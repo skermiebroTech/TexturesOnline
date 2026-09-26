@@ -1,9 +1,13 @@
+import type { PreviewParams } from '../../../src/core/types';
 import { createShaderPreview, type ShaderPreview } from '../../../src/shared/preview/shader-preview';
 import { fixtureAssets } from './fixture-assets';
 import { PRESETS } from './presets';
 
 declare global {
-  interface Window { __preview: ShaderPreview; __ready: Promise<void>; __setPreset(name: string): void; __setAssets(src: string): Promise<void> }
+  interface Window {
+    __preview: ShaderPreview; __ready: Promise<void>; __setPreset(name: string): void; __setAssets(src: string): Promise<void>;
+    __presetValues(name: string): PreviewParams;
+  }
 }
 
 const q = new URLSearchParams(location.search);
@@ -27,7 +31,7 @@ if (orbit) {
 async function setAssets(src: string): Promise<void> {
   status.textContent = `assets: ${src}…`;
   try {
-    await preview.setAssets(src === 'java' || src === 'bedrock' ? await fixtureAssets(src) : null);
+    await preview.setAssets(src === 'java' || src === 'bedrock' || src === 'legacy' ? await fixtureAssets(src) : null);
     status.textContent = `assets: ${src}`;
   } catch (e) {
     status.textContent = `assets failed: ${(e as Error).message}`;
@@ -35,6 +39,7 @@ async function setAssets(src: string): Promise<void> {
 }
 window.__setAssets = setAssets;
 window.__setPreset = (name) => preview.setParams(PRESETS[name]());
+window.__presetValues = (name) => PRESETS[name]();
 window.__ready = setAssets(q.get('assets') ?? 'none');
 
 const bar = document.getElementById('bar') as HTMLDivElement;
@@ -45,7 +50,7 @@ const btn = (label: string, fn: () => void) => {
   bar.appendChild(b);
 };
 for (const name of Object.keys(PRESETS)) btn(name, () => window.__setPreset(name));
-for (const src of ['none', 'java', 'bedrock']) btn(`assets:${src}`, () => void setAssets(src));
+for (const src of ['none', 'java', 'bedrock', 'legacy']) btn(`assets:${src}`, () => void setAssets(src));
 let anim = false;
 btn('time anim', () => preview.setTimeAnimation((anim = !anim)));
 let rot = q.get('rotate') === '1';

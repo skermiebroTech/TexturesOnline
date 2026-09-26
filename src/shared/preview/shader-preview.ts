@@ -10,7 +10,7 @@ import {
 } from './glsl';
 import { loadSlotTextures, proceduralSlotTextures, type SlotTexture, type SlotTextures } from './preview-textures';
 import { makePixelTexture } from './three-utils';
-import { createStage, OrbitController, ViewportLoop } from './viewport';
+import { createStage, OrbitController, prefersReducedMotion, ViewportLoop } from './viewport';
 import { buildDiorama, type DioramaData, type MeshData, type TextureSlot } from './voxel-world';
 
 export interface ShaderPreview {
@@ -267,15 +267,23 @@ class ShaderPreviewImpl implements ShaderPreview {
   private time = 0;
   private waterFrame = 0;
   private lastShadowKey = '';
-  private dpr: number;
-  private readonly maxDpr: number;
-  private readonly fixedDpr: boolean;
+  /** Current render scale; recomputed on resize (the device pixel ratio can change) and by adaptQuality */
+  private dpr = 1;
+  private readonly fixedDpr: number | null;
+  /** Adaptive quality factor applied to min(devicePixelRatio, 1.5) */
+  private dprScale = 1;
   private slowTime = 0;
+  private fastTime = 0;
+  private lastUpscale = -Infinity;
+  private upscaleLocked = false;
+  private assetsRef: AssetIndex | null | undefined = undefined;
+  private assetsLoad: Promise<void> | null = null;
   private cssW = 1;
   private cssH = 1;
   private destroyed = false;
   private assetToken = 0;
   private contextLost = false;
+  private failed = false;
   private firstFrame = true;
   private readonly tmp = {
     f: new THREE.Vector3(),
@@ -292,9 +300,8 @@ class ShaderPreviewImpl implements ShaderPreview {
     this.stage = stage;
     this.renderer = renderer;
     this.dayLength = Math.max(4, opts.dayLength ?? 48);
-    this.fixedDpr = typeof opts.pixelRatio === 'number' && opts.pixelRatio > 0;
-    this.maxDpr = this.fixedDpr ? (opts.pixelRatio as number) : Math.min(window.devicePixelRatio || 1, 1.5);
-    this.dpr = this.maxDpr;
+    this.fixedDpr = typeof opts.pixelRatio === 'number' && Number.isFinite(opts.pixelRatio) && opts.pixelRatio > 0 ? Math.min(opts.pixelRatio, 3) : null;
+    this.dpr = this.targetDpr();
 
     const params = sanitizePreviewParams(opts.params ?? defaultPreviewParams());
     this.target_ = params;
@@ -432,7 +439,7 @@ class ShaderPreviewImpl implements ShaderPreview {
 
     this.allocateTargets(1, 1);
 
-    const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     this.orbit = new OrbitController(stage.canvas, {
       azimuth: -0.62,
       elevation: 0.46,
@@ -451,10 +458,15 @@ class ShaderPreviewImpl implements ShaderPreview {
 
     stage.canvas.addEventListener('webglcontextlost', this.onContextLost);
     stage.canvas.addEventListener('webglcontextrestored', this.onContextRestored);
+    renderer.debug.onShaderError = (gl, program, vs, fs) => {
+      console.error('Shader preview: GPU shader compile failed', gl.getProgramInfoLog(program), gl.getShaderInfoLog(vs), gl.getShaderInfoLog(fs));
+      this.fail();
+    };
 
     this.loop = new ViewportLoop(stage.root, {
       frame: (dt) => this.frame(dt),
       resize: (w, h) => this.resize(w, h),
+      error: () => this.fail(),
     });
 
     if (opts.assets) void this.setAssets(opts.assets);
@@ -563,9 +575,16 @@ class ShaderPreviewImpl implements ShaderPreview {
     this.raysRT = this.makeRT(Math.max(1, Math.floor(w / 4)), Math.max(1, Math.floor(h / 4)));
   }
 
+  private targetDpr(): number {
+    if (this.fixedDpr) return this.fixedDpr;
+    const base = Math.min(window.devicePixelRatio || 1, 1.5);
+    return Math.max(Math.min(base, 0.65), base * this.dprScale);
+  }
+
   private resize(w: number, h: number): void {
     this.cssW = w;
     this.cssH = h;
+    this.dpr = this.targetDpr();
     this.applySize();
   }
 
@@ -584,6 +603,12 @@ class ShaderPreviewImpl implements ShaderPreview {
     this.allocateTargets(bw, bh);
   }
 
+  private fail(): void {
+    if (this.failed) return;
+    this.failed = true;
+    this.stage.message('The 3D preview could not run on this device. Your settings still export normally.');
+  }
+
   // ---- context loss ----
 
   private onContextLost = (e: Event): void => {
@@ -594,7 +619,7 @@ class ShaderPreviewImpl implements ShaderPreview {
 
   private onContextRestored = (): void => {
     this.contextLost = false;
-    this.stage.message(null);
+    if (!this.failed) this.stage.message(null);
     this.lastShadowKey = '';
     this.loop.invalidate();
   };
@@ -666,6 +691,11 @@ class ShaderPreviewImpl implements ShaderPreview {
   private renderShadows(L: Lighting): void {
     if (!this.shadowRT) return;
     const p = this.cur;
+    if (p.shadowStrength <= 0.001) {
+      // nothing samples the map (e.g. vanilla presets have no cast shadows): skip the pass, redraw when needed
+      this.lastShadowKey = '';
+      return;
+    }
     const key = `${L.lightDir.map((v) => v.toFixed(4)).join(',')}`;
     const moving = p.waving > 0.001;
     if (!moving && key === this.lastShadowKey) return;
@@ -713,19 +743,43 @@ class ShaderPreviewImpl implements ShaderPreview {
     this.renderer.render(this.quadScene, this.quadCam);
   }
 
+  /**
+   * Lowers the render scale when frames are consistently slow, and raises it again once they are fast
+   * (a busy main thread while the page loads should not leave the preview blurry for good). A raise that
+   * is immediately followed by another drop locks the scale, so a slow GPU does not flip-flop.
+   */
   private adaptQuality(dt: number): void {
     if (this.fixedDpr || this.firstFrame) return;
-    if (dt > 0.028) this.slowTime += dt;
-    else this.slowTime = Math.max(0, this.slowTime - dt * 0.5);
+    const now = performance.now();
+    if (dt > 0.028) {
+      this.slowTime += dt;
+      this.fastTime = 0;
+    } else {
+      this.slowTime = Math.max(0, this.slowTime - dt * 0.5);
+      this.fastTime = dt < 0.02 ? this.fastTime + dt : 0;
+    }
     if (this.slowTime > 1.5 && this.dpr > 0.65) {
-      this.dpr = Math.max(0.65, this.dpr * 0.8);
+      if (now - this.lastUpscale < 5000) this.upscaleLocked = true;
+      this.dprScale = Math.max(0.3, this.dprScale * 0.8);
       this.slowTime = 0;
-      this.applySize();
+      this.fastTime = 0;
+      this.resizeTo(this.targetDpr());
+    } else if (this.fastTime > 4 && this.dprScale < 1 && !this.upscaleLocked) {
+      this.dprScale = Math.min(1, this.dprScale / 0.8);
+      this.fastTime = 0;
+      this.lastUpscale = now;
+      this.resizeTo(this.targetDpr());
     }
   }
 
+  private resizeTo(dpr: number): void {
+    if (Math.abs(dpr - this.dpr) < 1e-3) return;
+    this.dpr = dpr;
+    this.applySize();
+  }
+
   private frame(dt: number): boolean {
-    if (this.destroyed || this.contextLost) return false;
+    if (this.destroyed || this.contextLost || this.failed) return false;
     // Only ambient motion (water, torches, foliage): 30 fps is plenty and saves battery.
     this.adaptQuality(dt);
     const active = this.firstFrame || this.timeAnimation || this.orbit.animating || performance.now() - this.lastChange < 1200;
@@ -854,8 +908,17 @@ class ShaderPreviewImpl implements ShaderPreview {
     this.loop.invalidate();
   }
 
-  async setAssets(a: AssetIndex | null): Promise<void> {
-    if (this.destroyed) return;
+  setAssets(a: AssetIndex | null): Promise<void> {
+    if (this.destroyed) return Promise.resolve();
+    // Views often pass the same index again on every re-render: keep the textures already loaded.
+    if (a === this.assetsRef && this.assetsLoad) return this.assetsLoad;
+    this.assetsRef = a;
+    const load = this.loadAssets(a);
+    this.assetsLoad = load;
+    return load;
+  }
+
+  private async loadAssets(a: AssetIndex | null): Promise<void> {
     const token = ++this.assetToken;
     let slots: SlotTextures;
     try {
@@ -903,6 +966,7 @@ class ShaderPreviewImpl implements ShaderPreview {
 
   screenshot(): Promise<Blob> {
     if (this.destroyed) return Promise.reject(new Error('The preview has been closed.'));
+    if (this.failed) return Promise.reject(new Error('The 3D preview could not run on this device.'));
     if (this.contextLost) return Promise.reject(new Error('The preview is paused. Try again in a moment.'));
     this.cur = structuredClone(this.target_);
     if (!this.timeAnimation) this.tod = this.todTarget;
@@ -961,7 +1025,10 @@ class UnavailablePreview implements ShaderPreview {
 
 /** Creates the live preview inside `container` (fills it; give the container a size). */
 export function createShaderPreview(container: HTMLElement, opts: ShaderPreviewOptions = {}): ShaderPreview {
-  const stage = createStage(container, 'Shader preview of a small voxel island. Drag to rotate, scroll or pinch to zoom, double-click to reset.');
+  const stage = createStage(
+    container,
+    'Shader preview of a small voxel island. Drag or use the arrow keys to rotate, scroll, pinch or press plus and minus to zoom, double-click or press Home to reset.',
+  );
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({

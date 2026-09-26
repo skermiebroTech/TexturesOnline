@@ -1,10 +1,47 @@
 // Small helpers shared by the 3D previews: a visibility-aware render loop and an orbit camera controller.
 
+let reducedMotionQuery: MediaQueryList | null | undefined;
+/** True when the user asked the system to minimise motion (cached media query, cheap to call per frame). */
+export function prefersReducedMotion(): boolean {
+  if (reducedMotionQuery === undefined) {
+    reducedMotionQuery = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+  }
+  return reducedMotionQuery?.matches ?? false;
+}
+
+/**
+ * Calls `onChange` whenever window.devicePixelRatio changes (browser zoom, moving the window to another
+ * monitor). Returns a function that stops watching.
+ */
+export function watchDevicePixelRatio(onChange: () => void): () => void {
+  if (typeof matchMedia !== 'function' || typeof window === 'undefined') return () => {};
+  let query: MediaQueryList | null = null;
+  let stopped = false;
+  const arm = (): void => {
+    query?.removeEventListener('change', fire);
+    query = matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    query.addEventListener('change', fire);
+  };
+  const fire = (): void => {
+    if (stopped) return;
+    arm();
+    onChange();
+  };
+  arm();
+  return () => {
+    stopped = true;
+    query?.removeEventListener('change', fire);
+    query = null;
+  };
+}
+
 export interface LoopOptions {
   /** Called every animation frame while visible. Return false when nothing is animating (loop idles until invalidated). */
   frame: (dt: number, now: number) => boolean | void;
   /** Called with the CSS size of the container whenever it changes (and once at start). */
   resize: (width: number, height: number) => void;
+  /** Called once when `frame` keeps throwing; the loop then stops until invalidated. */
+  error?: (err: unknown) => void;
 }
 
 /**
@@ -21,14 +58,17 @@ export class ViewportLoop {
   private io: IntersectionObserver | null = null;
   private width = 0;
   private height = 0;
+  private failures = 0;
+  private readonly unwatchDpr: () => void;
 
   constructor(private readonly el: HTMLElement, private readonly opts: LoopOptions) {
     if (typeof ResizeObserver !== 'undefined') {
       this.ro = new ResizeObserver(() => this.measure());
       this.ro.observe(el);
     } else {
-      window.addEventListener('resize', this.measure);
+      window.addEventListener('resize', this.onWindowResize);
     }
+    this.unwatchDpr = watchDevicePixelRatio(() => this.measure(true));
     if (typeof IntersectionObserver !== 'undefined') {
       this.io = new IntersectionObserver((entries) => {
         const e = entries[entries.length - 1];
@@ -50,17 +90,19 @@ export class ViewportLoop {
     return this.raf !== 0;
   }
 
-  private measure = (): void => {
+  private onWindowResize = (): void => this.measure();
+
+  /** Layout size (ignores CSS transforms such as a scale-in animation, which ResizeObserver does not report). */
+  private measure(force = false): void {
     if (this.disposed) return;
-    const r = this.el.getBoundingClientRect();
-    const w = Math.max(1, Math.round(r.width));
-    const h = Math.max(1, Math.round(r.height));
-    if (w === this.width && h === this.height) return;
+    const w = Math.max(1, this.el.clientWidth);
+    const h = Math.max(1, this.el.clientHeight);
+    if (!force && w === this.width && h === this.height) return;
     this.width = w;
     this.height = h;
     this.opts.resize(w, h);
     this.invalidate();
-  };
+  }
 
   private visible(): boolean {
     return !this.disposed && this.onScreen && document.visibilityState !== 'hidden';
@@ -90,8 +132,15 @@ export class ViewportLoop {
     let more: boolean | void = true;
     try {
       more = this.opts.frame(dt, now);
+      this.failures = 0;
     } catch (err) {
       console.error(err);
+      // a frame that keeps throwing would otherwise spam the console 60 times a second
+      if (++this.failures >= 3) {
+        more = false;
+        this.failures = 0;
+        this.opts.error?.(err);
+      }
     }
     this.idle = more === false;
     if (!this.idle) this.raf = requestAnimationFrame(this.tick);
@@ -108,7 +157,8 @@ export class ViewportLoop {
     this.stop();
     this.ro?.disconnect();
     this.io?.disconnect();
-    window.removeEventListener('resize', this.measure);
+    this.unwatchDpr();
+    window.removeEventListener('resize', this.onWindowResize);
     document.removeEventListener('visibilitychange', this.update);
   }
 }
@@ -126,9 +176,6 @@ export interface OrbitOptions {
   autoRotateSpeed?: number;
   onChange?: () => void;
 }
-
-const reducedMotion = (): boolean =>
-  typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
  * Minimal orbit controller: pointer drag rotates, wheel / pinch zooms, arrow keys and +/- work when focused,
@@ -236,7 +283,7 @@ export class OrbitController {
     if (this.pointers.size < 2) this.pinchDist = 0;
     if (this.pointers.size === 0) {
       this.dragging = false;
-      if (!this.moved || reducedMotion() || performance.now() - this.lastMove > 90) {
+      if (!this.moved || prefersReducedMotion() || performance.now() - this.lastMove > 90) {
         this.vAz = 0;
         this.vEl = 0;
       }
@@ -301,7 +348,7 @@ export class OrbitController {
       this.clamp();
       changed = true;
     }
-    if (this.autoRotate && !this.dragging && performance.now() - this.lastInteraction > 2500 && !reducedMotion()) {
+    if (this.autoRotate && !this.dragging && performance.now() - this.lastInteraction > 2500 && !prefersReducedMotion()) {
       this.azimuth += this.autoRotateSpeed * dt;
       changed = true;
     }
@@ -310,7 +357,7 @@ export class OrbitController {
 
   /** True while inertia or auto-rotation will keep moving the view. */
   get animating(): boolean {
-    return this.dragging || this.vAz !== 0 || this.vEl !== 0 || (this.autoRotate && !reducedMotion());
+    return this.dragging || this.vAz !== 0 || this.vEl !== 0 || (this.autoRotate && !prefersReducedMotion());
   }
 
   /** Camera position relative to the target. */

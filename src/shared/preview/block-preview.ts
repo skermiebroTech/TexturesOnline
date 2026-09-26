@@ -3,13 +3,17 @@
 
 import * as THREE from 'three';
 import { alphaMode, makePixelTexture, stripFrames, type PixelImage } from './three-utils';
-import { createStage, OrbitController, ViewportLoop } from './viewport';
+import { createStage, OrbitController, prefersReducedMotion, ViewportLoop } from './viewport';
 
 export type CubeFace = 'up' | 'down' | 'north' | 'south' | 'east' | 'west';
 export type CubeFaces = Partial<Record<CubeFace, ImageData | PixelImage>> & { all?: ImageData | PixelImage };
 
 export interface BlockViewOptions {
-  /** Game ticks per frame; when given, vertical animation strips play instead of showing frame 0 */
+  /**
+   * Game ticks per frame (Java .mcmeta `frametime`, Bedrock `ticks_per_frame`). When given, vertical
+   * animation strips play. Without it a cube face shows frame 0 of a strip, while showFlat shows the whole
+   * image (tall non-animated textures such as 1x2 paintings are valid images).
+   */
   frametime?: number;
 }
 
@@ -28,7 +32,9 @@ export interface BlockPreviewOptions {
 }
 
 // three.js BoxGeometry material group order: +x, -x, +y, -y, +z, -z (Minecraft: +x east, +y up, +z south).
-const BOX_ORDER: CubeFace[] = ['east', 'west', 'up', 'down', 'south', 'north'];
+// With rows flipped like flipY (makePixelTexture) this reproduces the game's default face UVs exactly.
+export const BOX_FACE_ORDER: readonly CubeFace[] = ['east', 'west', 'up', 'down', 'south', 'north'];
+const BOX_ORDER = BOX_FACE_ORDER;
 const FACE_SET = new Set<string>(BOX_ORDER);
 
 const VERT = /* glsl */ `
@@ -109,7 +115,7 @@ class BlockPreviewImpl implements BlockPreview {
   private destroyed = false;
 
   constructor(container: HTMLElement, opts: BlockPreviewOptions) {
-    this.stage = createStage(container, 'Block preview. Drag to rotate, scroll to zoom, double-click to reset.');
+    this.stage = createStage(container, 'Block preview. Drag or use the arrow keys to rotate, scroll to zoom, double-click or press Home to reset.');
     this.stage.root.style.minHeight = '80px';
     this.flat = document.createElement('canvas');
     this.flat.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none;';
@@ -141,7 +147,7 @@ class BlockPreviewImpl implements BlockPreview {
       this.stage.canvas.addEventListener('webglcontextrestored', this.onRestored);
     }
 
-    const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     this.orbit = new OrbitController(this.stage.canvas, {
       ...DEFAULT_VIEW,
       minDistance: 2.2,
@@ -197,6 +203,15 @@ class BlockPreviewImpl implements BlockPreview {
   private frame(dt: number): boolean {
     if (this.destroyed) return false;
     this.animTime += dt;
+    if (!this.renderer) {
+      // 2D fallback: the static isometric drawing only changes when a flat strip animates
+      if (this.mode === 'cube') {
+        this.drawIsoFallback();
+        return false;
+      }
+    } else if (this.mode === 'cube' && this.renderer.getContext().isContextLost()) {
+      return false; // resumes from onRestored
+    }
     const orbitMoving = this.mode === 'cube' && this.orbit.update(dt);
     let animating = false;
     if (this.frametime > 0) {
@@ -217,14 +232,11 @@ class BlockPreviewImpl implements BlockPreview {
   }
 
   private renderCube(): void {
+    if (!this.renderer) return;
     const off = this.orbit.offset();
     this.camera.position.set(off[0], off[1], off[2]);
     this.camera.lookAt(0, 0, 0);
-    if (this.renderer && !this.renderer.getContext().isContextLost()) {
-      this.renderer.render(this.scene, this.camera);
-    } else {
-      this.drawIsoFallback();
-    }
+    this.renderer.render(this.scene, this.camera);
   }
 
   showCube(faces: CubeFaces, opts: BlockViewOptions = {}): void {
@@ -247,7 +259,7 @@ class BlockPreviewImpl implements BlockPreview {
 
     if (!this.renderer) {
       this.cubeFallback = {};
-      for (const f of ['up', 'south', 'east'] as CubeFace[]) {
+      for (const f of ['up', 'east', 'north'] as CubeFace[]) {
         const img = resolved[f];
         if (img) this.cubeFallback[f] = this.firstFrameCanvas(img);
       }
@@ -302,7 +314,7 @@ class BlockPreviewImpl implements BlockPreview {
       this.meshes.push(new THREE.Mesh(this.geometry, materials));
     }
     for (const m of this.meshes) this.group.add(m);
-    if (this.shadow) this.shadow.visible = true;
+    if (this.shadow) this.shadow.visible = Object.keys(resolved).length > 0;
     this.loop.invalidate();
   }
 
@@ -385,7 +397,7 @@ class BlockPreviewImpl implements BlockPreview {
     ctx.drawImage(this.flatCanvas, 0, frame * fh, fw, fh, x, y, dw, dh);
   }
 
-  /** 2D isometric cube used when WebGL is unavailable. */
+  /** 2D isometric cube used when WebGL is unavailable; same faces and orientation as the default 3D view. */
   private drawIsoFallback(): void {
     const faces = this.cubeFallback;
     const ctx = this.flat.getContext('2d');
@@ -411,9 +423,11 @@ class BlockPreviewImpl implements BlockPreview {
     };
     const hx = s * 0.866;
     const hy = s * 0.5;
-    draw(faces.up, hx, hy, -hx, hy, cx, cy - s);
-    draw(faces.south, hx, hy, 0, s, cx - hx, cy - hy, 0.2);
-    draw(faces.east, hx, -hy, 0, s, cx, cy, 0.35);
+    // Default view looks from north-east: east face on the left, north face on the right, and the top
+    // texture's north-west corner at the right-hand vertex.
+    draw(faces.up, -hx, hy, -hx, -hy, cx + hx, cy - hy);
+    draw(faces.east, hx, hy, 0, s, cx - hx, cy - hy, 0.2);
+    draw(faces.north, hx, -hy, 0, s, cx, cy, 0.35);
   }
 
   setAutoRotate(v: boolean): void {

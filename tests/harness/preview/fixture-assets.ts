@@ -70,17 +70,22 @@ function decodeTga(buf: Uint8Array): ImageData {
   return new ImageData(px, w, h);
 }
 
-export async function loadFixtureIndex(): Promise<{ java: string[]; bedrock: string[] }> {
+export type FixtureSet = Edition | 'legacy';
+
+export async function loadFixtureIndex(): Promise<{ java: string[]; bedrock: string[]; legacy?: string[] }> {
   const res = await fetch(BASE + 'index.json');
   if (!res.ok) throw new Error('Fixtures missing: run node tests/harness/preview/extract-fixtures.mjs <client.jar> --bedrock');
   return res.json();
 }
 
-export async function fixtureAssets(edition: Edition): Promise<AssetIndex> {
+/** 'legacy' is a Java 1.12.2 subset (pre-flattening names), served as a Java index. */
+export async function fixtureAssets(which: FixtureSet): Promise<AssetIndex> {
   const index = await loadFixtureIndex();
-  const files = edition === 'java' ? index.java : index.bedrock;
+  const edition: Edition = which === 'bedrock' ? 'bedrock' : 'java';
+  const files = which === 'legacy' ? index.legacy ?? [] : which === 'java' ? index.java : index.bedrock;
+  if (!files.length) throw new Error(`No ${which} fixtures: run extract-fixtures.mjs`);
   const set = new Set(files);
-  const prefix = edition === 'java' ? 'java/' : 'bedrock/';
+  const prefix = `${which}/`;
   const readFile = async (path: string) => {
     if (!set.has(path)) throw new Error(`Not in fixtures: ${path}`);
     const res = await fetch(BASE + prefix + path);
@@ -96,7 +101,7 @@ export async function fixtureAssets(edition: Edition): Promise<AssetIndex> {
     });
   return {
     edition,
-    version: edition === 'java' ? '26.3' : 'main',
+    version: which === 'legacy' ? '1.12.2' : edition === 'java' ? '26.3' : 'main',
     textures,
     hasFile: (p) => set.has(p),
     listFiles: (prefix2) => files.filter((f) => f.startsWith(prefix2)),

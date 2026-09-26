@@ -47,7 +47,8 @@ const SOURCES: Record<TextureSlot, SlotSource> = {
   short_grass: { java: ['block/short_grass', 'block/grass', 'blocks/tallgrass'], bedrock: ['blocks/tallgrass'], tint: 'grass', procedural: 'short_grass' },
   poppy: { java: ['block/poppy', 'blocks/flower_rose'], bedrock: ['blocks/flower_rose'], procedural: 'poppy' },
   dandelion: { java: ['block/dandelion', 'blocks/flower_dandelion'], bedrock: ['blocks/flower_dandelion'], procedural: 'dandelion' },
-  cornflower: { java: ['block/cornflower', 'block/blue_orchid', 'blocks/flower_blue_orchid'], bedrock: ['blocks/flower_cornflower', 'blocks/flower_blue_orchid'], procedural: 'cornflower' },
+  // 1.6 has no blue flower: reuse the rose so the art style stays consistent
+  cornflower: { java: ['block/cornflower', 'block/blue_orchid', 'blocks/flower_blue_orchid', 'blocks/flower_rose'], bedrock: ['blocks/flower_cornflower', 'blocks/flower_blue_orchid'], procedural: 'cornflower' },
   torch: { java: ['block/torch', 'blocks/torch_on'], bedrock: ['blocks/torch_on'], procedural: 'torch' },
 };
 
@@ -137,10 +138,12 @@ export function sampleColormap(img: RGBAImage, temperature: number, downfall: nu
   return [img.data[i], img.data[i + 1], img.data[i + 2]];
 }
 
+// Bedrock resolves duplicate stems by extension priority .tga > .png (e.g. blocks/tallgrass has both,
+// with different pixels), so probe in the same order as the game.
 function roots(assets: AssetIndex): { root: string; exts: string[] } {
   return assets.edition === 'java'
     ? { root: 'assets/minecraft/textures/', exts: ['.png'] }
-    : { root: 'textures/', exts: ['.png', '.tga'] };
+    : { root: 'textures/', exts: ['.tga', '.png'] };
 }
 
 function resolvePath(assets: AssetIndex, ids: string[]): string | null {
@@ -165,6 +168,46 @@ async function readFrametime(assets: AssetIndex, path: string): Promise<number> 
   } catch {
     return 2;
   }
+}
+
+/** Tallest water strip uploaded (WebGL guarantees 4096 on practically every device). */
+export const MAX_STRIP_HEIGHT = 4096;
+
+/** Keeps the first frames of a vertical strip so it fits in `maxHeight` pixels. */
+export function limitStrip(img: RGBAImage, frames: number, maxHeight = MAX_STRIP_HEIGHT): { image: RGBAImage; frames: number } {
+  const frameH = img.height / frames;
+  if (img.height <= maxHeight || frames <= 1) return { image: img, frames };
+  const keep = Math.max(1, Math.floor(maxHeight / frameH));
+  const h = keep * frameH;
+  return { image: { width: img.width, height: h, data: img.data.slice(0, img.width * h * 4) }, frames: keep };
+}
+
+/**
+ * Java before 1.13 (and some packs) ship blue, pre-coloured water. The preview tints water with
+ * PreviewParams.waterColor, so convert coloured water to the neutral grey the modern game uses,
+ * keeping its light/dark detail. Grey textures are returned unchanged.
+ */
+export function neutralizeWater(img: RGBAImage): RGBAImage {
+  const d = img.data;
+  let chroma = 0;
+  let lumaSum = 0;
+  let n = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] === 0) continue;
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    chroma += Math.max(r, g, b) - Math.min(r, g, b);
+    lumaSum += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    n++;
+  }
+  if (!n || chroma / n < 24) return img;
+  const scale = 185 / Math.max(1, lumaSum / n);
+  const out = cloneImage(img);
+  const o = out.data;
+  for (let i = 0; i < o.length; i += 4) {
+    const v = (0.2126 * o[i] + 0.7152 * o[i + 1] + 0.0722 * o[i + 2]) * scale;
+    o[i] = o[i + 1] = o[i + 2] = v;
+  }
+  return out;
 }
 
 function proceduralSlot(slot: TextureSlot): SlotTexture {
@@ -205,8 +248,8 @@ async function loadSlot(assets: AssetIndex, slot: TextureSlot, tints: { grass: R
 
   if (slot === 'water') {
     const frameCount = raw.height > raw.width && raw.height % raw.width === 0 ? raw.height / raw.width : 1;
-    const image = frameCount > 1 ? cloneImage(raw) : firstFrame(raw);
-    return { image, frames: frameCount, frametime: await readFrametime(assets, path), source: 'asset', path };
+    const strip = limitStrip(frameCount > 1 ? cloneImage(raw) : firstFrame(raw), frameCount);
+    return { image: neutralizeWater(strip.image), frames: strip.frames, frametime: await readFrametime(assets, path), source: 'asset', path };
   }
 
   let img = firstFrame(raw);

@@ -1,11 +1,13 @@
+import { ColorManagement } from 'three';
 import { fixtureAssets } from './fixture-assets';
 import { createSkinPreview, SKIN_PARTS, type SkinAnimation, type SkinPreview } from '../../../src/tools/skins/skin-preview';
 
 declare global {
-  interface Window { __ready: Promise<void>; __a: SkinPreview; __b: SkinPreview; __paint(n: number): Promise<{ recreated: boolean }>; }
+  interface Window { __ready: Promise<void>; __a: SkinPreview; __b: SkinPreview; __paint(n: number): Promise<{ recreated: boolean }>; __colorManagement(): boolean }
 }
 
 const q = new URLSearchParams(location.search);
+window.__colorManagement = () => ColorManagement.enabled;
 
 /** Simple original test skin: coloured body parts with a patterned overlay on the head. */
 function testSkin(): ImageData {

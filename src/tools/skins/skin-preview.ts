@@ -4,7 +4,7 @@
 import { FlyingAnimation, IdleAnimation, RunningAnimation, SkinViewer, WalkingAnimation, type PlayerAnimation } from 'skinview3d';
 import * as THREE from 'three';
 import type { SkinModel } from '../../core/types';
-import { createStage } from '../../shared/preview/viewport';
+import { createStage, watchDevicePixelRatio } from '../../shared/preview/viewport';
 
 export type SkinAnimation = 'idle' | 'walk' | 'run' | 'fly' | 'none';
 export type SkinPartId = 'head' | 'body' | 'rightArm' | 'leftArm' | 'rightLeg' | 'leftLeg' | 'cape';
@@ -54,8 +54,7 @@ interface Highlight {
 /** Normalises free-form part names ("Left Arm", "left_arm", "arm-left:overlay", "hat", ...). */
 export function parseSkinPart(name: string | null | undefined): Highlight | null {
   if (!name) return null;
-  const raw = name.toLowerCase();
-  const s = raw.replace(/[^a-z]/g, '');
+  const s = name.toLowerCase().replace(/[^a-z0-9]/g, '');
   const outer = /outer|overlay|layer2|second|hat|jacket|sleeve|pants|helm/.test(s);
   const inner = /inner|base|layer1|first/.test(s);
   const layer: Highlight['layer'] = outer ? 'outer' : inner ? 'inner' : 'both';
@@ -78,12 +77,45 @@ const ANIMATIONS: Record<Exclude<SkinAnimation, 'none'>, () => PlayerAnimation> 
   fly: () => new FlyingAnimation(),
 };
 
-// Second-layer regions cleared for fully opaque skins (the game treats those as having no overlay).
-const OVERLAY_RECTS: [number, number, number, number][] = [
-  [32, 0, 32, 16], [0, 32, 16, 16], [16, 32, 24, 16], [40, 32, 16, 16], [0, 48, 16, 16], [48, 48, 16, 16],
-];
-
 const DEFAULT_ANGLE = 0.55;
+const MAX_PIXEL_RATIO = 2;
+
+const pixelRatio = (): number => Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+
+let colorProbe: CanvasRenderingContext2D | null | undefined;
+
+/**
+ * Resolves any CSS colour (hex, rgb(), hsl(), oklch(), named, var(--token), ...) to sRGB bytes + alpha,
+ * relative to `host` so custom properties resolve. Returns null for invalid or fully transparent colours.
+ */
+export function resolveCssColor(value: string, host: Element): [number, number, number, number] | null {
+  let css = value.trim();
+  if (!css || css === 'transparent' || css === 'none') return null;
+  if (typeof document === 'undefined') return null;
+  const probe = document.createElement('span');
+  probe.style.backgroundColor = css;
+  if (!probe.style.backgroundColor) return null;
+  if (host.isConnected && typeof getComputedStyle === 'function') {
+    probe.style.cssText += ';position:absolute;width:0;height:0;visibility:hidden;pointer-events:none';
+    host.appendChild(probe);
+    css = getComputedStyle(probe).backgroundColor || css;
+    probe.remove();
+  }
+  if (colorProbe === undefined) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 1;
+    colorProbe = c.getContext('2d', { willReadFrequently: true });
+  }
+  const ctx = colorProbe;
+  if (!ctx) return null;
+  ctx.clearRect(0, 0, 1, 1);
+  ctx.fillStyle = '#000';
+  ctx.fillStyle = css;
+  ctx.fillRect(0, 0, 1, 1);
+  const d = ctx.getImageData(0, 0, 1, 1).data;
+  if (d[3] < 13) return null;
+  return [d[0], d[1], d[2], d[3]];
+}
 
 class SkinPreviewImpl implements SkinPreview {
   private readonly stage: ReturnType<typeof createStage>;
@@ -99,23 +131,34 @@ class SkinPreviewImpl implements SkinPreview {
   private originals = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   private ro: ResizeObserver | null = null;
   private io: IntersectionObserver | null = null;
+  private readonly unwatchDpr: () => void;
   private onScreen = true;
+  private dirty = false;
   private destroyed = false;
 
   constructor(stage: ReturnType<typeof createStage>, opts: SkinPreviewOptions) {
     this.stage = stage;
     this.model = opts.model;
-    const rect = this.stage.root.getBoundingClientRect();
-    this.viewer = new SkinViewer({
-      canvas: this.stage.canvas,
-      width: Math.max(1, Math.round(rect.width)),
-      height: Math.max(1, Math.round(rect.height)),
-      pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
-      fov: 38,
-      zoom: 0.86,
-      enableControls: true,
-    });
+    // skinview3d switches three.js colour management off globally; restore it for the rest of the app
+    // (this preview's own colours do not depend on it, see setBackground).
+    const colorManagement = THREE.ColorManagement.enabled;
+    try {
+      this.viewer = new SkinViewer({
+        canvas: this.stage.canvas,
+        width: Math.max(1, this.stage.root.clientWidth),
+        height: Math.max(1, this.stage.root.clientHeight),
+        pixelRatio: pixelRatio(),
+        fov: 38,
+        zoom: 0.86,
+        enableControls: true,
+        // start paused: updatePaused() below decides whether the render loop needs to run
+        renderPaused: true,
+      });
+    } finally {
+      THREE.ColorManagement.enabled = colorManagement;
+    }
     this.viewer.controls.enablePan = false;
+    this.viewer.controls.addEventListener('change', this.requestRender);
     this.viewer.autoRotateSpeed = 0.7;
     this.viewer.autoRotate = opts.autoRotate ?? false;
     this.stage.canvas.style.width = '100%';
@@ -138,26 +181,52 @@ class SkinPreviewImpl implements SkinPreview {
       });
       this.io.observe(this.stage.root);
     }
+    this.unwatchDpr = watchDevicePixelRatio(() => this.resize(true));
     document.addEventListener('visibilitychange', this.updatePaused);
     this.stage.canvas.addEventListener('keydown', this.onKey);
     this.stage.canvas.addEventListener('dblclick', this.onDbl);
+    this.updatePaused();
   }
 
+  private get visible(): boolean {
+    return this.onScreen && document.visibilityState !== 'hidden';
+  }
+
+  /**
+   * The render loop only runs while something moves (an animation or auto-rotation) and the preview is
+   * visible; a static pose is re-rendered on demand (edits, camera drags) instead of 60 times a second.
+   */
   private updatePaused = (): void => {
     if (this.destroyed) return;
-    this.viewer.renderPaused = !(this.onScreen && document.visibilityState !== 'hidden');
+    const run = this.visible && (this.viewer.animation !== null || this.viewer.autoRotate);
+    if (this.viewer.renderPaused === run) this.viewer.renderPaused = !run;
+    if (!run && this.visible && this.dirty) this.renderNow();
   };
 
-  private resize(): void {
+  private renderNow(): void {
+    this.dirty = false;
+    this.viewer.render();
+  }
+
+  /** Redraws once when the loop is paused (running loops pick changes up on their next frame). */
+  private requestRender = (): void => {
+    if (this.destroyed || !this.viewer.renderPaused) return;
+    this.dirty = true;
+    if (this.visible) this.renderNow();
+  };
+
+  private resize(force = false): void {
     if (this.destroyed) return;
-    const r = this.stage.root.getBoundingClientRect();
-    const w = Math.max(1, Math.round(r.width));
-    const h = Math.max(1, Math.round(r.height));
-    if (w === this.viewer.width && h === this.viewer.height) return;
+    const w = Math.max(1, this.stage.root.clientWidth);
+    const h = Math.max(1, this.stage.root.clientHeight);
+    const pr = pixelRatio();
+    const prChanged = this.viewer.pixelRatio !== pr;
+    if (!force && !prChanged && w === this.viewer.width && h === this.viewer.height) return;
+    if (prChanged) this.viewer.pixelRatio = pr;
     this.viewer.setSize(w, h);
     this.stage.canvas.style.width = '100%';
     this.stage.canvas.style.height = '100%';
-    if (this.viewer.renderPaused) this.viewer.render();
+    this.requestRender();
   }
 
   private setCameraAngle(): void {
@@ -181,7 +250,10 @@ class SkinPreviewImpl implements SkinPreview {
       case 'Home': case '0': this.resetCamera(); break;
       default: handled = false;
     }
-    if (handled) e.preventDefault();
+    if (handled) {
+      e.preventDefault();
+      this.requestRender();
+    }
   };
 
   private onDbl = (): void => this.resetCamera();
@@ -219,14 +291,14 @@ class SkinPreviewImpl implements SkinPreview {
     const skinCanvas = this.viewer.skinCanvas;
     const map = this.viewer.playerObject.skin.map;
     if (this.hasSkin && map && w === h && skinCanvas.width === w && skinCanvas.height === h) {
-      // Fast path: repaint the existing texture's canvas and re-upload, no new GPU texture.
+      // Fast path: repaint the existing texture's canvas and re-upload, no new GPU texture. Same result
+      // as loadSkin for square skins (which, like the game, keeps opaque overlay pixels opaque).
       const ctx = skinCanvas.getContext('2d', { willReadFrequently: true });
       if (ctx) {
         ctx.clearRect(0, 0, w, h);
         ctx.drawImage(canvas, 0, 0);
-        this.fixOpaque(ctx, w);
         map.needsUpdate = true;
-        if (this.viewer.renderPaused) this.viewer.render();
+        this.requestRender();
         return;
       }
     }
@@ -234,17 +306,10 @@ class SkinPreviewImpl implements SkinPreview {
       this.viewer.loadSkin(canvas, { model: this.model === 'slim' ? 'slim' : 'default', ears: false });
       this.hasSkin = true;
       this.syncDimmedMaps();
-      if (this.viewer.renderPaused) this.viewer.render();
+      this.requestRender();
     } catch (err) {
       console.warn('Skin preview: could not load skin', err);
     }
-  }
-
-  private fixOpaque(ctx: CanvasRenderingContext2D, size: number): void {
-    const data = ctx.getImageData(0, 0, size, size).data;
-    for (let i = 3; i < data.length; i += 4) if (data[i] !== 255) return;
-    const k = size / 64;
-    for (const [x, y, w, h] of OVERLAY_RECTS) ctx.clearRect(x * k, y * k, w * k, h * k);
   }
 
   setSkin(src: SkinSource): void {
@@ -263,7 +328,7 @@ class SkinPreviewImpl implements SkinPreview {
     if (this.destroyed) return;
     this.model = m;
     this.viewer.playerObject.skin.modelType = m === 'slim' ? 'slim' : 'default';
-    if (this.viewer.renderPaused) this.viewer.render();
+    this.requestRender();
   }
 
   setCape(src: SkinSource | null): void {
@@ -271,6 +336,7 @@ class SkinPreviewImpl implements SkinPreview {
     if (!src) {
       this.viewer.loadCape(null);
       this.applyHighlight();
+      this.requestRender();
       return;
     }
     const canvas = this.toCanvas(src, 'cape');
@@ -281,36 +347,38 @@ class SkinPreviewImpl implements SkinPreview {
     } catch (err) {
       console.warn('Skin preview: unsupported cape image', err);
     }
+    this.requestRender();
   }
 
   setAnimation(a: SkinAnimation): void {
     if (this.destroyed) return;
-    this.viewer.animation = a === 'none' ? null : ANIMATIONS[a]();
+    const make = a === 'none' ? null : ANIMATIONS[a];
+    this.viewer.animation = make ? make() : null;
+    this.updatePaused();
+    this.requestRender();
   }
 
   setLayers(v: { inner: boolean; outer: boolean }): void {
     if (this.destroyed) return;
     this.viewer.playerObject.skin.setInnerLayerVisible(v.inner);
     this.viewer.playerObject.skin.setOuterLayerVisible(v.outer);
-    if (this.viewer.renderPaused) this.viewer.render();
+    this.requestRender();
   }
 
   setBackground(c: string | null): void {
     if (this.destroyed) return;
-    if (!c || c === 'transparent') {
-      this.viewer.background = null;
-    } else {
-      try {
-        this.viewer.background = new THREE.Color(c);
-      } catch {
-        this.viewer.background = null;
-      }
-    }
-    if (this.viewer.renderPaused) this.viewer.render();
+    const rgba = c ? resolveCssColor(c, this.stage.root) : null;
+    if (c && !rgba && c !== 'transparent' && c !== 'none') console.warn(`Skin preview: unsupported background colour "${c}"`);
+    // The scene renders into a linear render target with no output conversion, so storing the sRGB bytes
+    // as "linear" puts exactly this colour on screen, whatever the global colour-management setting.
+    this.viewer.background = rgba ? new THREE.Color().setRGB(rgba[0] / 255, rgba[1] / 255, rgba[2] / 255, THREE.LinearSRGBColorSpace) : null;
+    this.requestRender();
   }
 
   setAutoRotate(v: boolean): void {
+    if (this.destroyed) return;
     this.viewer.autoRotate = v;
+    this.updatePaused();
   }
 
   // ---- highlight ----
@@ -344,7 +412,11 @@ class SkinPreviewImpl implements SkinPreview {
       d.color.multiplyScalar(0.3);
       this.dimmed.set(m, d);
     }
-    d.map = std.map;
+    if (d.map !== std.map) {
+      // a map appearing or disappearing changes the shader program
+      d.map = std.map;
+      d.needsUpdate = true;
+    }
     return d;
   }
 
@@ -363,7 +435,7 @@ class SkinPreviewImpl implements SkinPreview {
       this.originals.set(mesh, mesh.material);
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map((m) => this.dimmedFor(m)) : this.dimmedFor(mesh.material);
     }
-    if (this.viewer.renderPaused) this.viewer.render();
+    this.requestRender();
   }
 
   /** Dimmed clones share the skin texture; keep them pointing at the current one after reloads. */
@@ -378,6 +450,7 @@ class SkinPreviewImpl implements SkinPreview {
     if (part && !parsed) console.warn(`Skin preview: unknown part "${part}"`);
     this.highlight = parsed;
     this.applyHighlight();
+    this.requestRender();
   }
 
   // ---- misc ----
@@ -389,7 +462,7 @@ class SkinPreviewImpl implements SkinPreview {
       this.pendingSkin = null;
       this.applySkin(pending);
     }
-    this.viewer.render();
+    this.renderNow();
     return new Promise((resolve, reject) => {
       this.stage.canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not capture the preview image.'))), 'image/png');
     });
@@ -400,6 +473,7 @@ class SkinPreviewImpl implements SkinPreview {
     this.viewer.playerWrapper.rotation.set(0, 0, 0);
     this.viewer.zoom = 0.86;
     this.setCameraAngle();
+    this.requestRender();
   }
 
   destroy(): void {
@@ -408,6 +482,8 @@ class SkinPreviewImpl implements SkinPreview {
     if (this.raf) cancelAnimationFrame(this.raf);
     this.ro?.disconnect();
     this.io?.disconnect();
+    this.unwatchDpr();
+    this.viewer.controls.removeEventListener('change', this.requestRender);
     document.removeEventListener('visibilitychange', this.updatePaused);
     this.stage.canvas.removeEventListener('keydown', this.onKey);
     this.stage.canvas.removeEventListener('dblclick', this.onDbl);
