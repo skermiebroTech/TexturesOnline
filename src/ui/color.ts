@@ -15,6 +15,18 @@ export function parseHex(input: string): RGBA | null {
   return [n(0), n(2), n(4), s.length === 8 ? n(6) : 255];
 }
 
+/**
+ * Hex typed into a colour field, applied while the user is still typing: only complete
+ * '#rrggbb' (or '#rrggbbaa' with alpha) values count, because '#123' is also the start of '#123456'.
+ */
+export function parseHexWhileTyping(input: string, withAlpha: boolean): RGBA | null {
+  const digits = input.trim().replace(/^#/, '').length;
+  if (digits !== 6 && !(withAlpha && digits === 8)) return null;
+  const c = parseHex(input);
+  if (c && !withAlpha) c[3] = 255;
+  return c;
+}
+
 /** RGBA -> '#rrggbb' (alpha omitted) or '#rrggbbaa' when withAlpha and alpha < 255. */
 export function toHex(c: RGBA | [number, number, number], withAlpha = false): string {
   const base = `#${hex2(c[0])}${hex2(c[1])}${hex2(c[2])}`;

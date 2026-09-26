@@ -2,7 +2,7 @@
 
 import { h, uid } from './dom';
 import { icon } from './icons';
-import { toast } from './toast';
+import { syncToastLayer, toast } from './toast';
 import { closeAllPopovers, firstFocusable } from './popover';
 import { hideTooltip } from './tooltip';
 import { setButtonBusy } from './components';
@@ -28,6 +28,26 @@ export interface ModalOptions {
 }
 
 let openCount = 0;
+const openHandles = new Set<{ close(): void }>();
+
+/** Lock page scrolling under a dialog without the page jumping sideways when the scrollbar goes. */
+export function setScrollLock(on: boolean): void {
+  const root = document.documentElement;
+  if (on) {
+    if (root.classList.contains('modal-open')) return;
+    const bar = window.innerWidth - root.clientWidth;
+    root.style.setProperty('--scrollbar-comp', `${Math.max(0, bar)}px`);
+    root.classList.add('modal-open');
+  } else if (!document.querySelector('dialog[open]')) {
+    root.classList.remove('modal-open');
+    root.style.removeProperty('--scrollbar-comp');
+  }
+}
+
+/** Close every open modal (e.g. when the user navigates to another page). */
+export function closeAllModals(): void {
+  for (const m of Array.from(openHandles).reverse()) m.close();
+}
 
 export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement; setBusy(busy: boolean): void } {
   const dismissible = opts.dismissible ?? true;
@@ -66,9 +86,11 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
       } catch {
         /* already closed */
       }
+      syncToastLayer();
       dlg.remove();
+      openHandles.delete(handle);
       openCount = Math.max(0, openCount - 1);
-      if (openCount === 0) document.documentElement.classList.remove('modal-open');
+      if (openCount === 0) setScrollLock(false);
       if (previouslyFocused?.isConnected) previouslyFocused.focus({ preventScroll: true });
       opts.onClose?.();
     };
@@ -122,6 +144,20 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
     e.preventDefault();
     if (dismissible && !busy) close();
   });
+  // Browsers close a dialog without a cancelable 'cancel' event when Esc is pressed repeatedly.
+  // Keep blocking dialogs open, and clean up properly after anything else.
+  dlg.addEventListener('close', () => {
+    if (closed || !dlg.isConnected) return;
+    if (dismissible && !busy) {
+      close();
+      return;
+    }
+    try {
+      dlg.showModal();
+    } catch {
+      close();
+    }
+  });
   let downOnBackdrop = false;
   dlg.addEventListener('pointerdown', (e) => {
     downOnBackdrop = e.target === dlg;
@@ -131,10 +167,13 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
     downOnBackdrop = false;
   });
 
+  const handle = { close };
   document.body.appendChild(dlg);
   openCount += 1;
-  document.documentElement.classList.add('modal-open');
+  openHandles.add(handle);
+  setScrollLock(true);
   dlg.showModal();
+  syncToastLayer();
 
   const body = dlg.querySelector('.modal-body') as HTMLElement;
   const field = body.querySelector<HTMLElement>('input:not([type=hidden]):not([disabled]), textarea, select');
@@ -210,7 +249,8 @@ export interface ShortcutGroup {
 /** Keyboard shortcuts sheet (editors open it with "?"). */
 export function openShortcutsSheet(groups: ShortcutGroup[], title = 'Keyboard shortcuts'): { close(): void } {
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-  const keyLabel = (k: string) => (k === 'Mod' ? (isMac ? '⌘' : 'Ctrl') : k === 'Alt' && isMac ? '⌥' : k === 'Shift' && isMac ? '⇧' : k);
+  // ⌥ and ⇧ are not in the UI font, so those keys are spelled out
+  const keyLabel = (k: string) => (k === 'Mod' ? (isMac ? '⌘' : 'Ctrl') : k === 'Alt' && isMac ? 'Option' : k);
   const body = h(
     'div',
     { class: 'shortcuts' },

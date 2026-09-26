@@ -3,7 +3,7 @@
 import { h, uid } from './dom';
 import { icon } from './icons';
 import { tooltip } from './tooltip';
-import { DEFAULT_PALETTE, hsvToRgb, parseHex, rgbToHsv, rgbaCss, rgbaEqual, toHex, type RGBA } from './color';
+import { DEFAULT_PALETTE, hsvToRgb, parseHex, parseHexWhileTyping, rgbToHsv, rgbaCss, rgbaEqual, toHex, type RGBA } from './color';
 
 export type { RGBA } from './color';
 
@@ -290,26 +290,30 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     emit();
   });
 
-  hexInput.addEventListener('input', () => {
-    const c = parseHex(hexInput.value);
-    if (!c) return;
+  const applyHex = (text: string, live: boolean): boolean => {
+    const c = live ? parseHexWhileTyping(text, withAlpha) : parseHex(text);
+    if (!c) return false;
     if (!withAlpha) c[3] = 255;
     const [nh, ns, nv] = rgbToHsv(c[0], c[1], c[2]);
     if (ns > 0 && nv > 0) hue = nh;
     sat = ns;
     val = nv;
     alpha = c[3];
-    sync(true);
+    sync(live);
     emit();
-  });
-  hexInput.addEventListener('change', () => {
-    sync();
+    return true;
+  };
+  const commitHex = () => {
+    applyHex(hexInput.value, false);
+    sync(); // also restores the text when the input was not a colour
     commit();
-  });
+  };
+  hexInput.addEventListener('input', () => void applyHex(hexInput.value, true));
+  hexInput.addEventListener('change', commitHex);
   hexInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      sync();
-      commit();
+      e.preventDefault();
+      commitHex();
     }
   });
   alphaInput.addEventListener('input', () => {

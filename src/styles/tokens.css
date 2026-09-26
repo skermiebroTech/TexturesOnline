@@ -70,7 +70,7 @@
   --border-strong: #3a4254;
   --text: #eef1f7;
   --text-2: #b4bccb;
-  --text-3: #7d8699;
+  --text-3: #8c95a8; /* spec #7d8699, lightened to pass WCAG AA on --surface-3 */
   --overlay: rgba(5, 7, 10, 0.72);
 
   /* Accents */
@@ -114,11 +114,18 @@
   --selection: rgba(79, 179, 255, 0.35);
 }
 
-/* Crisp 1.5x size for secondary text on high-density screens only */
+/* Smaller secondary text on high-density screens, at sizes that still land on whole device
+   pixels: 3 device px per font pixel at 2x and 4x, 5 at 3x (12px there would be 4.5 and blur). */
 @media (min-resolution: 2dppx) {
   :root {
     --fs-sm: 12px;
     --lh-sm: 20px;
+  }
+}
+@media (min-resolution: 3dppx) and (max-resolution: 3.49dppx) {
+  :root {
+    --fs-sm: calc(40px / 3);
+    --lh-sm: calc(64px / 3);
   }
 }
 
@@ -135,19 +142,19 @@
   --border-strong: #bfc6d4;
   --text: #121620;
   --text-2: #414a5c;
-  --text-3: #626b7e;
+  --text-3: #5f687a;
   --overlay: rgba(22, 27, 38, 0.45);
 
-  --green: #23863a;
+  --green: #207934;
   --green-2: #1b6f2f;
   --green-deep: #d5f2d5;
-  --blue: #1a6fc0;
+  --blue: #1969b6;
   --blue-2: #155ca1;
   --blue-deep: #d8ebfc;
   --purple: #7446d8;
   --purple-2: #5f35bd;
   --purple-deep: #ebe0ff;
-  --gold: #946900;
+  --gold: #886100;
   --gold-2: #7a5700;
   --red: #c92f2f;
   --red-2: #a82323;

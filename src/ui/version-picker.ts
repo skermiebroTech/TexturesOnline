@@ -6,7 +6,7 @@ import { h, uid } from './dom';
 import { icon } from './icons';
 import { badge, button, progressBar, segmented, spinner, toggle } from './components';
 import { openPopover, type PopoverHandle } from './popover';
-import { editionName, formatPackFormat, shortDate, shortVersionName, versionGroup } from './format';
+import { editionName, formatPackFormat, groupVersions, listVersionName, shortDate, shortVersionName } from './format';
 
 export { editionName, formatPackFormat } from './format';
 
@@ -71,7 +71,7 @@ export function versionPicker(opts: {
   ) as unknown as HTMLElement & { setValue(edition: Edition, versionId: string): void; getValue(): { edition: Edition; version: string } };
 
   const paintTrigger = () => {
-    const name = shortVersionName(known?.name ?? (value ? (value === 'latest' ? 'Latest' : value) : 'Choose a version'));
+    const name = known ? shortVersionName(listVersionName(known)) : shortVersionName(value ? (value === 'latest' ? 'Latest' : value) : 'Choose a version');
     nameEl.textContent = `${editionName(edition)} ${name}`;
     const sub: string[] = [];
     if (edition === 'java' && known?.packFormat) sub.push(`pack ${formatPackFormat(known.packFormat)}`);
@@ -186,36 +186,35 @@ export function versionPicker(opts: {
         return;
       }
       const latestRelease = versions.find((v) => v.type === 'release');
-      let group = '';
       const frag = document.createDocumentFragment();
-      for (const v of shown) {
-        const g = versionGroup(v);
-        if (g !== group) {
-          group = g;
-          frag.appendChild(h('div', { class: 'vp-group', role: 'presentation' }, g));
+      for (const { label, items: groupItems } of groupVersions(shown)) {
+        const groupEl = h('div', { role: 'group', 'aria-label': label }, h('div', { class: 'vp-group', 'aria-hidden': 'true' }, label));
+        frag.appendChild(groupEl);
+        for (const v of groupItems) {
+          const selected = v.id === value;
+          const meta: (HTMLElement | string)[] = [];
+          if (v.edition === 'java' && v.id === DEFAULT_JAVA_VERSION) meta.push(badge('Default', 'green'));
+          else if (v === latestRelease && v.edition === 'java') meta.push(badge('Latest', 'blue'));
+          // Snapshot ids ("26.3-rc-2", "24w14a") and Bedrock preview names already say what they are
+          // and sit under their own headings; a badge would squeeze the name out of the narrow list.
+          if (v.type === 'snapshot') meta.push(h('span', { class: 'sr-only' }, ', snapshot'));
+          const metaText = v.edition === 'java' ? (v.packFormat ? `pack ${formatPackFormat(v.packFormat)}` : '') : shortDate(v.releaseTime);
+          const item = h(
+            'div',
+            { class: ['vp-item', v.type !== 'release' && 'snapshot'], role: 'option', id: uid('vp-opt'), 'aria-selected': String(selected) },
+            h('span', { class: 'vp-check' }, selected ? icon('check') : null),
+            h('span', { class: 'vp-item-name', title: listVersionName(v) !== v.name ? v.name : undefined }, listVersionName(v)),
+            meta,
+            metaText ? h('span', { class: 'vp-item-meta' }, metaText) : null,
+          );
+          const index = items.length;
+          item.addEventListener('click', () => choose(v));
+          item.addEventListener('pointermove', () => {
+            if (active !== index) setActive(index, false);
+          });
+          items.push({ v, el: item });
+          groupEl.appendChild(item);
         }
-        const selected = v.id === value;
-        const meta: (HTMLElement | string)[] = [];
-        if (v.edition === 'java' && v.id === DEFAULT_JAVA_VERSION) meta.push(badge('Default', 'green'));
-        else if (v === latestRelease && v.edition === 'java') meta.push(badge('Latest', 'blue'));
-        if (v.type === 'snapshot') meta.push(badge('Snapshot', 'gold'));
-        if (v.type === 'preview') meta.push(badge('Preview', 'purple'));
-        const metaText = v.edition === 'java' ? (v.packFormat ? `pack ${formatPackFormat(v.packFormat)}` : '') : shortDate(v.releaseTime);
-        const item = h(
-          'div',
-          { class: 'vp-item', role: 'option', id: uid('vp-opt'), 'aria-selected': String(selected) },
-          h('span', { class: 'vp-check' }, selected ? icon('check') : null),
-          h('span', { class: 'vp-item-name' }, v.name),
-          meta,
-          metaText ? h('span', { class: 'vp-item-meta' }, metaText) : null,
-        );
-        const index = items.length;
-        item.addEventListener('click', () => choose(v));
-        item.addEventListener('pointermove', () => {
-          if (active !== index) setActive(index, false);
-        });
-        items.push({ v, el: item });
-        frag.appendChild(item);
       }
       list.appendChild(frag);
       const sel = items.findIndex((it) => it.v.id === value);
@@ -314,9 +313,11 @@ export function versionPicker(opts: {
 export function assetLoadingPanel(
   opts: { edition?: Edition; version?: string; onPickJar?: (f: File) => void; onCancel?: () => void } = {},
 ): HTMLElement & { set(p: Progress | null): void; error(msg: string, retry?: () => void, pickJar?: (f: File) => void): void } {
-  const edition = opts.edition ?? 'java';
+  // Without an edition the copy stays neutral (the spec'd zero-argument call is used for both).
+  const edition = opts.edition;
+  const javaLike = edition !== 'bedrock';
   const iconBox = h('div', { class: 'asset-panel-icon' }, icon('download', { size: 24 }));
-  const title = h('h3', null, edition === 'java' ? `Getting Minecraft${opts.version ? ` ${opts.version}` : ''} textures` : 'Getting Bedrock textures');
+  const title = h('h3', null, edition === 'bedrock' ? 'Getting Bedrock textures' : `Getting Minecraft${opts.version ? ` ${opts.version}` : ''} textures`);
   const subtitle = h('p', { class: 'muted' }, 'One-time download — next time it opens instantly.');
   const progress = progressBar({ label: 'Starting…' });
   progress.set({ label: 'Starting…', fraction: null });
@@ -329,23 +330,29 @@ export function assetLoadingPanel(
       null,
       edition === 'java'
         ? "Your browser downloads the official game files straight from Mojang's servers and keeps only the textures, models and shaders on this device. Nothing is uploaded."
-        : "Textures come straight from Mojang's official bedrock-samples repository on GitHub and are cached on this device as you browse. Nothing is uploaded.",
+        : edition === 'bedrock'
+          ? "Textures come straight from Mojang's official bedrock-samples repository on GitHub and are cached on this device as you browse. Nothing is uploaded."
+          : 'Your browser downloads the official game files straight from Mojang and keeps them on this device. Nothing is uploaded.',
     ),
   );
   const errorText = h('p', { class: 'asset-panel-error', role: 'alert', hidden: true });
   const actions = h('div', { class: 'asset-panel-actions' });
   const help = h('p', { class: 'field-desc', hidden: true });
+  // Only coarse state changes are announced; the progress bar itself carries the percentage.
+  const status = h('span', { class: 'sr-only', role: 'status' });
 
   const el = h(
     'section',
-    { class: 'asset-panel', 'aria-live': 'polite' },
+    { class: 'asset-panel', 'aria-labelledby': uid('asset-title') },
     h('div', { class: 'asset-panel-head' }, iconBox, h('div', { class: 'stack', style: { '--gap': '4px' } }, title, subtitle)),
     progress,
     errorText,
     note,
     actions,
     help,
+    status,
   ) as unknown as HTMLElement & { set(p: Progress | null): void; error(msg: string, retry?: () => void, pickJar?: (f: File) => void): void };
+  title.id = el.getAttribute('aria-labelledby') ?? '';
 
   const jarPicker = (onPick: (f: File) => void, primary = false) => {
     const input = h('input', { type: 'file', accept: '.jar,application/java-archive,application/zip', hidden: true });
@@ -375,7 +382,7 @@ export function assetLoadingPanel(
   const renderLoadingActions = () => {
     actions.replaceChildren();
     if (opts.onCancel) actions.appendChild(button({ label: 'Cancel', variant: 'ghost', onClick: opts.onCancel }));
-    if (opts.onPickJar && edition === 'java') {
+    if (opts.onPickJar && javaLike) {
       actions.append(...jarPicker(opts.onPickJar));
       jarHelp();
     }
@@ -392,10 +399,12 @@ export function assetLoadingPanel(
       iconBox.replaceChildren(icon('check'));
       progress.set({ label: 'Ready', fraction: 1 });
       subtitle.textContent = 'All set.';
+      status.textContent = 'Game files ready.';
       actions.hidden = true;
       help.hidden = true;
       return;
     }
+    if (!status.textContent || status.textContent === 'Game files ready.') status.textContent = 'Downloading game files…';
     if (el.classList.contains('is-done') || iconBox.querySelector('[data-icon="square-alert"]')) {
       el.classList.remove('is-done');
       iconBox.replaceChildren(icon('download'));
@@ -416,7 +425,8 @@ export function assetLoadingPanel(
     actions.replaceChildren();
     if (retry) actions.appendChild(button({ label: 'Try again', icon: 'reload', variant: 'primary', onClick: retry }));
     const pick = pickJar ?? opts.onPickJar;
-    if (pick && edition === 'java') {
+    status.textContent = '';
+    if (pick && javaLike) {
       actions.append(...jarPicker(pick, !retry));
       jarHelp();
     } else {

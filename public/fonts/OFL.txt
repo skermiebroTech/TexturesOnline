@@ -1,5 +1,6 @@
+Copyright (c) 2022, Idrees Hassan (https://github.com/IdreesInc/Minecraft-Font)
 Copyright (c) 2022, Idrees Hassan (https://github.com/IdreesInc/Monocraft)
-Copyright (c) 2026, TexturesOnline contributors (Texel: proportional adaptation of Monocraft)
+Copyright (c) 2026, TexturesOnline contributors (Texel: Modified Version combining and re-gridding the fonts above)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

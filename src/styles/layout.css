@@ -11,6 +11,8 @@
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
+  /* centre on a whole pixel so the pixel font stays crisp at odd window widths */
+  margin-left: max(0px, round(down, (100% - var(--container)) / 2, 1px));
   padding-left: var(--gutter);
   padding-right: var(--gutter);
 }
@@ -59,6 +61,7 @@ body[data-route='shaders'] .topbar {
   height: 100%;
   max-width: 1440px;
   margin: 0 auto;
+  margin-left: max(0px, round(down, (100% - 1440px) / 2, 1px));
   padding: 0 16px 0 20px;
 }
 
@@ -87,13 +90,13 @@ body[data-route='shaders'] .topbar {
   line-height: var(--lh-lg);
   color: var(--text);
   white-space: nowrap;
-  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+  text-shadow: 0.125em 0.125em 0 rgba(0, 0, 0, 0.3);
 }
 .wordmark span {
   color: #5bd35b;
 }
 :root[data-theme='light'] .wordmark {
-  text-shadow: 3px 3px 0 rgba(20, 30, 50, 0.1);
+  text-shadow: 0.125em 0.125em 0 rgba(20, 30, 50, 0.1);
 }
 :root[data-theme='light'] .wordmark span {
   color: #23863a;
@@ -177,7 +180,6 @@ body[data-route='shaders'] .topbar {
   .wordmark {
     font-size: var(--fs-md);
     line-height: var(--lh-md);
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -186,6 +188,7 @@ body[data-route='shaders'] .topbar {
   position: fixed;
   inset: 0 0 0 auto;
   width: min(360px, 88vw);
+  width: min(360px, round(down, 88vw, 1px));
   height: 100dvh;
   max-height: none;
   margin: 0;
@@ -286,6 +289,7 @@ body[data-route='shaders'] .topbar {
 .section-head.center {
   align-items: center;
   margin-left: auto;
+  margin-left: max(0px, round(down, (100% - 720px) / 2, 1px));
   margin-right: auto;
   text-align: center;
 }
@@ -297,7 +301,7 @@ body[data-route='shaders'] .topbar {
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.125em;
 }
 .lead {
   color: var(--text-2);
@@ -359,6 +363,16 @@ body[data-route='shaders'] .topbar {
   color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
+}
+
+.footer-legal a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.footer-legal a:hover {
+  color: var(--text);
 }
 
 /* ---------- Router fallbacks ---------- */

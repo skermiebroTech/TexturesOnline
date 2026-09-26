@@ -6,12 +6,13 @@ import './styles/layout.css';
 import { startRouter } from './core/router';
 import { createShell } from './app/shell';
 import { initTheme } from './ui/theme';
-import { toast } from './ui/toast';
+import { initToasts, toast } from './ui/toast';
 
 initTheme();
 
 const root = document.getElementById('app') ?? document.body.appendChild(Object.assign(document.createElement('div'), { id: 'app' }));
 const { outlet } = createShell(root);
+initToasts();
 startRouter(outlet);
 
 // Last-resort error reporting: keep the app usable and tell the user something failed.

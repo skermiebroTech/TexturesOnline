@@ -1,19 +1,15 @@
-// Placeholder view shown until the full skin editor is available.
+// Skin Maker: '#/skins' shows the start screen, '#/skins/:id' opens the editor.
 import type { RouteContext } from '../../core/router';
-import { h } from '../../ui/dom';
-import { button, emptyState } from '../../ui/components';
+import './view.css';
+import { mountEditor } from './ui/editor';
+import { mountStart } from './ui/start';
 
-export default function view(root: HTMLElement, _ctx: RouteContext): void {
-  root.append(
-    h(
-      'div',
-      { class: 'container accent-blue', style: { flex: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 24px' } },
-      emptyState({
-        icon: 'human',
-        title: 'Skin Editor — coming soon',
-        text: 'Paint on the 64×64 template with a live 3D preview, then export for Java or as a Bedrock skin pack.',
-        action: button({ label: 'Back home', icon: 'home', onClick: () => (location.hash = '#/') }),
-      }),
-    ),
-  );
+export default async function view(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+  root.classList.add('skins-view');
+  const id = ctx.params.id;
+  if (id) {
+    root.classList.add('skins-editing');
+    return mountEditor(root, decodeURIComponent(id));
+  }
+  return mountStart(root);
 }

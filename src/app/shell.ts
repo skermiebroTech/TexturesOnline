@@ -5,8 +5,11 @@ import { onRouteChange, type RouteState, type ToolId } from '../core/router';
 import { h } from '../ui/dom';
 import { icon, setIcon, type IconName } from '../ui/icons';
 import { logoMark } from '../ui/logo';
-import { tooltip } from '../ui/tooltip';
+import { hideTooltip, tooltip } from '../ui/tooltip';
 import { getTheme, onThemeChange, toggleTheme } from '../ui/theme';
+import { closeAllModals, setScrollLock } from '../ui/modal';
+import { closeAllPopovers } from '../ui/popover';
+import { syncToastLayer } from '../ui/toast';
 
 export const GITHUB_URL = 'https://github.com/skermiebroTech/TexturesOnline';
 
@@ -42,7 +45,16 @@ function themeButton(): HTMLButtonElement {
     b.classList.add('spin');
     toggleTheme();
   });
-  onThemeChange(paint);
+  // The drawer creates short-lived copies of this button: drop their listener once detached.
+  let attached = false;
+  const off = onThemeChange(() => {
+    if (b.isConnected) attached = true;
+    else if (attached) {
+      off();
+      return;
+    }
+    paint();
+  });
   paint();
   return b;
 }
@@ -95,14 +107,17 @@ function openDrawer(onNavigate: () => void): void {
     ),
   );
   let closed = false;
+  const onHash = () => close();
   const close = () => {
     if (closed) return;
     closed = true;
+    window.removeEventListener('hashchange', onHash);
     dlg.classList.add('closing');
     const done = () => {
       dlg.close();
+      syncToastLayer();
       dlg.remove();
-      document.documentElement.classList.remove('modal-open');
+      setScrollLock(false);
     };
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) done();
     else setTimeout(done, 180);
@@ -118,12 +133,15 @@ function openDrawer(onNavigate: () => void): void {
     e.preventDefault();
     close();
   });
+  dlg.addEventListener('close', () => close());
+  window.addEventListener('hashchange', onHash);
   dlg.addEventListener('click', (e) => {
     if (e.target === dlg) close();
   });
   document.body.appendChild(dlg);
-  document.documentElement.classList.add('modal-open');
+  setScrollLock(true);
   dlg.showModal();
+  syncToastLayer();
   (links.find((a) => a.hasAttribute('aria-current')) ?? links[0])?.focus();
 }
 
@@ -151,6 +169,13 @@ export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: H
   );
 
   root.replaceChildren(skip, topbar, outlet);
+
+  // Dialogs, menus and tooltips belong to the page that opened them.
+  window.addEventListener('hashchange', () => {
+    closeAllPopovers();
+    closeAllModals();
+    hideTooltip();
+  });
 
   const onScroll = () => topbar.classList.toggle('scrolled', window.scrollY > 4);
   window.addEventListener('scroll', onScroll, { passive: true });

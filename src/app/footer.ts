@@ -37,7 +37,7 @@ export function siteFooter(): HTMLElement {
       'div',
       { class: 'container footer-legal' },
       h('p', null, 'Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.'),
-      h('p', null, `© ${year} TexturesOnline · MIT licence · UI font: Texel (OFL, based on Monocraft)`),
+      h('p', null, `© ${year} TexturesOnline · MIT licence · UI font: Texel (`, h('a', { href: 'fonts/OFL.txt', target: '_blank', rel: 'noopener' }, 'SIL OFL 1.1'), ')'),
     ),
   );
 }

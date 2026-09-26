@@ -20,6 +20,11 @@
   gap: 12px;
   margin-top: 16px;
 }
+@supports (width: round(down, 1px, 1px)) {
+  .help-quick {
+    grid-template-columns: repeat(4, round(down, (100% - 36px) / 4, 1px));
+  }
+}
 .help-quick-card {
   display: flex;
   align-items: center;
@@ -323,7 +328,7 @@
   line-height: var(--lh-sm);
   font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.125em;
 }
 .paths-table tbody th {
   width: 1%;
@@ -388,6 +393,11 @@
 @media (max-width: 1024px) {
   .help-quick {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @supports (width: round(down, 1px, 1px)) {
+    .help-quick {
+      grid-template-columns: repeat(2, round(down, (100% - 12px) / 2, 1px));
+    }
   }
   .help-layout {
     grid-template-columns: minmax(0, 1fr);

@@ -2,7 +2,8 @@
 
 import './help.css';
 import type { RouteContext } from '../../core/router';
-import { h, type Child } from '../../ui/dom';
+import { isRestoringScroll, parseLocation, replacePath } from '../../core/router';
+import { h, prefersReducedMotion, uid, type Child } from '../../ui/dom';
 import { icon, type IconName } from '../../ui/icons';
 import { badge, tabs } from '../../ui/components';
 import { siteFooter } from '../../app/footer';
@@ -38,12 +39,18 @@ const callout = (tone: 'info' | 'warn' | 'tip', title: string, ...text: Child[])
 const ext = (href: string, label: string): HTMLElement => h('a', { href, target: '_blank', rel: 'noopener noreferrer' }, label);
 
 function tabbed(options: { value: string; label: string; icon?: IconName; content: () => Child[] }[]): HTMLElement {
-  const panel = h('div', { class: 'guide-tabpanel', role: 'tabpanel' });
-  const show = (v: string) => {
-    const opt = options.find((o) => o.value === v) ?? options[0];
-    panel.replaceChildren(...(opt.content().filter(Boolean) as Node[]));
-  };
-  const t = tabs({ value: options[0].value, tabs: options.map((o) => ({ value: o.value, label: o.label, icon: o.icon })), onChange: show, label: 'Platform' });
+  const panel = h('div', { class: 'guide-tabpanel', role: 'tabpanel', id: uid('guide-panel'), tabIndex: 0 });
+  const t = tabs({ value: options[0].value, tabs: options.map((o) => ({ value: o.value, label: o.label, icon: o.icon })), onChange: (v) => show(v), label: 'Platform' });
+  const tabEls = Array.from(t.querySelectorAll<HTMLElement>('[role="tab"]'));
+  tabEls.forEach((b) => {
+    b.id = uid('guide-tab');
+    b.setAttribute('aria-controls', panel.id);
+  });
+  function show(v: string) {
+    const i = Math.max(0, options.findIndex((o) => o.value === v));
+    panel.replaceChildren(...(options[i].content().filter(Boolean) as Node[]));
+    if (tabEls[i]) panel.setAttribute('aria-labelledby', tabEls[i].id);
+  }
   show(options[0].value);
   return h('div', { class: 'guide-tabs' }, t, panel);
 }
@@ -73,7 +80,7 @@ const SECTIONS: Section[] = [
     body: () => [
       h('p', { class: 'guide-intro' }, 'Java Edition calls texture packs ', h('em', null, 'resource packs'), '. Your export is a ', h('code', null, '.zip'), ' file — keep it zipped.'),
       steps(
-        ['Export your pack from the Texture Pack Maker. You get a file like ', h('code', null, 'My Pack.zip'), '.'],
+        ['Export your pack from the Texture Pack Maker. You get a file like ', h('code', null, 'My\u00a0Pack.zip'), '.'],
         ['Start Minecraft Java Edition and open ', path('Options…', 'Resource Packs…'), '.'],
         ['Click ', path('Open Pack Folder'), '. This opens the ', h('code', null, 'resourcepacks'), ' folder.'],
         ['Drop the ', h('code', null, '.zip'), ' into that folder. You can also drag it straight onto the Resource Packs screen.'],
@@ -108,7 +115,7 @@ const SECTIONS: Section[] = [
           icon: 'monitor',
           content: () => [
             steps(
-              ['Export your pack. You get a file like ', h('code', null, 'My Pack.mcpack'), '.'],
+              ['Export your pack. You get a file like ', h('code', null, 'My\u00a0Pack.mcpack'), '.'],
               ['Double-click the file. Minecraft opens and shows ', h('em', null, 'Import started…'), ' then ', h('em', null, 'Successfully imported'), '.'],
               ['Go to ', path('Settings', 'Global Resources', 'My Packs'), ', select your pack and press ', h('strong', null, 'Activate'), '.'],
               'Using several packs? Move yours to the top so it wins.',
@@ -308,9 +315,16 @@ const SECTIONS: Section[] = [
         ['Open ', path('Settings', 'Video'), ' and set ', h('strong', null, 'Graphics Mode'), ' to ', h('strong', null, 'Vibrant Visuals'), '.'],
       ),
       callout(
+        'warn',
+        "Can't choose Vibrant Visuals?",
+        'Minecraft only allows it when every active pack supports it. Classic texture packs (including the ones you make in the Texture Pack Maker) switch it off, so deactivate other packs while you use this one. Some servers also turn it off.',
+      ),
+      callout(
         'info',
         'Needs a supported device',
-        'Vibrant Visuals runs on recent Windows PCs, Xbox Series X|S, PlayStation 5 and many newer phones and tablets. It is not available on Nintendo Switch (original) or Chromebooks. The fog settings in your pack also apply in the classic graphics modes.',
+        'Vibrant Visuals runs on Windows PCs with DirectX 12, Xbox and PlayStation (on Xbox One and PS4 it starts switched off), iPhone and iPad with an A12 chip or newer, and many recent Android devices. It is not available on the original Nintendo Switch, Chromebooks or Fire tablets. ',
+        h('strong', null, 'Customize classic fog'),
+        ' also works in the other graphics modes.',
       ),
     ],
   },
@@ -432,22 +446,29 @@ export default function help(root: HTMLElement, ctx: RouteContext): () => void {
   const tocLinks = new Map<string, HTMLAnchorElement>();
   const allIds = [...SECTIONS.map((s) => s.id), 'faq'];
 
+  const behavior = (smooth: boolean): ScrollBehavior => (smooth && !prefersReducedMotion() ? 'smooth' : ('instant' as ScrollBehavior));
+
+  // The URL is kept in sync through the router so links to the current section still work.
   const jump = (id: string, smooth = true) => {
     const target = document.getElementById(`help-${id}`);
     if (!target) return;
     const top = target.getBoundingClientRect().top + window.scrollY - 88;
-    window.scrollTo({ top, behavior: smooth ? 'smooth' : ('instant' as ScrollBehavior) });
-    history.replaceState(history.state, '', `#/help?s=${id}`);
+    window.scrollTo({ top, behavior: behavior(smooth) });
+    replacePath(`/help?s=${id}`);
     setActive(id);
+  };
+
+  const openFaq = (id: string, smooth = true) => {
+    const d = document.getElementById(`faq-${id}`) as HTMLDetailsElement | null;
+    if (!d) return;
+    d.open = true;
+    d.scrollIntoView({ block: 'center', behavior: behavior(smooth) });
+    replacePath(`/help?s=${id}`);
+    setActive('faq');
   };
 
   const tocItem = (id: string, label: string, ic: IconName, accent: string) => {
     const a = h('a', { class: ['toc-link', accent], href: `#/help?s=${id}` }, icon(ic), h('span', null, label));
-    a.addEventListener('click', (e) => {
-      e.preventDefault();
-      jump(id);
-      document.getElementById(`help-${id}`)?.focus({ preventScroll: true });
-    });
     tocLinks.set(id, a);
     return a;
   };
@@ -517,14 +538,9 @@ export default function help(root: HTMLElement, ctx: RouteContext): () => void {
       { id: 'java-skins', label: 'Change your skin', icon: 'human' as IconName, accent: 'accent-blue' },
       { id: 'iris', label: 'Use a shader pack', icon: 'sparkles' as IconName, accent: 'accent-purple' },
       { id: 'faq', label: 'Questions', icon: 'circle-question' as IconName, accent: 'accent-gold' },
-    ].map((q) => {
-      const a = h('a', { class: ['help-quick-card', q.accent], href: `#/help?s=${q.id}` }, h('span', { class: 'help-quick-icon' }, icon(q.icon)), h('span', null, q.label), icon('arrow-right', { class: 'help-quick-go' }));
-      a.addEventListener('click', (e) => {
-        e.preventDefault();
-        jump(q.id);
-      });
-      return a;
-    }),
+    ].map((q) =>
+      h('a', { class: ['help-quick-card', q.accent], href: `#/help?s=${q.id}` }, h('span', { class: 'help-quick-icon' }, icon(q.icon)), h('span', null, q.label), icon('arrow-right', { class: 'help-quick-go' })),
+    ),
   );
 
   root.append(
@@ -559,19 +575,40 @@ export default function help(root: HTMLElement, ctx: RouteContext): () => void {
       : null;
   [...sections, faq].forEach((s) => io?.observe(s));
 
+  // In-page links (table of contents, quick cards, footer) scroll instead of re-rendering the page.
+  const onClick = (e: MouseEvent) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = (e.target as Element | null)?.closest?.('a[href^="#/help"]');
+    if (!a) return;
+    const { path, query } = parseLocation(a.getAttribute('href') ?? '');
+    if (path !== '/help') return;
+    e.preventDefault();
+    const s = query.get('s');
+    if (s && allIds.includes(s)) {
+      jump(s);
+      document.getElementById(`help-${s}`)?.focus({ preventScroll: true });
+    } else if (s && FAQ.some((f) => f.id === s)) {
+      openFaq(s);
+    } else {
+      window.scrollTo({ top: 0, behavior: behavior(true) });
+      replacePath('/help');
+      setActive(allIds[0]);
+    }
+  };
+  root.addEventListener('click', onClick);
+
   const initial = ctx.query.get('s');
   setActive(initial && allIds.includes(initial) ? initial : allIds[0]);
-  if (initial && allIds.includes(initial)) {
+  if (isRestoringScroll()) {
+    // back/forward: the router puts the page back where the reader left it
+  } else if (initial && allIds.includes(initial)) {
     requestAnimationFrame(() => requestAnimationFrame(() => jump(initial, false)));
   } else if (initial && FAQ.some((f) => f.id === initial)) {
-    requestAnimationFrame(() => {
-      const d = document.getElementById(`faq-${initial}`) as HTMLDetailsElement | null;
-      if (d) {
-        d.open = true;
-        d.scrollIntoView({ block: 'center' });
-      }
-    });
+    requestAnimationFrame(() => openFaq(initial, false));
   }
 
-  return () => io?.disconnect();
+  return () => {
+    io?.disconnect();
+    root.removeEventListener('click', onClick);
+  };
 }

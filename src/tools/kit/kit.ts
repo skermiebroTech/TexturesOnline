@@ -63,7 +63,7 @@ export default function kit(root: HTMLElement, _ctx: RouteContext): () => void {
     { class: 'stack' },
     [64, 48, 32, 24, 16].map((s) => h('div', { class: 'kit-type-row' }, h('span', { class: 'faint small' }, `${s}px`), h('span', { style: { fontSize: `${s}px`, lineHeight: `${s + 8}px` } }, s >= 32 ? 'Pixel perfect' : 'The quick brown fox jumps over the lazy dog'))),
     h('div', { class: 'kit-type-row' }, h('span', { class: 'faint small' }, 'bold'), h('strong', null, 'Double-struck bold, like in-game titles')),
-    h('div', { class: 'kit-type-row' }, h('span', { class: 'faint small' }, 'small'), h('span', { class: 'small muted' }, 'Secondary text uses --fs-sm (crisp 12px on high-density screens)')),
+    h('div', { class: 'kit-type-row' }, h('span', { class: 'faint small' }, 'small'), h('span', { class: 'small muted' }, 'Secondary text uses --fs-sm (smaller, still pixel-exact, on high-density screens)')),
     h('div', { class: 'kit-type-row' }, h('span', { class: 'faint small' }, 'shadow'), h('span', { class: 'pixel-shadow', style: { fontSize: '32px', lineHeight: '40px' } }, 'Drop shadow')),
   );
   const tokenNames = ['bg', 'bg-elev', 'surface', 'surface-2', 'surface-3', 'border', 'border-strong', 'text', 'text-2', 'text-3', 'green', 'blue', 'purple', 'gold', 'red'];

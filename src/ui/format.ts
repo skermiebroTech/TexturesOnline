@@ -49,6 +49,29 @@ export function versionGroup(v: GameVersion): string {
   return year ? `Snapshots ${year}` : 'Other';
 }
 
+/**
+ * Groups a newest-first version list for display. Each group appears once, in order of its newest
+ * member; weekly snapshots are grouped by year because they interleave with the release lines.
+ */
+export function groupVersions(list: GameVersion[]): { label: string; items: GameVersion[] }[] {
+  const groups = new Map<string, GameVersion[]>();
+  for (const v of list) {
+    const key = versionGroup(v);
+    const items = groups.get(key);
+    if (items) items.push(v);
+    else groups.set(key, [v]);
+  }
+  return Array.from(groups, ([label, items]) => ({ label, items }));
+}
+
+/**
+ * Name shown in the version list and picker button. Java snapshots use their id ("26.3-rc-2",
+ * "24w14a"): Mojang's long names ("26.3 Release Candidate 2") would be cut off in a narrow list.
+ */
+export function listVersionName(v: GameVersion): string {
+  return v.edition === 'java' && v.type === 'snapshot' ? v.id : v.name;
+}
+
 /** Compact name for the trigger: "Latest release (26.50)" -> "26.50 (latest)" */
 export function shortVersionName(name: string): string {
   const m = /^Latest (release|preview) \((.+)\)$/.exec(name);

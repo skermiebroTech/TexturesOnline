@@ -4,7 +4,7 @@ import './home.css';
 import type { RouteContext } from '../../core/router';
 import { navigate } from '../../core/router';
 import type { Project } from '../../core/types';
-import { deleteProject, listProjects, saveProject } from '../../core/storage';
+import { deleteProject, getProject, listProjects, saveProject } from '../../core/storage';
 import { h, timeAgo } from '../../ui/dom';
 import { icon, type IconName } from '../../ui/icons';
 import { button, openMenu } from '../../ui/components';
@@ -166,10 +166,12 @@ function recentSection(): { el: HTMLElement; destroy(): void } {
 
   let projects: Project[] = [];
   let expanded = false;
+  let destroyed = false;
   const LIMIT = 6;
 
   const render = () => {
     urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
+    if (destroyed) return; // the list finished loading after the user left the page
     el.hidden = projects.length === 0;
     moreBtn.hidden = projects.length <= LIMIT;
     moreBtn.querySelector('.btn-label')!.textContent = expanded ? 'Show fewer' : `Show all ${projects.length}`;
@@ -212,10 +214,10 @@ function recentSection(): { el: HTMLElement; destroy(): void } {
     const name = await promptDialog('Rename project', 'Project name', p.name, { confirmLabel: 'Rename', maxLength: 80 });
     if (!name || name === p.name) return;
     try {
-      const updated = { ...p, name } as Project;
-      await saveProject(updated);
-      projects = projects.map((x) => (x.id === p.id ? { ...updated, updatedAt: Date.now() } : x));
-      render();
+      // start from the stored copy so edits saved since this page loaded are kept
+      const fresh = (await getProject(p.id).catch(() => undefined)) ?? p;
+      await saveProject({ ...fresh, name } as Project);
+      await load();
       toast('Project renamed', { tone: 'success' });
     } catch (err) {
       console.error(err);
@@ -264,7 +266,10 @@ function recentSection(): { el: HTMLElement; destroy(): void } {
   void load();
   return {
     el,
-    destroy: () => urls.splice(0).forEach((u) => URL.revokeObjectURL(u)),
+    destroy: () => {
+      destroyed = true;
+      urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
+    },
   };
 }
 

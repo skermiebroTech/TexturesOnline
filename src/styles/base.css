@@ -316,7 +316,7 @@ hr {
   line-height: var(--lh-sm);
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.125em;
 }
 
 .divider {

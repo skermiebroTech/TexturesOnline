@@ -6,6 +6,7 @@ import { floatingHost, positionFloating, showInTopLayer } from './popover';
 let tipEl: HTMLDivElement | null = null;
 let showTimer: ReturnType<typeof setTimeout> | null = null;
 let activeTarget: HTMLElement | null = null;
+let hiddenAt = 0;
 const attached = new WeakSet<HTMLElement>();
 
 function ensureTip(): HTMLDivElement {
@@ -40,6 +41,7 @@ function show(target: HTMLElement): void {
 export function hideTooltip(): void {
   if (showTimer) clearTimeout(showTimer);
   showTimer = null;
+  if (activeTarget) hiddenAt = Date.now();
   activeTarget = null;
   if (tipEl) {
     tipEl.classList.remove('show');
@@ -58,7 +60,9 @@ export function tooltip(el: HTMLElement, text: string): void {
   el.addEventListener('pointerenter', (e) => {
     if (e.pointerType === 'touch') return;
     if (showTimer) clearTimeout(showTimer);
-    showTimer = setTimeout(() => show(el), activeTarget ? 60 : 450);
+    // moving along a toolbar shows the next tooltip right away
+    const warm = activeTarget !== null || Date.now() - hiddenAt < 500;
+    showTimer = setTimeout(() => show(el), warm ? 60 : 450);
   });
   el.addEventListener('pointerleave', hideTooltip);
   el.addEventListener('pointerdown', hideTooltip);

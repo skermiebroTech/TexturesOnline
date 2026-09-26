@@ -1127,6 +1127,12 @@ input[type='number']::-webkit-outer-spin-button {
     bottom: max(16px, env(safe-area-inset-bottom));
   }
 }
+/* keep toasts above the editors' bottom tab bar on phones */
+@media (max-width: 720px) {
+  body:has(.editor-layout.has-tabs) .toast-region {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}
 
 /* ---------- Dropzone ---------- */
 .dropzone {
@@ -1284,8 +1290,6 @@ input[type='number']::-webkit-outer-spin-button {
   color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 .vp-item {
   display: flex;
@@ -1308,6 +1312,9 @@ input[type='number']::-webkit-outer-spin-button {
   color: var(--text-3);
   font-size: var(--fs-sm);
   white-space: nowrap;
+}
+.vp-item.snapshot:not([aria-selected='true']) {
+  color: var(--text-2);
 }
 .vp-item.active {
   background: var(--surface-3);
@@ -1593,8 +1600,10 @@ input[type='number']::-webkit-outer-spin-button {
   display: none;
 }
 
+/* page scroll is locked under dialogs; the padding stands in for the hidden scrollbar */
 html.modal-open {
   overflow: hidden;
+  padding-right: var(--scrollbar-comp, 0px);
 }
 
 /* ---------- Shortcuts sheet ---------- */

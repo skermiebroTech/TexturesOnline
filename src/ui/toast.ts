@@ -2,7 +2,7 @@
 
 import { h } from './dom';
 import { icon, type IconName } from './icons';
-import { showInTopLayer } from './popover';
+import { floatingHost, showInTopLayer } from './popover';
 
 type Tone = 'info' | 'success' | 'error' | 'warn';
 
@@ -18,9 +18,27 @@ let region: HTMLElement | null = null;
 
 function ensureRegion(): HTMLElement {
   if (region && region.isConnected) return region;
-  region = h('div', { class: 'toast-region', role: 'region', 'aria-label': 'Notifications' });
+  // A polite live region that exists before any toast is added, so screen readers announce them.
+  region = h('div', { class: 'toast-region', role: 'region', 'aria-label': 'Notifications', 'aria-live': 'polite', 'aria-relevant': 'additions' });
   document.body.appendChild(region);
   return region;
+}
+
+/** Create the notification live region early (call once at startup). */
+export function initToasts(): void {
+  ensureRegion();
+}
+
+/**
+ * Keep the toast stack usable above modal dialogs: while a <dialog> is open everything outside it
+ * is inert, so the stack moves inside the top-most open dialog (shown in the top layer) and back
+ * to <body> when the dialogs close. Called by the modal helpers after opening/closing a dialog.
+ */
+export function syncToastLayer(): void {
+  if (!region) return;
+  const host = floatingHost();
+  if (!region.isConnected || region.parentElement !== host) host.appendChild(region);
+  if (host !== document.body || region.hasAttribute('popover')) showInTopLayer(region);
 }
 
 export interface ToastHandle {
@@ -39,11 +57,14 @@ export function toast(
   let timer: ReturnType<typeof setTimeout> | null = null;
   let remaining = duration;
   let startedAt = 0;
+  let hovered = false;
+  let focused = false;
 
   const close = () => {
     if (closed) return;
     closed = true;
     if (timer) clearTimeout(timer);
+    timer = null;
     el.classList.add('leaving');
     const done = () => el.remove();
     el.addEventListener('animationend', done, { once: true });
@@ -74,18 +95,15 @@ export function toast(
 
   const el = h(
     'div',
-    {
-      class: ['toast', `tone-${tone}`],
-      role: tone === 'error' ? 'alert' : 'status',
-      'aria-live': tone === 'error' ? 'assertive' : 'polite',
-    },
+    { class: ['toast', `tone-${tone}`], role: tone === 'error' ? 'alert' : undefined },
     icon(TONE_ICON[tone]),
     h('div', { class: 'toast-msg' }, msg),
     actions,
   );
 
+  // The timer runs only while the toast is neither hovered nor focused.
   const start = () => {
-    if (duration <= 0 || closed) return;
+    if (duration <= 0 || closed || timer || hovered || focused) return;
     startedAt = Date.now();
     timer = setTimeout(close, remaining);
   };
@@ -95,15 +113,28 @@ export function toast(
     timer = null;
     remaining = Math.max(1200, remaining - (Date.now() - startedAt));
   };
-  el.addEventListener('pointerenter', pause);
-  el.addEventListener('pointerleave', start);
-  el.addEventListener('focusin', pause);
-  el.addEventListener('focusout', start);
+  el.addEventListener('pointerenter', () => {
+    hovered = true;
+    pause();
+  });
+  el.addEventListener('pointerleave', () => {
+    hovered = false;
+    start();
+  });
+  el.addEventListener('focusin', () => {
+    focused = true;
+    pause();
+  });
+  el.addEventListener('focusout', (e) => {
+    if (e.relatedTarget instanceof Node && el.contains(e.relatedTarget)) return;
+    focused = false;
+    start();
+  });
 
   reg.appendChild(el);
   const live = Array.from(reg.children).filter((c) => !c.classList.contains('leaving'));
   if (live.length > MAX_VISIBLE) live.slice(0, live.length - MAX_VISIBLE).forEach((c) => c.remove());
-  if (document.querySelector('dialog[open]')) showInTopLayer(reg);
+  syncToastLayer();
   start();
   return { close };
 }

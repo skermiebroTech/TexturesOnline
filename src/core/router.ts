@@ -112,6 +112,7 @@ let firstRender = true;
 const scrollPositions = new Map<number, number>();
 const listeners = new Set<Listener>();
 let liveRegion: HTMLElement | null = null;
+let restoring = false;
 
 const SCROLL_KEY = 'to-router-scroll';
 
@@ -141,6 +142,14 @@ export function replacePath(path: string): void {
 
 export function currentRoute(): RouteState | null {
   return current;
+}
+
+/**
+ * True while a view renders for a back/forward visit whose scroll position is about to be
+ * restored; views should then skip their own "scroll to the deep-linked section" behaviour.
+ */
+export function isRestoringScroll(): boolean {
+  return restoring;
 }
 
 export function onRouteChange(cb: Listener): () => void {
@@ -250,6 +259,7 @@ async function render(force = false): Promise<void> {
   root.className = `view view-${tool ?? 'missing'}`;
   outlet.replaceChildren(root);
   document.title = match ? match.route.title : `Page not found — ${APP}`;
+  restoring = restoreY > 0;
 
   try {
     const result = await mod.default(root, { params: current.params, query, path });
@@ -268,6 +278,7 @@ async function render(force = false): Promise<void> {
   firstRender = false;
   requestAnimationFrame(() => {
     if (my !== token) return;
+    restoring = false;
     window.scrollTo({ top: restoreY, left: 0, behavior: 'instant' as ScrollBehavior });
     if (!wasFirst) {
       outlet.focus({ preventScroll: true });
