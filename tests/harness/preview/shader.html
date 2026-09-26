@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harness: shader preview</title>
+  <style>
+    body { margin: 0; background: #0d0f14; color: #eef1f7; font: 14px system-ui, sans-serif; }
+    #bar { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px; }
+    button { background: #1f2430; color: inherit; border: 1px solid #3a4254; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+    #view { width: 960px; height: 600px; }
+    #status { padding: 4px 8px; color: #b4bccb; }
+  </style>
+</head>
+<body>
+  <div id="bar"></div>
+  <div id="status">loading…</div>
+  <div id="view"></div>
+  <script type="module" src="./shader.ts"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": ["./*.ts", "../../../src/shared/pixel-canvas.ts", "../../../src/shared/pixel-algorithms.ts"]
+}

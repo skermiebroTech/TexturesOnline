@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pixel canvas harness</title>
+    <style>
+      :root {
+        --bg: #0d0f14; --bg-elev: #12151c; --surface: #181c25; --surface-2: #1f2430; --surface-3: #282e3c;
+        --border: #2a3140; --border-strong: #3a4254; --text: #eef1f7; --text-2: #b4bccb; --text-3: #7d8699;
+        --green: #5bd35b; --blue: #4fb3ff; --tool-accent: var(--green);
+      }
+      :root[data-theme='light'] {
+        --bg: #f4f5f8; --bg-elev: #ffffff; --surface: #ffffff; --surface-2: #eceef3; --surface-3: #dfe3ea;
+        --border: #d5dae3; --border-strong: #c2c8d3; --text: #151922; --text-2: #3d4556; --text-3: #6b7486;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, sans-serif; }
+      #app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+      .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+      .bar button, .bar select, .bar input[type='number'], .bar input[type='text'] {
+        background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: 4px; padding: 4px 8px; font: inherit;
+      }
+      .bar button[aria-pressed='true'] { background: var(--tool-accent); color: #0d0f14; border-color: transparent; }
+      .bar label { display: inline-flex; gap: 4px; align-items: center; color: var(--text-2); }
+      .bar .sep { width: 1px; height: 20px; background: var(--border); }
+      main { display: grid; grid-template-columns: 1fr 260px; min-height: 0; }
+      #stage { position: relative; min-height: 0; }
+      #side { border-left: 1px solid var(--border); padding: 8px; overflow: auto; font: 12px/1.5 ui-monospace, monospace; color: var(--text-2); }
+      @media (max-width: 700px) { main { grid-template-columns: 1fr; grid-template-rows: 1fr 120px; } #side { border-left: 0; border-top: 1px solid var(--border); } }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

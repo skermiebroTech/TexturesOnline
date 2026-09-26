@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harness: skin preview</title>
+  <style>
+    body { margin: 0; background: #0d0f14; color: #eef1f7; font: 13px system-ui, sans-serif; }
+    #bar { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px; }
+    button { background: #1f2430; color: inherit; border: 1px solid #3a4254; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+    #view { display: flex; gap: 10px; padding: 10px; }
+    .box { width: 300px; height: 420px; border: 1px solid #2a3140; border-radius: 8px; background: #181c25; }
+    #paint { image-rendering: pixelated; width: 192px; height: 192px; border: 1px solid #2a3140; background: repeating-conic-gradient(#222 0 25%, #333 0 50%) 0 0/16px 16px; }
+  </style>
+</head>
+<body>
+  <div id="bar"></div>
+  <div id="view"><div class="box" id="a"></div><div class="box" id="b"></div><canvas id="paint" width="64" height="64"></canvas></div>
+  <script type="module" src="./skin.ts"></script>
+</body>
+</html>

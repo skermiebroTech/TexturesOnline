@@ -1,0 +1,224 @@
+/* Design tokens. Dark theme is the default; [data-theme="light"] on <html> switches palettes. */
+
+@font-face {
+  font-family: 'Texel';
+  src: url('/fonts/texel-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Texel';
+  src: url('/fonts/texel-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+
+  /* Type. Texel is drawn on an 8px em grid: 16px = 2 CSS px per font pixel. */
+  --font: 'Texel', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --fs-sm: 16px;
+  --lh-sm: 24px;
+  --fs-md: 16px;
+  --lh-md: 24px;
+  --fs-lg: 24px;
+  --lh-lg: 32px;
+  --fs-xl: 32px;
+  --lh-xl: 40px;
+  --fs-2xl: 48px;
+  --lh-2xl: 56px;
+  --fs-3xl: 64px;
+  --lh-3xl: 72px;
+
+  /* Spacing (4px base) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  --topbar-h: 64px;
+  --container: 1200px;
+  --gutter: 24px;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 120ms;
+  --dur-2: 160ms;
+  --dur-3: 240ms;
+
+  /* Neutrals */
+  --bg: #0d0f14;
+  --bg-elev: #12151c;
+  --surface: #181c25;
+  --surface-2: #1f2430;
+  --surface-3: #282e3c;
+  --surface-4: #313849;
+  --border: #2a3140;
+  --border-strong: #3a4254;
+  --text: #eef1f7;
+  --text-2: #b4bccb;
+  --text-3: #7d8699;
+  --overlay: rgba(5, 7, 10, 0.72);
+
+  /* Accents */
+  --green: #5bd35b;
+  --green-2: #3fb23f;
+  --green-deep: #1d4d21;
+  --blue: #4fb3ff;
+  --blue-2: #2f93e0;
+  --blue-deep: #16395a;
+  --purple: #b07cff;
+  --purple-2: #9058f0;
+  --purple-deep: #3a2566;
+  --gold: #ffcf4a;
+  --gold-2: #e0ad22;
+  --red: #ff5b5b;
+  --red-2: #e03e3e;
+  --on-accent: #08120a;
+
+  --tool-accent: var(--green);
+  --tool-accent-2: var(--green-2);
+  --tool-accent-soft: rgba(91, 211, 91, 0.14);
+  --tool-accent-glow: rgba(91, 211, 91, 0.28);
+
+  --focus: #8fd0ff;
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus);
+
+  /* Pixel bevel for raised controls */
+  --bevel-hi: rgba(255, 255, 255, 0.22);
+  --bevel-lo: rgba(0, 0, 0, 0.32);
+  --inner-hi: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 4px 10px rgba(0, 0, 0, 0.35), 0 24px 64px rgba(0, 0, 0, 0.55);
+
+  --checker-a: #2b313e;
+  --checker-b: #1d222c;
+  --grid-line: rgba(255, 255, 255, 0.028);
+
+  --scrollbar: #323a4b;
+  --selection: rgba(79, 179, 255, 0.35);
+}
+
+/* Crisp 1.5x size for secondary text on high-density screens only */
+@media (min-resolution: 2dppx) {
+  :root {
+    --fs-sm: 12px;
+    --lh-sm: 20px;
+  }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #eef1f6;
+  --bg-elev: #f6f8fb;
+  --surface: #ffffff;
+  --surface-2: #f3f5f9;
+  --surface-3: #e7eaf1;
+  --surface-4: #dde1ea;
+  --border: #d9dee8;
+  --border-strong: #bfc6d4;
+  --text: #121620;
+  --text-2: #414a5c;
+  --text-3: #626b7e;
+  --overlay: rgba(22, 27, 38, 0.45);
+
+  --green: #23863a;
+  --green-2: #1b6f2f;
+  --green-deep: #d5f2d5;
+  --blue: #1a6fc0;
+  --blue-2: #155ca1;
+  --blue-deep: #d8ebfc;
+  --purple: #7446d8;
+  --purple-2: #5f35bd;
+  --purple-deep: #ebe0ff;
+  --gold: #946900;
+  --gold-2: #7a5700;
+  --red: #c92f2f;
+  --red-2: #a82323;
+  --on-accent: #ffffff;
+
+  --tool-accent-soft: rgba(35, 134, 58, 0.1);
+  --tool-accent-glow: rgba(35, 134, 58, 0.18);
+
+  --focus: #1a6fc0;
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus);
+
+  --bevel-hi: rgba(255, 255, 255, 0.35);
+  --bevel-lo: rgba(0, 0, 0, 0.2);
+  --inner-hi: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  --shadow-1: 0 1px 2px rgba(20, 28, 45, 0.08), 0 2px 8px rgba(20, 28, 45, 0.06);
+  --shadow-2: 0 2px 4px rgba(20, 28, 45, 0.06), 0 12px 28px rgba(20, 28, 45, 0.12);
+  --shadow-pop: 0 4px 10px rgba(20, 28, 45, 0.1), 0 24px 64px rgba(20, 28, 45, 0.22);
+
+  --checker-a: #d9dde6;
+  --checker-b: #f4f6fa;
+  --grid-line: rgba(20, 30, 50, 0.04);
+
+  --scrollbar: #c3c9d6;
+  --selection: rgba(26, 111, 192, 0.25);
+}
+
+/* Per-tool accent (set on <html data-tool> by the router) */
+:root[data-tool='skins'] {
+  --tool-accent: var(--blue);
+  --tool-accent-2: var(--blue-2);
+  --tool-accent-soft: rgba(79, 179, 255, 0.14);
+  --tool-accent-glow: rgba(79, 179, 255, 0.28);
+}
+:root[data-tool='shaders'] {
+  --tool-accent: var(--purple);
+  --tool-accent-2: var(--purple-2);
+  --tool-accent-soft: rgba(176, 124, 255, 0.14);
+  --tool-accent-glow: rgba(176, 124, 255, 0.3);
+}
+:root[data-theme='light'][data-tool='skins'] {
+  --tool-accent-soft: rgba(26, 111, 192, 0.1);
+  --tool-accent-glow: rgba(26, 111, 192, 0.18);
+}
+:root[data-theme='light'][data-tool='shaders'] {
+  --tool-accent-soft: rgba(116, 70, 216, 0.1);
+  --tool-accent-glow: rgba(116, 70, 216, 0.18);
+}
+
+/* Local accent overrides for any element */
+.accent-green {
+  --tool-accent: var(--green);
+  --tool-accent-2: var(--green-2);
+  --tool-accent-soft: color-mix(in srgb, var(--green) 14%, transparent);
+  --tool-accent-glow: color-mix(in srgb, var(--green) 28%, transparent);
+}
+.accent-blue {
+  --tool-accent: var(--blue);
+  --tool-accent-2: var(--blue-2);
+  --tool-accent-soft: color-mix(in srgb, var(--blue) 14%, transparent);
+  --tool-accent-glow: color-mix(in srgb, var(--blue) 28%, transparent);
+}
+.accent-purple {
+  --tool-accent: var(--purple);
+  --tool-accent-2: var(--purple-2);
+  --tool-accent-soft: color-mix(in srgb, var(--purple) 14%, transparent);
+  --tool-accent-glow: color-mix(in srgb, var(--purple) 30%, transparent);
+}
+.accent-gold {
+  --tool-accent: var(--gold);
+  --tool-accent-2: var(--gold-2);
+  --tool-accent-soft: color-mix(in srgb, var(--gold) 14%, transparent);
+  --tool-accent-glow: color-mix(in srgb, var(--gold) 28%, transparent);
+}

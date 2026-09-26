@@ -1,16 +1,39 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>TexturesOnline — Minecraft texture pack, skin & shader maker</title>
-    <meta name="description" content="Make Minecraft texture packs, skins and shaders in your browser. Java & Bedrock." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet" />
+    <meta name="description" content="Make Minecraft texture packs, skins and shaders right in your browser. Java 26.3 and every version since 1.6.1, plus Bedrock. Free, private and works offline." />
+    <meta name="theme-color" content="#0d0f14" />
+    <meta name="color-scheme" content="dark light" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="TexturesOnline — Minecraft texture pack, skin & shader maker" />
+    <meta property="og:description" content="Make Minecraft texture packs, skins and shaders in your browser. Java & Bedrock." />
+    <meta property="og:image" content="https://skermiebrotech.github.io/TexturesOnline/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/texel-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('to-theme');
+          if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', t);
+          if (t === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#eef1f6');
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      html { background: #0d0f14; }
+      html[data-theme='light'] { background: #eef1f6; }
+    </style>
   </head>
   <body>
     <div id="app"></div>
+    <noscript>
+      <p style="font-family: sans-serif; color: #eef1f7; padding: 24px">TexturesOnline needs JavaScript to run. Please enable it in your browser settings.</p>
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

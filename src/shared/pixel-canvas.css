@@ -1,0 +1,108 @@
+.pc-root {
+  --pc-bg: var(--bg, #0d0f14);
+  --pc-dot: rgba(255, 255, 255, 0.035);
+  --pc-checker-a: var(--surface-3, #282e3c);
+  --pc-checker-b: var(--surface-2, #1f2430);
+  --pc-grid: rgba(0, 0, 0, 0.3);
+  --pc-grid-light: rgba(255, 255, 255, 0.1);
+  --pc-border: var(--border-strong, rgba(255, 255, 255, 0.16));
+  --pc-accent: var(--tool-accent, var(--green, #5bd35b));
+  --pc-mask: rgba(6, 8, 12, 0.58);
+  --pc-hud-bg: rgba(13, 15, 20, 0.78);
+  --pc-hud-text: var(--text-2, #b4bccb);
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  overflow: hidden;
+  outline: none;
+  border-radius: inherit;
+  background-color: var(--pc-bg);
+  background-image: radial-gradient(circle at 1px 1px, var(--pc-dot) 1px, transparent 0);
+  background-size: 16px 16px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  contain: layout paint;
+}
+
+.pc-root:focus-visible:not([data-pointer-focus]) {
+  box-shadow: inset 0 0 0 2px var(--pc-accent);
+}
+
+.pc-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.pc-canvas[data-cursor='default'] { cursor: default; }
+.pc-canvas[data-cursor='paint'] { cursor: crosshair; }
+.pc-canvas[data-cursor='select'] { cursor: crosshair; }
+.pc-canvas[data-cursor='move'] { cursor: move; }
+.pc-canvas[data-cursor='grab'] { cursor: grab; }
+.pc-canvas[data-cursor='grabbing'] { cursor: grabbing; }
+.pc-canvas[data-cursor='pick'] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg fill='%23fff' stroke='%23000' stroke-width='1.2' paint-order='stroke'%3E%3Cpath d='M3 15h2v4H3zm2 4h4v2H5zm0-6h2v2H5zm4 4h2v2H9zm-2-6h2v2H7zm4 4h2v2h-2zM9 9h2v2H9zm4 4h2v2h-2zm-2-6h2v2h-2zM9 5h2v2H9zm2-2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm2 2h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm-4-4h2v2h-2zm2 2h2v2h-2zM1 19h2v4H1z'/%3E%3Cpath d='M1 21h4v2H1z'/%3E%3C/g%3E%3C/svg%3E") 2 22, crosshair;
+}
+
+.pc-hud {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--pc-hud-bg);
+  color: var(--pc-hud-text);
+  font: inherit;
+  /* The pixel font is only crisp at whole multiples of its grid; the token picks the right size per density. */
+  font-size: var(--fs-sm, 12px);
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: opacity 160ms ease;
+}
+
+.pc-hud[hidden] { display: none; }
+.pc-hud-pos:empty { display: none; }
+.pc-hud-pos:empty + .pc-hud-sep { display: none; }
+.pc-hud-sep { opacity: 0.4; }
+
+.pc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:root[data-theme='light'] .pc-root,
+.theme-light .pc-root {
+  --pc-dot: rgba(0, 0, 0, 0.05);
+  --pc-checker-a: var(--surface-3, #d9dde5);
+  --pc-checker-b: var(--surface-2, #eceef3);
+  --pc-grid: rgba(0, 0, 0, 0.26);
+  --pc-grid-light: rgba(255, 255, 255, 0.22);
+  --pc-hud-bg: rgba(255, 255, 255, 0.85);
+  --pc-mask: rgba(20, 24, 32, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-hud { transition: none; }
+}
