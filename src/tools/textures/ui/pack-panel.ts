@@ -20,6 +20,7 @@ import { RESOLUTIONS, newBedrockUuids } from '../project';
 import { firstSquare, getFrame, planCube, transparentShare } from './meta';
 import { formattedText, FORMAT_CODES } from './mc-text';
 import { paintCanvas } from './thumbs';
+import { packIconImage } from './icon';
 import { ICON_KEY, type TexStore } from './store';
 import type { OpenTexture } from './canvas-panel';
 
@@ -131,33 +132,8 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     iconInput,
   );
 
-  let autoIcon: ImageData | null = null;
-  const autoIconImage = async (): Promise<ImageData> => {
-    if (autoIcon) return autoIcon;
-    const root = java ? 'assets/minecraft/textures/' : 'textures/';
-    const pairs = java ? [['block/grass_block_top', 'block/grass_block_side'], ['block/stone', 'block/stone']] : [['blocks/grass_carried', 'blocks/grass_side_carried'], ['blocks/stone', 'blocks/stone']];
-    for (const [a, b] of pairs) {
-      try {
-        const [top, side] = await Promise.all([store.getFull(root + a + '.png'), store.getFull(root + b + '.png')]);
-        autoIcon = renderIsoCube(firstSquare(top), firstSquare(side), 64);
-        return autoIcon;
-      } catch {
-        /* next */
-      }
-    }
-    autoIcon = createImageData(64, 64);
-    return autoIcon;
-  };
-
   const paintIcon = async () => {
-    let img: ImageData;
-    let auto = false;
-    try {
-      img = await store.getFull(ICON_KEY);
-    } catch {
-      img = await autoIconImage();
-      auto = true;
-    }
+    const { img, auto } = await packIconImage(store);
     for (const c of [iconCanvas, pvIcon]) {
       paintCanvas(c, img);
       const s = img.width <= 64 ? Math.floor(64 / img.width) : 64 / img.width;

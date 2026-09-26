@@ -585,7 +585,7 @@ export const STARTERS: readonly StarterDef[] = [
     id: 'template',
     name: 'Template',
     description: 'Every body part in its own colour, with each face labelled.',
-    badge: 'Beginner friendly',
+    badge: 'Start here',
     paint: paintTemplate,
   },
   { id: 'explorer', name: 'Explorer', description: 'Safari hat, vest, backpack and boots.', paint: paintExplorer },

@@ -18,6 +18,12 @@ import { importPack } from '../import';
 import { newBedrockUuids, newTextureProject } from '../project';
 import { resolutionSentence } from './pack-panel';
 import { plainText } from './mc-text';
+import { decodeImage, resizeNearest } from '../../../core/image';
+import { proceduralTexture, toImageData, type ProceduralTextureName } from '../../../shared/preview/procedural-textures';
+import { applyEffects, getPreset } from '../effects';
+import { renderIsoCube } from '../export';
+import { firstSquare } from './meta';
+import { paintCanvas } from './thumbs';
 
 const START_RES = [16, 32, 64, 128];
 
@@ -30,6 +36,60 @@ function hashHue(s: string): number {
   let x = 0;
   for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0;
   return x % 360;
+}
+
+const proc = (n: ProceduralTextureName) => firstSquare(toImageData(proceduralTexture(n)));
+
+/** An original iso block (procedural art), optionally restyled by a preset. */
+function isoBlock(top: ProceduralTextureName, side: ProceduralTextureName, preset: string | null, size: number): HTMLCanvasElement {
+  const layers = preset ? getPreset(preset)?.layers ?? [] : [];
+  const fx = (n: ProceduralTextureName) => applyEffects(proc(n), layers, { path: `assets/minecraft/textures/block/${n}.png`, category: 'block', animated: false });
+  const c = document.createElement('canvas');
+  c.className = 'pixelated';
+  paintCanvas(c, renderIsoCube(fx(top), fx(side), size));
+  return c;
+}
+
+function heroArt(): HTMLElement {
+  const items: [ProceduralTextureName, ProceduralTextureName, string | null, string][] = [
+    ['grass_top', 'grass_side', null, 'Original'],
+    ['grass_top', 'grass_side', 'autumn', 'Autumn'],
+    ['grass_top', 'grass_side', 'winter-frost', 'Winter Frost'],
+    ['oak_planks', 'oak_planks', 'neon-outline', 'Neon Outline'],
+    ['cobblestone', 'cobblestone', 'cartoon', 'Cartoon'],
+    ['sand', 'sand', 'game-boy', 'Game Boy'],
+  ];
+  return h(
+    'div',
+    { class: 'tx-hero-art', 'aria-hidden': 'true' },
+    items.map(([t, sd, preset, label], i) => h('figure', { class: 'tx-hero-cube', style: { '--i': i } }, isoBlock(t, sd, preset, 64), h('figcaption', null, label))),
+  );
+}
+
+/** Up to four of the pack's own edited textures, or an original block restyled with the pack's effects. */
+async function drawProjectThumb(p: TexturePackProject, canvas: HTMLCanvasElement): Promise<void> {
+  const paths = Object.keys(p.overrides ?? {})
+    .filter((k) => /\/(block|blocks|item|items)\//.test(k))
+    .slice(0, 4);
+  if (paths.length) {
+    const out = new ImageData(64, 64);
+    const imgs = await Promise.all(paths.map((k) => decodeImage(p.overrides[k], k.split('.').pop()).then(firstSquare).catch(() => null)));
+    const cells = imgs.filter((x): x is ImageData => !!x);
+    if (cells.length) {
+      const n = cells.length === 1 ? 1 : 2;
+      const cell = 64 / n;
+      cells.slice(0, n * n).forEach((img, i) => {
+        const r = resizeNearest(img, cell, cell);
+        const ox = (i % n) * cell;
+        const oy = Math.floor(i / n) * cell;
+        for (let y = 0; y < cell; y++) out.data.set(r.data.subarray(y * cell * 4, (y + 1) * cell * 4), ((oy + y) * 64 + ox) * 4);
+      });
+      paintCanvas(canvas, out);
+      return;
+    }
+  }
+  const fx = (n: ProceduralTextureName) => applyEffects(proc(n), p.effects ?? [], { path: `block/${n}.png`, category: 'block', animated: false });
+  paintCanvas(canvas, renderIsoCube(fx('grass_top'), fx('grass_side'), 64));
 }
 
 /** Original fallback thumbnail: a small seeded pixel pattern in the pack's hue. */
@@ -149,7 +209,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const newCard = h(
     'section',
     { class: 'card tx-new', 'aria-labelledby': 'tx-new-title' },
-    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('image-new')), h('div', null, h('h2', { id: 'tx-new-title' }, 'New texture pack'), h('p', { class: 'muted' }, 'Start from the vanilla textures and make them yours.'))),
+    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('plus')), h('div', null, h('h2', { id: 'tx-new-title' }, 'New texture pack'), h('p', { class: 'muted' }, 'Start from the vanilla textures and make them yours.'))),
     h(
       'div',
       { class: 'tx-new-body' },
@@ -245,9 +305,9 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       img.addEventListener('error', () => box.replaceChildren(patternThumb(p.id)));
       box.appendChild(img);
     } else {
-      box.classList.remove('checker');
-      box.appendChild(patternThumb(p.id));
-      box.appendChild(h('span', { class: 'tx-rc-glyph' }, icon('image', { size: 24 })));
+      const c = h('canvas', { class: 'pixelated' });
+      box.appendChild(c);
+      void drawProjectThumb(p, c).catch(() => box.replaceChildren(patternThumb(p.id)));
     }
     return box;
   };
@@ -296,7 +356,8 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
               { class: 'tx-rc-info' },
               h('span', { class: 'tx-rc-name truncate' }, plainText(p.name) || 'Untitled'),
               h('span', { class: 'tx-rc-badges' }, badge(versionLabel(p), p.edition === 'java' ? 'green' : 'blue'), p.resolution > 16 ? badge(`${p.resolution}×`, 'gray') : null),
-              h('span', { class: 'tx-rc-meta faint small truncate' }, `${edited} edited${fx ? ` · ${fx} effect${fx === 1 ? '' : 's'}` : ''} · ${timeAgo(p.updatedAt || p.createdAt)}`),
+              h('span', { class: 'tx-rc-meta faint small truncate' }, `${edited} edited${fx ? ` · ${fx} effect${fx === 1 ? '' : 's'}` : ''}`),
+              h('span', { class: 'tx-rc-time faint small' }, `Edited ${timeAgo(p.updatedAt || p.createdAt)}`),
             ),
           ),
           menuBtn,
@@ -371,9 +432,14 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     h(
       'header',
       { class: 'container tx-start-hero' },
-      h('span', { class: 'eyebrow' }, icon('image'), 'Texture Pack Maker'),
-      h('h1', { class: 'pixel-shadow' }, 'Make Minecraft look ', h('span', { class: 'accent' }, 'your'), ' way'),
-      h('p', { class: 'lead' }, 'Repaint any block, item or mob, upload your own pictures, or restyle everything with one click. Works for Java and Bedrock.'),
+      h(
+        'div',
+        { class: 'tx-hero-text' },
+        h('span', { class: 'eyebrow' }, icon('image'), 'Texture Pack Maker'),
+        h('h1', { class: 'pixel-shadow' }, 'Make Minecraft look ', h('span', { class: 'accent' }, 'your'), ' way'),
+        h('p', { class: 'lead' }, 'Repaint any block, item or mob, upload your own pictures, or restyle everything with one click. Works for Java and Bedrock.'),
+      ),
+      heroArt(),
     ),
     h('div', { class: 'container tx-start-grid' }, newCard, h('div', { class: 'tx-start-side' }, openCard, h('section', { class: 'card tx-howto-card' }, h('h3', { class: 'section-title' }, icon('info'), 'How it works'), steps))),
     recent,

@@ -20,10 +20,10 @@ interface FormatInfo {
 }
 
 export const EXPORT_FORMATS: readonly FormatInfo[] = [
-  { kind: 'java', title: 'Java skin (.png)', sub: 'Launcher or minecraft.net · 64×64', icon: 'monitor', edition: 'Java' },
+  { kind: 'java', title: 'Java skin (.png)', sub: 'For the Launcher or minecraft.net', icon: 'monitor', edition: 'Java' },
   { kind: 'bedrock-pack', title: 'Bedrock skin pack (.mcpack)', sub: 'Opens straight in Minecraft', icon: 'package', edition: 'Bedrock' },
-  { kind: 'bedrock-png', title: 'Bedrock skin (.png)', sub: 'For the Import slot in the Dressing Room', icon: 'smartphone', edition: 'Bedrock' },
-  { kind: 'java-legacy', title: 'Old Java skin (64×32)', sub: 'Java 1.7.10 and older only', icon: 'clock', edition: 'Java' },
+  { kind: 'bedrock-png', title: 'Bedrock skin (.png)', sub: 'For the Dressing Room import slot', icon: 'smartphone', edition: 'Bedrock' },
+  { kind: 'java-legacy', title: 'Old Java skin (64×32)', sub: 'Java 1.7.10 and older', icon: 'clock', edition: 'Java' },
 ];
 
 /** Popover listing the export formats. */
@@ -33,7 +33,7 @@ export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) =
       'button',
       { type: 'button', class: 'sk-export-item', role: 'menuitem', tabIndex: -1, dataset: { kind: f.kind } },
       h('span', { class: ['sk-export-icon', f.edition === 'Java' ? 'is-java' : 'is-bedrock'] }, icon(f.icon)),
-      h('span', { class: 'sk-export-text' }, h('span', { class: 'sk-export-title' }, f.title), h('span', { class: 'sk-export-sub' }, `${f.edition} · ${f.sub}`)),
+      h('span', { class: 'sk-export-text' }, h('span', { class: 'sk-export-title' }, f.title), h('span', { class: 'sk-export-sub' }, f.sub)),
     ),
   );
   const list = h('div', { class: 'sk-export-menu', role: 'menu', 'aria-label': 'Export formats' }, items);
@@ -147,7 +147,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
     const body = h(
       'div',
       { class: 'sk-export' },
-      h('div', { class: 'sk-export-compare' }, figure(img, project.model, 'Your skin'), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), figure(after, 'classic', 'In old versions')),
+      h('div', { class: 'sk-export-compare' }, figure(img, project.model, 'Your skin'), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), figure(after, 'classic', 'Old versions')),
       losses.length
         ? h('div', { class: 'sk-losses' }, h('h3', { class: 'sk-guide-title' }, icon('warning'), 'What changes'), h('ul', null, losses.map((l) => h('li', null, l))))
         : h('p', { class: 'sk-note' }, icon('check'), 'Nothing gets lost: your skin already fits the old layout.'),
@@ -203,7 +203,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
         { class: 'sk-export-file' },
         h('span', { class: 'sk-export-ok' }, icon('check'), 'Downloading'),
         h('code', { class: 'sk-export-name' }, res.filename),
-        h('span', { class: 'muted small' }, `${info.edition} Edition · ${project.model === 'slim' ? 'Slim' : 'Classic'} arms`),
+        h('span', { class: 'muted small' }, [`${info.edition} Edition`, `${project.model === 'slim' ? 'Slim' : 'Classic'} arms`, res.meta].filter(Boolean).join(' · ')),
         h('div', { class: 'row', style: { '--gap': '8px', marginTop: '8px' } }, again),
       ),
     ),

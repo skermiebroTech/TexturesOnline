@@ -139,7 +139,9 @@ float skyBlend() { return SKY_CUSTOM * outdoorAmount(); }
 vec3 getLightColor() {
 	float h = sunElevation();
 	float low = 1.0 - smoothstep(0.02, 0.40, h);
-	vec3 sunLight = mix(optColor(SUN_R, SUN_G, SUN_B), optColor(SUNSET_R, SUNSET_G, SUNSET_B) * 1.15, low * 0.75) * SUN_STRENGTH;
+	// A low sun is weaker and warmer (more air in the way).
+	float strength = SUN_STRENGTH * 0.9 * (0.45 + 0.55 * smoothstep(0.0, 0.35, h));
+	vec3 sunLight = mix(optColor(SUN_R, SUN_G, SUN_B), optColor(SUNSET_R, SUNSET_G, SUNSET_B) * 1.15, low * 0.75) * strength;
 	vec3 moonLight = vec3(0.55, 0.65, 1.00) * (0.025 + 0.10 * NIGHT_BRIGHTNESS);
 	vec3 c = h > 0.0 ? sunLight : moonLight;
 	c *= smoothstep(0.0, 0.06, abs(h));
@@ -163,15 +165,18 @@ vec3 paletteHorizon(vec3 viewDir) {
 	vec3 night = optColor(NIGHT_R, NIGHT_G, NIGHT_B) * 1.6 + vec3(0.002, 0.003, 0.006);
 	vec3 c = mix(night, optColor(HORIZON_R, HORIZON_G, HORIZON_B), d);
 	float toSun = dot(viewDir, sunDirView()) * 0.5 + 0.5;
-	vec3 glow = optColor(SUNSET_R, SUNSET_G, SUNSET_B) * (0.45 + 0.9 * toSun * toSun);
+	vec3 glow = optColor(SUNSET_R, SUNSET_G, SUNSET_B) * (0.35 + 0.65 * toSun * toSun);
 	return mix(c, glow, tw * (0.25 + 0.75 * toSun));
 }
 
 // Rain and thunder turn the palette grey (the vanilla colours already do this themselves).
 vec3 rainTone(vec3 c) { return mix(c, vec3(luma(c) * 0.7), rainStrength * 0.8); }
 
-vec3 skyZenith() { return mix(toLinear(skyColor), rainTone(paletteZenith()), skyBlend()); }
-vec3 skyHorizon(vec3 viewDir) { return mix(toLinear(fogColor), rainTone(paletteHorizon(viewDir)), skyBlend()); }
+// Tone mapping lifts mid-tones; this level makes the sky on screen match the chosen colours.
+const float SKY_LEVEL = 0.7;
+
+vec3 skyZenith() { return mix(toLinear(skyColor), rainTone(paletteZenith()), skyBlend()) * SKY_LEVEL; }
+vec3 skyHorizon(vec3 viewDir) { return mix(toLinear(fogColor), rainTone(paletteHorizon(viewDir)), skyBlend()) * SKY_LEVEL; }
 
 vec3 sunGlowColor() {
 	vec3 c = mix(optColor(SUN_R, SUN_G, SUN_B), optColor(SUNSET_R, SUNSET_G, SUNSET_B), twilightAmount());
@@ -310,7 +315,7 @@ vec3 waveOffset(vec3 worldPos, float id, bool isTop, float skyLight) {
 	if (isId(id, ID_CROP) && isTop) o.xz = w * (0.06 * amp);
 	#endif
 	#ifdef WAVING_VINES
-	if (isId(id, ID_VINE)) o.xz = w * (0.03 * amp);
+	if (isId(id, ID_VINE)) o.xz = w * (0.02 * amp);
 	#endif
 	#ifdef WATER_WAVES
 	if (isId(id, ID_LILY_PAD)) o.y = waterSurfaceOffset(worldPos.xz);
@@ -401,7 +406,7 @@ float blockLightFrom(vec2 lm, vec3 feetPos) {
 }
 
 // Light falls off quickly away from the source, like a real lamp.
-float blockLightCurve(float b) { return b * b * (0.12 + 1.10 * b); }
+float blockLightCurve(float b) { return b * b * (0.12 + 1.0 * b); }
 
 vec3 lightDirFeet() { return safeNormalize(mat3(gbufferModelViewInverse) * shadowLightPosition); }
 
@@ -410,8 +415,11 @@ vec3 lightDirFeet() { return safeNormalize(mat3(gbufferModelViewInverse) * shado
 vec3 ambientLight(vec2 lm) {
 	float skyL = skyLightFrom(lm);
 	vec3 lmSky = toLinear(texture2D(lightmap, vec2(0.03125, lm.y)).rgb);
+	// Dim light keeps more of its strength, so nights, caves and the Nether stay readable
+	// after tone mapping while full daylight leaves room for the sun.
+	float level = clamp(luma(lmSky), 0.0, 1.0);
 	float night = 1.0 - dayAmount();
-	vec3 a = lmSky * ambientSkyTint() * (0.45 * AMBIENT_STRENGTH);
+	vec3 a = lmSky * ambientSkyTint() * ((1.35 - 0.95 * sqrt(level)) * AMBIENT_STRENGTH);
 	a += vec3(0.50, 0.62, 1.00) * (skyL * night * (0.006 + 0.04 * NIGHT_BRIGHTNESS));
 	a += vec3(0.60, 0.66, 0.78) * (0.003 + 0.012 * NIGHT_BRIGHTNESS);
 	return a;

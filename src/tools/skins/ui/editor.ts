@@ -11,7 +11,7 @@ import { PixelCanvas, type RGBA, type Tool } from '../../../shared/pixel-canvas'
 import { colorPicker } from '../../../ui/color-picker';
 import { toHex } from '../../../ui/color';
 import { button, editorLayout, emptyState, iconButton, openMenu, openPopover, segmented, slider, spinner, toggle, tooltip, type EditorPanel } from '../../../ui/components';
-import { h, isTypingTarget } from '../../../ui/dom';
+import { h, isTypingTarget, prefersReducedMotion } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { openModal, openShortcutsSheet } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
@@ -74,11 +74,12 @@ const DEFAULT_PREFS: Prefs = {
 };
 
 function loadPrefs(): Prefs {
+  const defaults: Prefs = { ...DEFAULT_PREFS, animation: prefersReducedMotion() ? 'none' : DEFAULT_PREFS.animation };
   try {
     const raw = localStorage.getItem(PREFS_KEY);
-    return raw ? { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<Prefs>) } : { ...DEFAULT_PREFS };
+    return raw ? { ...defaults, ...(JSON.parse(raw) as Partial<Prefs>) } : defaults;
   } catch {
-    return { ...DEFAULT_PREFS };
+    return defaults;
   }
 }
 
@@ -262,7 +263,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   mirrorBtn.addEventListener('click', () => setMirror(!prefs.mirror));
   const guidesBtn = iconButton('label', 'Part guides (P)', () => setGuides(!prefs.guides), { active: prefs.guides });
   const gridBtn = iconButton('grid', 'Pixel grid (#)', () => pc.setShowGrid(!pc.showGrid), { active: prefs.grid });
-  const fitBtn = iconButton('expand', 'Fit to screen (0)', () => pc.zoomToFit());
+  const fitBtn = iconButton('aspect-ratio', 'Fit to screen (0)', () => fitView());
 
   const canvasBar = h(
     'div',
@@ -357,7 +358,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       'li',
       { class: 'sk-part', dataset: { part }, style: { '--part': info.color } },
       h('span', { class: 'sk-part-dot', 'aria-hidden': 'true' }),
-      h('span', { class: 'sk-part-name' }, h('span', null, info.label), h('span', { class: 'sk-part-sub' }, `+ ${info.outerLabel.toLowerCase()}`)),
+      h('span', { class: 'sk-part-name' }, h('span', null, info.label), h('span', { class: 'sk-part-sub' }, `+ ${info.outerLabel.replace(/^(Left|Right) /, '').toLowerCase()}`)),
       h('span', { class: 'sk-part-actions' }, lock, eye, more),
     );
     row.addEventListener('pointerenter', () => setHighlight(part));
@@ -424,7 +425,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     rotateBtn.setActive(prefs.autoRotate);
     preview?.setAutoRotate(prefs.autoRotate);
   }, { size: 'sm', active: prefs.autoRotate });
-  const resetCamBtn = iconButton('reset', 'Reset camera', () => preview?.resetCamera(), { size: 'sm' });
+  const resetCamBtn = iconButton('target', 'Reset camera', () => preview?.resetCamera(), { size: 'sm' });
   const shotBtn = iconButton('camera', 'Save a picture of the 3D view', () => void screenshot(), { size: 'sm' });
   const modelSeg = segmented<SkinModel>({
     value: model,
@@ -502,6 +503,24 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     decodeImage: (b) => decodeImage(b),
   });
   canvasHost.appendChild(tip);
+  // On narrow screens use every pixel of width: the default fit leaves generous margins.
+  const fitView = () => {
+    pc.zoomToFit();
+    const w = canvasHost.clientWidth;
+    const hh = canvasHost.clientHeight;
+    if (w && w < 560) {
+      const snug = Math.floor(Math.min((w - 12) / 64, (hh - 12) / 64));
+      if (snug > pc.getZoom()) pc.setZoom(snug);
+    }
+  };
+  let firstLayout = true;
+  const hostObserver = new ResizeObserver(() => {
+    if (!firstLayout || !canvasHost.clientWidth) return;
+    firstLayout = false;
+    requestAnimationFrame(() => fitView());
+  });
+  hostObserver.observe(canvasHost);
+  disposers.push(() => hostObserver.disconnect());
   pc.setMirror(prefs.mirror, false);
   pc.setColor([62, 124, 214, 255]);
   pc.setSecondaryColor([0, 0, 0, 0]);
@@ -622,9 +641,18 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   disposers.push(() => clearInterval(tipTimer));
 
   let pointer: { x: number; y: number; type: string } | null = null;
+  let touchTipTimer = 0;
   const placeTip = () => {
-    if (!pointer || !hoverPixel || pointer.type === 'touch') {
+    if (!pointer || !hoverPixel) {
       tip.hidden = true;
+      return;
+    }
+    if (pointer.type === 'touch') {
+      // Fingers cover the pixel: show the part name at the top of the canvas for a moment.
+      tip.hidden = false;
+      tip.style.transform = `translate(${Math.round((canvasHost.clientWidth - tip.offsetWidth) / 2)}px, 8px)`;
+      clearTimeout(touchTipTimer);
+      touchTipTimer = window.setTimeout(() => (tip.hidden = true), 1400);
       return;
     }
     const r = canvasHost.getBoundingClientRect();
@@ -657,10 +685,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     placeTip();
     if (e.buttons && preview) scheduleLive();
   };
-  const onHostLeave = () => {
+  const onHostLeave = (e: PointerEvent) => {
+    if (e.pointerType === 'touch') return;
     pointer = null;
     tip.hidden = true;
   };
+  disposers.push(() => clearTimeout(touchTipTimer));
   canvasHost.addEventListener('pointermove', onHostMove);
   canvasHost.addEventListener('pointerleave', onHostLeave);
   disposers.push(
@@ -686,7 +716,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
   disposers.push(() => cancelAnimationFrame(liveRaf));
   const drawDolls = (img: ImageData) => {
-    const s = Math.max(2, Math.round(4 * Math.min(3, window.devicePixelRatio || 1)));
+    // 3 CSS px per skin pixel (48x96), in whole device pixels.
+    const s = Math.max(3, Math.round(3 * Math.min(3, window.devicePixelRatio || 1)));
     drawPaperDoll(dollFront, img, model, 'front', s);
     drawPaperDoll(dollBack, img, model, 'back', s);
     drawHead(headCanvas, img, 32);
@@ -733,6 +764,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   let version = 0;
   let savedVersion = 0;
   let saving: Promise<void> | null = null;
+  let saveErrorShown = false;
   const setSaveState = (state: 'saved' | 'saving' | 'unsaved' | 'error', detail?: string) => {
     saveState.dataset.state = state;
     const map = { saved: ['check', 'Saved'], saving: ['cloud', 'Saving…'], unsaved: ['clock', 'Unsaved'], error: ['warning', "Couldn't save"] } as const;
@@ -757,6 +789,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         if (!destroyed) setSaveState(version === v ? 'saved' : 'unsaved');
       } catch (err) {
         if (!destroyed) setSaveState('error', err instanceof Error ? err.message : undefined);
+        if (!saveErrorShown) {
+          saveErrorShown = true;
+          toast(`Couldn't save your skin in this browser${err instanceof Error ? `: ${err.message}` : '.'} Export it to keep a copy.`, { tone: 'error', duration: 8000 });
+        }
         throw err;
       } finally {
         saving = null;

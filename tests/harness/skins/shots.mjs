@@ -74,7 +74,8 @@ for (const theme of themes) {
       } else if (scene === 'parts' || scene === '3d') {
         await openEditor(page);
         const tab = scene === 'parts' ? 'left' : 'right';
-        await page.click(`.editor-tab[data-panel="${tab}"]`).catch(() => page.click(`.editor-sidetabs [data-value="${tab}"]`));
+        if (await page.isVisible(`.editor-tab[data-panel="${tab}"]`)) await page.click(`.editor-tab[data-panel="${tab}"]`);
+        else if (await page.isVisible(`.editor-sidetabs [data-value="${tab}"]`)) await page.click(`.editor-sidetabs [data-value="${tab}"]`);
         await page.waitForTimeout(1200);
         await page.screenshot({ path: path.join(out, name) });
       } else if (scene === 'export' || scene === 'legacy') {
@@ -90,6 +91,35 @@ for (const theme of themes) {
         await page.waitForTimeout(800);
         await page.screenshot({ path: path.join(out, name) });
         await page.keyboard.press('Escape');
+      } else if (scene === 'mirror' || scene === 'lock') {
+        await openEditor(page);
+        const pt = (x, y) => page.evaluate(([x, y]) => document.querySelector('.sk-editor').__skinEditor.imageToClient(x, y), [x, y]);
+        if (scene === 'mirror') {
+          await page.click('.sk-toggle-btn');
+          await page.fill('.sk-block-color .cp-hex', '#e03c8a').catch(() => {});
+          await page.keyboard.press('Enter');
+          for (let y = 21; y < 30; y++) {
+            const [x0, y0] = await pt(44, y);
+            await page.mouse.click(x0, y0);
+          }
+          const [hx, hy] = await pt(45, 27);
+          await page.mouse.move(hx, hy);
+        } else {
+          await page.click('.sk-part[data-part="leftArm"] [aria-label^="Only paint"]');
+          await page.click('[aria-label="Layer to paint on"] [data-value="outer"]');
+          const [hx, hy] = await pt(52, 57);
+          await page.mouse.move(hx, hy);
+        }
+        await page.waitForTimeout(700);
+        await page.screenshot({ path: path.join(out, name) });
+      } else if (scene === 'hide') {
+        await openEditor(page);
+        await page.click('.sk-part[data-part="leftArm"] [aria-label^="Show"]');
+        await page.click('.sk-part[data-part="head"]', { position: { x: 20, y: 10 } });
+        await page.click('.sk-block-guides .toggle:nth-of-type(2) .switch').catch(() => page.click('text=See-through outer layer'));
+        await page.hover('.sk-part[data-part="body"]');
+        await page.waitForTimeout(900);
+        await page.screenshot({ path: path.join(out, name) });
       } else if (scene === 'shortcuts') {
         await openEditor(page);
         await page.keyboard.press('?');

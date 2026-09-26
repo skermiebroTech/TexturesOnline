@@ -308,7 +308,7 @@ test('preview parameters follow the generated GLSL math', () => {
   }
   // same lens vignette as the preview: smoothstep(1.05, 0.25, r * 1.25) mixed by strength
   assert.equal(vignetteFactor([0, 0], 1), 1);
-  assert.ok(Math.abs(vignetteFactor([0, 0.5], 1) - 0.4543) < 1e-3);
+  assert.ok(Math.abs(vignetteFactor([0, 0.5], 1) - 0.546814) < 1e-5); // smoothstep(1.05, 0.25, 0.625)
   assert.equal(vignetteFactor([0.89, 0.5], 0.5), 0.5);
 });
 
@@ -443,7 +443,7 @@ test('1.17-style patch: world graded per object, GUI untouched, waving via GameT
   assert.match(fsh, /#moj_import <txo_post\.glsl>/);
   assert.match(fsh, /if \(txo_aspect > 0\.0001\) \{\n\s+fragColor\.rgb = txo_grade\(fragColor\.rgb\) \* txo_vignette\(/);
   const vsh = textOf(files, `${CORE}rendertype_solid.vsh`);
-  assert.match(vsh, /txo_aspect = abs\(ProjMat\[2\]\[3\]\) > 0\.0001 \? abs\(ProjMat\[1\]\[1\] \/ ProjMat\[0\]\[0\]\) : 0\.0;\n\s+txo_clipPos = gl_Position;/);
+  assert.match(vsh, /txo_aspect = abs\(ProjMat\[2\]\[3\]\) > 0\.0001 && ProjMat\[2\]\[2\] > -1\.005 \? abs\(ProjMat\[1\]\[1\] \/ ProjMat\[0\]\[0\]\) : 0\.0;\n\s+txo_clipPos = gl_Position;/);
   assert.ok(!/txo_wave/.test(vsh), 'solid blocks must not wave');
   const cutout = textOf(files, `${CORE}rendertype_cutout.vsh`);
   assert.match(cutout, /uniform float GameTime;/);
@@ -459,7 +459,9 @@ test('1.17-style patch: world graded per object, GUI untouched, waving via GameT
   assert.match(r.warnings.join('\n'), /Bloom needs Java 26\.3/);
   assert.match(r.warnings.join('\n'), /Water & weather fog/);
   assert.match(r.warnings.join('\n'), /Darker nights skipped/);
-  for (const t of Object.values(files)) assert.ok(!/\bAI\b/i.test(t as string));
+  for (const t of Object.values(files)) {
+    for (const m of (t as string).matchAll(/Made with (\w+)/g)) assert.equal(m[1], 'TexturesOnline');
+  }
 });
 
 test('synthetic 1.17-style output compiles and links', { skip: findGlslang() ? false : 'glslangValidator not found' }, async () => {

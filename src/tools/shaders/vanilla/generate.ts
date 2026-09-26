@@ -151,14 +151,7 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
   const varyings = !fam.ubo;
   const vertexShaders = new Set<string>();
   let patched = 0;
-  if (!varyings) {
-    for (const f of ['projection.glsl', 'globals.glsl']) {
-      if (src[INCLUDE + f] === undefined) {
-        pt.warn(`Colors and vignette skipped: this version has no include/${f}.`);
-        return;
-      }
-    }
-  }
+  const hasInclude = (f: string): boolean => src[INCLUDE + f] !== undefined;
   for (const [fsh, partners] of byFsh) {
     if (GRADE_DENY.test(fsh)) continue;
     const fpath = `${CORE}${fsh}.fsh`;
@@ -184,12 +177,13 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
     } else {
       const expanded = expandForAnalysis(code, src, fpath);
       const ubos = uboNames(expanded);
+      // Projection and Globals are bound automatically when a shader declares them (built-in blocks).
       if (!declares(expanded, 'mat4', 'ProjMat')) {
-        if (ubos.has('Projection')) continue;
+        if (ubos.has('Projection') || !hasInclude('projection.glsl')) continue;
         plan.push(importLine(fam, 'projection.glsl'));
       }
       if (withVignette && !declares(expanded, 'vec2', 'ScreenSize')) {
-        if (ubos.has('Globals')) continue;
+        if (ubos.has('Globals') || !hasInclude('globals.glsl')) continue;
         plan.push(importLine(fam, 'globals.glsl'));
       }
       plan.push(importLine(fam, POST_INCLUDE_FILE));
@@ -217,7 +211,12 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
     const vp = pt.plan(`${CORE}${vsh}.vsh`);
     vp.decls.push(`out vec4 ${P}_clipPos;`, `out float ${P}_aspect;`);
     // Perspective projection = world (value = aspect ratio); orthographic = GUI and items in the GUI.
-    vp.post.push(`${P}_aspect = abs(ProjMat[2][3]) > 0.0001 ? abs(ProjMat[1][1] / ProjMat[0][0]) : 0.0;`, `${P}_clipPos = gl_Position;`);
+    // The title-screen panorama (≤ 1.21.5) is perspective too but has a 10-block far plane
+    // (ProjMat[2][2] ≈ -1.01; the world's far plane is ≥ 128 blocks, ≈ -1.0008), so it counts as GUI.
+    vp.post.push(
+      `${P}_aspect = abs(ProjMat[2][3]) > 0.0001 && ProjMat[2][2] > -1.005 ? abs(ProjMat[1][1] / ProjMat[0][0]) : 0.0;`,
+      `${P}_clipPos = gl_Position;`,
+    );
   }
   if (patched === 0) {
     pt.warn('Colors and vignette skipped: no world shader in this version matched the expected layout.');

@@ -530,14 +530,15 @@ export function drawPartOverlay(ctx: CanvasRenderingContext2D, view: OverlayView
         const b = partBox(part, layout);
         const info = PART_INFO[part];
         // Tags sit in the unused corner left of the top face (d x d pixels).
+        // Keep tags over the unused corner and the top face; fall back to short names.
         let text = layer === 'base' ? info.label : info.outerLabel;
         let tw = ctx.measureText(text).width + padX * 2;
-        const maxW = (b.d + b.w + b.w) * s - 4;
+        const maxW = (b.d + b.w) * s - 4;
         if (tw > maxW) {
           text = layer === 'base' ? info.short : info.outerShort;
           tw = ctx.measureText(text).width + padX * 2;
         }
-        if (tw > maxW + b.d * s) continue;
+        if (tw > (2 * b.d + 2 * b.w) * s - 6) continue;
         const [cx, cy] = view.toScreen(o[0], o[1]);
         const x = px(cx) + 3;
         const y = px(cy) + Math.max(3, Math.round((Math.min(b.d * s, 40) - tagH) / 2));

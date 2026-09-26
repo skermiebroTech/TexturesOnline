@@ -176,7 +176,7 @@
 .sk-starter-stage {
   display: block;
   height: 176px;
-  padding: 12px 0 4px;
+  padding: 6px 0 2px;
   border-bottom: 2px solid var(--border);
   background: var(--sk-stage-bg);
 }
@@ -287,7 +287,7 @@
 /* Recent skins */
 .sk-recent-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
   gap: 12px;
 }
 .sk-recent {
@@ -335,9 +335,7 @@
   font-weight: 700;
 }
 .sk-recent-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
 }
@@ -819,6 +817,31 @@
 .sk-picker-slot {
   min-height: 0;
 }
+.sk-block-color .cp-sv {
+  height: 136px;
+  aspect-ratio: auto;
+}
+.sk-block-color .cp-preview,
+.sk-color-pop .cp-preview {
+  width: 36px;
+  height: 36px;
+}
+.sk-block-color .cp-hex,
+.sk-color-pop .cp-hex {
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 4px;
+}
+.sk-block-color .cp-alpha-input,
+.sk-color-pop .cp-alpha-input {
+  width: 52px;
+  padding-left: 4px;
+  padding-right: 6px;
+}
+.sk-block-color .cp-row,
+.sk-color-pop .cp-row {
+  gap: 6px;
+}
 .sk-color-pop {
   display: flex;
   flex-direction: column;
@@ -984,7 +1007,7 @@
 }
 .sk-ctl-label {
   flex: none;
-  width: 72px;
+  width: 88px;
   color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
@@ -995,6 +1018,9 @@
 .sk-backdrops {
   display: flex;
   gap: 8px;
+}
+.sk-ctl .sk-chips {
+  flex-wrap: nowrap;
 }
 .sk-backdrop {
   width: 28px;
@@ -1055,7 +1081,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  width: 340px;
+  width: 360px;
   max-width: calc(100vw - 24px);
   padding: 6px;
 }
@@ -1303,6 +1329,23 @@
 /* =========================================================================================
    Responsive
    ========================================================================================= */
+/* Short screens: two columns of tools */
+@media (max-height: 860px) and (min-width: 721px) {
+  .sk-rail {
+    width: 92px;
+    gap: 10px;
+  }
+  .sk-rail-tools {
+    display: grid;
+    grid-template-columns: repeat(2, 40px);
+    gap: 2px;
+  }
+  .sk-tool[data-tool='line'],
+  .sk-tool[data-tool='lighten'],
+  .sk-tool[data-tool='select'] {
+    margin-top: 0;
+  }
+}
 @media (max-width: 1180px) {
   .sk-starters {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1317,8 +1360,15 @@
   .sk-imports > :last-child {
     grid-column: span 2;
   }
+  .sk-imports > :last-child .sk-game-actions .btn {
+    width: auto;
+    align-self: flex-start;
+  }
   .sk-editor > .editor-layout {
     --right-w: 320px;
+  }
+  .sk-ctl-label {
+    width: 76px;
   }
   .sk-name {
     width: 16ch;
@@ -1367,6 +1417,9 @@
   }
   .sk-imports > :last-child {
     grid-column: auto;
+  }
+  .sk-imports > :last-child .sk-game-actions .btn {
+    width: 100%;
   }
 
   /* Editor on phones: bottom tabs Paint / 3D / Parts */
@@ -1447,6 +1500,33 @@
   .sk-block-color {
     display: none;
   }
+  .sk-block-parts {
+    order: -1;
+  }
+  .sk-cb-label,
+  .sk-toggle-btn > span:not(.icon),
+  .sk-canvas-bar [aria-label^='Pixel grid'] {
+    display: none;
+  }
+  .sk-toggle-btn {
+    padding: 0 6px 2px;
+  }
+  .sk-canvas-bar {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .sk-canvas-bar .segmented {
+    flex: 1 1 auto;
+  }
+  .sk-editor .editor-tab[data-panel='center'] {
+    order: 1;
+  }
+  .sk-editor .editor-tab[data-panel='right'] {
+    order: 2;
+  }
+  .sk-editor .editor-tab[data-panel='left'] {
+    order: 3;
+  }
   .sk-3d-wrap {
     min-height: 0;
   }
@@ -1454,7 +1534,50 @@
     display: flex;
   }
   .sk-export-done {
-    flex-direction: column;
-    align-items: flex-start;
+    gap: 14px;
   }
+  .sk-export-done .sk-export-stage {
+    width: 88px;
+    height: 108px;
+  }
+  .sk-export-done .sk-export-name {
+    font-size: var(--fs-md);
+    line-height: var(--lh-md);
+  }
+  .sk-export-compare {
+    gap: 8px;
+  }
+  .sk-export-compare .sk-export-stage {
+    width: 96px;
+    height: 116px;
+  }
+}
+
+/* Import card extras */
+.sk-examples {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sk-example {
+  height: 28px;
+  padding: 0 8px 2px;
+}
+.sk-import-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  margin-top: auto;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.sk-import-note .icon {
+  flex: none;
+  margin-top: -2px;
+}
+.sk-import-note + .sk-game-actions {
+  margin-top: 0;
 }

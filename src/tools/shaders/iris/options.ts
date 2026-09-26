@@ -29,7 +29,7 @@ export const OPTIONS: OptionDef[] = [
     description: 'Soft light from the sky that fills in shaded areas. Lower gives deeper, moodier shade.' },
   { key: 'nightBrightness', label: 'Night brightness', group: GROUPS.lighting, type: 'range', default: 0.3, min: 0, max: 1, step: 0.05,
     description: 'Moonlight and the lowest light level at night and in caves. 0 gives very dark nights.' },
-  { key: 'torchColor', label: 'Torch light color', group: GROUPS.lighting, type: 'color', default: '#ffc27a',
+  { key: 'torchColor', label: 'Torch light color', group: GROUPS.lighting, type: 'color', default: '#ffcc8f',
     description: 'Color of the light from torches, lanterns, lava and other light sources.' },
   { key: 'torchStrength', label: 'Torch light strength', group: GROUPS.lighting, type: 'range', default: 1, min: 0, max: 3, step: 0.05, unit: '×',
     description: 'How bright light from torches and glowing blocks is, and how much the light sources themselves glow.' },
@@ -178,7 +178,7 @@ export const PRESETS: Preset[] = [
     description: 'Filmic tone mapping, warm light, deep shadows, strong sun rays and a subtle vignette.',
     values: {
       tonemap: 'filmic', exposure: -0.15, contrast: 1.12, saturation: 0.92, vibrance: 0.2, temperature: 0.12,
-      sunColor: '#ffe2bf', sunsetColor: '#ff7a3d', horizonColor: '#c8d3df', shadowBrightness: 0.12, ambientStrength: 0.85,
+      sunColor: '#ffe2bf', sunsetColor: '#ff7a3d', horizonColor: '#c8d3df', shadowBrightness: 0.1, ambientStrength: 0.85,
       bloomStrength: 0.3, bloomThreshold: 0.8, godrays: 1, vignette: 0.45, fogDensity: 1.5, shadowSoftness: 1.3,
     },
     swatch: ['#2f4f66', '#ffb86b'],

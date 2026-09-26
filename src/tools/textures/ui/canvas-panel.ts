@@ -10,7 +10,6 @@ import { badge, button, iconButton, openMenu, segmented, spinner, tooltip } from
 import { toast } from '../../../ui/toast';
 import { confirmDialog } from '../../../ui/modal';
 import { scaleForResolution } from '../project';
-import { renderIsoCube } from '../export';
 import {
   CATEGORY_INFO,
   alphaDataKind,
@@ -28,6 +27,7 @@ import { createFrameStrip } from './frames';
 import { openUploadDialog, type UploadScope } from './upload-dialog';
 import { ICON_KEY, type TexStore } from './store';
 import { paintCanvas } from './thumbs';
+import { autoPackIcon } from './icon';
 
 export interface OpenTexture {
   key: string;
@@ -241,6 +241,17 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const frames = createFrameStrip((i) => selectFrame(i));
 
   const workspace = h('div', { class: 'tx-workspace' }, rail, stage);
+  // Short screens: wrap the vertical tool rail into two columns instead of scrolling it.
+  const railRo = new ResizeObserver(() => {
+    if (getComputedStyle(rail).flexDirection !== 'column') {
+      rail.classList.remove('two-col');
+      return;
+    }
+    rail.classList.remove('two-col');
+    if (rail.scrollHeight > rail.clientHeight + 2) rail.classList.add('two-col');
+  });
+  railRo.observe(workspace);
+  offs.push(() => railRo.disconnect());
   const el = h(
     'section',
     { class: 'panel tx-center is-empty', 'aria-label': 'Texture editor' },
@@ -365,10 +376,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     paintCanvas(headThumb, f);
     headTitle.textContent = t.name;
     const size = `${t.full.width}×${t.full.height}`;
-    headSub.textContent = t.key === ICON_KEY ? `Pack icon · ${size}` : `${t.entry?.id ?? t.key} · ${size}${t.anim ? ` · ${t.anim.count} frames` : ''}`;
+    const cat = t.entry ? CATEGORY_INFO[t.entry.category].short : '';
+    headSub.textContent = t.key === ICON_KEY ? `Pack icon · ${size}` : `${cat ? `${cat} · ` : ''}${size}${t.anim ? ` · ${t.anim.count} frames` : ''} · ${t.entry?.id ?? t.key}`;
     headSub.title = t.key;
     const edited = t.key === ICON_KEY ? !!project.icon : store.isEdited(t.key);
-    if (t.key !== ICON_KEY && t.entry) headBadges.append(badge(CATEGORY_INFO[t.entry.category].short, 'gray'));
     if (edited && t.key !== ICON_KEY) headBadges.append(badge('Edited', 'green'));
     if (t.anim) headBadges.append(badge('Animated', 'blue'));
     if (t.upscaled) {
@@ -422,20 +433,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     return { key: path, entry, name: entry?.pretty ?? path, full, vanilla, upscaled, anim, frame: 0, alphaData };
   }
 
-  async function defaultIcon(): Promise<ImageData> {
-    const root = project.edition === 'java' ? 'assets/minecraft/textures/' : 'textures/';
-    const tryIds = project.edition === 'java' ? [['block/grass_block_top', 'block/grass_block_side'], ['block/stone', 'block/stone']] : [['blocks/grass_carried', 'blocks/grass_side_carried'], ['blocks/stone', 'blocks/stone']];
-    for (const [top, side] of tryIds) {
-      try {
-        const [a, b] = await Promise.all([store.getFull(`${root}${top}.png`), store.getFull(`${root}${side}.png`)]);
-        return renderIsoCube(firstSquare(a), firstSquare(b), 64);
-      } catch {
-        /* next */
-      }
-    }
-    const img = new ImageData(64, 64);
-    return img;
-  }
+  const defaultIcon = (): Promise<ImageData> => autoPackIcon(store, 64);
 
   let loadingTimer: ReturnType<typeof setTimeout> | null = null;
   async function open(path: string, o: { focus?: boolean } = {}): Promise<void> {

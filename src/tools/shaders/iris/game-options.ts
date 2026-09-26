@@ -90,6 +90,8 @@ const TONEMAP_IDS = { none: 0, reinhard: 1, aces: 2, filmic: 3 } as const;
 const BLOOM_FALLBACK = 0.2;
 const GODRAYS_FALLBACK = 0.6;
 
+const sampleLabel = (names: Record<string, string>, f: string): string | null => (names[f] ? `${names[f]} (${f})` : null);
+
 const range = (
   name: string, label: string, comment: string, screen: ScreenId | null, list: number[], value: (s: Settings) => number, decimals = 2,
 ): ValueOption => ({ kind: 'value', form: 'define', name, label, comment, screen, list, decimals, value, slider: true });
@@ -190,11 +192,13 @@ export const GAME_OPTIONS: GameOption[] = [
     kind: 'value', form: 'define', name: 'SHADOW_SAMPLES', label: 'Shadow Quality', screen: 'PERFORMANCE',
     comment: 'Samples used to smooth shadow edges. Higher is smoother but slower.',
     list: [4, 8, 12, 16, 24, 32], decimals: 0, slider: true, value: (s) => QUALITY_SHADOW_SAMPLES[s.effectQuality],
+    valueLabels: (f) => sampleLabel({ '4': 'Low', '8': 'Medium', '12': 'Medium+', '16': 'High', '24': 'Ultra', '32': 'Extreme' }, f),
   },
   {
     kind: 'value', form: 'define', name: 'GODRAYS_SAMPLES', label: 'God Ray Quality', screen: 'PERFORMANCE',
     comment: 'Samples used for god rays. Higher is smoother but slower.',
     list: [8, 12, 16, 24, 32], decimals: 0, slider: true, value: (s) => QUALITY_GODRAY_SAMPLES[s.effectQuality],
+    valueLabels: (f) => sampleLabel({ '8': 'Low', '12': 'Medium', '16': 'High', '24': 'Ultra', '32': 'Extreme' }, f),
   },
 ];
 

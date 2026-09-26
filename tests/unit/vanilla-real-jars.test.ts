@@ -23,7 +23,7 @@ const NO_GLSLANG = 'glslangValidator not found (set GLSLANG_VALIDATOR or add it 
 if (!glslang && jars.length) test('shader compilation', { skip: NO_GLSLANG }, () => {});
 
 test('real game versions cover every shader family', { skip: jars.length ? false : NO_JARS }, () => {
-  const families = new Set(jars.map((j) => familyOf(j)?.id ?? 'none'));
+  const families = new Set<string>(jars.map((j) => familyOf(j)?.id ?? 'none'));
   for (const f of ['none', 'F1', 'F2', 'F3', 'F4', 'F6']) {
     if (!families.has(f)) console.log(`note: no fixture jar for shader family ${f}`);
   }
@@ -53,7 +53,7 @@ test('validation catches broken patches', { skip: control ? false : NO_JARS }, a
   const merged: Record<string, string> = { ...vs.sources, ...(r.files as Record<string, string>) };
 
   // Removing a varying the fragment shader reads must be reported.
-  const noVarying = { ...merged, [vpath]: merged[vpath].replace('out float txo_aspect;', '') };
+  const noVarying: Record<string, string> = { ...merged, [vpath]: merged[vpath].replace('out float txo_aspect;', '') };
   assert.deepEqual(missingVaryings(mojPreprocess(merged[vpath], merged, vpath), mojPreprocess(merged[fpath], merged, fpath)), []);
   assert.deepEqual(missingVaryings(mojPreprocess(noVarying[vpath], noVarying, vpath), mojPreprocess(noVarying[fpath], noVarying, fpath)), ['txo_aspect']);
 

@@ -213,7 +213,7 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
       const img = t.anim ? stripForPreview(withFx(t.full, t.key, true), t.anim) : withFx(t.full, t.key, false);
       const shown = e ? tinted(img, e.id, t.key) : img;
       pv.showFlat(shown, frametime && t.anim ? { frametime } : undefined);
-      stageLabel.textContent = t.key === ICON_KEY ? 'Pack icon' : e?.category === 'block' ? 'Flat (cut-out block)' : 'Flat sprite';
+      stageLabel.textContent = t.key === ICON_KEY ? 'Pack icon' : e?.category === 'block' ? 'Cut-out block' : 'Sprite';
       return;
     }
     const plan = e ? planCube(e.id, (id) => pathOfId(id) !== null, project.edition) : null;
@@ -221,7 +221,7 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
     const main = e ? tinted(mainFull, e.id, t.key) : mainFull;
     if (!plan || !e) {
       pv.showCube({ all: main }, frametime ? { frametime } : undefined);
-      stageLabel.textContent = 'Every side';
+      stageLabel.textContent = 'Block';
       return;
     }
     const [up, down, side, front] = await Promise.all([
@@ -236,7 +236,7 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
       { up: up ?? main, down: down ?? up ?? main, north: sideImg, east: sideImg, west: sideImg, south: front ?? sideImg },
       frametime ? { frametime } : undefined,
     );
-    stageLabel.textContent = 'On a block';
+    stageLabel.textContent = 'Block';
   }
 
   let timer: ReturnType<typeof setTimeout> | null = null;

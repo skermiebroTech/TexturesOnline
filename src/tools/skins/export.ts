@@ -24,7 +24,10 @@ export type ExportKind = 'java' | 'java-legacy' | 'bedrock-pack' | 'bedrock-png'
 export interface ExportResult {
   blob: Blob;
   filename: string;
+  /** Warnings worth reading before uploading */
   notes: string[];
+  /** Short extra detail shown next to the file name */
+  meta?: string;
 }
 
 function pngBlob(img: ImageData): Blob {
@@ -109,6 +112,7 @@ export async function exportBedrockPack(project: SkinProjectData, img: ImageData
   return {
     blob,
     filename: `${baseName(name)}.mcpack`,
-    notes: [`Pack version ${project.packVersion.join('.')}. Importing it again updates the pack you already have.`],
+    notes: [],
+    meta: `Pack v${project.packVersion.join('.')}`,
   };
 }

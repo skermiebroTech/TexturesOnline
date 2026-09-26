@@ -28,11 +28,12 @@ export interface BrowserOptions {
   onReset(path: string): void;
 }
 
-const MIN_TILE = 76;
-const GAP = 8;
+const MIN_TILE = 64;
+const GAP = 6;
 const PAD = 8;
-const NAME_H = 24;
+const LIST_ROW = 48;
 const OVERSCAN = 3;
+const MODE_KEY = 'to-tex-browser-mode';
 const nf = new Intl.NumberFormat();
 
 type Cat = TextureCategory | 'all';
@@ -48,6 +49,12 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   let cols = 3;
   let tileW = 80;
   let rowH = 104;
+  let mode: 'grid' | 'list' = 'grid';
+  try {
+    if (localStorage.getItem(MODE_KEY) === 'list') mode = 'list';
+  } catch {
+    /* storage blocked */
+  }
   const cleanups: (() => void)[] = [];
 
   // ---- header ----
@@ -74,8 +81,32 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   const fxBtn = h('button', { type: 'button', class: 'icon-btn sm tx-fx-toggle', 'aria-pressed': 'true', 'aria-label': 'Preview effects in thumbnails' }, icon('sparkles'));
   tooltip(fxBtn, 'Preview effects in thumbnails');
 
+  const gridBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(mode === 'grid'), 'aria-label': 'Show as a grid' }, icon('grid-2x2-2'));
+  const listBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(mode === 'list'), 'aria-label': 'Show as a list with names' }, icon('bulletlist'));
+  tooltip(gridBtn, 'Grid');
+  tooltip(listBtn, 'List with names');
+  const setMode = (m: 'grid' | 'list') => {
+    if (m === mode) return;
+    mode = m;
+    gridBtn.setAttribute('aria-pressed', String(m === 'grid'));
+    listBtn.setAttribute('aria-pressed', String(m === 'list'));
+    grid.classList.toggle('is-list', m === 'list');
+    try {
+      localStorage.setItem(MODE_KEY, m);
+    } catch {
+      /* storage blocked */
+    }
+    for (const t of tiles.values()) t.remove();
+    tiles.clear();
+    lastCols = -1;
+    layout();
+    if (active >= 0) reveal(active);
+  };
+  gridBtn.addEventListener('click', () => setMode('grid'));
+  listBtn.addEventListener('click', () => setMode('list'));
+  const status = h('div', { class: 'tx-browser-status' });
   const catBar = h('div', { class: 'tx-cats', role: 'toolbar', 'aria-label': 'Texture categories' });
-  const grid = h('div', { class: 'tx-grid', role: 'listbox', tabIndex: 0, 'aria-label': 'Textures', 'aria-multiselectable': 'false' });
+  const grid = h('div', { class: ['tx-grid', mode === 'list' && 'is-list'], role: 'listbox', tabIndex: 0, 'aria-label': 'Textures', 'aria-multiselectable': 'false' });
   const sizer = h('div', { class: 'tx-grid-sizer' });
   const scroller = h('div', { class: 'tx-grid-scroll scroll' }, sizer, grid);
   const empty = h('div', { class: 'tx-grid-empty', hidden: true });
@@ -86,8 +117,9 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     'section',
     { class: 'panel tx-browser', 'aria-label': 'Texture browser' },
     h('div', { class: 'tx-browser-head' }, search, h('div', { class: 'tx-browser-tools' }, catBar)),
-    h('div', { class: 'tx-browser-bar' }, editedBtn, h('span', { class: 'grow' }), count, fxBtn),
+    h('div', { class: 'tx-browser-bar' }, editedBtn, h('span', { class: 'grow' }), fxBtn, h('span', { class: 'tx-seg' }, gridBtn, listBtn)),
     h('div', { class: 'tx-grid-wrap' }, scroller, empty),
+    status,
     ctxAnchor,
   );
 
@@ -230,7 +262,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   const setThumb = (tile: HTMLElement, img: ImageData) => {
     const c = tile.querySelector('canvas')!;
     paintCanvas(c, img);
-    const box = tileW - 16;
+    const box = mode === 'list' ? 32 : tileW - 12;
     const m = Math.max(img.width, img.height);
     let scale = box / m;
     if (m <= box) scale = Math.max(1, Math.floor(box / m));
@@ -263,11 +295,10 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         id: tileId(i),
         'aria-selected': String(e.path === selected),
         'aria-label': `${e.pretty}${edited ? ', edited' : ''}${e.animated ? ', animated' : ''}`,
-        title: e.id,
         dataset: { index: i, path: e.path },
       },
       h('span', { class: 'tx-tile-img' }, h('canvas', { class: 'tx-thumb-canvas', 'aria-hidden': 'true' })),
-      h('span', { class: 'tx-tile-name' }, e.pretty),
+      h('span', { class: 'tx-tile-text' }, h('span', { class: 'tx-tile-name' }, e.pretty), h('span', { class: 'tx-tile-id' }, e.id)),
       h(
         'span',
         { class: 'tx-tile-badges', 'aria-hidden': 'true' },
@@ -295,9 +326,15 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     const w = scroller.clientWidth;
     if (!w) return false;
     const inner = w - PAD * 2;
-    cols = Math.max(1, Math.floor((inner + GAP) / (MIN_TILE + GAP)));
-    tileW = Math.floor((inner - GAP * (cols - 1)) / cols);
-    rowH = tileW - 8 + NAME_H;
+    if (mode === 'list') {
+      cols = 1;
+      tileW = inner;
+      rowH = LIST_ROW;
+    } else {
+      cols = Math.max(1, Math.floor((inner + GAP) / (MIN_TILE + GAP)));
+      tileW = Math.floor((inner - GAP * (cols - 1)) / cols);
+      rowH = tileW;
+    }
     el.style.setProperty('--tile-w', `${tileW}px`);
     return true;
   }
@@ -340,7 +377,16 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     syncActive();
   }
 
+  const showStatus = (e: TextureEntry | undefined) => {
+    status.replaceChildren(...(e ? [h('strong', null, e.pretty), h('span', null, e.id)] : [count]));
+  };
+  grid.addEventListener('pointerover', (ev) => {
+    const t = (ev.target as HTMLElement).closest<HTMLElement>('.tx-tile');
+    if (t) showStatus(items[Number(t.dataset.index)]);
+  });
+  grid.addEventListener('pointerleave', () => showStatus(undefined));
   const syncActive = () => {
+    showStatus(document.activeElement === grid ? items[active] : undefined);
     if (active >= 0 && tiles.has(active)) grid.setAttribute('aria-activedescendant', tileId(active));
     else grid.removeAttribute('aria-activedescendant');
     for (const [i, t] of tiles) {
@@ -513,6 +559,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     }
   });
 
+  grid.addEventListener('blur', () => showStatus(undefined));
   grid.addEventListener('focus', () => {
     if (active < 0 && items.length) {
       active = Math.max(0, selected ? items.findIndex((e) => e.path === selected) : 0);

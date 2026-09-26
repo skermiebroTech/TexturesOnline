@@ -23,6 +23,7 @@ import { createEffectsPanel } from './effects-panel';
 import { createPackPanel } from './pack-panel';
 import { openExportDialog } from './export-dialog';
 import { plainText } from './mc-text';
+import { packIconImage } from './icon';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pack';
 type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pack';
@@ -132,17 +133,21 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
 
   // ---------------------------------------------------------------- top bar
   const barIcon = h('canvas', { class: 'tx-bar-icon pixelated', width: 32, height: 32 });
+  let iconTimer: ReturnType<typeof setTimeout> | null = null;
   const paintBarIcon = () => {
-    void store
-      .getFull(ICON_KEY)
-      .then((img) => {
-        paintCanvas(barIcon, img);
-        barIcon.parentElement?.classList.remove('is-auto');
-      })
-      .catch(() => barIcon.parentElement?.classList.add('is-auto'));
+    if (iconTimer) clearTimeout(iconTimer);
+    iconTimer = setTimeout(() => {
+      iconTimer = null;
+      void packIconImage(store).then(({ img }) => paintCanvas(barIcon, img));
+    }, 250);
   };
+  cleanups.push(() => iconTimer && clearTimeout(iconTimer));
   const nameInput = h('input', { class: 'tx-name-input', value: proj.name, maxLength: 80, 'aria-label': 'Pack name', spellcheck: false, autocomplete: 'off' });
-  const sizeName = () => nameInput.style.setProperty('--chars', String(Math.max(6, Math.min(32, nameInput.value.length + 1))));
+  const measurer = h('span', { class: 'tx-name-measure', 'aria-hidden': 'true' });
+  const sizeName = () => {
+    measurer.textContent = nameInput.value || 'Untitled pack';
+    if (measurer.isConnected) nameInput.style.width = `${Math.ceil(measurer.getBoundingClientRect().width) + 20}px`;
+  };
   sizeName();
   nameInput.addEventListener('input', () => {
     proj.name = nameInput.value;
@@ -195,8 +200,8 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
     'header',
     { class: 'tx-bar' },
     h('a', { class: 'icon-btn tx-back', href: '#/textures', 'aria-label': 'All texture packs' }, icon('arrow-left')),
-    h('div', { class: 'tx-bar-iconbox checker' }, barIcon, icon('image', { class: 'tx-bar-fallback', size: 16 })),
-    h('div', { class: 'tx-bar-title' }, nameInput, h('span', { class: 'tx-bar-sub' }, badge(versionText(proj), proj.edition === 'java' ? 'green' : 'blue'), saveEl)),
+    h('div', { class: 'tx-bar-iconbox checker' }, barIcon),
+    h('div', { class: 'tx-bar-title' }, nameInput, measurer, h('span', { class: 'tx-bar-sub' }, badge(versionText(proj), proj.edition === 'java' ? 'green' : 'blue'), saveEl)),
     h('span', { class: 'grow' }),
     h('div', { class: 'tx-bar-actions' }, undoBtn, redoBtn, h('span', { class: 'toolbar-sep' }), helpBtn, exportBtn),
   );
@@ -223,7 +228,7 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
 
   const tabbarItems: { v: Mobile; label: string; ic: IconName }[] = [
     { v: 'textures', label: 'Textures', ic: 'bulletlist' },
-    { v: 'editor', label: 'Editor', ic: 'pencil' },
+    { v: 'editor', label: 'Paint', ic: 'pencil' },
     { v: 'preview', label: 'Preview', ic: 'cube' },
     { v: 'effects', label: 'Effects', ic: 'sparkles' },
     { v: 'pack', label: 'Pack', ic: 'settings' },
@@ -246,6 +251,8 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
     h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pack),
   );
   shell.replaceChildren(bar, main, tabbar);
+  sizeName();
+  void document.fonts?.ready.then(() => sizeName());
 
   function notifyVisibility() {
     const phone = isPhone();
@@ -287,6 +294,10 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
   // ---------------------------------------------------------------- store events
   cleanups.push(
     store.events.on('save', (s) => paintSave(s)),
+    store.events.on('effects', () => paintBarIcon()),
+    store.events.on('overrides', ({ path }) => {
+      if (/grass/.test(path)) paintBarIcon();
+    }),
     store.events.on('meta', () => {
       paintBarIcon();
       if (document.activeElement !== nameInput && nameInput.value !== proj.name) {

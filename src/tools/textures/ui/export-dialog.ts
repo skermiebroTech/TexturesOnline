@@ -14,7 +14,9 @@ import { exportTexturePack, type ExportResult } from '../export';
 import { packFileName } from '../project';
 import { plainText } from './mc-text';
 import { paintCanvas } from './thumbs';
-import { ICON_KEY, type TexStore } from './store';
+import type { TexStore } from './store';
+import { packIconImage } from './icon';
+import { matchingPreset } from './effects-panel';
 
 export function openExportDialog(store: TexStore): void {
   const project = store.project;
@@ -35,18 +37,13 @@ export function openExportDialog(store: TexStore): void {
   const title = modal.el.querySelector('.modal-title') as HTMLElement;
 
   const iconCanvas = h('canvas', { class: 'tx-exp-icon pixelated' });
-  void store
-    .getFull(ICON_KEY)
-    .then((img) => {
-      paintCanvas(iconCanvas, img);
-    })
-    .catch(() => iconCanvas.classList.add('is-auto'));
+  void packIconImage(store).then(({ img }) => paintCanvas(iconCanvas, img));
 
   const packHead = () =>
     h(
       'div',
       { class: 'tx-exp-pack' },
-      h('div', { class: 'tx-exp-iconbox checker' }, iconCanvas, icon('image', { class: 'tx-exp-fallback' })),
+      h('div', { class: 'tx-exp-iconbox checker' }, iconCanvas),
       h('div', { class: 'stack', style: { '--gap': '2px', minWidth: '0' } }, h('strong', { class: 'truncate' }, plainText(project.name)), h('span', { class: 'faint small truncate' }, packFileName(project))),
     );
 
@@ -55,6 +52,7 @@ export function openExportDialog(store: TexStore): void {
     title.textContent = 'Export your pack';
     const edited = store.editedCount();
     const fx = project.effects.filter((l) => l.enabled && getEffect(l.type));
+    const preset = matchingPreset(project.effects);
     const target = h('span', null, java ? `Java ${project.version}` : `Bedrock ${project.version === 'latest' ? 'latest' : bedrockDisplayVersion(project.version)}`);
     if (java) {
       void getJavaPackFormat(project.version)
@@ -67,7 +65,7 @@ export function openExportDialog(store: TexStore): void {
       h('div', { class: 'tx-exp-row' }, icon(ic), h('span', { class: 'tx-exp-k' }, label), h('span', { class: 'tx-exp-v' }, value));
     const rows = [
       row('pencil', 'Edited textures', String(edited)),
-      row('sparkles', 'Effects', fx.length ? fx.map((l) => getEffect(l.type)!.label).slice(0, 4).join(', ') + (fx.length > 4 ? ` +${fx.length - 4}` : '') : 'None'),
+      row('sparkles', 'Effects', fx.length ? (preset ? `${preset.label} (${fx.length} effect${fx.length === 1 ? '' : 's'})` : fx.map((l) => getEffect(l.type)!.label).slice(0, 3).join(', ') + (fx.length > 3 ? ` +${fx.length - 3}` : '')) : 'None'),
       row(java ? 'laptop' : 'gamepad', 'Made for', target),
       project.compat && java ? row('arrows-horizontal', 'Also works in', `${project.compat.minVersion} – ${project.compat.maxVersion}`) : null,
       row('grid', 'Resolution', `${project.resolution}×`),

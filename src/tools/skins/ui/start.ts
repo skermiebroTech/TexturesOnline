@@ -230,7 +230,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
             'span',
             { class: 'sk-recent-info' },
             h('span', { class: 'sk-recent-name truncate' }, p.name || 'Untitled'),
-            h('span', { class: 'sk-recent-meta' }, badge(p.model === 'slim' ? 'Slim' : 'Classic', 'blue'), h('span', { class: 'faint' }, timeAgo(p.updatedAt || p.createdAt))),
+            h('span', { class: 'sk-recent-meta truncate' }, `${p.model === 'slim' ? 'Slim' : 'Classic'} · ${timeAgo(p.updatedAt || p.createdAt)}`),
           ),
         ),
         menuBtn,
@@ -368,6 +368,21 @@ export function mountStart(root: HTMLElement): () => void {
     );
 
   const gameBtn = button({ label: 'Choose a default skin', icon: 'users', variant: 'secondary', onClick: () => openDefaultSkinsModal(model) });
+  const examples = h(
+    'div',
+    { class: 'sk-examples' },
+    h('span', { class: 'faint small' }, 'Try'),
+    ['jeb_', 'Dinnerbone', 'Notch'].map((n) => {
+      const b = h('button', { type: 'button', class: 'sk-chip sk-example' }, n);
+      b.addEventListener('click', () => {
+        userInput.value = n;
+        userError.hidden = true;
+        userInput.focus();
+      });
+      return b;
+    }),
+  );
+  const note = (iconName: Parameters<typeof icon>[0], text: string) => h('p', { class: 'sk-import-note' }, icon(iconName), h('span', null, text));
 
   const imports = h(
     'div',
@@ -379,8 +394,16 @@ export function mountStart(root: HTMLElement): () => void {
       "Grab any Java player's current skin.",
       h('div', { class: 'sk-user-row' }, h('div', { class: 'input-with-icon grow' }, icon('user'), userInput), userBtn),
       userError,
+      examples,
+      note('info', 'Java Edition names only. Bedrock gamertags can’t be looked up.'),
     ),
-    importCard('gamepad', 'Steve, Alex & friends', `The nine default skins from the Minecraft ${DEFAULT_JAVA_VERSION} game files.`, h('div', { class: 'sk-game-actions' }, gameBtn)),
+    importCard(
+      'gamepad',
+      'Steve, Alex & friends',
+      `The nine default skins from the Minecraft ${DEFAULT_JAVA_VERSION} game files, in classic or slim.`,
+      note('lock', 'Downloaded once from Mojang’s servers (about 6 MB), then kept on this device.'),
+      h('div', { class: 'sk-game-actions' }, gameBtn),
+    ),
   );
 
   // ---- Recent ----
