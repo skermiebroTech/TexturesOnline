@@ -342,6 +342,29 @@ export default function kit(root: HTMLElement, _ctx: RouteContext): () => void {
             button({ label: 'Confirm', onClick: () => void confirmDialog('Reset texture?', 'Your edits to stone.png will be lost.', 'Reset', true).then((ok) => toast(ok ? 'Confirmed' : 'Cancelled')) }),
             button({ label: 'Prompt', onClick: () => void promptDialog('Rename project', 'Name', 'My Pack').then((v) => v && toast(`Renamed to ${v}`)) }),
             button({
+              label: 'Blocking',
+              onClick: () => {
+                const bar = progressBar();
+                const m = openModal({ title: 'Exporting…', body: h('div', { class: 'stack' }, h('p', null, "This dialog can't be dismissed and closes by itself."), bar), dismissible: false });
+                let f = 0;
+                const t = setInterval(() => {
+                  f += 0.05;
+                  bar.set({ label: 'Writing pack', fraction: Math.min(1, f) });
+                  if (f >= 1) {
+                    clearInterval(t);
+                    m.close();
+                  }
+                }, 150);
+              },
+            }),
+            button({
+              label: 'Toast over dialog',
+              onClick: () => {
+                openModal({ title: 'Pack exported', body: h('p', null, 'Toasts stay clickable above dialogs.'), actions: [{ label: 'Done', variant: 'primary' }] });
+                toast('Deleted "My Pack"', { action: { label: 'Undo delete', onClick: () => toast('Restored "My Pack"', { tone: 'success', duration: 20000 }) } });
+              },
+            }),
+            button({
               label: 'Shortcuts',
               onClick: () =>
                 openShortcutsSheet([

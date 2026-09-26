@@ -162,6 +162,12 @@ body[data-route='shaders'] .topbar {
   }
 }
 
+/* small laptops / tablets in landscape: text-only nav so the bar never overflows */
+@media (max-width: 1120px) {
+  .mainnav .nav-link .icon {
+    display: none;
+  }
+}
 @media (max-width: 900px) {
   .mainnav {
     display: none;
@@ -359,7 +365,8 @@ body[data-route='shaders'] .topbar {
   flex-wrap: wrap;
   margin-top: var(--sp-6);
   padding-top: var(--sp-4);
-  border-top: 2px solid var(--border);
+  /* divider aligned with the text column, not the padded container edge */
+  background: linear-gradient(var(--border), var(--border)) no-repeat var(--gutter) 0 / calc(100% - 2 * var(--gutter)) 2px;
   color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);

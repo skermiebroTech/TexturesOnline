@@ -253,7 +253,9 @@
   border-bottom-width: 4px;
   background: var(--surface-3);
   color: var(--text);
-  white-space: nowrap;
+  /* one piece unless it is wider than the whole line (narrow phones) */
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .ui-path-sep {
   color: var(--text-3);

@@ -24,6 +24,14 @@ function ensureRegion(): HTMLElement {
   return region;
 }
 
+function isPopoverOpen(el: HTMLElement): boolean {
+  try {
+    return el.matches(':popover-open');
+  } catch {
+    return true; // no Popover API: nothing to show
+  }
+}
+
 /** Create the notification live region early (call once at startup). */
 export function initToasts(): void {
   ensureRegion();
@@ -37,8 +45,11 @@ export function initToasts(): void {
 export function syncToastLayer(): void {
   if (!region) return;
   const host = floatingHost();
-  if (!region.isConnected || region.parentElement !== host) host.appendChild(region);
-  if (host !== document.body || region.hasAttribute('popover')) showInTopLayer(region);
+  const moved = !region.isConnected || region.parentElement !== host;
+  if (moved) host.appendChild(region);
+  // (re)showing restarts the toasts' entry animation, so only when needed
+  const topLayer = host !== document.body || region.hasAttribute('popover');
+  if (topLayer && (moved || !isPopoverOpen(region))) showInTopLayer(region);
 }
 
 export interface ToastHandle {

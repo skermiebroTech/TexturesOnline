@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { groupVersions, listVersionName, shortVersionName } from '../../src/ui/format';
+import { describeAccept, fileMatchesAccept, groupVersions, listVersionName, shortVersionName } from '../../src/ui/format';
 import { parseHexWhileTyping } from '../../src/ui/color';
 import { isRestoringScroll } from '../../src/core/router';
 import type { GameVersion } from '../../src/core/types';
@@ -71,6 +71,19 @@ test('parseHexWhileTyping only applies complete colours', () => {
   assert.equal(parseHexWhileTyping('#12345680', false), null, 'no alpha digits without alpha');
   assert.deepEqual(parseHexWhileTyping('#abcdef', false), [0xab, 0xcd, 0xef, 255]);
   assert.equal(parseHexWhileTyping('#12345g', true), null);
+});
+
+test('file accept checks fall back to the extension when the browser gives no type', () => {
+  assert.ok(fileMatchesAccept({ name: 'skin.PNG', type: '' }, 'image/png'));
+  assert.ok(fileMatchesAccept({ name: 'photo.jpeg', type: '' }, 'image/*'));
+  assert.ok(!fileMatchesAccept({ name: 'notes.txt', type: '' }, 'image/*'));
+  assert.ok(!fileMatchesAccept({ name: 'noext', type: '' }, 'image/png'));
+  assert.ok(fileMatchesAccept({ name: 'client.jar', type: '' }, '.jar,application/java-archive'));
+  assert.equal(describeAccept('image/png'), 'a PNG image');
+  assert.equal(describeAccept('image/*'), 'an image');
+  assert.equal(describeAccept('image/png,image/jpeg'), 'a PNG image or a JPEG image');
+  assert.equal(describeAccept('application/x-unknown'), 'a supported file');
+  assert.equal(describeAccept('.zip,.mcpack'), '.zip or .mcpack files');
 });
 
 test('router is not restoring scroll outside a render', () => {

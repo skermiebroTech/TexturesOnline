@@ -52,7 +52,10 @@ export function dropzone(opts: {
       el.setError(`"${files[0].name}" can't be used here. Please choose ${describeAccept(opts.accept)}.`);
       return;
     }
-    el.setError(ok.length < files.length ? `Skipped ${files.length - ok.length} unsupported file(s).` : null);
+    const notes: string[] = [];
+    if (ok.length < files.length) notes.push(`Skipped ${files.length - ok.length} unsupported file${files.length - ok.length === 1 ? '' : 's'}.`);
+    if (!opts.multiple && ok.length > 1) notes.push(`One file at a time: using "${ok[0].name}".`);
+    el.setError(notes.length ? notes.join(' ') : null);
     opts.onFiles(picked);
   };
 

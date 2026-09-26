@@ -86,6 +86,19 @@ export function shortDate(iso?: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
+// Some drag sources and platforms report no MIME type; fall back to the file extension.
+const TYPE_BY_EXT: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  bmp: 'image/bmp',
+  zip: 'application/zip',
+  jar: 'application/java-archive',
+  json: 'application/json',
+};
+
 /** Does a file match an accept string like '.zip,.mcpack,image/*'? Empty accept = anything. */
 export function fileMatchesAccept(file: { name: string; type: string }, accept: string): boolean {
   const tokens = accept
@@ -94,7 +107,8 @@ export function fileMatchesAccept(file: { name: string; type: string }, accept: 
     .filter(Boolean);
   if (!tokens.length) return true;
   const name = file.name.toLowerCase();
-  const type = (file.type || '').toLowerCase();
+  const ext = name.includes('.') ? name.slice(name.lastIndexOf('.') + 1) : '';
+  const type = (file.type || TYPE_BY_EXT[ext] || '').toLowerCase();
   return tokens.some((t) => {
     if (t.startsWith('.')) return name.endsWith(t);
     if (t.endsWith('/*')) return type.startsWith(t.slice(0, -1));
@@ -102,12 +116,26 @@ export function fileMatchesAccept(file: { name: string; type: string }, accept: 
   });
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  'image/*': 'an image',
+  'image/png': 'a PNG image',
+  'image/jpeg': 'a JPEG image',
+  'application/zip': 'a .zip file',
+  'application/json': 'a .json file',
+};
+
 export function describeAccept(accept: string): string {
-  const exts = accept
+  const tokens = accept
     .split(',')
     .map((t) => t.trim())
-    .filter((t) => t.startsWith('.'));
-  if (!exts.length) return 'this kind of file';
+    .filter(Boolean);
+  const exts = tokens.filter((t) => t.startsWith('.'));
+  if (!exts.length) {
+    const labels = tokens.map((t) => TYPE_LABEL[t.toLowerCase()]).filter(Boolean);
+    if (labels.length === 1) return labels[0];
+    if (labels.length > 1) return `${labels.slice(0, -1).join(', ')} or ${labels[labels.length - 1]}`;
+    return 'a supported file';
+  }
   if (exts.length === 1) return `a ${exts[0]} file`;
   return `${exts.slice(0, -1).join(', ')} or ${exts[exts.length - 1]} files`;
 }
