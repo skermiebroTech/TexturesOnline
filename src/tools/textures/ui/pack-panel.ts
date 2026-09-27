@@ -18,7 +18,7 @@ import { buildPackMcmetaForVersions, describePackForGame } from '../../../editio
 import { effectiveCompat, renderIsoCube } from '../export';
 import { RESOLUTIONS, newBedrockUuids } from '../project';
 import { firstSquare, getFrame, planCube, transparentShare } from './meta';
-import { formattedText, FORMAT_CODES } from './mc-text';
+import { formattedText, plainText, FORMAT_CODES } from './mc-text';
 import { paintCanvas } from './thumbs';
 import { packIconImage } from './icon';
 import { ICON_KEY, type TexStore } from './store';
@@ -393,13 +393,15 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     variant: 'danger',
     size: 'sm',
     onClick: async () => {
-      const ok = await confirmDialog('Delete this pack?', `“${project.name}” and everything you painted in it will be removed from this browser. Export it first if you want to keep a copy.`, 'Delete pack', true);
+      const ok = await confirmDialog('Delete this pack?', `“${plainText(project.name)}” and everything you painted in it will be removed from this browser. Export it first if you want to keep a copy.`, 'Delete pack', true);
       if (!ok) return;
       try {
+        await store.discard();
         await deleteProject(project.id);
-        toast(`Deleted “${project.name}”`, { tone: 'info' });
+        toast(`Deleted “${plainText(project.name)}”`, { tone: 'info' });
         navigate('/textures');
       } catch {
+        store.revive();
         toast("Couldn't delete the pack.", { tone: 'error' });
       }
     },
@@ -441,6 +443,12 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     store.events.on('meta', () => {
       void paintIcon();
       paintStats();
+      // renamed from the top bar
+      const nameEl = (nameField as HTMLElement & { input?: HTMLInputElement }).input;
+      if (nameEl && document.activeElement !== nameEl && nameEl.value.trim() !== project.name) {
+        nameField.setValue(project.name);
+        paintPreview();
+      }
       if (java) {
         if (descTimer) clearTimeout(descTimer);
         descTimer = setTimeout(() => void renderCompat(), 400);

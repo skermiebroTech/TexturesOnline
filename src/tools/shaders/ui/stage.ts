@@ -254,7 +254,8 @@ export function createStage(opts: {
   }
 
   async function capture(): Promise<Blob | null> {
-    if (!preview) return null;
+    // hidden (e.g. another tab on phones): the canvas has no useful size
+    if (!preview || host.clientWidth < 16 || host.clientHeight < 16) return null;
     const was = comparing;
     if (was) {
       comparing = false;

@@ -4,7 +4,7 @@
 import { createLimiter } from '../../../core/net';
 import { resizeSmooth } from '../../../core/image';
 import { applyEffects, effectsApply } from '../effects';
-import { displayAlphaData, firstSquare, type TextureEntry } from './meta';
+import { displayAlphaData, firstSquare, isBedrockStrip, type TextureEntry } from './meta';
 import type { TexStore } from './store';
 
 const MAX_THUMB = 128;
@@ -120,7 +120,7 @@ export class ThumbService {
     if (hit) return hit;
     try {
       let img = await this.store.getFull(e.path);
-      if (e.animated) img = firstSquare(img);
+      if (e.animated || isBedrockStrip(e, img)) img = firstSquare(img);
       if (e.ext === 'tga') img = displayAlphaData(img, e.category);
       if (img.width > 256 || img.height > 256) {
         const s = 256 / Math.max(img.width, img.height);

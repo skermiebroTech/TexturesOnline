@@ -121,6 +121,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   type SaveState = 'saved' | 'saving' | 'dirty' | 'error';
   const saveEl = h('span', { class: 'sh-save', role: 'status', 'aria-live': 'polite' });
   const paintSave = (s: SaveState) => {
+    if (saveEl.dataset.state === s) return;
     saveEl.dataset.state = s;
     const [ic, text] =
       s === 'saving' ? (['loader', 'Saving…'] as const) : s === 'dirty' ? (['clock', 'Unsaved changes'] as const) : s === 'error' ? (['warning', 'Not saved'] as const) : (['check', 'Saved'] as const);
@@ -258,6 +259,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
       project.name = v;
       header.textContent = v.trim() || 'My shaders';
       pack.setName(v);
+      setTitle();
       markDirty();
     },
     onDescription: (v) => {
@@ -297,6 +299,8 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   });
   const editor = h('div', { class: ['sh-editor', `is-${target.id}`] }, bar, layout, live);
   root.replaceChildren(editor);
+  const setTitle = () => (document.title = `${project.name.trim() || 'My shaders'} · Shader Maker — TexturesOnline`);
+  setTitle();
 
   // ---------------------------------------------------------------- state changes
   const paintHistory = () => {
@@ -393,6 +397,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     project.name = cleanName(n) || project.name;
     header.textContent = project.name;
     pack.setName(project.name);
+    setTitle();
     void saveNow();
   }
 
@@ -433,7 +438,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
 
   // ---------------------------------------------------------------- images
   async function packIcon(size: number): Promise<Uint8Array> {
-    const shot = await stage.capture();
+    const shot = (await stage.capture()) ?? (project.thumb instanceof Blob && project.thumb.size ? project.thumb : null);
     if (shot) {
       try {
         return await iconFromScreenshot(shot, size);

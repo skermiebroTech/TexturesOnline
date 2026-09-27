@@ -12,12 +12,17 @@ import { confirmDialog } from '../../../ui/modal';
 import { scaleForResolution } from '../project';
 import {
   CATEGORY_INFO,
-  alphaDataKind,
+  displayAlphaData,
   firstSquare,
   frameRect,
   getFrame,
+  hasAlphaData,
+  isBedrockStrip,
+  isTintMaskBlock,
+  opaqueCopy,
   putFrame,
   readAnimInfo,
+  stripLayout,
   type AnimInfo,
   type RGBA,
   type TextureEntry,
@@ -144,15 +149,29 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       { value: 'alpha', label: 'Mask' },
       { value: 'rgba', label: 'Both' },
     ],
-    onChange: (v) => pc?.setChannelMode(v),
+    onChange: (v) => {
+      pc?.setChannelMode(v);
+      if (pc) dock.setPalette(paletteSource(pc.getImage()));
+    },
   });
-  const maskBanner = h(
-    'div',
-    { class: 'tx-banner', hidden: true, role: 'note' },
-    icon('info'),
-    h('span', { class: 'grow' }, 'Transparency is a colour mask here. Paint the colour and the mask separately:'),
-    channelSeg,
-  );
+  const bannerText = h('span', { class: 'grow' });
+  const maskBanner = h('div', { class: 'tx-banner', hidden: true, role: 'note' }, icon('info'), bannerText, channelSeg);
+  function paintBanner(t: OpenTexture) {
+    maskBanner.hidden = !t.alphaData;
+    if (!t.alphaData) return;
+    const tint = !!t.entry && isTintMaskBlock(t.full, t.entry.category);
+    bannerText.replaceChildren(
+      tint
+        ? 'The see-through part marks where the grass colour goes in the game. '
+        : 'Faint or see-through pixels here are a mask the game uses (dye colour, glow or tint). ',
+      h('strong', null, 'Colour'),
+      ' paints what you see and keeps the mask; ',
+      h('strong', null, 'Mask'),
+      ' edits the mask itself.',
+    );
+  }
+  /** Colours to offer: in colour-only mode every pixel counts, even the see-through ones. */
+  const paletteSource = (img: ImageData): ImageData => (cur?.alphaData && pc?.channelMode === 'rgb' ? opaqueCopy(img) : img);
 
   // ---------------------------------------------------------------- tool rail
   const railButtons = new Map<Tool, HTMLButtonElement>();
@@ -361,7 +380,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (PAINT_TOOLS.has(pc.tool)) dock.noteUsed(pc.color as RGBA);
     paintHeader();
     if (paletteTimer) clearTimeout(paletteTimer);
-    paletteTimer = setTimeout(() => dock.setPalette(pc ? pc.getImage() : null), 400);
+    paletteTimer = setTimeout(() => dock.setPalette(pc ? paletteSource(pc.getImage()) : null), 400);
   }
 
   // ---------------------------------------------------------------- header paint
@@ -373,7 +392,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       headSub.textContent = 'Choose a texture from the list';
       return;
     }
-    const f = t.anim ? getFrame(t.full, t.anim, 0) : t.full;
+    const f0 = t.anim ? getFrame(t.full, t.anim, 0) : firstSquare(t.full);
+    const f = t.alphaData && t.entry ? displayAlphaData(f0, t.entry.category) : f0;
     paintCanvas(headThumb, f);
     headTitle.textContent = t.name;
     const size = `${t.full.width}×${t.full.height}`;
@@ -382,7 +402,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     headSub.title = t.key;
     const edited = t.key === ICON_KEY ? !!project.icon : store.isEdited(t.key);
     if (edited && t.key !== ICON_KEY) headBadges.append(badge('Edited', 'green'));
-    if (t.anim) headBadges.append(badge('Animated', 'blue'));
+    if (t.anim && !t.anim.still) headBadges.append(badge('Animated', 'blue'));
     if (t.upscaled) {
       const b = badge(`Upscaled to ${project.resolution}×`, 'purple');
       tooltip(b, `Vanilla is ${t.vanilla?.width}×${t.vanilla?.height}. Your pack is ${project.resolution}×, so it was scaled up for extra detail. It is saved at this size when you edit it.`);
@@ -425,12 +445,9 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       full = scaleForResolution(vanilla, project.resolution, !!entry?.animated && vanilla.height > vanilla.width);
       upscaled = full.width !== vanilla.width;
     }
-    const anim = entry ? await readAnimInfo(project, store.assets, entry, full, vanilla?.width ?? null) : null;
-    let alphaData = false;
-    if (project.edition === 'bedrock' && /\.tga$/i.test(path)) {
-      const k = alphaDataKind(full);
-      alphaData = k.hidden > 0.02 || k.faint > 0;
-    }
+    let anim = entry ? await readAnimInfo(project, store.assets, entry, full, vanilla?.width ?? null) : null;
+    if (!anim && entry && project.edition === 'bedrock' && isBedrockStrip(entry, full)) anim = stripLayout(full);
+    const alphaData = project.edition === 'bedrock' && /\.tga$/i.test(path) && hasAlphaData(full);
     return { key: path, entry, name: entry?.pretty ?? path, full, vanilla, upscaled, anim, frame: 0, alphaData };
   }
 
@@ -463,10 +480,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     const frameImg = getFrame(t.full, t.anim, 0);
     const canvas = ensureCanvas(frameImg);
     canvas.setImage(frameImg, { resetHistory: true, resetView: true });
-    canvas.setChannelMode(t.alphaData ? (alphaDataKind(t.full).hidden > 0.3 || alphaDataKind(t.full).faint > 0 ? 'rgb' : 'rgba') : 'rgba');
-    maskBanner.hidden = !t.alphaData;
+    // Alpha that is data (tint / dye / glow masks): paint colours by default so the mask survives.
+    canvas.setChannelMode(t.alphaData ? 'rgb' : 'rgba');
+    paintBanner(t);
     frames.set(t.full, t.anim, 0);
-    dock.setPalette(frameImg);
+    dock.setPalette(paletteSource(frameImg));
     paintHeader();
     opts.onHistory();
     opts.onOpened(t);
@@ -486,7 +504,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     t.frame = i;
     const f = getFrame(t.full, t.anim, i);
     pc.setImage(f, { resetHistory: true, resetView: false });
-    dock.setPalette(f);
+    dock.setPalette(paletteSource(f));
     opts.onHistory();
     if (comparing) drawCompare();
   }

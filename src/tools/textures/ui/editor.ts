@@ -35,9 +35,8 @@ function versionText(p: TexturePackProject): string {
   return p.edition === 'java' ? `Java ${p.version}` : `Bedrock ${p.version === 'latest' ? 'latest' : p.version === 'preview' ? 'preview' : bedrockDisplayVersion(p.version)}`;
 }
 
-export async function renderEditor(root: HTMLElement, id: string): Promise<() => void> {
+export async function renderEditor(root: HTMLElement, id: string, life: AbortSignal): Promise<() => void> {
   const cleanups: (() => void)[] = [];
-  let alive = true;
   const shell = h('div', { class: 'tx-editor accent-green' });
   root.appendChild(shell);
 
@@ -51,7 +50,7 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
   } catch {
     project = undefined;
   }
-  if (!alive) return () => undefined;
+  if (life.aborted) return () => undefined;
   if (!project) {
     shell.replaceChildren(
       h(
@@ -77,13 +76,15 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
 
   // ---------------------------------------------------------------- vanilla assets
   const controller = new AbortController();
-  cleanups.push(() => controller.abort());
+  const onLeave = () => controller.abort();
+  life.addEventListener('abort', onLeave);
+  cleanups.push(() => {
+    life.removeEventListener('abort', onLeave);
+    controller.abort();
+  });
   const assets = await loadVanilla(proj, shell, loadingView, controller.signal);
-  if (!assets || !alive) {
-    return () => {
-      alive = false;
-      cleanups.forEach((f) => f());
-    };
+  if (!assets || life.aborted) {
+    return () => cleanups.forEach((f) => f());
   }
 
   // ---------------------------------------------------------------- state + panels
@@ -417,7 +418,6 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
   }
 
   return () => {
-    alive = false;
     void store.flush();
     cleanups.forEach((f) => f());
     browser.destroy();
@@ -442,8 +442,15 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
         onCancel: () => navigate('/textures'),
       });
       wrap.replaceChildren(
-        h('div', { class: 'tx-assets-head' }, h('span', { class: 'eyebrow' }, icon('image'), plainText(p.name)), h('p', { class: 'muted' }, `${versionText(p)} · ${p.resolution}×`)),
+        h(
+          'div',
+          { class: 'tx-assets-head' },
+          h('span', { class: 'eyebrow' }, icon('image'), 'Texture pack'),
+          h('h1', { class: 'tx-assets-name truncate' }, plainText(p.name) || 'Untitled pack'),
+          h('p', { class: 'muted' }, `${versionText(p)} · ${p.resolution}×`),
+        ),
         panel,
+        h('a', { class: 'btn btn-ghost btn-sm tx-assets-back', href: '#/textures' }, icon('arrow-left'), h('span', { class: 'btn-label' }, 'All texture packs')),
       );
       host.replaceChildren(wrap);
     };
@@ -453,6 +460,8 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
 
     let resolveDone!: (a: AssetIndex | null) => void;
     const done = new Promise<AssetIndex | null>((r) => (resolveDone = r));
+    // Leaving the page (even from the error state, where nothing is loading) ends the wait.
+    signal.addEventListener('abort', () => resolveDone(null), { once: true });
     let attemptId = 0;
     async function attempt(jarFile?: File) {
       const my = ++attemptId;

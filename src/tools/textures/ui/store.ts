@@ -41,6 +41,7 @@ export class TexStore {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private flushing: Promise<void> | null = null;
   private again = false;
+  private discarded = false;
   private vanillaCache = new Map<string, Promise<ImageData | null>>();
 
   constructor(
@@ -170,10 +171,12 @@ export class TexStore {
   }
 
   hasUnsaved(): boolean {
+    if (this.discarded) return false;
     return this.metaDirty || this.pending.size > 0 || !!this.pendingIcon || this.timer !== null || this.flushing !== null;
   }
 
   private schedule(): void {
+    if (this.discarded) return;
     this.setState('dirty');
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
@@ -182,8 +185,30 @@ export class TexStore {
     }, SAVE_DELAY);
   }
 
+  /**
+   * Stops saving for good (the project is being deleted): drops pending edits and waits for a save
+   * that is already running, so it can't write the project back after it's gone.
+   */
+  async discard(): Promise<void> {
+    this.discarded = true;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    this.pending.clear();
+    this.pendingIcon = null;
+    this.metaDirty = false;
+    await this.flushing?.catch(() => undefined);
+  }
+
+  /** Undoes discard() (deleting failed): saves the project again. */
+  revive(): void {
+    if (!this.discarded) return;
+    this.discarded = false;
+    this.touch();
+  }
+
   /** Saves everything now. Never rejects; failures set the 'error' state. */
   flush(): Promise<void> {
+    if (this.discarded) return Promise.resolve();
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -212,7 +237,10 @@ export class TexStore {
     try {
       const batch = [...this.pending.entries()];
       for (const [path, img] of batch) {
+        const stamp = this.stamp(path);
         await setOverride(this.project, path, img);
+        // Reset to vanilla while this was encoding: don't bring the old pixels back.
+        if (this.stamp(path) !== stamp && !this.pending.has(path)) removeOverride(this.project, path);
         if (this.pending.get(path) === img) this.pending.delete(path);
       }
       if (this.pendingIcon) {
@@ -221,6 +249,7 @@ export class TexStore {
         if (this.pendingIcon === icon) this.pendingIcon = null;
       }
       this.metaDirty = false;
+      if (this.discarded) return;
       await saveProject(this.project);
       this.lastError = '';
       this.setState(this.pending.size || this.pendingIcon || this.metaDirty ? 'dirty' : 'saved');

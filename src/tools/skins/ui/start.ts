@@ -276,11 +276,11 @@ export function mountStart(root: HTMLElement): () => void {
         const card = h(
           'button',
           { type: 'button', class: ['sk-starter', `sk-starter-${s.id}`], dataset: { starter: s.id } },
-          h('span', { class: 'sk-starter-stage' }, figureCanvas(img, model), s.badge ? badge(s.badge, 'green') : null),
+          h('span', { class: 'sk-starter-stage' }, figureCanvas(img, model)),
           h(
             'span',
             { class: 'sk-starter-text' },
-            h('span', { class: 'sk-starter-name' }, s.name),
+            h('span', { class: 'sk-starter-name' }, h('span', null, s.name), s.badge ? badge(s.badge, 'green') : null),
             h('span', { class: 'sk-starter-desc' }, s.description),
           ),
         );

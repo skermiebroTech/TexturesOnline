@@ -23,6 +23,11 @@ export function openExportDialog(store: TexStore): void {
   const java = project.edition === 'java';
   let controller: AbortController | null = null;
   let result: ExportResult | null = null;
+  let dismissed = false;
+  const stop = () => {
+    dismissed = true;
+    controller?.abort();
+  };
 
   const body = h('div', { class: 'tx-export' });
   const footer = h('div', { class: 'modal-footer tx-export-foot' });
@@ -31,9 +36,18 @@ export function openExportDialog(store: TexStore): void {
     body,
     width: 560,
     class: 'tx-export-modal',
-    onClose: () => controller?.abort(),
+    onClose: stop,
   });
   modal.el.appendChild(footer);
+  // The dialog finishes closing on a timer, and a running export can hold timers back until it ends.
+  // Stop the export as soon as the dialog starts closing (Esc, close button, backdrop, navigation).
+  const closing = new MutationObserver(() => {
+    if (modal.el.classList.contains('closing') || !modal.el.isConnected) {
+      closing.disconnect();
+      stop();
+    }
+  });
+  closing.observe(modal.el, { attributes: true, attributeFilter: ['class'] });
   const title = modal.el.querySelector('.modal-title') as HTMLElement;
 
   const iconCanvas = h('canvas', { class: 'tx-exp-icon pixelated' });
@@ -95,18 +109,23 @@ export function openExportDialog(store: TexStore): void {
     const cancel = button({ label: 'Cancel', variant: 'secondary', onClick: () => controller?.abort() });
     footer.replaceChildren(cancel);
     cancel.focus();
+    const signal = controller.signal;
     try {
       await store.flush();
-      result = await exportTexturePack(project, store.assets, { signal: controller.signal, onProgress: (p) => bar.set(p) });
+      if (signal.aborted) throw new DOMException('Export cancelled', 'AbortError');
+      result = await exportTexturePack(project, store.assets, { signal, onProgress: (p) => bar.set(p) });
       controller = null;
+      // Bedrock exports bump the pack version: keep it
       store.touch('meta');
       void store.flush();
+      if (dismissed) return;
       saveBlob(result.blob, result.filename);
       success(result);
     } catch (err) {
       controller = null;
-      if (isAbortError(err)) {
-        if (modal.el.isConnected) void summary();
+      if (dismissed) return;
+      if (isAbortError(err) || signal.aborted) {
+        void summary();
         return;
       }
       console.error(err);

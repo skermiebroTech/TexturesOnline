@@ -626,7 +626,6 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   // =============================================================================================
   // Layout
 
-  let layoutReady = false;
   const layout = editorLayout({
     left,
     center,
@@ -636,7 +635,6 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     initial: 'center',
     onPanelChange: (p: EditorPanel) => {
       if (p === 'center') requestAnimationFrame(() => pc?.redraw());
-      else if (layoutReady) setPref('side', p);
     },
   });
   // Tablets show one side panel next to the canvas: it opens on the live 3D view, and the other tab
@@ -648,8 +646,14 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   if (sideLeftIcon) setIcon(sideLeftIcon, 'brush');
   layout.show(prefs.side);
   layout.show('center');
-  layoutReady = true;
+  // Remember the side panel (tablet tabs and phone tabs both set data-side).
+  const sideObserver = new MutationObserver(() => {
+    const side = layout.dataset.side;
+    if ((side === 'left' || side === 'right') && side !== prefs.side) setPref('side', side);
+  });
+  sideObserver.observe(layout, { attributes: true, attributeFilter: ['data-side'] });
   const editorRoot = h('div', { class: 'sk-editor' }, bar, layout);
+  disposers.push(() => sideObserver.disconnect());
   root.append(editorRoot);
 
   // =============================================================================================
@@ -858,10 +862,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const lockReason = (r: FaceRect): string | null => {
     if (!hoverPixel || mask[hoverPixel.y * 64 + hoverPixel.x]) return null;
     if (prefs.layers !== 'both' && r.layer !== prefs.layers) {
-      return `Locked: you are painting the ${prefs.layers === 'base' ? 'base' : 'outer'} layer (press 3 for both)`;
+      return `Locked: painting the ${prefs.layers} layer only (press 3 for both)`;
     }
     const open = [...(prefs.mirror ? withMirrorParts(locked) : locked)].map((p) => PART_INFO[p].label);
-    return open.length ? `Locked: painting only inside ${open.join(', ')}` : 'Locked';
+    return open.length ? `Locked: only ${open.join(', ')} can be painted` : 'Locked';
   };
   const updateHoverUi = () => {
     if (hoverRect) {

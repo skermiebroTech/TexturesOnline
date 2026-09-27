@@ -83,7 +83,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 600px;
+  max-width: 640px;
 }
 .sk-hero h1 {
   font-size: var(--fs-2xl);
@@ -181,12 +181,6 @@
   border-bottom: 2px solid var(--border);
   background: var(--sk-stage-bg);
 }
-.sk-starter-stage .badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  box-shadow: var(--shadow-1);
-}
 .sk-starter-stage .sk-figure {
   transition: transform var(--dur-3) var(--ease-out);
 }
@@ -202,8 +196,9 @@
 .sk-starter-name {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px 8px;
   font-weight: 700;
 }
 .sk-starter-desc {
@@ -723,7 +718,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: min(440px, calc(100% - 8px));
+  max-width: min(400px, calc(100% - 8px));
   padding: 4px 10px 6px 8px;
   border: 2px solid var(--border-strong);
   border-radius: var(--r-sm);
@@ -743,12 +738,19 @@
   display: flex;
   flex-direction: column;
 }
+.sk-tip-text {
+  min-width: 0;
+}
 .sk-tip-lock {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   margin: 0 0 -2px -4px;
   color: var(--gold);
+  white-space: normal;
+}
+.sk-tip-lock .icon {
+  margin-top: calc((var(--lh-sm) - 24px) / 2);
 }
 .sk-tip.is-locked {
   border-color: color-mix(in srgb, var(--gold) 55%, var(--border-strong));

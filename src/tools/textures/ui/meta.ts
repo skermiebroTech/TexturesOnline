@@ -114,6 +114,8 @@ export interface AnimInfo {
   frametime: number;
   /** Explicit playback order (index + ticks), when the .mcmeta lists frames */
   sequence: { index: number; time: number }[];
+  /** A plain strip of frames the game doesn't animate (shown frame by frame for easier painting) */
+  still?: boolean;
 }
 
 function num(v: unknown): number | undefined {
@@ -214,7 +216,20 @@ export async function readAnimInfo(project: TexturePackProject, assets: AssetInd
   }
   const stem = entry.path.replace(/\.(png|tga)$/i, '');
   const ticks = (await bedrockFlipbooks(assets)).get(stem);
+  if (ticks === undefined && !entry.animated) return null;
   return animLayout(img.width, img.height, { frametime: ticks ?? 1 });
+}
+
+/** A tall strip of square frames (e.g. an unused Bedrock water strip): browse it frame by frame. */
+export function stripLayout(img: ImageData): AnimInfo | null {
+  if (img.height < img.width * 2 || img.height % img.width) return null;
+  const a = animLayout(img.width, img.height, { frametime: 1 });
+  return a && { ...a, still: true };
+}
+
+/** Bedrock ships some plain vertical strips (blocks/items) that aren't in the flipbook list. */
+export function isBedrockStrip(entry: { path: string; category: TextureCategory; animated?: boolean }, img: { width: number; height: number }): boolean {
+  return !entry.animated && entry.path.startsWith('textures/') && (entry.category === 'block' || entry.category === 'item') && img.height >= img.width * 2 && img.height % img.width === 0;
 }
 
 export function frameRect(a: AnimInfo, i: number): { x: number; y: number; w: number; h: number } {
@@ -316,31 +331,62 @@ export function transparentShare(img: ImageData): number {
   return n / (img.width * img.height);
 }
 
-/** Bedrock alpha-as-data detection: hidden colour under alpha 0, or faint mask alpha values. */
-export function alphaDataKind(img: ImageData): { hidden: number; faint: number } {
+/**
+ * Bedrock alpha-as-data detection. `hidden`: share of fully transparent pixels that keep a colour;
+ * `varied`: that hidden colour is real art (several colours, like the dirt under grass_side's tint
+ * mask) rather than the flat matte most TGA cut-outs carry; `faint`: share of faint mask values
+ * (dye / glow masks, alpha 1-23).
+ */
+export function alphaDataKind(img: ImageData): { hidden: number; faint: number; varied: boolean } {
   const d = img.data;
   let hidden = 0;
   let faint = 0;
+  const colours = new Set<number>();
   for (let i = 0; i < d.length; i += 4) {
     const a = d[i + 3];
-    if (a === 0 && (d[i] | d[i + 1] | d[i + 2]) !== 0) hidden++;
-    else if (a > 0 && a < 24) faint++;
+    if (a === 0) {
+      const rgb = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
+      if (rgb !== 0) {
+        hidden++;
+        if (colours.size < 3) colours.add(rgb);
+      }
+    } else if (a < 24) faint++;
   }
-  const total = img.width * img.height;
-  return { hidden: hidden / total, faint: faint / total };
+  const total = img.width * img.height || 1;
+  return { hidden: hidden / total, faint: faint / total, varied: colours.size >= 3 };
+}
+
+/** Whether a Bedrock texture's alpha channel carries data the painter must not wipe out by accident. */
+export function hasAlphaData(img: ImageData): boolean {
+  const k = alphaDataKind(img);
+  return k.faint > 0 || (k.varied && k.hidden > 0.02);
+}
+
+/** A block whose transparency is the biome tint mask (grass_side): the game draws it fully opaque. */
+export function isTintMaskBlock(img: ImageData, category: TextureCategory): boolean {
+  const k = alphaDataKind(img);
+  return category === 'block' && k.varied && k.hidden > 0.3;
 }
 
 /**
- * How Bedrock shows a texture whose alpha is data: blocks are opaque (alpha is only the tint mask),
- * faint dye / emissive mask values are visible pixels. Returns the input when nothing needs changing.
+ * How Bedrock shows a texture whose alpha is data: tint-mask blocks are opaque (alpha is only the
+ * mask), faint dye / emissive mask values are visible pixels. Returns the input when nothing needs changing.
  */
 export function displayAlphaData(img: ImageData, category: TextureCategory): ImageData {
   const k = alphaDataKind(img);
-  const block = category === 'block' && k.hidden > 0.3;
+  const block = category === 'block' && k.varied && k.hidden > 0.3;
   if (!block && k.faint === 0) return img;
   const out = new ImageData(new Uint8ClampedArray(img.data), img.width, img.height);
   const d = out.data;
   for (let i = 3; i < d.length; i += 4) if (block || d[i] > 0) d[i] = 255;
+  return out;
+}
+
+/** Every pixel fully opaque (palette extraction for colour-only painting). */
+export function opaqueCopy(img: ImageData): ImageData {
+  const out = new ImageData(new Uint8ClampedArray(img.data), img.width, img.height);
+  const d = out.data;
+  for (let i = 3; i < d.length; i += 4) d[i] = 255;
   return out;
 }
 
