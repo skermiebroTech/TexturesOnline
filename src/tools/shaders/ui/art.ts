@@ -180,24 +180,47 @@ export const TARGET_SCENES: Record<ShaderTarget, SceneStyle> = {
   },
 };
 
-/** Preset card art from its two swatch colours. */
-export function presetSceneSvg(swatch: [string, string]): string {
+/**
+ * Preset art: the two swatch colours as a diagonal gradient with a pixel sun, hills and a tree.
+ * `height` is the viewBox height in pixel units (48 wide): 12 for thin strips, 21 for cards.
+ */
+export function presetSceneSvg(swatch: [string, string], height = 21): string {
+  const id = `ps${++artId}`;
+  const VH = Math.max(10, Math.round(height));
   const a = hex(swatch[0]);
   const b = hex(swatch[1]);
   const lum = (c: RGB) => (c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11) / 255;
-  const dark = lum(a) < 0.18 && lum(b) < 0.5;
-  const ground = mix(a, [20, 24, 30], 0.55);
-  return sceneSvg({
-    skyTop: css(a),
-    skyBottom: css(b),
-    sun: { x: 36, y: 9, color: css(mix(b, [255, 255, 255], 0.55)), size: 4 },
-    grass: css(mix(mix(b, a, 0.35), [40, 140, 60], 0.35)),
-    dirt: css(ground),
-    water: css(mix(a, [40, 110, 200], 0.4)),
-    leaves: css(mix(mix(b, a, 0.5), [30, 110, 50], 0.3)),
-    light: dark ? 0.8 : 0.92,
-    stars: dark,
-  });
+  const light = lum(mix(a, b, 0.5)) > 0.62;
+  const sun = mix(lum(b) > lum(a) ? b : a, [255, 255, 255], 0.6);
+  const scale = VH / 30;
+  const far = HILLS.map((hh) => Math.round((hh - 8) * scale * 1.1));
+  const near = GROUND.map((gh) => Math.max(2, Math.round((gh - 3) * scale * 0.9)));
+  let farPath = `M0 ${VH}`;
+  far.forEach((hh, x) => (farPath += ` L${x} ${VH - hh} L${x + 1} ${VH - hh}`));
+  farPath += ` L${W} ${VH} Z`;
+  let nearPath = `M0 ${VH}`;
+  near.forEach((gh, x) => (nearPath += ` L${x} ${VH - gh} L${x + 1} ${VH - gh}`));
+  nearPath += ` L${W} ${VH} Z`;
+  const shade = `rgb(0 0 0 / ${light ? 0.22 : 0.34})`;
+  const ty = VH - near[8];
+  const sunSize = Math.max(2, Math.round(VH / 5));
+  const sunY = Math.max(1, Math.round(VH * 0.18));
+  const treeH = Math.max(3, Math.round(VH * 0.28));
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${VH}" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges" aria-hidden="true" focusable="false">` +
+    `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${css(a)}"/><stop offset="1" stop-color="${css(b)}"/></linearGradient>` +
+    `<radialGradient id="${id}g"><stop offset="0" stop-color="${css(sun)}" stop-opacity="0.6"/><stop offset="1" stop-color="${css(sun)}" stop-opacity="0"/></radialGradient></defs>` +
+    `<rect width="${W}" height="${VH}" fill="url(#${id})"/>` +
+    `<circle cx="${38 + sunSize / 2}" cy="${sunY + sunSize / 2}" r="${sunSize * 2.2}" fill="url(#${id}g)"/>` +
+    `<rect x="38" y="${sunY}" width="${sunSize}" height="${sunSize}" fill="${css(sun)}"/>` +
+    `<path d="${farPath}" fill="${light ? 'rgb(0 0 0 / 0.12)' : 'rgb(255 255 255 / 0.1)'}"/>` +
+    `<path d="${nearPath}" fill="${shade}"/>` +
+    (VH >= 16
+      ? `<rect x="8" y="${ty - treeH}" width="1.5" height="${treeH}" fill="${shade}"/>` +
+        `<rect x="5.5" y="${ty - treeH - Math.round(treeH * 0.7)}" width="6.5" height="${Math.round(treeH * 0.8)}" fill="${shade}"/>`
+      : '') +
+    `</svg>`
+  );
 }
 
 // ---------------------------------------------------------------------------------------------

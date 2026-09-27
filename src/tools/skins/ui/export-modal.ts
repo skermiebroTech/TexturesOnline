@@ -4,6 +4,7 @@ import { convertLegacySkin } from '../../../core/image';
 import { saveBlob } from '../../../core/download';
 import type { SkinModel } from '../../../core/types';
 import { button, openPopover, withBusy } from '../../../ui/components';
+import type { PopoverHandle } from '../../../ui/popover';
 import { h } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { openModal } from '../../../ui/modal';
@@ -27,7 +28,7 @@ export const EXPORT_FORMATS: readonly FormatInfo[] = [
 ];
 
 /** Popover listing the export formats. */
-export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) => void): void {
+export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) => void): PopoverHandle {
   const items = EXPORT_FORMATS.map((f) =>
     h(
       'button',
@@ -62,6 +63,7 @@ export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) =
       }
     });
   });
+  return pop;
 }
 
 const strong = (t: string) => h('strong', null, t);
@@ -201,7 +203,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
       h(
         'div',
         { class: 'sk-export-file' },
-        h('span', { class: 'sk-export-ok' }, icon('check'), 'Downloading'),
+        h('span', { class: 'sk-export-ok' }, icon('check'), 'Download started'),
         h('code', { class: 'sk-export-name' }, res.filename),
         h('span', { class: 'muted small' }, [`${info.edition} Edition`, `${project.model === 'slim' ? 'Slim' : 'Classic'} arms`, res.meta].filter(Boolean).join(' · ')),
         h('div', { class: 'row', style: { '--gap': '8px', marginTop: '8px' } }, again),

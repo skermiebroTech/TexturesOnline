@@ -1,6 +1,6 @@
 import type { OptionValues, PreviewParams } from '../../../core/types';
 import { readSettings } from './options';
-import { tintMultiplier, waveParams, MAX_WAVE_AMPLITUDE } from './color';
+import { PREVIEW_LIGHT_GAMMA, colorMultiplier, tintMultiplier, waveParams, whiteBalance, MAX_WAVE_AMPLITUDE } from './color';
 
 const clamp = (x: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, x));
 const r6 = (x: number): number => Math.round(x * 1e6) / 1e6;
@@ -14,11 +14,18 @@ const SUN: [number, number, number] = [1, 0.97, 0.9];
 
 /**
  * Maps the options onto the preview. The grade uses the same order and constants as the generated
- * GLSL: exposure = brightness, temperature + tint = the same white balance and hue tint, then
- * contrast, saturation, gamma, black & white, sepia, posterize and the same lens vignette.
+ * GLSL: brightness × white balance × hue tint, then contrast, saturation, gamma, black & white,
+ * sepia, posterize and the same lens vignette. The game multiplies display values while the preview
+ * multiplies linear light before its tone curve, so the multipliers are converted with
+ * PREVIEW_LIGHT_GAMMA; the preview applies its own copy of the same white balance, which the tint
+ * divides back out so that exposure × white balance × tint equals the game's multiplier.
  */
 export function toPreviewParams(v: OptionValues): PreviewParams {
   const s = readSettings(v);
+  const g = PREVIEW_LIGHT_GAMMA;
+  const m = colorMultiplier(s);
+  const wb = whiteBalance(s.temperature);
+  const tint = m.map((x, i) => Math.pow(Math.max(x / s.brightness, 0), g) / wb[i]);
   const fogTint = tintMultiplier(s.fogTint, s.fogTintStrength);
   const fogColor = HORIZON.map((c, i) => clamp(c * fogTint[i], 0, 1));
   // Vanilla has light distance fog only; moving its start closer thickens the haze.
@@ -26,13 +33,13 @@ export function toPreviewParams(v: OptionValues): PreviewParams {
   const waterClarity = clamp(0.55 * Math.pow(s.fogEnvironment, 0.5), 0.15, 1);
   const wave = waveParams(s);
   return {
-    exposure: r6(s.brightness),
+    exposure: r6(Math.pow(s.brightness, g)),
     contrast: r6(s.contrast),
     // vibrance scales saturation by (1 - colour spread); 0.6 is a typical spread of Minecraft textures
     saturation: r6(clamp(s.saturation + s.vibrance * 0.4, 0, 3)),
     gamma: r6(s.gamma),
     temperature: r6(s.temperature),
-    tint: v3(tintMultiplier(s.tintColor, s.tintStrength)),
+    tint: v3(tint),
     vignette: r6(s.vignette),
     bloom: s.bloom ? r6(s.bloomStrength * clamp(1.6 - s.bloomThreshold, 0.4, 1.3)) : 0,
     // Vanilla has no cast shadows or light shafts.

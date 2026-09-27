@@ -11,9 +11,10 @@ export interface PresetGallery {
   setActive(id: string | null): void;
 }
 
-export function presetCardArt(p: ShaderPresetDef): HTMLElement {
+export function presetCardArt(p: ShaderPresetDef, height = 21): HTMLElement {
   const art = h('span', { class: 'sh-preset-art', 'aria-hidden': 'true' });
-  art.innerHTML = presetSceneSvg(p.swatch);
+  art.innerHTML = presetSceneSvg(p.swatch, height);
+  art.appendChild(h('span', { class: 'sh-preset-check' }, icon('check')));
   return art;
 }
 
@@ -38,8 +39,8 @@ export function presetGallery(opts: {
         role: mode === 'choose' ? 'radio' : undefined,
         'aria-describedby': undefined,
       },
-      presetCardArt(p),
-      h('span', { class: 'sh-preset-name' }, h('span', { class: 'truncate' }, p.label), icon('check', { class: 'sh-preset-check' })),
+      presetCardArt(p, mode === 'choose' ? 21 : 10),
+      h('span', { class: 'sh-preset-name' }, p.label),
       mode === 'choose' && p.description ? h('span', { class: 'sh-preset-desc' }, p.description) : null,
     );
     if (mode === 'apply' && p.description) tooltip(b, p.description);

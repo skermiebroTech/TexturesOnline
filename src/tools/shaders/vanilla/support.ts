@@ -132,6 +132,12 @@ const FEATURE_OPTIONS: Record<Feature, string[]> = {
   nightDarkness: ['nightDarkness'],
 };
 
+/** Shown when a 1.17+ version arrives without any shader files (the game files could not be read). */
+export function missingSourcesMessage(versionId: string): string {
+  const v = versionId?.trim() ? `Java ${versionId.trim()}` : 'this version';
+  return `The shader files of ${v} could not be read, so nothing was changed. Load the game files again (or pick the client .jar again) and export once more.`;
+}
+
 export const NO_CORE_SHADERS_MESSAGE =
   'Vanilla shaders need Java Edition 1.17 or newer. Older versions have no core shaders a resource pack can change. Pick 1.17+ or use the Iris / OptiFine target instead.';
 
@@ -191,6 +197,27 @@ function summarize(pf: number, known: boolean): VanillaSupport {
   return { supported, known, packFormat: pf || null, family, features, options, reasons, notes };
 }
 
+/**
+ * Weekly snapshots ('21w10a'): the release each run of snapshots led up to, as [year, first week,
+ * representative pack format]. Core shaders arrived in 21w10a; earlier ids have none.
+ */
+const WEEKLY_SNAPSHOTS: readonly [number, number, number][] = [
+  [21, 10, 7], [21, 37, 8], [22, 3, 8], [22, 11, 9], [22, 42, 12], [23, 3, 13], [23, 12, 15], [23, 31, 18],
+  [23, 40, 22], [24, 3, 32], [24, 18, 34], [24, 33, 42], [24, 44, 46], [25, 2, 55], [25, 15, 63], [25, 31, 69],
+  [25, 41, 75],
+];
+
+/** Approximate pack format of a weekly snapshot id (also April Fools ids like '24w14potato'); 1 before 21w10a. */
+function packFormatFromWeekly(id: string): number | null {
+  const m = /^(\d\d)w(\d\d)[a-z]/i.exec(id.trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const week = Number(m[2]);
+  let pf = 1;
+  for (const [y, w, f] of WEEKLY_SNAPSHOTS) if (year > y || (year === y && week >= w)) pf = f;
+  return pf;
+}
+
 function packFormatFromId(id: string): number | null {
   const s = id.trim();
   const rel = /^(\d+)\.(\d+)(?:\.(\d+))?(?:[-_ ](?:pre|rc|snapshot)[-_ ]?\d*)?$/i.exec(s);
@@ -199,7 +226,8 @@ function packFormatFromId(id: string): number | null {
   const minor = Number(rel[2]);
   const patch = rel[3] ? Number(rel[3]) : 0;
   if (major === 1) {
-    if (minor < 17) return minor >= 6 ? 1 : null;
+    // Every release before 1.17 (1.0 – 1.16.5) has no core shaders.
+    if (minor < 17) return 1;
     if (minor <= 17) return 7;
     if (minor === 18) return 8;
     if (minor === 19) return patch >= 4 ? 13 : patch === 3 ? 12 : 9;
@@ -226,8 +254,10 @@ function packFormatFromId(id: string): number | null {
 export function supportedFor(target: PackFormat | number | string): VanillaSupport {
   if (typeof target === 'string') {
     const pf = packFormatFromId(target);
-    if (pf === null) return summarize(END_OF_FRAME_FORMAT, false);
-    return summarize(pf, true);
+    if (pf !== null) return summarize(pf, true);
+    // Weekly snapshots are placed by date: close, but their shaders may differ from the release.
+    const weekly = packFormatFromWeekly(target);
+    return summarize(weekly ?? END_OF_FRAME_FORMAT, false);
   }
   const pf = majorFormat(target);
   if (pf === 0) return summarize(END_OF_FRAME_FORMAT, false);

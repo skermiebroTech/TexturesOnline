@@ -142,6 +142,7 @@ export function openExportDialog(store: TexStore): void {
         { class: 'tx-exp-done' },
         h('div', { class: 'tx-exp-done-icon' }, icon('check', { size: 48 })),
         h('div', { class: 'stack', style: { '--gap': '4px', minWidth: '0' } }, h('strong', { class: 'truncate' }, r.filename), h('span', { class: 'faint small' }, `${formatBytes(r.blob.size)} · ${r.fileCount} files · downloading now`)),
+        button({ icon: 'download', size: 'sm', variant: 'ghost', title: 'Download again', onClick: () => saveBlob(r.blob, r.filename) }),
       ),
       ...(warnings ? [warnings] : []),
       h('h3', { class: 'section-title' }, icon('book-open'), 'How to install'),
@@ -150,7 +151,6 @@ export function openExportDialog(store: TexStore): void {
     );
     body.querySelector('.tx-help-link')?.addEventListener('click', () => modal.close());
     footer.replaceChildren(
-      button({ label: 'Download again', icon: 'download', variant: 'ghost', onClick: () => saveBlob(r.blob, r.filename) }),
       button({ label: 'Export again', icon: 'reload', variant: 'secondary', onClick: () => void summary() }),
       button({ label: 'Done', variant: 'primary', onClick: () => modal.close() }),
     );

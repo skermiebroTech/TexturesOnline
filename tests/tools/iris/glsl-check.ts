@@ -50,6 +50,8 @@ export interface LoaderEnv {
   macros: Record<string, string>;
   /** Minecraft 1.17+: the loader rewrites the pack's GLSL 1.20 into 330 core */
   core: boolean;
+  /** OptiFine 1.17+: textual lightmap remap and gl_FragData[0] alpha-test injection first */
+  optifineRewrite?: boolean;
 }
 
 export const ENVIRONMENTS: LoaderEnv[] = [
@@ -70,6 +72,7 @@ export const ENVIRONMENTS: LoaderEnv[] = [
   {
     name: 'optifine-1.21.11',
     core: true,
+    optifineRewrite: true,
     macros: { MC_VERSION: '12111', MC_GL_VERSION: '320', MC_GLSL_VERSION: '150', MC_OS_WINDOWS: '', MC_GL_VENDOR_INTEL: '', ...stages(OPTIFINE_STAGES) },
   },
   {
@@ -152,6 +155,37 @@ function wrapCalls(s: string, fname: string, wrap: (args: string) => string): st
   return out + s.slice(i);
 }
 
+const OPTIFINE_FRAGDATA_RE = /^(\s*)gl_FragData\[(\d+)\](\S*)\s*=\s*(.*)$/;
+
+/**
+ * The two textual rewrites OptiFine 1.17+ applies before its core conversion (read from the
+ * OptiFine 26.2 bytecode): ShaderPackParser.remapTextureUnits moves the lightmap to unit 2, and
+ * ShadersCompatibility.addAlphaTest wraps every whole-line `gl_FragData[0] = ...` of gbuffers /
+ * shadow fragment shaders (not gbuffers_skybasic, not composite / deferred / final) in an alpha
+ * test. `program` is the program name without extension.
+ */
+export function toOptiFine(src: string, stage: Stage, program: string): string {
+  let s = src.split('gl_TextureMatrix[1]').join('gl_TextureMatrix[2]').split('gl_MultiTexCoord1').join('gl_MultiTexCoord2');
+  const alphaTest = stage === 'frag' && program !== 'gbuffers_skybasic' && !/^(composite|deferred|final|prepare|shadowcomp)/.test(program);
+  if (!alphaTest) return s;
+  let used = false;
+  s = s.split('\n').map((line) => {
+    const m = OPTIFINE_FRAGDATA_RE.exec(line);
+    if (!m || m[2] !== '0') return line;
+    used = true;
+    const [, ws, idx, suffix, rhs] = m;
+    return `${ws}if(true){\n${ws}  temp_FragData${idx}${suffix} = ${rhs}\n${ws}  if(temp_FragData${idx}.a < alphaTestRef) discard;\n${ws}  gl_FragData[${idx}] = temp_FragData${idx};\n${ws}}`;
+  }).join('\n');
+  if (!used) return s;
+  const lines = s.split('\n');
+  const i = lines.findIndex((l) => l.trim().startsWith('#version'));
+  // Declarations go after the macro block that follows #version.
+  let j = i + 1;
+  while (j < lines.length && /^\s*#define\s/.test(lines[j])) j++;
+  lines.splice(j, 0, 'uniform float alphaTestRef;', 'vec4 temp_FragData0;');
+  return lines.join('\n');
+}
+
 /**
  * Rough emulation of the GLSL 1.20 -> 330 core rewrite done by Iris (glsl-transformer) and
  * OptiFine (ShadersCompatibility) on Minecraft 1.17+. Catches identifiers that become keywords
@@ -166,9 +200,10 @@ export function toCore(src: string, stage: Stage): string {
   s = s.split('gl_ModelViewProjectionMatrix').join('(projectionMatrix * modelViewMatrix)');
   s = s.split('gl_ModelViewMatrix').join('modelViewMatrix').split('gl_ProjectionMatrix').join('projectionMatrix');
   s = s.split('gl_NormalMatrix').join('normalMatrix').split('gl_TextureMatrix[0]').join('textureMatrix');
-  s = s.split('gl_TextureMatrix[1]').join('TEXTURE_MATRIX_2');
+  s = s.split('gl_TextureMatrix[1]').join('TEXTURE_MATRIX_2').split('gl_TextureMatrix[2]').join('TEXTURE_MATRIX_2');
   s = s.split('gl_Vertex').join('vec4(vaPosition, 1.0)').split('gl_Color').join('vaColor').split('gl_Normal').join('vaNormal');
-  s = s.split('gl_MultiTexCoord0').join('vec4(vaUV0, 0.0, 1.0)').split('gl_MultiTexCoord1').join('vec4(vec2(vaUV2), 0.0, 1.0)');
+  s = s.split('gl_MultiTexCoord0').join('vec4(vaUV0, 0.0, 1.0)');
+  s = s.split('gl_MultiTexCoord1').join('vec4(vec2(vaUV2), 0.0, 1.0)').split('gl_MultiTexCoord2').join('vec4(vec2(vaUV2), 0.0, 1.0)');
   const pre: string[] = [];
   if (stage === 'vert') {
     pre.push('in vec3 vaPosition;', 'in vec4 vaColor;', 'in vec2 vaUV0;', 'in ivec2 vaUV2;', 'in vec3 vaNormal;',
@@ -400,6 +435,26 @@ export function parsePackOptions(files: Record<string, string>, root = 'shaders/
   }
   for (const name of bools.keys()) if (!referenced.has(name)) problems.push(`${name}: boolean never referenced by #ifdef/#ifndef (not shown as an option)`);
   return { bools, values, referenced, problems };
+}
+
+/**
+ * Lines mentioning "#define" that the loaders' option parsers would not accept as an option
+ * (Iris OptionAnnotatedSource.parseDefineOption logs a diagnostic for them; OptiFine silently
+ * skips them). Covers comment text too, since both loaders scan every line.
+ */
+export function defineLineProblems(files: Record<string, string>): string[] {
+  const problems: string[] = [];
+  for (const [path, src] of Object.entries(files)) {
+    if (!/\.(glsl|vsh|fsh)$/.test(path)) continue;
+    src.split('\n').forEach((raw, i) => {
+      if (!raw.includes('#define')) return;
+      const line = raw.trim();
+      const bool = /^(\/\/)?\s*#define\s+\w+(\s*|\s*\/\/.*)$/.exec(line);
+      const value = /^#define\s+\w+\s+[\w.-]+\s*\/\/\s*\[[^\]]*\].*$/.exec(line);
+      if (!bool && !value) problems.push(`${path}:${i + 1}: ${line}`);
+    });
+  }
+  return problems;
 }
 
 /** Parses a .properties text into key -> value, ignoring comments and preprocessor lines. */

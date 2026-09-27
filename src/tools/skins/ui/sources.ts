@@ -46,6 +46,9 @@ export function normalizeSkinImage(img: ImageData): LoadedSkin {
         : ' Make sure you picked the skin file itself, not a screenshot or a render of it.';
     throw new SkinSourceError(`This image is ${w}×${h} pixels. Minecraft skins are exactly 64×64 pixels (or the old 64×32 size).${hint}`);
   }
+  let visible = false;
+  for (let i = 3; i < image.data.length && !visible; i += 4) visible = image.data[i] > 0;
+  if (!visible) notes.push('This skin is completely see-through, so there is nothing to see yet. Paint away!');
   return { image, model: detectSlim(image) ? 'slim' : 'classic', notes };
 }
 
@@ -109,11 +112,19 @@ function modelFromProperties(props: { name: string; value: string }[] | undefine
   }
 }
 
+/** A skin server answered, but not with a usable skin. */
+class BadAnswerError extends Error {}
+
 async function imageFromUrl(url: string, signal?: AbortSignal): Promise<ImageData> {
   const res = await fetchWithTimeout(url, signal, 15000);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new BadAnswerError(`HTTP ${res.status}`);
   const bytes = new Uint8Array(await res.arrayBuffer());
-  return decodeImage(bytes, 'png');
+  if (sniff(bytes) !== 'png') throw new BadAnswerError('not a PNG');
+  try {
+    return await decodeImage(bytes, 'png');
+  } catch {
+    throw new BadAnswerError('damaged PNG');
+  }
 }
 
 /**
@@ -169,6 +180,7 @@ export async function fetchSkinByUsername(input: string, signal?: AbortSignal): 
       if (lookupFailed) notes.push('The player lookup service did not answer, so the skin came from mc-heads.net. The arm model was guessed from the pixels.');
     } catch (err) {
       if (signal?.aborted) throw err;
+      if (err instanceof BadAnswerError) throw new SkinSourceError("The skin servers answered, but didn't send a usable skin. Try again in a minute.");
       throw new SkinSourceError("Couldn't reach the skin servers. Check your internet connection and try again.");
     }
   }

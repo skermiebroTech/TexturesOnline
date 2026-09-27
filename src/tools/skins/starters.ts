@@ -198,8 +198,10 @@ const GLYPHS: Record<string, readonly string[]> = {
   B: ['##.', '#.#', '##.', '#.#', '##.'],
   R: ['##.', '#.#', '##.', '#.#', '#.#'],
   L: ['#..', '#..', '#..', '#..', '###'],
-  up: ['.#.', '###', '.#.', '.#.'],
-  down: ['.#.', '.#.', '###', '.#.'],
+  up: ['..#..', '.###.', '#####'],
+  down: ['#####', '.###.', '..#..'],
+  upSmall: ['.#.', '###'],
+  downSmall: ['###', '.#.'],
 };
 
 const FACE_GLYPH: Record<SkinFace, string> = { front: 'F', back: 'B', right: 'R', left: 'L', top: 'up', bottom: 'down' };
@@ -227,8 +229,10 @@ function paintTemplate(p: Painter): void {
     for (const face of FACES) {
       if (part === 'head' && face === 'front') continue;
       const r = faces[face];
-      const g = GLYPHS[FACE_GLYPH[face]];
-      const gw = 3;
+      let key = FACE_GLYPH[face];
+      if ((key === 'up' || key === 'down') && r.w < 5) key += 'Small';
+      const g = GLYPHS[key];
+      const gw = g[0].length;
       const gh = g.length;
       if (r.w < gw || r.h < gh) continue;
       const x0 = Math.floor((r.w - gw) / 2);

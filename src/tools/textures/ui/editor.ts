@@ -109,9 +109,6 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
     onOpen: (path, how) => {
       void canvas.open(path, { focus: how === 'enter' });
       if (isPhone() && how !== 'keyboard') showMobile('editor');
-      if (isTablet() && side === 'textures' && how === 'pointer') {
-        /* keep the list open on tablets so browsing stays quick */
-      }
     },
     onUpload: (path) => {
       void canvas.open(path).then(() => canvas.upload(path));
@@ -142,7 +139,10 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
     }, 250);
   };
   cleanups.push(() => iconTimer && clearTimeout(iconTimer));
-  const nameInput = h('input', { class: 'tx-name-input', value: proj.name, maxLength: 80, 'aria-label': 'Pack name', spellcheck: false, autocomplete: 'off' });
+  const nameInput = h('input', { class: 'tx-name-input', value: plainText(proj.name), maxLength: 80, 'aria-label': 'Pack name', spellcheck: false, autocomplete: 'off' });
+  nameInput.addEventListener('focus', () => {
+    if (nameInput.value !== proj.name) nameInput.value = proj.name;
+  });
   const measurer = h('span', { class: 'tx-name-measure', 'aria-hidden': 'true' });
   const sizeName = () => {
     measurer.textContent = nameInput.value || 'Untitled pack';
@@ -156,10 +156,11 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
   });
   nameInput.addEventListener('blur', () => {
     if (!nameInput.value.trim()) {
-      nameInput.value = proj.name = 'Untitled pack';
-      sizeName();
+      proj.name = 'Untitled pack';
       store.touch('meta');
     }
+    nameInput.value = plainText(proj.name);
+    sizeName();
     document.title = `${plainText(proj.name)} — Texture Pack Maker — TexturesOnline`;
   });
   nameInput.addEventListener('keydown', (e) => {
@@ -300,8 +301,8 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
     }),
     store.events.on('meta', () => {
       paintBarIcon();
-      if (document.activeElement !== nameInput && nameInput.value !== proj.name) {
-        nameInput.value = proj.name;
+      if (document.activeElement !== nameInput && nameInput.value !== plainText(proj.name)) {
+        nameInput.value = plainText(proj.name);
         sizeName();
       }
     }),
@@ -332,7 +333,7 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
       {
         title: 'Texture list',
         items: [
-          { keys: ['↑', '↓', '←', '→'], label: 'Move between textures' },
+          { keys: ['Arrow keys'], label: 'Move between textures' },
           { keys: ['Enter'], label: 'Open and start painting' },
           { keys: ['Shift', 'F10'], label: 'More actions' },
           { keys: ['Esc'], label: 'Clear the search' },
@@ -356,7 +357,7 @@ export async function renderEditor(root: HTMLElement, id: string): Promise<() =>
       return;
     }
     if (isTypingTarget(e.target) || mod || e.altKey) return;
-    if (e.key === '?') {
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
       e.preventDefault();
       showShortcuts();
     } else if (e.key === '/') {

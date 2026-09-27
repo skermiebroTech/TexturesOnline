@@ -12,8 +12,9 @@ import { colorPicker } from '../../../ui/color-picker';
 import { toHex } from '../../../ui/color';
 import { button, editorLayout, emptyState, iconButton, openMenu, openPopover, segmented, slider, spinner, toggle, tooltip, type EditorPanel } from '../../../ui/components';
 import { h, isTypingTarget, prefersReducedMotion } from '../../../ui/dom';
-import { icon, type IconName } from '../../../ui/icons';
+import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { openModal, openShortcutsSheet } from '../../../ui/modal';
+import type { PopoverHandle } from '../../../ui/popover';
 import { toast } from '../../../ui/toast';
 import type { SkinAnimation, SkinPreview } from '../skin-preview';
 import { exportSkin, openExportMenu } from './export-modal';
@@ -56,6 +57,10 @@ interface Prefs {
   palette: string;
   base3d: boolean;
   outer3d: boolean;
+  /** Last paint colour (RGBA) */
+  color: [number, number, number, number];
+  /** Side panel shown next to the canvas on tablets */
+  side: 'left' | 'right';
 }
 
 const PREFS_KEY = 'to-skin-editor';
@@ -71,13 +76,20 @@ const DEFAULT_PREFS: Prefs = {
   palette: 'skin',
   base3d: true,
   outer3d: true,
+  color: [62, 124, 214, 255],
+  side: 'right',
 };
 
 function loadPrefs(): Prefs {
   const defaults: Prefs = { ...DEFAULT_PREFS, animation: prefersReducedMotion() ? 'none' : DEFAULT_PREFS.animation };
   try {
     const raw = localStorage.getItem(PREFS_KEY);
-    return raw ? { ...defaults, ...(JSON.parse(raw) as Partial<Prefs>) } : defaults;
+    const p: Prefs = raw ? { ...defaults, ...(JSON.parse(raw) as Partial<Prefs>) } : defaults;
+    const c = p.color;
+    if (!Array.isArray(c) || c.length !== 4 || c.some((v) => typeof v !== 'number' || !(v >= 0 && v <= 255))) p.color = [...DEFAULT_PREFS.color];
+    if (!['base', 'outer', 'both'].includes(p.layers)) p.layers = 'both';
+    if (p.side !== 'left' && p.side !== 'right') p.side = 'right';
+    return p;
   } catch {
     return defaults;
   }
@@ -127,7 +139,7 @@ const TIPS = [
   'Hover the template to see which part and face you are painting.',
   'Turn on Mirror to paint both arms or both legs at once.',
   'Paint hats, jackets and sleeves on the Outer layer — it can be see-through.',
-  'Lock a part in the Parts list so you can’t paint outside it.',
+  'Lock a part in the Body parts list so you can’t paint outside it.',
   'Shading tip: use Lighten and Darken to add depth.',
   'Press ? to see every keyboard shortcut.',
 ];
@@ -175,6 +187,79 @@ function choose<T extends string>(title: string, body: Node, options: { value: T
   });
 }
 
+function samePixels(a: ArrayLike<number>, b: ArrayLike<number>): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+/** Opens a popover from `anchor`, or closes it when it is already open (a second click toggles). */
+function togglePopover(anchor: HTMLElement, open: () => PopoverHandle): void {
+  const current = openPopovers.get(anchor);
+  if (current?.open) {
+    current.close();
+    return;
+  }
+  openPopovers.set(anchor, open());
+}
+const openPopovers = new WeakMap<HTMLElement, PopoverHandle>();
+
+// ---- Crash-safe backup ----
+// IndexedDB writes started while the page unloads often never finish, so the last few strokes
+// before a reload or tab close are also written synchronously to localStorage and recovered on
+// the next visit.
+
+const BACKUP_PREFIX = 'to-skin-backup:';
+
+interface SkinBackup {
+  png: string;
+  model: SkinModel;
+  name: string;
+  t: number;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function writeBackup(id: string, b: SkinBackup): boolean {
+  try {
+    localStorage.setItem(BACKUP_PREFIX + id, JSON.stringify(b));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function readBackup(id: string): SkinBackup | null {
+  try {
+    const raw = localStorage.getItem(BACKUP_PREFIX + id);
+    if (!raw) return null;
+    const b = JSON.parse(raw) as Partial<SkinBackup>;
+    if (typeof b.png !== 'string' || typeof b.t !== 'number') return null;
+    return { png: b.png, t: b.t, model: b.model === 'slim' ? 'slim' : 'classic', name: typeof b.name === 'string' ? b.name : '' };
+  } catch {
+    return null;
+  }
+}
+
+function clearBackup(id: string): void {
+  try {
+    localStorage.removeItem(BACKUP_PREFIX + id);
+  } catch {
+    /* private mode */
+  }
+}
+
 export interface SkinEditorTestApi {
   getImage(): ImageData;
   imageToClient(x: number, y: number): [number, number];
@@ -188,12 +273,38 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     return notFound(root, 'Skin not found', 'This skin is not saved in this browser. It may have been deleted, or it was made on another device.');
   }
   const project: SkinProjectData = found;
-  let initial: ImageData;
-  try {
-    const decoded = await decodeImage(project.image, 'png');
-    initial = decoded.width === 64 && decoded.height === 64 ? decoded : normalizeSkinImage(decoded).image;
-  } catch {
-    return notFound(root, "This skin can't be opened", 'The saved image is damaged. Try making a new skin.');
+  let initial: ImageData | null = null;
+  // Changes made just before the page was closed may only be in the local backup.
+  let recovered = false;
+  const savedModel = project.model;
+  const savedName = project.name;
+  const backup = readBackup(id);
+  if (backup && backup.t > (project.updatedAt || 0)) {
+    try {
+      const img = await decodeImage(base64ToBytes(backup.png), 'png');
+      if (img.width === 64 && img.height === 64) {
+        initial = img;
+        project.model = backup.model;
+        if (backup.name.trim()) project.name = backup.name.trim().slice(0, 60);
+        recovered = true;
+      }
+    } catch {
+      /* unreadable backup: fall back to the saved skin */
+    }
+  }
+  if (recovered && initial) {
+    // Nothing to announce when the backup matches what was saved anyway.
+    const saved = await decodeImage(project.image, 'png').catch(() => null);
+    if (saved && samePixels(saved.data, initial.data) && savedModel === project.model && savedName === project.name) recovered = false;
+  }
+  if (!recovered) clearBackup(id);
+  if (!initial) {
+    try {
+      const decoded = await decodeImage(project.image, 'png');
+      initial = decoded.width === 64 && decoded.height === 64 ? decoded : normalizeSkinImage(decoded).image;
+    } catch {
+      return notFound(root, "This skin can't be opened", 'The saved image is damaged. Try making a new skin.');
+    }
   }
 
   const prefs = loadPrefs();
@@ -232,7 +343,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const keysBtn = iconButton('keyboard', 'Keyboard shortcuts (?)', () => showShortcuts());
   const exportBtn = button({ label: 'Export', icon: 'download', iconEnd: 'chevron-down', variant: 'primary', class: 'sk-export-btn' });
   exportBtn.setAttribute('aria-haspopup', 'menu');
-  exportBtn.addEventListener('click', () => openExportMenu(exportBtn, (kind) => void doExport(kind)));
+  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind))));
   const backBtn = iconButton('arrow-left', 'All skins', () => navigate('/skins'));
 
   const bar = h(
@@ -285,6 +396,43 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     toolButtons.set(t.tool, b);
     railTools.appendChild(b);
   }
+  // The rail is one tab stop; arrow keys move between tools in whichever direction it is laid out
+  // (a column, two columns, or rows on phones). Enter or Space picks the tool.
+  const toolList = [...toolButtons.values()];
+  railTools.addEventListener('keydown', (e) => {
+    const cur = e.target as HTMLButtonElement;
+    const i = toolList.indexOf(cur as (typeof toolList)[number]);
+    if (i < 0) return;
+    let next: HTMLElement | undefined;
+    const dirs: Record<string, [number, number]> = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    const d = dirs[e.key];
+    if (e.key === 'Home') next = toolList[0];
+    else if (e.key === 'End') next = toolList[toolList.length - 1];
+    else if (d) {
+      const r0 = cur.getBoundingClientRect();
+      const cx = r0.left + r0.width / 2;
+      const cy = r0.top + r0.height / 2;
+      let best = Infinity;
+      for (const b of toolList) {
+        if (b === cur) continue;
+        const r = b.getBoundingClientRect();
+        const dx = r.left + r.width / 2 - cx;
+        const dy = r.top + r.height / 2 - cy;
+        const along = dx * d[0] + dy * d[1];
+        if (along < 4) continue;
+        const score = along + 3 * Math.abs(d[0] ? dy : dx);
+        if (score < best) {
+          best = score;
+          next = b;
+        }
+      }
+      next ??= toolList[(i + (d[0] + d[1] > 0 ? 1 : toolList.length - 1)) % toolList.length];
+    }
+    if (!next) return;
+    e.preventDefault();
+    toolList.forEach((b) => (b.tabIndex = b === next ? 0 : -1));
+    next.focus();
+  });
   const primarySwatch = h('button', { type: 'button', class: 'sk-well sk-well-primary', 'aria-label': 'Paint colour' }, h('span', { class: 'sk-well-fill' }));
   const secondarySwatch = h('button', { type: 'button', class: 'sk-well sk-well-secondary', 'aria-label': 'Right-click colour' }, h('span', { class: 'sk-well-fill' }));
   const swapBtn = h('button', { type: 'button', class: 'sk-swap', 'aria-label': 'Swap colours (X)' }, icon('arrows-horizontal'));
@@ -352,7 +500,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     const info = PART_INFO[part];
     const eye = iconButton('eye', `Show ${info.label} in 3D`, () => togglePartVisible(part), { size: 'sm', active: true });
     const lock = iconButton('lock', `Only paint the ${info.label}`, () => toggleLock(part), { size: 'sm', active: false });
-    const more = iconButton('more-horizontal', `More for ${info.label}`, () => partMenu(part, more), { size: 'sm' });
+    const more = iconButton('more-horizontal', `More for ${info.label}`, () => togglePopover(more, () => partMenu(part, more)), { size: 'sm' });
     more.setAttribute('aria-haspopup', 'menu');
     const row = h(
       'li',
@@ -394,7 +542,6 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       'div',
       { class: 'sk-left-scroll scroll' },
       block('Colour', 'sk-block-color', paletteChips, pickerSlot),
-      block('Brush', 'sk-block-brush', brushSlider, brushShape),
       h(
         'section',
         { class: 'sk-block sk-block-parts' },
@@ -402,6 +549,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         h('p', { class: 'sk-block-hint' }, icon('lock', { size: 24 }), h('span', null, 'Lock parts to paint only inside them. The eye hides a part in 3D.')),
         partsList,
       ),
+      block('Brush', 'sk-block-brush', brushSlider, brushShape),
       block('Guides', 'sk-block-guides', guidesToggle, seeThroughToggle),
     ),
   );
@@ -478,6 +626,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   // =============================================================================================
   // Layout
 
+  let layoutReady = false;
   const layout = editorLayout({
     left,
     center,
@@ -487,8 +636,19 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     initial: 'center',
     onPanelChange: (p: EditorPanel) => {
       if (p === 'center') requestAnimationFrame(() => pc?.redraw());
+      else if (layoutReady) setPref('side', p);
     },
   });
+  // Tablets show one side panel next to the canvas: it opens on the live 3D view, and the other tab
+  // (colours, brush and parts) is called Paint there, since the canvas has no tab of its own.
+  const sideLeft = layout.querySelector<HTMLElement>('.editor-sidetabs .segmented-item[data-value="left"]');
+  const sideLeftText = sideLeft?.querySelector('span:not(.icon)');
+  const sideLeftIcon = sideLeft?.querySelector<HTMLSpanElement>('.icon');
+  if (sideLeftText) sideLeftText.textContent = 'Paint';
+  if (sideLeftIcon) setIcon(sideLeftIcon, 'brush');
+  layout.show(prefs.side);
+  layout.show('center');
+  layoutReady = true;
   const editorRoot = h('div', { class: 'sk-editor' }, bar, layout);
   root.append(editorRoot);
 
@@ -503,6 +663,19 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     decodeImage: (b) => decodeImage(b),
   });
   canvasHost.appendChild(tip);
+  // Arm conversions are pixel steps in the canvas history; wrap undo/redo (the canvas calls these
+  // for Ctrl+Z and two-finger taps too) so the arm model follows the pixels.
+  const modelSteps: { from: SkinModel; to: SkinModel; before: Uint8ClampedArray; after: Uint8ClampedArray }[] = [];
+  const baseUndo = pc.undo.bind(pc);
+  const baseRedo = pc.redo.bind(pc);
+  pc.undo = () => {
+    baseUndo();
+    syncModelWithHistory('undo');
+  };
+  pc.redo = () => {
+    baseRedo();
+    syncModelWithHistory('redo');
+  };
   // On narrow screens use every pixel of width: the default fit leaves generous margins.
   const fitView = () => {
     pc.zoomToFit();
@@ -522,12 +695,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   hostObserver.observe(canvasHost);
   disposers.push(() => hostObserver.disconnect());
   pc.setMirror(prefs.mirror, false);
-  pc.setColor([62, 124, 214, 255]);
+  pc.setColor(prefs.color);
   pc.setSecondaryColor([0, 0, 0, 0]);
   disposers.push(() => pc.destroy());
 
   const overlay = (ctx: CanvasRenderingContext2D, view: Parameters<typeof drawPartOverlay>[1]) => {
-    const focus = highlight ? new Set([highlight]) : locked.size ? locked : null;
+    const focus = highlight ? new Set([highlight]) : locked.size ? (prefs.mirror ? withMirrorParts(locked) : locked) : null;
     drawPartOverlay(ctx, view, {
       model,
       outlines: prefs.guides,
@@ -543,14 +716,21 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   pc.setOverlay(overlay);
   buildPicker();
 
+  let mask: Uint8Array = new Uint8Array(64 * 64);
   const updateMask = () => {
     const parts = locked.size ? (prefs.mirror ? withMirrorParts(locked) : locked) : null;
-    pc.setMask(maskForParts(parts, model, prefs.layers));
+    mask = maskForParts(parts, model, prefs.layers);
+    pc.setMask(mask);
+    if (hoverPixel) updateHoverUi();
   };
   updateMask();
 
   // ---- sync UI from the canvas ----
-  const syncTool = () => toolButtons.forEach((b, t) => b.setActive(t === pc.tool));
+  const syncTool = () =>
+    toolButtons.forEach((b, t) => {
+      b.setActive(t === pc.tool);
+      if (!railTools.contains(document.activeElement)) b.tabIndex = t === pc.tool ? 0 : -1;
+    });
   const syncColors = () => {
     const c = pc.color;
     const s = pc.secondaryColor;
@@ -569,10 +749,17 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
   syncTool();
   syncColors();
+  railTools.addEventListener('focusout', (e) => {
+    if (!railTools.contains(e.relatedTarget as Node | null)) requestAnimationFrame(syncTool);
+  });
+  const saveColor = debounce(() => setPref('color', pc.color as Prefs['color']), 400);
+  disposers.push(() => saveColor.flush());
   disposers.push(
     pc.on('tool', syncTool),
     pc.on('settings', (s) => {
       syncColors();
+      const c = pc.color;
+      if (c.some((v, i) => v !== prefs.color[i])) saveColor();
       brushSlider.setValue(s.brushSize);
       brushShape.setValue(s.brushShape);
       if (s.showGrid !== prefs.grid) {
@@ -584,7 +771,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     pc.on('history', syncHistory),
   );
 
-  primarySwatch.addEventListener('click', () => {
+  primarySwatch.addEventListener('click', () => togglePopover(primarySwatch, () => openColorPopover()));
+  const openColorPopover = (): PopoverHandle => {
     const phone = window.matchMedia('(max-width: 720px)').matches;
     const content = h('div', { class: 'sk-color-pop' });
     const group = SKIN_PALETTES.find((g) => g.id === prefs.palette) ?? SKIN_PALETTES[0];
@@ -616,8 +804,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     }
     build(group.id);
     content.append(chips, slot);
-    const pop = openPopover(primarySwatch, content, { placement: phone ? 'top-start' : 'right-start', label: 'Paint colour', focus: true });
-  });
+    const pop = openPopover(primarySwatch, content, { placement: phone ? 'top-start' : 'right-start', label: 'Paint colour', focus: true, class: 'sk-color-popover' });
+    return pop;
+  };
   secondarySwatch.addEventListener('click', () => {
     const s = pc.secondaryColor;
     pc.setSecondaryColor(s[3] === 0 ? pc.color : [0, 0, 0, 0]);
@@ -665,14 +854,29 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     if (y + th > r.height - 8) y = pointer.y - r.top - th - 12;
     tip.style.transform = `translate(${Math.round(Math.max(4, x))}px, ${Math.round(Math.max(4, y))}px)`;
   };
+  /** Why the hovered pixel can't be painted, or null when it can. */
+  const lockReason = (r: FaceRect): string | null => {
+    if (!hoverPixel || mask[hoverPixel.y * 64 + hoverPixel.x]) return null;
+    if (prefs.layers !== 'both' && r.layer !== prefs.layers) {
+      return `Locked: you are painting the ${prefs.layers === 'base' ? 'base' : 'outer'} layer (press 3 for both)`;
+    }
+    const open = [...(prefs.mirror ? withMirrorParts(locked) : locked)].map((p) => PART_INFO[p].label);
+    return open.length ? `Locked: painting only inside ${open.join(', ')}` : 'Locked';
+  };
   const updateHoverUi = () => {
     if (hoverRect) {
       const text = describeRect(hoverRect);
-      tip.replaceChildren(h('span', { class: 'sk-tip-dot', style: { background: PART_INFO[hoverRect.part].color } }), text);
-      statusText.textContent = `${text} · ${hoverPixel!.x}, ${hoverPixel!.y}`;
+      const reason = lockReason(hoverRect);
+      tip.replaceChildren(
+        h('span', { class: 'sk-tip-dot', style: { background: PART_INFO[hoverRect.part].color } }),
+        h('span', { class: 'sk-tip-text' }, text, reason ? h('span', { class: 'sk-tip-lock' }, icon('lock'), reason) : null),
+      );
+      tip.classList.toggle('is-locked', !!reason);
+      statusText.textContent = reason ? `${text} · ${reason}` : `${text} · ${hoverPixel!.x}, ${hoverPixel!.y}`;
       status.classList.add('is-hover');
     } else if (hoverPixel) {
-      tip.replaceChildren(h('span', { class: 'sk-tip-dot is-unused' }), 'Unused area (not shown in game)');
+      tip.classList.remove('is-locked');
+      tip.replaceChildren(h('span', { class: 'sk-tip-dot is-unused' }), h('span', { class: 'sk-tip-text' }, 'Unused area (not shown in game)'));
       statusText.textContent = 'Unused area — pixels here are not shown in game.';
       status.classList.add('is-hover');
     } else {
@@ -786,8 +990,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         project.name = nameInput.value.trim() || 'My skin';
         await saveProject(project);
         savedVersion = v;
+        if (version === v) clearBackup(id);
         if (!destroyed) setSaveState(version === v ? 'saved' : 'unsaved');
       } catch (err) {
+        backupNow();
         if (!destroyed) setSaveState('error', err instanceof Error ? err.message : undefined);
         if (!saveErrorShown) {
           saveErrorShown = true;
@@ -814,6 +1020,11 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const flushSave = async () => {
     scheduleSave.cancel();
     if (version !== savedVersion || saving) await persist();
+  };
+  /** Synchronous copy of unsaved work (see readBackup); false when it could not be written. */
+  const backupNow = (): boolean => {
+    if (version === savedVersion) return true;
+    return writeBackup(id, { png: bytesToBase64(encodePng(latest)), model, name: nameInput.value.trim() || 'My skin', t: Date.now() });
   };
   saveState.addEventListener('click', () => void flushSave());
 
@@ -845,13 +1056,21 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
   disposers.push(pc.on('change', onImageChanged));
 
-  const onPageHide = () => void flushSave();
+  const onPageHide = () => {
+    backupNow();
+    void flushSave();
+  };
   const onVisibility = () => {
-    if (document.visibilityState === 'hidden') void flushSave();
+    if (document.visibilityState !== 'hidden') return;
+    backupNow();
+    void flushSave();
   };
   const onBeforeUnload = (e: BeforeUnloadEvent) => {
-    if (version !== savedVersion) {
-      void flushSave();
+    if (version === savedVersion) return;
+    const safe = backupNow();
+    void flushSave();
+    // Only ask "Leave site?" when not even the local backup could be written.
+    if (!safe) {
       e.preventDefault();
       e.returnValue = '';
     }
@@ -946,13 +1165,20 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     pc.redraw();
   }
 
+  /** Undo from a toast: only steps back while nothing else was painted since `after`. */
+  function undoIfUnchanged(after: Uint8ClampedArray) {
+    if (samePixels(pc.getImage().data, after)) pc.undo();
+    else toast('You painted after that, so use Undo (Ctrl+Z) to step back.', { duration: 3500 });
+  }
+
   function applyImageOp(label: string, fn: (img: ImageData) => ImageData) {
     pc.deselect();
     pc.applyFilter(fn);
-    toast(label, { tone: 'success', duration: 2500, action: { label: 'Undo', onClick: () => pc.undo() } });
+    const after = pc.getImage().data;
+    toast(label, { tone: 'success', duration: 3500, action: { label: 'Undo', onClick: () => undoIfUnchanged(after) } });
   }
 
-  function partMenu(part: SkinPart, anchor: HTMLElement) {
+  function partMenu(part: SkinPart, anchor: HTMLElement): PopoverHandle {
     const info = PART_INFO[part];
     const other = PART_INFO[info.mirror];
     const layer = prefs.layers === 'outer' ? 'outer' : 'base';
@@ -978,7 +1204,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         onClick: () => applyImageOp(`Cleared the ${info.outerLabel.toLowerCase()}`, (img) => fillPart(img, part, 'outer', model, null)),
       },
     ];
-    openMenu(anchor, items, { label: `${info.label} actions` });
+    return openMenu(anchor, items, { label: `${info.label} actions` });
   }
 
   async function switchModel(to: SkinModel) {
@@ -1000,25 +1226,63 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       modelSeg.setValue(model);
       return;
     }
-    const before = pc.getImage();
-    model = to;
-    project.model = to;
-    if (answer === 'convert') pc.setImage(convertArms(before, from, to), { resetHistory: false, resetView: false });
-    afterModelChange();
-    onImageChanged(pc.getImage());
+    let after: Uint8ClampedArray | null = null;
+    if (answer === 'convert') after = convertAndSwitch(from, to);
+    else {
+      setModel(to);
+      markDirty();
+    }
     toast(`Switched to ${to === 'slim' ? 'slim' : 'classic'} arms`, {
       tone: 'success',
+      duration: 5000,
       action: {
         label: 'Undo',
         onClick: () => {
-          model = from;
-          project.model = from;
-          if (answer === 'convert') pc.undo();
-          afterModelChange();
-          onImageChanged(pc.getImage());
+          if (model !== to) return;
+          if (!after) {
+            setModel(from);
+            markDirty();
+          } else if (samePixels(pc.getImage().data, after)) {
+            pc.undo(); // the history hook below switches the model back too
+          } else {
+            convertAndSwitch(to, from); // painted since: convert back, keeping the new paint
+          }
         },
       },
     });
+  }
+
+  /**
+   * Converts the arm pixels as one undoable step and switches the model. The step is remembered so
+   * undo/redo (buttons, Ctrl+Z, two-finger tap) also switch the model back and forth with it.
+   */
+  function convertAndSwitch(from: SkinModel, to: SkinModel): Uint8ClampedArray {
+    const before = pc.getImage();
+    const converted = convertArms(before, from, to);
+    pc.setImage(converted, { resetHistory: false, resetView: false });
+    modelSteps.push({ from, to, before: before.data, after: converted.data });
+    if (modelSteps.length > 32) modelSteps.shift();
+    setModel(to);
+    onImageChanged(pc.getImage());
+    return converted.data;
+  }
+
+  function setModel(m: SkinModel) {
+    if (m === model) return;
+    model = m;
+    project.model = m;
+    afterModelChange();
+    drawDolls(latest);
+  }
+
+  /** After an undo/redo: the pixel layout decides the arm model when it matches a conversion step. */
+  function syncModelWithHistory(dir: 'undo' | 'redo') {
+    const cur = pc.getImage().data;
+    for (let i = modelSteps.length - 1; i >= 0; i--) {
+      const st = modelSteps[i];
+      if (dir === 'undo' && model === st.to && samePixels(cur, st.before)) return setModel(st.from);
+      if (dir === 'redo' && model === st.from && samePixels(cur, st.after)) return setModel(st.to);
+    }
   }
 
   function afterModelChange() {
@@ -1180,8 +1444,14 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
   Object.defineProperty(editorRoot, '__skinEditor', { value: api });
 
+  if (recovered) {
+    markDirty();
+    toast('Restored the changes you made just before the page closed.', { tone: 'success', duration: 5000 });
+  }
+
   return () => {
     destroyed = true;
+    backupNow();
     void flushSave();
     for (const d of disposers.splice(0).reverse()) {
       try {

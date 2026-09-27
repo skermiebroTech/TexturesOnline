@@ -13,6 +13,7 @@ import { dropzone } from '../../../ui/dropzone';
 import { icon } from '../../../ui/icons';
 import { confirmDialog, openModal, promptDialog } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
+import type { PopoverHandle } from '../../../ui/popover';
 import { assetLoadingPanel } from '../../../ui/version-picker';
 import type { SkinProjectData } from '../export';
 import { createStarterSkin, STARTERS } from '../starters';
@@ -37,8 +38,20 @@ function saveModelPref(m: SkinModel): void {
   }
 }
 
-/** Creates a skin project, saves it and opens the editor. */
+let creating = false;
+
+/** Creates a skin project, saves it and opens the editor. Ignores a second request while one is saving. */
 export async function createSkinProject(opts: { image: ImageData; model: SkinModel; name: string; source: string }): Promise<void> {
+  if (creating) return;
+  creating = true;
+  try {
+    await saveNewProject(opts);
+  } finally {
+    creating = false;
+  }
+}
+
+async function saveNewProject(opts: { image: ImageData; model: SkinModel; name: string; source: string }): Promise<void> {
   const now = Date.now();
   const project: SkinProjectData = {
     id: uuidv4(),
@@ -61,7 +74,8 @@ function figureCanvas(img: ImageData, model: SkinModel, cls = 'sk-figure'): HTML
   return c;
 }
 
-let assetsPromise: Promise<AssetIndex> | null = null;
+/** Shared game-files load; `signal` is the modal that started it (a closed modal aborts it). */
+let assetsLoad: { promise: Promise<AssetIndex>; signal: AbortSignal | null } | null = null;
 
 /** Modal that loads the Java game files and lets the user pick a default skin. */
 function openDefaultSkinsModal(preferred: SkinModel): void {
@@ -73,7 +87,11 @@ function openDefaultSkinsModal(preferred: SkinModel): void {
     width: 720,
     onClose: () => ctrl.abort(),
   });
-  const panel = assetLoadingPanel({ edition: 'java', version: DEFAULT_JAVA_VERSION });
+  const useJar = (file: File) => {
+    assetsLoad = { promise: loadAssets('java', DEFAULT_JAVA_VERSION, { jarFile: file, onProgress: (p) => panel.set(p) }), signal: null };
+    start();
+  };
+  const panel = assetLoadingPanel({ edition: 'java', version: DEFAULT_JAVA_VERSION, onPickJar: useJar });
   const intro = h('p', { class: 'muted' }, `Start from one of the nine default characters in Minecraft Java ${DEFAULT_JAVA_VERSION}. They come straight from the official game files.`);
 
   const showGrid = (assets: AssetIndex) => {
@@ -142,21 +160,21 @@ function openDefaultSkinsModal(preferred: SkinModel): void {
   const start = () => {
     body.replaceChildren(intro, panel);
     panel.set({ label: 'Checking game files…', fraction: null });
-    assetsPromise ??= loadAssets('java', DEFAULT_JAVA_VERSION, { onProgress: (p: Progress) => panel.set(p), signal: ctrl.signal });
-    assetsPromise
+    if (!assetsLoad || assetsLoad.signal?.aborted) {
+      assetsLoad = { promise: loadAssets('java', DEFAULT_JAVA_VERSION, { onProgress: (p: Progress) => panel.set(p), signal: ctrl.signal }), signal: ctrl.signal };
+    }
+    const load = assetsLoad;
+    load.promise
       .then((assets) => {
         if (ctrl.signal.aborted) return;
         panel.set(null);
         showGrid(assets);
       })
       .catch((err: unknown) => {
-        assetsPromise = null;
+        if (assetsLoad === load) assetsLoad = null;
         if (ctrl.signal.aborted) return;
         const msg = err instanceof Error ? err.message : 'Could not download the game files.';
-        panel.error(msg, start, (file) => {
-          assetsPromise = loadAssets('java', DEFAULT_JAVA_VERSION, { jarFile: file, onProgress: (p) => panel.set(p) });
-          start();
-        });
+        panel.error(msg, start, useJar);
       });
   };
   start();
@@ -178,10 +196,15 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
         })
         .catch(() => thumb.appendChild(icon('human')));
       const menuBtn = h('button', { type: 'button', class: 'icon-btn sm sk-recent-menu', 'aria-label': `More actions for ${p.name}`, 'aria-haspopup': 'menu' }, icon('more-vertical'));
+      let menu: PopoverHandle | null = null;
       menuBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        openMenu(menuBtn, [
+        if (menu?.open) {
+          menu.close();
+          return;
+        }
+        menu = openMenu(menuBtn, [
           { label: 'Open', icon: 'pencil', onClick: () => navigate(`/skins/${p.id}`) },
           {
             label: 'Rename',
@@ -253,11 +276,11 @@ export function mountStart(root: HTMLElement): () => void {
         const card = h(
           'button',
           { type: 'button', class: ['sk-starter', `sk-starter-${s.id}`], dataset: { starter: s.id } },
-          h('span', { class: 'sk-starter-stage' }, figureCanvas(img, model)),
+          h('span', { class: 'sk-starter-stage' }, figureCanvas(img, model), s.badge ? badge(s.badge, 'green') : null),
           h(
             'span',
             { class: 'sk-starter-text' },
-            h('span', { class: 'sk-starter-name' }, s.name, s.badge ? badge(s.badge, 'green') : null),
+            h('span', { class: 'sk-starter-name' }, s.name),
             h('span', { class: 'sk-starter-desc' }, s.description),
           ),
         );

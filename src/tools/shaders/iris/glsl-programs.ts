@@ -173,8 +173,10 @@ void main() {
 	gl_Position = ftransform();
 	#ifdef WATER_WAVES
 	float h = fract(fpos.y + cameraPosition.y);
-	// Only the water surface moves (both of its sides), never the bottom of a water block.
-	if (isId(blockId, ID_WATER) && abs(feetNormal.y) > 0.5 && h > 0.05 && h < 0.95) {
+	// Every vertex at the height of the water surface moves: the surface itself (both of its
+	// sides) and the upper edge of side faces, so no gap opens where water meets air. Vertices on
+	// block boundaries (the bottom of the water, full-height sides) stay put.
+	if (isId(blockId, ID_WATER) && h > 0.05 && h < 0.95) {
 		fpos.y += waterSurfaceOffset(fpos.xz + cameraPosition.xz);
 		vpos = gbufferModelView * vec4(fpos, 1.0);
 		gl_Position = gl_ProjectionMatrix * vpos;
@@ -488,7 +490,7 @@ void main() {
 `;
 
 const SKYBASIC_FSH = `#version 120
-${inc('settings', 'uniforms', 'common', 'sky')}
+${inc('settings', 'uniforms', 'common', 'sky', 'fog')}
 
 #ifdef MC_RENDER_STAGE_STARS
 uniform int renderStage;
@@ -520,6 +522,12 @@ void main() {
 	} else {
 		result = vec4(skyGradient(viewDir), 1.0);
 	}
+	if (isEyeInWater != 0) {
+		// From inside water (or lava / powder snow on old versions that still draw the sky) the
+		// sky disappears in that fog.
+		if (star || sunset) discard;
+		result = vec4(mediumFogColor(), 1.0);
+	}
 	result.rgb *= 1.0 - max(blindness, darknessFactor);
 	gl_FragData[0] = result;
 }
@@ -540,6 +548,8 @@ varying vec3 viewPos;
 
 /* DRAWBUFFERS:0 */
 void main() {
+	// No sun, moon or custom sky from inside water, lava or powder snow.
+	if (isEyeInWater != 0) discard;
 	vec4 c = texture2D(gtexture, texcoord) * glcolor;
 	vec3 col = toLinear(c.rgb);
 	#ifdef MC_RENDER_STAGE_SUN
@@ -554,7 +564,7 @@ void main() {
 `;
 
 const CLOUDS_FSH = `#version 120
-${inc('settings', 'uniforms', 'common', 'sky')}
+${inc('settings', 'uniforms', 'common', 'sky', 'fog')}
 
 uniform sampler2D gtexture;
 
@@ -573,6 +583,8 @@ void main() {
 	base = mix(base, base * optColor(SUNSET_R, SUNSET_G, SUNSET_B) * 1.8, twilightAmount() * skyBlend() * 0.55);
 	// Clouds are far away: fade them into the sky instead of the render-distance fog.
 	vec3 color = mix(base, skyGradient(safeNormalize(viewPos)), clamp(length(viewPos) / (far * 4.0), 0.0, 0.85));
+	// From inside water, lava or powder snow the clouds sink into that fog like everything else.
+	if (isEyeInWater != 0) color = applyFog(color, viewPos);
 	gl_FragData[0] = vec4(color * (1.0 - max(blindness, darknessFactor)), c.a);
 }
 `;

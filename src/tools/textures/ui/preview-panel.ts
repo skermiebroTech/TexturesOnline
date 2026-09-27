@@ -8,7 +8,7 @@ import { icon } from '../../../ui/icons';
 import { emptyState, iconButton, segmented, toggle } from '../../../ui/components';
 import { DEFAULT_FOLIAGE_TINT, DEFAULT_GRASS_TINT, compositeOverlay, tintByAlphaMask, tintImage } from '../../../shared/preview/preview-textures';
 import { applyEffects, effectsApply } from '../effects';
-import { firstSquare, getFrame, planCube, tile3, tintFor, transparentShare, type AnimInfo } from './meta';
+import { displayAlphaData, firstSquare, getFrame, planCube, tile3, tintFor, transparentShare, type AnimInfo } from './meta';
 import { ICON_KEY, type TexStore } from './store';
 import type { OpenTexture } from './canvas-panel';
 import { paintCanvas } from './thumbs';
@@ -188,7 +188,9 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
     if (!t) return;
     // tiled view (first/current frame, effects applied)
     const frame = t.anim ? getFrame(t.full, t.anim, t.frame) : t.full;
-    const tileSrc = withFx(frame, t.key, !!t.anim);
+    const cat = t.entry?.category ?? 'block';
+    const shown = (img: ImageData) => (t.alphaData ? displayAlphaData(t.entry ? tinted(img, t.entry.id, t.key) : img, cat) : img);
+    const tileSrc = shown(withFx(frame, t.key, !!t.anim));
     paintCanvas(tileCanvas, tile3(tileSrc));
     const tw = tileSrc.width * 3;
     const th = tileSrc.height * 3;
@@ -206,34 +208,35 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
     if (my !== token) return;
     const e = t.entry;
     const isBlockish = !!e && e.category === 'block';
-    const cutout = transparentShare(frame) > 0.3;
+    const cutout = !t.alphaData && transparentShare(frame) > 0.3;
     const cube = mode === 'cube' || (mode === 'auto' && isBlockish && !cutout && t.key !== ICON_KEY);
     const frametime = t.anim ? t.anim.frametime : undefined;
     if (!cube) {
       const img = t.anim ? stripForPreview(withFx(t.full, t.key, true), t.anim) : withFx(t.full, t.key, false);
-      const shown = e ? tinted(img, e.id, t.key) : img;
-      pv.showFlat(shown, frametime && t.anim ? { frametime } : undefined);
+      const tintedImg = e ? tinted(img, e.id, t.key) : img;
+      pv.showFlat(t.alphaData ? displayAlphaData(tintedImg, cat) : tintedImg, frametime && t.anim ? { frametime } : undefined);
       stageLabel.textContent = t.key === ICON_KEY ? 'Pack icon' : e?.category === 'block' ? 'Cut-out block' : 'Sprite';
       return;
     }
     const plan = e ? planCube(e.id, (id) => pathOfId(id) !== null, project.edition) : null;
     const mainFull = withFx(t.anim ? stripForPreview(t.full, t.anim) : t.full, t.key, !!t.anim);
     const main = e ? tinted(mainFull, e.id, t.key) : mainFull;
+    const mainShown = t.alphaData ? displayAlphaData(main, cat) : main;
     if (!plan || !e) {
-      pv.showCube({ all: main }, frametime ? { frametime } : undefined);
+      pv.showCube({ all: mainShown }, frametime ? { frametime } : undefined);
       stageLabel.textContent = 'Block';
       return;
     }
     const [up, down, side, front] = await Promise.all([
-      plan.up === e.id ? main : faceImage(plan.up, t),
-      plan.down === e.id ? main : faceImage(plan.down, t),
-      plan.side === e.id ? main : faceImage(plan.side, t),
-      plan.front ? (plan.front === e.id ? main : faceImage(plan.front, t)) : Promise.resolve(null),
+      plan.up === e.id ? mainShown : faceImage(plan.up, t),
+      plan.down === e.id ? mainShown : faceImage(plan.down, t),
+      plan.side === e.id ? mainShown : faceImage(plan.side, t),
+      plan.front ? (plan.front === e.id ? mainShown : faceImage(plan.front, t)) : Promise.resolve(null),
     ]);
     if (my !== token) return;
-    const sideImg = side ?? main;
+    const sideImg = side ?? mainShown;
     pv.showCube(
-      { up: up ?? main, down: down ?? up ?? main, north: sideImg, east: sideImg, west: sideImg, south: front ?? sideImg },
+      { up: up ?? mainShown, down: down ?? up ?? mainShown, north: sideImg, east: sideImg, west: sideImg, south: front ?? sideImg },
       frametime ? { frametime } : undefined,
     );
     stageLabel.textContent = 'Block';

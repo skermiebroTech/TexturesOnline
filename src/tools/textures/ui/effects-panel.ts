@@ -240,6 +240,7 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
     enable.addEventListener('click', () => {
       l.enabled = !l.enabled;
       changed();
+      requestAnimationFrame(() => (layersList.children[i]?.querySelector('.tx-l-enable') as HTMLElement | null)?.focus());
     });
     const handle = h('span', { class: 'tx-l-handle', 'aria-hidden': 'true', title: 'Drag to reorder' }, h('span', { class: 'tx-grip' }));
     const title = h(

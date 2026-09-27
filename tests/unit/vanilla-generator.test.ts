@@ -10,8 +10,9 @@ import {
   gradeColor, vignetteFactor, vanillaPackDescription,
 } from '../../src/tools/shaders/vanilla/index';
 import { countMain, glslFloat, maskComments, renameMain, wrapFunction, expandForAnalysis, fragmentOutputs } from '../../src/tools/shaders/vanilla/glsl';
-import { addProgramUniform } from '../../src/tools/shaders/vanilla/generate';
-import { whiteBalance } from '../../src/tools/shaders/vanilla/color';
+import { FOG_SIGNATURES, addProgramUniform } from '../../src/tools/shaders/vanilla/generate';
+import { ENV_FOG_FULL_END, ENV_FOG_PROTECT_END, environmentFogScale, tintMultiplier, whiteBalance } from '../../src/tools/shaders/vanilla/color';
+import { WAVE_CONDITION, gradeFunction } from '../../src/tools/shaders/vanilla/templates';
 import type { OptionValues } from '../../src/core/types';
 import { compileGL, findGlslang, injectDefines, mojPreprocess, missingVaryings } from '../tools/vanilla/glsl';
 
@@ -265,13 +266,32 @@ test('default preview is neutral', () => {
   }
 });
 
-/** The preview's final pass (shader-preview FINAL_FRAG) without its tone mapping, bloom and dither. */
+// The preview's final pass (src/shared/preview/glsl.ts FINAL_FRAG at noon, without bloom and dither):
+// exposure × white balance × tint multiply linear light, then ACES + sRGB, then the display-space grade.
+const aces = (x: number) => Math.min(1, Math.max(0, (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14)));
+const toSrgb = (c: number) => {
+  const x = Math.min(1, Math.max(0, c));
+  return x <= 0.0031308 ? x * 12.92 : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
+};
+const previewDisplay = (lin: number) => toSrgb(aces(lin * 0.72));
+/** Scene light that the preview shows as display value d (inverse of previewDisplay). */
+function previewLinear(d: number): number {
+  let lo = 0;
+  let hi = 64;
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    if (previewDisplay(mid) < d) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 function previewGrade(c: [number, number, number], p: ReturnType<typeof toPreviewParams>): [number, number, number] {
   const luma = (x: number[]) => x[0] * 0.2126 + x[1] * 0.7152 + x[2] * 0.0722;
   const t = p.temperature;
   const wb = [1 + 0.16 * t, 1 + 0.02 * t, 1 - 0.2 * t];
   const l0 = luma(wb);
-  let x = c.map((v, i) => v * p.exposure * (wb[i] / l0) * p.tint[i]);
+  let x = c.map((v, i) => previewDisplay(previewLinear(v) * p.exposure * (wb[i] / l0) * p.tint[i]));
   x = x.map((v) => (v - 0.5) * p.contrast + 0.5);
   let l = luma(x);
   x = x.map((v) => Math.min(1, Math.max(0, l + (v - l) * p.saturation)));
@@ -290,7 +310,9 @@ function previewGrade(c: [number, number, number], p: ReturnType<typeof toPrevie
 
 test('preview parameters follow the generated GLSL math', () => {
   assert.deepEqual(whiteBalance(0), [1, 1, 1].map((x) => x / (0.2126 + 0.7152 + 0.0722)));
-  const samples: [number, number, number][] = [[0.1, 0.2, 0.3], [0.8, 0.6, 0.2], [0.45, 0.7, 0.9], [0.95, 0.95, 0.9]];
+  // midtones, where the preview's filmic curve is matched by PREVIEW_LIGHT_GAMMA
+  const samples: [number, number, number][] = [[0.35, 0.45, 0.55], [0.6, 0.5, 0.35], [0.4, 0.55, 0.45], [0.55, 0.55, 0.5]];
+  let worst = 0;
   for (const preset of PRESETS) {
     const v = presetValues(preset.id);
     const s = readSettings(v);
@@ -298,18 +320,118 @@ test('preview parameters follow the generated GLSL math', () => {
     for (const c of samples) {
       const a = gradeColor(c, s);
       const b = previewGrade(c, p);
-      // exact when vibrance is off; vibrance is approximated by a saturation offset in the preview
-      const tol = s.vibrance === 0 ? 1e-5 : 0.08;
+      // vibrance is approximated by a saturation offset in the preview
+      const tol = s.vibrance === 0 ? 0.03 : 0.08;
       // posterize can flip a level at a rounding boundary
       const levelTol = s.posterize ? 1 / (s.posterize - 1) + 1e-6 : 0;
-      for (let i = 0; i < 3; i++) assert.ok(Math.abs(a[i] - b[i]) <= Math.max(tol, levelTol), `${preset.id} ${c}: ${a} vs ${b}`);
+      for (let i = 0; i < 3; i++) {
+        const d = Math.abs(a[i] - b[i]);
+        if (!s.posterize && !s.vibrance) worst = Math.max(worst, d);
+        assert.ok(d <= Math.max(tol, levelTol), `${preset.id} ${c}: ${a} vs ${b}`);
+      }
     }
     assert.equal(p.vignette, s.vignette);
   }
+  assert.ok(worst > 0 && worst < 0.03, `worst midtone difference ${worst}`);
+  // A warm tint must look about as warm in the preview as in the game (display-space ratio R/B).
+  const warm = { ...defaults(), temperature: 0.6 };
+  const g = gradeColor([0.5, 0.5, 0.5], readSettings(warm));
+  const pv = previewGrade([0.5, 0.5, 0.5], toPreviewParams(warm));
+  assert.ok(Math.abs(g[0] / g[2] - pv[0] / pv[2]) < 0.06, `game ${g} vs preview ${pv}`);
   // same lens vignette as the preview: smoothstep(1.05, 0.25, r * 1.25) mixed by strength
   assert.equal(vignetteFactor([0, 0], 1), 1);
   assert.ok(Math.abs(vignetteFactor([0, 0.5], 1) - 0.546814) < 1e-5); // smoothstep(1.05, 0.25, 0.625)
   assert.equal(vignetteFactor([0.89, 0.5], 0.5), 0.5);
+});
+
+// ---------------------------------------------------------------- review regressions
+
+test('low saturation with negative vibrance never inverts colours', () => {
+  const s = readSettings({ ...defaults(), saturation: 0, vibrance: -1 });
+  for (const c of [[0.9, 0.2, 0.1], [0.1, 0.8, 0.3], [0.5, 0.45, 0.4]] as [number, number, number][]) {
+    const g = gradeColor(c, s);
+    const l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    // factor clamped at 0: fully grey, never pushed past grey to the complementary colour
+    for (const x of g) assert.ok(Math.abs(x - l) < 1e-9, `${c} -> ${g}`);
+  }
+  assert.match(gradeFunction(s), /c = mix\(vec3\(txo_l\), c, max\(0\.0 \+ -1\.0 \* \(1\.0 - txo_s\), 0\.0\)\);/);
+});
+
+test('tint colours only change the hue: black and grey are neutral, dark picks act like bright ones', () => {
+  assert.deepEqual(tintMultiplier([0, 0, 0], 1), [1, 1, 1]);
+  assert.deepEqual(tintMultiplier([128, 128, 128], 1), [1, 1, 1]);
+  assert.deepEqual(tintMultiplier([0, 0, 128], 0.7), tintMultiplier([0, 0, 255], 0.7));
+  assert.deepEqual(tintMultiplier([60, 40, 20], 0.5), tintMultiplier([255, 170, 85], 0.5));
+  const black = generateVanillaShaderFiles(f6Sources(), { ...defaults(), tintColor: '#000000', tintStrength: 1, fogTint: '#000000', fogTintStrength: 1 },
+    { versionId: '26.3', packFormat: pf(97) });
+  assert.deepEqual(black.files, {}, 'a black tint must not turn the world black');
+  // presets keep their look: their tint colours are already at full brightness
+  const warm = readSettings(presetValues('warm-sunset'));
+  const c = [0xff / 255, 0xb0 / 255, 0x70 / 255];
+  const l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  const m = tintMultiplier(warm.tintColor, warm.tintStrength);
+  for (let i = 0; i < 3; i++) assert.ok(Math.abs(m[i] - (1 + (c[i] / l - 1) * 0.2)) < 1e-12);
+});
+
+test('waving only picks biome-tinted plants, never redstone wire or grey blocks', () => {
+  type Rgb = { r: number; g: number; b: number };
+  const cond = new Function('Color', 'Normal', 'gl_VertexID', 'abs', `return ${WAVE_CONDITION};`) as
+    (c: Rgb, n: { y: number }, id: number, abs: (x: number) => number) => boolean;
+  const hex = (h: string, shade = 1): Rgb => ({ r: (parseInt(h.slice(1, 3), 16) / 255) * shade, g: (parseInt(h.slice(3, 5), 16) / 255) * shade, b: (parseInt(h.slice(5, 7), 16) / 255) * shade });
+  const top = (c: Rgb) => cond(c, { y: 0 }, 4, Math.abs) && cond(c, { y: 0 }, 7, Math.abs);
+  // grass / foliage colours of plains, savanna, badlands, swamp, jungle, snowy plains, dark forest, cherry grove, pale garden;
+  // melon / pumpkin stems at age 0 and 7; with vertex shade and ambient occlusion down to 40 %
+  for (const c of ['#91bd59', '#bfb755', '#90814d', '#6a7039', '#4c763c', '#59c93c', '#80b497', '#507a32', '#b6db61', '#48b518', '#9e814d', '#00ff00', '#e0c71c']) {
+    for (const shade of [1, 0.8, 0.4]) assert.ok(top(hex(c, shade)), `${c} x${shade} should wave`);
+  }
+  // the pale garden's grey-green grass is close to grey; cross models have no ambient occlusion,
+  // so their vertex shade stays at 0.8 or more
+  for (const shade of [1, 0.8]) assert.ok(top(hex('#778272', shade)), `pale garden x${shade} should wave`);
+  // redstone wire at every power level (RedStoneWireBlock colours), untinted grey blocks
+  for (let power = 0; power <= 15; power++) {
+    const f = power / 15;
+    const rgb = { r: f * 0.6 + (f > 0 ? 0.4 : 0.3), g: Math.min(1, Math.max(0, f * f * 0.7 - 0.5)), b: Math.min(1, Math.max(0, f * f * 0.6 - 0.7)) };
+    assert.ok(!top(rgb), `redstone at power ${power} must not wave`);
+  }
+  for (const grey of [1, 0.7, 0.3]) assert.ok(!top({ r: grey, g: grey, b: grey }));
+  // bottom corners and horizontal faces stay put
+  assert.ok(!cond(hex('#91bd59'), { y: 0 }, 5, Math.abs));
+  assert.ok(!cond(hex('#91bd59'), { y: 1 }, 4, Math.abs));
+});
+
+test('water & weather fog distance leaves Blindness, Darkness, lava and powder snow alone', () => {
+  assert.equal(ENV_FOG_PROTECT_END, 16);
+  assert.equal(ENV_FOG_FULL_END, 32);
+  // 26.3 FogEnvironment ends: lava 1, powder snow 2, blindness 5, lava + fire resistance 5, darkness 15
+  for (const end of [1, 2, 5, 15]) for (const k of [0.25, 3]) assert.equal(environmentFogScale(end, k), 1);
+  // water 96 (x water vision >= 0.25), rain >= 96, clear weather 1024
+  for (const end of [32, 96, 768, 1024]) assert.equal(environmentFogScale(end, 3), 3);
+  const mid = environmentFogScale(24, 3);
+  assert.ok(mid > 1 && mid < 3);
+  // continuous and monotonic through the fade, so effects fading in or out do not pop
+  let prev = 0;
+  for (let e = 0; e <= 40; e += 0.25) {
+    const d = e * environmentFogScale(e, 3);
+    assert.ok(d >= prev - 1e-9, `fog end must not jump back at ${e}`);
+    prev = d;
+  }
+});
+
+test('supportedFor places old releases and weekly snapshots', () => {
+  assert.equal(supportedFor('1.5.2').supported, false);
+  assert.equal(supportedFor('1.0').supported, false);
+  assert.equal(supportedFor('20w51a').supported, false);
+  assert.equal(supportedFor('21w08b').supported, false);
+  assert.equal(supportedFor('15w14a').supported, false);
+  const s17 = supportedFor('21w10a');
+  assert.equal(s17.supported, true);
+  assert.equal(s17.known, false);
+  assert.equal(s17.family, 'F1');
+  assert.equal(s17.features.bloom, false);
+  assert.equal(supportedFor('24w45a').family, 'F2');
+  assert.equal(supportedFor('25w03a').features.waving, false);
+  assert.equal(supportedFor('24w14potato').supported, true);
+  assert.equal(supportedFor('25w45a').features.bloom, false);
 });
 
 // ---------------------------------------------------------------- text primitives
@@ -337,14 +459,26 @@ test('main() is renamed only when there is exactly one', () => {
 });
 
 test('function wrapping keeps vanilla code and fails closed', () => {
-  const r = wrapFunction(FOG_V1, 'linear_fog', 5, (n) => [n[0], n[1], `${n[2]} * 0.5`, n[3], n[4]]);
+  const r = wrapFunction(FOG_V1, 'linear_fog', FOG_SIGNATURES.linear_fog, (n) => [n[0], n[1], `${n[2]} * 0.5`, n[3], n[4]]);
   assert.equal(typeof r, 'object');
   if (typeof r === 'object') {
     assert.match(r.code, /vec4 linear_fog\(vec4 inColor, float vertexDistance, float fogStart, float fogEnd, vec4 fogColor\);\nvec4 txo_vanilla_linear_fog\(/);
     assert.match(r.wrapper, /return txo_vanilla_linear_fog\(inColor, vertexDistance, fogStart \* 0\.5, fogEnd, fogColor\);/);
   }
-  assert.match(wrapFunction(FOG_V1, 'linear_fog', 6, (n) => n) as string, /5 parameters instead of 6/);
-  assert.match(wrapFunction(FOG_V1, 'apply_fog', 8, (n) => n) as string, /not found/);
+  const six = { ret: 'vec4', params: ['vec4', 'float', 'float', 'float', 'vec4', 'float'] } as const;
+  assert.match(wrapFunction(FOG_V1, 'linear_fog', six, (n) => n) as string, /5 parameters instead of 6/);
+  assert.match(wrapFunction(FOG_V1, 'apply_fog', FOG_SIGNATURES.apply_fog, (n) => n) as string, /not found/);
+  // Same parameter count but a different order or return type must not be wrapped (the wrapper
+  // would pass a float where a vec4 is expected and the whole pack would fail to load).
+  const reordered = FOG_V1.replace('vec4 inColor, float vertexDistance, float fogStart, float fogEnd, vec4 fogColor',
+    'vec4 inColor, vec4 fogColor, float vertexDistance, float fogStart, float fogEnd');
+  assert.match(wrapFunction(reordered, 'linear_fog', FOG_SIGNATURES.linear_fog, (n) => n) as string, /parameter 2 is vec4 instead of float/);
+  const retyped = FOG_V1.replace('float linear_fog_fade(', 'vec4 linear_fog_fade(');
+  assert.match(wrapFunction(retyped, 'linear_fog_fade', FOG_SIGNATURES.linear_fog_fade, (n) => n) as string, /returns vec4 instead of float/);
+  const r2 = generateVanillaShaderFiles({ ...f1Sources(), [`${INC}fog.glsl`]: reordered }, { ...defaults(), fogTintStrength: 0.5, fogTint: '#ff0000' },
+    { versionId: '1.17.1', packFormat: pf(7) });
+  assert.deepEqual(r2.files, {});
+  assert.match(r2.warnings.join('\n'), /linear_fog\(\) parameter 2 is vec4 instead of float/);
 });
 
 test('include expansion for analysis handles both import syntaxes', () => {
@@ -421,6 +555,13 @@ test('versions without core shaders are unsupported', () => {
   assert.equal(r.supported, false);
   assert.deepEqual(r.files, {});
   assert.match(r.warnings[0], /1\.17/);
+  // 1.6.x has no shaders folder at all: still "too old"
+  assert.match(generateVanillaShaderFiles({}, ALL_ON, { versionId: '1.6.4', packFormat: pf(1) }).warnings[0], /1\.17/);
+  // a modern version whose shader files never arrived must not be called too old
+  const empty = generateVanillaShaderFiles({ 'assets/minecraft/post_effect/blur.json': '{}' }, ALL_ON, { versionId: '26.3', packFormat: pf(97) });
+  assert.equal(empty.supported, false);
+  assert.deepEqual(empty.files, {});
+  assert.match(empty.warnings[0], /shader files of Java 26\.3 could not be read/);
 });
 
 test('default settings change nothing', () => {
@@ -524,7 +665,10 @@ test('26.3-style patch: full-screen post effect, no core fragment patches', () =
   assert.match(final, /layout\(location = 0\) out vec4 fragColor;/);
   const fog = files[`${INC}fog.glsl`];
   assert.ok(fog.indexOf('#endif\n') < fog.indexOf('#ifndef TXO_FOG_WRAPPERS'), 'wrappers go after the vanilla include guard');
-  assert.match(fog, /envStart \* 0\.8, envEnd \* 0\.8/);
+  assert.match(fog, /envStart \* txo_fog_env\(envEnd\), envEnd \* txo_fog_env\(envEnd\)/);
+  assert.match(fog, /float txo_fog_env\(float envEnd\) \{\n\s+return mix\(1\.0, 0\.8, smoothstep\(16\.0, 32\.0, envEnd\)\);/);
+  assert.ok(fog.indexOf('float txo_fog_env(') < fog.indexOf('float total_fog_value(float sph, float cyl, float envStart, float envEnd, float rdStart, float rdEnd) {\n    return'),
+    'the helper is defined before the wrapper that calls it');
   assert.match(r.warnings.join('\n'), /Waving plants skipped/);
   const light = files[`${CORE}lightmap.fsh`];
   assert.match(light, /fragColor\.rgb \*= mix\(1\.0, txo_m, 0\.4\);/);

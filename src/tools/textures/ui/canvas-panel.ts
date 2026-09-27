@@ -5,7 +5,7 @@ import { PixelCanvas, type Tool, type PixelCanvasSettings } from '../../../share
 import { cloneImageData, decodeImage, encodePng } from '../../../core/image';
 import { saveBlob } from '../../../core/download';
 import { h, isTypingTarget } from '../../../ui/dom';
-import { icon, type IconName } from '../../../ui/icons';
+import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { badge, button, iconButton, openMenu, segmented, spinner, tooltip } from '../../../ui/components';
 import { toast } from '../../../ui/toast';
 import { confirmDialog } from '../../../ui/modal';
@@ -150,7 +150,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     'div',
     { class: 'tx-banner', hidden: true, role: 'note' },
     icon('info'),
-    h('span', { class: 'grow' }, 'Bedrock uses this texture’s transparency as a tint or dye mask. Paint colour and mask separately so you don’t break it.'),
+    h('span', { class: 'grow' }, 'Transparency is a colour mask here. Paint the colour and the mask separately:'),
     channelSeg,
   );
 
@@ -324,7 +324,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   function syncSettings(s: PixelCanvasSettings) {
     for (const [tool, b] of railButtons) b.setAttribute('aria-pressed', String(tool === s.tool || (tool === 'rect' && s.tool === 'rect-fill')));
     const rectB = railButtons.get('rect');
-    if (rectB) rectB.querySelector('.icon')?.replaceWith(icon(s.tool === 'rect-fill' ? 'rect-fill' : 'rect'));
+    const rectIcon = rectB?.querySelector<HTMLElement>('.icon');
+    if (rectIcon) setIcon(rectIcon, s.tool === 'rect-fill' ? 'rect-fill' : 'rect');
     sizeVal.textContent = String(s.brushSize);
     sizeGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool);
     mirrorGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool) && s.tool !== 'fill';

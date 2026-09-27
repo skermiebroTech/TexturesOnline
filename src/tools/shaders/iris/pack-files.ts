@@ -33,6 +33,16 @@ export function asciiText(s: unknown, max: number): string {
   return decomposed.replace(/[^\x20-\x7e]/g, '').replace(/[\\*]/g, '').replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * The pack name for comment lines of GLSL and .properties files. Only plain characters are kept:
+ * '#' or '//' could turn a comment into something the loaders parse (OptiFine accepts "# if" as
+ * a preprocessor directive in .properties files, and "// #define X // y" as an option), and a
+ * trailing backslash would continue the line. Comment lines also always start with fixed words.
+ */
+export function commentTitle(s: unknown): string {
+  return asciiText(s, 64).replace(/[^A-Za-z0-9 .,:;!?'()&+_-]/g, '').replace(/\s+/g, ' ').trim() || 'Shader pack';
+}
+
 export function cleanMeta(meta: Partial<PackMeta> | null | undefined): PackMeta {
   const name = langText(meta?.name, 64) || DEFAULT_PACK_NAME;
   const description = langText(meta?.description, 240);
@@ -65,17 +75,17 @@ function optionLine(opt: GameOption, s: Settings): string {
 }
 
 export function buildSettingsGlsl(s: Settings, meta: PackMeta): string {
-  const title = asciiText(meta.name, 64) || 'Shader pack';
   const out: string[] = [
     '// ============================================================================',
-    `// ${title} - settings`,
+    `// Settings of ${commentTitle(meta.name)}`,
     `// ${CREDIT}.`,
     '//',
     '// Every option of the pack lives in this file (so no option can have different',
     '// defaults in different files). The values below are the defaults chosen when the',
     '// pack was made; change them in game under Shader Options.',
-    '//   Boolean on:  #define NAME             Boolean off: //#define NAME',
-    '//   Value:       #define NAME <default> // [allowed values] description',
+    '//   On / off options: a define line, commented out when the option is off.',
+    '//   Value options: a define with its default value, then the allowed values in',
+    '//   square brackets and a description.',
     '// ============================================================================',
     '',
   ];
@@ -93,9 +103,9 @@ export function buildSettingsGlsl(s: Settings, meta: PackMeta): string {
     'const float shadowDistanceRenderMul = 1.0; // skip shadow casters beyond the shadow distance',
     'const bool shadowHardwareFiltering = true; // shadowtex0 compares depth in hardware (shadow2D)',
     '',
-    '// ---- Boolean option references ----',
-    '// A boolean #define only shows up as an option when an #ifdef for it is in the same',
-    '// (include-expanded) file. These empty blocks make that true for every program.',
+    '// ---- On / off option references ----',
+    '// An on / off option only shows up in the menu when the same (include-expanded) file',
+    '// tests it with an ifdef. These empty blocks make that true for every program.',
   );
   for (const opt of GAME_OPTIONS) if (opt.kind === 'bool') out.push(`#ifdef ${opt.name}`, '#endif');
   out.push('');
@@ -105,12 +115,11 @@ export function buildSettingsGlsl(s: Settings, meta: PackMeta): string {
 // ------------------------------------------------------------------ shaders.properties
 
 export function buildShadersProperties(meta: PackMeta): string {
-  const title = asciiText(meta.name, 64) || 'Shader pack';
   const sliders = GAME_OPTIONS.filter((o) => o.kind === 'value' && o.slider).map((o) => o.name);
   const lines: string[] = [
-    `# ${title} - ${CREDIT}.`,
-    '# Shader pack for Iris (Minecraft 1.16.5 and newer) and OptiFine (Minecraft 1.8.9 and newer).',
-    '# This file is preprocessed: #if / #ifdef can use MC_VERSION, IS_IRIS and the pack options.',
+    `# Shader pack: ${commentTitle(meta.name)} - ${CREDIT}.`,
+    '# For Iris (Minecraft 1.16.5 and newer) and OptiFine (Minecraft 1.8.9 and newer).',
+    '# The loaders run this file through the preprocessor (MC_VERSION and the options).',
     '',
     '# ---- Rendering switches ----',
     'oldLighting=false',
@@ -149,12 +158,13 @@ export function buildShadersProperties(meta: PackMeta): string {
 const ns = (names: readonly string[]): string => names.map((n) => `minecraft:${n}`).join(' ');
 
 export function buildBlockProperties(meta: PackMeta): string {
-  const title = asciiText(meta.name, 64) || 'Shader pack';
+  // Comments never contain "block" directly followed by a dot: Iris starts a new entry at
+  // every "<non-space> block." it finds in this file.
   const lines: string[] = [
-    `# ${title} - block IDs (${CREDIT}).`,
-    '# mc_Entity.x in gbuffers_terrain, gbuffers_water and shadow; blockEntityId in gbuffers_block.',
-    '# One line per ID: a repeated key replaces the earlier line. A block gets only one ID (the',
-    '# first mapping wins). Unknown names are ignored. Never use ID 0.',
+    `# Block IDs of ${commentTitle(meta.name).replace(/block\./gi, 'block')} (${CREDIT}).`,
+    '# Read as mc_Entity.x by the terrain, water and shadow programs, and as blockEntityId by',
+    '# the block entity program. One line per ID: a repeated key replaces the earlier line. A',
+    '# block gets only one ID (the first mapping wins). Unknown names are ignored. Never use 0.',
     ...BLOCK_GROUPS.map((g) => `#   ${g.id} = ${g.what}`),
     '',
     '#if MC_VERSION >= 11300',

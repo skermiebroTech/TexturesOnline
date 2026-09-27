@@ -23,6 +23,21 @@ const TONEMAP_LOOK: Record<Tonemap, { exposure: number; contrast: number }> = {
   none: { exposure: 1.08, contrast: 1.06 },
 };
 
+/**
+ * Preview temperature giving the same red / blue balance as the pack's final pass.
+ * Pack (final.fsh): (1 + 0.30 T, 1 + 0.05 T, 1 - 0.30 T); preview: (1 + 0.16 t, 1 + 0.02 t, 1 - 0.20 t).
+ */
+export function previewTemperature(t: number): number {
+  const k = (1 + 0.3 * t) / (1 - 0.3 * t);
+  return clamp((k - 1) / (0.16 + 0.2 * k), -1, 1);
+}
+
+/**
+ * The pack darkens by VIGNETTE * smoothstep(0.35, 1.2, r); the preview's vignette mask is about
+ * twice as strong at the same value (least-squares fit over a 16:9 screen).
+ */
+const VIGNETTE_TO_PREVIEW = 0.51;
+
 export function toPreviewParams(v: OptionValues): PreviewParams {
   const s = readSettings(v);
   const look = TONEMAP_LOOK[s.tonemap];
@@ -47,9 +62,9 @@ export function toPreviewParams(v: OptionValues): PreviewParams {
     contrast: round(clamp(s.contrast * look.contrast, 0.3, 2.5)),
     saturation: round(clamp(s.saturation * satBoost, 0, 3)),
     gamma: round(clamp(s.gamma, 0.5, 2)),
-    temperature: round(clamp(s.temperature * 0.8, -1, 1)),
+    temperature: round(previewTemperature(s.temperature)),
     tint: [round(wb[0] / wbLuma), round(wb[1] / wbLuma), round(wb[2] / wbLuma)],
-    vignette: round(clamp(s.vignette, 0, 1)),
+    vignette: round(clamp(s.vignette * VIGNETTE_TO_PREVIEW, 0, 1)),
     bloom: round(clamp(s.bloomStrength * 1.6 * (1.25 - 0.25 * clamp(s.bloomThreshold, 0, 3)), 0, 1)),
     shadowStrength: s.shadows ? round(clamp(0.95 * (1 - s.shadowBrightness) * (1.05 - 0.15 * s.ambientStrength), 0, 1)) : 0,
     sunColor: scale(unit(s.sunColor), clamp(0.5 + 0.5 * s.sunStrength, 0, 2)),

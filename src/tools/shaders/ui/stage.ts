@@ -101,7 +101,7 @@ export function createStage(opts: {
   const viewTools = h('div', { class: 'sh-stage-tools' }, rotateBtn, resetBtn, shotBtn);
 
   const compareBtn = h('button', { type: 'button', class: 'sh-compare-btn', 'aria-pressed': 'false' }, icon('eye'), h('span', null, 'Hold to compare'));
-  tooltip(compareBtn, `Hold to see ${opts.compareLabel.toLowerCase()} (or hold C)`);
+  tooltip(compareBtn, `Hold to see “${opts.compareLabel}” (or hold C)`);
   const endCompare = () => setCompare(false);
   compareBtn.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;

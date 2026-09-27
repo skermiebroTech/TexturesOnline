@@ -18,11 +18,17 @@ export function whiteBalance(temperature: number): Vec3 {
   return [wb[0] / l, wb[1] / l, wb[2] / l];
 }
 
-/** Hue-only tint: the colour normalised to luma 1 (kept within 0..4), blended in by strength. */
+/**
+ * Hue-only tint, blended in by strength. Only the colour's hue and saturation count: it is first
+ * scaled to full brightness (so a dark pick tints like its bright version and black or grey is
+ * neutral), then normalised to luma 1 and kept within 0..4 per channel.
+ */
 export function tintMultiplier(color: RGB, strength: number): Vec3 {
-  const c: Vec3 = [color[0] / 255, color[1] / 255, color[2] / 255];
-  const l = Math.max(luma(c), 0.05);
   const s = clamp(strength, 0, 1);
+  const peak = Math.max(color[0], color[1], color[2]);
+  if (!(peak > 0) || s <= 0) return [1, 1, 1];
+  const c: Vec3 = [color[0] / peak, color[1] / peak, color[2] / peak];
+  const l = Math.max(luma(c), 0.05);
   return [mix(1, clamp(c[0] / l, 0, 4), s), mix(1, clamp(c[1] / l, 0, 4), s), mix(1, clamp(c[2] / l, 0, 4), s)];
 }
 
@@ -99,7 +105,8 @@ export function gradeColor(rgb: Vec3, s: Settings): Vec3 {
   if (steps.saturation) {
     const l = luma(c);
     const spread = clamp(Math.max(...c) - Math.min(...c), 0, 1);
-    const f = s.saturation + s.vibrance * (1 - spread);
+    // Never below 0: a negative factor would invert colours around grey.
+    const f = Math.max(s.saturation + s.vibrance * (1 - spread), 0);
     c = c.map((x) => mix(l, x, f)) as Vec3;
   }
   c = c.map((x) => clamp(x, 0, 1)) as Vec3;
@@ -132,6 +139,28 @@ export function vignetteFactor(p: [number, number], strength: number): number {
   const t = clamp((r - 0.25) / 0.8, 0, 1);
   return 1 - strength * t * t * (3 - 2 * t);
 }
+
+/**
+ * Environmental fog (1.21.6+) ends this close for Blindness (5 blocks), Darkness (15), lava (1, or 5
+ * with Fire Resistance) and powder snow (2). The distance multiplier fades in between these two fog
+ * end distances, so those effects keep their vanilla fog while water (24 – 96), rain, foggy biomes
+ * and boss fog (96+) get the full multiplier. The fade keeps effect transitions smooth.
+ */
+export const ENV_FOG_PROTECT_END = 16;
+export const ENV_FOG_FULL_END = 32;
+
+/** Multiplier applied to the environmental fog start and end for a vanilla fog end distance (mirrors the GLSL). */
+export function environmentFogScale(envEnd: number, multiplier: number): number {
+  const t = clamp((envEnd - ENV_FOG_PROTECT_END) / (ENV_FOG_FULL_END - ENV_FOG_PROTECT_END), 0, 1);
+  return mix(1, multiplier, t * t * (3 - 2 * t));
+}
+
+/**
+ * The in-browser preview multiplies exposure, white balance and tint in linear light before its
+ * filmic tone curve, while the game shaders multiply display (sRGB) values. A display-space factor m
+ * is matched in the preview's midtones by the linear factor m ^ PREVIEW_LIGHT_GAMMA.
+ */
+export const PREVIEW_LIGHT_GAMMA = 1.8;
 
 /** Minecraft's GameTime uniform wraps once per in-game day (1200 s); waves use whole cycles per day. */
 export const GAME_TIME_DAY_SECONDS = 1200;

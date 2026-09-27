@@ -280,9 +280,13 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
       const off: string[] = [];
       for (const [v, f] of formats) if (f && describePackForGame(text, f) !== 'compatible') off.push(v);
       if (my !== compatToken) return;
-      const fields = Object.entries(pack)
-        .filter(([k]) => k !== 'description')
-        .map(([k, v]) => h('div', { class: 'tx-kv' }, h('span', { class: 'tx-k' }, k), h('span', { class: 'tx-v' }, JSON.stringify(v))));
+      const fields = h(
+        'pre',
+        { class: 'tx-mcmeta-lines' },
+        Object.entries(pack)
+          .filter(([k]) => k !== 'description')
+          .map(([k, v]) => [h('span', { class: 'tx-k' }, `"${k}": `), JSON.stringify(v), '\n']),
+      );
       compatResult.replaceChildren(
         h('div', { class: 'tx-formats' }, formats.map(([v, f]: readonly [string, PackFormat | null]) => h('span', { class: 'tx-format-chip' }, h('strong', null, v), ` pack ${f ? formatPackFormat(f) : '?'}`))),
         h('div', { class: 'tx-mcmeta' }, h('span', { class: 'tx-mcmeta-title' }, 'pack.mcmeta will say'), fields),

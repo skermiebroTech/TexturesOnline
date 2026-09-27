@@ -406,6 +406,11 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
       if (token !== supportToken || destroyed) return;
       optPanel.setAvailability(s);
       pack.setSupport(s);
+      exportAllowed = s.supported;
+      const why = s.notes[0] ?? 'This Minecraft version is not supported.';
+      pack.setExportAvailable(s.supported, why);
+      exportBtn.disabled = !s.supported;
+      tooltip(exportBtn, s.supported ? `Export ${target.fileExt} (Ctrl+E)` : why);
     };
     const sf = gen.supportedFor;
     apply(sf(v));
@@ -453,8 +458,13 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   }
 
   // ---------------------------------------------------------------- export
+  let exportAllowed = true;
   function doExport(): void {
     scheduleSave.flush();
+    if (!exportAllowed) {
+      toast('Pick Minecraft 1.17 or newer to export vanilla shaders.', { tone: 'warn' });
+      return;
+    }
     openExportDialog({
       project,
       target,
@@ -486,13 +496,14 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
       {
         title: 'Preview',
         items: [
-          { keys: ['C'], label: `Hold to compare with ${target.compareLabel.toLowerCase()}` },
+          { keys: ['C'], label: `Hold to compare (${target.compareLabel})` },
           ...TIME_PRESETS.map((t) => ({ keys: [t.key], label: t.label })),
           { keys: ['D'], label: 'Play or pause the day cycle' },
           { keys: ['R'], label: 'Auto-rotate on or off' },
           { keys: ['P'], label: 'Save a screenshot' },
-          { keys: ['Arrows'], label: 'Rotate (when the preview is focused)' },
-          { keys: ['+', '-'], label: 'Zoom (when the preview is focused)' },
+          { keys: ['Arrows'], label: 'Rotate (preview focused)' },
+          { keys: ['+'], label: 'Zoom in (preview focused)' },
+          { keys: ['-'], label: 'Zoom out (preview focused)' },
           { keys: ['Home'], label: 'Reset the view' },
         ],
       },

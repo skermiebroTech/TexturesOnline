@@ -7,7 +7,7 @@ export { generateVanillaShaderFiles, vanillaPackDescription, GRADE_DENY } from '
 export type { VanillaShaderResult, VanillaVersionInfo } from './generate';
 export { toPreviewParams } from './preview';
 export {
-  shaderSourcePrefixes, supportedFor, supportFromSources, detectFamily, END_OF_FRAME_FORMAT, NO_CORE_SHADERS_MESSAGE,
+  shaderSourcePrefixes, supportedFor, supportFromSources, detectFamily, missingSourcesMessage, END_OF_FRAME_FORMAT, NO_CORE_SHADERS_MESSAGE,
 } from './support';
 export type { VanillaSupport, Feature, Family, FamilyId } from './support';
 export { gradeColor, vignetteFactor, colorMultiplier } from './color';

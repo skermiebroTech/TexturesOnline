@@ -22,6 +22,7 @@ export interface BaseGenerator {
 export interface IrisGenerator extends BaseGenerator {
   kind: 'iris';
   generateIrisPack(v: OptionValues, meta: { name: string; description: string }): FileMap;
+  IRIS_NOTES?: readonly NoteDef[];
 }
 
 /** What the vanilla generator reports about one Java version (subset of its VanillaSupport). */
@@ -49,11 +50,12 @@ export interface VanillaGenerator extends BaseGenerator {
   vanillaPackDescription?(versionId: string, name?: string): string;
 }
 
-export interface BedrockNoteDef {
+export interface NoteDef {
   id: string;
   title: string;
   text: string;
 }
+export type BedrockNoteDef = NoteDef;
 
 export interface BedrockGenerator extends BaseGenerator {
   kind: 'bedrock-vibrant';
@@ -124,6 +126,11 @@ function presetsOf(mod: Mod): ShaderPresetDef[] {
   return out;
 }
 
+function notesOf(x: unknown): NoteDef[] | undefined {
+  if (!Array.isArray(x)) return undefined;
+  return x.filter((n): n is NoteDef => !!n && typeof n === 'object' && typeof (n as NoteDef).text === 'string' && typeof (n as NoteDef).title === 'string');
+}
+
 function wrap(target: ShaderTarget, mod: Mod): AnyGenerator {
   const base: BaseGenerator = {
     OPTIONS: mod.OPTIONS as OptionDef[],
@@ -134,7 +141,7 @@ function wrap(target: ShaderTarget, mod: Mod): AnyGenerator {
   };
   if (target === 'iris') {
     checkBase(target, mod, 'generateIrisPack');
-    return { ...base, kind: 'iris', generateIrisPack: mod.generateIrisPack as IrisGenerator['generateIrisPack'] };
+    return { ...base, kind: 'iris', generateIrisPack: mod.generateIrisPack as IrisGenerator['generateIrisPack'], IRIS_NOTES: notesOf(mod.IRIS_NOTES) };
   }
   if (target === 'java-vanilla') {
     checkBase(target, mod, 'generateVanillaShaderFiles');
@@ -150,9 +157,7 @@ function wrap(target: ShaderTarget, mod: Mod): AnyGenerator {
     };
   }
   checkBase(target, mod, 'generateBedrockVisuals');
-  const notes = Array.isArray(mod.BEDROCK_VV_NOTES)
-    ? (mod.BEDROCK_VV_NOTES as unknown[]).filter((n): n is BedrockNoteDef => !!n && typeof n === 'object' && typeof (n as BedrockNoteDef).text === 'string')
-    : undefined;
+  const notes = notesOf(mod.BEDROCK_VV_NOTES);
   return {
     ...base,
     kind: 'bedrock-vibrant',

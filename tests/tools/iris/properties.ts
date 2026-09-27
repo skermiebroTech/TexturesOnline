@@ -97,6 +97,32 @@ export function preprocessProperties(text: string, macros: Macros): string[] {
   return out;
 }
 
+const DIRECTIVES = ['define', 'undef', 'ifdef', 'ifndef', 'if', 'elif', 'else', 'endif', 'include', 'error', 'warning', 'line', 'pragma'];
+
+/**
+ * Comment lines the preprocessors would read as directives. OptiFine matches
+ * `\s*#\s*(\w+)\s*(.*)`, so "# if ..." (with a space) is a directive there. Every intended
+ * directive in the generated files is written "#word" at the start of the line.
+ */
+export function accidentalDirectives(text: string): string[] {
+  const out: string[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const m = /^\s*#\s*(\w+)/.exec(raw);
+    if (!m || !DIRECTIVES.includes(m[1])) continue;
+    if (!new RegExp(`^#${m[1]}\\b`).test(raw)) out.push(raw);
+  }
+  return out;
+}
+
+/**
+ * Iris' IdMap runs replaceAll("\\S *block\\.", "\nblock.") over block.properties, so any
+ * "block." that follows other text on a line (in a comment too, on loaders that keep comments
+ * until then) would start a bogus entry.
+ */
+export function strayBlockKeys(text: string): string[] {
+  return text.split(/\r?\n/).filter((line) => /\S *block\./.test(line));
+}
+
 /** key=value entries of the preprocessed file (comments and blank lines dropped). */
 export function propertiesFor(text: string, macros: Macros): Array<[string, string]> {
   const out: Array<[string, string]> = [];

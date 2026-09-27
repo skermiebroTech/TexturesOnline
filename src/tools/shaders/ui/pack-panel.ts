@@ -7,7 +7,7 @@ import { h, timeAgo } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { versionPicker } from '../../../ui/version-picker';
 import type { ShaderTargetInfo } from '../targets';
-import type { AnyGenerator, VanillaSupportInfo } from './generator';
+import type { AnyGenerator, NoteDef, VanillaSupportInfo } from './generator';
 import { helpLink, installSteps } from './install';
 import type { ShaderProjectData } from './project';
 
@@ -18,6 +18,7 @@ export interface PackPanel {
   refresh(settings: OptionValues): void;
   setSupport(s: VanillaSupportInfo | null): void;
   setVersion(v: string): void;
+  setExportAvailable(ok: boolean, reason?: string): void;
 }
 
 const FEATURE_LABELS: { id: string; label: string; icon: IconName }[] = [
@@ -53,6 +54,14 @@ function row(ok: boolean | null, label: string, detail: string, ic: IconName): H
   );
 }
 
+function accordion(notes: readonly NoteDef[]): HTMLElement {
+  return h(
+    'div',
+    { class: 'sh-vv-notes' },
+    notes.map((n) => h('details', { class: 'sh-vv-note' }, h('summary', null, h('span', { class: 'grow' }, n.title), icon('chevron-down', { class: 'chev' })), h('p', null, n.text))),
+  );
+}
+
 export function packPanel(opts: {
   project: ShaderProjectData;
   target: ShaderTargetInfo;
@@ -85,7 +94,7 @@ export function packPanel(opts: {
   const badges = h(
     'div',
     { class: 'row wrap', style: { '--gap': '6px' } },
-    badge(target.edition === 'java' ? 'Java Edition' : 'Bedrock Edition', target.edition === 'java' ? 'green' : 'blue'),
+    badge(target.edition === 'java' ? 'Java' : 'Bedrock', target.edition === 'java' ? 'green' : 'blue'),
     target.needsMods ? badge('Needs Iris or OptiFine', 'gold') : badge('No mods needed', 'purple'),
   );
   const infoSection = h('section', { class: 'sh-pack-section' }, targetLine, badges, nameField, descField);
@@ -109,25 +118,33 @@ export function packPanel(opts: {
       row(of, 'OptiFine', 'Java 1.8.9 to 26.2 (no 26.3 build yet).', 'gear'),
     );
     const tips: HTMLElement[] = [];
+    const notes = gen.kind === 'iris' ? (gen.IRIS_NOTES ?? []) : [];
     const vulkan = compareJavaReleases(v, '26.2');
     if (vulkan === null || vulkan >= 0) {
+      const n = notes.find((x) => x.id === 'vulkan');
+      tips.push(
+        h(
+          'p',
+          { class: 'sh-note is-warn' },
+          icon('warning'),
+          n
+            ? h('span', null, n.text)
+            : h('span', null, 'Minecraft 26.2 and newer can run on Vulkan. Iris needs OpenGL: set ', h('strong', null, 'Graphics API'), ' to ', h('strong', null, 'Default'), ' or ', h('strong', null, 'Prefer OpenGL'), ' in Video Settings.'),
+        ),
+      );
+    }
+    const extra = notes.filter((x) => x.id === 'settings' || x.id === 'performance');
+    if (extra.length) tips.push(accordion(extra));
+    else {
       tips.push(
         h(
           'p',
           { class: 'sh-note' },
-          icon('warning'),
-          h('span', null, 'Minecraft 26.2 and newer can run on Vulkan. Iris needs OpenGL: set ', h('strong', null, 'Graphics API'), ' to ', h('strong', null, 'Default'), ' or ', h('strong', null, 'Prefer OpenGL'), ' in Video Settings.'),
+          icon('info'),
+          h('span', null, 'Re-exported with the same file name? In game, press ', h('strong', null, 'Reset'), ' in Shader Pack Settings to use your new defaults.'),
         ),
       );
     }
-    tips.push(
-      h(
-        'p',
-        { class: 'sh-note' },
-        icon('info'),
-        h('span', null, 'Re-exported with the same file name? In game, press ', h('strong', null, 'Reset'), ' in Shader Pack Settings to use your new defaults.'),
-      ),
-    );
     notesEl.replaceChildren(...tips);
   };
 
@@ -187,14 +204,7 @@ export function packPanel(opts: {
     targetSection.append(compatList, notesEl);
     if (gen.kind === 'iris') renderIrisCompat();
   } else {
-    const notes = gen.BEDROCK_VV_NOTES ?? [];
-    const noteList = h(
-      'div',
-      { class: 'sh-vv-notes' },
-      notes
-        .filter((n) => n.id !== 'activate')
-        .map((n) => h('details', { class: 'sh-vv-note' }, h('summary', null, h('span', { class: 'grow' }, n.title), icon('chevron-down', { class: 'chev' })), h('p', null, n.text))),
-    );
+    const noteList = accordion((gen.BEDROCK_VV_NOTES ?? []).filter((n) => n.id !== 'activate'));
     targetSection.append(h('h3', { class: 'section-title' }, icon('cloud-sun'), 'Vibrant Visuals'), bedrockEngine, notesEl, noteList);
     renderBedrock(opts.settings);
   }
@@ -203,10 +213,11 @@ export function packPanel(opts: {
   const exportBtn = button({ label: `Export ${target.fileExt}`, icon: 'download', variant: 'primary', size: 'lg', class: 'sh-export-main', onClick: () => opts.onExport() });
   tooltip(exportBtn, 'Build and download your pack (Ctrl+E)');
   const fileLine = h('p', { class: 'sh-file-line' });
+  const destLine = h('p', { class: 'sh-file-dest' }, target.installPlace);
   const lastLine = h('p', { class: 'faint small sh-last-export' });
   const paintFile = () => {
     const name = (project.name.trim() || 'My shaders') + target.fileExt;
-    fileLine.replaceChildren(icon(target.fileExt === '.mcpack' ? 'package' : 'archive'), h('span', { class: 'truncate', title: name }, name), icon('arrow-right', { class: 'sh-file-arrow' }), h('span', { class: 'sh-file-dest' }, target.installPlace));
+    fileLine.replaceChildren(icon(target.fileExt === '.mcpack' ? 'package' : 'archive'), h('span', { class: 'truncate', title: name }, name));
     lastLine.hidden = !project.lastExportAt;
     if (project.lastExportAt) lastLine.textContent = `Last exported ${timeAgo(project.lastExportAt)}`;
   };
@@ -215,6 +226,7 @@ export function packPanel(opts: {
     { class: 'sh-pack-section sh-export-section' },
     exportBtn,
     fileLine,
+    destLine,
     lastLine,
     h('h3', { class: 'section-title' }, icon('book-open'), 'How to install'),
     installSteps(target, { compact: true }),
@@ -247,6 +259,10 @@ export function packPanel(opts: {
     setVersion(v) {
       version = v;
       if (gen.kind === 'iris') renderIrisCompat();
+    },
+    setExportAvailable(ok, reason) {
+      exportBtn.disabled = !ok;
+      tooltip(exportBtn, ok ? 'Build and download your pack (Ctrl+E)' : (reason ?? 'Export is not available'));
     },
   };
 }

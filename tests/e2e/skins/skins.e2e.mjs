@@ -1,8 +1,8 @@
 // End-to-end checks for the Skin Maker (#/skins).
 // Run: NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs [screenshotDir]
 // Needs the global 'playwright' package. Mojang/playerdb/texture requests are routed to local
-// fixtures; the game-files check reads a local client jar when SKINS_JAR (or the default scratch
-// path) exists and is skipped otherwise.
+// fixtures; the game-files check serves a local 26.3 client jar (SKINS_JAR=/path/to/26.3.jar) and
+// is skipped without it.
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, statSync, openSync, readSync, closeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -229,6 +229,34 @@ const RED = [230, 30, 40, 255];
   await paintAt(page, 10, 12); // head front
   check('lock to part allows the locked part', eq(await pixelAt(page, 10, 12), [16, 255, 16, 255]), JSON.stringify(await pixelAt(page, 10, 12)));
 
+  // Part menu: fill the right leg, then copy it to the left leg.
+  await page.click('.sk-part[data-part="head"] [aria-label^="Only paint"]'); // unlock
+  await page.click('.sk-part[data-part="rightLeg"] [aria-label^="More for"]');
+  await page.click('.menu-item >> text=Fill right leg with colour');
+  check('part menu fills the part', eq(await pixelAt(page, 5, 25), [16, 255, 16, 255]), JSON.stringify(await pixelAt(page, 5, 25)));
+  await page.click('.sk-part[data-part="rightLeg"] [aria-label^="More for"]');
+  await page.click('.menu-item >> text=Copy to left leg');
+  check('part menu copies to the other side', eq(await pixelAt(page, 22, 57), [16, 255, 16, 255]), JSON.stringify(await pixelAt(page, 22, 57)));
+  // Hiding a part in 3D and toggling guides must not throw.
+  await page.click('.sk-part[data-part="leftLeg"] [aria-label^="Show"]');
+  check('eye button hides the part', (await page.getAttribute('.sk-part[data-part="leftLeg"] [aria-label^="Show"]', 'aria-pressed')) === 'false');
+  await page.locator('.pc-root').focus();
+  await page.keyboard.press('p');
+  check('P toggles part guides', (await page.getAttribute('[aria-label^="Part guides"]', 'aria-pressed')) === 'false');
+  await page.keyboard.press('p');
+  // Flipping without a selection is refused with a hint.
+  const beforeFlip = await api(page, (e) => Array.from(e.getImage().data).join(','));
+  await page.keyboard.press('h');
+  await page.waitForTimeout(150);
+  const afterFlip = await api(page, (e) => Array.from(e.getImage().data).join(','));
+  check('H without a selection does not scramble the skin', beforeFlip === afterFlip);
+  check('H without a selection explains why', /Select an area first/.test((await page.textContent('.toast-region')) || ''));
+  // Back to the start screen: the skin is listed.
+  await api(page, (e) => e.flush());
+  await page.click('.sk-bar [aria-label="All skins"]');
+  await page.waitForSelector('.sk-recent');
+  check('recent skins list the project', /Red Arms/.test((await page.textContent('.sk-recent-grid')) || ''));
+
   check('no page errors (editor flow)', errors.length === 0, errors.join(' | '));
   await context.close();
 }
@@ -316,7 +344,7 @@ const RED = [230, 30, 40, 255];
 
 // =============================================================================================
 // 4. Default skins from the game files (local jar served with Range support)
-if (existsSync(jarPath)) {
+if (jarPath && existsSync(jarPath)) {
   const { page, context, errors } = await newPage();
   const size = statSync(jarPath).size;
   const fd = openSync(jarPath, 'r');
@@ -360,7 +388,7 @@ if (existsSync(jarPath)) {
   check('no page errors (game files)', errors.filter((e) => !/piston|mojang/i.test(e)).length === 0, errors.join(' | '));
   await context.close();
 } else {
-  console.log('SKIP  game files check (no local jar)');
+  console.log('SKIP  game files check (set SKINS_JAR to a 26.3 client jar)');
 }
 
 // =============================================================================================

@@ -465,8 +465,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
       { label: 'Open', icon: 'pencil', onClick: () => openAt(i, 'pointer') },
       { label: 'Replace with upload…', icon: 'upload', onClick: () => opts.onUpload(e.path) },
       { label: 'Download PNG', icon: 'download', onClick: () => opts.onDownload(e.path) },
-      { label: hasVanilla ? 'Reset to vanilla' : 'Remove from pack', icon: 'reset', danger: true, disabled: !edited, onClick: () => opts.onReset(e.path) },
     ];
+    if (edited) menu.push({ label: hasVanilla ? 'Reset to vanilla' : 'Remove from pack', icon: 'reset', danger: true, onClick: () => opts.onReset(e.path) });
     openMenu(ctxAnchor, menu, { placement: 'bottom-start', label: `${e.pretty} actions` });
   };
 

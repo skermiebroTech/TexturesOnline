@@ -330,6 +330,20 @@ export function alphaDataKind(img: ImageData): { hidden: number; faint: number }
   return { hidden: hidden / total, faint: faint / total };
 }
 
+/**
+ * How Bedrock shows a texture whose alpha is data: blocks are opaque (alpha is only the tint mask),
+ * faint dye / emissive mask values are visible pixels. Returns the input when nothing needs changing.
+ */
+export function displayAlphaData(img: ImageData, category: TextureCategory): ImageData {
+  const k = alphaDataKind(img);
+  const block = category === 'block' && k.hidden > 0.3;
+  if (!block && k.faint === 0) return img;
+  const out = new ImageData(new Uint8ClampedArray(img.data), img.width, img.height);
+  const d = out.data;
+  for (let i = 3; i < d.length; i += 4) if (block || d[i] > 0) d[i] = 255;
+  return out;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Palette
 

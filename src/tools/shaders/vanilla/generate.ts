@@ -6,14 +6,15 @@ import { readSettings } from './options';
 import type { Settings } from './options';
 import { fogTintMultiplier, hasFogChange, hasGrade, hasVignette } from './color';
 import {
-  BANNER, CORE, INCLUDE, POST_EFFECT, MAIN_NOTE, POST_SHADERS, PREFIX, VANILLA_MAIN,
+  BANNER, CORE, INCLUDE, POST_EFFECT, MAIN_NOTE, POST_SHADERS, PREFIX, SHADERS_ROOT, VANILLA_MAIN,
   declares, expandForAnalysis, fragmentOutputs, glslFloat, glslVec3, mentions, renameMain, uboNames, wrapFunction,
 } from './glsl';
-import { NO_CORE_SHADERS_MESSAGE, detectFamily, importLine, wavingTarget } from './support';
+import type { FunctionSignature } from './glsl';
+import { NO_CORE_SHADERS_MESSAGE, detectFamily, importLine, majorFormat, missingSourcesMessage, wavingTarget } from './support';
 import type { Family } from './support';
 import {
-  POST_NAMES, darknessBody, endOfFrameJson, gradeExpression, postBlurShader, postBrightShader, postFinalShader,
-  postInclude, waveBody, waveFunction,
+  POST_NAMES, darknessBody, endOfFrameJson, fogEnvironmentFunction, gradeExpression, postBlurShader, postBrightShader,
+  postFinalShader, postInclude, waveBody, waveFunction,
 } from './templates';
 
 export interface VanillaShaderResult {
@@ -243,6 +244,14 @@ function endOfFrameFiles(pt: Patcher, s: Settings, withGrade: boolean, withVigne
 
 // ---------------------------------------------------------------- (d) fog: include/fog.glsl
 
+/** Vanilla fog API signatures the wrappers depend on (v1: 1.17 – 1.21.5, v2: 1.21.6+). */
+export const FOG_SIGNATURES: Record<'linear_fog' | 'linear_fog_fade' | 'total_fog_value' | 'apply_fog', FunctionSignature> = {
+  linear_fog: { ret: 'vec4', params: ['vec4', 'float', 'float', 'float', 'vec4'] },
+  linear_fog_fade: { ret: 'float', params: ['float', 'float', 'float'] },
+  total_fog_value: { ret: 'float', params: ['float', 'float', 'float', 'float', 'float', 'float'] },
+  apply_fog: { ret: 'vec4', params: ['vec4', 'float', 'float', 'float', 'float', 'float', 'float', 'vec4'] },
+};
+
 function patchFog(pt: Patcher, fam: Family, s: Settings): void {
   const path = `${INCLUDE}fog.glsl`;
   let code = pt.get(path);
@@ -257,32 +266,37 @@ function patchFog(pt: Patcher, fam: Family, s: Settings): void {
   // start > end means "no fog" (e.g. Float.MAX_VALUE, 0) and must stay untouched.
   const start = (st: string, end: string): string => (change.start ? `(${st} <= ${end} ? min(${st}, ${end} * ${k}) : ${st})` : st);
   const color = (c: string): string => (change.tint ? `vec4(${c}.rgb * ${tint}, ${c}.a)` : c);
+  const helpers: string[] = [];
   const wrappers: string[] = [];
-  const wrap = (name: string, n: number, build: (a: string[]) => string[]): void => {
-    const r = wrapFunction(code as string, name, n, build);
+  const wrap = (name: string, signature: FunctionSignature, build: (a: string[]) => string[]): boolean => {
+    const r = wrapFunction(code as string, name, signature, build);
     if (typeof r === 'string') {
       pt.warn(`Fog: ${r} in include/fog.glsl, so part of the fog settings is skipped.`);
-      return;
+      return false;
     }
     code = r.code;
     wrappers.push(r.wrapper);
+    return true;
   };
   if (fam.fogApi === 'v1') {
-    if (change.start || change.tint) wrap('linear_fog', 5, (a) => [a[0], a[1], start(a[2], a[3]), a[3], color(a[4])]);
-    if (change.start) wrap('linear_fog_fade', 3, (a) => [a[0], start(a[1], a[2]), a[2]]);
+    if (change.start || change.tint) wrap('linear_fog', FOG_SIGNATURES.linear_fog, (a) => [a[0], a[1], start(a[2], a[3]), a[3], color(a[4])]);
+    if (change.start) wrap('linear_fog_fade', FOG_SIGNATURES.linear_fog_fade, (a) => [a[0], start(a[1], a[2]), a[2]]);
     if (change.environment) pt.warn('Water & weather fog distance needs Java 1.21.6 or newer; it was left at vanilla.');
   } else {
-    const env = glslFloat(s.fogEnvironment);
-    const envScale = (x: string): string => (change.environment ? `${x} * ${env}` : x);
+    // Environmental fog is scaled by txo_fog_env(end), which leaves Blindness, Darkness, lava and
+    // powder snow at their vanilla distances (see ENV_FOG_PROTECT_END).
+    const envScale = (x: string, end: string): string => (change.environment ? `${x} * ${P}_fog_env(${end})` : x);
     if (change.start || change.environment) {
-      wrap('total_fog_value', 6, (a) => [a[0], a[1], envScale(a[2]), envScale(a[3]), start(a[4], a[5]), a[5]]);
+      const ok = wrap('total_fog_value', FOG_SIGNATURES.total_fog_value,
+        (a) => [a[0], a[1], envScale(a[2], a[3]), envScale(a[3], a[3]), start(a[4], a[5]), a[5]]);
+      if (ok && change.environment) helpers.push(fogEnvironmentFunction(s.fogEnvironment));
     }
-    if (change.tint) wrap('apply_fog', 8, (a) => [...a.slice(0, 7), color(a[7])]);
+    if (change.tint) wrap('apply_fog', FOG_SIGNATURES.apply_fog, (a) => [...a.slice(0, 7), color(a[7])]);
   }
   if (wrappers.length === 0) return;
   const text = code as string;
   pt.out[path] = `${text.endsWith('\n') ? text : text + '\n'}\n${BANNER}\n` +
-    `#ifndef TXO_FOG_WRAPPERS\n#define TXO_FOG_WRAPPERS\n${wrappers.join('\n')}#endif\n`;
+    `#ifndef TXO_FOG_WRAPPERS\n#define TXO_FOG_WRAPPERS\n${[...helpers, ...wrappers].join('\n')}#endif\n`;
 }
 
 // ---------------------------------------------------------------- (c) waving plants
@@ -441,7 +455,13 @@ export function generateVanillaShaderFiles(
   info: VanillaVersionInfo,
 ): VanillaShaderResult {
   const fam = detectFamily(sources, info?.packFormat);
-  if (!fam) return { files: {}, warnings: [NO_CORE_SHADERS_MESSAGE], supported: false };
+  if (!fam) {
+    // No shader files at all for a 1.17+ pack format means the game files were not read, not that
+    // the version is too old.
+    const noFiles = !Object.keys(sources ?? {}).some((k) => k.startsWith(SHADERS_ROOT));
+    const message = noFiles && majorFormat(info?.packFormat) >= 7 ? missingSourcesMessage(info.versionId) : NO_CORE_SHADERS_MESSAGE;
+    return { files: {}, warnings: [message], supported: false };
+  }
   const s = readSettings(v);
   const pt = new Patcher(sources);
 

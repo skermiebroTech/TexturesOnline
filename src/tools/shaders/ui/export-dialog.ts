@@ -149,7 +149,7 @@ export function openExportDialog(opts: {
         h('span', { class: 'faint small' }, formatBytes(blob.size)),
       ),
       ...(warn ? [warn] : []),
-      h('h4', { class: 'section-title' }, icon('book-open'), `Install it (${target.installPlace})`),
+      h('h4', { class: 'section-title' }, icon('book-open'), 'How to install'),
       installSteps(target),
       helpLink(target),
       footer(again, download, done),

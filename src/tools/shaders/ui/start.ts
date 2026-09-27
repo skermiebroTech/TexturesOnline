@@ -13,10 +13,18 @@ import { confirmDialog, promptDialog } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
 import { TARGETS, targetInfo, type ShaderTargetInfo } from '../targets';
 import { sceneSvg, TARGET_SCENES } from './art';
-import { presetSettings } from './generator';
 import { openNewProjectDialog } from './new-project';
 import { cleanName, duplicateShaderProject, isShaderProject, type ShaderProjectData } from './project';
-import { jobKey, renderPreviewImages, type RenderJob } from './thumbs';
+import irisShowcase from './showcase/iris.webp';
+import vanillaShowcase from './showcase/java-vanilla.webp';
+import bedrockShowcase from './showcase/bedrock-vibrant.webp';
+
+/** Pictures rendered with the live preview (tests/harness/shaders-view/render-showcase.cjs). */
+const SHOWCASE: Record<ShaderTarget, string> = {
+  iris: irisShowcase,
+  'java-vanilla': vanillaShowcase,
+  'bedrock-vibrant': bedrockShowcase,
+};
 
 function artEl(svg: string, cls: string): HTMLElement {
   const el = h('span', { class: cls, 'aria-hidden': 'true' });
@@ -25,26 +33,29 @@ function artEl(svg: string, cls: string): HTMLElement {
 }
 
 function projectMeta(p: ShaderProjectData): string {
-  const t = targetInfo(p.target);
-  if (p.target === 'java-vanilla') return `${t.shortName} ${p.version}`;
-  if (p.target === 'iris') return t.shortName;
-  return t.shortName;
+  const when = `Edited ${timeAgo(p.updatedAt)}`;
+  if (p.target === 'java-vanilla') return `Java ${p.version} · ${when}`;
+  return when;
 }
 
 export function mountStart(root: HTMLElement): () => void {
   const urls: string[] = [];
-  const ctrl = new AbortController();
   let destroyed = false;
 
   // ---------------------------------------------------------------- target cards
-  const thumbs = new Map<ShaderTarget, HTMLElement>();
   const cards = TARGETS.map((t) => targetCard(t));
 
   function targetCard(t: ShaderTargetInfo): HTMLElement {
+    const render = h('img', { class: 'sh-card-render', src: SHOWCASE[t.id], alt: '', decoding: 'async' });
+    const reveal = () => render.classList.add('is-in');
+    if (render.complete && render.naturalWidth) reveal();
+    else render.addEventListener('load', reveal);
+    render.addEventListener('error', () => render.remove());
     const thumb = h(
       'div',
       { class: 'sh-card-thumb' },
       artEl(sceneSvg(TARGET_SCENES[t.id]), 'sh-card-art'),
+      render,
       h(
         'div',
         { class: 'sh-card-badges' },
@@ -52,7 +63,6 @@ export function mountStart(root: HTMLElement): () => void {
         t.needsMods ? badge('Needs a mod', 'gold') : badge('No mods', 'purple'),
       ),
     );
-    thumbs.set(t.id, thumb);
     const start = button({ label: 'Start', iconEnd: 'arrow-right', variant: 'primary', class: 'sh-card-start', onClick: () => openNewProjectDialog(t.id) });
     start.setAttribute('aria-label', `Start a ${t.name}`);
     const card = h(
@@ -87,7 +97,7 @@ export function mountStart(root: HTMLElement): () => void {
       null,
       h('li', null, h('span', { class: 'muted' }, 'Java with mods'), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'iris' } }, 'Iris / OptiFine')),
       h('li', null, h('span', { class: 'muted' }, 'Java, no mods'), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'java-vanilla' } }, 'Vanilla Java')),
-      h('li', null, h('span', { class: 'muted' }, 'Bedrock (PC, console, phone)'), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'bedrock-vibrant' } }, 'Vibrant Visuals')),
+      h('li', null, h('span', { class: 'muted' }, 'Bedrock'), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'bedrock-vibrant' } }, 'Vibrant Visuals')),
     ),
   );
   chooser.addEventListener('click', (e) => {
@@ -145,7 +155,7 @@ export function mountStart(root: HTMLElement): () => void {
           'span',
           { class: 'sh-recent-info' },
           h('span', { class: 'sh-recent-name truncate' }, p.name),
-          h('span', { class: 'sh-recent-meta truncate' }, `${projectMeta(p)} · ${timeAgo(p.updatedAt)}`),
+          h('span', { class: 'sh-recent-meta truncate' }, projectMeta(p)),
         ),
       ),
       menuBtn,
@@ -208,38 +218,6 @@ export function mountStart(root: HTMLElement): () => void {
     }
   }
 
-  // ---------------------------------------------------------------- real preview pictures
-  async function renderShowcases(): Promise<void> {
-    const jobs: (RenderJob & { target: ShaderTarget })[] = [];
-    for (const t of TARGETS) {
-      try {
-        const gen = await t.load();
-        const preset = gen.PRESETS.some((p) => p.id === t.showcase.preset) ? t.showcase.preset : 'default';
-        const params = { ...gen.toPreviewParams(presetSettings(gen, preset)), timeOfDay: t.showcase.timeOfDay };
-        jobs.push({ key: jobKey(t.id, params), params, target: t.id });
-      } catch {
-        /* that target keeps its drawn picture */
-      }
-      if (destroyed) return;
-    }
-    const byKey = new Map(jobs.map((j) => [j.key, j.target]));
-    await renderPreviewImages(
-      jobs,
-      (key, blob) => {
-        const tid = byKey.get(key);
-        const thumb = tid ? thumbs.get(tid) : undefined;
-        if (!thumb || destroyed) return;
-        const url = URL.createObjectURL(blob);
-        urls.push(url);
-        const img = h('img', { class: 'sh-card-render', src: url, alt: '' });
-        img.addEventListener('load', () => img.classList.add('is-in'));
-        thumb.querySelector('.sh-card-render')?.remove();
-        thumb.insertBefore(img, thumb.querySelector('.sh-card-badges'));
-      },
-      { signal: ctrl.signal, width: 480, height: 300 },
-    );
-  }
-
   // ---------------------------------------------------------------- page
   const page = h(
     'div',
@@ -258,14 +236,9 @@ export function mountStart(root: HTMLElement): () => void {
   );
   root.appendChild(page);
   void renderRecent();
-  const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-  const kick = () => void renderShowcases();
-  if (idle) idle(kick, { timeout: 1200 });
-  else setTimeout(kick, 300);
 
   return () => {
     destroyed = true;
-    ctrl.abort();
     for (const u of urls.splice(0)) URL.revokeObjectURL(u);
   };
 }

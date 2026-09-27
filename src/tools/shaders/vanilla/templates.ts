@@ -1,7 +1,7 @@
 // GLSL and JSON templates for the vanilla shader pack. Numbers from the sliders are baked in as literals.
 
 import type { Settings } from './options';
-import { colorMultiplier, gradeSteps, waveParams } from './color';
+import { ENV_FOG_FULL_END, ENV_FOG_PROTECT_END, colorMultiplier, gradeSteps, waveParams } from './color';
 import { PREFIX, glslFloat as f, glslVec3 } from './glsl';
 
 const P = PREFIX;
@@ -17,7 +17,8 @@ export function gradeFunction(s: Settings): string {
     lines.push(`    float ${P}_l = dot(c, ${LUMA});`);
     if (st.vibrance) {
       lines.push(`    float ${P}_s = clamp(max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b)), 0.0, 1.0);`);
-      lines.push(`    c = mix(vec3(${P}_l), c, ${f(s.saturation)} + ${f(s.vibrance)} * (1.0 - ${P}_s));`);
+      // max(): a negative factor (low saturation with negative vibrance) would invert colours.
+      lines.push(`    c = mix(vec3(${P}_l), c, max(${f(s.saturation)} + ${f(s.vibrance)} * (1.0 - ${P}_s), 0.0));`);
     } else {
       lines.push(`    c = mix(vec3(${P}_l), c, ${f(s.saturation)});`);
     }
@@ -76,11 +77,13 @@ export function waveFunction(s: Settings): string {
 }
 
 /**
- * Plant detection: biome-tinted (grass, ferns, sugar cane, vines; excludes grey AO-only and red
- * redstone), vertical faces only, top edge of the quad (vertices 0 and 3 in Minecraft's face order).
+ * Plant detection: biome-tinted green to olive (grass, ferns, sugar cane, vines, stems in every
+ * biome; green clearly above blue and at least half of red, which rules out untinted grey blocks and
+ * redstone wire, whose green is at most a fifth of its red), vertical faces only, top edge of the
+ * quad (vertices 0 and 3 in Minecraft's face order). Ratios survive the per-vertex shade and AO.
  */
 export const WAVE_CONDITION =
-  'Color.g > Color.b * 1.12 + 0.004 && abs(Normal.y) < 0.5 && ((gl_VertexID & 3) == 0 || (gl_VertexID & 3) == 3)';
+  'Color.g > Color.b * 1.12 + 0.004 && Color.g > Color.r * 0.5 && abs(Normal.y) < 0.5 && ((gl_VertexID & 3) == 0 || (gl_VertexID & 3) == 3)';
 
 export function waveBody(layerGated: boolean): string[] {
   const inner = [
@@ -91,6 +94,19 @@ export function waveBody(layerGated: boolean): string[] {
   if (!layerGated) return inner;
   // ALPHA_CUTOUT 0.1 = the plants layer; 0.5 = leaves / grass blocks; translucent has no define.
   return ['#ifdef ALPHA_CUTOUT', 'if (ALPHA_CUTOUT < 0.3) {', ...inner.map((l) => '    ' + l), '}', '#endif'];
+}
+
+/**
+ * `float txo_fog_env(float envEnd)`: the environmental fog multiplier for a vanilla fog end
+ * distance. Short fog (Blindness, Darkness, lava, powder snow) keeps its vanilla distance.
+ */
+export function fogEnvironmentFunction(multiplier: number): string {
+  return [
+    `float ${P}_fog_env(float envEnd) {`,
+    `    return mix(1.0, ${f(multiplier)}, smoothstep(${f(ENV_FOG_PROTECT_END)}, ${f(ENV_FOG_FULL_END)}, envEnd));`,
+    '}',
+    '',
+  ].join('\n');
 }
 
 /** Darkens dim light-map texels (night sky light, caves) and keeps bright light unchanged. */

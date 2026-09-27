@@ -14,7 +14,7 @@ import { PRESETS, defaults, generateIrisPack, presetValues, IRIS_PROGRAMS } from
 import type { OptionValues } from '../../src/core/types';
 import {
   ENVIRONMENTS, applyOverrides, checkVaryings, compileAll, expandIncludes, findGlslang, injectMacros, linkPair, parsePackOptions,
-  toCore, type CompileJob, type LoaderEnv,
+  toCore, toOptiFine, type CompileJob, type LoaderEnv,
 } from '../tools/iris/glsl-check';
 import { allExtreme, mulberry32, randomOptions } from '../tools/iris/fixtures';
 
@@ -78,7 +78,12 @@ for (const env of ENVIRONMENTS) {
           const src = prepare(variant.files, `${prog}.${ext}`, variant.overrides, env);
           srcs[stage] = src;
           jobs.push({ label: `${env.name} ${variant.name} ${prog}.${ext}`, stage, source: src });
-          if (env.core) jobs.push({ label: `${env.name} ${variant.name} ${prog}.${ext} [core]`, stage, source: toCore(src, stage) });
+          let loaderSrc = src;
+          if (env.optifineRewrite) {
+            loaderSrc = toOptiFine(src, stage, prog);
+            jobs.push({ label: `${env.name} ${variant.name} ${prog}.${ext} [optifine rewrite]`, stage, source: loaderSrc });
+          }
+          if (env.core) jobs.push({ label: `${env.name} ${variant.name} ${prog}.${ext} [core]`, stage, source: toCore(loaderSrc, stage) });
         }
         for (const p of checkVaryings(srcs.vert!, srcs.frag!)) varyingProblems.push(`${variant.name} ${prog}: ${p}`);
       }
@@ -127,6 +132,21 @@ test('the compile check catches broken GLSL', { skip: SKIP }, async () => {
   assert.equal(big.unique, 151);
   assert.deepEqual(big.failures.map((f) => f.label), ['bad one']);
   assert.match(big.failures[0].output, /ERROR/);
+  // The OptiFine rewrite emulation really rewrites (lightmap unit, alpha test) and catches a
+  // gl_FragData[0] assignment split over two lines, which OptiFine's line regex would break.
+  const optifine = ENVIRONMENTS.find((e) => e.optifineRewrite)!;
+  const terrain = prepare(files, 'gbuffers_terrain.fsh', {}, optifine);
+  const rewritten = toOptiFine(terrain, 'frag', 'gbuffers_terrain');
+  assert.match(rewritten, /if\(temp_FragData0\.a < alphaTestRef\) discard;/);
+  assert.ok(toOptiFine(prepare(files, 'gbuffers_terrain.vsh', {}, optifine), 'vert', 'gbuffers_terrain').includes('gl_MultiTexCoord2'));
+  assert.equal(toOptiFine(prepare(files, 'final.fsh', {}, optifine), 'frag', 'final'), prepare(files, 'final.fsh', {}, optifine));
+  const split = terrain.replace('gl_FragData[0] = vec4(applyFog(color, viewPos), albedo.a);', 'gl_FragData[0] = vec4(applyFog(color, viewPos),\n\t\talbedo.a);');
+  assert.notEqual(split, terrain);
+  const ofJobs: CompileJob[] = [
+    { label: 'rewritten', stage: 'frag', source: toCore(rewritten, 'frag') },
+    { label: 'split assignment', stage: 'frag', source: toCore(toOptiFine(split, 'frag', 'gbuffers_terrain'), 'frag') },
+  ];
+  assert.deepEqual((await compileAll(GLSLANG!, ofJobs, { batchSize: 1 })).failures.map((f) => f.label), ['split assignment']);
   // A varying the vertex shader does not write is reported.
   const vsh = prepare(files, 'final.vsh', {}, env);
   const fsh = prepare(files, 'final.fsh', {}, env).replace('varying vec2 texcoord;', 'varying vec2 texcoord;\nvarying vec3 extra;');

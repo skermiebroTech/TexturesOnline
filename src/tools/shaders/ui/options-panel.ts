@@ -128,7 +128,9 @@ export function optionsPanel(opts: {
     if (!g) return;
     const n = (groups.get(group) ?? []).filter((d) => isChanged(d.key)).length;
     g.count.hidden = n === 0;
-    g.count.textContent = `${n} changed`;
+    g.count.textContent = String(n);
+    g.count.setAttribute('aria-label', `${n} changed`);
+    tooltip(g.count, `${n} setting${n === 1 ? '' : 's'} changed from the default`);
     g.reset.disabled = n === 0;
   }
 
@@ -165,14 +167,18 @@ export function optionsPanel(opts: {
       const ok = !availability || availability.options[d.key] !== false;
       c.classList.toggle('is-unavailable', !ok);
       c.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement>('input, button, select').forEach((x) => (x.disabled = !ok));
-      let note = c.querySelector<HTMLElement>(':scope > .sh-unavailable');
-      if (!ok) {
+      // toggles are a row (text + switch): the note goes under the text
+      const host = c.querySelector<HTMLElement>(':scope > .toggle-text') ?? c;
+      let note = host.querySelector<HTMLElement>(':scope > .sh-unavailable');
+      // a dependent control of an unavailable toggle doesn't repeat the same reason
+      const parentOff = Boolean(d.dependsOn && availability && availability.options[d.dependsOn] === false);
+      if (!ok && !parentOff) {
         const reason = availability?.reasons[d.key] || 'Not available for this Minecraft version.';
         if (!note) {
-          note = h('div', { class: 'sh-unavailable' }, icon('lock'), h('span', null));
-          c.appendChild(note);
+          note = h('div', { class: 'sh-unavailable' }, icon('lock'), h('span', { class: 'sh-unavailable-text' }));
+          host.appendChild(note);
         }
-        note.querySelector('span')!.textContent = reason;
+        note.querySelector('.sh-unavailable-text')!.textContent = reason;
       } else note?.remove();
     }
   }

@@ -144,16 +144,23 @@ export interface WrapResult {
   wrapper: string;
 }
 
+/** Expected shape of a wrapped function: return type and parameter types in order. */
+export interface FunctionSignature {
+  ret: 'float' | 'vec2' | 'vec3' | 'vec4';
+  params: readonly string[];
+}
+
 /**
  * Renames the definition of `RET name(PARAMS) {` to `RET txo_vanilla_name(PARAMS) {`, adds a prototype
  * `RET name(PARAMS);` right before it (vanilla code later in the file keeps calling `name`) and
  * returns a wrapper `RET name(PARAMS) { return txo_vanilla_name(buildArgs(paramNames)); }` to be
- * appended by the caller. Returns a string reason when the anchor is missing or unexpected.
+ * appended by the caller. The definition must match `signature` exactly (return type, parameter
+ * count and types), otherwise a string reason is returned and nothing is changed.
  */
 export function wrapFunction(
   code: string,
   name: string,
-  expectedParams: number,
+  signature: FunctionSignature,
   buildArgs: (names: string[]) => string[],
 ): WrapResult | string {
   const re = new RegExp(`^([ \\t]*)(float|vec[234])\\s+(${name})\\s*\\(([^)]*)\\)\\s*\\{`, 'mg');
@@ -162,12 +169,15 @@ export function wrapFunction(
   if (matches.length === 0) return `${name}() was not found`;
   if (matches.length > 1) return `${name}() is defined more than once`;
   const m = matches[0];
+  if (m[2] !== signature.ret) return `${name}() returns ${m[2]} instead of ${signature.ret}`;
   const params = m[4].split(',').map((p) => p.trim()).filter(Boolean);
+  const expectedParams = signature.params.length;
   if (params.length !== expectedParams) return `${name}() has ${params.length} parameters instead of ${expectedParams}`;
   const names: string[] = [];
-  for (const p of params) {
+  for (const [i, p] of params.entries()) {
     const pm = /^(?:(?:in|const|highp|mediump|lowp)\s+)*(\w+)\s+(\w+)$/.exec(p);
     if (!pm) return `${name}() has an unexpected parameter "${p}"`;
+    if (pm[1] !== signature.params[i]) return `${name}() parameter ${i + 1} is ${pm[1]} instead of ${signature.params[i]}`;
     names.push(pm[2]);
   }
   const ret = m[2];

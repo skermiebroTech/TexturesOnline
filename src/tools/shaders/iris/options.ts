@@ -57,7 +57,7 @@ export const OPTIONS: OptionDef[] = [
     description: 'Glow around the sun at dawn and dusk. Also tints sunlight while the sun is low.' },
   { key: 'nightSkyColor', label: 'Night sky', group: GROUPS.sky, type: 'color', default: '#0c1528',
     description: 'Color of the sky at night.' },
-  { key: 'customSky', label: 'Use custom sky colors', group: GROUPS.sky, type: 'range', default: 0.7, min: 0, max: 1, step: 0.05,
+  { key: 'customSky', label: 'Custom sky amount', group: GROUPS.sky, type: 'range', default: 0.7, min: 0, max: 1, step: 0.05,
     description: "Blend between Minecraft's own biome sky colors (0) and your colors above (1). Caves, the Nether and the End keep their own colors." },
   { key: 'fogDensity', label: 'Fog density', group: GROUPS.sky, type: 'range', default: 1, min: 0, max: 3, step: 0.05, unit: '×',
     description: 'Thickness of the haze in the distance. Fog is thicker near sea level and at sunrise.' },

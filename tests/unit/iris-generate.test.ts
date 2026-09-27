@@ -14,8 +14,10 @@ import {
 import { formatValue, optionList } from '../../src/tools/shaders/iris/game-options';
 import { writeZip, readZip } from '../../src/core/zip';
 import type { OptionValues } from '../../src/core/types';
-import { expandIncludes, lintShadersProperties, parsePackOptions, propertyLines, varyings, checkVaryings, ENVIRONMENTS, injectMacros } from '../tools/iris/glsl-check';
-import { preprocessProperties, propertiesFor } from '../tools/iris/properties';
+import {
+  expandIncludes, lintShadersProperties, parsePackOptions, propertyLines, varyings, checkVaryings, defineLineProblems, ENVIRONMENTS, injectMacros,
+} from '../tools/iris/glsl-check';
+import { accidentalDirectives, preprocessProperties, propertiesFor, strayBlockKeys } from '../tools/iris/properties';
 import { allExtreme, mulberry32, randomOptions } from '../tools/iris/fixtures';
 
 const META = { name: 'Test Pack', description: 'A pack for tests.' };
@@ -70,7 +72,7 @@ test('text files are ASCII (GLSL, .properties); the name only reaches UTF-8 file
   const lang = files['shaders/lang/en_US.lang'];
   assert.ok(lang.includes('option.PACK_INFO=Crème Brûlée ✨ 100\n'), 'lang keeps the name (UTF-8) without % or \\');
   assert.ok(lang.includes('option.PACK_INFO.comment=Ünïcödé desc s second line Made with TexturesOnline.'));
-  assert.ok(files['shaders/shaders.properties'].startsWith('# Creme Brulee 100 - Made with TexturesOnline.'));
+  assert.ok(files['shaders/shaders.properties'].startsWith('# Shader pack: Creme Brulee 100 - Made with TexturesOnline.'));
   assert.ok(files['README.txt'].startsWith('Crème Brûlée ✨ 100\n'));
 });
 
@@ -410,4 +412,51 @@ test('deterministic output, safe metadata and file names', () => {
   // Invalid input never breaks generation.
   const garbage = gen({ sunStrength: 'abc', tonemap: 42, skyColor: null } as unknown as OptionValues);
   assert.deepEqual(parsePackOptions(garbage).problems, []);
+});
+
+test('loader parsers: pack names never turn comments into directives, options or block entries', () => {
+  const hostile = ['if 0', 'endif', 'else', 'define X 1', '#define EVIL // x', 'include "/lib/x.glsl"', 'My block. pack', '# ifdef SHADOWS',
+    'error', 'pack \\', '// #define TRAP // [0 1]', 'a */ b /* c'];
+  const plain = gen(defaults(), { name: 'Plain', description: '' });
+  const plainOpts = parsePackOptions(plain);
+  const irisMacros = { MC_VERSION: '260300', IS_IRIS: '', IRIS_TAG_SUPPORT: '2' };
+  for (const name of [...hostile, META.name]) {
+    const files = gen(defaults(), { name, description: name });
+    for (const p of ['shaders.properties', 'block.properties', 'item.properties', 'entity.properties']) {
+      assert.deepEqual(accidentalDirectives(files[`shaders/${p}`]), [], `${JSON.stringify(name)}: ${p}`);
+      // The same entries survive preprocessing as for a plain name.
+      assert.deepEqual(propertiesFor(files[`shaders/${p}`], irisMacros), propertiesFor(plain[`shaders/${p}`], irisMacros), `${JSON.stringify(name)}: ${p} entries`);
+    }
+    assert.deepEqual(strayBlockKeys(files['shaders/block.properties']), [], `${JSON.stringify(name)}: block.properties`);
+    assert.deepEqual(defineLineProblems(files), [], `${JSON.stringify(name)}: #define lines`);
+    const opts = parsePackOptions(files);
+    assert.deepEqual(opts.problems, [], `${JSON.stringify(name)}: options`);
+    assert.deepEqual([...opts.bools.keys(), ...opts.values.keys()].sort(), [...plainOpts.bools.keys(), ...plainOpts.values.keys()].sort());
+    for (const [p, c] of Object.entries(files)) {
+      if (!/\.(glsl|vsh|fsh)$/.test(p)) continue;
+      for (const line of c.split('\n')) {
+        if (!line.trimStart().startsWith('//')) continue;
+        assert.ok(!line.trimEnd().endsWith('\\'), `${p}: a comment line ending in a backslash continues onto the next line`);
+        assert.ok(!line.includes('*/') && !line.includes('/*'), `${p}: block comment markers in a line comment`);
+      }
+    }
+  }
+});
+
+test('sky, sun, moon and clouds sink into the fog seen from inside water, lava or powder snow', () => {
+  const files = gen(defaults());
+  const sky = files['shaders/gbuffers_skybasic.fsh'];
+  assert.match(sky, /if \(isEyeInWater != 0\) \{[^}]*mediumFogColor\(\)/);
+  assert.match(sky, /#include "\/lib\/fog\.glsl"/);
+  assert.match(files['shaders/gbuffers_skytextured.fsh'], /if \(isEyeInWater != 0\) discard;/);
+  assert.match(files['shaders/gbuffers_clouds.fsh'], /if \(isEyeInWater != 0\) color = applyFog\(color, viewPos\);/);
+  assert.match(files['shaders/lib/fog.glsl'], /vec3 mediumFogColor\(\)/);
+});
+
+test('water waves move the upper edge of side faces together with the surface', () => {
+  const vsh = gen(defaults())['shaders/gbuffers_water.vsh'];
+  const cond = vsh.split('\n').find((l) => l.includes('isId(blockId, ID_WATER)'))!;
+  assert.ok(cond, 'water displacement condition');
+  assert.ok(!/Normal/.test(cond), 'the displacement must not depend on the face normal, or side faces keep their old top edge');
+  assert.match(cond, /h > 0\.05 && h < 0\.95/);
 });

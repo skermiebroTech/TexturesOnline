@@ -171,3 +171,35 @@ test('toPreviewParams: follows the options in the expected direction', () => {
   const warmTint = toPreviewParams({ ...defaults(), tint: 1 });
   assert.ok(warmTint.tint[0] > warmTint.tint[1] && warmTint.tint[2] > warmTint.tint[1], 'positive tint is magenta');
 });
+
+test('toPreviewParams: white balance and vignette match what the pack renders', () => {
+  // final.fsh white balance (temperature part) vs the preview's (shader-preview.ts whiteBalance).
+  const packRB = (t: number): number => (1 + 0.3 * t) / (1 - 0.3 * t);
+  const previewRB = (t: number): number => (1 + 0.16 * t) / (1 - 0.2 * t);
+  for (let T = -1; T <= 1.0001; T += 0.05) {
+    const t = toPreviewParams({ ...defaults(), temperature: Math.round(T * 100) / 100 }).temperature;
+    assert.ok(t >= -1 && t <= 1);
+    assert.equal(Math.sign(t), Math.sign(Math.round(T * 100) / 100), `sign at ${T}`);
+    // Within the preview's range the red / blue balance is the same; beyond it the preview saturates.
+    if (Math.abs(t) < 0.999) assert.ok(Math.abs(previewRB(t) - packRB(Math.round(T * 100) / 100)) < 1e-3, `balance at ${T}`);
+  }
+  assert.ok(Math.abs(toPreviewParams({ ...defaults(), temperature: 0.3 }).temperature - 0.494) < 0.01);
+  // Vignette: the preview mask at value k*V best matches the pack's at V for k ~ 0.5 (16:9).
+  const ss = (a: number, b: number, x: number): number => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const V = 0.6;
+  const pv = toPreviewParams({ ...defaults(), vignette: V }).vignette;
+  const rms = (k: number): number => {
+    let sum = 0;
+    let n = 0;
+    for (let i = 0; i <= 20; i++) {
+      for (let j = 0; j <= 20; j++) {
+        const r = Math.hypot((i / 20 - 0.5) * (16 / 9), j / 20 - 0.5);
+        sum += ((1 - V * ss(0.35, 1.2, r)) - (1 + (ss(1.05, 0.25, r * 1.25) - 1) * k)) ** 2;
+        n++;
+      }
+    }
+    return Math.sqrt(sum / n);
+  };
+  assert.ok(rms(pv) < 0.1, `vignette mismatch ${rms(pv).toFixed(3)}`);
+  assert.ok(rms(pv) < rms(V) / 2, 'a 1:1 mapping is clearly worse');
+});

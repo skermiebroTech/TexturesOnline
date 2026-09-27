@@ -47,6 +47,8 @@ uniform float viewWidth;
 uniform float viewHeight;
 uniform float aspectRatio;
 uniform float far;
+uniform float fogStart;
+uniform float fogEnd;
 uniform int isEyeInWater;
 uniform ivec2 eyeBrightnessSmooth;
 uniform int heldBlockLightValue;
@@ -197,12 +199,13 @@ vec3 skyGradient(vec3 viewDir) {
 	return c;
 }
 
-// A hint of the current sky colour for the ambient light.
-vec3 ambientSkyTint() {
+// A hint of the current sky colour for the ambient light of surfaces that see the sky
+// (skyLight 0..1), neutral in caves and in the Nether.
+vec3 ambientSkyTint(float skyLight) {
 	vec3 z = skyZenith();
 	float l = luma(z);
 	vec3 n = l > 1.0e-3 ? min(z / l, vec3(2.5)) : vec3(1.0);
-	return mix(vec3(1.0), n, 0.22);
+	return mix(vec3(1.0), n, 0.22 * skyLight);
 }
 `;
 
@@ -213,6 +216,13 @@ vec3 waterFogColor() {
 	float outside = float(eyeBrightnessSmooth.y) / 240.0;
 	float light = 0.02 + (0.03 + 0.30 * dayAmount() * (1.0 - 0.6 * rainStrength)) * outside * outside;
 	return optColor(WATER_R, WATER_G, WATER_B) * light;
+}
+
+// Fog colour inside water, lava or powder snow (isEyeInWater 1, 2, 3).
+vec3 mediumFogColor() {
+	if (isEyeInWater == 2) return vec3(1.0, 0.28, 0.03);
+	if (isEyeInWater == 3) return vec3(0.55, 0.65, 0.78);
+	return waterFogColor();
 }
 
 vec3 fogColorFor(vec3 viewDir) {
@@ -228,23 +238,28 @@ void fogParams(vec3 viewPos, out vec3 fogCol, out float amount) {
 	vec3 viewDir = viewPos / max(dist, 1.0e-4);
 	float f = 0.0;
 	if (isEyeInWater == 1) {
-		fogCol = waterFogColor();
+		fogCol = mediumFogColor();
 		f = 1.0 - exp(-dist * mix(0.22, 0.03, WATER_CLARITY));
 	} else if (isEyeInWater == 2) {
-		fogCol = vec3(1.0, 0.28, 0.03);
+		fogCol = mediumFogColor();
 		f = 1.0 - exp(-dist * 1.2);
 	} else if (isEyeInWater == 3) {
-		fogCol = vec3(0.55, 0.65, 0.78);
+		fogCol = mediumFogColor();
 		f = 1.0 - exp(-dist * 0.9);
 	} else {
 		fogCol = fogColorFor(viewDir);
+		// Distance haze and rain fog under the open sky only, so caves are not veiled.
+		float outdoor = outdoorAmount();
 		float y0 = cameraPosition.y;
 		float y1 = (mat3(gbufferModelViewInverse) * viewPos).y + y0;
 		float heightMul = 0.5 * (exp(-max(y0 - 62.0, 0.0) * 0.015) + exp(-max(y1 - 62.0, 0.0) * 0.015));
 		float density = 0.0014 * FOG_DENSITY * heightMul * (1.0 + 0.8 * twilightAmount()) + 0.006 * RAIN_FOG * rainStrength;
-		float atmo = 1.0 - exp(-dist * density);
+		float atmo = (1.0 - exp(-dist * density)) * outdoor;
+		// Hides the edge of the loaded world.
 		float border = smoothstep(far * 0.70, far, dist);
-		f = max(atmo, border);
+		// Vanilla fog distances elsewhere: the thick Nether fog, boss fog, biome fog underground.
+		float vanillaFog = fogEnd > fogStart + 0.5 ? smoothstep(fogStart, fogEnd, dist) * (1.0 - outdoor) : 0.0;
+		f = max(max(atmo, border), vanillaFog);
 	}
 	float blind = max(blindness, darknessFactor);
 	f = mix(f, smoothstep(0.0, 6.0, dist), blind);
@@ -419,7 +434,7 @@ vec3 ambientLight(vec2 lm) {
 	// after tone mapping while full daylight leaves room for the sun.
 	float level = clamp(luma(lmSky), 0.0, 1.0);
 	float night = 1.0 - dayAmount();
-	vec3 a = lmSky * ambientSkyTint() * ((1.35 - 0.95 * sqrt(level)) * AMBIENT_STRENGTH);
+	vec3 a = lmSky * ambientSkyTint(skyL) * ((1.35 - 0.95 * sqrt(level)) * AMBIENT_STRENGTH);
 	a += vec3(0.50, 0.62, 1.00) * (skyL * night * (0.006 + 0.04 * NIGHT_BRIGHTNESS));
 	a += vec3(0.60, 0.66, 0.78) * (0.003 + 0.012 * NIGHT_BRIGHTNESS);
 	return a;

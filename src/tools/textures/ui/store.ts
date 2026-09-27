@@ -6,7 +6,7 @@ import { Emitter } from '../../../core/events';
 import { saveProject } from '../../../core/storage';
 import { decodeImage, encodePng } from '../../../core/image';
 import { friendlyError } from '../../../core/net';
-import { categoryForPath, extOf, getBaseImage, isEdited, removeOverride, setOverride } from '../project';
+import { categoryForPath, getBaseImage, isEdited, removeOverride, setOverride } from '../project';
 import { hasActiveEffects } from '../effects';
 import { buildEntries, makeEntry, type TextureEntry } from './meta';
 
@@ -231,10 +231,5 @@ export class TexStore {
       this.lastError = friendlyError(err);
       this.setState('error');
     }
-  }
-
-  /** Extension a texture path is stored with. */
-  static extOf(path: string): string {
-    return extOf(path);
   }
 }
