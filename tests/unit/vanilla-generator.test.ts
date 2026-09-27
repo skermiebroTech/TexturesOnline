@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {
   OPTIONS, PRESETS, GROUPS, defaults, presetValues, normalizeOptions, readSettings, toPreviewParams,
   generateVanillaShaderFiles, supportedFor, supportFromSources, detectFamily, shaderSourcePrefixes,
-  gradeColor, vignetteFactor, vanillaPackDescription,
+  gradeColor, vignetteFactor, vanillaPackDescription, GRADE_DENY,
 } from '../../src/tools/shaders/vanilla/index';
 import { countMain, glslFloat, maskComments, renameMain, wrapFunction, expandForAnalysis, fragmentOutputs } from '../../src/tools/shaders/vanilla/glsl';
 import { FOG_SIGNATURES, addProgramUniform } from '../../src/tools/shaders/vanilla/generate';
@@ -603,6 +603,16 @@ test('1.17-style patch: world graded per object, GUI untouched, waving via GameT
   for (const t of Object.values(files)) {
     for (const m of (t as string).matchAll(/Made with (\w+)/g)) assert.equal(m[1], 'TexturesOnline');
   }
+});
+
+test('additive and emissive overlays are never graded', () => {
+  for (const name of ['rendertype_eyes', 'rendertype_energy_swirl', 'rendertype_lightning']) {
+    assert.ok(GRADE_DENY.test(name), `${name} must be on the deny list`);
+  }
+  assert.ok(!GRADE_DENY.test('rendertype_entity_translucent_emissive'), 'translucent emissive entities stay graded');
+  const r = generateVanillaShaderFiles(f1Sources(), ALL_ON, { versionId: '1.17.1', packFormat: pf(7) });
+  const fsh = textOf(r.files as Record<string, string>, `${CORE}rendertype_solid.fsh`);
+  assert.match(fsh, /#if !\(defined\(EMISSIVE\) && defined\(NO_OVERLAY\)\)\n\s*if \(txo_aspect > 0\.0001\) \{[\s\S]*?\}\n#endif/);
 });
 
 test('synthetic 1.17-style output compiles and links', { skip: findGlslang() ? false : 'glslangValidator not found' }, async () => {

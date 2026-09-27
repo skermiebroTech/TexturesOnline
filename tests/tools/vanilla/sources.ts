@@ -2,8 +2,8 @@
  * Real game shader sources for the vanilla shader tests, read from Minecraft client jars at runtime
  * (never stored in the repo). Extracted files are cached next to the jars.
  *
- * Fixture directory: $TO_FIXTURES, else the build machine's scratch area (a directory holding
- * research-cache/jars/<version>.jar and optionally client-26.3.jar). Tests skip when it is missing.
+ * Fixture directory: $TO_FIXTURES (a directory holding research-cache/jars/<version>.jar and
+ * optionally client-26.3.jar). Tests skip when it is unset or missing.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,20 +11,8 @@ import { unzipSync, strFromU8 } from 'fflate';
 import type { PackFormat } from '../../../src/core/types';
 
 export function fixturesDir(): string | null {
-  if (process.env.TO_FIXTURES) return existsSync(process.env.TO_FIXTURES) ? process.env.TO_FIXTURES : null;
-  try {
-    for (const a of readdirSync('/tmp')) {
-      const base = join('/tmp', a, '-home-user-TexturesOnline');
-      if (!existsSync(base)) continue;
-      for (const b of readdirSync(base)) {
-        const dir = join(base, b, 'scratchpad');
-        if (existsSync(join(dir, 'research-cache', 'jars'))) return dir;
-      }
-    }
-  } catch {
-    /* no fixtures on this machine */
-  }
-  return null;
+  const dir = process.env.TO_FIXTURES;
+  return dir && existsSync(join(dir, 'research-cache', 'jars')) ? dir : null;
 }
 
 export interface JarRef {

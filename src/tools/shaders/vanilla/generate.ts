@@ -29,7 +29,7 @@ export interface VanillaVersionInfo {
 }
 
 /** Shaders whose colour output is not the world's final colour (or which run for the GUI only). */
-export const GRADE_DENY = /^(blit_screen|blit_depth|lightmap|animate_sprite.*|panorama|gui|rendertype_gui.*|integrate_depth|oit_.*|rendertype_outline|rendertype_water_mask|rendertype_crumbling|glint|rendertype_.*glint.*|screenquad)$/;
+export const GRADE_DENY = /^(blit_screen|blit_depth|lightmap|animate_sprite.*|panorama|gui|rendertype_gui.*|integrate_depth|oit_.*|rendertype_outline|rendertype_water_mask|rendertype_crumbling|glint|rendertype_.*glint.*|screenquad|rendertype_eyes|rendertype_energy_swirl|rendertype_lightning)$/;
 
 const P = PREFIX;
 const POST_INCLUDE_FILE = `${P}_post.glsl`;
@@ -205,7 +205,15 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
     }
     const fp = pt.plan(fpath);
     fp.decls.push(...plan);
-    fp.post.push(`if (${cond}) {`, `    ${outVar}.rgb = ${gradeExpression(outVar, withGrade, withVignette, point)};`, '}');
+    // Additive/emissive overlays (1.21.2+ entity eyes and energy swirl) must stay ungraded: a brightness
+    // lift would turn their transparent black texels into a glow over the whole model.
+    fp.post.push(
+      '#if !(defined(EMISSIVE) && defined(NO_OVERLAY))',
+      `if (${cond}) {`,
+      `    ${outVar}.rgb = ${gradeExpression(outVar, withGrade, withVignette, point)};`,
+      '}',
+      '#endif',
+    );
     patched++;
   }
   for (const vsh of vertexShaders) {

@@ -12,8 +12,6 @@ import { createHash } from 'node:crypto';
 
 export type Stage = 'vert' | 'frag';
 
-const FALLBACK_GLSLANG = 'glslangValidator';
-
 function isExecutable(p: string): boolean {
   try {
     accessSync(p, constants.X_OK);
@@ -23,7 +21,7 @@ function isExecutable(p: string): boolean {
   }
 }
 
-/** glslangValidator from $GLSLANG_VALIDATOR, then PATH, then the local tools folder; null when absent. */
+/** glslangValidator from $GLSLANG_VALIDATOR, then PATH, then $TO_FIXTURES/tools/bin; null when absent. */
 export function findGlslang(): string | null {
   const fromEnv = process.env.GLSLANG_VALIDATOR;
   if (fromEnv && isExecutable(fromEnv)) return fromEnv;
@@ -34,7 +32,8 @@ export function findGlslang(): string | null {
       if (existsSync(p) && isExecutable(p)) return p;
     }
   }
-  return existsSync(FALLBACK_GLSLANG) && isExecutable(FALLBACK_GLSLANG) ? FALLBACK_GLSLANG : null;
+  const local = process.env.TO_FIXTURES ? join(process.env.TO_FIXTURES, 'tools', 'bin', 'glslangValidator') : '';
+  return local && existsSync(local) && isExecutable(local) ? local : null;
 }
 
 // ------------------------------------------------------------------ loader environments
