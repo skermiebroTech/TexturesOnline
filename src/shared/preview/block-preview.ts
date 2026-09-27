@@ -4,6 +4,32 @@
 import * as THREE from 'three';
 import { alphaMode, makePixelTexture, stripFrames, type PixelImage } from './three-utils';
 import { createStage, OrbitController, prefersReducedMotion, ViewportLoop } from './viewport';
+import { ModelMesh, type ModelHit, type ModelTextureImage } from '../models/model-mesh';
+import type { BakedQuad, RGB, Tint } from '../models/geometry';
+
+export type { ModelHit, ModelTextureImage } from '../models/model-mesh';
+
+/** Baked model quads plus the (pack) images of every texture they use. */
+export interface ModelScene {
+  quads: BakedQuad[];
+  textures: Map<string, ModelTextureImage>;
+  /** Colour of a biome / fixed tint */
+  tint: (t: Tint) => RGB;
+}
+
+export interface ModelShowOptions {
+  /** 'block' looks at the north-east corner like the inventory; 'item' at the front (south) of a flat item */
+  view?: 'block' | 'item';
+  /** Keep the camera where the user left it (e.g. when only the block state changed) */
+  keepView?: boolean;
+}
+
+export interface ModelHandlers {
+  /** Pointer moved onto another face (null = off the model) */
+  hover?(hit: ModelHit | null): void;
+  /** A face was clicked or tapped (not dragged) */
+  pick?(hit: ModelHit): void;
+}
 
 export type CubeFace = 'up' | 'down' | 'north' | 'south' | 'east' | 'west';
 export type CubeFaces = Partial<Record<CubeFace, ImageData | PixelImage>> & { all?: ImageData | PixelImage };
@@ -20,6 +46,16 @@ export interface BlockViewOptions {
 export interface BlockPreview {
   showCube(faces: CubeFaces, opts?: BlockViewOptions): void;
   showFlat(img: ImageData | PixelImage, opts?: BlockViewOptions): void;
+  /** Full block / item model (see ModelScene); faces can be hovered and clicked. */
+  showModel(scene: ModelScene, opts?: ModelShowOptions): void;
+  /** Live pixels for one texture of the shown model (painting) */
+  updateModelTexture(path: string, tex: ModelTextureImage): void;
+  setModelHandlers(h: ModelHandlers | null): void;
+  /** Highlights the faces drawn with a texture (null = none) */
+  highlightTexture(path: string | null): void;
+  /** Where the most visible face drawn with `path` is on screen (client CSS pixels), or null */
+  facePoint(path: string): { x: number; y: number } | null;
+  readonly mode: 'empty' | 'cube' | 'flat' | 'model';
   setAutoRotate(v: boolean): void;
   /** Back to the standard inventory angle */
   resetView(): void;
@@ -75,6 +111,8 @@ void main() {
 `;
 
 const DEFAULT_VIEW = { azimuth: (3 * Math.PI) / 4, elevation: 0.52, distance: 3.6 };
+const ITEM_VIEW = { azimuth: 0.42, elevation: 0.24, distance: 3.3 };
+const CLICK_SLOP = 6;
 
 function asPixelImage(img: ImageData | PixelImage): PixelImage {
   return { width: img.width, height: img.height, data: img.data };
@@ -104,7 +142,17 @@ class BlockPreviewImpl implements BlockPreview {
   private textures: THREE.Texture[] = [];
   private faces: FaceState[] = [];
   private extraMaterials: THREE.Material[] = [];
-  private mode: 'empty' | 'cube' | 'flat' = 'empty';
+  mode: 'empty' | 'cube' | 'flat' | 'model' = 'empty';
+  private model: ModelMesh | null = null;
+  private modelPivot: THREE.Group | null = null;
+  private modelCells: THREE.LineSegments | null = null;
+  private handlers: ModelHandlers | null = null;
+  private readonly raycaster = new THREE.Raycaster();
+  private readonly ndc = new THREE.Vector2();
+  private hoverRaf = 0;
+  private hoverKey = '';
+  private down: { x: number; y: number; t: number; id: number } | null = null;
+  private lastPointer: { x: number; y: number } | null = null;
   private flatImage: PixelImage | null = null;
   private flatCanvas: HTMLCanvasElement | null = null;
   private cubeFallback: Partial<Record<CubeFace, HTMLCanvasElement>> | null = null;
@@ -162,7 +210,80 @@ class BlockPreviewImpl implements BlockPreview {
       frame: (dt) => this.frame(dt),
       resize: (w, h) => this.resize(w, h),
     });
+    const c = this.stage.canvas;
+    c.addEventListener('pointermove', this.onPointerMove);
+    c.addEventListener('pointerdown', this.onPointerDown);
+    c.addEventListener('pointerup', this.onPointerUp);
+    c.addEventListener('pointerleave', this.onPointerLeave);
   }
+
+  // ---- model picking ----
+
+  private setNdc(clientX: number, clientY: number): boolean {
+    const r = this.stage.canvas.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    this.ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    return true;
+  }
+
+  private pickAt(clientX: number, clientY: number): ModelHit | null {
+    if (this.mode !== 'model' || !this.model || !this.renderer) return null;
+    if (!this.setNdc(clientX, clientY)) return null;
+    this.syncCamera();
+    this.scene.updateMatrixWorld(true);
+    this.raycaster.setFromCamera(this.ndc, this.camera);
+    return this.model.pick(this.raycaster);
+  }
+
+  private setHover(hit: ModelHit | null): void {
+    const key = hit ? `${hit.index}` : '';
+    if (key === this.hoverKey) return;
+    this.hoverKey = key;
+    this.model?.highlight(hit?.texture ?? null, hit ? hit.index : -1);
+    this.stage.canvas.style.cursor = hit ? 'pointer' : 'grab';
+    this.handlers?.hover?.(hit);
+    this.loop.invalidate();
+  }
+
+  private onPointerMove = (e: PointerEvent): void => {
+    if (this.mode !== 'model') return;
+    this.lastPointer = { x: e.clientX, y: e.clientY };
+    if (this.down && Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > CLICK_SLOP) {
+      this.setHover(null);
+      return;
+    }
+    if (e.pointerType === 'touch' || this.hoverRaf) return;
+    this.hoverRaf = requestAnimationFrame(() => {
+      this.hoverRaf = 0;
+      if (this.destroyed || !this.lastPointer || this.orbit.interacting) return;
+      this.setHover(this.pickAt(this.lastPointer.x, this.lastPointer.y));
+    });
+  };
+
+  private onPointerDown = (e: PointerEvent): void => {
+    if (this.mode !== 'model') return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    this.down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+  };
+
+  private onPointerUp = (e: PointerEvent): void => {
+    const d = this.down;
+    this.down = null;
+    if (!d || d.id !== e.pointerId || this.mode !== 'model') return;
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > CLICK_SLOP || performance.now() - d.t > 700) return;
+    const hit = this.pickAt(e.clientX, e.clientY);
+    if (!hit) return;
+    if (e.pointerType !== 'mouse') {
+      this.hoverKey = '';
+      this.setHover(hit);
+    }
+    this.handlers?.pick?.(hit);
+  };
+
+  private onPointerLeave = (): void => {
+    this.lastPointer = null;
+    if (this.mode === 'model') this.setHover(null);
+  };
 
   private onLost = (e: Event): void => {
     e.preventDefault();
@@ -188,7 +309,28 @@ class BlockPreviewImpl implements BlockPreview {
     this.drawFlat();
   }
 
+  private clearModel(): void {
+    if (this.hoverRaf) cancelAnimationFrame(this.hoverRaf);
+    this.hoverRaf = 0;
+    this.hoverKey = '';
+    if (this.modelPivot) this.group.remove(this.modelPivot);
+    this.model?.dispose();
+    this.model = null;
+    this.modelPivot = null;
+    if (this.modelCells) {
+      this.modelCells.geometry.dispose();
+      (this.modelCells.material as THREE.Material).dispose();
+      this.modelCells = null;
+    }
+    if (this.shadow) {
+      this.shadow.position.y = -0.62;
+      this.shadow.scale.setScalar(1);
+    }
+    this.stage.canvas.style.cursor = 'grab';
+  }
+
   private clearCube(): void {
+    this.clearModel();
     for (const m of this.meshes) this.group.remove(m);
     for (const f of this.faces) f.material.dispose();
     for (const m of this.extraMaterials) m.dispose();
@@ -209,8 +351,15 @@ class BlockPreviewImpl implements BlockPreview {
         this.drawIsoFallback();
         return false;
       }
-    } else if (this.mode === 'cube' && this.renderer.getContext().isContextLost()) {
+    } else if ((this.mode === 'cube' || this.mode === 'model') && this.renderer.getContext().isContextLost()) {
       return false; // resumes from onRestored
+    }
+    if (this.mode === 'model') {
+      if (!this.renderer) return false;
+      const moving = this.orbit.update(dt);
+      const anim = this.model?.animate(this.animTime) ?? false;
+      this.renderCube();
+      return moving || anim || this.orbit.animating;
     }
     const orbitMoving = this.mode === 'cube' && this.orbit.update(dt);
     let animating = false;
@@ -231,12 +380,137 @@ class BlockPreviewImpl implements BlockPreview {
     return orbitMoving || animating || (this.mode === 'cube' && this.orbit.animating);
   }
 
-  private renderCube(): void {
-    if (!this.renderer) return;
+  private syncCamera(): void {
     const off = this.orbit.offset();
     this.camera.position.set(off[0], off[1], off[2]);
     this.camera.lookAt(0, 0, 0);
+    this.camera.updateMatrixWorld();
+  }
+
+  private renderCube(): void {
+    if (!this.renderer) return;
+    this.syncCamera();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  showModel(scene: ModelScene, opts: ModelShowOptions = {}): void {
+    if (this.destroyed) return;
+    this.clearCube();
+    this.mode = 'model';
+    this.flatImage = null;
+    this.frametime = 0;
+    this.animTime = 0;
+    if (!this.renderer) {
+      // No WebGL: show the first texture flat.
+      const first = scene.quads.find((q) => q.texture && scene.textures.has(q.texture));
+      const img = first?.texture ? scene.textures.get(first.texture)!.image : null;
+      this.mode = 'flat';
+      this.flatImage = img ? asPixelImage(img) : null;
+      this.flatCanvas = null;
+      this.stage.canvas.style.visibility = 'hidden';
+      this.flat.style.display = 'block';
+      this.drawFlat();
+      return;
+    }
+    this.flat.style.display = 'none';
+    this.stage.canvas.style.visibility = 'visible';
+    const mesh = new ModelMesh();
+    mesh.build(scene.quads, scene.textures, scene.tint);
+    const accent = getComputedStyle(this.stage.root).getPropertyValue('--tool-accent').trim();
+    if (accent) mesh.setAccent(accent);
+    // Frame the model like a unit cube: centred, scaled down when it spans more than one block.
+    const min = [Infinity, Infinity, Infinity];
+    const max = [-Infinity, -Infinity, -Infinity];
+    for (const q of scene.quads)
+      for (const p of q.positions)
+        for (let i = 0; i < 3; i++) {
+          min[i] = Math.min(min[i], p[i]);
+          max[i] = Math.max(max[i], p[i]);
+        }
+    if (!scene.quads.length) {
+      min.fill(0);
+      max.fill(1);
+    }
+    // Always frame at least the block cell(s) the model sits in, so small models keep their size.
+    // (elements may poke a little outside their block, like a wall torch's base: that isn't another block)
+    const cellMin = min.map((v, i) => Math.min(Math.floor(v + 0.3), Math.floor(max[i] - 1e-4)));
+    const cellMax = max.map((v, i) => Math.max(cellMin[i] + 1, Math.ceil(v - 0.3)));
+    const fmin = cellMin.map((v, i) => Math.min(v, min[i]));
+    const fmax = cellMax.map((v, i) => Math.max(v, max[i]));
+    const center = fmin.map((v, i) => (v + fmax[i]) / 2);
+    const extent = Math.max(fmax[0] - fmin[0], fmax[1] - fmin[1], fmax[2] - fmin[2]);
+    const scale = 1 / Math.max(1, extent);
+    const pivot = new THREE.Group();
+    mesh.group.position.set(-center[0], -center[1], -center[2]);
+    pivot.add(mesh.group);
+    pivot.scale.setScalar(scale);
+    // Faint outline of the block cells when the model doesn't fill them (torches, flowers, fences...).
+    const fills = scene.quads.length > 0 && [0, 1, 2].every((i) => Math.abs(min[i] - cellMin[i]) < 1e-3 && Math.abs(max[i] - cellMax[i]) < 1e-3);
+    if (!fills && opts.view !== 'item') {
+      const w = cellMax[0] - cellMin[0];
+      const hgt = cellMax[1] - cellMin[1];
+      const d = cellMax[2] - cellMin[2];
+      const box = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, hgt, d));
+      const lines = new THREE.LineSegments(box, new THREE.LineBasicMaterial({ color: 0x8a93a6, transparent: true, opacity: 0.35, depthWrite: false }));
+      lines.position.set((cellMin[0] + cellMax[0]) / 2 - center[0], (cellMin[1] + cellMax[1]) / 2 - center[1], (cellMin[2] + cellMax[2]) / 2 - center[2]);
+      pivot.add(lines);
+      this.modelCells = lines;
+    }
+    this.group.add(pivot);
+    this.model = mesh;
+    this.modelPivot = pivot;
+    if (this.shadow) {
+      this.shadow.visible = opts.view !== 'item' && scene.quads.length > 0;
+      this.shadow.position.y = (fmin[1] - center[1]) * scale - 0.1;
+      this.shadow.scale.setScalar(Math.max(0.6, Math.max(fmax[0] - fmin[0], fmax[2] - fmin[2]) * scale));
+    }
+    if (!opts.keepView) this.orbit.setHome(opts.view === 'item' ? ITEM_VIEW : DEFAULT_VIEW);
+    this.loop.invalidate();
+  }
+
+  updateModelTexture(path: string, tex: ModelTextureImage): void {
+    if (this.mode !== 'model' || !this.model) return;
+    if (this.model.updateTexture(path, tex)) this.loop.invalidate();
+  }
+
+  setModelHandlers(h: ModelHandlers | null): void {
+    this.handlers = h;
+  }
+
+  highlightTexture(path: string | null): void {
+    if (!this.model) return;
+    const cur = this.model.highlighted;
+    if (cur.texture === path && cur.face < 0) return;
+    this.hoverKey = '';
+    this.model.highlight(path, -1);
+    this.loop.invalidate();
+  }
+
+  facePoint(path: string): { x: number; y: number } | null {
+    if (this.mode !== 'model' || !this.model || !this.modelPivot) return null;
+    this.syncCamera();
+    this.scene.updateMatrixWorld(true);
+    const cam = this.camera.position;
+    const quads = this.model.quadList();
+    const candidates: { i: number; score: number; world: THREE.Vector3 }[] = [];
+    quads.forEach((q, i) => {
+      if (q.texture !== path) return;
+      const c = this.model!.quadCenter(i)!;
+      const world = c.applyMatrix4(this.model!.group.matrixWorld);
+      const toCam = cam.clone().sub(world).normalize();
+      const score = toCam.dot(new THREE.Vector3(q.normal[0], q.normal[1], q.normal[2]));
+      if (score > 0.05) candidates.push({ i, score, world });
+    });
+    candidates.sort((a, b) => b.score - a.score);
+    const r = this.stage.canvas.getBoundingClientRect();
+    for (const c of candidates) {
+      const ndc = c.world.clone().project(this.camera);
+      const x = r.left + ((ndc.x + 1) / 2) * r.width;
+      const y = r.top + ((1 - ndc.y) / 2) * r.height;
+      const hit = this.pickAt(x, y);
+      if (hit && hit.texture === path) return { x, y };
+    }
+    return null;
   }
 
   showCube(faces: CubeFaces, opts: BlockViewOptions = {}): void {
@@ -252,6 +526,7 @@ class BlockPreviewImpl implements BlockPreview {
     }
     this.mode = 'cube';
     this.flatImage = null;
+    this.orbit.setHome(DEFAULT_VIEW, false);
     this.frametime = opts.frametime && opts.frametime > 0 ? opts.frametime : 0;
     this.animTime = 0;
     this.flat.style.display = 'none';
@@ -443,6 +718,11 @@ class BlockPreviewImpl implements BlockPreview {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    const c = this.stage.canvas;
+    c.removeEventListener('pointermove', this.onPointerMove);
+    c.removeEventListener('pointerdown', this.onPointerDown);
+    c.removeEventListener('pointerup', this.onPointerUp);
+    c.removeEventListener('pointerleave', this.onPointerLeave);
     this.loop.dispose();
     this.orbit.dispose();
     this.clearCube();

@@ -27,8 +27,15 @@ async function waitEditor(page) {
   await page.waitForFunction(() => !!window.__tx && document.querySelector('.tx-main'), null, { timeout: 120000 });
 }
 
+/** The texture grid lives under "All textures" (the browser opens in Blocks mode). */
+async function showAllTextures(page) {
+  if (await page.isVisible('.tx-mb')) await page.click('.tx-mb .tx-libbar .segmented-item[data-value="textures"]');
+  await page.waitForSelector('.tx-browser:not(.tx-mb) .tx-search-input', { state: 'visible' });
+}
+
 async function openBySearch(page, query, pathSuffix) {
-  await page.fill('.tx-search-input', query);
+  await showAllTextures(page);
+  await page.fill('.tx-browser:not(.tx-mb) .tx-search-input', query);
   const sel = `.tx-tile[data-path$="${pathSuffix}"]`;
   await page.waitForSelector(sel, { timeout: 30000 });
   await page.click(sel);
@@ -135,7 +142,7 @@ async function meanLuma(bytes) {
     check('Java 26.3 is the default version', /Java 26\.3/.test(pickerText ?? ''), pickerText?.trim());
     await page.fill('.tx-name-field input', 'E2E Java');
     await page.click('.tx-create-btn');
-    await page.waitForURL(/#\/textures\/[0-9a-f-]+$/, { timeout: 15000 });
+    await page.waitForURL(/(#\/|\/)textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
     const t0 = Date.now();
     await waitEditor(page);
     await page.waitForSelector('.tx-tile.loaded', { timeout: 120000 });
@@ -204,7 +211,7 @@ async function meanLuma(bytes) {
     await page.goto(base + '#/textures');
     await page.waitForSelector('.tx-open-dz');
     await page.setInputFiles('.tx-open-dz input[type=file]', javaZip.file);
-    await page.waitForURL(/#\/textures\/[0-9a-f-]+$/, { timeout: 60000 });
+    await page.waitForURL(/(#\/|\/)textures\/[0-9a-f-]+\/?$/, { timeout: 60000 });
     const warnModal = await page.$('dialog[open] .btn-primary:has-text("Open in editor")');
     if (warnModal) await warnModal.click();
     await waitEditor(page);
@@ -214,6 +221,94 @@ async function meanLuma(bytes) {
     await page.evaluate((p) => window.__tx.open(p), JAVA_STONE);
     const ip = await page.evaluate(() => window.__tx.pixel(3, 4));
     check('import: painted pixel survived the round trip', ip && ip[0] > ip[1] + 80, JSON.stringify(ip));
+
+    // ------------------------------------------------------------------ Java 26.3: Blocks mode (model-aware editing)
+    await page.goto(base + '#/textures');
+    await page.waitForSelector('.tx-new');
+    await page.fill('.tx-name-field input', 'E2E Blocks');
+    await page.click('.tx-create-btn');
+    await page.waitForURL(/(#\/|\/)textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
+    await waitEditor(page);
+    await page.click('.tx-browser:not(.tx-mb) .tx-libbar .segmented-item[data-value="blocks"]');
+    await page.waitForSelector('.tx-mb .tx-search-input', { state: 'visible' });
+    await page.waitForFunction(() => window.__tx.models.lib, null, { timeout: 120000 });
+    const blockCount = await page.evaluate(() => window.__tx.models.lib.blocks().length);
+    check('Blocks mode lists every 26.3 block', blockCount > 1200, `${blockCount} blocks`);
+    await page.fill('.tx-mb .tx-search-input', 'furnace');
+    await page.waitForSelector('.tx-mb .tx-tile[data-id="furnace"]', { timeout: 30000 });
+    await page.waitForSelector('.tx-mb .tx-tile[data-id="furnace"].loaded', { timeout: 30000 });
+    check('block list shows a rendered icon', true);
+    await page.click('.tx-mb .tx-tile[data-id="furnace"]');
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'furnace', null, { timeout: 30000 });
+    const pvName = await page.textContent('.tx-pv-name');
+    check('picking Furnace opens its model workspace', pvName?.trim() === 'Furnace', pvName?.trim());
+    await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('block/furnace_front.png'), null, { timeout: 30000 });
+    check('its front texture opens in the pixel editor', true);
+    const roleLabels = await page.$$eval('.tx-pv-texlabel', (els) => els.map((e) => e.textContent.trim()));
+    check('model textures are labelled by role', ['Front', 'Top', 'Side', 'Front (lit)'].every((l) => roleLabels.includes(l)), roleLabels.join(', '));
+    const litOn = '.tx-pv-state[data-prop="lit"] .segmented-item[data-value="true"]';
+    const litOff = '.tx-pv-state[data-prop="lit"] .segmented-item[data-value="false"]';
+    await page.click(litOn);
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.lit === 'true');
+    await page.click(litOff);
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.lit === 'false');
+    await page.click(litOn);
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.lit === 'true');
+    check('the lit state switches on and off', true);
+    const FRONT_ON = 'assets/minecraft/textures/block/furnace_front_on.png';
+    let face = null;
+    for (let i = 0; i < 60 && !face; i++) {
+      face = await page.evaluate((p) => window.__tx.preview.facePoint(p), FRONT_ON);
+      if (!face) await page.waitForTimeout(250);
+    }
+    check('lit furnace shows furnace_front_on on its front face', !!face, JSON.stringify(face));
+    if (face) {
+      await page.mouse.move(face.x, face.y);
+      await page.waitForFunction(() => /Front \(lit\)/.test(document.querySelector('.tx-pv-hover:not([hidden])')?.textContent ?? ''), null, { timeout: 10000 }).catch(() => null);
+      const hoverText = await page.textContent('.tx-pv-hover');
+      check('hovering a face names its texture', /Front \(lit\)/.test(hoverText ?? ''), hoverText?.trim());
+      await page.mouse.click(face.x, face.y);
+      await page.waitForFunction((p) => window.__tx.canvas.current()?.key === p, FRONT_ON, { timeout: 30000 });
+      check('clicking the front face opens furnace_front_on for painting', true);
+    }
+    const usedBy = await page.$$eval('.tx-usedby-chip', (els) => els.map((e) => e.textContent.trim()));
+    check('"Used by" names the Furnace', usedBy.includes('Furnace'), usedBy.join(', '));
+    const BLUE = [20, 60, 255, 255];
+    await paint(page, BLUE, [[5, 5], [6, 5], [7, 5]]);
+    // the middle of the face (where the model was clicked) too, to see it change live in 3D
+    const middle = [];
+    for (let y = 6; y <= 9; y++) for (let x = 6; x <= 9; x++) middle.push([x, y]);
+    await paint(page, BLUE, middle);
+    if (face) {
+      await page.mouse.move(5, 5);
+      await page.waitForTimeout(400);
+      const shot = await page.screenshot({ clip: { x: Math.round(face.x) - 2, y: Math.round(face.y) - 2, width: 5, height: 5 } });
+      const img = await rgbaOf(shot);
+      let r = 0, g = 0, b = 0;
+      for (let i = 0; i < img.data.length; i += 4) (r += img.data[i]), (g += img.data[i + 1]), (b += img.data[i + 2]);
+      const n = img.data.length / 4;
+      check('paint shows live on the 3D model', b / n > r / n + 60 && b / n > g / n + 40, JSON.stringify([r / n, g / n, b / n].map(Math.round)));
+    }
+    await waitSaved(page);
+    check('painting furnace_front_on marks it edited', await page.evaluate((p) => window.__tx.store.isEdited(p), FRONT_ON));
+    const editedChip = await page.textContent('.tx-mb .tx-edited-chip .tx-chip-count');
+    check('Blocks mode counts the edited block', editedChip?.trim() === '1', editedChip?.trim());
+    if (shotsDir) await page.screenshot({ path: path.join(shotsDir, 'textures-e2e-blocks-furnace.png') });
+    // Items mode
+    await page.click('.tx-mb .tx-libbar .segmented-item[data-value="items"]');
+    await page.fill('.tx-mb .tx-search-input', 'diamond sword');
+    await page.waitForSelector('.tx-mb .tx-tile[data-id="diamond_sword"]', { timeout: 30000 });
+    await page.click('.tx-mb .tx-tile[data-id="diamond_sword"]');
+    await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('item/diamond_sword.png'), null, { timeout: 30000 });
+    check('Items mode opens the item texture', true);
+    const blocksZip = await exportPack(page, '.zip');
+    const bzip = unzip(blocksZip.file);
+    check('export contains the edited furnace_front_on.png', !!bzip[FRONT_ON]);
+    if (bzip[FRONT_ON]) {
+      const bp = await pixelOf(bzip[FRONT_ON], 6, 5);
+      check('the painted pixel is in the exported furnace_front_on.png', bp[2] > 200 && bp[0] < 60, JSON.stringify(bp));
+    }
+    await page.click('.tx-export-modal .btn-primary:has-text("Done")');
     await ctx.close();
 
     // ------------------------------------------------------------------ Bedrock (latest)
@@ -250,6 +345,27 @@ async function meanLuma(bytes) {
       if (bs) {
         const p = await pixelOf(bs, 2, 2);
         check('Bedrock edited pixel is blue', p[2] > 200 && p[0] < 40, JSON.stringify(p));
+      }
+      await bp.click('.tx-export-modal .btn-primary:has-text("Done")');
+      // Bedrock blocks: blocks.json faces, lit furnace as a state
+      await bp.click('.tx-browser:not(.tx-mb) .tx-libbar .segmented-item[data-value="blocks"]');
+      await bp.waitForFunction(() => window.__tx.models.lib, null, { timeout: 120000 });
+      await bp.fill('.tx-mb .tx-search-input', 'furnace');
+      await bp.waitForSelector('.tx-mb .tx-tile[data-id="furnace"]', { timeout: 30000 });
+      await bp.click('.tx-mb .tx-tile[data-id="furnace"]');
+      await bp.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'furnace', null, { timeout: 30000 });
+      await bp.click('.tx-pv-state[data-prop="lit"] .segmented-item[data-value="true"]');
+      let bface = null;
+      for (let i = 0; i < 60 && !bface; i++) {
+        bface = await bp.evaluate(() => window.__tx.preview.facePoint('textures/blocks/furnace_front_on.png'));
+        if (!bface) await bp.waitForTimeout(250);
+      }
+      const bstate = bface ? '' : await bp.evaluate(() => JSON.stringify({ cur: window.__tx.preview.current(), label: document.querySelector('.tx-pv-label')?.textContent, side: document.querySelector('.tx-editor')?.dataset.side }));
+      check('Bedrock lit furnace shows furnace_front_on facing the camera', !!bface, JSON.stringify(bface) + bstate);
+      if (bface) {
+        await bp.mouse.click(bface.x, bface.y);
+        await bp.waitForFunction(() => window.__tx.canvas.current()?.key === 'textures/blocks/furnace_front_on.png', null, { timeout: 30000 });
+        check('Bedrock: clicking the face opens furnace_front_on', true);
       }
       await bctx.close();
     }

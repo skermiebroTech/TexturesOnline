@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harness: block and item models</title>
+  <style>
+    body { margin: 0; background: #12151c; color: #eef1f7; font: 13px system-ui, sans-serif; }
+    #view { display: grid; grid-template-columns: repeat(4, 240px); gap: 10px; padding: 10px; width: max-content; }
+    .cell { background: #181c25; border: 1px solid #2a3140; border-radius: 8px; }
+    .cell .box { width: 240px; height: 220px; }
+    .cell p { margin: 4px 8px 8px; color: #b4bccb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <div id="view"></div>
+  <script type="module" src="./models.ts"></script>
+</body>
+</html>

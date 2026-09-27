@@ -71,6 +71,8 @@ export interface CanvasPanel {
 
 export interface CanvasPanelOptions {
   store: TexStore;
+  /** Shown under the texture header (e.g. the "Used by" chips) */
+  belowHeader?: HTMLElement;
   onOpened(t: OpenTexture | null): void;
   onHistory(): void;
   onBrowse(): void;
@@ -302,6 +304,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     'section',
     { class: 'panel tx-center is-empty', 'aria-label': 'Texture editor' },
     header,
+    opts.belowHeader ?? null,
     maskBanner,
     workspace,
     frames.el,
@@ -339,7 +342,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         { class: 'tx-empty-inner' },
         h('div', { class: 'empty-icon' }, icon('image', { size: 48 })),
         h('h3', null, 'Pick a texture to paint'),
-        h('p', { class: 'muted' }, 'Choose any texture from the list, or start with one of these:'),
+        h('p', { class: 'muted' }, 'Pick a block or a texture from the list, or start with one of these:'),
         h('div', { class: 'tx-picks' }, chips),
         button({ label: 'Browse all textures', icon: 'search', variant: 'secondary', class: 'tx-browse-btn', onClick: () => opts.onBrowse() }),
       ),

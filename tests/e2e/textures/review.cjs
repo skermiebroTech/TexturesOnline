@@ -70,6 +70,8 @@ async function pngFile(name, w, h) {
   const errors = [];
   const fresh = async () => {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    // These flows use the texture grid: start the browser in All textures mode.
+    await ctx.addInitScript(() => { try { localStorage.setItem('to-tex-library-mode', 'textures'); } catch { /* storage blocked */ } });
     await routeMojang(ctx, fx);
     const page = await ctx.newPage();
     page.on('pageerror', (e) => errors.push(e.message));

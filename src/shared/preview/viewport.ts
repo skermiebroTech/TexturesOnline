@@ -323,6 +323,14 @@ export class OrbitController {
     this.reset();
   };
 
+  /** Changes the view that reset() (double-click / Home) returns to, and goes there. */
+  setHome(view: { azimuth: number; elevation: number; distance: number }, jump = true): void {
+    (this.opts as { azimuth: number }).azimuth = view.azimuth;
+    (this.opts as { elevation: number }).elevation = view.elevation;
+    (this.opts as { distance: number }).distance = view.distance;
+    if (jump) this.reset();
+  }
+
   reset(): void {
     this.azimuth = this.opts.azimuth;
     this.elevation = this.opts.elevation;

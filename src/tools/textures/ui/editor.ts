@@ -5,7 +5,7 @@
 import type { AssetIndex, TexturePackProject } from '../../../core/types';
 import { h, isTypingTarget } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
-import { badge, button, emptyState, iconButton, spinner, tabs, tooltip } from '../../../ui/components';
+import { badge, button, emptyState, iconButton, segmented, spinner, tabs, tooltip } from '../../../ui/components';
 import { assetLoadingPanel } from '../../../ui/version-picker';
 import { openShortcutsSheet } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
@@ -17,6 +17,10 @@ import { PIXEL_SHORTCUTS } from '../../../shared/pixel-canvas';
 import { TexStore, ICON_KEY, type SaveState } from './store';
 import { ThumbService, paintCanvas } from './thumbs';
 import { createBrowser } from './browser';
+import { createModelBrowser } from './model-browser';
+import { ModelService } from './models';
+import { createUsedBy } from './used-by';
+import type { ModelEntry } from '../../../shared/models/index';
 import { createCanvasPanel } from './canvas-panel';
 import { createPreviewPanel } from './preview-panel';
 import { createEffectsPanel } from './effects-panel';
@@ -26,6 +30,8 @@ import { plainText } from './mc-text';
 import { packIconImage } from './icon';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pack';
+type LibMode = 'blocks' | 'items' | 'textures';
+const LIB_KEY = 'to-tex-library-mode';
 type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pack';
 
 const PHONE = '(max-width: 760px)';
@@ -90,16 +96,43 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   // ---------------------------------------------------------------- state + panels
   const store = new TexStore(proj, assets);
   const thumbs = new ThumbService(store);
+  const models = new ModelService(store);
+  let libMode: LibMode = 'blocks';
+  try {
+    const saved = localStorage.getItem(LIB_KEY);
+    if (saved === 'blocks' || saved === 'items' || saved === 'textures') libMode = saved;
+  } catch {
+    /* storage blocked */
+  }
+  const switches: (HTMLElement & { setValue(v: LibMode): void })[] = [];
+  const makeSwitch = () => {
+    const sw = segmented<LibMode>({
+      value: libMode,
+      size: 'sm',
+      label: 'Browse by',
+      options: [
+        { value: 'blocks', label: 'Blocks' },
+        { value: 'items', label: 'Items' },
+        { value: 'textures', label: 'All textures' },
+      ],
+      onChange: (v) => setLibMode(v, true),
+    });
+    switches.push(sw);
+    return h('div', { class: 'tx-libbar' }, sw);
+  };
   let side: Side = 'preview';
   let mobile: Mobile = 'editor';
   const isPhone = () => matchMedia(PHONE).matches;
   const isTablet = () => matchMedia(TABLET).matches && !isPhone();
 
+  const usedBy = createUsedBy({ store, models, onPick: (e) => showEntry(e, 'chip') });
   const canvas = createCanvasPanel({
     store,
+    belowHeader: usedBy.el,
     onOpened: (t) => {
       preview.setTexture(t);
       browser.setSelected(t && t.key !== ICON_KEY ? t.key : null, true);
+      usedBy.setPath(t && t.key !== ICON_KEY ? t.key : null);
     },
     onHistory: () => paintHistory(),
     onBrowse: () => showMobile('textures', true),
@@ -116,8 +149,64 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     },
     onDownload: (path) => void canvas.download(path),
     onReset: (path) => void canvas.reset(path),
+    top: makeSwitch(),
   });
-  const preview = createPreviewPanel(store);
+  const modelBrowser = createModelBrowser({
+    store,
+    models,
+    top: makeSwitch(),
+    onOpen: (e, how) => showEntry(e, how),
+    onShowTextures: () => setLibMode('textures', true),
+  });
+  const preview = createPreviewPanel(store, models, {
+    openTexture: (path) => {
+      void canvas.open(path);
+      // Phones show one panel at a time: go paint it.
+      if (isPhone()) showMobile('editor');
+    },
+    onEntry: (e) => {
+      if (e) modelBrowser.setSelected(e.kind, e.id, false);
+      usedBy.setCurrent(e);
+    },
+  });
+
+  /** Shows a block / item in the model workspace and opens its main texture (unless one of its textures is open). */
+  function showEntry(e: ModelEntry, how: 'pointer' | 'keyboard' | 'enter' | 'chip') {
+    preview.showEntry(e);
+    modelBrowser.setSelected(e.kind, e.id, how === 'chip');
+    const lib = models.lib;
+    if (lib && how !== 'chip') {
+      const cur = canvas.current();
+      const view = lib.resolve(e, preview.current()?.state);
+      if (!cur || !view.textures.some((t) => t.path === cur.key)) {
+        const first = view.textures.find((t) => t.faces > 0 && !t.missing) ?? view.textures.find((t) => !t.missing);
+        if (first) void canvas.open(first.path, { focus: how === 'enter' });
+      }
+    }
+    if (how === 'keyboard') return;
+    if (isPhone()) showMobile('preview');
+    else if (!isTablet() || how !== 'enter') setSide('preview');
+  }
+
+  function setLibMode(v: LibMode, user = false) {
+    libMode = v;
+    switches.forEach((sw) => sw.setValue(v));
+    if (user) {
+      try {
+        localStorage.setItem(LIB_KEY, v);
+      } catch {
+        /* storage blocked */
+      }
+    }
+    const models3d = v !== 'textures';
+    browser.el.hidden = models3d;
+    modelBrowser.el.hidden = !models3d;
+    if (models3d) {
+      modelBrowser.setKind(v === 'blocks' ? 'block' : 'item');
+      modelBrowser.activate();
+    }
+    if (user) requestAnimationFrame(() => (models3d ? modelBrowser.focusSearch() : browser.focusSearch()));
+  }
   const effects = createEffectsPanel(store);
   const pack = createPackPanel({
     store,
@@ -247,7 +336,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const main = h(
     'div',
     { class: 'tx-main' },
-    h('div', { class: 'tx-col-left' }, browser.el),
+    h('div', { class: 'tx-col-left' }, browser.el, modelBrowser.el),
     h('div', { class: 'tx-col-center' }, canvas.el),
     h('div', { class: 'tx-col-tabs' }, sideTabs),
     h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pack),
@@ -280,11 +369,22 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     else notifyVisibility();
     if (!isPhone() && !isTablet() && v === 'textures') setSide('preview');
     if (isTablet() && v === 'textures') setSide('textures');
-    if (focusSearch) requestAnimationFrame(() => browser.focusSearch());
+    if (focusSearch) requestAnimationFrame(() => focusSearch_());
   }
+  const focusSearch_ = () => (libMode === 'textures' ? browser.focusSearch() : modelBrowser.focusSearch());
 
   setSide(side);
   showMobile('editor');
+  setLibMode(libMode);
+  // The "Used by" chips need the model library: fetch it shortly after opening.
+  const libTimer = setTimeout(() => void models.load(), 700);
+  cleanups.push(
+    () => clearTimeout(libTimer),
+    // Versions without block models (Java before 1.8) start in All textures.
+    models.events.on('ready', () => {
+      if (models.lib && !models.lib.available && libMode !== 'textures') setLibMode('textures');
+    }),
+  );
   const mqs = [matchMedia(PHONE), matchMedia(TABLET)];
   const onMq = () => {
     if (!isTablet() && !isPhone() && side === 'textures') setSide('preview');
@@ -334,6 +434,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       {
         title: 'Texture list',
         items: [
+          { keys: ['Click'], label: 'On the 3D model: paint the texture of that face' },
           { keys: ['Arrow keys'], label: 'Move between textures' },
           { keys: ['Enter'], label: 'Open and start painting' },
           { keys: ['Shift', 'F10'], label: 'More actions' },
@@ -365,7 +466,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       e.preventDefault();
       if (isPhone()) showMobile('textures');
       else if (isTablet()) setSide('textures');
-      requestAnimationFrame(() => browser.focusSearch());
+      requestAnimationFrame(() => focusSearch_());
     } else if (e.key === ',' || e.key === '.') {
       if ((e.target as HTMLElement | null)?.closest?.('[role="listbox"],[role="menu"]')) return;
       e.preventDefault();
@@ -407,6 +508,14 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     (window as unknown as { __tx?: unknown }).__tx = {
       store,
       canvas,
+      models,
+      preview,
+      setLibraryMode: (m: LibMode) => setLibMode(m),
+      showBlock: (id: string) => {
+        const e = models.lib?.block(id);
+        if (e) showEntry(e, 'pointer');
+        return !!e;
+      },
       open: (p: string) => canvas.open(p),
       pixel: (x: number, y: number) => {
         const t = canvas.current();
@@ -421,8 +530,11 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     void store.flush();
     cleanups.forEach((f) => f());
     browser.destroy();
+    modelBrowser.destroy();
+    usedBy.destroy();
     canvas.destroy();
     preview.destroy();
+    models.dispose();
     effects.destroy();
     pack.destroy();
     thumbs.clear();

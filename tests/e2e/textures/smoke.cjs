@@ -31,6 +31,8 @@ async function samplePng(w, h) {
   const base = baseArg || server.url;
   const browser = await launch();
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  // These flows use the texture grid: start the browser in All textures mode.
+  await ctx.addInitScript(() => { try { localStorage.setItem('to-tex-library-mode', 'textures'); } catch { /* storage blocked */ } });
   await routeMojang(ctx, fixturesDir());
   const page = await ctx.newPage();
   const errors = [];
@@ -191,7 +193,7 @@ async function samplePng(w, h) {
     await page.click('.tx-col-tabs .tab[data-value="pack"]');
     await page.click('.tx-danger .btn');
     await page.click('dialog[open] .btn-danger');
-    await page.waitForURL(/#\/textures$/);
+    await page.waitForURL(/(#\/|\/)textures\/?$/);
     await page.waitForSelector('.tx-new');
     await page.waitForTimeout(500);
     const names = await page.$$eval('.tx-rc-name', (els) => els.map((e) => e.textContent));

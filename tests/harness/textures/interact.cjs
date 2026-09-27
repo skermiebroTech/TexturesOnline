@@ -38,6 +38,8 @@ async function makePng() {
   const errors = [];
   const tag = `${W}-${theme}`;
   const ctx = await browser.newContext({ viewport: { width: W, height: H }, colorScheme: theme, deviceScaleFactor: W < 761 ? 2 : 1, acceptDownloads: true });
+  // These flows use the texture grid: start the browser in All textures mode.
+  await ctx.addInitScript(() => { try { localStorage.setItem('to-tex-library-mode', 'textures'); } catch { /* storage blocked */ } });
   await routeMojang(ctx, fx);
   await ctx.addInitScript((t) => localStorage.setItem('to-theme', t), theme);
   const page = await ctx.newPage();
@@ -81,6 +83,8 @@ async function makePng() {
     if (on('loading')) {
       // hold the jar back to capture the one-time download panel
       const lctx = await browser.newContext({ viewport: { width: W, height: H }, colorScheme: theme, deviceScaleFactor: W < 761 ? 2 : 1 });
+      // These flows use the texture grid: start the browser in All textures mode.
+      await lctx.addInitScript(() => { try { localStorage.setItem('to-tex-library-mode', 'textures'); } catch { /* storage blocked */ } });
       await lctx.addInitScript((t) => localStorage.setItem('to-theme', t), theme);
       await routeMojang(lctx, fx);
       await lctx.route(/client\.jar$/, () => {});

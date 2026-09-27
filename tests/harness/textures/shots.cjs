@@ -23,6 +23,8 @@ fs.mkdirSync(out, { recursive: true });
       for (const [w, hgt] of sizes) {
         const tag = `${w}-${theme}`;
         const ctx = await browser.newContext({ viewport: { width: w, height: hgt }, colorScheme: theme, deviceScaleFactor: w < 761 ? 2 : 1 });
+        // These flows use the texture grid: start the browser in All textures mode.
+        await ctx.addInitScript(() => { try { localStorage.setItem('to-tex-library-mode', 'textures'); } catch { /* storage blocked */ } });
         await routeMojang(ctx, fx);
         await ctx.addInitScript((t) => localStorage.setItem('to-theme', t), theme);
         const page = await ctx.newPage();

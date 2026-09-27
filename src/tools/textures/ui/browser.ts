@@ -26,6 +26,8 @@ export interface BrowserOptions {
   onUpload(path: string): void;
   onDownload(path: string): void;
   onReset(path: string): void;
+  /** Shown above the search (the Blocks / Items / All textures switch) */
+  top?: HTMLElement;
 }
 
 const MIN_TILE = 64;
@@ -140,6 +142,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   const el = h(
     'section',
     { class: 'panel tx-browser', 'aria-label': 'Texture browser' },
+    opts.top ?? null,
     h('div', { class: 'tx-browser-head' }, search, catPick),
     h('div', { class: 'tx-browser-bar' }, editedBtn, h('span', { class: 'grow' }), fxBtn, h('span', { class: 'tx-seg' }, gridBtn, listBtn)),
     h('div', { class: 'tx-grid-wrap' }, scroller, empty),
