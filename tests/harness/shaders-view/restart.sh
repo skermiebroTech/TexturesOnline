@@ -1,6 +1,7 @@
 #!/bin/sh
 # Rebuilds and restarts the stable preview server used by the screenshot scripts.
 S=${SCRATCH:-/tmp/shaders-view}
+mkdir -p "$S"
 PORT=${1:-5734}
 [ -f "$S/vite-shaders-preview.pid" ] && kill "$(cat "$S/vite-shaders-preview.pid")" 2>/dev/null
 pkill -f "vite preview --outDir $S/shaders-dist" 2>/dev/null

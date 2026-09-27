@@ -1,5 +1,6 @@
 // Shared Playwright helpers for the Shader Maker harness scripts and E2E tests.
 // Run scripts with NODE_PATH=$(npm root -g) so the global 'playwright' package resolves.
+// Screenshots go to $SHOTS_DIR (default: <tmp>/shaders-view-screens).
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
@@ -67,7 +68,7 @@ async function waitForCanvasPixels(page, selector = '.sh-stage-host canvas', tim
 }
 
 function outDir() {
-  const d = process.env.SHOTS_DIR || 'screens';
+  const d = process.env.SHOTS_DIR || path.join(require('os').tmpdir(), 'shaders-view-screens');
   fs.mkdirSync(d, { recursive: true });
   return d;
 }

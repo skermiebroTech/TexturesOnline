@@ -343,6 +343,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const keysBtn = iconButton('keyboard', 'Keyboard shortcuts (?)', () => showShortcuts());
   const exportBtn = button({ label: 'Export', icon: 'download', iconEnd: 'chevron-down', variant: 'primary', class: 'sk-export-btn' });
   exportBtn.setAttribute('aria-haspopup', 'menu');
+  exportBtn.setAttribute('aria-label', 'Export'); // the label text is hidden on phones
   exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind))));
   const backBtn = iconButton('arrow-left', 'All skins', () => navigate('/skins'));
 
@@ -960,6 +961,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         autoRotate: prefs.autoRotate,
         background: (BACKDROPS.find((x) => x.id === prefs.backdrop) ?? BACKDROPS[0]).color,
       });
+      // Parts hidden or highlighted while the preview was still loading.
+      for (const p of hidden) setPartVisible(preview, p, false);
+      if (highlight) preview.setHighlight(highlight);
       applyLayers3d();
       if (prefs.seeThrough) applySeeThrough();
       disposers.push(() => preview?.destroy());
@@ -1156,7 +1160,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     updateMask();
     syncPartsUi();
     pc.redraw();
-    if (locked.size) statusText.textContent = `Painting only inside: ${[...locked].map((p) => PART_INFO[p].label).join(', ')}`;
+    if (locked.size) statusText.textContent = `Painting only inside: ${[...(prefs.mirror ? withMirrorParts(locked) : locked)].map((p) => PART_INFO[p].label).join(', ')}`;
   }
 
   function resetParts() {
@@ -1312,7 +1316,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   async function doExport(kind: Parameters<typeof exportSkin>[0]) {
     project.name = nameInput.value.trim() || 'My skin';
     project.model = model;
-    await exportSkin(kind, project, pc.getImage(), () => markDirty());
+    await exportSkin(kind, project, pc.getImage(), () => (destroyed ? void persist() : markDirty()), () => !destroyed);
   }
 
   function showShortcuts() {

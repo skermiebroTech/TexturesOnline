@@ -57,7 +57,7 @@ function heroArt(): HTMLElement {
     ['grass_top', 'grass_side', 'winter-frost', 'Winter Frost'],
     ['oak_planks', 'oak_planks', 'neon-outline', 'Neon Outline'],
     ['cobblestone', 'cobblestone', 'cartoon', 'Cartoon'],
-    ['sand', 'sand', 'game-boy', 'Game Boy'],
+    ['oak_log_top', 'oak_log', 'game-boy', 'Game Boy'],
   ];
   return h(
     'div',

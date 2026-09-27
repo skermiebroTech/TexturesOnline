@@ -33,6 +33,7 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
   let showFx = true;
   let autoRotate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   let token = 0;
+  let destroyed = false;
 
   const stage = h('div', { class: 'tx-pv-stage' });
   const stageLabel = h('span', { class: 'tx-pv-label' });
@@ -91,6 +92,8 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
     if (!creating) {
       creating = import('../../../shared/preview/block-preview')
         .then((m) => {
+          // the panel may be gone by the time the 3D code arrives: don't open a WebGL context then
+          if (destroyed) return null;
           preview = m.createBlockPreview(stage, { autoRotate });
           return preview;
         })
@@ -275,6 +278,8 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
       if (v) void render();
     },
     destroy() {
+      destroyed = true;
+      token++;
       offs.forEach((f) => f());
       if (timer) clearTimeout(timer);
       preview?.destroy();

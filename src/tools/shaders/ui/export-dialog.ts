@@ -154,7 +154,8 @@ export function openExportDialog(opts: {
       helpLink(target),
       footer(again, download, done),
     );
-    done.focus();
+    done.focus({ preventScroll: true });
+    body.closest('.modal-body')?.scrollTo(0, 0);
   }
 
   async function run(jarFile?: File): Promise<void> {

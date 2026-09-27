@@ -132,8 +132,11 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     iconInput,
   );
 
+  let iconToken = 0;
   const paintIcon = async () => {
+    const my = ++iconToken;
     const { img, auto } = await packIconImage(store);
+    if (my !== iconToken) return;
     for (const c of [iconCanvas, pvIcon]) {
       paintCanvas(c, img);
       const s = img.width <= 64 ? Math.floor(64 / img.width) : 64 / img.width;
@@ -454,8 +457,14 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
         descTimer = setTimeout(() => void renderCompat(), 400);
       }
     }),
-    store.events.on('overrides', () => paintStats()),
-    store.events.on('effects', () => paintStats()),
+    store.events.on('overrides', ({ path }) => {
+      paintStats();
+      if (/grass|stone/.test(path)) void paintIcon();
+    }),
+    store.events.on('effects', () => {
+      paintStats();
+      void paintIcon();
+    }),
   );
 
   return {

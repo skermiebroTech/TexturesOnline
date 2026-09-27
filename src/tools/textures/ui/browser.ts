@@ -3,7 +3,7 @@
 import type { TextureCategory } from '../../../core/types';
 import { h, listen } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
-import { emptyState, button, openMenu, tooltip, type MenuItem } from '../../../ui/components';
+import { emptyState, button, openMenu, openPopover, tooltip, type MenuItem, type PopoverHandle } from '../../../ui/components';
 import { TEXTURE_CATEGORY_ORDER } from '../../../editions/index';
 import { CATEGORY_INFO, searchScore, tokenize, type TextureEntry } from './meta';
 import { paintCanvas, type ThumbService } from './thumbs';
@@ -61,7 +61,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   const input = h('input', {
     class: 'input tx-search-input',
     type: 'search',
-    placeholder: `Search ${nf.format(store.entries.length)} textures`,
+    placeholder: 'Search textures',
     autocomplete: 'off',
     spellcheck: false,
     'aria-label': 'Search textures',
@@ -105,7 +105,31 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   gridBtn.addEventListener('click', () => setMode('grid'));
   listBtn.addEventListener('click', () => setMode('list'));
   const status = h('div', { class: 'tx-browser-status' });
-  const catBar = h('div', { class: 'tx-cats', role: 'toolbar', 'aria-label': 'Texture categories' });
+  // Category picker: one compact button (a narrow panel can't show 15 chips with counts), opening a
+  // grid of category tiles with their counts.
+  const catIcon = h('span', { class: 'tx-catpick-icon' });
+  const catLabel = h('span', { class: 'tx-catpick-label truncate' });
+  const catCount = h('span', { class: 'tx-chip-count' });
+  const catPick = h(
+    'button',
+    { type: 'button', class: 'chip tx-catpick', 'aria-haspopup': 'menu', 'aria-expanded': 'false' },
+    catIcon,
+    catLabel,
+    catCount,
+    icon('chevron-down', { class: 'tx-catpick-chev' }),
+  );
+  tooltip(catPick, 'Show one kind of texture');
+  let catMenu: PopoverHandle | null = null;
+  catPick.addEventListener('click', () => {
+    if (catMenu?.open) catMenu.close();
+    else openCatMenu();
+  });
+  catPick.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowDown' && !catMenu?.open) {
+      ev.preventDefault();
+      openCatMenu();
+    }
+  });
   const grid = h('div', { class: ['tx-grid', mode === 'list' && 'is-list'], role: 'listbox', tabIndex: 0, 'aria-label': 'Textures', 'aria-multiselectable': 'false' });
   const sizer = h('div', { class: 'tx-grid-sizer' });
   const scroller = h('div', { class: 'tx-grid-scroll scroll' }, sizer, grid);
@@ -116,7 +140,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   const el = h(
     'section',
     { class: 'panel tx-browser', 'aria-label': 'Texture browser' },
-    h('div', { class: 'tx-browser-head' }, search, h('div', { class: 'tx-browser-tools' }, catBar)),
+    h('div', { class: 'tx-browser-head' }, search, catPick),
     h('div', { class: 'tx-browser-bar' }, editedBtn, h('span', { class: 'grow' }), fxBtn, h('span', { class: 'tx-seg' }, gridBtn, listBtn)),
     h('div', { class: 'tx-grid-wrap' }, scroller, empty),
     status,
@@ -139,35 +163,65 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     return m;
   };
 
+  const catName = (c: Cat) => (c === 'all' ? 'All textures' : CATEGORY_INFO[c].label);
   const renderCats = () => {
     const m = counts();
-    const chips: HTMLElement[] = [];
-    const mk = (c: Cat, label: string, n: number) => {
+    catIcon.replaceChildren(icon(cat === 'all' ? 'grid' : CATEGORY_INFO[cat].icon));
+    catLabel.textContent = catName(cat);
+    catCount.textContent = nf.format(m.get(cat) ?? 0);
+    catPick.setAttribute('aria-label', `Category: ${catName(cat)}, ${m.get(cat) ?? 0} textures. Change category`);
+    catPick.classList.toggle('is-filtered', cat !== 'all');
+  };
+
+  function openCatMenu() {
+    const m = counts();
+    const list = h('div', { class: 'tx-catmenu', role: 'menu', 'aria-label': 'Texture categories' });
+    const items: HTMLButtonElement[] = [];
+    const mk = (c: Cat) => {
+      const on = cat === c;
       const b = h(
         'button',
-        { type: 'button', class: 'chip tx-cat', 'aria-pressed': String(cat === c), dataset: { cat: c } },
-        c !== 'all' ? icon(CATEGORY_INFO[c].icon) : null,
-        h('span', null, label),
-        h('span', { class: 'tx-chip-count' }, nf.format(n)),
+        { type: 'button', class: 'tx-catmenu-item', role: 'menuitemradio', 'aria-checked': String(on), tabIndex: -1, dataset: { cat: c } },
+        icon(c === 'all' ? 'grid' : CATEGORY_INFO[c].icon),
+        h('span', { class: 'tx-catmenu-label' }, c === 'all' ? 'All' : CATEGORY_INFO[c].label),
+        h('span', { class: 'tx-chip-count' }, nf.format(m.get(c) ?? 0)),
       );
       b.addEventListener('click', () => {
-        cat = cat === c && c !== 'all' ? 'all' : c;
+        catMenu?.close();
+        cat = c;
         refilter(true);
       });
-      chips.push(b);
+      items.push(b);
+      list.appendChild(b);
     };
-    mk('all', 'All', m.get('all') ?? 0);
-    for (const c of TEXTURE_CATEGORY_ORDER) {
-      const n = m.get(c) ?? 0;
-      if (n > 0 || cat === c) mk(c, CATEGORY_INFO[c].label, n);
-    }
-    catBar.replaceChildren(...chips);
-    const cur = catBar.querySelector<HTMLElement>('[aria-pressed="true"]');
-    if (cur && catBar.scrollWidth > catBar.clientWidth) {
-      const l = cur.offsetLeft - catBar.offsetLeft;
-      if (l < catBar.scrollLeft || l + cur.offsetWidth > catBar.scrollLeft + catBar.clientWidth) catBar.scrollLeft = l - 16;
-    }
-  };
+    mk('all');
+    for (const c of TEXTURE_CATEGORY_ORDER) if ((m.get(c) ?? 0) > 0 || cat === c) mk(c);
+    list.addEventListener('keydown', (ev) => {
+      const i = items.indexOf(document.activeElement as HTMLButtonElement);
+      let n = -1;
+      if (ev.key === 'ArrowRight') n = Math.min(items.length - 1, i + 1);
+      else if (ev.key === 'ArrowLeft') n = Math.max(0, i - 1);
+      else if (ev.key === 'ArrowDown') n = Math.min(items.length - 1, i + 2);
+      else if (ev.key === 'ArrowUp') n = Math.max(0, i - 2);
+      else if (ev.key === 'Home') n = 0;
+      else if (ev.key === 'End') n = items.length - 1;
+      else if (ev.key === 'Tab') {
+        catMenu?.close();
+        return;
+      }
+      if (n < 0) return;
+      ev.preventDefault();
+      items[n].focus();
+    });
+    catPick.setAttribute('aria-expanded', 'true');
+    catMenu = openPopover(catPick, list, {
+      placement: 'bottom-start',
+      role: 'presentation',
+      class: 'tx-catmenu-pop',
+      focus: items.find((b) => b.getAttribute('aria-checked') === 'true') ?? items[0],
+      onClose: () => catPick.setAttribute('aria-expanded', 'false'),
+    });
+  }
 
   const computeItems = () => {
     const edited = store.editedPaths();
@@ -607,16 +661,6 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     thumbs.showEffects = !thumbs.showEffects;
     refreshAllThumbs();
   });
-  catBar.addEventListener(
-    'wheel',
-    (ev) => {
-      if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX) && catBar.scrollWidth > catBar.clientWidth) {
-        catBar.scrollLeft += ev.deltaY;
-        ev.preventDefault();
-      }
-    },
-    { passive: false },
-  );
 
   let raf = 0;
   scroller.addEventListener(
@@ -662,6 +706,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     },
     visible: () => items,
     destroy() {
+      catMenu?.close();
       cleanups.forEach((f) => f());
       io.disconnect();
       ro.disconnect();

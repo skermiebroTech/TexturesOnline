@@ -136,6 +136,29 @@ const GREEN = [0, 255, 0, 255];
 }
 
 // =============================================================================================
+// 1b. Old 64x32 export of a slim skin widens the arms instead of leaving a gap
+{
+  const { page, context, errors } = await newPage();
+  const { decode: decodePng } = projectRequire('fast-png');
+  const { readFileSync } = await import('node:fs');
+  await page.goto(`${base}#/skins`);
+  await page.click('.sk-model-pick .segmented-item[data-value="slim"]');
+  await page.click('.sk-starter-template');
+  await waitEditor(page);
+  check('slim starter opens slim', (await model(page)) === 'slim');
+  await page.click('.sk-export-btn');
+  await page.click('.sk-export-item[data-kind="java-legacy"]');
+  await page.waitForSelector('.sk-losses');
+  check('legacy dialog says slim arms are widened', /widened/.test((await page.textContent('.sk-losses')) || ''));
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('.modal-footer >> text=Download 64×32 PNG')]);
+  const img = decodePng(readFileSync(await dl.path()));
+  const at = (x, y) => Array.from(img.data.slice((y * 64 + x) * 4, (y * 64 + x) * 4 + 4));
+  check('legacy export fills the 4th arm column', at(47, 24)[3] === 255 && eq(at(47, 24), at(46, 24)), `${at(47, 24)} vs ${at(46, 24)}`);
+  check('no page errors (legacy slim)', errors.length === 0, errors.join(' | '));
+  await context.close();
+}
+
+// =============================================================================================
 // 2. Popovers toggle instead of stacking up
 {
   const { page, context, errors } = await newPage();
@@ -187,6 +210,7 @@ const GREEN = [0, 255, 0, 255];
   check('paint colour is remembered', (await page.inputValue('.sk-block-color .cp-hex')).toLowerCase() === '#00ff00');
 
   // A backup newer than the saved project (the IndexedDB write never finished) is restored.
+  await api(page, (e) => e.flush());
   const png = makePng(64, 64, (x, y) => (x === 3 && y === 3 ? [1, 2, 3, 255] : [200, 100, 50, 255])).toString('base64');
   await page.evaluate(([key, png]) => localStorage.setItem(key, JSON.stringify({ png, model: 'slim', name: 'Recovered', t: Date.now() + 60000 })), [`to-skin-backup:${id}`, png]);
   await page.reload();

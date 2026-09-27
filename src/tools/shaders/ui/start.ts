@@ -124,15 +124,14 @@ export function mountStart(root: HTMLElement): () => void {
 
   function recentCard(p: ShaderProjectData): HTMLElement {
     const t = targetInfo(p.target);
-    const thumb = h('div', { class: 'sh-recent-thumb' });
+    const thumb = h('div', { class: 'sh-recent-thumb' }, artEl(sceneSvg(TARGET_SCENES[p.target]), 'sh-card-art'));
     if (p.thumb instanceof Blob && p.thumb.size) {
       const url = URL.createObjectURL(p.thumb);
       urls.push(url);
-      const img = h('img', { src: url, alt: '', loading: 'lazy', decoding: 'async' });
-      img.addEventListener('error', () => img.replaceWith(artEl(sceneSvg(TARGET_SCENES[p.target]), 'sh-card-art')));
+      const img = h('img', { class: 'sh-card-render', src: url, alt: '', decoding: 'async' });
+      img.addEventListener('load', () => img.classList.add('is-in'));
+      img.addEventListener('error', () => img.remove());
       thumb.appendChild(img);
-    } else {
-      thumb.appendChild(artEl(sceneSvg(TARGET_SCENES[p.target]), 'sh-card-art'));
     }
     thumb.appendChild(h('span', { class: 'sh-recent-target' }, icon(t.icon), h('span', null, t.shortName)));
     const menuBtn = iconButton('more-vertical', `More actions for ${p.name}`, () => {

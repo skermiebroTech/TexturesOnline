@@ -34,10 +34,11 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
   tooltip(prev, 'Previous frame — ,');
   tooltip(next, 'Next frame — .');
   const list = h('div', { class: 'tx-frames-list', role: 'listbox', 'aria-label': 'Animation frames', 'aria-orientation': 'horizontal' });
+  const title = h('span', { class: 'tx-frames-title' }, 'Animation');
   const el = h(
     'div',
     { class: 'tx-frames', hidden: true },
-    h('div', { class: 'tx-frames-lead' }, h('div', { class: 'tx-frames-pv checker' }, preview), playBtn, h('div', { class: 'tx-frames-meta' }, h('span', { class: 'tx-frames-title' }, 'Animation'), info)),
+    h('div', { class: 'tx-frames-lead' }, h('div', { class: 'tx-frames-pv checker' }, preview), playBtn, h('div', { class: 'tx-frames-meta' }, title, info)),
     prev,
     list,
     next,
@@ -58,7 +59,7 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
 
   const paintInfo = () => {
     if (!anim) return;
-    info.textContent = `Frame ${current + 1} of ${anim.count} · ${anim.frametime} tick${anim.frametime === 1 ? '' : 's'}`;
+    info.textContent = anim.still ? `Frame ${current + 1} of ${anim.count}` : `Frame ${current + 1} of ${anim.count} · ${anim.frametime} tick${anim.frametime === 1 ? '' : 's'}`;
     list.querySelectorAll<HTMLElement>('.tx-frame').forEach((b, i) => {
       b.setAttribute('aria-selected', String(i === current));
       b.tabIndex = i === current ? 0 : -1;
@@ -137,6 +138,7 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
       el.hidden = !a || !f;
       list.replaceChildren();
       if (!a || !f) return;
+      title.textContent = a.still ? 'Frames' : 'Animation';
       for (let i = 0; i < a.count; i++) {
         const c = h('canvas', { class: 'pixelated', 'aria-hidden': 'true' });
         paintThumb(c, i);

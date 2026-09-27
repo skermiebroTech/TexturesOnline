@@ -18,6 +18,29 @@ import type { TexStore } from './store';
 import { packIconImage } from './icon';
 import { matchingPreset } from './effects-panel';
 
+/**
+ * export.ts yields with scheduler.yield(), and Chrome runs those continuations ahead of every other
+ * queued task, so timers, toasts and even navigation (hashchange) wait until the whole export is
+ * done. While exporting, hide scheduler.yield so the exporter uses its fair MessageChannel fallback.
+ */
+async function withFairYield<T>(fn: () => Promise<T>): Promise<T> {
+  const sched = (globalThis as { scheduler?: object }).scheduler;
+  let patched = false;
+  if (sched && typeof (sched as { yield?: unknown }).yield === 'function') {
+    try {
+      Object.defineProperty(sched, 'yield', { value: undefined, configurable: true, writable: true });
+      patched = true;
+    } catch {
+      /* read-only: keep the native one */
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    if (patched) delete (sched as { yield?: unknown }).yield;
+  }
+}
+
 export function openExportDialog(store: TexStore): void {
   const project = store.project;
   const java = project.edition === 'java';
@@ -113,7 +136,7 @@ export function openExportDialog(store: TexStore): void {
     try {
       await store.flush();
       if (signal.aborted) throw new DOMException('Export cancelled', 'AbortError');
-      result = await exportTexturePack(project, store.assets, { signal, onProgress: (p) => bar.set(p) });
+      result = await withFairYield(() => exportTexturePack(project, store.assets, { signal, onProgress: (p) => bar.set(p) }));
       controller = null;
       // Bedrock exports bump the pack version: keep it
       store.touch('meta');

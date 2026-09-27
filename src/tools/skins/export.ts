@@ -7,7 +7,7 @@ import { writeZip } from '../../core/zip';
 import { uuidv4 } from '../../core/uuid';
 import type { SkinModel, SkinProject } from '../../core/types';
 import { buildSkinPackFiles, bumpPackVersion } from '../../editions/bedrock/manifest';
-import { countBaseHoles, countOuterPixels, faceRects, mirrorPixel, type SkinPart } from './templates';
+import { convertArms, countBaseHoles, countOuterPixels, faceRects, mirrorPixel, type SkinPart } from './templates';
 
 /** Skin project with the extra fields the skin tool stores (IndexedDB keeps any shape). */
 export interface SkinProjectData extends SkinProject {
@@ -73,13 +73,18 @@ export function legacyLosses(img: ImageData, model: SkinModel): string[] {
   const outer = countOuterPixels(img, model);
   const hatOnly = countOuterPixels(img, 'legacy');
   if (outer - hatOnly > 0) lost.push('Jacket, sleeves and pants (the outer layer below the head) are dropped. Only the hat layer is kept.');
-  if (model === 'slim') lost.push('Old versions only have the classic 4-pixel arms, so the slim arms get a gap.');
+  if (model === 'slim') lost.push('Old versions only have classic 4-pixel arms, so the slim arms are widened by repeating the column next to the body.');
   return lost;
 }
 
-/** Legacy 64x32 PNG for Java 1.7.10 and older (the top half of the modern layout). */
+/** The 64x64 skin as old versions will read it: slim arms widened to classic first. */
+export function legacySource(img: ImageData, model: SkinModel): ImageData {
+  return model === 'slim' ? convertArms(img, 'slim', 'classic') : img;
+}
+
+/** Legacy 64x32 PNG for Java 1.7.10 and older (the top half of the modern layout, classic arms). */
 export function exportJavaLegacy(img: ImageData, name: string, model: SkinModel): ExportResult {
-  const legacy = toLegacySkin(img);
+  const legacy = toLegacySkin(legacySource(img, model));
   return { blob: pngBlob(legacy), filename: `${baseName(name)}-64x32.png`, notes: legacyLosses(img, model) };
 }
 

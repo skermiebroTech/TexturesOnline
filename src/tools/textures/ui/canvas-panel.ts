@@ -46,6 +46,9 @@ export interface OpenTexture {
   anim: AnimInfo | null;
   frame: number;
   alphaData: boolean;
+  /** Pixels when opened, if the texture wasn't edited then: undoing back to them un-edits it */
+  base: ImageData | null;
+  baseUpscaled: boolean;
 }
 
 export interface CanvasPanel {
@@ -91,6 +94,14 @@ const TOOLS: { tool: Tool; label: string; icon: IconName; key?: string; hint?: s
 const PAINT_TOOLS = new Set<Tool>(['pencil', 'fill', 'line', 'rect', 'rect-fill', 'ellipse']);
 const SIZE_TOOLS = new Set<Tool>(['pencil', 'eraser', 'line', 'rect', 'ellipse', 'lighten', 'darken', 'noise']);
 const MAX_HD_PIXELS = 4 * 1024 * 1024;
+
+function samePixels(a: ImageData, b: ImageData): boolean {
+  if (a.width !== b.width || a.height !== b.height) return false;
+  const x = a.data;
+  const y = b.data;
+  for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
+  return true;
+}
 
 const QUICK_PICKS: { label: string; ids: string[] }[] = [
   { label: 'Grass block', ids: ['block/grass_block_side', 'blocks/grass_side_carried', 'blocks/grass_side'] },
@@ -161,13 +172,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (!t.alphaData) return;
     const tint = !!t.entry && isTintMaskBlock(t.full, t.entry.category);
     bannerText.replaceChildren(
-      tint
-        ? 'The see-through part marks where the grass colour goes in the game. '
-        : 'Faint or see-through pixels here are a mask the game uses (dye colour, glow or tint). ',
+      tint ? 'The see-through part is where grass colour goes. ' : 'Faint pixels here are a dye or glow mask. ',
       h('strong', null, 'Colour'),
-      ' paints what you see and keeps the mask; ',
+      ' keeps that mask safe; ',
       h('strong', null, 'Mask'),
-      ' edits the mask itself.',
+      ' edits it.',
     );
   }
   /** Colours to offer: in colour-only mode every pixel counts, even the see-through ones. */
@@ -271,6 +280,24 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   });
   railRo.observe(workspace);
   offs.push(() => railRo.disconnect());
+
+  // Horizontal scrollers (the rail on phones, the options bar): fade the side with more to show.
+  const fades = (sc: HTMLElement) => {
+    const paint = () => {
+      const max = sc.scrollWidth - sc.clientWidth;
+      const on = max > 2 && getComputedStyle(sc).flexDirection !== 'column';
+      sc.classList.toggle('is-scroller', on);
+      sc.classList.toggle('can-left', on && sc.scrollLeft > 2);
+      sc.classList.toggle('can-right', on && sc.scrollLeft < max - 2);
+    };
+    sc.addEventListener('scroll', paint, { passive: true });
+    const ro = new ResizeObserver(paint);
+    ro.observe(sc);
+    offs.push(() => ro.disconnect());
+    return paint;
+  };
+  const paintRailFade = fades(rail);
+  const paintOptFade = fades(optbar);
   const el = h(
     'section',
     { class: 'panel tx-center is-empty', 'aria-label': 'Texture editor' },
@@ -361,6 +388,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     tiledBtn.setActive(s.tiledPreview);
     channelSeg.setValue(s.channelMode);
     dock.sync();
+    requestAnimationFrame(() => {
+      paintRailFade();
+      paintOptFade();
+    });
   }
 
   let paletteTimer: ReturnType<typeof setTimeout> | null = null;
@@ -373,9 +404,15 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     } else {
       t.full = img;
     }
-    t.upscaled = false;
     const copy = t.anim ? cloneImageData(t.full) : img;
-    store.setImage(t.key, copy);
+    if (t.base && !pc.canUndo() && samePixels(t.full, t.base)) {
+      // everything was undone: the texture is untouched again, not an edit that looks like vanilla
+      t.upscaled = t.baseUpscaled;
+      if (store.isEdited(t.key)) store.resetToVanilla(t.key);
+    } else {
+      t.upscaled = false;
+      store.setImage(t.key, copy);
+    }
     store.events.emit('image', { path: t.key, full: copy });
     if (PAINT_TOOLS.has(pc.tool)) dock.noteUsed(pc.color as RGBA);
     paintHeader();
@@ -434,7 +471,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       } catch {
         full = await defaultIcon();
       }
-      return { key: ICON_KEY, entry: null, name: 'Pack icon', full, vanilla: null, upscaled: false, anim: null, frame: 0, alphaData: false };
+      return { key: ICON_KEY, entry: null, name: 'Pack icon', full, vanilla: null, upscaled: false, anim: null, frame: 0, alphaData: false, base: null, baseUpscaled: false };
     }
     const entry = store.byPath.get(path) ?? store.ensureEntry(path) ?? null;
     const edited = store.isEdited(path);
@@ -448,7 +485,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     let anim = entry ? await readAnimInfo(project, store.assets, entry, full, vanilla?.width ?? null) : null;
     if (!anim && entry && project.edition === 'bedrock' && isBedrockStrip(entry, full)) anim = stripLayout(full);
     const alphaData = project.edition === 'bedrock' && /\.tga$/i.test(path) && hasAlphaData(full);
-    return { key: path, entry, name: entry?.pretty ?? path, full, vanilla, upscaled, anim, frame: 0, alphaData };
+    const pristine = !edited && !!vanilla;
+    return { key: path, entry, name: entry?.pretty ?? path, full, vanilla, upscaled, anim, frame: 0, alphaData, base: pristine ? cloneImageData(full) : null, baseUpscaled: upscaled };
   }
 
   const defaultIcon = (): Promise<ImageData> => autoPackIcon(store, 64);
@@ -735,11 +773,15 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (e.type === 'keydown' && !e.repeat) setCompare(true);
     if (e.type === 'keyup') setCompare(false);
   };
+  // the key-up never arrives when the window loses focus mid-hold
+  const onBlur = () => setCompare(false);
   window.addEventListener('keydown', onKey);
   window.addEventListener('keyup', onKey);
+  window.addEventListener('blur', onBlur);
   offs.push(() => {
     window.removeEventListener('keydown', onKey);
     window.removeEventListener('keyup', onKey);
+    window.removeEventListener('blur', onBlur);
   });
   offs.push(store.events.on('entries', () => renderEmpty()));
 

@@ -2,9 +2,10 @@
 // fit / crop), with a live preview. Animated strips can take a whole strip, one frame, or all frames.
 
 import { decodeImage, fitToSize } from '../../../core/image';
+import { formatBytes } from '../../../ui/dom';
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
-import { segmented } from '../../../ui/components';
+import { segmented, spinner } from '../../../ui/components';
 import { dropzone } from '../../../ui/dropzone';
 import { openModal } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
@@ -25,6 +26,11 @@ export interface UploadOptions {
 }
 
 const ACCEPT = 'image/*,.png,.tga,.jpg,.jpeg,.gif,.webp,.bmp';
+/** Bigger pictures take seconds and hundreds of MB to decode; no texture needs them. */
+const MAX_FILE_BYTES = 60 * 1024 * 1024;
+const MAX_PIXELS = 36 * 1024 * 1024;
+/** The "Your image" preview never needs more than this many pixels per side. */
+const PREVIEW_MAX = 352;
 
 export function openUploadDialog(opts: UploadOptions): void {
   let src: ImageData | null = null;
@@ -79,9 +85,9 @@ export function openUploadDialog(opts: UploadOptions): void {
         label: 'What to replace',
         size: 'sm',
         options: [
-          { value: 'full', label: `All ${a.count} frames` },
-          { value: 'frame', label: `Frame ${a.index + 1}` },
-          { value: 'all-frames', label: 'Same on every frame' },
+          { value: 'full', label: 'Whole strip' },
+          { value: 'frame', label: `Frame ${a.index + 1} only` },
+          { value: 'all-frames', label: 'Every frame' },
         ],
         onChange: (v) => {
           scope = v;
@@ -105,8 +111,12 @@ export function openUploadDialog(opts: UploadOptions): void {
       ? h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), 'Bedrock uses this texture’s transparency as a colour mask. Your image’s transparency replaces it.')
       : null,
   );
+  const again = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-up-again' }, icon('image'), h('span', { class: 'btn-label' }, 'Choose a different picture'));
+  again.addEventListener('click', () => (dz.querySelector('input[type=file]') as HTMLInputElement | null)?.click());
+  editor.appendChild(again);
 
-  const body = h('div', { class: 'tx-upload' }, dz, editor);
+  const reading = h('div', { class: 'tx-up-reading', hidden: true }, spinner(24), h('span', null, 'Reading your image…'));
+  const body = h('div', { class: 'tx-upload' }, dz, reading, editor);
   const modal = openModal({
     title: `Upload image for ${opts.name}`,
     body,
@@ -129,6 +139,12 @@ export function openUploadDialog(opts: UploadOptions): void {
     ],
   });
 
+  const applyBtn = modal.el.querySelector<HTMLButtonElement>('.modal-footer .btn-primary');
+  if (applyBtn) applyBtn.disabled = true;
+
+  /** Inner size of the preview boxes (smaller on phones). */
+  const boxSize = () => Math.max(64, ((outCanvas.parentElement?.clientWidth || 192) - 16));
+
   const target = () => (a && scope !== 'full' ? { w: a.frameW, h: a.frameH } : { w: opts.width, h: opts.height });
 
   function render() {
@@ -136,7 +152,7 @@ export function openUploadDialog(opts: UploadOptions): void {
     const t = target();
     result = fitToSize(src, t.w, t.h, mode, fit);
     paintCanvas(outCanvas, result);
-    const box = 176;
+    const box = boxSize();
     const zoom = Math.max(1, Math.floor(box / Math.max(t.w, t.h)));
     const sc = Math.min(zoom, box / Math.max(t.w, t.h));
     outCanvas.style.width = `${Math.round(t.w * sc)}px`;
@@ -145,21 +161,44 @@ export function openUploadDialog(opts: UploadOptions): void {
     outInfo.textContent = ` ${t.w}×${t.h}`;
   }
 
+  let loadId = 0;
   async function load(file: File | undefined) {
     if (!file) return;
-    try {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      src = await decodeImage(file, ext);
-    } catch (err) {
-      console.error(err);
-      dz.setError("That file couldn't be read as an image. Try a PNG or JPG.");
+    const my = ++loadId;
+    if (file.size > MAX_FILE_BYTES) {
+      dz.setError(`That file is too big (${formatBytes(file.size)}). Pick a picture under ${formatBytes(MAX_FILE_BYTES)}.`);
       return;
     }
+    let img: ImageData;
+    dz.hidden = true;
+    editor.hidden = true;
+    reading.hidden = false;
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      img = await decodeImage(file, ext);
+    } catch {
+      if (my !== loadId) return;
+      reading.hidden = true;
+      dz.hidden = false;
+      dz.setError("That file couldn't be read as a picture. Try a PNG or JPG.");
+      return;
+    }
+    if (my !== loadId || !modal.el.isConnected) return;
+    reading.hidden = true;
+    if (img.width * img.height > MAX_PIXELS) {
+      dz.hidden = false;
+      dz.setError(`That picture is huge (${img.width}×${img.height}). Use one under ${Math.floor(Math.sqrt(MAX_PIXELS))}×${Math.floor(Math.sqrt(MAX_PIXELS))} pixels.`);
+      return;
+    }
+    src = img;
     dz.hidden = true;
     editor.hidden = false;
-    paintCanvas(srcCanvas, src);
-    const box = 176;
-    const s = Math.max(src.width, src.height) <= box ? Math.max(1, Math.floor(box / Math.max(src.width, src.height))) : box / Math.max(src.width, src.height);
+    if (applyBtn) applyBtn.disabled = false;
+    const big = Math.max(src.width, src.height);
+    const shown = big > PREVIEW_MAX ? fitToSize(src, Math.max(1, Math.round((src.width * PREVIEW_MAX) / big)), Math.max(1, Math.round((src.height * PREVIEW_MAX) / big)), 'smooth', 'stretch') : src;
+    paintCanvas(srcCanvas, shown);
+    const box = boxSize();
+    const s = big <= box ? Math.max(1, Math.floor(box / big)) : box / big;
     srcCanvas.style.width = `${Math.round(src.width * s)}px`;
     srcCanvas.style.height = `${Math.round(src.height * s)}px`;
     srcCanvas.classList.toggle('pixelated', s >= 1);

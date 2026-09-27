@@ -289,7 +289,7 @@
 /* Recent skins */
 .sk-recent-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 296px), 1fr));
   gap: 12px;
 }
 .sk-recent {
@@ -300,7 +300,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 44px 8px 8px;
+  padding: 8px 40px 8px 8px;
   border: 2px solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
@@ -363,6 +363,14 @@
 }
 .sk-defaults-head p {
   flex: 1 1 280px;
+}
+/* Labels of different lengths: size each option to its text so none is clipped. */
+.sk-defaults-head .segmented {
+  flex: none;
+}
+.sk-defaults-head .segmented-item {
+  flex: 0 0 auto;
+  padding: 0 12px 2px;
 }
 .sk-defaults-grid {
   display: grid;
@@ -1492,11 +1500,15 @@
   .sk-save {
     padding: 0 6px;
   }
-  .sk-export-btn .btn-label {
+  .sk-export-btn .btn-label,
+  .sk-export-btn .icon:last-child {
     display: none;
   }
+  .sk-export-btn .icon:first-child {
+    display: inline-flex;
+  }
   .sk-export-btn {
-    padding: 0 8px 2px;
+    padding: 0 10px 2px;
   }
   .sk-work {
     flex-direction: column-reverse;
@@ -1611,7 +1623,7 @@
 }
 .sk-example {
   height: 28px;
-  padding: 0 8px 2px;
+  padding: 0 6px 2px;
 }
 .sk-import-note {
   display: flex;

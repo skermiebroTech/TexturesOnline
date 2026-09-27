@@ -298,7 +298,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     store.events.on('save', (s) => paintSave(s)),
     store.events.on('effects', () => paintBarIcon()),
     store.events.on('overrides', ({ path }) => {
-      if (/grass/.test(path)) paintBarIcon();
+      if (/grass|stone/.test(path)) paintBarIcon();
     }),
     store.events.on('meta', () => {
       paintBarIcon();

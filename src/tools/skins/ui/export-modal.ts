@@ -9,7 +9,7 @@ import { h } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { openModal } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
-import { exportBedrockPack, exportBedrockPng, exportJavaLegacy, exportJavaPng, legacyLosses, type ExportKind, type ExportResult, type SkinProjectData } from '../export';
+import { exportBedrockPack, exportBedrockPng, exportJavaLegacy, exportJavaPng, legacyLosses, legacySource, type ExportKind, type ExportResult, type SkinProjectData } from '../export';
 import { drawFigure } from './figure';
 
 interface FormatInfo {
@@ -141,11 +141,11 @@ function figure(img: ImageData, model: SkinModel, label: string): HTMLElement {
  * Downloads the chosen format (legacy asks first, since it loses detail) and shows install steps.
  * `onProjectChanged` runs after a .mcpack export updated the stored uuids/version.
  */
-export async function exportSkin(kind: ExportKind, project: SkinProjectData, img: ImageData, onProjectChanged: () => void): Promise<void> {
+export async function exportSkin(kind: ExportKind, project: SkinProjectData, img: ImageData, onProjectChanged: () => void, isOpen: () => boolean = () => true): Promise<void> {
   const info = EXPORT_FORMATS.find((f) => f.kind === kind)!;
   if (kind === 'java-legacy') {
     const losses = legacyLosses(img, project.model);
-    const after = convertLegacySkin(exportJavaLegacyImage(img), { forceOpaqueBase: false });
+    const after = convertLegacySkin(exportJavaLegacyImage(legacySource(img, project.model)), { forceOpaqueBase: false });
     const body = h(
       'div',
       { class: 'sk-export' },
@@ -184,6 +184,8 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
   }
   saveBlob(res.blob, res.filename);
   if (kind === 'bedrock-pack') onProjectChanged();
+  // Left the editor while the file was being built: the download still happens, but no dialog.
+  if (!isOpen()) return;
 
   const again = button({ label: 'Download again', icon: 'download', variant: 'secondary', size: 'sm' });
   again.addEventListener('click', () =>
