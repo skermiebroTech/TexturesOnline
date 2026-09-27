@@ -587,12 +587,21 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   const onVisibility = () => {
     if (document.visibilityState === 'hidden') flushAll();
   };
+  // A save started while the page unloads may not finish, so ask the browser to confirm leaving.
+  const onBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (!scheduleSave.pending() && !saving) return;
+    flushAll();
+    e.preventDefault();
+    e.returnValue = '';
+  };
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', onBlur);
   window.addEventListener('pagehide', flushAll);
+  window.addEventListener('beforeunload', onBeforeUnload);
   document.addEventListener('visibilitychange', onVisibility);
   disposers.push(() => {
+    window.removeEventListener('beforeunload', onBeforeUnload);
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);
     window.removeEventListener('blur', onBlur);

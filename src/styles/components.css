@@ -197,7 +197,12 @@ input[type='number']::-webkit-outer-spin-button {
   gap: 12px;
   min-width: 0;
 }
+.field-head > .slider-value {
+  flex: none;
+}
 .field-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--text);
   font-size: var(--fs-md);
   line-height: var(--lh-md);

@@ -292,13 +292,46 @@ onAssetCacheCleared(() => {
   writeQueue.clear();
 });
 
+const resolvedRefs = new Map<string, string>();
+
+/**
+ * Git tag names in bedrock-samples are irregular: most start with 'v' but some don't
+ * (e.g. '1.21.90.21-preview'), and jsDelivr lists them all without it. Probe the tag as given,
+ * then with the 'v' toggled. Branches, cached catalogs and offline use keep the ref unchanged.
+ */
+async function resolveTagRef(ref: string, signal?: AbortSignal): Promise<string> {
+  if (ref === 'main' || ref === 'preview') return ref;
+  const known = resolvedRefs.get(ref);
+  if (known) return known;
+  if (await cacheGet(indexKey(ref)).catch(() => undefined)) return ref;
+  const alt = ref.startsWith('v') ? ref.slice(1) : `v${ref}`;
+  if (await cacheGet(indexKey(alt)).catch(() => undefined)) return alt;
+  let result = ref;
+  try {
+    await fetchSampleFile(ref, 'manifest.json', signal);
+  } catch (err) {
+    if (isAbortError(err)) throw err;
+    if (err instanceof NetError && err.kind === 'not-found') {
+      try {
+        await fetchSampleFile(alt, 'manifest.json', signal);
+        result = alt;
+      } catch (err2) {
+        if (isAbortError(err2)) throw err2;
+      }
+    }
+  }
+  resolvedRefs.set(ref, result);
+  return result;
+}
+
 async function load(versionId: string, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<BedrockAssets> {
   opts.onProgress?.({ label: 'Loading the Bedrock texture list', fraction: null });
   const v = await resolveBedrockVersion(versionId);
+  const ref = await resolveTagRef(v.ref, opts.signal);
   const gameVersion = await bedrockGameVersion(versionId).catch(() => undefined);
-  const catalog = await loadCatalog(v.ref, gameVersion, opts.signal);
+  const catalog = await loadCatalog(ref, gameVersion, opts.signal);
   opts.onProgress?.({ label: 'Loading the Bedrock texture list', fraction: 1 });
-  return new BedrockAssets(versionId, v.ref, catalog);
+  return new BedrockAssets(versionId, ref, catalog);
 }
 
 export function loadBedrockAssets(versionId: string, opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {}): Promise<AssetIndex> {

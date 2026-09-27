@@ -239,7 +239,8 @@ export function createPreviewPanel(store: TexStore): PreviewPanel {
     if (my !== token) return;
     const sideImg = side ?? mainShown;
     pv.showCube(
-      { up: up ?? mainShown, down: down ?? up ?? mainShown, north: sideImg, east: sideImg, west: sideImg, south: front ?? sideImg },
+      // Minecraft puts a block's front on north, which the preview camera faces by default.
+      { up: up ?? mainShown, down: down ?? up ?? mainShown, north: front ?? sideImg, east: sideImg, west: sideImg, south: sideImg },
       frametime ? { frametime } : undefined,
     );
     stageLabel.textContent = 'Block';

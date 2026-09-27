@@ -11,24 +11,10 @@ const { chromium } = require('playwright');
 
 const EXE = [process.env.CHROME, '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', '/opt/pw-browsers/chromium/chrome-linux/chrome'].find((p) => p && fs.existsSync(p));
 
-/** Where the real game files live (client jar, Mojang manifests). Override with TO_FIXTURES. */
+/** Where the real game files live (client jar, Mojang manifests): set TO_FIXTURES. */
 function fixturesDir() {
-  const candidates = [process.env.TO_FIXTURES, ...fs.readdirSync('/tmp').flatMap((d) => {
-    try {
-      const base = path.join('/tmp', d);
-      return fs.readdirSync(base).flatMap((p) => {
-        const s = path.join(base, p);
-        try {
-          return fs.readdirSync(s).map((q) => path.join(s, q, 'scratchpad'));
-        } catch {
-          return [];
-        }
-      });
-    } catch {
-      return [];
-    }
-  })].filter(Boolean);
-  return candidates.find((d) => fs.existsSync(path.join(d, 'client-26.3.jar')) && fs.existsSync(path.join(d, 'manifest.json'))) || null;
+  const d = process.env.TO_FIXTURES;
+  return d && fs.existsSync(path.join(d, 'client-26.3.jar')) && fs.existsSync(path.join(d, 'manifest.json')) ? d : null;
 }
 
 function freePort() {

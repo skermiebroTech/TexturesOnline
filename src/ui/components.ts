@@ -157,7 +157,7 @@ export function slider(opts: {
   const el = h(
     'div',
     { class: 'field slider' },
-    fieldHead(opts.label, id, h('span', { class: 'row', style: { '--gap': '4px' } }, num, unit)),
+    fieldHead(opts.label, id, h('span', { class: 'row slider-value', style: { '--gap': '4px' } }, num, unit)),
     range,
     opts.description ? h('div', { class: 'field-desc', id: descId }, opts.description) : null,
   ) as unknown as HTMLElement & { setValue(v: number): void };

@@ -30,6 +30,8 @@ export interface PopoverOptions {
 }
 
 const stack: PopoverHandle[] = [];
+/** The open popover of each anchor, so a second click on the anchor toggles it closed. */
+const byAnchor = new WeakMap<HTMLElement, PopoverHandle>();
 const supportsPopover = typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
 
 const FOCUSABLE =
@@ -105,6 +107,11 @@ export function showInTopLayer(el: HTMLElement): void {
 }
 
 export function openPopover(anchor: HTMLElement, content: Node, opts: PopoverOptions = {}): PopoverHandle {
+  const existing = byAnchor.get(anchor);
+  if (existing?.open) {
+    existing.close();
+    return existing;
+  }
   const el = h('div', { class: ['popover', opts.class], role: opts.role ?? 'dialog', 'aria-label': opts.label });
   el.appendChild(content);
   floatingHost(anchor).appendChild(el);
@@ -166,6 +173,8 @@ export function openPopover(anchor: HTMLElement, content: Node, opts: PopoverOpt
       ro?.disconnect();
       const i = stack.indexOf(handle);
       if (i >= 0) stack.splice(i, 1);
+      if (byAnchor.get(anchor) === handle) byAnchor.delete(anchor);
+      anchor.setAttribute('aria-expanded', 'false');
       const hadFocus = el.contains(document.activeElement);
       el.remove();
       if ((opts.restoreFocus ?? true) && hadFocus && anchor.isConnected) anchor.focus({ preventScroll: true });
@@ -173,6 +182,8 @@ export function openPopover(anchor: HTMLElement, content: Node, opts: PopoverOpt
     },
   };
   stack.push(handle);
+  byAnchor.set(anchor, handle);
+  anchor.setAttribute('aria-expanded', 'true');
 
   if (opts.focus) {
     requestAnimationFrame(() => {
