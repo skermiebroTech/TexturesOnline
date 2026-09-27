@@ -1,6 +1,6 @@
 # Texel
 
-Texel is the pixel font used by the TexturesOnline interface (`texel-regular.woff2`, `texel-bold.woff2`).
+Texel is the pixel font used by the Texture Pack Maker interface (`texel-regular.woff2`, `texel-bold.woff2`).
 
 It is a Modified Version of two fonts by Idrees Hassan, both under the SIL Open Font License 1.1 (see `OFL.txt`):
 [Minecraft-Font](https://github.com/IdreesInc/Minecraft-Font) (Latin glyphs) and

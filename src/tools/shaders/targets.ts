@@ -233,7 +233,12 @@ async function buildIris(gen: IrisGenerator, ctx: BuildContext): Promise<BuildRe
   ctx.step({ id: 'generate', label: 'Write the shader programs' });
   let files: FileMap;
   try {
-    files = gen.generateIrisPack(ctx.settings, { name: packName(ctx.project), description: ctx.project.description.trim() });
+    files = gen.generateIrisPack(ctx.settings, {
+      name: packName(ctx.project),
+      description: ctx.project.description.trim(),
+      version: ctx.project.version,
+      preset: ctx.project.preset,
+    });
   } catch (err) {
     console.error(err);
     throw new BuildError("The shader pack couldn't be generated with these settings. Try a preset, then export again.", 'generator');
@@ -277,7 +282,7 @@ async function buildVanilla(gen: VanillaGenerator, ctx: BuildContext): Promise<B
   if (!packFormat) throw new BuildError(`Couldn't find the pack format for Minecraft ${version}. Check your connection and try again.`, 'assets');
   let result: ReturnType<VanillaGenerator['generateVanillaShaderFiles']>;
   try {
-    result = gen.generateVanillaShaderFiles(sources, ctx.settings, { versionId: version, packFormat });
+    result = gen.generateVanillaShaderFiles(sources, ctx.settings, { versionId: version, packFormat, preset: ctx.project.preset });
   } catch (err) {
     console.error(err);
     throw new BuildError(`The shaders of Minecraft ${version} couldn't be patched. Try another version, or report it so we can fix it.`, 'generator');
@@ -291,7 +296,7 @@ async function buildVanilla(gen: VanillaGenerator, ctx: BuildContext): Promise<B
     ? desc.includes(version)
       ? desc
       : `${desc} (Java ${version} only)`
-    : (gen.vanillaPackDescription?.(version) ?? `Shaders for Java ${version} only. Made with TexturesOnline`);
+    : (gen.vanillaPackDescription?.(version) ?? `Shaders for Java ${version} only. Made with Texture Pack Maker`);
   files['pack.mcmeta'] = await buildPackMcmetaForVersions(description, version);
   files['pack.png'] = await ctx.packIcon(128);
   return { files, filename: `${packName(ctx.project)}.zip`, warnings: result.warnings };
@@ -301,7 +306,7 @@ async function buildBedrock(gen: BedrockGenerator, ctx: BuildContext): Promise<B
   ctx.step({ id: 'generate', label: 'Write the Vibrant Visuals settings' });
   let files: FileMap;
   try {
-    files = { ...gen.generateBedrockVisuals(ctx.settings) };
+    files = { ...gen.generateBedrockVisuals(ctx.settings, { version: ctx.project.version, preset: ctx.project.preset }) };
   } catch (err) {
     console.error(err);
     throw new BuildError("The Vibrant Visuals files couldn't be generated with these settings. Try a preset, then export again.", 'generator');
@@ -314,7 +319,7 @@ async function buildBedrock(gen: BedrockGenerator, ctx: BuildContext): Promise<B
   const capabilities = opts.capabilities.includes('pbr') ? opts.capabilities : [...opts.capabilities, 'pbr'];
   files['manifest.json'] = buildResourceManifest({
     name: packName(ctx.project),
-    description: ctx.project.description.trim() || 'Vibrant Visuals settings made with TexturesOnline',
+    description: ctx.project.description.trim() || 'Vibrant Visuals settings made with Texture Pack Maker',
     uuids,
     version,
     minEngine: opts.minEngine,

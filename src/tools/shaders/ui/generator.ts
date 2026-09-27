@@ -21,7 +21,7 @@ export interface BaseGenerator {
 
 export interface IrisGenerator extends BaseGenerator {
   kind: 'iris';
-  generateIrisPack(v: OptionValues, meta: { name: string; description: string }): FileMap;
+  generateIrisPack(v: OptionValues, meta: { name: string; description: string; version?: string; preset?: string }): FileMap;
   IRIS_NOTES?: readonly NoteDef[];
 }
 
@@ -42,7 +42,7 @@ export interface VanillaGenerator extends BaseGenerator {
   generateVanillaShaderFiles(
     sources: Record<string, string>,
     v: OptionValues,
-    info: { versionId: string; packFormat: PackFormat },
+    info: { versionId: string; packFormat: PackFormat; preset?: string },
   ): { files: FileMap; warnings: string[]; supported: boolean };
   shaderSourcePrefixes: readonly string[];
   supportedFor?(target: PackFormat | number | string): VanillaSupportInfo;
@@ -59,7 +59,7 @@ export type BedrockNoteDef = NoteDef;
 
 export interface BedrockGenerator extends BaseGenerator {
   kind: 'bedrock-vibrant';
-  generateBedrockVisuals(v: OptionValues): FileMap;
+  generateBedrockVisuals(v: OptionValues, opts?: { version?: string; preset?: string }): FileMap;
   bedrockManifestOptions?(v: OptionValues): { capabilities: string[]; minEngine: [number, number, number] };
   BEDROCK_VV_NOTES?: readonly BedrockNoteDef[];
   bedrockCompatibilityNotes?(v: OptionValues): string[];

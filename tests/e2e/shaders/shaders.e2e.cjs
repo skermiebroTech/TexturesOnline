@@ -91,7 +91,7 @@ async function runTarget(browser, base, target) {
   await page.getByRole('button', { name: 'Create pack' }).click();
   await page.waitForSelector('.sh-editor');
   const url = page.url();
-  assert.match(url, /#\/shaders\/[0-9a-f-]{36}$/);
+  assert.match(url, /\/shaders\/[0-9a-f-]{36}$/);
   assert.equal(await page.getAttribute(`.sh-settings .sh-preset[data-preset="${plan.startPreset}"]`, 'aria-pressed'), 'true');
   step('project created from the start screen with a preset');
 

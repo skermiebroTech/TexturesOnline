@@ -82,7 +82,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     value: project.description,
     multiline: true,
     maxLength: 200,
-    placeholder: 'Made with TexturesOnline',
+    placeholder: 'Made with Texture Pack Maker',
     description: java ? 'Shown under the name in the Resource Packs menu. Two short lines fit best.' : 'Shown under the name in Global Resources.',
     onInput: (v) => {
       project.description = v;

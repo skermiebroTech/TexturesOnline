@@ -9,6 +9,7 @@ import { pathToFileURL } from 'node:url';
 import type { OptionValues, PackFormat } from '../../../src/core/types';
 import { bundledPackFormat } from '../../../src/editions/java/packformats';
 import { OPTIONS, PRESETS, defaults, detectFamily, generateVanillaShaderFiles, presetValues } from '../../../src/tools/shaders/vanilla/index';
+import { METADATA_FILE, parsePackMetadata } from '../../../src/tools/shaders/import/metadata';
 import type { Family } from '../../../src/tools/shaders/vanilla/index';
 import {
   compileGL, compileVulkan, declaredDescriptors, findGlslang, includeExpand, injectDefines, injectDefinesAfterHeader,
@@ -213,6 +214,10 @@ export async function validateVersion(jar: JarRef, glslang: string | null, sets:
       if (typeof v !== 'string') fail(`${k} is not text`);
       else files[k] = v;
     }
+    // texturepackmaker.json (settings for opening the pack again, ignored by the game) is always there
+    const meta = parsePackMetadata(files[METADATA_FILE]);
+    if (!meta || meta.target !== 'java-vanilla' || meta.version !== jar.version) fail(`${METADATA_FILE} missing or wrong`);
+    delete files[METADATA_FILE];
     report.changedFiles = Math.max(report.changedFiles, Object.keys(files).length);
     if (set.name === 'defaults' || set.name === 'preset:default') {
       if (Object.keys(files).length) fail('default settings must not change any file');
@@ -221,7 +226,7 @@ export async function validateVersion(jar: JarRef, glslang: string | null, sets:
     // ---- structure
     for (const [k, text] of Object.entries(files)) {
       if (!k.startsWith(SHADERS) && !k.startsWith('assets/minecraft/post_effect/')) fail(`unexpected output path ${k}`);
-      if (/Made with (?!TexturesOnline)/.test(text)) fail(`${k} credits something other than TexturesOnline`);
+      if (/Made with (?!Texture Pack Maker)/.test(text)) fail(`${k} credits something other than Texture Pack Maker`);
       const name = k.slice(k.lastIndexOf('/') + 1);
       if (k.startsWith(CORE) && GUI_SHADERS.test(name)) fail(`GUI shader ${k} was changed`);
       const vanilla = sources[k];

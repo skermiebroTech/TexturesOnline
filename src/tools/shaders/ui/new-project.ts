@@ -56,7 +56,7 @@ export function openNewProjectDialog(targetId: ShaderTarget, opts: { preset?: st
       target: targetId,
       version,
       name: name.trim() || DEFAULT_NAMES[targetId],
-      description: p && p.id !== 'default' ? `${p.label} shaders made with TexturesOnline` : 'Custom shaders made with TexturesOnline',
+      description: p && p.id !== 'default' ? `${p.label} shaders made with Texture Pack Maker` : 'Custom shaders made with Texture Pack Maker',
       settings: presetSettings(gen, p?.id ?? 'default'),
       preset: p?.id,
     });

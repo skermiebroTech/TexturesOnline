@@ -1,7 +1,7 @@
 // Component gallery for visual QA (route: #/kit).
 
 import './kit.css';
-import type { RouteContext } from '../../core/router';
+import { href as routeHref, type RouteContext } from '../../core/router';
 import type { OptionDef, OptionValues } from '../../core/types';
 import { h, type Child } from '../../ui/dom';
 import { ICON_NAMES, icon } from '../../ui/icons';
@@ -124,7 +124,7 @@ export default function kit(root: HTMLElement, _ctx: RouteContext): () => void {
   });
   const txt = textInput({ label: 'Pack name', value: 'My Pack', placeholder: 'Name', onInput: () => undefined });
   const search = textInput({ value: '', placeholder: 'Search textures', icon: 'search', onInput: () => undefined });
-  const area = textInput({ label: 'Description', value: 'Made with TexturesOnline', multiline: true, onInput: () => undefined });
+  const area = textInput({ label: 'Description', value: 'Made with Texture Pack Maker', multiline: true, onInput: () => undefined });
   const swatch = colorSwatch({ label: 'Fog colour', value: '#9fc6ff', onChange: () => undefined });
   const picker = colorPicker({ value: [91, 211, 91, 255], inline: true, onChange: () => undefined });
 
@@ -204,7 +204,7 @@ export default function kit(root: HTMLElement, _ctx: RouteContext): () => void {
         'a',
         {
           class: 'chip',
-          href: `#/kit`,
+          href: routeHref('/kit'),
           on: {
             click: (e: MouseEvent) => {
               e.preventDefault();

@@ -6,6 +6,7 @@ import {
 } from './keyframes';
 import type { Settings } from './options';
 import { DEFAULT_SETTINGS, OPTIONS, WATER_STYLES, normalizeOptions, readSettings } from './options';
+import { METADATA_FILE, packMetadataJson } from '../import/metadata';
 import type { BlendStops, DistanceFog, FogMedium, VanillaAtmospherics, VanillaColorGrading, VanillaFog, VanillaLighting } from './vanilla';
 import {
   VANILLA_ATMOSPHERICS, VANILLA_COLOR_GRADING, VANILLA_FOGS, VANILLA_LIGHTING, VANILLA_WATER,
@@ -57,6 +58,11 @@ export interface GenerateOptions {
   includeUnchangedFogs?: boolean;
   /** Add README.txt with install notes and the chosen settings (default true). */
   readme?: boolean;
+  /** Add texturepackmaker.json so the Shader Maker can open the pack again (default true). */
+  metadata?: boolean;
+  /** Game version and starting preset recorded in texturepackmaker.json */
+  version?: string;
+  preset?: string;
 }
 
 /** True when the pack needs Minecraft 26.0+ features (keyframed ambient light, biome water colours). */
@@ -94,6 +100,9 @@ export function generateBedrockVisuals(v: OptionValues, opts: GenerateOptions = 
   }
 
   if (opts.readme !== false) files['README.txt'] = buildReadme(v, s);
+  if (opts.metadata !== false) {
+    files[METADATA_FILE] = packMetadataJson({ target: 'bedrock-vibrant', version: opts.version, settings: normalizeOptions(v), preset: opts.preset });
+  }
   return files;
 }
 

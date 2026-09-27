@@ -18,7 +18,7 @@ const exe = ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome', '/opt/pw-brow
 
   await page.goto(base, { waitUntil: 'networkidle' });
   assert.equal(await page.evaluate(() => location.hash), '#/');
-  assert.match(await page.title(), /TexturesOnline/);
+  assert.match(await page.title(), /Texture Pack Maker/);
   assert.equal(await page.locator('.nav-link[aria-current="page"]').getAttribute('data-tool'), 'home');
   step('home renders with Home active');
 

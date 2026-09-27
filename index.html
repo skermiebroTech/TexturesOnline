@@ -1,25 +1,26 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="no-js" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>TexturesOnline — Minecraft texture pack, skin & shader maker</title>
-    <meta name="description" content="Make Minecraft texture packs, skins and shaders right in your browser. Java 26.3 and every version since 1.6.1, plus Bedrock. Free, private and works offline." />
+    <!--app-head-->
     <meta name="theme-color" content="#0d0f14" />
     <meta name="color-scheme" content="dark light" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="TexturesOnline — Minecraft texture pack, skin & shader maker" />
-    <meta property="og:description" content="Make Minecraft texture packs, skins and shaders in your browser. Java & Bedrock." />
-    <meta property="og:image" content="https://skermiebrotech.github.io/TexturesOnline/og-image.png" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="application-name" content="Texture Pack Maker" />
+    <meta name="apple-mobile-web-app-title" content="Pack Maker" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="preload" href="/fonts/texel-regular.woff2" as="font" type="font/woff2" crossorigin />
     <script>
       (function () {
+        var d = document.documentElement;
+        d.className = d.className.replace('no-js', 'js');
         try {
           var t = localStorage.getItem('to-theme');
           if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', t);
+          d.setAttribute('data-theme', t);
           if (t === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#eef1f6');
         } catch (e) {}
       })();
@@ -30,10 +31,7 @@
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    <noscript>
-      <p style="font-family: sans-serif; color: #eef1f7; padding: 24px">TexturesOnline needs JavaScript to run. Please enable it in your browser settings.</p>
-    </noscript>
+    <div id="app"><!--app-html--></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

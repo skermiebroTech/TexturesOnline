@@ -20,7 +20,7 @@ test('uuidv4 produces distinct lowercase v4 UUIDs', () => {
 test('resource pack manifest matches research §2.3', () => {
   const text = buildResourceManifest({
     name: 'My Texture Pack',
-    description: 'Made with TexturesOnline',
+    description: 'Made with Texture Pack Maker',
     uuids: { header: U1, module: U2 },
     version: [1, 0, 0],
     authors: ['Someone'],
@@ -28,13 +28,13 @@ test('resource pack manifest matches research §2.3', () => {
   assert.ok(!text.startsWith('﻿'));
   assert.deepEqual(JSON.parse(text), {
     format_version: 2,
-    header: { name: 'My Texture Pack', description: 'Made with TexturesOnline', uuid: U1, version: [1, 0, 0], min_engine_version: [1, 21, 0] },
+    header: { name: 'My Texture Pack', description: 'Made with Texture Pack Maker', uuid: U1, version: [1, 0, 0], min_engine_version: [1, 21, 0] },
     modules: [{ type: 'resources', uuid: U2, version: [1, 0, 0] }],
-    metadata: { authors: ['Someone'], generated_with: { texturesonline: ['1.0.0'] } },
+    metadata: { authors: ['Someone'], generated_with: { texturepackmaker: ['1.0.0'] } },
   });
   assert.ok(!('capabilities' in JSON.parse(text)), 'no pbr capability on texture packs');
   const noAuthor = JSON.parse(buildResourceManifest({ name: 'x', description: '', uuids: { header: U1, module: U2 }, version: [1, 0, 3], minEngine: [1, 26, 50] }));
-  assert.deepEqual(noAuthor.metadata, { generated_with: { texturesonline: ['1.0.0'] } });
+  assert.deepEqual(noAuthor.metadata, { generated_with: { texturepackmaker: ['1.0.0'] } });
   assert.deepEqual(noAuthor.header.min_engine_version, [1, 26, 50]);
   assert.deepEqual(noAuthor.modules[0].version, [1, 0, 3]);
 });
@@ -67,7 +67,7 @@ function skin(w: number, h: number, rgba = [200, 30, 30, 255]): Uint8Array {
 
 test('skin pack files match research §5.7', () => {
   const files = buildSkinPackFiles({
-    name: 'TexturesOnline Example Skins',
+    name: 'Texture Pack Maker Example Skins',
     skins: [
       { name: 'Red (Classic)', model: 'classic', png: skin(64, 64) },
       { name: 'Blue (Slim)', model: 'slim', png: skin(64, 64, [30, 30, 200, 255]) },
@@ -79,11 +79,11 @@ test('skin pack files match research §5.7', () => {
   assert.deepEqual(Object.keys(files).sort(), ['blue_slim.png', 'manifest.json', 'red_classic.png', 'skins.json', 'texts/en_US.lang', 'texts/languages.json']);
   assert.deepEqual(JSON.parse(files['manifest.json'] as string), {
     format_version: 2,
-    header: { name: 'TexturesOnline Example Skins', uuid: U1, version: [1, 0, 0] },
+    header: { name: 'Texture Pack Maker Example Skins', uuid: U1, version: [1, 0, 0] },
     modules: [{ type: 'skin_pack', uuid: U2, version: [1, 0, 0] }],
   });
   const skins = JSON.parse(files['skins.json'] as string);
-  const packId = 'TexturesOnlineExampleSkins_8b0f1a52';
+  const packId = 'TexturePackMakerExampleSkins_8b0f1a52';
   assert.equal(skins.serialize_name, packId);
   assert.equal(skins.localization_name, skins.serialize_name);
   assert.match(skins.serialize_name, /^[A-Za-z0-9_]+$/);
@@ -93,7 +93,7 @@ test('skin pack files match research §5.7', () => {
   ]);
   assert.equal(
     files['texts/en_US.lang'],
-    `skinpack.${packId}=TexturesOnline Example Skins\nskinpack.${packId}.by=Example Author\nskin.${packId}.RedClassic=Red (Classic)\nskin.${packId}.BlueSlim=Blue (Slim)\n`,
+    `skinpack.${packId}=Texture Pack Maker Example Skins\nskinpack.${packId}.by=Example Author\nskin.${packId}.RedClassic=Red (Classic)\nskin.${packId}.BlueSlim=Blue (Slim)\n`,
   );
   assert.deepEqual(JSON.parse(files['texts/languages.json'] as string), ['en_US']);
 });

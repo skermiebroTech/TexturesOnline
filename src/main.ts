@@ -2,9 +2,11 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/layout.css';
+import './app/app.css';
 
-import { startRouter } from './core/router';
+import { onViewRendered, startRouter } from './core/router';
 import { createShell } from './app/shell';
+import { initHead } from './app/head';
 import { initTheme } from './ui/theme';
 import { initToasts, toast } from './ui/toast';
 
@@ -13,6 +15,18 @@ initTheme();
 const root = document.getElementById('app') ?? document.body.appendChild(Object.assign(document.createElement('div'), { id: 'app' }));
 const { outlet } = createShell(root);
 initToasts();
+initHead();
+
+// The texture, skin and shader start screens get the same introduction as their prerendered pages.
+const INTRO_ROUTES: Record<string, 'textures' | 'skins' | 'shaders'> = { '/textures': 'textures', '/skins': 'skins', '/shaders': 'shaders' };
+onViewRendered((state, view) => {
+  const tool = state.pattern ? INTRO_ROUTES[state.pattern] : undefined;
+  if (!tool) return;
+  import('./app/tool-intro')
+    .then((m) => m.mountToolIntro(view, tool))
+    .catch((err) => console.warn('Tool introduction unavailable', err));
+});
+
 startRouter(outlet);
 
 // Last-resort error reporting: keep the app usable and tell the user something failed.

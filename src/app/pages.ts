@@ -1,9 +1,10 @@
 // Router fallback views: loading, not found and load/render errors.
 
-import type { RouteContext } from '../core/router';
+import { navigate, type RouteContext } from '../core/router';
 import { h } from '../ui/dom';
 import { button, emptyState, spinner } from '../ui/components';
 import { siteFooter } from './footer';
+import { SITE_NAME } from './site';
 
 export function loadingView(): HTMLElement {
   return h('div', { class: 'route-loading', role: 'status' }, spinner(32), h('span', { class: 'muted' }, 'Loading…'));
@@ -22,8 +23,8 @@ export function notFoundView(root: HTMLElement, ctx: RouteContext): void {
         action: h(
           'div',
           { class: 'row wrap', style: { justifyContent: 'center' } },
-          button({ label: 'Go home', icon: 'home', variant: 'primary', onClick: () => (location.hash = '#/') }),
-          button({ label: 'Help', icon: 'circle-question', onClick: () => (location.hash = '#/help') }),
+          button({ label: 'Go home', icon: 'home', variant: 'primary', onClick: () => navigate('/') }),
+          button({ label: 'Help', icon: 'circle-question', onClick: () => navigate('/help') }),
         ),
       }),
     ),
@@ -37,7 +38,7 @@ export function loadErrorView(err: unknown): HTMLElement {
   const text = offline
     ? "You're offline and this part of the app hasn't been saved on this device yet. Reconnect and try again."
     : chunk
-      ? 'A newer version of TexturesOnline may have been published. Reloading the page usually fixes this.'
+      ? `A newer version of ${SITE_NAME} may have been published. Reloading the page usually fixes this.`
       : 'Something went wrong while opening this page. Your projects are safe — try reloading.';
   const detail = err instanceof Error ? err.message : String(err ?? '');
   return h(
@@ -54,7 +55,7 @@ export function loadErrorView(err: unknown): HTMLElement {
           'div',
           { class: 'row wrap', style: { justifyContent: 'center' } },
           button({ label: 'Reload', icon: 'reload', variant: 'primary', onClick: () => location.reload() }),
-          button({ label: 'Go home', icon: 'home', onClick: () => (location.hash = '#/') }),
+          button({ label: 'Go home', icon: 'home', onClick: () => navigate('/') }),
         ),
         detail ? h('details', { class: 'error-detail' }, h('summary', null, 'Technical details'), h('code', null, detail)) : null,
       ),

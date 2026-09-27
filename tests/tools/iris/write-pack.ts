@@ -19,7 +19,7 @@ if (!preset) {
   process.exit(2);
 }
 
-const name = `TexturesOnline ${preset.label}`;
+const name = `Texture Pack Maker ${preset.label}`;
 const files = generateIrisPack(presetValues(preset.id), { name, description: preset.description });
 const root = resolve(outDir);
 for (const [path, content] of Object.entries(files)) {

@@ -115,7 +115,7 @@ fb.setupHorizontalHeader(ascent=ASC, descent=DESC, lineGap=0)
 style = "Bold" if bold else "Regular"
 copyright_ = ("Copyright (c) 2022, Idrees Hassan (https://github.com/IdreesInc/Minecraft-Font). "
               "Copyright (c) 2022, Idrees Hassan (https://github.com/IdreesInc/Monocraft). "
-              "Modifications copyright (c) 2026, TexturesOnline contributors.")
+              "Modifications copyright (c) 2026, Texture Pack Maker contributors.")
 fb.setupNameTable({
     "copyright": copyright_, "familyName": family, "styleName": style,
     "uniqueFontIdentifier": f"{family}-{style};2.000", "fullName": f"{family} {style}",

@@ -71,8 +71,8 @@ test('text files are ASCII (GLSL, .properties); the name only reaches UTF-8 file
   }
   const lang = files['shaders/lang/en_US.lang'];
   assert.ok(lang.includes('option.PACK_INFO=Crème Brûlée ✨ 100\n'), 'lang keeps the name (UTF-8) without % or \\');
-  assert.ok(lang.includes('option.PACK_INFO.comment=Ünïcödé desc s second line Made with TexturesOnline.'));
-  assert.ok(files['shaders/shaders.properties'].startsWith('# Shader pack: Creme Brulee 100 - Made with TexturesOnline.'));
+  assert.ok(lang.includes('option.PACK_INFO.comment=Ünïcödé desc s second line Made with Texture Pack Maker.'));
+  assert.ok(files['shaders/shaders.properties'].startsWith('# Shader pack: Creme Brulee 100 - Made with Texture Pack Maker.'));
   assert.ok(files['README.txt'].startsWith('Crème Brûlée ✨ 100\n'));
 });
 
@@ -86,8 +86,8 @@ test('no forbidden words anywhere (generated files and generator sources)', () =
     assert.ok(!bad.test(readFileSync(dir + f, 'utf8')), `src/tools/shaders/iris/${f}`);
   }
   const files = gen(defaults());
-  assert.ok(files['README.txt'].includes('Made with TexturesOnline'));
-  assert.ok(files['shaders/lang/en_US.lang'].includes('Made with TexturesOnline'));
+  assert.ok(files['README.txt'].includes('Made with Texture Pack Maker'));
+  assert.ok(files['shaders/lang/en_US.lang'].includes('Made with Texture Pack Maker'));
 });
 
 test('includes resolve, each lib once per program, no include guards', () => {
@@ -267,7 +267,7 @@ test('lang/en_US.lang: readable names for every option, screen, profile and enum
     for (const val of opts.values.get('shadowDistance')!.list) assert.ok(entries.get(`value.shadowDistance.${val}`), `${name}: shadowDistance ${val}`);
     for (const val of opts.values.get('SHADOW_SAMPLES')!.list) assert.ok(entries.get(`value.SHADOW_SAMPLES.${val}`));
     assert.equal(entries.get('option.PACK_INFO'), 'Test Pack');
-    assert.equal(entries.get('value.PACK_INFO.0'), 'Made with TexturesOnline');
+    assert.equal(entries.get('value.PACK_INFO.0'), 'Made with Texture Pack Maker');
     // Every value label refers to a value that exists.
     for (const key of entries.keys()) {
       const m = /^value\.(\w+)\.(.+)$/.exec(key);
@@ -392,8 +392,8 @@ test('zipIrisPack: shaders/ at the root with directory entries; readable by the 
 test('deterministic output, safe metadata and file names', () => {
   assert.deepEqual(gen(presetValues('golden')), gen(presetValues('golden')));
   const empty = gen(defaults(), { name: '   ', description: '' });
-  assert.ok(empty['shaders/lang/en_US.lang'].includes('option.PACK_INFO=TexturesOnline Shaders\n'));
-  assert.ok(empty['shaders/lang/en_US.lang'].includes('option.PACK_INFO.comment=Made with TexturesOnline.\n'));
+  assert.ok(empty['shaders/lang/en_US.lang'].includes('option.PACK_INFO=Texture Pack Maker Shaders\n'));
+  assert.ok(empty['shaders/lang/en_US.lang'].includes('option.PACK_INFO.comment=Made with Texture Pack Maker.\n'));
   const weird = gen(defaults(), { name: '#!  Evil=Name\\with%stuff', description: '*/ /* end' });
   assert.ok(weird['shaders/lang/en_US.lang'].includes('option.PACK_INFO=Evil=Namewithstuff\n'));
   for (const p of shaderFiles(weird)) {
@@ -407,7 +407,7 @@ test('deterministic output, safe metadata and file names', () => {
   assert.ok(long['shaders/lang/en_US.lang'].includes(`option.PACK_INFO=${'x'.repeat(64)}\n`));
   assert.equal(irisPackFileName('My Shaders'), 'My Shaders.zip');
   assert.equal(irisPackFileName('a/b:c*?'), 'a_b_c_.zip');
-  assert.equal(irisPackFileName(''), 'TexturesOnline Shaders.zip');
+  assert.equal(irisPackFileName(''), 'Texture Pack Maker Shaders.zip');
   assert.equal(irisPackFileName('pack.zip'), 'pack.zip');
   // Invalid input never breaks generation.
   const garbage = gen({ sunStrength: 'abc', tonemap: 42, skyColor: null } as unknown as OptionValues);

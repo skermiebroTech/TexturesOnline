@@ -1,5 +1,12 @@
-// Hash router with lazily imported views, per-entry scroll restoration and view cleanup.
-// Pure helpers (parseLocation, matchRoute, resolveRoute) have no DOM dependency.
+// Path router (History API) with lazily imported views, per-entry scroll restoration and view
+// cleanup. Real URLs ("/textures/", "/skins/<id>") under a site base worked out at runtime, so
+// the same build runs at a domain root or under a GitHub Pages project path. Old "#/..." links
+// are redirected to the matching path. Internal <a href> links are intercepted (no reloads).
+// Pure helpers (parseLocation, matchRoute, resolveRoute, toHref, stripBase) have no DOM dependency.
+
+import { appBasePath } from './base';
+import { GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META } from '../app/seo/meta';
+import { SITE_NAME } from '../app/site';
 
 export interface RouteContext {
   params: Record<string, string>;
@@ -25,27 +32,35 @@ export interface RouteState extends RouteContext {
   pattern: string | null;
 }
 
-const APP = 'TexturesOnline';
+const APP = SITE_NAME;
 
 const textures = () => import('../tools/textures/view');
 const skins = () => import('../tools/skins/view');
 const shaders = () => import('../tools/shaders/view');
+const guides = () => import('../tools/guides/guides');
 
 export const ROUTES: RouteDef[] = [
-  { pattern: '/', load: () => import('../tools/home/home'), title: `${APP} — Minecraft texture pack, skin & shader maker`, tool: 'home' },
-  { pattern: '/textures', load: textures, title: `Texture Pack Maker — ${APP}`, tool: 'textures' },
-  { pattern: '/textures/:id', load: textures, title: `Texture Pack Maker — ${APP}`, tool: 'textures' },
-  { pattern: '/skins', load: skins, title: `Skin Editor — ${APP}`, tool: 'skins' },
-  { pattern: '/skins/:id', load: skins, title: `Skin Editor — ${APP}`, tool: 'skins' },
-  { pattern: '/shaders', load: shaders, title: `Shader Maker — ${APP}`, tool: 'shaders' },
-  { pattern: '/shaders/:id', load: shaders, title: `Shader Maker — ${APP}`, tool: 'shaders' },
-  { pattern: '/help', load: () => import('../tools/help/help'), title: `Install guide & help — ${APP}`, tool: 'help' },
+  { pattern: '/', load: () => import('../tools/home/home'), title: HOME_META.title, tool: 'home' },
+  { pattern: '/textures', load: textures, title: TOOL_META.textures.title, tool: 'textures' },
+  { pattern: '/textures/:id', load: textures, title: `Texture packs — ${APP}`, tool: 'textures' },
+  { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
+  { pattern: '/skins/:id', load: skins, title: `Skin editor — ${APP}`, tool: 'skins' },
+  { pattern: '/shaders', load: shaders, title: TOOL_META.shaders.title, tool: 'shaders' },
+  { pattern: '/shaders/:id', load: shaders, title: `Shader maker — ${APP}`, tool: 'shaders' },
+  { pattern: '/help', load: () => import('../tools/help/help'), title: HELP_META.title, tool: 'help' },
+  { pattern: '/guides', load: guides, title: GUIDES_META.title, tool: 'help' },
+  ...GUIDES.map((g): RouteDef => ({ pattern: g.path, load: guides, title: g.title, tool: 'help' })),
   { pattern: '/kit', load: () => import('../tools/kit/kit'), title: `UI kit — ${APP}`, tool: 'kit' },
 ];
 
-/** '#/textures/abc?x=1' -> { path: '/textures/abc', query } */
-export function parseLocation(hash: string): { path: string; query: URLSearchParams } {
-  let h = hash.startsWith('#') ? hash.slice(1) : hash;
+/**
+ * Route path and query of a location string. Accepts an app path ('/textures/abc?x=1'), a legacy
+ * hash ('#/textures/abc?x=1') or a bare path ('help'). A trailing '#fragment' is ignored.
+ */
+export function parseLocation(input: string): { path: string; query: URLSearchParams } {
+  let h = input.startsWith('#') ? input.slice(1) : input;
+  const fi = h.indexOf('#');
+  if (fi >= 0) h = h.slice(0, fi);
   const qi = h.indexOf('?');
   const queryString = qi >= 0 ? h.slice(qi + 1) : '';
   h = qi >= 0 ? h.slice(0, qi) : h;
@@ -92,14 +107,40 @@ export function resolveRoute(path: string, routes: RouteDef[] = ROUTES): { route
   return null;
 }
 
-/** Link target for a route path: href('/help') === '#/help' */
+/** Section pages ('/', '/help', '/guides/x') are folders on the server, so their URLs end in '/'. */
+function isFolderPath(path: string, routes: RouteDef[]): boolean {
+  if (path === '/') return true;
+  const r = resolveRoute(path, routes);
+  return !!r && !r.route.pattern.includes(':');
+}
+
+/** URL for a route path under a site base: toHref('/help?s=faq', '/Repo/') === '/Repo/help/?s=faq' */
+export function toHref(path: string, base = '/', routes: RouteDef[] = ROUTES): string {
+  const { path: p, query } = parseLocation(path);
+  const qs = query.toString();
+  let rel = p === '/' ? '' : p.slice(1);
+  if (rel && isFolderPath(p, routes)) rel += '/';
+  const b = base.endsWith('/') ? base : `${base}/`;
+  return `${b}${rel}${qs ? `?${qs}` : ''}`;
+}
+
+/** Route path of a URL pathname under a site base ('/Repo/help/' -> '/help'); null outside the base. */
+export function stripBase(pathname: string, base = '/'): string | null {
+  const b = base.endsWith('/') ? base : `${base}/`;
+  if (pathname === b.slice(0, -1) || pathname === b) return '/';
+  if (!pathname.startsWith(b)) return null;
+  return normalizePath(pathname.slice(b.length - 1));
+}
+
+/** Link target for a route path: href('/help') === '/help/' at a domain root. */
 export function href(path: string): string {
-  return `#${path.startsWith('/') ? path : `/${path}`}`;
+  return toHref(path.startsWith('/') || path.startsWith('#') ? path : `/${path}`, appBasePath());
 }
 
 // ---------------- Runtime (browser only) ----------------
 
 type Listener = (state: RouteState) => void;
+type RenderedListener = (state: RouteState, root: HTMLElement) => void;
 
 let outletEl: HTMLElement | null = null;
 let current: RouteState | null = null;
@@ -109,21 +150,46 @@ let token = 0;
 let entryIdx = 0;
 let maxIdx = 0;
 let firstRender = true;
+let started = false;
+let pendingFragment = '';
 const scrollPositions = new Map<number, number>();
 const listeners = new Set<Listener>();
+const navListeners = new Set<Listener>();
+const renderedListeners = new Set<RenderedListener>();
 let liveRegion: HTMLElement | null = null;
 let restoring = false;
 
 const SCROLL_KEY = 'to-router-scroll';
 
+/** Current route path + query from the address bar (legacy '#/...' hashes win). */
+function readLocation(): { path: string; query: URLSearchParams } {
+  if (location.hash.startsWith('#/')) return parseLocation(location.hash);
+  const path = stripBase(location.pathname, appBasePath());
+  return { path: path ?? normalizePath(location.pathname), query: new URLSearchParams(location.search) };
+}
+
+function currentUrl(): string {
+  return location.pathname + location.search;
+}
+
 export function navigate(path: string, opts: { replace?: boolean } = {}): void {
-  const target = href(path);
+  const hashAt = path.startsWith('#') ? -1 : path.indexOf('#');
+  pendingFragment = hashAt >= 0 ? path.slice(hashAt + 1) : '';
+  const target = href(hashAt >= 0 ? path.slice(0, hashAt) : path);
+  if (!started) {
+    if (opts.replace) location.replace(target);
+    else location.assign(target);
+    return;
+  }
   if (opts.replace) {
-    location.replace(target);
-  } else if (location.hash === target) {
+    history.replaceState(null, '', target);
+    void render();
+  } else if (currentUrl() === target && !location.hash) {
     void render(true);
   } else {
-    location.hash = target;
+    saveScrollMap();
+    history.pushState(null, '', target);
+    void render();
   }
 }
 
@@ -131,7 +197,7 @@ export function navigate(path: string, opts: { replace?: boolean } = {}): void {
 export function replacePath(path: string): void {
   const target = href(path);
   history.replaceState(history.state, '', target);
-  const { path: p, query } = parseLocation(target);
+  const { path: p, query } = parseLocation(path);
   currentKey = `${p}?${query.toString()}`;
   if (current) {
     const match = resolveRoute(p);
@@ -157,9 +223,21 @@ export function onRouteChange(cb: Listener): () => void {
   return () => listeners.delete(cb);
 }
 
-function emit(): void {
+/** Called once per real navigation (not for replacePath), before the new view renders. */
+export function onNavigation(cb: Listener): () => void {
+  navListeners.add(cb);
+  return () => navListeners.delete(cb);
+}
+
+/** Called after a view has rendered into its root element. */
+export function onViewRendered(cb: RenderedListener): () => void {
+  renderedListeners.add(cb);
+  return () => renderedListeners.delete(cb);
+}
+
+function emit(set: Set<Listener> = listeners): void {
   if (!current) return;
-  for (const cb of Array.from(listeners)) {
+  for (const cb of Array.from(set)) {
     try {
       cb(current);
     } catch (err) {
@@ -208,16 +286,36 @@ function trackEntry(): number {
   return 0;
 }
 
+/** Rewrites legacy '#/x' URLs and non-canonical paths ('/help' -> '/help/') in place. */
+function canonicalizeUrl(): void {
+  const { path, query } = readLocation();
+  const qs = query.toString();
+  const target = href(qs ? `${path}?${qs}` : path);
+  const legacy = location.hash.startsWith('#/');
+  const inBase = stripBase(location.pathname, appBasePath()) !== null;
+  if (!inBase && !legacy) return;
+  if (legacy || currentUrl() !== target) {
+    try {
+      history.replaceState(history.state, '', legacy ? target : target + location.hash);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 async function render(force = false): Promise<void> {
   const outlet = outletEl;
   if (!outlet) return;
-  const { path, query } = parseLocation(location.hash);
+  canonicalizeUrl();
+  const { path, query } = readLocation();
   const key = `${path}?${query.toString()}`;
   const restoreY = trackEntry();
   if (!force && key === currentKey && !firstRender && outlet.firstChild) return;
   currentKey = key;
   const my = ++token;
   const match = resolveRoute(path);
+  // Pages rendered at build time stay on screen until the real view replaces them.
+  const prerendered = firstRender && outlet.hasChildNodes();
 
   if (cleanup) {
     const fn = cleanup;
@@ -232,14 +330,17 @@ async function render(force = false): Promise<void> {
   const tool = match?.route.tool ?? null;
   document.documentElement.dataset.tool = tool ?? '';
   current = { params: match?.params ?? {}, query, path, tool, pattern: match?.route.pattern ?? null };
+  emit(navListeners);
   emit();
 
   const pages = await import('../app/pages');
   if (my !== token) return;
 
-  const loadingTimer = setTimeout(() => {
-    if (my === token) outlet.replaceChildren(pages.loadingView());
-  }, 150);
+  const loadingTimer = prerendered
+    ? 0
+    : setTimeout(() => {
+        if (my === token) outlet.replaceChildren(pages.loadingView());
+      }, 150);
 
   let mod: ViewModule;
   try {
@@ -268,6 +369,13 @@ async function render(force = false): Promise<void> {
       return;
     }
     cleanup = typeof result === 'function' ? result : null;
+    for (const cb of Array.from(renderedListeners)) {
+      try {
+        cb(current, root);
+      } catch (err) {
+        console.error(err);
+      }
+    }
   } catch (err) {
     if (my !== token) return;
     console.error('View failed to render', err);
@@ -276,10 +384,15 @@ async function render(force = false): Promise<void> {
 
   const wasFirst = firstRender;
   firstRender = false;
+  const fragment = pendingFragment;
+  pendingFragment = '';
   requestAnimationFrame(() => {
     if (my !== token) return;
     restoring = false;
-    window.scrollTo({ top: restoreY, left: 0, behavior: 'instant' as ScrollBehavior });
+    const target = fragment ? document.getElementById(decodeURIComponent(fragment)) : null;
+    if (target) target.scrollIntoView({ block: 'start' });
+    // The first view keeps whatever scroll the visitor already has on the prerendered page.
+    else if (!wasFirst || restoreY > 0) window.scrollTo({ top: restoreY, left: 0, behavior: 'instant' as ScrollBehavior });
     if (!wasFirst) {
       outlet.focus({ preventScroll: true });
       if (liveRegion) liveRegion.textContent = document.title;
@@ -287,8 +400,38 @@ async function render(force = false): Promise<void> {
   });
 }
 
+const FILE_RE = /\.[a-z0-9]{1,8}$/i;
+
+/** Same-site links to app pages navigate without a reload; files, new tabs and other sites are left alone. */
+function onDocumentClick(e: MouseEvent): void {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = (e.target as Element | null)?.closest?.('a[href]');
+  if (!(a instanceof HTMLAnchorElement)) return;
+  if ((a.target && a.target !== '_self') || a.hasAttribute('download') || /\bexternal\b/.test(a.rel)) return;
+  const raw = a.getAttribute('href') ?? '';
+  if (raw.startsWith('#/')) {
+    e.preventDefault();
+    navigate(raw.slice(1));
+    return;
+  }
+  if (raw.startsWith('#')) return;
+  let url: URL;
+  try {
+    url = new URL(a.href, location.href);
+  } catch {
+    return;
+  }
+  if (url.origin !== location.origin) return;
+  const path = stripBase(url.pathname, appBasePath());
+  if (path === null || FILE_RE.test(path)) return;
+  if (url.hash && url.pathname === location.pathname && url.search === location.search) return;
+  e.preventDefault();
+  navigate(path + url.search + url.hash);
+}
+
 export function startRouter(outlet: HTMLElement): void {
   outletEl = outlet;
+  started = true;
   if (!outlet.hasAttribute('tabindex')) outlet.setAttribute('tabindex', '-1');
   try {
     history.scrollRestoration = 'manual';
@@ -318,13 +461,17 @@ export function startRouter(outlet: HTMLElement): void {
     { passive: true },
   );
   window.addEventListener('pagehide', saveScrollMap);
-  window.addEventListener('hashchange', () => {
+  window.addEventListener('popstate', () => {
     saveScrollMap();
     void render();
   });
+  // Old '#/...' links typed or pasted into the address bar of an open page.
+  window.addEventListener('hashchange', () => {
+    if (!location.hash.startsWith('#/')) return;
+    saveScrollMap();
+    void render();
+  });
+  document.addEventListener('click', onDocumentClick);
 
-  if (!location.hash || location.hash === '#') {
-    history.replaceState(history.state, '', '#/');
-  }
   void render();
 }

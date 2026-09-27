@@ -9,7 +9,7 @@ export const POST_SHADERS = `${SHADERS_ROOT}post/`;
 export const POST_EFFECT = 'assets/minecraft/post_effect/';
 
 export const VANILLA_MAIN = `${PREFIX}_vanilla_main`;
-export const BANNER = '// Made with TexturesOnline: generated code below.';
+export const BANNER = '// Made with Texture Pack Maker: generated code below.';
 export const MAIN_NOTE = `// The original main() above now runs as ${VANILLA_MAIN}().`;
 
 /** GLSL float literal that always has a decimal point (GLSL 1.50 has no implicit int to float in all places). */

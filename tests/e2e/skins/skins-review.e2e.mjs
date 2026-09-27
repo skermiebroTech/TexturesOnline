@@ -198,7 +198,7 @@ const GREEN = [0, 255, 0, 255];
     void d.accept();
   });
   await openStarter(page, 'blank');
-  const id = (await page.evaluate(() => location.hash)).split('/').pop();
+  const id = (await page.evaluate(() => location.pathname + location.hash)).split('/').pop();
   await setColor(page, '#00ff00');
   await page.keyboard.press('b');
   await page.waitForTimeout(500);

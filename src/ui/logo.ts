@@ -1,4 +1,4 @@
-// The TexturesOnline mark: an isometric pixel grass block (original artwork, generated).
+// The Texture Pack Maker mark: an isometric pixel grass block (original artwork, generated).
 // logoSvgMarkup() is pure so it can also generate public/favicon.svg at build time.
 
 type Pt = [number, number];

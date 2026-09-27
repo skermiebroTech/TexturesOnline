@@ -1,10 +1,12 @@
 // Builds the Iris / OptiFine shader pack: every file under 'shaders/' plus README.txt at the
-// zip root. Pure and synchronous; the result is a FileMap of strings.
+// zip root. Pure and synchronous; the result is a FileMap of strings. shaders/texturepackmaker.json
+// records the settings so the Shader Maker can open the pack again (the loaders ignore it).
 
 import { zipSync, strToU8, type Zippable } from 'fflate';
 import type { FileMap, OptionValues } from '../../../core/types';
 import { sanitizeFilename } from '../../../core/download';
-import { readSettings } from './options';
+import { normalizeOptions, readSettings } from './options';
+import { IRIS_METADATA_PATH, packMetadataJson } from '../import/metadata';
 import { LIB_FILES } from './glsl-lib';
 import { PROGRAM_FILES } from './glsl-programs';
 import {
@@ -20,7 +22,7 @@ export const SHADERS_DIR = 'shaders/';
  * fall back to the defaults); they become the defaults of the in-game options.
  * Paths are relative to the zip root: 'README.txt' and 'shaders/...'.
  */
-export function generateIrisPack(v: OptionValues, meta: { name: string; description: string }): FileMap {
+export function generateIrisPack(v: OptionValues, meta: { name: string; description: string; version?: string; preset?: string }): FileMap {
   const settings = readSettings(v);
   const m: PackMeta = cleanMeta(meta);
   const files: Record<string, string> = {
@@ -34,12 +36,13 @@ export function generateIrisPack(v: OptionValues, meta: { name: string; descript
   };
   for (const [path, src] of Object.entries(LIB_FILES)) files[SHADERS_DIR + path] = src;
   for (const [path, src] of Object.entries(PROGRAM_FILES)) files[SHADERS_DIR + path] = src;
+  files[IRIS_METADATA_PATH] = packMetadataJson({ target: 'iris', version: meta.version, settings: normalizeOptions(v), preset: meta.preset });
   return files;
 }
 
 /** A file name for the pack zip, e.g. 'My Shaders.zip'. */
 export function irisPackFileName(name: string): string {
-  const base = sanitizeFilename(cleanMeta({ name, description: '' }).name, 'TexturesOnline Shaders').replace(/\.zip$/i, '');
+  const base = sanitizeFilename(cleanMeta({ name, description: '' }).name, 'Texture Pack Maker Shaders').replace(/\.zip$/i, '');
   return `${base}.zip`;
 }
 

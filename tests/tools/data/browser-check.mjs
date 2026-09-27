@@ -14,7 +14,7 @@ const { chromium } = require('playwright');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const freePort = () => new Promise((res) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => res(p)); }); });
 const port = (process.argv.includes('--port') && Number(process.argv[process.argv.indexOf('--port') + 1])) || (await freePort());
-const outDir = process.env.OUT_DIR || resolve(tmpdir(), 'texturesonline-data-check');
+const outDir = process.env.OUT_DIR || resolve(tmpdir(), 'texturepackmaker-data-check');
 mkdirSync(outDir, { recursive: true });
 
 // Own process group so the dev server (a grandchild of npx) is stopped with it.

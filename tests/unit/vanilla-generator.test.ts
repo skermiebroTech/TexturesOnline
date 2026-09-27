@@ -15,11 +15,20 @@ import { ENV_FOG_FULL_END, ENV_FOG_PROTECT_END, environmentFogScale, tintMultipl
 import { WAVE_CONDITION, gradeFunction } from '../../src/tools/shaders/vanilla/templates';
 import type { OptionValues } from '../../src/core/types';
 import { compileGL, findGlslang, injectDefines, mojPreprocess, missingVaryings } from '../tools/vanilla/glsl';
+import { METADATA_FILE, parsePackMetadata } from '../../src/tools/shaders/import/metadata';
+import type { FileMap } from '../../src/core/types';
 
 const S = 'assets/minecraft/shaders/';
 const CORE = `${S}core/`;
 const INC = `${S}include/`;
 const pf = (major: number) => ({ major, minor: 0 });
+
+/** The patched shader files of a supported result: everything but the texturepackmaker.json it always carries. */
+function patches(files: FileMap): FileMap {
+  const { [METADATA_FILE]: meta, ...rest } = files;
+  assert.equal(typeof meta, 'string', 'a supported pack carries texturepackmaker.json');
+  return rest;
+}
 
 // ---------------------------------------------------------------- synthetic shader sets (written for these tests)
 
@@ -364,7 +373,7 @@ test('tint colours only change the hue: black and grey are neutral, dark picks a
   assert.deepEqual(tintMultiplier([60, 40, 20], 0.5), tintMultiplier([255, 170, 85], 0.5));
   const black = generateVanillaShaderFiles(f6Sources(), { ...defaults(), tintColor: '#000000', tintStrength: 1, fogTint: '#000000', fogTintStrength: 1 },
     { versionId: '26.3', packFormat: pf(97) });
-  assert.deepEqual(black.files, {}, 'a black tint must not turn the world black');
+  assert.deepEqual(patches(black.files), {}, 'a black tint must not turn the world black');
   // presets keep their look: their tint colours are already at full brightness
   const warm = readSettings(presetValues('warm-sunset'));
   const c = [0xff / 255, 0xb0 / 255, 0x70 / 255];
@@ -477,7 +486,7 @@ test('function wrapping keeps vanilla code and fails closed', () => {
   assert.match(wrapFunction(retyped, 'linear_fog_fade', FOG_SIGNATURES.linear_fog_fade, (n) => n) as string, /returns vec4 instead of float/);
   const r2 = generateVanillaShaderFiles({ ...f1Sources(), [`${INC}fog.glsl`]: reordered }, { ...defaults(), fogTintStrength: 0.5, fogTint: '#ff0000' },
     { versionId: '1.17.1', packFormat: pf(7) });
-  assert.deepEqual(r2.files, {});
+  assert.deepEqual(patches(r2.files), {});
   assert.match(r2.warnings.join('\n'), /linear_fog\(\) parameter 2 is vec4 instead of float/);
 });
 
@@ -568,7 +577,7 @@ test('default settings change nothing', () => {
   for (const [src, p] of [[f1Sources(), 7], [f6Sources(), 97]] as const) {
     const r = generateVanillaShaderFiles(src, defaults(), { versionId: 'x', packFormat: pf(p) });
     assert.equal(r.supported, true);
-    assert.deepEqual(r.files, {});
+    assert.deepEqual(patches(r.files), {});
     assert.match(r.warnings.join(' '), /matches vanilla/);
   }
 });
@@ -601,7 +610,7 @@ test('1.17-style patch: world graded per object, GUI untouched, waving via GameT
   assert.match(r.warnings.join('\n'), /Water & weather fog/);
   assert.match(r.warnings.join('\n'), /Darker nights skipped/);
   for (const t of Object.values(files)) {
-    for (const m of (t as string).matchAll(/Made with (\w+)/g)) assert.equal(m[1], 'TexturesOnline');
+    for (const m of (t as string).matchAll(/Made with ([^.:\n]+)/g)) assert.equal(m[1], 'Texture Pack Maker');
   }
 });
 
@@ -647,7 +656,7 @@ test('anchors that are missing or unexpected are skipped with a warning', () => 
   const noFog = f1Sources();
   delete noFog[`${INC}fog.glsl`];
   const r2 = generateVanillaShaderFiles(noFog, { ...defaults(), fogStart: 0.5 }, { versionId: '1.17.1', packFormat: pf(7) });
-  assert.deepEqual(r2.files, {});
+  assert.deepEqual(patches(r2.files), {});
   assert.match(r2.warnings.join('\n'), /Fog settings skipped/);
 });
 
@@ -662,7 +671,12 @@ test('26.3-style patch: full-screen post effect, no core fragment patches', () =
     `${S}post/txo_blur.fsh`,
     `${S}post/txo_bright.fsh`,
     `${S}post/txo_final.fsh`,
+    METADATA_FILE,
   ]);
+  const meta = parsePackMetadata(files[METADATA_FILE]);
+  assert.equal(meta?.target, 'java-vanilla');
+  assert.equal(meta?.version, '26.3');
+  assert.deepEqual(meta?.settings, normalizeOptions(ALL_ON));
   const eof = JSON.parse(files['assets/minecraft/post_effect/end_of_frame.json']);
   assert.deepEqual(Object.keys(eof.targets).sort(), ['txo_bloom_a', 'txo_bloom_b', 'txo_swap']);
   assert.equal(eof.passes.length, 7);
@@ -689,11 +703,11 @@ test('26.3-style patch: full-screen post effect, no core fragment patches', () =
   assert.ok(!(`${S}post/txo_blur.fsh` in noBloom.files));
 
   const early = generateVanillaShaderFiles(src, { ...defaults(), contrast: 1.3 }, { versionId: '26.3-snapshot-1', packFormat: pf(95) });
-  assert.deepEqual(early.files, {});
+  assert.deepEqual(patches(early.files), {});
   assert.match(early.warnings.join('\n'), /Colors and vignette skipped/);
 });
 
 test('pack description names the one version the pack works in', () => {
-  assert.equal(vanillaPackDescription('26.3'), 'Shaders for Java 26.3 only. Made with TexturesOnline');
-  assert.equal(vanillaPackDescription('1.21.4', 'Dusk'), 'Dusk · Shaders for Java 1.21.4 only. Made with TexturesOnline');
+  assert.equal(vanillaPackDescription('26.3'), 'Shaders for Java 26.3 only. Made with Texture Pack Maker');
+  assert.equal(vanillaPackDescription('1.21.4', 'Dusk'), 'Dusk · Shaders for Java 1.21.4 only. Made with Texture Pack Maker');
 });

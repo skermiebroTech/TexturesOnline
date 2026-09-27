@@ -1,7 +1,7 @@
 // Skins start screen: new skin cards (blank, template, starter characters), upload, username
 // import, default skins from the game files, and the recent skin projects.
 
-import { navigate } from '../../../core/router';
+import { navigate, href as routeHref } from '../../../core/router';
 import { decodeImage, encodePng } from '../../../core/image';
 import { deleteProject, listProjects, saveProject } from '../../../core/storage';
 import type { AssetIndex, Progress, SkinModel } from '../../../core/types';
@@ -247,7 +247,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
         { class: 'sk-recent' },
         h(
           'a',
-          { class: 'sk-recent-link', href: `#/skins/${encodeURIComponent(p.id)}` },
+          { class: 'sk-recent-link', href: routeHref(`/skins/${encodeURIComponent(p.id)}`) },
           thumb,
           h(
             'span',

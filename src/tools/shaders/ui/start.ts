@@ -14,7 +14,9 @@ import { toast } from '../../../ui/toast';
 import { TARGETS, targetInfo, type ShaderTargetInfo } from '../targets';
 import { sceneSvg, TARGET_SCENES } from './art';
 import { openNewProjectDialog } from './new-project';
-import { cleanName, duplicateShaderProject, isShaderProject, type ShaderProjectData } from './project';
+import { enablePageDrop, openPackSection } from '../import/start-card';
+import { duplicateImported, importedKindLabel, isImportedPack, sweepOrphanedPackFiles } from '../packedit/store';
+import { cleanName, cleanupPreviewPacks, duplicateShaderProject, isShaderProject, type ShaderProjectData } from './project';
 import irisShowcase from './showcase/iris.webp';
 import vanillaShowcase from './showcase/java-vanilla.webp';
 import bedrockShowcase from './showcase/bedrock-vibrant.webp';
@@ -34,6 +36,7 @@ function artEl(svg: string, cls: string): HTMLElement {
 
 function projectMeta(p: ShaderProjectData): string {
   const when = `Edited ${timeAgo(p.updatedAt)}`;
+  if (isImportedPack(p)) return `${p.fileCount} files · ${when}`;
   if (p.target === 'java-vanilla') return `Java ${p.version} · ${when}`;
   return when;
 }
@@ -133,7 +136,8 @@ export function mountStart(root: HTMLElement): () => void {
       img.addEventListener('error', () => img.remove());
       thumb.appendChild(img);
     }
-    thumb.appendChild(h('span', { class: 'sh-recent-target' }, icon(t.icon), h('span', null, t.shortName)));
+    thumb.appendChild(h('span', { class: 'sh-recent-target' }, icon(t.icon), h('span', null, isImportedPack(p) ? importedKindLabel(p) : t.shortName)));
+    if (isImportedPack(p)) thumb.appendChild(h('span', { class: 'pe-recent-badge' }, badge('Imported', 'gold')));
     const menuBtn = iconButton('more-vertical', `More actions for ${p.name}`, () => {
       openMenu(menuBtn, [
         { label: 'Open', icon: 'arrow-right', onClick: () => navigate(`/shaders/${p.id}`) },
@@ -161,10 +165,16 @@ export function mountStart(root: HTMLElement): () => void {
     );
   }
 
+  let cleaned = false;
   async function renderRecent(): Promise<void> {
     let list: ShaderProjectData[] = [];
     try {
       list = (await listProjects('shader')).filter(isShaderProject);
+      if (!cleaned) {
+        // once per visit (not after a delete, which can still be undone): drop unused preview packs
+        cleaned = true;
+        void cleanupPreviewPacks(list).catch(() => undefined);
+      }
     } catch {
       list = [];
     }
@@ -189,7 +199,7 @@ export function mountStart(root: HTMLElement): () => void {
 
   async function duplicate(p: ShaderProjectData): Promise<void> {
     try {
-      await saveProject(duplicateShaderProject(p));
+      await saveProject(isImportedPack(p) ? await duplicateImported(p) : duplicateShaderProject(p));
       toast(`Made a copy of “${p.name}”`, { tone: 'success' });
     } catch (err) {
       toast(friendlyError(err, "Couldn't copy the pack"), { tone: 'error' });
@@ -202,6 +212,8 @@ export function mountStart(root: HTMLElement): () => void {
     if (!ok) return;
     try {
       await deleteProject(p.id);
+      // an imported pack's files go a little later, so Undo can still bring it back
+      if (isImportedPack(p)) sweepOrphanedPackFiles();
       void renderRecent();
       toast(`Deleted “${p.name}”`, {
         action: {
@@ -230,14 +242,17 @@ export function mountStart(root: HTMLElement): () => void {
     ),
     h('div', { class: 'container' }, chooser),
     h('div', { class: 'container sh-cards' }, cards),
+    openPackSection(),
     recent,
     siteFooter(),
   );
   root.appendChild(page);
   void renderRecent();
+  const stopDrop = enablePageDrop(root);
 
   return () => {
     destroyed = true;
+    stopDrop();
     for (const u of urls.splice(0)) URL.revokeObjectURL(u);
   };
 }

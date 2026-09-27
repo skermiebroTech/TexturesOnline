@@ -2,7 +2,7 @@
   "name": "texturesonline",
   "private": true,
   "version": "0.1.0",
-  "description": "Make Minecraft texture packs, skins and shaders in your browser \u2014 Java & Bedrock.",
+  "description": "Make Minecraft texture packs, skins and shaders in your browser — Java & Bedrock.",
   "author": "Skermiebro Tech Tips",
   "license": "MIT",
   "type": "module",
@@ -22,6 +22,7 @@
     "three": "~0.156.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
     "@types/three": "~0.156.0",
     "tsx": "^4.23.15",
     "typescript": "^6.0.2",

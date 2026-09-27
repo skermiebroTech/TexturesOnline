@@ -10,7 +10,7 @@ import { toast } from '../../../ui/toast';
 import { versionPicker } from '../../../ui/version-picker';
 import { DEFAULT_JAVA_VERSION, bedrockDisplayVersion, getDefaultVersion } from '../../../editions/index';
 import { deleteProject, listProjects, saveProject } from '../../../core/storage';
-import { navigate, type RouteContext } from '../../../core/router';
+import { currentRoute, navigate, href as routeHref, type RouteContext } from '../../../core/router';
 import { friendlyError } from '../../../core/net';
 import { uuidv4 } from '../../../core/uuid';
 import { siteFooter } from '../../../app/footer';
@@ -188,7 +188,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   };
   paintRes();
 
-  const descField = textInput({ label: 'Description (optional)', value: '', placeholder: 'Made with TexturesOnline', multiline: true, maxLength: 200, onInput: (v) => (description = v) });
+  const descField = textInput({ label: 'Description (optional)', value: '', placeholder: 'Made with Texture Pack Maker', multiline: true, maxLength: 200, onInput: (v) => (description = v) });
   const createBtn = button({ label: 'Create pack', icon: 'arrow-right', variant: 'primary', size: 'lg', class: 'tx-create-btn', onClick: () => void create() });
 
   async function create() {
@@ -260,7 +260,10 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
           ),
           actions: [{ label: 'Open in editor', variant: 'primary', onClick: () => navigate(`/textures/${project.id}`) }],
           onClose: () => {
-            if (location.hash.startsWith('#/textures') && !location.hash.includes(project.id)) void renderRecent();
+            {
+              const here = currentRoute()?.path ?? '';
+              if (here.startsWith('/textures') && !here.includes(project.id)) void renderRecent();
+            }
           },
         });
       } else {
@@ -349,7 +352,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
           { class: 'tx-rc' },
           h(
             'a',
-            { class: 'tx-rc-link', href: `#/textures/${encodeURIComponent(p.id)}` },
+            { class: 'tx-rc-link', href: routeHref(`/textures/${encodeURIComponent(p.id)}`) },
             thumbFor(p),
             h(
               'span',

@@ -1,37 +1,28 @@
 // App shell: sticky top bar (logo, main nav, theme toggle, GitHub), mobile menu drawer and
-// the page outlet the router renders into.
+// the page outlet the router renders into. The markup comes from content/chrome.ts, the same tree
+// the build prerenders, so the booted shell replaces the static one without any visible change.
 
-import { onRouteChange, type RouteState, type ToolId } from '../core/router';
+import { onNavigation, onRouteChange, type RouteState, type ToolId } from '../core/router';
 import { h } from '../ui/dom';
-import { icon, setIcon, type IconName } from '../ui/icons';
-import { logoMark } from '../ui/logo';
+import { icon, setIcon } from '../ui/icons';
 import { hideTooltip, tooltip } from '../ui/tooltip';
 import { getTheme, onThemeChange, toggleTheme } from '../ui/theme';
 import { closeAllModals, setScrollLock } from '../ui/modal';
 import { closeAllPopovers } from '../ui/popover';
 import { syncToastLayer } from '../ui/toast';
+import { NAV as NAV_ITEMS, brandLink, githubLink as githubTree, navLinks as navTree, skipLink, topbar as topbarTree, type NavItem as ChromeNavItem } from './content/chrome';
+import { toDom } from './markup-dom';
+import { REPO_URL, SITE_NAME } from './site';
 
-export const GITHUB_URL = 'https://github.com/skermiebroTech/TexturesOnline';
+export const GITHUB_URL = REPO_URL;
 
-interface NavItem {
-  path: string;
-  label: string;
-  icon: IconName;
-  tool: ToolId;
-  accent: string;
-}
+type NavItem = Omit<ChromeNavItem, 'tool'> & { tool: ToolId };
 
-export const NAV: NavItem[] = [
-  { path: '/', label: 'Home', icon: 'home', tool: 'home', accent: 'accent-green' },
-  { path: '/textures', label: 'Textures', icon: 'image', tool: 'textures', accent: 'accent-green' },
-  { path: '/skins', label: 'Skins', icon: 'human', tool: 'skins', accent: 'accent-blue' },
-  { path: '/shaders', label: 'Shaders', icon: 'sparkles', tool: 'shaders', accent: 'accent-purple' },
-  { path: '/help', label: 'Help', icon: 'circle-question', tool: 'help', accent: 'accent-gold' },
-];
+export const NAV: NavItem[] = NAV_ITEMS;
 
-function themeButton(): HTMLButtonElement {
-  const glyph = icon(getTheme() === 'dark' ? 'moon' : 'sun');
-  const b = h('button', { type: 'button', class: 'icon-btn theme-toggle' }, glyph);
+/** Adds the theme toggle behaviour to a button (the icon follows the current theme). */
+function wireThemeButton(b: HTMLButtonElement): HTMLButtonElement {
+  const glyph = b.querySelector<HTMLElement>('.icon') ?? b.appendChild(icon('moon'));
   const paint = () => {
     const dark = getTheme() === 'dark';
     setIcon(glyph, dark ? 'moon' : 'sun');
@@ -59,21 +50,19 @@ function themeButton(): HTMLButtonElement {
   return b;
 }
 
+function themeButton(): HTMLButtonElement {
+  return wireThemeButton(h('button', { type: 'button', class: 'icon-btn theme-toggle' }, icon('moon')));
+}
+
 function githubLink(): HTMLAnchorElement {
-  const a = h('a', { class: 'icon-btn', href: GITHUB_URL, target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'TexturesOnline on GitHub' }, icon('github'));
+  const a = toDom<HTMLAnchorElement>(githubTree());
   tooltip(a, 'Source code on GitHub');
   return a;
 }
 
-function navLinks(cls: string): HTMLAnchorElement[] {
-  return NAV.map((item) =>
-    h(
-      'a',
-      { class: [cls, item.accent], href: `#${item.path}`, dataset: { tool: item.tool } },
-      icon(item.icon),
-      h('span', null, item.label),
-    ),
-  );
+function navLinks(cls: string, active: ToolId | null): HTMLAnchorElement[] {
+  const tool = active === 'kit' ? null : active;
+  return navTree(cls, tool).map((n) => toDom<HTMLAnchorElement>(n));
 }
 
 function markActive(links: HTMLAnchorElement[], state: RouteState): void {
@@ -85,16 +74,14 @@ function markActive(links: HTMLAnchorElement[], state: RouteState): void {
 }
 
 function openDrawer(onNavigate: () => void): void {
-  const links = navLinks('drawer-link');
-  const state = currentState;
-  if (state) markActive(links, state);
+  const links = navLinks('drawer-link', currentState?.tool ?? null);
   const dlg = h(
     'dialog',
     { class: 'nav-drawer', 'aria-label': 'Menu' },
     h(
       'div',
       { class: 'drawer-head' },
-      h('a', { class: 'brand', href: '#/' }, logoMark(32), h('span', { class: 'wordmark' }, 'Textures', h('span', null, 'Online'))),
+      toDom(brandLink()),
       h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Close menu', on: { click: () => close() } }, icon('close')),
     ),
     h('nav', { class: 'drawer-nav', 'aria-label': 'Main' }, links),
@@ -107,11 +94,11 @@ function openDrawer(onNavigate: () => void): void {
     ),
   );
   let closed = false;
-  const onHash = () => close();
+  const offNav = onNavigation(() => close());
   const close = () => {
     if (closed) return;
     closed = true;
-    window.removeEventListener('hashchange', onHash);
+    offNav();
     dlg.classList.add('closing');
     const done = () => {
       dlg.close();
@@ -134,7 +121,6 @@ function openDrawer(onNavigate: () => void): void {
     close();
   });
   dlg.addEventListener('close', () => close());
-  window.addEventListener('hashchange', onHash);
   dlg.addEventListener('click', (e) => {
     if (e.target === dlg) close();
   });
@@ -148,30 +134,30 @@ function openDrawer(onNavigate: () => void): void {
 let currentState: RouteState | null = null;
 
 export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: HTMLElement } {
+  // A prerendered page keeps its content on screen until the router renders the real view.
+  const prerendered = Array.from(root.querySelector('main#main')?.childNodes ?? []);
   const outlet = h('main', { id: 'main', class: 'page', tabIndex: -1 });
-  const links = navLinks('nav-link');
-  const menuBtn = h('button', { type: 'button', class: 'icon-btn menu-btn', 'aria-label': 'Open menu', 'aria-haspopup': 'dialog' }, icon('menu'));
-  menuBtn.addEventListener('click', () => openDrawer(() => undefined));
+  outlet.append(...prerendered);
 
-  const skip = h('button', { type: 'button', class: 'skip-link' }, 'Skip to content');
-  skip.addEventListener('click', () => outlet.focus());
+  const tool = (document.documentElement.dataset.tool || null) as ToolId | null;
+  const topbar = toDom(topbarTree(tool === 'kit' ? null : (tool as ChromeNavItem['tool'] | null)));
+  const links = Array.from(topbar.querySelectorAll<HTMLAnchorElement>('.mainnav .nav-link'));
+  wireThemeButton(topbar.querySelector<HTMLButtonElement>('.theme-toggle')!);
+  const gh = topbar.querySelector<HTMLAnchorElement>('.topbar-actions > a.icon-btn');
+  if (gh) tooltip(gh, 'Source code on GitHub');
+  topbar.querySelector('.menu-btn')?.addEventListener('click', () => openDrawer(() => undefined));
+  topbar.querySelector('.brand')?.setAttribute('aria-label', `${SITE_NAME} home`);
 
-  const topbar = h(
-    'header',
-    { class: 'topbar' },
-    h(
-      'div',
-      { class: 'topbar-inner' },
-      h('a', { class: 'brand', href: '#/', 'aria-label': 'TexturesOnline home' }, logoMark(32), h('span', { class: 'wordmark', 'aria-hidden': 'true' }, 'Textures', h('span', null, 'Online'))),
-      h('nav', { class: 'mainnav', 'aria-label': 'Main' }, links),
-      h('div', { class: 'topbar-actions' }, themeButton(), githubLink(), menuBtn),
-    ),
-  );
+  const skip = toDom<HTMLAnchorElement>(skipLink());
+  skip.addEventListener('click', (e) => {
+    e.preventDefault();
+    outlet.focus();
+  });
 
   root.replaceChildren(skip, topbar, outlet);
 
   // Dialogs, menus and tooltips belong to the page that opened them.
-  window.addEventListener('hashchange', () => {
+  onNavigation(() => {
     closeAllPopovers();
     closeAllModals();
     hideTooltip();

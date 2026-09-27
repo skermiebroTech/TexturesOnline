@@ -9,7 +9,7 @@ import { convertLegacySkin, decodeImage, decodeImageSync, encodePng, isPng } fro
 export const DEFAULT_MIN_ENGINE: [number, number, number] = [1, 21, 0];
 /** Vibrant Visuals packs (capability "pbr") need at least this engine version. */
 export const PBR_MIN_ENGINE: [number, number, number] = [1, 21, 120];
-export const GENERATOR_NAME = 'texturesonline';
+export const GENERATOR_NAME = 'texturepackmaker';
 export const GENERATOR_VERSION = '1.0.0';
 
 type Vec3 = [number, number, number];

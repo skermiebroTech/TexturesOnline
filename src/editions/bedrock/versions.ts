@@ -1,6 +1,7 @@
 import type { GameVersion } from '../../core/types';
 import { fetchJson } from '../../core/net';
 import { cacheGet, cacheSet } from '../../core/storage';
+import { appBaseUrl } from '../../core/base';
 
 export const SAMPLES_RAW = 'https://raw.githubusercontent.com/Mojang/bedrock-samples';
 export const SAMPLES_CDN = 'https://cdn.jsdelivr.net/gh/Mojang/bedrock-samples';
@@ -151,11 +152,9 @@ interface CachedSources {
   src: BedrockVersionSources;
 }
 
-/** URL of a file bundled with the app (public/), relative to the page. */
+/** URL of a file bundled with the app (public/), relative to the site root (pages can be nested). */
 export function appDataUrl(path: string): string {
-  const base = (globalThis as { document?: Document }).document?.baseURI ?? (globalThis as { location?: Location }).location?.href;
-  if (!base) throw new Error('No document base URL.');
-  return new URL(path, base).href;
+  return new URL(path, appBaseUrl()).href;
 }
 
 let sourcesMem: Promise<BedrockVersionSources> | null = null;

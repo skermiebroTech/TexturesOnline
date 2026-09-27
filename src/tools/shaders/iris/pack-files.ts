@@ -12,8 +12,8 @@ export interface PackMeta {
   description: string;
 }
 
-export const CREDIT = 'Made with TexturesOnline';
-export const DEFAULT_PACK_NAME = 'TexturesOnline Shaders';
+export const CREDIT = 'Made with Texture Pack Maker';
+export const DEFAULT_PACK_NAME = 'Texture Pack Maker Shaders';
 
 /** One line of plain text: no control characters, collapsed whitespace, limited length. */
 function oneLine(s: unknown, max: number): string {

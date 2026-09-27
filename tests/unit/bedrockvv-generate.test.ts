@@ -9,9 +9,10 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  OPTIONS, PRESETS, bedrockManifestOptions, defaults, generateBedrockVisuals, presetValues, validateBedrockVisuals,
+  OPTIONS, PRESETS, bedrockManifestOptions, defaults, generateBedrockVisuals, normalizeOptions, presetValues, validateBedrockVisuals,
 } from '../../src/tools/shaders/bedrock/index';
 import { BLOCK_LIGHTS } from '../../src/tools/shaders/bedrock/generate';
+import { METADATA_FILE, parsePackMetadata } from '../../src/tools/shaders/import/metadata';
 import { buildResourceManifest } from '../../src/editions/bedrock/manifest';
 import type { OptionValues } from '../../src/core/types';
 
@@ -121,9 +122,15 @@ test('default pack contains one file per vanilla identifier with the right forma
 });
 
 test('output is strict JSON with 2-space indentation and explicit 0.0/1.0 keyframes', () => {
-  const files = generateBedrockVisuals(presetValues('fantasy'), { includeUnchangedFogs: true });
+  const files = generateBedrockVisuals(presetValues('fantasy'), { includeUnchangedFogs: true, version: '1.26.30', preset: 'fantasy' });
+  // texturepackmaker.json (read back by the Shader Maker, ignored by the game) is not a settings file
+  const meta = parsePackMetadata(files[METADATA_FILE] as string);
+  assert.equal(meta?.target, 'bedrock-vibrant');
+  assert.equal(meta?.version, '1.26.30');
+  assert.equal(meta?.preset, 'fantasy');
+  assert.deepEqual(meta?.settings, normalizeOptions(presetValues('fantasy')));
   for (const [path, content] of Object.entries(files)) {
-    if (!path.endsWith('.json')) continue;
+    if (!path.endsWith('.json') || path === METADATA_FILE) continue;
     const text = content as string;
     assert.ok(text.startsWith('{\n  "format_version": '), `${path} starts with format_version`);
     assert.ok(!/\/\/|\/\*/.test(text), `${path} has no comments`);

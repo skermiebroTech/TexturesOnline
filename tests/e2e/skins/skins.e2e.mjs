@@ -109,8 +109,8 @@ const RED = [230, 30, 40, 255];
   await page.waitForSelector('.sk-starter-template');
   await page.click('.sk-starter-template');
   await waitEditor(page);
-  const hash = await page.evaluate(() => location.hash);
-  check('template creates a project and opens the editor', /^#\/skins\/[\w-]+$/.test(hash), hash);
+  const where = await page.evaluate(() => location.pathname + location.hash);
+  check('template creates a project and opens the editor', /\/skins\/[\w-]+$/.test(where), where);
   const headFront = await pixelAt(page, 9, 12);
   check('template paints the head', headFront[3] === 255, JSON.stringify(headFront));
 

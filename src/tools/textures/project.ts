@@ -7,7 +7,7 @@ import { EFFECT_PRESETS, type EffectPreset } from './effects';
 
 /** Resolutions offered for texture packs (pixels per block face). */
 export const RESOLUTIONS = [16, 32, 64, 128, 256, 512] as const;
-export const DEFAULT_DESCRIPTION = 'Made with TexturesOnline';
+export const DEFAULT_DESCRIPTION = 'Made with Texture Pack Maker';
 
 export const JAVA_TEXTURE_ROOT = 'assets/minecraft/textures/';
 export const BEDROCK_TEXTURE_ROOT = 'textures/';

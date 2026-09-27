@@ -1,8 +1,10 @@
 // "Vanilla Java" shader pack: patches the selected version's own core shaders (read from its jar).
 // Only new or changed files are returned; untouched vanilla files keep coming from the game.
+// texturepackmaker.json (ignored by the game) records the settings so the pack can be opened again.
 
 import type { FileMap, OptionValues, PackFormat } from '../../../core/types';
-import { readSettings } from './options';
+import { normalizeOptions, readSettings } from './options';
+import { METADATA_FILE, packMetadataJson } from '../import/metadata';
 import type { Settings } from './options';
 import { fogTintMultiplier, hasFogChange, hasGrade, hasVignette } from './color';
 import {
@@ -26,6 +28,10 @@ export interface VanillaShaderResult {
 export interface VanillaVersionInfo {
   versionId: string;
   packFormat: PackFormat;
+  /** Preset the project started from (recorded in texturepackmaker.json) */
+  preset?: string;
+  /** Add texturepackmaker.json so the Shader Maker can open the pack again (default true) */
+  metadata?: boolean;
 }
 
 /** Shaders whose colour output is not the world's final colour (or which run for the GUI only). */
@@ -498,11 +504,14 @@ export function generateVanillaShaderFiles(
   if (Object.keys(files).length === 0 && warnings.length === 0) {
     warnings.push('Every setting matches vanilla, so this pack does not change how the game looks.');
   }
+  if (info.metadata !== false) {
+    files[METADATA_FILE] = packMetadataJson({ target: 'java-vanilla', version: info.versionId, settings: normalizeOptions(v), preset: info.preset });
+  }
   return { files, warnings, supported: true };
 }
 
 /** Suggested pack.mcmeta description: the pack only works in the version it was made for. */
 export function vanillaPackDescription(versionId: string, name?: string): string {
   const title = name?.trim() ? `${name.trim()} · ` : '';
-  return `${title}Shaders for Java ${versionId} only. Made with TexturesOnline`;
+  return `${title}Shaders for Java ${versionId} only. Made with Texture Pack Maker`;
 }

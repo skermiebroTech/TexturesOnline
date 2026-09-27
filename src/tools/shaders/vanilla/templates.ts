@@ -46,7 +46,7 @@ export function vignetteFunction(s: Settings): string {
 /** Shared include for the per-object path (1.17 – 26.2): `assets/minecraft/shaders/include/txo_post.glsl`. */
 export function postInclude(s: Settings, withGrade: boolean, withVignette: boolean): string {
   const parts = [
-    '// Made with TexturesOnline: color grading and vignette shared by the patched shaders.',
+    '// Made with Texture Pack Maker: color grading and vignette shared by the patched shaders.',
     '#ifndef TXO_POST_GLSL',
     '#define TXO_POST_GLSL',
     '',
@@ -119,7 +119,7 @@ export function darknessBody(outVar: string, strength: number): string[] {
 
 // ---------------------------------------------------------------- 26.3+: always-on end_of_frame post effect
 
-const POST_HEAD = '#version 330\n#extension GL_ARB_separate_shader_objects : require\n\n// Made with TexturesOnline.\n';
+const POST_HEAD = '#version 330\n#extension GL_ARB_separate_shader_objects : require\n\n// Made with Texture Pack Maker.\n';
 
 export function postFinalShader(s: Settings, withGrade: boolean, withVignette: boolean, bloom: boolean): string {
   const out = [POST_HEAD, 'uniform sampler2D InSampler;'];

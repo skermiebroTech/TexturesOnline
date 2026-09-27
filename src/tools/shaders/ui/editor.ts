@@ -306,7 +306,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   });
   const editor = h('div', { class: ['sh-editor', `is-${target.id}`] }, bar, layout, live);
   root.replaceChildren(editor);
-  const setTitle = () => (document.title = `${project.name.trim() || 'My shaders'} · Shader Maker — TexturesOnline`);
+  const setTitle = () => (document.title = `${project.name.trim() || 'My shaders'} · Shader Maker — Texture Pack Maker`);
   setTitle();
 
   // ---------------------------------------------------------------- state changes

@@ -1,6 +1,7 @@
 // Export: the format menu, the download itself and a modal that explains where the file goes.
 
 import { convertLegacySkin } from '../../../core/image';
+import { href as routeHref } from '../../../core/router';
 import { saveBlob } from '../../../core/download';
 import type { SkinModel } from '../../../core/types';
 import { button, openPopover, withBusy } from '../../../ui/components';
@@ -194,7 +195,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
       saveBlob(r.blob, r.filename);
     }),
   );
-  const help = h('a', { class: 'sk-help-link', href: `#/help?s=${info.edition === 'Java' ? 'java-skins' : 'bedrock-skins'}` }, icon('book-open'), 'Full install guide');
+  const help = h('a', { class: 'sk-help-link', href: routeHref(`/help?s=${info.edition === 'Java' ? 'java-skins' : 'bedrock-skins'}`) }, icon('book-open'), 'Full install guide');
   const body = h(
     'div',
     { class: 'sk-export' },

@@ -56,11 +56,12 @@ test('resolveRoute maps every spec route to its tool', () => {
 test('every route has a title and a lazy loader', () => {
   for (const r of ROUTES) {
     assert.equal(typeof r.load, 'function');
-    assert.match(r.title, /TexturesOnline/);
+    assert.ok(r.title.length > 0 && r.title.length <= 60, `title of ${r.pattern}: ${r.title}`);
   }
 });
 
-test('href builds hash links', () => {
-  assert.equal(href('/help'), '#/help');
-  assert.equal(href('skins/1'), '#/skins/1');
+test('href builds path links (folders end in a slash, project pages do not)', () => {
+  assert.equal(href('/help'), '/help/');
+  assert.equal(href('skins/1'), '/skins/1');
+  assert.equal(href('#/textures'), '/textures/');
 });

@@ -960,7 +960,7 @@ export class PixelCanvas {
       if (!r) return false;
       img = extractRect(this.img, r);
     } else img = this.getImage();
-    clipboard = { img, token: `texturesonline-pixels:${img.width}x${img.height}:${Math.random().toString(36).slice(2, 10)}` };
+    clipboard = { img, token: `texturepackmaker-pixels:${img.width}x${img.height}:${Math.random().toString(36).slice(2, 10)}` };
     return true;
   }
 

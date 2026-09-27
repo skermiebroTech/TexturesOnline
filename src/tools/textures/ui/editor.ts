@@ -11,7 +11,7 @@ import { openShortcutsSheet } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
 import { getProject } from '../../../core/storage';
 import { friendlyError, isAbortError } from '../../../core/net';
-import { navigate } from '../../../core/router';
+import { navigate, href as routeHref } from '../../../core/router';
 import { bedrockDisplayVersion, isAssetsCached, loadAssets } from '../../../editions/index';
 import { PIXEL_SHORTCUTS } from '../../../shared/pixel-canvas';
 import { TexStore, ICON_KEY, type SaveState } from './store';
@@ -78,7 +78,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     return () => undefined;
   }
   const proj = project;
-  document.title = `${plainText(proj.name)} — Texture Pack Maker — TexturesOnline`;
+  document.title = `${plainText(proj.name)} — Texture Pack Maker`;
 
   // ---------------------------------------------------------------- vanilla assets
   const controller = new AbortController();
@@ -251,7 +251,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     }
     nameInput.value = plainText(proj.name);
     sizeName();
-    document.title = `${plainText(proj.name)} — Texture Pack Maker — TexturesOnline`;
+    document.title = `${plainText(proj.name)} — Texture Pack Maker`;
   });
   nameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === 'Escape') {
@@ -290,7 +290,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const bar = h(
     'header',
     { class: 'tx-bar' },
-    h('a', { class: 'icon-btn tx-back', href: '#/textures', 'aria-label': 'All texture packs' }, icon('arrow-left')),
+    h('a', { class: 'icon-btn tx-back', href: routeHref('/textures'), 'aria-label': 'All texture packs' }, icon('arrow-left')),
     h('div', { class: 'tx-bar-iconbox checker' }, barIcon),
     h('div', { class: 'tx-bar-title' }, nameInput, measurer, h('span', { class: 'tx-bar-sub' }, badge(versionText(proj), proj.edition === 'java' ? 'green' : 'blue'), saveEl)),
     h('span', { class: 'grow' }),
@@ -562,7 +562,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
           h('p', { class: 'muted' }, `${versionText(p)} · ${p.resolution}×`),
         ),
         panel,
-        h('a', { class: 'btn btn-ghost btn-sm tx-assets-back', href: '#/textures' }, icon('arrow-left'), h('span', { class: 'btn-label' }, 'All texture packs')),
+        h('a', { class: 'btn btn-ghost btn-sm tx-assets-back', href: routeHref('/textures') }, icon('arrow-left'), h('span', { class: 'btn-label' }, 'All texture packs')),
       );
       host.replaceChildren(wrap);
     };

@@ -1,0 +1,59 @@
+/* Prerendered pages: what shows before the app boots, and without JavaScript. The inline script in
+   index.html swaps the "no-js" class on <html> for "js" before anything is painted. */
+
+/* The hero's grass block is a static picture until the interactive one takes its place. */
+.hb-static {
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+.hb-static svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.35));
+}
+.js .hb-static {
+  visibility: hidden;
+}
+
+/* Tool pages: the prerendered introduction stays hidden while the tool itself loads (it appears
+   again below the tool's start screen); it is shown anyway if loading takes long or fails. */
+.js main[data-boot='replace'] > * {
+  visibility: hidden;
+  animation: prerender-reveal 0s linear 4s forwards;
+}
+@keyframes prerender-reveal {
+  to {
+    visibility: visible;
+  }
+}
+
+/* Without JavaScript: controls that need it are hidden and every tab panel is listed. */
+.no-js .theme-toggle,
+.no-js .menu-btn,
+.no-js .hero-art-hint,
+.no-js .guide-tabs > [role='tablist'] {
+  display: none;
+}
+.no-js .guide-tabpanel[hidden] {
+  display: flex !important;
+}
+.no-js .guide-tabpanel::before {
+  content: attr(data-md-heading);
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* The "TexturePackMaker" wordmark is wider than the old one: use the 16px size where the full nav
+   would otherwise not fit next to it (the nav collapses into the menu below 901px). */
+@media (min-width: 901px) and (max-width: 990px) {
+  .topbar .wordmark {
+    font-size: var(--fs-md);
+    line-height: var(--lh-md);
+  }
+}
+
+/* Without JavaScript the hero block is a still picture. */
+.no-js .hero-block {
+  cursor: default;
+}
