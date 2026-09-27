@@ -43,14 +43,19 @@ export function createHeroParticles(seed = 99): HeroParticles {
   let h = 0;
   let dpr = 1;
   let unit = 100; // block size in CSS px
+  let cx = 0; // orbit centre in canvas px (the canvas is larger than the hero box)
+  let cy = 0;
   const resize = () => {
     const r = canvas.getBoundingClientRect();
+    const box = (canvas.parentElement ?? canvas).getBoundingClientRect();
     dpr = Math.min(2, window.devicePixelRatio || 1);
     w = Math.max(1, Math.round(r.width));
     h = Math.max(1, Math.round(r.height));
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
-    unit = Math.min(w / 2, h / 1.9);
+    unit = Math.min(box.width / 2, box.height / 1.9);
+    cx = box.left - r.left + box.width / 2;
+    cy = box.top - r.top + box.height * 0.47;
   };
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(resize) : null;
   ro?.observe(canvas);
@@ -105,8 +110,8 @@ export function createHeroParticles(seed = 99): HeroParticles {
 
   const project = (m: Mote) => {
     const depth = Math.cos(m.theta); // 1 = in front of the block, -1 = behind it
-    const x = w / 2 + Math.sin(m.theta) * m.radius * unit;
-    const y = h * 0.47 - m.y * unit * 0.95 + depth * m.radius * unit * TILT;
+    const x = cx + Math.sin(m.theta) * m.radius * unit;
+    const y = cy - m.y * unit * 0.95 + depth * m.radius * unit * TILT;
     return { x, y, depth };
   };
 
