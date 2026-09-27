@@ -7,6 +7,8 @@ import type { AssetIndex, ProgressFn } from '../../core/types';
 import { parseLenientJson } from '../../editions/bedrock/catalog';
 import { BedrockBackend, parseLang } from './bedrock-blocks';
 import { JavaBackend, javaModelFiles } from './java-blocks';
+import { loadJavaModelMirror } from './java-mirror';
+import type { JsonGet } from './java-models';
 import { labelTextures, pretty, propertyLabel, valueLabel, type LabelInput } from './labels';
 import type { BakedQuad, Dir } from './geometry';
 import type { BlockState, EditionBackend, ModelCategory, ModelEntry, ModelTexture, ModelView, RawView, StateProperty, TextureStates, TextureUsage } from './types';
@@ -384,6 +386,11 @@ export interface LoadOptions {
   signal?: AbortSignal;
   /** Downloads Java jar groups ahead of reading them (reports progress); optional */
   prefetch?: (groups: string[], opts: { onProgress?: ProgressFn; signal?: AbortSignal }) => Promise<void>;
+  /**
+   * Bedrock: Java block models and blockstates for the shapes Bedrock builds in (null: none). Defaults
+   * to the public model mirror in browsers and to none elsewhere.
+   */
+  javaModels?: () => Promise<JsonGet | null>;
 }
 
 const libraries = new WeakMap<AssetIndex, Promise<ModelLibrary>>();
@@ -392,7 +399,7 @@ const libraries = new WeakMap<AssetIndex, Promise<ModelLibrary>>();
 export function loadModelLibrary(assets: AssetIndex, opts: LoadOptions = {}): Promise<ModelLibrary> {
   let p = libraries.get(assets);
   if (!p) {
-    p = (assets.edition === 'java' ? loadJava(assets, opts) : loadBedrock(assets)).catch((err) => {
+    p = (assets.edition === 'java' ? loadJava(assets, opts) : loadBedrock(assets, opts)).catch((err) => {
       libraries.delete(assets);
       throw err;
     });
@@ -464,7 +471,7 @@ async function readJavaLang(assets: AssetIndex): Promise<Record<string, string>>
   return {};
 }
 
-async function loadBedrock(assets: AssetIndex): Promise<ModelLibrary> {
+async function loadBedrock(assets: AssetIndex, opts: LoadOptions): Promise<ModelLibrary> {
   const read = async (p: string, lenient = true): Promise<unknown> => {
     try {
       const t = await assets.readText(p);
@@ -473,16 +480,18 @@ async function loadBedrock(assets: AssetIndex): Promise<ModelLibrary> {
       return undefined;
     }
   };
-  const [blocks, terrain, items, langText] = await Promise.all([
+  const javaModels = opts.javaModels ?? (typeof window !== 'undefined' ? () => loadJavaModelMirror({ onProgress: opts.onProgress, signal: opts.signal }) : async () => null);
+  const [blocks, terrain, items, langText, java] = await Promise.all([
     read('blocks.json'),
     read('textures/terrain_texture.json'),
     read('textures/item_texture.json'),
     assets.hasFile('texts/en_US.lang') ? assets.readText('texts/en_US.lang').catch(() => '') : Promise.resolve(''),
+    javaModels().catch(() => null),
   ]);
   if (!blocks || !terrain) {
     return new ModelLibrary('bedrock', assets.version, null, "The block list for this Bedrock version couldn't be loaded. Check your connection, or use All textures.");
   }
-  const backend = new BedrockBackend({ blocks, terrain, items, lang: parseLang(langText), hasFile: (p) => assets.hasFile(p), animated: animatedSet(assets) });
+  const backend = new BedrockBackend({ blocks, terrain, items, lang: parseLang(langText), hasFile: (p) => assets.hasFile(p), animated: animatedSet(assets), java });
   return new ModelLibrary('bedrock', assets.version, backend);
 }
 

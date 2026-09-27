@@ -54,7 +54,32 @@ const ROLE_LABELS: Record<string, string> = {
   upperstem: 'Stem',
   pane: 'Pane',
   edge: 'Edge',
+  // Models the game draws with its own code (one texture sheet each)
+  chest: 'Chest',
+  chest_left: 'Left half',
+  chest_right: 'Right half',
+  chest_double: 'Double chest',
+  shulker_box: 'Shulker box',
+  banner: 'Banner',
+  banner_color: 'Colour mask',
+  head: 'Head',
+  pot_base: 'Neck and base',
+  pot_side: 'Sides',
+  conduit_shell: 'Shell',
+  bell_body: 'Bell',
+  book: 'Book',
+  statue: 'Statue',
+  sign: 'Sign',
+  hanging_sign: 'Hanging sign',
+  bed: 'Bed',
+  end_portal: 'Portal',
+  shield: 'Shield',
+  trident: 'Trident',
+  sprite: 'Item icon',
 };
+
+/** Roles of entity-drawn models: their texture sheets are named by what they are, not by file name. */
+const ENTITY_ROLES = new Set(['chest', 'chest_left', 'chest_right', 'chest_double', 'shulker_box', 'banner', 'banner_color', 'head', 'pot_base', 'pot_side', 'conduit_shell', 'bell_body', 'book', 'statue', 'sign', 'hanging_sign', 'bed', 'end_portal', 'shield', 'trident', 'sprite']);
 
 /** Label for a texture variable / face key when the texture name says nothing about its place. */
 export function roleLabel(role: string): string {
@@ -118,7 +143,9 @@ export function labelTextures(blockId: string, inputs: LabelInput[], allStates: 
     const suffix = textureSuffix(blockId, name);
     let label: string;
     const kept = suffix?.filter((t) => !DROP_TOKENS.has(t)) ?? [];
-    if (suffix && kept.length) {
+    if (ENTITY_ROLES.has(inp.role)) {
+      label = roleLabel(inp.role);
+    } else if (suffix && kept.length) {
       if (opts.halves && kept.length === 1 && (kept[0] === 'top' || kept[0] === 'upper')) label = 'Upper half';
       else if (opts.halves && kept.length === 1 && (kept[0] === 'bottom' || kept[0] === 'lower')) label = 'Lower half';
       else label = pretty(kept.join('_'));
@@ -162,16 +189,20 @@ export function labelTextures(blockId: string, inputs: LabelInput[], allStates: 
   return out;
 }
 
-/** A property=value shared by every state in `using` that some other state doesn't have. */
+/**
+ * A property=value shared by every state in `using` that the other states don't have (lit=true for a
+ * lit texture), else one that at least some other state lacks.
+ */
 function distinguishingState(using: BlockState[], all: BlockState[], name?: ValueName): string | null {
   if (!using.length) return null;
   const first = using[0];
-  for (const [k, v] of Object.entries(first)) {
-    if (!using.every((s) => s[k] === v)) continue;
-    if (!all.some((s) => k in s && s[k] !== v)) continue;
+  const usingKeys = new Set(using.map((s) => JSON.stringify(s)));
+  const others = all.filter((s) => !usingKeys.has(JSON.stringify(s)));
+  const shared = Object.entries(first).filter(([k, v]) => using.every((s) => s[k] === v) && all.some((s) => k in s && s[k] !== v));
+  const strict = shared.find(([k, v]) => others.length > 0 && !others.some((s) => s[k] === v));
+  for (const [k, v] of strict ? [strict] : shared.slice(0, 1)) {
     const q = qualifierFor(k, v, name);
     if (q) return q;
-    return null;
   }
   return null;
 }

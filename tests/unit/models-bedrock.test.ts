@@ -68,7 +68,7 @@ test('bedrock: grass side tint mask, biome-tinted top', { skip: SKIP }, async ()
   assert.equal(tex(v.quads.find((q) => q.worldDir === 'down')!.texture), 'blocks/dirt');
 });
 
-test('bedrock: engine shapes: plants cross, doors two blocks tall, stairs, torch; others approximate', { skip: SKIP }, async () => {
+test('bedrock without the Java block models (offline): built-in shapes, others approximate', { skip: SKIP }, async () => {
   assert.equal(bedrockShape('poppy').shape, 'cross');
   assert.equal(bedrockShape('oak_stairs').shape, 'stairs');
   assert.equal(bedrockShape('stone_slab').shape, 'slab');
@@ -90,7 +90,7 @@ test('bedrock: engine shapes: plants cross, doors two blocks tall, stairs, torch
   assert.ok(Math.max(...torch.quads.flatMap((q) => q.positions.map((p) => p[1]))) <= 10 / 16 + 1e-9);
   const anvil = await view('anvil');
   assert.equal(anvil.approximate, true);
-  assert.ok(anvil.note && /own shape/.test(anvil.note));
+  assert.ok(anvil.note && /builds this block's shape/.test(anvil.note));
 });
 
 test('bedrock: variations are a state with readable names', { skip: SKIP }, async () => {

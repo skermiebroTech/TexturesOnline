@@ -581,7 +581,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       stageLabel.textContent = 'Item';
     } else {
       pv.showModel(built.scene, { view: built.view, keepView: keepView && again });
-      stageLabel.textContent = v.approximate ? 'Approximate shape' : e.kind === 'item' ? 'Item' : v.category === 'special' ? 'Drawn by the game' : 'In-game model';
+      stageLabel.textContent = v.approximate ? 'Approximate shape' : e.kind === 'item' ? 'Item' : v.shape === 'sprite' ? 'Item icon' : v.category === 'special' ? 'Drawn by the game' : 'In-game model';
     }
     if (hoverPath) preview?.highlightTexture(hoverPath);
   }

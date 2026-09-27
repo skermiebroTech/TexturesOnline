@@ -222,7 +222,8 @@ export class JavaModelSet {
       if (path.startsWith('builtin/')) {
         chain.push(cur);
         const kind = path.slice('builtin/'.length);
-        if (!elements) builtin = kind === 'generated' ? 'generated' : kind === 'entity' ? 'entity' : 'missing';
+        // builtin/compass and builtin/clock (1.8) are generated sprites with a moving texture.
+        if (!elements) builtin = kind === 'generated' || kind === 'compass' || kind === 'clock' ? 'generated' : kind === 'entity' ? 'entity' : 'missing';
         break;
       }
       const j = this.json(modelPath(cur));
@@ -270,11 +271,16 @@ export function resolveTextureVar(textures: Record<string, string>, name: string
   return { ref: null, via };
 }
 
-/** Texture ref and role of a face texture value ('#side' or a direct 'block/x'). */
+/**
+ * Texture ref and role of a face texture value. A face always names a texture variable: '#side' and
+ * 'side' are the same (the game strips an optional '#', TextureSlots.getMaterial), so a value without
+ * '#' is never a texture path. An unknown variable gives null (the game's missing texture).
+ */
 export function faceTexture(model: ResolvedModel, value: string, dir: Dir): { ref: string | null; role: string } {
-  if (!value.startsWith('#')) return { ref: value, role: dir };
-  const { ref, via } = resolveTextureVar(model.textures, value);
-  return { ref, role: via[via.length - 1] ?? value.slice(1) };
+  const name = value.startsWith('#') ? value.slice(1) : value;
+  if (!name) return { ref: null, role: dir };
+  const { ref, via } = resolveTextureVar(model.textures, name);
+  return { ref, role: via[via.length - 1] ?? name };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -638,9 +644,14 @@ export function redstoneColor(power: number): RGB {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-/** How the game tints a block's tintindex faces (vanilla colours; biome colours use the default biome). */
-export function javaBlockTint(blockId: string, state: Record<string, string> = {}): Tint | null {
+/**
+ * How the game tints a block's tintindex faces (vanilla colours; biome colours use the default biome).
+ * Blocks without a colour provider (a stonecutter's saw has a tintindex) aren't tinted. Flower beds
+ * only tint their stems (tint layer 1).
+ */
+export function javaBlockTint(blockId: string, state: Record<string, string> = {}, tintindex = 0): Tint | null {
   const id = blockId.replace(/^minecraft:/, '');
+  if (/^(pink_petals|wildflowers)$/.test(id) && tintindex === 0) return null;
   if (GRASS_BLOCKS.test(id)) return { kind: 'grass' };
   if (FOLIAGE_BLOCKS.test(id)) return { kind: 'foliage' };
   if (id === 'birch_leaves') return { kind: 'fixed', rgb: rgbOf(0x80a755) };
@@ -655,7 +666,9 @@ export function javaBlockTint(blockId: string, state: Record<string, string> = {
     const age = Number(state.age ?? 7);
     return { kind: 'fixed', rgb: [age * 32, 255 - age * 8, age * 4] };
   }
-  return { kind: 'grass' };
+  // Before 1.13 grass-coloured plants shared ids with variants (double_plant, tallgrass...).
+  if (/^(tallgrass|double_plant|double_grass|double_fern|grass|fern)$/.test(id)) return { kind: 'grass' };
+  return null;
 }
 
 /** A tint from an item definition's "tints" entry (1.21.4+). */
@@ -698,7 +711,7 @@ export function legacyItemTint(itemId: string, tintindex: number): Tint | null {
 
 export type ItemLeaf =
   | { kind: 'model'; model: string; tints: (Tint | null)[] }
-  | { kind: 'special'; base: string | null; type: string; texture?: string }
+  | { kind: 'special'; base: string | null; type: string; texture?: string; props: Record<string, unknown> }
   | { kind: 'empty' };
 
 export interface ItemOption {
@@ -738,7 +751,7 @@ export function itemOptions(def: unknown): ItemOption[] {
         const sm = isObj(node.model) ? node.model : {};
         const stype = typeof sm.type === 'string' ? sm.type.replace(/^minecraft:/, '') : 'special';
         const texture = typeof sm.texture === 'string' ? sm.texture : undefined;
-        return [{ label, leaves: [{ leaf: { kind: 'special', base: typeof node.base === 'string' ? node.base : null, type: stype, texture }, offset: off }] }];
+        return [{ label, leaves: [{ leaf: { kind: 'special', base: typeof node.base === 'string' ? node.base : null, type: stype, texture, props: sm }, offset: off }] }];
       }
       case 'empty':
         return [{ label, leaves: [{ leaf: { kind: 'empty' }, offset: off }] }];

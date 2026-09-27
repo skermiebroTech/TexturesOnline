@@ -97,3 +97,34 @@ export function bedrockAssets(): AssetIndex | null {
   };
   return bedrockCache;
 }
+
+const javaJsonCache = new Map<string, ((path: string) => unknown) | null>();
+
+/**
+ * Java blockstates and block models of a client jar as a JSON lookup by pack path: what the Bedrock
+ * library borrows its built-in shapes from (instead of downloading the model mirror).
+ */
+export function javaModelJson(version = '26.3'): ((path: string) => unknown) | null {
+  if (javaJsonCache.has(version)) return javaJsonCache.get(version)!;
+  const jar = javaJarPath(version);
+  if (!jar) {
+    javaJsonCache.set(version, null);
+    return null;
+  }
+  const files = unzipSync(new Uint8Array(readFileSync(jar)), { filter: (f) => /^assets\/minecraft\/(blockstates|models)\/.*\.json$/.test(f.name) });
+  const parsed = new Map<string, unknown>();
+  const get = (path: string): unknown => {
+    if (parsed.has(path)) return parsed.get(path);
+    const b = files[path];
+    let v: unknown;
+    try {
+      v = b ? JSON.parse(new TextDecoder().decode(b)) : undefined;
+    } catch {
+      v = undefined;
+    }
+    parsed.set(path, v);
+    return v;
+  };
+  javaJsonCache.set(version, get);
+  return get;
+}

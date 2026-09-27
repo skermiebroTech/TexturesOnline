@@ -22,6 +22,8 @@ export interface ModelShowOptions {
   view?: 'block' | 'item';
   /** Keep the camera where the user left it (e.g. when only the block state changed) */
   keepView?: boolean;
+  /** Start from another angle than the view's standard one (radians; azimuth 0 looks at the south face) */
+  angle?: { azimuth?: number; elevation?: number };
 }
 
 export interface ModelHandlers {
@@ -464,7 +466,10 @@ class BlockPreviewImpl implements BlockPreview {
       this.shadow.position.y = (fmin[1] - center[1]) * scale - 0.1;
       this.shadow.scale.setScalar(Math.max(0.6, Math.max(fmax[0] - fmin[0], fmax[2] - fmin[2]) * scale));
     }
-    if (!opts.keepView) this.orbit.setHome(opts.view === 'item' ? ITEM_VIEW : DEFAULT_VIEW);
+    if (!opts.keepView) {
+      const home = opts.view === 'item' ? ITEM_VIEW : DEFAULT_VIEW;
+      this.orbit.setHome({ ...home, azimuth: opts.angle?.azimuth ?? home.azimuth, elevation: opts.angle?.elevation ?? home.elevation });
+    }
     this.loop.invalidate();
   }
 

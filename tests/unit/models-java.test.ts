@@ -2,7 +2,7 @@
  * Model library against real Minecraft Java jars (TO_FIXTURES): 26.3, 1.20.1 and 1.12.2 (pre-flattening),
  * plus 1.8.9 and 1.6.1 when present. Checks that blocks resolve to the textures the game puts on each face:
  * crafting / cartography tables, lit furnaces, stairs, slabs, torches, flowers, doors, fences, grass
- * block overlays and tints, redstone wire, observers, chests (drawn by the game's code) and items.
+ * block overlays and tints, redstone wire, observers, chests (the game's entity models) and items.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -224,15 +224,15 @@ test('26.3: observer: front north by default, back lights up when powered, facin
   assert.equal(faceMap(up).up, 'block/observer_front');
 });
 
-test('26.3: chest, banners and heads are drawn by the game: flat texture sheet with a note', { skip: !has(V) && SKIP(V) }, async () => {
+test('26.3: chest, banners and heads are drawn by the game: their entity models with their texture sheets', { skip: !has(V) && SKIP(V) }, async () => {
   const chest = await view(V, 'chest');
-  assert.equal(chest.shape, 'special');
+  assert.equal(chest.shape, 'model');
   assert.equal(chest.category, 'special');
-  assert.deepEqual(chest.sprite.map((s) => tex(s.path)), ['entity/chest/normal']);
-  assert.ok(chest.note && /own code/.test(chest.note));
-  assert.deepEqual((await view(V, 'ender_chest')).sprite.map((s) => tex(s.path)), ['entity/chest/ender']);
-  assert.deepEqual((await view(V, 'red_banner')).sprite.map((s) => tex(s.path)), ['entity/banner/banner_base']);
-  assert.deepEqual((await view(V, 'zombie_head')).sprite.map((s) => tex(s.path)), ['entity/zombie/zombie']);
+  assert.deepEqual([...new Set(chest.quads.map((q) => tex(q.texture)))], ['entity/chest/normal']);
+  assert.ok(chest.note && /own model code/.test(chest.note));
+  assert.deepEqual([...new Set((await view(V, 'ender_chest')).quads.map((q) => tex(q.texture)))], ['entity/chest/ender']);
+  assert.deepEqual([...new Set((await view(V, 'red_banner')).quads.map((q) => tex(q.texture)))].sort(), ['entity/banner/banner_base', 'entity/banner/base']);
+  assert.deepEqual([...new Set((await view(V, 'zombie_head')).quads.map((q) => tex(q.texture)))], ['entity/zombie/zombie']);
   const water = await view(V, 'water');
   assert.equal(water.shape, 'model');
   assert.ok(water.quads.every((q) => q.tint?.kind === 'water'));
@@ -270,8 +270,8 @@ test('26.3: items: generated sprites, block items, special items, several looks'
   assert.equal(furnace.shape, 'model');
   assert.equal(faceMap(furnace).north, 'block/furnace_front');
   const chest = l.resolve(l.item('chest')!);
-  assert.equal(chest.shape, 'special');
-  assert.deepEqual(chest.sprite.map((s) => tex(s.path)), ['entity/chest/normal']);
+  assert.equal(chest.shape, 'model');
+  assert.deepEqual([...new Set(chest.quads.map((q) => tex(q.texture)))], ['entity/chest/normal']);
   const bow = l.properties(l.item('bow')!);
   assert.equal(bow[0]?.values.length, 4, 'bow: standby and three pulling stages');
   const helmet = l.resolve(l.item('leather_helmet')!);
@@ -294,10 +294,11 @@ test('1.20.1: tables, furnace, stairs and entity-drawn beds, signs and chests', 
   assert.equal(new Set(Object.values(faceMap(cart))).size, 5);
   assert.equal(faceMap(await view(M, 'furnace', { lit: 'true' })).north, 'block/furnace_front_on');
   const bed = await view(M, 'red_bed');
-  assert.equal(bed.shape, 'special');
-  assert.deepEqual(bed.sprite.map((s) => tex(s.path)), ['entity/bed/red']);
-  assert.deepEqual((await view(M, 'oak_sign')).sprite.map((s) => tex(s.path)), ['entity/signs/oak']);
-  assert.equal((await view(M, 'chest')).shape, 'special');
+  assert.equal(bed.shape, 'model');
+  assert.deepEqual([...new Set(bed.quads.map((q) => tex(q.texture)))], ['entity/bed/red']);
+  assert.ok(near(bounds(bed.quads).min[2], -1), 'bed: head one block ahead of the foot');
+  assert.deepEqual([...new Set((await view(M, 'oak_sign')).quads.map((q) => tex(q.texture)))], ['entity/signs/oak']);
+  assert.equal((await view(M, 'chest')).shape, 'model');
   const door = await view(M, 'oak_door');
   assert.ok(near(bounds(door.quads).max[1], 2));
   const fence = await view(M, 'oak_fence');
@@ -354,8 +355,8 @@ test('1.12.2: stairs, torch, flower, door, fence, grass, redstone, observer, che
   assert.equal(faceMap(obs).north, 'blocks/observer_front');
   assert.ok(obs.quads.some((q) => q.texture?.endsWith('observer_back_lit.png')));
   const chest = await view(L, 'chest');
-  assert.equal(chest.shape, 'special');
-  assert.deepEqual(chest.sprite.map((s) => tex(s.path)), ['entity/chest/normal']);
+  assert.equal(chest.shape, 'model');
+  assert.deepEqual([...new Set(chest.quads.map((q) => tex(q.texture)))], ['entity/chest/normal']);
   const water = await view(L, 'water');
   assert.ok(water.quads.length === 6 && water.quads.every((q) => q.texture?.endsWith('blocks/water_still.png')));
 });
@@ -365,7 +366,7 @@ test('1.12.2: items (overrides as looks) and usage', { skip: !has(L) && SKIP(L) 
   assert.deepEqual(l.resolve(l.item('diamond_sword')!).sprite.map((s) => tex(s.path)), ['items/diamond_sword']);
   assert.equal(l.properties(l.item('bow')!)[0]?.values.length, 4);
   assert.ok(!l.item('bow_pulling_0'), 'override-only models are not separate items');
-  assert.equal(l.resolve(l.item('chest')!).shape, 'special');
+  assert.equal(l.resolve(l.item('chest')!).shape, 'model');
   const u = l.usage();
   assert.deepEqual(u.get('assets/minecraft/textures/blocks/furnace_front_on.png')?.blocks, ['furnace']);
 });
@@ -437,7 +438,7 @@ for (const [v, n] of Object.entries(ERAS)) {
     assert.equal(faceMap(obs).south, n.observer[0]);
     assert.equal(faceMap(await view(v, 'observer', { facing: 'north', powered: 'true' })).south, n.observer[1]);
     const chest = await view(v, 'chest');
-    assert.equal(chest.shape, 'special');
-    assert.equal(tex(chest.sprite[0]?.path ?? null), 'entity/chest/normal');
+    assert.equal(chest.shape, 'model');
+    assert.equal(tex(chest.quads[0]?.texture ?? null), 'entity/chest/normal');
   });
 }
