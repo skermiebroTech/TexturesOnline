@@ -29,6 +29,8 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+          # One artifact per attempt, so re-running a deploy never finds two with the same name.
+          name: github-pages-${{ github.run_attempt }}
 
   deploy:
     needs: build
@@ -39,3 +41,5 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
