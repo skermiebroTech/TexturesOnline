@@ -1,7 +1,8 @@
 // Rotating CSS 3D grass block for the landing hero (drag to spin, pauses when hidden).
 
 import { h, prefersReducedMotion } from '../../ui/dom';
-import { heroBlockFaces, prng } from './art';
+import { heroBlockFaces } from './art';
+import { createHeroParticles } from './hero-particles';
 
 type FaceName = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right';
 
@@ -39,35 +40,22 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
     cube.appendChild(face);
   });
 
-  const r = prng(99);
-  const particles = h(
-    'div',
-    { class: 'hb-particles', 'aria-hidden': 'true' },
-    Array.from({ length: 14 }, (_, i) =>
-      h('i', {
-        style: {
-          '--x': `${Math.round(r() * 100)}%`,
-          '--d': `${(r() * 6).toFixed(2)}s`,
-          '--t': `${(5 + r() * 4).toFixed(2)}s`,
-          '--ps': `${i % 3 === 0 ? 8 : 6}px`,
-          '--c': i % 4 === 0 ? 'var(--gold)' : i % 3 === 0 ? '#ffffff' : '#7ddc5a',
-        },
-      }),
-    ),
-  );
+  const reduce = prefersReducedMotion();
+  const particles = reduce ? null : createHeroParticles();
 
   const stage = h('div', { class: 'hb-stage' }, cube);
   const el = h(
     'div',
     { class: 'hero-block', role: 'img', 'aria-label': 'A pixel-art grass block slowly rotating' },
     h('div', { class: 'hb-glow' }),
-    particles,
+    particles?.canvas ?? null,
     stage,
     h('div', { class: 'hb-shadow' }),
   );
 
-  const reduce = prefersReducedMotion();
   let yaw = -38;
+  let prevYaw = yaw;
+  let spin = 0; // measured yaw speed (deg/s), covers dragging, flicks and the idle turn
   let pitch = -24;
   let velocity = 0;
   let dragging = false;
@@ -116,6 +104,11 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
       pitch += (-24 - pitch) * Math.min(1, dt * 2);
     }
     render(now);
+    if (dt > 0) {
+      spin += ((yaw - prevYaw) / dt - spin) * Math.min(1, dt * 12);
+      particles?.update(dt, spin);
+    }
+    prevYaw = yaw;
     if (!reduce || dragging || velocity !== 0) raf = requestAnimationFrame(tick);
   };
   const kick = () => {
@@ -125,16 +118,17 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
     }
   };
 
-  stage.addEventListener('pointerdown', (e) => {
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
     dragging = true;
     velocity = 0;
     lastX = e.clientX;
     lastY = e.clientY;
-    stage.setPointerCapture(e.pointerId);
+    el.setPointerCapture(e.pointerId);
     el.classList.add('dragging');
     kick();
   });
-  stage.addEventListener('pointermove', (e) => {
+  el.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
@@ -151,8 +145,8 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
     el.classList.remove('dragging');
     kick();
   };
-  stage.addEventListener('pointerup', end);
-  stage.addEventListener('pointercancel', end);
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
 
   const io =
     typeof IntersectionObserver !== 'undefined'
@@ -179,6 +173,7 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
       visible = false;
       io?.disconnect();
       document.removeEventListener('visibilitychange', onVis);
+      particles?.destroy();
       t0 = 0;
     },
   };

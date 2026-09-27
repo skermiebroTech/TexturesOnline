@@ -128,10 +128,12 @@
   width: var(--s);
   height: var(--s);
   perspective: 1100px;
+}
+.hero-block {
   cursor: grab;
   touch-action: pan-y;
 }
-.hero-block.dragging .hb-stage {
+.hero-block.dragging {
   cursor: grabbing;
 }
 .hb-cube {
@@ -193,32 +195,10 @@
 }
 .hb-particles {
   position: absolute;
-  inset: 0 18%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-}
-.hb-particles i {
-  position: absolute;
-  left: var(--x);
-  bottom: 22%;
-  width: var(--ps);
-  height: var(--ps);
-  background: var(--c);
-  opacity: 0;
-  box-shadow: 0 0 12px var(--c);
-  animation: hb-float var(--t) linear var(--d) infinite;
-}
-@keyframes hb-float {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(-260px);
-    opacity: 0;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .hb-particles {
