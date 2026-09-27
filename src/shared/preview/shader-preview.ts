@@ -13,9 +13,25 @@ import { makePixelTexture } from './three-utils';
 import { createStage, OrbitController, prefersReducedMotion, ViewportLoop } from './viewport';
 import { buildDiorama, type DioramaData, type MeshData, type TextureSlot } from './voxel-world';
 
+/** What a setAssets call ended up showing. */
+export interface PreviewTexturesReport {
+  /** Texture slots in the diorama */
+  total: number;
+  /** Slots drawn from the given assets (the rest use the built-in art) */
+  fromAssets: number;
+  /** Slots drawn from a texture pack layered over vanilla (see shared/overlay-assets) */
+  fromPack: number;
+  /** False when a newer setAssets call (or destroy) replaced this one before it was shown */
+  applied: boolean;
+}
+
 export interface ShaderPreview {
   setParams(p: PreviewParams): void;
-  setAssets(a: AssetIndex | null): Promise<void>;
+  /**
+   * Swaps the diorama's textures (null = built-in art). Resolves once they are on screen. Calling it
+   * again cancels a load still in progress; the previous textures are freed from the GPU.
+   */
+  setAssets(a: AssetIndex | null): Promise<PreviewTexturesReport>;
   setAutoRotate(v: boolean): void;
   setTimeAnimation(v: boolean): void;
   screenshot(): Promise<Blob>;
@@ -220,6 +236,16 @@ interface WorldMesh {
   depthMaterial: THREE.ShaderMaterial | null;
 }
 
+function slotReport(slots: SlotTextures, applied: boolean): PreviewTexturesReport {
+  const list = Object.values(slots) as SlotTexture[];
+  return {
+    total: list.length,
+    fromAssets: list.filter((t) => t.source === 'asset').length,
+    fromPack: list.filter((t) => t.fromPack).length,
+    applied,
+  };
+}
+
 class ShaderPreviewImpl implements ShaderPreview {
   private readonly stage: ReturnType<typeof createStage>;
   private readonly renderer: THREE.WebGLRenderer;
@@ -277,7 +303,10 @@ class ShaderPreviewImpl implements ShaderPreview {
   private lastUpscale = -Infinity;
   private upscaleLocked = false;
   private assetsRef: AssetIndex | null | undefined = undefined;
-  private assetsLoad: Promise<void> | null = null;
+  private assetsLoad: Promise<PreviewTexturesReport> | null = null;
+  private assetsAbort: AbortController | null = null;
+  /** Decoded slots per index (CPU copies), so switching back to a recent source is instant */
+  private readonly slotCache = new WeakMap<AssetIndex, SlotTextures>();
   private cssW = 1;
   private cssH = 1;
   private destroyed = false;
@@ -908,25 +937,31 @@ class ShaderPreviewImpl implements ShaderPreview {
     this.loop.invalidate();
   }
 
-  setAssets(a: AssetIndex | null): Promise<void> {
-    if (this.destroyed) return Promise.resolve();
+  setAssets(a: AssetIndex | null): Promise<PreviewTexturesReport> {
+    if (this.destroyed) return Promise.resolve(slotReport(this.slotInfo, false));
     // Views often pass the same index again on every re-render: keep the textures already loaded.
     if (a === this.assetsRef && this.assetsLoad) return this.assetsLoad;
     this.assetsRef = a;
-    const load = this.loadAssets(a);
+    this.assetsAbort?.abort();
+    const ctrl = new AbortController();
+    this.assetsAbort = ctrl;
+    const load = this.loadAssets(a, ctrl.signal);
     this.assetsLoad = load;
     return load;
   }
 
-  private async loadAssets(a: AssetIndex | null): Promise<void> {
+  private async loadAssets(a: AssetIndex | null, signal: AbortSignal): Promise<PreviewTexturesReport> {
     const token = ++this.assetToken;
-    let slots: SlotTextures;
-    try {
-      slots = await loadSlotTextures(a);
-    } catch {
-      slots = proceduralSlotTextures();
+    let slots = a ? this.slotCache.get(a) : undefined;
+    if (!slots) {
+      try {
+        slots = await loadSlotTextures(a, signal);
+        if (a && !signal.aborted) this.slotCache.set(a, slots);
+      } catch {
+        slots = proceduralSlotTextures();
+      }
     }
-    if (this.destroyed || token !== this.assetToken) return;
+    if (this.destroyed || token !== this.assetToken) return slotReport(slots, false);
     const old = [...this.textures.values()];
     this.textures.clear();
     this.slotInfo = slots;
@@ -940,6 +975,7 @@ class ShaderPreviewImpl implements ShaderPreview {
     for (const t of old) t.dispose();
     this.lastShadowKey = '';
     this.loop.invalidate();
+    return slotReport(slots, true);
   }
 
   setAutoRotate(v: boolean): void {
@@ -981,6 +1017,7 @@ class ShaderPreviewImpl implements ShaderPreview {
     if (this.destroyed) return;
     this.destroyed = true;
     this.assetToken++;
+    this.assetsAbort?.abort();
     this.loop.dispose();
     this.orbit.dispose();
     this.stage.canvas.removeEventListener('webglcontextlost', this.onContextLost);
@@ -1008,7 +1045,9 @@ class ShaderPreviewImpl implements ShaderPreview {
 class UnavailablePreview implements ShaderPreview {
   constructor(private readonly stage: ReturnType<typeof createStage>) {}
   setParams(): void {}
-  async setAssets(): Promise<void> {}
+  async setAssets(): Promise<PreviewTexturesReport> {
+    return { total: 0, fromAssets: 0, fromPack: 0, applied: false };
+  }
   setAutoRotate(): void {}
   setTimeAnimation(): void {}
   getTimeOfDay(): number {

@@ -14,8 +14,22 @@ export interface SlotTexture {
   frametime: number;
   source: 'asset' | 'procedural';
   path?: string;
+  /** Came from a texture pack layered over vanilla (see shared/overlay-assets) */
+  fromPack?: boolean;
 }
 export type SlotTextures = Record<TextureSlot, SlotTexture>;
+
+/**
+ * Optional capability of an AssetIndex that layers a texture pack over vanilla: the pack file served
+ * for a path (null when vanilla serves it). Duck-typed so this module stays free of the pack code.
+ */
+interface PackLayer {
+  overridePath(path: string): string | null;
+}
+
+function packLayerOf(assets: AssetIndex): PackLayer | null {
+  return typeof (assets as Partial<PackLayer>).overridePath === 'function' ? (assets as unknown as PackLayer) : null;
+}
 
 type RGB = [number, number, number];
 
@@ -24,8 +38,11 @@ export const DEFAULT_GRASS_TINT: RGB = [0x91, 0xbd, 0x59];
 export const DEFAULT_FOLIAGE_TINT: RGB = [0x77, 0xab, 0x2f];
 
 interface SlotSource {
+  /** The block's names across versions (newest first) */
   java: string[];
   bedrock: string[];
+  /** Stand-ins for versions without the block (only used when none of the names exist) */
+  substitute?: { java: string[]; bedrock: string[] };
   tint?: 'grass' | 'foliage';
   opaque?: boolean;
   procedural: ProceduralTextureName;
@@ -47,8 +64,13 @@ const SOURCES: Record<TextureSlot, SlotSource> = {
   short_grass: { java: ['block/short_grass', 'block/grass', 'blocks/tallgrass'], bedrock: ['blocks/tallgrass'], tint: 'grass', procedural: 'short_grass' },
   poppy: { java: ['block/poppy', 'blocks/flower_rose'], bedrock: ['blocks/flower_rose'], procedural: 'poppy' },
   dandelion: { java: ['block/dandelion', 'blocks/flower_dandelion'], bedrock: ['blocks/flower_dandelion'], procedural: 'dandelion' },
-  // 1.6 has no blue flower: reuse the rose so the art style stays consistent
-  cornflower: { java: ['block/cornflower', 'block/blue_orchid', 'blocks/flower_blue_orchid', 'blocks/flower_rose'], bedrock: ['blocks/flower_cornflower', 'blocks/flower_blue_orchid'], procedural: 'cornflower' },
+  // Older versions have no cornflower: use the blue orchid, and 1.6 (no blue flower) the rose, so the art style stays consistent
+  cornflower: {
+    java: ['block/cornflower'],
+    bedrock: ['blocks/flower_cornflower'],
+    substitute: { java: ['block/blue_orchid', 'blocks/flower_blue_orchid', 'blocks/flower_rose'], bedrock: ['blocks/flower_blue_orchid'] },
+    procedural: 'cornflower',
+  },
   torch: { java: ['block/torch', 'blocks/torch_on'], bedrock: ['blocks/torch_on'], procedural: 'torch' },
 };
 
@@ -146,19 +168,45 @@ function roots(assets: AssetIndex): { root: string; exts: string[] } {
     : { root: 'textures/', exts: ['.tga', '.png'] };
 }
 
-function resolvePath(assets: AssetIndex, ids: string[]): string | null {
+/**
+ * Path of a slot's texture. A texture pack's own file wins over vanilla even when it uses another
+ * version's (or the other edition's) name for the block, so older packs still show in the preview.
+ */
+function resolvePath(assets: AssetIndex, src: SlotSource): string | null {
   const { root, exts } = roots(assets);
-  for (const id of ids) {
+  const java = assets.edition === 'java';
+  const pack = packLayerOf(assets);
+  if (pack) {
+    for (const id of java ? [...src.java, ...src.bedrock] : [...src.bedrock, ...src.java]) {
+      for (const ext of exts) {
+        const hit = pack.overridePath(root + id + ext);
+        if (hit) return hit;
+      }
+    }
+  }
+  const sub = src.substitute ? (java ? src.substitute.java : src.substitute.bedrock) : [];
+  for (const id of [...(java ? src.java : src.bedrock), ...sub]) {
     for (const ext of exts) {
       const p = root + id + ext;
-      if (assets.hasFile(p)) return p;
+      if (assets.hasFile(p)) return pack?.overridePath(p) ?? p;
     }
   }
   return null;
 }
 
+/** Every texture id (relative to the textures root, no extension) the diorama may read, both editions. */
+export function previewTextureIds(): string[] {
+  const ids = new Set<string>(['colormap/grass', 'colormap/foliage']);
+  for (const [slot, src] of Object.entries(SOURCES) as [TextureSlot, SlotSource][]) {
+    for (const id of [...src.java, ...src.bedrock, ...(src.substitute?.java ?? []), ...(src.substitute?.bedrock ?? [])]) {
+      ids.add(id);
+      if (slot === 'grass_side') ids.add(`${id}_overlay`);
+    }
+  }
+  return [...ids].sort();
+}
+
 async function readFrametime(assets: AssetIndex, path: string): Promise<number> {
-  if (assets.edition !== 'java') return 2;
   const meta = path + '.mcmeta';
   if (!assets.hasFile(meta)) return 2;
   try {
@@ -172,6 +220,46 @@ async function readFrametime(assets: AssetIndex, path: string): Promise<number> 
 
 /** Tallest water strip uploaded (WebGL guarantees 4096 on practically every device). */
 export const MAX_STRIP_HEIGHT = 4096;
+/** Widest texture uploaded: HD packs (1024x and up) are reduced, the preview never shows more detail. */
+export const MAX_TEXTURE_SIZE = 512;
+
+/**
+ * Halves the size (averaging 2x2 blocks, alpha-weighted) until the width is at most `max`. Square
+ * frames of a vertical strip stay aligned because both sides shrink by the same power of two.
+ */
+export function limitSize(img: RGBAImage, max = MAX_TEXTURE_SIZE): RGBAImage {
+  let cur = img;
+  while (cur.width > max && cur.width % 2 === 0 && cur.height % 2 === 0) {
+    const w = cur.width / 2;
+    const h = cur.height / 2;
+    const out = new Uint8ClampedArray(w * h * 4);
+    const s = cur.data;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let r = 0, g = 0, b = 0, a = 0, r0 = 0, g0 = 0, b0 = 0;
+        for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+          const i = ((y * 2 + dy) * cur.width + x * 2 + dx) * 4;
+          const al = s[i + 3];
+          r += s[i] * al;
+          g += s[i + 1] * al;
+          b += s[i + 2] * al;
+          a += al;
+          r0 += s[i];
+          g0 += s[i + 1];
+          b0 += s[i + 2];
+        }
+        const o = (y * w + x) * 4;
+        // colour under fully transparent pixels still matters (Bedrock tint masks): plain average there
+        out[o] = a > 0 ? r / a : r0 / 4;
+        out[o + 1] = a > 0 ? g / a : g0 / 4;
+        out[o + 2] = a > 0 ? b / a : b0 / 4;
+        out[o + 3] = a / 4;
+      }
+    }
+    cur = { width: w, height: h, data: out };
+  }
+  return cur;
+}
 
 /** Keeps the first frames of a vertical strip so it fits in `maxHeight` pixels. */
 export function limitStrip(img: RGBAImage, frames: number, maxHeight = MAX_STRIP_HEIGHT): { image: RGBAImage; frames: number } {
@@ -240,28 +328,32 @@ async function loadTints(assets: AssetIndex): Promise<{ grass: RGB; foliage: RGB
 
 async function loadSlot(assets: AssetIndex, slot: TextureSlot, tints: { grass: RGB; foliage: RGB }): Promise<SlotTexture> {
   const src = SOURCES[slot];
-  const path = resolvePath(assets, assets.edition === 'java' ? src.java : src.bedrock);
+  const path = resolvePath(assets, src);
   if (!path) return proceduralSlot(slot);
-  const raw = await assets.readImage(path);
-  if (!raw || raw.width < 1 || raw.height < 1) throw new Error(`Empty image: ${path}`);
+  const read = await assets.readImage(path);
+  if (!read || read.width < 1 || read.height < 1) throw new Error(`Empty image: ${path}`);
+  const raw = limitSize(read);
   const tint = src.tint ? tints[src.tint] : null;
+  const pack = packLayerOf(assets);
+  let fromPack = !!pack?.overridePath(path);
 
   if (slot === 'water') {
+    // any resolution: frames are square tiles as wide as the texture
     const frameCount = raw.height > raw.width && raw.height % raw.width === 0 ? raw.height / raw.width : 1;
     const strip = limitStrip(frameCount > 1 ? cloneImage(raw) : firstFrame(raw), frameCount);
-    return { image: neutralizeWater(strip.image), frames: strip.frames, frametime: await readFrametime(assets, path), source: 'asset', path };
+    return { image: neutralizeWater(strip.image), frames: strip.frames, frametime: await readFrametime(assets, path), source: 'asset', path, fromPack };
   }
 
   let img = firstFrame(raw);
   if (slot === 'grass_side' && tint) {
-    if (assets.edition === 'java') {
-      const overlayPath = path.replace(/\.png$/, '_overlay.png');
-      if (assets.hasFile(overlayPath)) {
-        try {
-          img = compositeOverlay(img, firstFrame(await assets.readImage(overlayPath)), tint);
-        } catch {
-          // keep the untinted side
-        }
+    // Java: a tinted overlay texture on top (any edition's pack may bring one). Bedrock: alpha is the tint mask.
+    const overlayPath = path.replace(/\.(png|tga)$/i, '_overlay.png');
+    if (assets.hasFile(overlayPath)) {
+      try {
+        img = compositeOverlay(img, firstFrame(await assets.readImage(overlayPath)), tint);
+        fromPack ||= !!pack?.overridePath(overlayPath);
+      } catch {
+        // keep the untinted side
       }
     } else if (!path.includes('carried') && hasTranslucency(img)) {
       img = tintByAlphaMask(img, tint);
@@ -270,7 +362,7 @@ async function loadSlot(assets: AssetIndex, slot: TextureSlot, tints: { grass: R
     img = tintImage(img, tint);
   }
   if (src.opaque) img = forceOpaque(img);
-  return { image: img, frames: 1, frametime: 2, source: 'asset', path };
+  return { image: img, frames: 1, frametime: 2, source: 'asset', path, fromPack };
 }
 
 /**

@@ -724,13 +724,16 @@
   top: 12px;
   right: 12px;
 }
-.sh-stage-overlay.bl {
+.sh-stage-overlay.bottom {
+  right: 12px;
   bottom: 12px;
   left: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
 }
-.sh-stage-overlay.br {
-  bottom: 12px;
-  right: 12px;
+.sh-stage-overlay.bottom > .sh-compare-btn {
+  flex: none;
+  margin-left: auto;
 }
 .sh-stage-chip,
 .sh-compare-btn,
@@ -774,18 +777,51 @@ button.sh-stage-chip:active,
 .sh-compare-btn:active {
   transform: translateY(1px);
 }
-.sh-tex-btn .icon {
+/* ---- preview textures control (texture-picker.ts) */
+.sh-tex {
+  display: flex;
+  flex: 0 1 auto;
+  gap: 4px;
+  min-width: 0;
+}
+.sh-tex-btn {
+  min-width: 0;
+  max-width: 100%;
+  padding-right: 6px;
+}
+.sh-tex-btn > .icon:first-child {
+  color: #d3b8ff;
+}
+.sh-tex-btn[data-source='simple'] > .icon:first-child {
   color: #8c95a8;
 }
-.sh-tex-btn[aria-pressed='true'] {
+.sh-tex-btn[aria-expanded='true'] {
   border-color: rgba(176, 124, 255, 0.7);
-  background: rgba(58, 37, 102, 0.78);
+  background: rgba(58, 37, 102, 0.82);
 }
-.sh-tex-btn[aria-pressed='true'] > .icon {
-  color: #d3b8ff;
+.sh-tex-btn[data-state='warn'] {
+  border-color: rgba(255, 207, 74, 0.55);
+}
+.sh-tex-prefix {
+  flex: none;
+  padding-right: 2px;
+  color: #8c95a8;
+}
+.sh-tex-btn[data-state='warn'] .sh-tex-prefix {
+  display: none;
+}
+.sh-tex-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sh-tex-caret {
+  flex: none;
+  color: #8c95a8;
 }
 .sh-tex-status {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 6px;
 }
@@ -794,6 +830,205 @@ button.sh-stage-chip:active,
 }
 .sh-tex-status .spinner {
   --spin-color: #d3b8ff;
+}
+.sh-tex-pct {
+  color: #c4cad6;
+  font-variant-numeric: tabular-nums;
+}
+.sh-tex-warn {
+  color: #ffcf4a;
+}
+.sh-tex-retry {
+  flex: none;
+  padding: 0 10px 2px 6px;
+  border-color: rgba(255, 207, 74, 0.55);
+  color: #ffe08a;
+}
+.sh-tex-retry[hidden] {
+  display: none;
+}
+
+/* drop a pack on the preview */
+.sh-drop {
+  position: absolute;
+  inset: 12px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  border: 2px dashed rgba(176, 124, 255, 0.85);
+  border-radius: var(--r-md);
+  background: rgba(16, 10, 34, 0.78);
+  color: #eef1f7;
+  text-align: center;
+  pointer-events: none;
+  animation: fade-in var(--dur-2) var(--ease);
+}
+.sh-drop[hidden] {
+  display: none;
+}
+.sh-drop-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 480px;
+  text-wrap: balance;
+}
+.sh-drop-box .icon {
+  color: #d3b8ff;
+}
+.sh-drop-box strong {
+  font-size: var(--fs-lg);
+  line-height: var(--lh-lg);
+}
+.sh-drop-box span:not(.icon) {
+  color: #c4cad6;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
+/* menu (a popover in the top layer: themed like the rest of the UI) */
+.popover.sh-tex-pop {
+  width: min(432px, calc(100vw - 16px));
+  min-width: 0;
+}
+.sh-tex-menu {
+  display: flex;
+  flex-direction: column;
+}
+.sh-tex-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 8px;
+  font-weight: 700;
+}
+.sh-tex-menu-head .icon {
+  color: var(--tool-accent);
+}
+.sh-tex-menu-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 4px 4px;
+}
+.sh-tex-item {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 8px 8px 12px;
+  border: 2px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.sh-tex-item:not([role='menuitemradio']) {
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+.sh-tex-item:hover,
+.sh-tex-item:focus-visible {
+  background: var(--surface-3);
+  outline: none;
+}
+.sh-tex-item:focus-visible {
+  border-color: var(--focus);
+}
+.sh-tex-item[aria-checked='true'] {
+  background: var(--tool-accent-soft);
+}
+.sh-tex-art {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.sh-tex-item[aria-checked='true'] .sh-tex-art {
+  background: var(--surface);
+  color: var(--tool-accent);
+}
+.sh-tex-art img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+.sh-tex-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sh-tex-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sh-tex-sub {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  overflow-wrap: anywhere;
+}
+.sh-tex-item.is-warn .sh-tex-sub {
+  color: var(--gold);
+}
+.sh-tex-item.is-danger .sh-tex-title,
+.sh-tex-item.is-danger .sh-tex-art {
+  color: var(--red);
+}
+.sh-tex-check {
+  display: grid;
+  place-items: center;
+  color: var(--tool-accent);
+}
+.sh-tex-heading {
+  margin: 4px 4px 0;
+  padding: 12px 8px 4px;
+  border-top: 2px solid var(--border);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.sh-tex-packs {
+  display: flex;
+  flex-direction: column;
+  max-height: 232px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sh-tex-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.sh-tex-note {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 16px;
+  border-top: 2px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.sh-tex-note .icon {
+  --icon-size: var(--lh-sm);
+  flex: none;
+  color: var(--text-3);
 }
 .sh-stage-tools {
   display: flex;
@@ -1595,6 +1830,16 @@ button.sh-stage-chip:active,
   .sh-compare-btn {
     padding: 0 8px 2px;
   }
+  .sh-tex-retry > span:not(.icon) {
+    display: none;
+  }
+  .sh-tex-retry {
+    padding: 0 6px 2px;
+  }
+  .sh-drop-box strong {
+    font-size: var(--fs-md);
+    line-height: var(--lh-md);
+  }
   .sh-presets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1630,6 +1875,9 @@ button.sh-stage-chip:active,
 }
 @media (max-width: 400px) {
   .sh-time-btn > span:not(.icon) {
+    display: none;
+  }
+  .sh-tex-prefix {
     display: none;
   }
 }

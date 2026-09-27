@@ -30,8 +30,9 @@ import { SettingsHistory } from './history';
 import { optionsPanel } from './options-panel';
 import { packPanel } from './pack-panel';
 import { presetGallery } from './presets';
-import { cleanName, isShaderProject, loadPrefs, savePrefs, type ShaderProjectData } from './project';
+import { cleanName, isShaderProject, loadPrefs, normalizePreviewTextures, savePrefs, type ShaderProjectData } from './project';
 import { createStage, TIME_PRESETS } from './stage';
+import { previewVersionFor } from './texture-sources';
 
 /** Plain Minecraft without shaders, for the Iris compare button. */
 function plainMinecraftLook(): PreviewParams {
@@ -181,7 +182,13 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     compareParams: () => vanillaBase,
     compareLabel: target.compareLabel,
     edition: target.edition,
-    version: project.version,
+    version: previewVersionFor(target, project.version),
+    textures: normalizePreviewTextures(project.previewTextures),
+    // preview-only choice: saved with the project, not an undo step, never part of the export
+    onTexturesChange: (pref) => {
+      project.previewTextures = pref;
+      if (!destroyed) void saveNow();
+    },
     prefs,
     onPrefsChange: () => savePrefs(prefs),
     screenshotName: () => project.name.trim() || 'Shaders',
@@ -430,7 +437,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     if (!v || v === project.version) return;
     project.version = v;
     pack.setVersion(v);
-    stage.setTexturesSource(target.edition, v);
+    stage.setTexturesSource(target.edition, previewVersionFor(target, v));
     refreshSupport();
     void saveNow();
     if (gen.kind === 'java-vanilla') toast(`Now making shaders for Minecraft Java ${v}`, { tone: 'info', duration: 2500 });
@@ -506,6 +513,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
           { keys: ['D'], label: 'Play or pause the day cycle' },
           { keys: ['R'], label: 'Auto-rotate on or off' },
           { keys: ['P'], label: 'Save a screenshot' },
+          { keys: ['T'], label: 'Preview textures' },
           { keys: ['Arrows'], label: 'Rotate (preview focused)' },
           { keys: ['+'], label: 'Zoom in (preview focused)' },
           { keys: ['-'], label: 'Zoom out (preview focused)' },
@@ -559,6 +567,11 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     } else if (k === 'r' && !e.repeat) stage.toggleAutoRotate();
     else if (k === 'd' && !e.repeat) stage.toggleDayAnimation();
     else if (k === 'p' && !e.repeat) void stage.saveScreenshot();
+    else if (k === 't' && !e.repeat) {
+      e.preventDefault();
+      if (layout.current() !== 'center' && window.matchMedia('(max-width: 720px)').matches) layout.show('center');
+      stage.openTexturesMenu();
+    }
     else {
       const t = TIME_PRESETS.find((x) => x.key === e.key);
       if (t) {

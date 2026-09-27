@@ -1,5 +1,6 @@
-// Real game textures in the preview (Java 26.3 from Mojang, Bedrock from bedrock-samples), day
-// cycle animation and the screenshot button.
+// Preview textures (Java 26.3 from Mojang, Bedrock from bedrock-samples, loaded by default), the
+// Simple choice being remembered per project, day cycle animation and the screenshot button.
+// The full import / texture project flow is covered by tests/e2e/shaders/preview-textures.e2e.cjs.
 // Usage: NODE_PATH=$(npm root -g) node tests/harness/shaders-view/textures.cjs <baseUrl>
 const assert = require('assert/strict');
 const { launch, newContext, collectErrors, waitForCanvasPixels, shotPath } = require('./lib.cjs');
@@ -14,6 +15,17 @@ async function create(page, target) {
   await waitForCanvasPixels(page);
 }
 
+function texturesReady(page, source, timeout = 120000) {
+  return page.waitForFunction(
+    (s) => {
+      const b = document.querySelector('.sh-tex-btn');
+      return b && b.dataset.source === s && b.dataset.state === 'ready';
+    },
+    source,
+    { timeout },
+  );
+}
+
 (async () => {
   const browser = await launch();
   const ctx = await newContext(browser, { width: 1440, height: 900 });
@@ -21,20 +33,23 @@ async function create(page, target) {
   const errors = collectErrors(page);
   for (const target of ['java-vanilla', 'bedrock-vibrant']) {
     await create(page, target);
-    assert.equal(await page.getAttribute('.sh-tex-btn', 'aria-pressed'), 'false');
-    await page.click('.sh-tex-btn');
-    await page.waitForFunction(() => {
-      const b = document.querySelector('.sh-tex-btn');
-      return b.getAttribute('aria-pressed') === 'true' && !b.classList.contains('is-loading');
-    }, null, { timeout: 120000 });
+    await texturesReady(page, 'vanilla');
     await page.waitForTimeout(2500);
     await page.screenshot({ path: shotPath(`textures-${target}`) });
-    console.log('ok - real textures', target);
+    console.log('ok - game textures by default', target, await page.getAttribute('.sh-tex-btn', 'data-slots'));
   }
-  // remembered for the next project of the same edition (already downloaded)
+
+  // Simple is remembered for this project only
+  await page.click('.sh-tex-btn');
+  await page.click('.sh-tex-menu .sh-tex-item[data-key="simple"]');
+  await texturesReady(page, 'simple');
+  await page.waitForFunction(() => document.querySelector('.sh-save')?.dataset.state === 'saved', null, { timeout: 15000 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await texturesReady(page, 'simple', 60000);
   await create(page, 'iris');
-  await page.waitForFunction(() => document.querySelector('.sh-tex-btn').getAttribute('aria-pressed') === 'true', null, { timeout: 60000 });
-  console.log('ok - textures preference remembered');
+  await texturesReady(page, 'vanilla', 60000);
+  assert.equal(await page.locator('.sh-tex-label').innerText(), 'Minecraft 26.3');
+  console.log('ok - texture choice is per project');
 
   // day cycle
   const t0 = await page.locator('.sh-clock').innerText();

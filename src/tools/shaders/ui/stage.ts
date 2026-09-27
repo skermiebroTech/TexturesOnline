@@ -1,15 +1,15 @@
 // Center preview stage: live 3D preview, time of day, auto-rotate, compare, screenshot and the
-// optional real game textures.
+// preview textures (the real game textures by default, see texture-picker.ts).
 
-import type { AssetIndex, Edition, PreviewParams } from '../../../core/types';
-import { isAssetsCached, loadAssets } from '../../../editions/index';
+import type { Edition, PreviewParams } from '../../../core/types';
 import type { ShaderPreview } from '../../../shared/preview/shader-preview';
-import { iconButton, spinner, tooltip } from '../../../ui/components';
+import { iconButton, tooltip } from '../../../ui/components';
 import { h, prefersReducedMotion } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { toast } from '../../../ui/toast';
-import { friendlyError, isAbortError } from '../../../core/net';
-import type { ShaderPrefs } from './project';
+import { friendlyError } from '../../../core/net';
+import type { PreviewTexturesPref, ShaderPrefs } from './project';
+import { createTexturePicker } from './texture-picker';
 
 export const TIME_PRESETS: { id: string; label: string; icon: IconName; tick: number; key: string }[] = [
   { id: 'sunrise', label: 'Sunrise', icon: 'cloud-sun', tick: 400, key: '1' },
@@ -33,7 +33,10 @@ export interface Stage {
   mount(): Promise<void>;
   /** Push the current parameters to the preview on the next frame */
   update(): void;
+  /** Game version of the vanilla preview textures */
   setTexturesSource(edition: Edition, version: string): void;
+  /** Opens the preview textures menu */
+  openTexturesMenu(): void;
   setTime(tick: number): void;
   setDayAnimation(on: boolean): void;
   toggleDayAnimation(): void;
@@ -51,7 +54,10 @@ export function createStage(opts: {
   compareParams: () => PreviewParams;
   compareLabel: string;
   edition: Edition;
+  /** Game version of the vanilla preview textures */
   version: string;
+  textures: PreviewTexturesPref;
+  onTexturesChange: (pref: PreviewTexturesPref) => void;
   prefs: ShaderPrefs;
   onPrefsChange: () => void;
   screenshotName: () => string;
@@ -66,11 +72,8 @@ export function createStage(opts: {
   let raf = 0;
   let clockRaf = 0;
   let lastClock = 0;
-  let edition = opts.edition;
-  let version = opts.version;
-  let texturesOn = false;
-  let texturesCtrl: AbortController | null = null;
-  let assets: AssetIndex | null = null;
+  let resolvePreview: (p: ShaderPreview | null) => void = () => {};
+  const previewReady = new Promise<ShaderPreview | null>((r) => (resolvePreview = r));
 
   // ---- view
   const host = h('div', { class: 'sh-stage-host' });
@@ -78,22 +81,6 @@ export function createStage(opts: {
   const hint = h('div', { class: 'sh-stage-chip sh-stage-hint' }, icon('info'), h('span', null, 'Live preview'));
   tooltip(hint, 'An approximate in-browser preview. Drag to look around, scroll or pinch to zoom. The game will look a little different.');
   hint.tabIndex = 0;
-
-  const texLabel = h('span', null, 'Game textures');
-  const texStatus = h('span', { class: 'sh-tex-status' });
-  const texBtn = h(
-    'button',
-    { type: 'button', class: 'sh-stage-chip sh-tex-btn', 'aria-pressed': 'false' },
-    icon('image'),
-    texLabel,
-    texStatus,
-  );
-  texBtn.addEventListener('click', () => void setTextures(!texturesOn, true));
-  const texTip = () =>
-    edition === 'java'
-      ? `Show the real Minecraft ${version} textures in the preview. The first time, about 6 MB of game files are downloaded from Mojang and kept on this device.`
-      : 'Show the real Bedrock textures in the preview. A few textures are loaded from Mojang’s official samples.';
-  tooltip(texBtn, texTip());
 
   const rotateBtn = iconButton('reload', 'Auto-rotate (R)', () => toggleAutoRotate(), { active: prefs.autoRotate && !reduced });
   const resetBtn = iconButton('target', 'Reset view (Home)', () => resetCamera());
@@ -123,15 +110,25 @@ export function createStage(opts: {
   compareBtn.addEventListener('blur', endCompare);
   compareBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  const view = h(
-    'div',
-    { class: 'sh-stage-view' },
-    host,
-    compareBadge,
+  const view = h('div', { class: 'sh-stage-view' }, host, compareBadge);
+  const textures = createTexturePicker({
+    edition: opts.edition,
+    version: opts.version,
+    pref: opts.textures,
+    onPrefChange: opts.onTexturesChange,
+    // the base textures start downloading right away; they are shown once the preview exists
+    apply: async (a) => {
+      const p = await previewReady;
+      return p && !destroyed ? p.setAssets(a) : null;
+    },
+    dropTarget: view,
+  });
+  view.append(
     h('div', { class: 'sh-stage-overlay tl' }, hint),
     h('div', { class: 'sh-stage-overlay tr' }, viewTools),
-    h('div', { class: 'sh-stage-overlay bl' }, texBtn),
-    h('div', { class: 'sh-stage-overlay br' }, compareBtn),
+    // one row, so the textures control shrinks (its label truncates) instead of overlapping compare
+    h('div', { class: 'sh-stage-overlay bottom' }, textures.el, compareBtn),
+    textures.dropHint,
   );
 
   // ---- time bar
@@ -283,62 +280,8 @@ export function createStage(opts: {
     }
   }
 
-  function paintTextures(state: 'off' | 'loading' | 'on', pct?: number): void {
-    texBtn.setAttribute('aria-pressed', String(state !== 'off'));
-    texBtn.classList.toggle('is-loading', state === 'loading');
-    texStatus.replaceChildren();
-    if (state === 'loading') {
-      texStatus.append(spinner(16), h('span', null, pct !== undefined ? `${Math.round(pct * 100)}%` : ''));
-    }
-  }
-
-  async function setTextures(on: boolean, user: boolean): Promise<void> {
-    texturesCtrl?.abort();
-    texturesCtrl = null;
-    texturesOn = on;
-    if (user) {
-      prefs.realTextures[edition] = on;
-      opts.onPrefsChange();
-    }
-    if (!on) {
-      paintTextures('off');
-      assets = null;
-      await preview?.setAssets(null);
-      return;
-    }
-    const ctrl = new AbortController();
-    texturesCtrl = ctrl;
-    paintTextures('loading');
-    try {
-      const idx = await loadAssets(edition, version, {
-        signal: ctrl.signal,
-        onProgress: (p) => {
-          if (!ctrl.signal.aborted) paintTextures('loading', p.fraction ?? undefined);
-        },
-      });
-      if (ctrl.signal.aborted || destroyed) return;
-      assets = idx;
-      await preview?.setAssets(idx);
-      if (ctrl.signal.aborted || destroyed) return;
-      paintTextures('on');
-    } catch (err) {
-      if (ctrl.signal.aborted || isAbortError(err) || destroyed) return;
-      texturesOn = false;
-      paintTextures('off');
-      if (user) toast(friendlyError(err, "Couldn't load the game textures"), { tone: 'error' });
-    } finally {
-      if (texturesCtrl === ctrl) texturesCtrl = null;
-    }
-  }
-
-  async function initTextures(): Promise<void> {
-    const pref = prefs.realTextures[edition];
-    if (pref === false) return paintTextures('off');
-    if (pref === true || (await isAssetsCached(edition, version))) await setTextures(true, false);
-  }
-
   paintTime(tod);
-  paintTextures('off');
+  textures.start();
 
   return {
     el,
@@ -348,16 +291,13 @@ export function createStage(opts: {
       if (destroyed) return;
       preview = createShaderPreview(host, { params: currentParams(), autoRotate: prefs.autoRotate && !reduced, assets: null });
       if (prefs.animateDay) setDayAnimation(true);
-      void initTextures();
+      resolvePreview(preview);
     },
     update,
     setTexturesSource(e, v) {
-      if (e === edition && v === version) return;
-      edition = e;
-      version = v;
-      tooltip(texBtn, texTip());
-      if (texturesOn) void setTextures(true, false);
+      textures.setBase(e, v);
     },
+    openTexturesMenu: () => textures.openMenu(),
     setTime: (t) => setTime(t),
     setDayAnimation,
     toggleDayAnimation,
@@ -370,10 +310,10 @@ export function createStage(opts: {
       destroyed = true;
       if (raf) cancelAnimationFrame(raf);
       if (clockRaf) cancelAnimationFrame(clockRaf);
-      texturesCtrl?.abort();
+      textures.destroy();
+      resolvePreview(null);
       preview?.destroy();
       preview = null;
-      void assets;
     },
   };
 }
