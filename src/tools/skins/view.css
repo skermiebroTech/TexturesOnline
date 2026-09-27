@@ -1093,12 +1093,43 @@
     0 0 0 4px var(--tool-accent);
 }
 /* ---- Painting on the 3D model ---- */
-.sk-right[data-mode='paint'] .sk-3d-controls,
-.sk-right[data-mode='paint'] .sk-3d-anim,
-.sk-right[data-mode='paint'] .sk-dolls,
-.sk-right[data-mode='view'] .sk-3d-paint,
-.sk-right[data-mode='view'] .sk-3d-hint {
+/* The 3D stage carries its own mode, wherever it sits (side panel or main editor area). */
+.sk-3d-wrap[data-mode='paint'] .sk-3d-anim,
+.sk-3d-wrap[data-mode='view'] .sk-3d-hint {
   display: none;
+}
+.sk-editor[data-workspace='2d'] .sk-3d-paint,
+.sk-editor[data-workspace='3d'] .sk-dolls {
+  display: none;
+}
+/* 3D in the main area: the compact 3D paint strip (layer, 3D tools, brush) sits under the model. */
+.sk-editor[data-workspace='3d'] .sk-center > .sk-3d-paint {
+  border-top: 2px solid var(--border);
+  border-bottom: 0;
+}
+.sk-work > .sk-3d-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  border-bottom: 0;
+}
+.sk-template-slot {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 280px;
+  border-bottom: 2px solid var(--border);
+}
+.sk-editor[data-workspace='2d'] .sk-template-slot,
+.sk-editor[data-workspace='3d'] .sk-right .panel-header > .icon-btn {
+  display: none;
+}
+.sk-tools-group,
+.sk-bar-tools,
+.sk-head-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 /* An accent frame says the model takes paint. */
 .sk-3d-wrap.is-painting::after {
@@ -1751,6 +1782,35 @@
   .sk-canvas-bar .segmented {
     flex: 1 1 auto;
   }
+  .sk-canvas-bar .sk-workspace {
+    flex: none;
+  }
+  /* Two rows: the view switch and view buttons, then the layer choice and mirror. */
+  .sk-canvas-bar {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .sk-canvas-bar > .grow {
+    display: none;
+  }
+  .sk-canvas-bar > .sk-bar-tools {
+    order: 1;
+    margin-left: auto;
+  }
+  .sk-canvas-bar > .sk-cb-group {
+    order: 2;
+    flex: 1 1 auto;
+  }
+  .sk-canvas-bar > .sk-toggle-btn {
+    order: 3;
+  }
+  .sk-canvas-bar > .toolbar-sep {
+    display: none;
+  }
+  /* 3D: the strip under the model has the layer switch. */
+  .sk-editor[data-workspace='3d'] .sk-canvas-bar .sk-cb-group {
+    display: none;
+  }
   .sk-editor .editor-tab[data-panel='center'] {
     order: 1;
   }
@@ -1816,4 +1876,101 @@
 }
 .sk-import-note + .sk-game-actions {
   margin-top: 0;
+}
+
+/* ---- Body-part figure on the 3D stage (show / hide / show only) ---- */
+.sk-body-toggle {
+  --u: 3px; /* one skin pixel */
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--bg-elev) 82%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-1);
+  transform: translateY(-50%);
+}
+.sk-body-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(4, calc(var(--u) * 4));
+  grid-template-rows: calc(var(--u) * 8) calc(var(--u) * 12) calc(var(--u) * 12);
+  gap: 2px;
+}
+.sk-fig-part {
+  padding: 0;
+  border: 2px solid var(--part);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--part) 70%, transparent);
+  cursor: pointer;
+  transition:
+    background var(--dur-1) var(--ease),
+    opacity var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+.sk-fig-part:hover {
+  transform: scale(1.06);
+}
+.sk-fig-part:focus-visible {
+  outline: 2px solid var(--focus, var(--tool-accent));
+  outline-offset: 2px;
+}
+.sk-fig-part[aria-pressed='false'] {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.6;
+}
+.sk-fig-part.is-focus {
+  box-shadow: 0 0 0 2px var(--bg-elev), 0 0 0 4px var(--tool-accent);
+}
+.sk-fig-part[data-part='head'] {
+  grid-column: 2 / span 2;
+  grid-row: 1;
+}
+.sk-fig-part[data-part='rightArm'] {
+  grid-column: 1;
+  grid-row: 2;
+}
+.sk-fig-part[data-part='body'] {
+  grid-column: 2 / span 2;
+  grid-row: 2;
+}
+.sk-fig-part[data-part='leftArm'] {
+  grid-column: 4;
+  grid-row: 2;
+}
+.sk-fig-part[data-part='rightLeg'] {
+  grid-column: 2;
+  grid-row: 3;
+}
+.sk-fig-part[data-part='leftLeg'] {
+  grid-column: 3;
+  grid-row: 3;
+}
+.sk-fig-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-xs);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.sk-fig-all.is-off {
+  visibility: hidden;
+}
+@media (pointer: coarse) {
+  .sk-body-toggle {
+    --u: 4px;
+  }
 }

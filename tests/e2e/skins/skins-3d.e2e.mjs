@@ -133,9 +133,12 @@ const PURPLE = [140, 40, 200, 255];
   await page.click('.sk-3d-mode [data-value="paint"]');
   await page.waitForTimeout(200);
   check('paint switch turns paint mode on', (await api(page, (e) => e.paint3d())) === true);
-  check('paint controls replace the view controls', (await page.isVisible('.sk-3d-paint')) && !(await page.isVisible('.sk-3d-controls')));
+  check(
+    'paint opens the 3D model in the main editor, the template moves to the side panel',
+    (await page.isVisible('.sk-center .sk-3d-wrap')) && (await page.isVisible('.sk-center .sk-3d-paint')) && (await page.isVisible('.sk-right .sk-canvas-host')),
+  );
   check('the stage shows it takes paint', await page.isVisible('.sk-3d-wrap.is-painting'));
-  check('spinning is disabled while painting', await page.isDisabled('.sk-right .panel-header [aria-label="Spin automatically"]'));
+  check('spinning is disabled while painting', await page.isDisabled('.sk-canvas-bar [aria-label="Spin automatically"]'));
 
   await view(page, 'front');
   await setColor(page, '#e61e28');
@@ -303,9 +306,10 @@ const PURPLE = [140, 40, 200, 255];
   const stage = await page.locator('.sk-3d .preview-stage').boundingBox();
   await view(page, 'front');
   const r0 = await to3d(page, 10, 12);
-  await page.mouse.move(stage.x + 30, stage.y + stage.height / 2);
+  // Open background right of the model (the body-part figure sits on the left edge).
+  await page.mouse.move(stage.x + stage.width - 160, stage.y + stage.height / 2);
   await page.mouse.down();
-  await page.mouse.move(stage.x + 90, stage.y + stage.height / 2, { steps: 4 });
+  await page.mouse.move(stage.x + stage.width - 100, stage.y + stage.height / 2, { steps: 4 });
   await page.mouse.up();
   const r1 = await to3d(page, 10, 12);
   check('dragging the background turns the model', !r1 || Math.hypot(r1[0] - r0[0], r1[1] - r0[1]) > 10, `${r0} -> ${r1}`);
@@ -322,7 +326,7 @@ const PURPLE = [140, 40, 200, 255];
   const z2 = await to3d(page, 8, 12);
   check('wheel zooms in', Math.abs(z2[0] - z1[0]) > Math.abs(z1a[0] - z0[0]) * 1.2, `${z1a[0] - z0[0]} -> ${z2[0] - z1[0]}`);
   check('zooming keeps the pointed pixel under the pointer', Math.hypot(z1[0] - z0[0], z1[1] - z0[1]) < 12, `${z0} -> ${z1}`);
-  await page.click('.sk-right .panel-header [aria-label^="Reset view"]');
+  await page.click('.sk-canvas-bar [aria-label^="Reset view"]');
 
   // Top view shows the top of the head.
   await view(page, 'top');
@@ -424,7 +428,7 @@ for (const theme of ['dark', 'light']) {
     }
     await page.waitForTimeout(400);
     const fits = await page.evaluate(() => {
-      const panel = document.querySelector('.sk-right').getBoundingClientRect();
+      const panel = document.querySelector('.sk-center').getBoundingClientRect();
       const stage = document.querySelector('.sk-3d-wrap').getBoundingClientRect();
       const inPanel = Array.from(document.querySelectorAll('.sk-3d-paint button, .sk-3d-paint .segmented, .sk-3d-paint output')).every((el) => {
         const r = el.getBoundingClientRect();

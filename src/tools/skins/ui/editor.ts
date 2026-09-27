@@ -62,6 +62,8 @@ interface Prefs {
   color: [number, number, number, number];
   /** Side panel shown next to the canvas on tablets */
   side: 'left' | 'right';
+  /** What the main editor area shows: the 2D template or the 3D model (the other goes to the side panel) */
+  workspace: '2d' | '3d';
 }
 
 const PREFS_KEY = 'to-skin-editor';
@@ -79,6 +81,7 @@ const DEFAULT_PREFS: Prefs = {
   outer3d: true,
   color: [62, 124, 214, 255],
   side: 'right',
+  workspace: '2d',
 };
 
 function loadPrefs(): Prefs {
@@ -90,6 +93,7 @@ function loadPrefs(): Prefs {
     if (!Array.isArray(c) || c.length !== 4 || c.some((v) => typeof v !== 'number' || !(v >= 0 && v <= 255))) p.color = [...DEFAULT_PREFS.color];
     if (!['base', 'outer', 'both'].includes(p.layers)) p.layers = 'both';
     if (p.side !== 'left' && p.side !== 'right') p.side = 'right';
+    if (p.workspace !== '2d' && p.workspace !== '3d') p.workspace = '2d';
     return p;
   } catch {
     return defaults;
@@ -387,16 +391,30 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const gridBtn = iconButton('grid', 'Pixel grid (#)', () => pc.setShowGrid(!pc.showGrid), { active: prefs.grid });
   const fitBtn = iconButton('aspect-ratio', 'Fit to screen (0)', () => fitView());
 
+  const workspaceSeg = segmented<'2d' | '3d'>({
+    value: prefs.workspace,
+    label: 'Main editor view',
+    size: 'sm',
+    options: [
+      { value: '2d', label: '2D', icon: 'grid' },
+      { value: '3d', label: '3D', icon: 'cube' },
+    ],
+    onChange: (v) => setWorkspace(v),
+  });
+  workspaceSeg.classList.add('sk-workspace');
+  tooltip(workspaceSeg, 'Paint on the flat 2D template or directly on the 3D model (D)');
+  const canvasTools = h('div', { class: 'sk-tools-group' }, guidesBtn, gridBtn, fitBtn);
+  const barTools = h('div', { class: 'sk-bar-tools' }, canvasTools);
   const canvasBar = h(
     'div',
     { class: 'sk-canvas-bar' },
+    workspaceSeg,
+    h('span', { class: 'toolbar-sep' }),
     h('div', { class: 'sk-cb-group' }, h('span', { class: 'sk-cb-label' }, 'Paint on'), layerSeg),
     h('span', { class: 'toolbar-sep' }),
     mirrorBtn,
     h('span', { class: 'grow' }),
-    guidesBtn,
-    gridBtn,
-    fitBtn,
+    barTools,
   );
 
   const toolButtons = new Map<Tool, ReturnType<typeof iconButton>>();
@@ -620,6 +638,28 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const dollBack = h('canvas', { class: 'sk-doll pixelated', 'aria-label': 'Back view', role: 'img' });
 
   const stageWrap = h('div', { class: 'sk-3d-wrap', dataset: { backdrop: prefs.backdrop } }, stage, h('div', { class: 'sk-3d-anim' }, animSeg));
+  // Body-part figure over the stage: a click shows or hides a part in 3D (to reach the sides of the
+  // body, the inside of an arm...), a double-click or Shift+click shows only that part and turns the
+  // camera around it.
+  const figureButtons = new Map<SkinPart, HTMLButtonElement>();
+  const figureGrid = h('div', { class: 'sk-body-toggle-grid' });
+  for (const part of ['head', 'rightArm', 'body', 'leftArm', 'rightLeg', 'leftLeg'] as SkinPart[]) {
+    const info = PART_INFO[part];
+    const b = h('button', { type: 'button', class: 'sk-fig-part', dataset: { part }, style: { '--part': info.color }, 'aria-pressed': 'true' });
+    tooltip(b, `${info.label}: click to show or hide, double-click to see only this`);
+    b.addEventListener('click', (e) => {
+      if (e.detail >= 2 || e.shiftKey) soloPart(part);
+      else togglePartVisible(part);
+    });
+    figureButtons.set(part, b);
+    figureGrid.appendChild(b);
+  }
+  const figureAll = h('button', { type: 'button', class: 'sk-fig-all is-off', tabIndex: -1, 'aria-hidden': 'true' }, icon('eye'), h('span', null, 'All'));
+  tooltip(figureAll, 'Show every part again');
+  figureAll.addEventListener('click', () => showAllParts());
+  const figure = h('div', { class: 'sk-body-toggle', role: 'group', 'aria-label': 'Show or hide body parts in 3D' }, figureGrid, figureAll);
+  stageWrap.appendChild(figure);
+
   const viewControls = h(
     'div',
     { class: 'sk-3d-controls' },
@@ -627,10 +667,17 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Show'), h('div', { class: 'sk-chips' }, layerChip('Base', 'base3d'), layerChip('Outer', 'outer3d'))),
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Backdrop'), h('div', { class: 'sk-backdrops' }, backdropBtns)),
   );
+  const camTools = h('div', { class: 'sk-tools-group' }, rotateBtn, resetCamBtn, shotBtn);
+  const rightTitle = h('h2', null, '3D preview');
+  const openBigBtn = iconButton('expand', 'Paint in 3D in the main editor (D)', () => setWorkspace('3d'), { size: 'sm' });
+  const headTools = h('div', { class: 'sk-head-tools' }, camTools);
+  // Holds the 2D template while the 3D model fills the main editor area.
+  const templateSlot = h('div', { class: 'sk-template-slot' });
   const right = h(
     'aside',
     { class: 'panel sk-right', 'aria-label': '3D preview', dataset: { mode: 'view' } },
-    h('div', { class: 'panel-header' }, h('h2', null, '3D preview'), rotateBtn, resetCamBtn, shotBtn),
+    h('div', { class: 'panel-header' }, rightTitle, openBigBtn, headTools),
+    templateSlot,
     stageWrap,
     viewControls,
     h('div', { class: 'sk-dolls' }, h('figure', null, dollFront, h('figcaption', null, 'Front')), h('figure', null, dollBack, h('figcaption', null, 'Back'))),
@@ -778,6 +825,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     },
     modeChanged: (on) => {
       right.dataset.mode = on ? 'paint' : 'view';
+      stageWrap.dataset.mode = on ? 'paint' : 'view';
+      if (on && workspace === '2d') setWorkspace('3d');
       rotateBtn.disabled = on;
       stageWrap.classList.toggle('is-painting', on);
       // Leaving paint mode: the Show chips and the see-through option apply again.
@@ -788,7 +837,65 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     },
   });
   stageWrap.append(paint3d.modeSwitch, paint3d.views, paint3d.hint);
+  stageWrap.dataset.mode = 'view';
   viewControls.after(paint3d.controls);
+
+  // ---- 2D / 3D workspace: the chosen view fills the main editor area, the other one moves to
+  // the side panel. Both views are moved, not rebuilt, so the canvas history and the WebGL view
+  // stay alive; each resizes itself to its new home.
+  let workspace: '2d' | '3d' = '2d';
+  const work = center.querySelector<HTMLElement>('.sk-work')!;
+  const status3d = center.querySelector<HTMLElement>('.sk-status')!;
+  const setTabLabel = (panel: 'center' | 'right', text: string, iconName: 'brush' | 'cube' | 'grid') => {
+    layout.querySelectorAll<HTMLElement>(`.editor-tab[data-panel='${panel}'], .editor-sidetabs .segmented-item[data-value='${panel}']`).forEach((tab) => {
+      const label = tab.querySelector('span:not(.icon)');
+      const ic = tab.querySelector<HTMLSpanElement>('.icon');
+      if (label) label.textContent = text;
+      if (ic) setIcon(ic, iconName);
+    });
+  };
+  function setWorkspace(ws: '2d' | '3d'): void {
+    if (ws === workspace) return;
+    workspace = ws;
+    setPref('workspace', ws);
+    workspaceSeg.setValue(ws);
+    editorRoot.dataset.workspace = ws;
+    if (ws === '3d') {
+      work.appendChild(stageWrap);
+      templateSlot.appendChild(canvasHost);
+      center.insertBefore(paint3d.controls, status3d);
+      barTools.replaceChildren(camTools);
+      headTools.replaceChildren(canvasTools);
+      rightTitle.textContent = '2D template';
+      right.setAttribute('aria-label', '2D template');
+      center.setAttribute('aria-label', '3D model');
+      setTabLabel('center', '3D', 'cube');
+      setTabLabel('right', 'Template', 'grid');
+      paint3d.setEnabled(true);
+    } else {
+      paint3d.setEnabled(false);
+      work.appendChild(canvasHost);
+      templateSlot.after(stageWrap);
+      viewControls.after(paint3d.controls);
+      barTools.replaceChildren(canvasTools);
+      headTools.replaceChildren(camTools);
+      rightTitle.textContent = '3D preview';
+      right.setAttribute('aria-label', '3D preview');
+      center.setAttribute('aria-label', 'Skin template');
+      setTabLabel('center', 'Paint', 'brush');
+      setTabLabel('right', '3D', 'cube');
+    }
+    if (layout.current() !== 'center' && window.matchMedia('(max-width: 720px)').matches) layout.show('center');
+    requestAnimationFrame(() => {
+      fitView();
+      pc.redraw();
+    });
+  }
+  editorRoot.dataset.workspace = '2d';
+  if (prefs.workspace === '3d') {
+    prefs.workspace = '2d';
+    setWorkspace('3d');
+  }
 
   // ---- sync UI from the canvas ----
   const syncTool = () =>
@@ -1208,12 +1315,53 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       r.row.classList.toggle('is-hidden', isHidden);
     });
     resetPartsBtn.hidden = locked.size === 0 && hidden.size === 0;
+    figureButtons.forEach((b, p) => {
+      const shown = !hidden.has(p);
+      b.setAttribute('aria-pressed', String(shown));
+      b.setAttribute('aria-label', `${PART_INFO[p].label}: ${shown ? 'shown' : 'hidden'} in 3D`);
+      b.classList.toggle('is-focus', focusedPart === p);
+    });
+    // Hidden with visibility, not display, so the figure never shifts under a double-click.
+    const none = hidden.size === 0;
+    figureAll.classList.toggle('is-off', none);
+    figureAll.tabIndex = none ? -1 : 0;
+    figureAll.setAttribute('aria-hidden', String(none));
+  }
+
+  /** Part the camera turns around (after "show only"); null = the whole player */
+  let focusedPart: SkinPart | null = null;
+  function setFocus(part: SkinPart | null) {
+    if (focusedPart === part) return;
+    focusedPart = part;
+    preview?.focusPart(part);
+  }
+
+  /** Shows only one part in 3D and frames the camera on it, so every side can be turned to. */
+  function soloPart(part: SkinPart) {
+    for (const p of PARTS) {
+      if (p === part) hidden.delete(p);
+      else hidden.add(p);
+      if (preview) setPartVisible(preview, p, p === part);
+    }
+    if (preview) applyLayers3d();
+    setFocus(part);
+    syncPartsUi();
+    statusText.textContent = `Showing only the ${PART_INFO[part].label.toLowerCase()} in 3D. Turn it with the side buttons or right-drag.`;
+  }
+
+  function showAllParts() {
+    for (const p of hidden) if (preview) setPartVisible(preview, p, true);
+    hidden.clear();
+    if (preview) applyLayers3d();
+    setFocus(null);
+    syncPartsUi();
   }
 
   let visibilityWarned = false;
   function togglePartVisible(part: SkinPart) {
     if (hidden.has(part)) hidden.delete(part);
     else hidden.add(part);
+    if (focusedPart && (hidden.has(focusedPart) || hidden.size === 0)) setFocus(null);
     if (preview) {
       const ok = setPartVisible(preview, part, !hidden.has(part));
       if (!ok && !visibilityWarned) {
@@ -1238,6 +1386,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     locked.clear();
     for (const p of hidden) if (preview) setPartVisible(preview, p, true);
     hidden.clear();
+    setFocus(null);
     applyLayers3d();
     updateMask();
     syncPartsUi();
@@ -1282,6 +1431,20 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         icon: 'eraser' as IconName,
         onClick: () => applyImageOp(`Cleared the ${info.outerLabel.toLowerCase()}`, (img) => fillPart(img, part, 'outer', model, null)),
       },
+      {
+        label: `Show only the ${info.label.toLowerCase()} in 3D`,
+        icon: 'eye' as IconName,
+        onClick: () => soloPart(part),
+      },
+      ...(hidden.size
+        ? [
+            {
+              label: 'Show all parts in 3D',
+              icon: 'eye' as IconName,
+              onClick: () => showAllParts(),
+            },
+          ]
+        : []),
     ];
     return openMenu(anchor, items, { label: `${info.label} actions` });
   }
@@ -1505,8 +1668,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         break;
       case 'd':
       case 'D':
-        paint3d.setEnabled(!paint3d.enabled());
-        if (paint3d.enabled() && layout.current() === 'center' && window.matchMedia('(max-width: 720px)').matches) layout.show('right');
+        if (workspace === '2d') setWorkspace('3d');
+        else paint3d.setEnabled(!paint3d.enabled());
         break;
       default:
         handled = false;

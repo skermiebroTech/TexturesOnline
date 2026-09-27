@@ -98,6 +98,11 @@ export interface SkinPreview {
   setOverlay(o: SkinOverlay | null): void;
   /** Turns the camera to face one side of the player (keeps the zoom). */
   setView(v: SkinView): void;
+  /**
+   * Moves the camera's pivot onto one body part and frames it, so turning (setView, dragging) goes
+   * around that part; null goes back to the whole player.
+   */
+  focusPart(part: SkinPartId | null): void;
   /** The skin pixel at a client (viewport) point, honouring the painted layer(s). */
   hitTest(clientX: number, clientY: number): SkinHit | null;
   /** Client position of a pixel's centre on the model, or null when it faces away or is hidden. */
@@ -257,6 +262,8 @@ class SkinPreviewImpl implements SkinPreview {
   private overlay: OverlayLayer | null = null;
   private overlayKey = '';
   private tweenRaf = 0;
+  /** Camera distance of the default framing (whole player) */
+  private homeDistance = 0;
 
   constructor(stage: ReturnType<typeof createStage>, opts: SkinPreviewOptions) {
     this.stage = stage;
@@ -391,6 +398,7 @@ class SkinPreviewImpl implements SkinPreview {
     this.viewer.adjustCameraDistance();
     cam.lookAt(0, 0, 0);
     this.viewer.controls.update();
+    this.homeDistance = cam.position.distanceTo(this.viewer.controls.target);
   }
 
   private onKey = (e: KeyboardEvent): void => {
@@ -1228,6 +1236,55 @@ class SkinPreviewImpl implements SkinPreview {
     return shot;
   }
 
+  focusPart(part: SkinPartId | null): void {
+    if (this.destroyed) return;
+    this.stopTween();
+    const cam = this.viewer.camera;
+    const controls = this.viewer.controls;
+    const target = controls.target;
+    const wrapper = this.viewer.playerWrapper;
+    // Face the player square-on first so the part's centre stays put when the side buttons turn it.
+    const r0 = Math.atan2(Math.sin(wrapper.rotation.y), Math.cos(wrapper.rotation.y));
+    wrapper.rotation.y = 0;
+    wrapper.updateMatrixWorld(true);
+    const skin = this.viewer.playerObject.skin as unknown as Partial<Record<SkinPartId, THREE.Object3D>>;
+    const obj = part ? (part === 'cape' ? this.viewer.playerObject.cape : skin[part]) : null;
+    let center = new THREE.Vector3(0, 0, 0);
+    let dist = this.homeDistance || cam.position.distanceTo(target);
+    if (obj) {
+      const box = new THREE.Box3().setFromObject(obj);
+      if (!box.isEmpty()) {
+        center = box.getCenter(new THREE.Vector3());
+        const radius = box.getSize(new THREE.Vector3()).length() / 2;
+        const fov = (cam.fov * Math.PI) / 180;
+        dist = (radius / Math.sin(fov / 2)) * 1.25;
+      }
+    }
+    wrapper.rotation.y = r0;
+    center.clamp(PIVOT_MIN, PIVOT_MAX);
+    dist = Math.min(controls.maxDistance, Math.max(controls.minDistance, dist));
+    const fromTarget = target.clone();
+    const fromDist = cam.position.distanceTo(target);
+    const dir = cam.position.clone().sub(target).normalize();
+    const duration = prefersReducedMotion() ? 0 : 360;
+    const t0 = performance.now();
+    const step = () => {
+      this.tweenRaf = 0;
+      if (this.destroyed) return;
+      const t = duration ? Math.min(1, (performance.now() - t0) / duration) : 1;
+      const k = 1 - Math.pow(1 - t, 3);
+      target.lerpVectors(fromTarget, center, k);
+      cam.position.copy(target).addScaledVector(dir, fromDist + (dist - fromDist) * k);
+      cam.lookAt(target);
+      wrapper.rotation.y = r0 * (1 - k);
+      controls.update();
+      this.requestRender();
+      if (t < 1) this.tweenRaf = requestAnimationFrame(step);
+      else this.refreshHover();
+    };
+    step();
+  }
+
   resetCamera(): void {
     if (this.destroyed) return;
     this.stopTween();
@@ -1298,6 +1355,7 @@ class UnavailableSkinPreview implements SkinPreview {
   setPaintLayers(): void {}
   setOverlay(): void {}
   setView(): void {}
+  focusPart(): void {}
   hitTest(): SkinHit | null {
     return null;
   }
