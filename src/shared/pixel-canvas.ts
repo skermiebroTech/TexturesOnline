@@ -165,7 +165,8 @@ const TOOL_KEYS: Record<string, Tool> = { b: 'pencil', e: 'eraser', g: 'fill', i
 const TOOL_SET = new Set<string>(TOOLS);
 
 type PaintOp = 'set' | 'lighten' | 'darken' | 'noise';
-type StrokeTool = 'pencil' | 'eraser' | 'lighten' | 'darken' | 'noise';
+/** Tools that paint along a stroke (also accepted by beginStroke). */
+export type StrokeTool = 'pencil' | 'eraser' | 'lighten' | 'darken' | 'noise';
 type ShapeTool = 'line' | 'rect' | 'rect-fill' | 'ellipse';
 
 interface Floating {
@@ -192,7 +193,9 @@ type Gesture =
   | { kind: 'marquee'; id: number; touch: boolean; start: Point; moved: boolean; prevSel: Rect | null }
   | { kind: 'move'; id: number; touch: boolean; fx: number; fy: number; x0: number; y0: number; moved: boolean; lifted: boolean }
   | { kind: 'pinch'; ids: [number, number]; d0: number; ds0: number; ix: number; iy: number; mx0: number; my0: number; t0: number; travel: number }
-  | { kind: 'ignore'; id: number; touch: boolean };
+  | { kind: 'ignore'; id: number; touch: boolean }
+  /** A stroke driven through beginStroke() / setPixels() / endStroke(), e.g. painting on a 3D model. */
+  | { kind: 'external'; id: number; touch: boolean };
 
 type Listener = (arg: never) => void;
 
@@ -294,6 +297,8 @@ export class PixelCanvas {
   private opColor: RGBA = [0, 0, 0, 255];
   private opAmount = 0;
   private sx0 = Infinity; private sy0 = Infinity; private sx1 = -1; private sy1 = -1;
+  /** Counts pixels plotRaw actually changed (setPixels reports whether anything changed). */
+  private plotChanges = 0;
   private dx0 = Infinity; private dy0 = Infinity; private dx1 = -1; private dy1 = -1;
 
   private raf = 0;
@@ -688,7 +693,7 @@ export class PixelCanvas {
 
   private hasPendingEdit(): boolean {
     const k = this.gesture?.kind;
-    return k === 'stroke' || k === 'shape' || k === 'move' || k === 'marquee';
+    return k === 'stroke' || k === 'shape' || k === 'move' || k === 'marquee' || k === 'external';
   }
   canRedo(): boolean { return this.redoStack.length > 0; }
 
@@ -697,6 +702,93 @@ export class PixelCanvas {
     this.undoStack = [];
     this.redoStack = [];
     this.emit('history', undefined);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public API: programmatic strokes (painting from outside the canvas, e.g. on a 3D model)
+
+  /**
+   * Starts a stroke driven from outside the canvas. Everything painted with setPixels() until
+   * endStroke() becomes one undo step (cancelStroke() takes it back). A gesture in progress on the
+   * canvas is finished first. `tool` picks the paint (pencil = colour, eraser = transparent,
+   * lighten / darken / noise shade); `secondary` paints with the secondary colour.
+   */
+  beginStroke(opts: { tool?: StrokeTool; secondary?: boolean } = {}): void {
+    if (this.destroyed) return;
+    this.endGesture();
+    this.finalizeFloat();
+    const tool = opts.tool ?? 'pencil';
+    this.prepareEdit(tool === 'eraser' || tool === 'lighten' || tool === 'darken' || tool === 'noise' ? tool : 'pencil', !!opts.secondary);
+    this.gesture = { kind: 'external', id: -1, touch: false };
+    this.updateCursor();
+  }
+
+  /** True while a stroke started with beginStroke() is open. */
+  get stroking(): boolean {
+    return this.gesture?.kind === 'external';
+  }
+
+  /**
+   * Paints pixels in the open stroke (without one, the call is its own undo step). With `rgba` the
+   * pixels get exactly that colour (null = transparent), otherwise the stroke's tool paints them. The
+   * paint mask, the selection and mirror painting apply as they do for the pencil (mirror: false paints
+   * only the given pixels); each pixel is painted at most once per stroke. The canvas shows the change
+   * at once; 'change' is emitted by endStroke(). Returns true when a pixel changed.
+   */
+  setPixels(points: Iterable<readonly [number, number]>, rgba?: RGBA | null, opts: { mirror?: boolean } = {}): boolean {
+    if (this.destroyed) return false;
+    const oneShot = !this.stroking;
+    if (oneShot) this.beginStroke();
+    const saved = rgba === undefined ? null : { op: this.op, color: this.opColor };
+    if (rgba !== undefined) {
+      this.op = 'set';
+      this.opColor = rgba ? normalizeColor(rgba) : [0, 0, 0, 0];
+    }
+    const before = this.plotChanges;
+    const W = this.img.width;
+    const H = this.img.height;
+    for (const p of points) {
+      const x = Math.floor(p[0]);
+      const y = Math.floor(p[1]);
+      if (opts.mirror === false) {
+        if (x >= 0 && y >= 0 && x < W && y < H) this.plotRaw(x, y);
+      } else {
+        this.plot(x, y);
+      }
+    }
+    if (saved) {
+      this.op = saved.op;
+      this.opColor = saved.color;
+    }
+    const changed = this.plotChanges !== before;
+    if (changed) this.requestRender();
+    if (oneShot) this.endStroke();
+    return changed;
+  }
+
+  /** Closes the stroke: records it as one undo step and emits 'change'. Returns true when it changed pixels. */
+  endStroke(): boolean {
+    if (!this.stroking) return false;
+    this.gesture = null;
+    const changed = this.commit();
+    this.updateCursor();
+    this.requestRender();
+    return changed;
+  }
+
+  /** Abandons the open stroke and puts its pixels back. */
+  cancelStroke(): void {
+    if (this.stroking) this.cancelGesture();
+  }
+
+  /** One pixel (straight RGBA; transparent black outside the image). */
+  getPixel(x: number, y: number): RGBA {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    if (!(x >= 0 && y >= 0 && x < this.img.width && y < this.img.height)) return [0, 0, 0, 0];
+    const i = (y * this.img.width + x) * 4;
+    const d = this.img.data;
+    return [d[i], d[i + 1], d[i + 2], d[i + 3]];
   }
 
   // ---------------------------------------------------------------------------
@@ -1153,7 +1245,10 @@ export class PixelCanvas {
       case 'darken': changed = shadePixel(d, i, -this.opAmount, this._channelMode); break;
       default: changed = writePixel(d, i, noiseColor(this.opColor, this.opAmount), this._channelMode);
     }
-    if (changed) this.markDirty(x, y);
+    if (changed) {
+      this.markDirty(x, y);
+      this.plotChanges++;
+    }
   }
 
   /** Plots one pixel with tiling wrap and mirroring applied. */
@@ -1664,6 +1759,9 @@ export class PixelCanvas {
         this.commit();
         this.lastPointF = [g.end[0] + 0.5, g.end[1] + 0.5];
         break;
+      case 'external':
+        this.commit();
+        break;
       case 'marquee':
         if (!g.moved) this.sel = null;
         this.committedSel = this.sel;
@@ -1704,6 +1802,7 @@ export class PixelCanvas {
     switch (g.kind) {
       case 'stroke':
       case 'shape':
+      case 'external':
         this.restoreStroke();
         break;
       case 'marquee':

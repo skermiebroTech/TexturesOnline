@@ -653,6 +653,72 @@ try {
     await context.close();
   }
 
+  // ------------------------------------------------------------------ programmatic strokes (painting from a 3D view)
+  {
+    const { page, context, errors } = await openPage();
+    await H.load(page, 16, 16);
+    const r = await page.evaluate(() => {
+      const h = window.harness;
+      const p = h.pc;
+      p.setColor([255, 0, 0, 255]);
+      const change0 = h.events.change;
+      p.beginStroke();
+      const a = p.setPixels([[1, 1], [2, 1]]);
+      const shownDuringStroke = p.getPixel(1, 1);
+      const changeDuring = h.events.change - change0;
+      const again = p.setPixels([[1, 1]]); // each pixel once per stroke
+      p.setPixels([[3, 1]], [0, 0, 255, 255]);
+      const stroking = p.stroking;
+      const committed = p.endStroke();
+      return { a, again, shownDuringStroke, changeDuring, stroking, committed, changes: h.events.change - change0, after: [p.getPixel(1, 1), p.getPixel(2, 1), p.getPixel(3, 1)], ended: !p.stroking };
+    });
+    check('setPixels paints and reports a change', r.a === true && eq(r.shownDuringStroke, RED));
+    check('a pixel is painted once per stroke', r.again === false);
+    check('no change event until endStroke', r.changeDuring === 0 && r.stroking === true);
+    check('endStroke commits one change', r.committed === true && r.changes === 1 && r.ended);
+    check('explicit colours are written as given', eq(r.after, [RED, RED, BLUE]), JSON.stringify(r.after));
+    await page.evaluate(() => window.harness.pc.undo());
+    check('one undo takes back the whole programmatic stroke', eq(await H.px(page, 1, 1), CLEAR) && eq(await H.px(page, 3, 1), CLEAR));
+
+    const c = await page.evaluate(() => {
+      const p = window.harness.pc;
+      const undoable = p.canUndo();
+      p.beginStroke({ tool: 'eraser' });
+      p.setPixels([[5, 5]], [0, 255, 0, 255]);
+      p.cancelStroke();
+      const cancelled = p.getPixel(5, 5);
+      const one = p.setPixels([[6, 6]], [0, 0, 255, 255]); // outside a stroke: its own undo step
+      return { cancelled, one, undoable, after: p.canUndo() };
+    });
+    check('cancelStroke puts the pixels back', eq(c.cancelled, CLEAR));
+    check('setPixels outside a stroke is its own undo step', c.one === true && c.after === true && eq(await H.px(page, 6, 6), BLUE));
+
+    const m = await page.evaluate(() => {
+      const h = window.harness;
+      const p = h.pc;
+      h.load(16, 16);
+      const mask = new Uint8Array(256);
+      for (let i = 0; i < 256; i++) mask[i] = i % 16 < 8 ? 1 : 0;
+      p.setMask(mask);
+      p.setMirror(true, false);
+      p.setColor([255, 0, 0, 255]);
+      p.beginStroke();
+      p.setPixels([[2, 2], [12, 2]]);
+      p.endStroke();
+      const masked = { inside: p.getPixel(2, 2), locked: p.getPixel(12, 2), mirrorLocked: p.getPixel(13, 2) };
+      p.setMask(null);
+      p.setPixels([[3, 4]], [255, 0, 0, 255], { mirror: false });
+      p.setPixels([[2, 9]]);
+      p.setMirror(false, false);
+      return { ...masked, plain: p.getPixel(3, 4), plainMirror: p.getPixel(12, 4), mirrored: p.getPixel(13, 9), source: p.getPixel(2, 9) };
+    });
+    check('the paint mask applies to programmatic strokes', eq(m.inside, RED) && eq(m.locked, CLEAR) && eq(m.mirrorLocked, CLEAR), JSON.stringify(m));
+    check('mirror: false paints only the given pixels', eq(m.plain, RED) && eq(m.plainMirror, CLEAR));
+    check('mirror painting applies to programmatic strokes', eq(m.mirrored, RED) && eq(m.source, RED));
+    check('no page errors in programmatic strokes', errors.length === 0, errors.join(' | '));
+    await context.close();
+  }
+
   // ------------------------------------------------------------------ screenshots
   {
     const { page, context } = await openPage();

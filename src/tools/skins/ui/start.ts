@@ -449,7 +449,7 @@ export function mountStart(root: HTMLElement): () => void {
         { class: 'sk-hero-text' },
         h('span', { class: 'eyebrow' }, icon('human'), 'Skin Maker'),
         h('h1', { class: 'pixel-shadow' }, 'Design your own skin'),
-        h('p', { class: 'lead' }, 'Paint on the skin template and watch your character come to life in 3D. Export for Java or Bedrock when you are done.'),
+        h('p', { class: 'lead' }, 'Paint on the skin template or right onto the 3D model, and watch your character come to life. Export for Java or Bedrock when you are done.'),
       ),
       modelPick,
     ),

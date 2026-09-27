@@ -41,6 +41,7 @@ import { drawHead, drawPaperDoll } from './figure';
 import { SKIN_PALETTES } from './palettes';
 import { normalizeSkinImage } from './sources';
 import { setOuterSeeThrough, setPartVisible } from './preview-extras';
+import { createPaint3d, drawPixelOutline } from './paint3d';
 
 // ---------------------------------------------------------------------------------------------
 // Preferences (per browser)
@@ -142,6 +143,7 @@ const TIPS = [
   'Lock a part in the Body parts list so you can’t paint outside it.',
   'Shading tip: use Lighten and Darken to add depth.',
   'Press ? to see every keyboard shortcut.',
+  'Press D to paint straight onto the 3D model.',
 ];
 
 function isLight(): boolean {
@@ -265,6 +267,12 @@ export interface SkinEditorTestApi {
   imageToClient(x: number, y: number): [number, number];
   model(): SkinModel;
   flush(): Promise<void>;
+  /** 3D paint mode on? */
+  paint3d(): boolean;
+  /** Client position of a pixel's centre on the 3D model (null: facing away, hidden or no preview) */
+  pixelTo3d(x: number, y: number): [number, number] | null;
+  /** The skin pixel under a client point of the 3D view, with the layer rules of paint mode */
+  hit3d(clientX: number, clientY: number): { x: number; y: number; layer: string } | null;
 }
 
 export async function mountEditor(root: HTMLElement, id: string): Promise<() => void> {
@@ -318,6 +326,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   let highlight: SkinPart | null = null;
   let hoverPixel: { x: number; y: number } | null = null;
   let hoverRect: FaceRect | null = null;
+  /** What a click on the 3D model would paint (outlined on the template too) */
+  let hover3d: { pixels: readonly number[]; echo: readonly number[] } | null = null;
   let preview: SkinPreview | null = null;
   let destroyed = false;
   const disposers: (() => void)[] = [];
@@ -574,7 +584,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     rotateBtn.setActive(prefs.autoRotate);
     preview?.setAutoRotate(prefs.autoRotate);
   }, { size: 'sm', active: prefs.autoRotate });
-  const resetCamBtn = iconButton('target', 'Reset camera', () => preview?.resetCamera(), { size: 'sm' });
+  const resetCamBtn = iconButton('target', 'Reset view (0)', () => preview?.resetCamera(), { size: 'sm' });
   const shotBtn = iconButton('camera', 'Save a picture of the 3D view', () => void screenshot(), { size: 'sm' });
   const modelSeg = segmented<SkinModel>({
     value: model,
@@ -609,18 +619,20 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const dollFront = h('canvas', { class: 'sk-doll pixelated', 'aria-label': 'Front view', role: 'img' });
   const dollBack = h('canvas', { class: 'sk-doll pixelated', 'aria-label': 'Back view', role: 'img' });
 
+  const stageWrap = h('div', { class: 'sk-3d-wrap', dataset: { backdrop: prefs.backdrop } }, stage, h('div', { class: 'sk-3d-anim' }, animSeg));
+  const viewControls = h(
+    'div',
+    { class: 'sk-3d-controls' },
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Arms'), modelSeg),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Show'), h('div', { class: 'sk-chips' }, layerChip('Base', 'base3d'), layerChip('Outer', 'outer3d'))),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Backdrop'), h('div', { class: 'sk-backdrops' }, backdropBtns)),
+  );
   const right = h(
     'aside',
-    { class: 'panel sk-right', 'aria-label': '3D preview' },
+    { class: 'panel sk-right', 'aria-label': '3D preview', dataset: { mode: 'view' } },
     h('div', { class: 'panel-header' }, h('h2', null, '3D preview'), rotateBtn, resetCamBtn, shotBtn),
-    h('div', { class: 'sk-3d-wrap', dataset: { backdrop: prefs.backdrop } }, stage, h('div', { class: 'sk-3d-anim' }, animSeg)),
-    h(
-      'div',
-      { class: 'sk-3d-controls' },
-      h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Arms'), modelSeg),
-      h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Show'), h('div', { class: 'sk-chips' }, layerChip('Base', 'base3d'), layerChip('Outer', 'outer3d'))),
-      h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Backdrop'), h('div', { class: 'sk-backdrops' }, backdropBtns)),
-    ),
+    stageWrap,
+    viewControls,
     h('div', { class: 'sk-dolls' }, h('figure', null, dollFront, h('figcaption', null, 'Front')), h('figure', null, dollBack, h('figcaption', null, 'Back'))),
   );
 
@@ -717,6 +729,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       pointer: hoverPixel,
       theme: isLight() ? 'light' : 'dark',
     });
+    if (hover3d) {
+      drawPixelOutline(ctx, view, hover3d.echo, 0.6);
+      drawPixelOutline(ctx, view, hover3d.pixels);
+    }
   };
   pc.setOverlay(overlay);
   buildPicker();
@@ -729,6 +745,50 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     if (hoverPixel) updateHoverUi();
   };
   updateMask();
+
+  // ---- painting on the 3D model ----
+  const paint3d = createPaint3d({
+    pc,
+    model: () => model,
+    layers: () => prefs.layers,
+    setLayers: (v) => setLayers(v),
+    mirror: () => prefs.mirror,
+    setMirror: (v) => setMirror(v),
+    mask: () => mask,
+    lockReason: (x, y) => lockReasonAt(x, y),
+    live: () => scheduleLive(),
+    hover: (hit, pixels, echo) => {
+      hover3d = hit ? { pixels, echo } : null;
+      if (hit) {
+        hoverPixel = { x: hit.x, y: hit.y };
+        hoverRect = partAt(hit.x, hit.y, model);
+      } else if (!pointer) {
+        hoverPixel = null;
+        hoverRect = null;
+      }
+      updateHoverUi();
+      pc.redraw();
+    },
+    openColor: (anchor) => togglePopover(anchor, () => openColorPopover(anchor, 'top-start')),
+    beforeView: () => {
+      if (!prefs.autoRotate) return;
+      setPref('autoRotate', false);
+      rotateBtn.setActive(false);
+      preview?.setAutoRotate(false);
+    },
+    modeChanged: (on) => {
+      right.dataset.mode = on ? 'paint' : 'view';
+      rotateBtn.disabled = on;
+      stageWrap.classList.toggle('is-painting', on);
+      // Leaving paint mode: the Show chips and the see-through option apply again.
+      if (!on && preview) {
+        applyLayers3d();
+        if (prefs.seeThrough) applySeeThrough();
+      }
+    },
+  });
+  stageWrap.append(paint3d.modeSwitch, paint3d.views, paint3d.hint);
+  viewControls.after(paint3d.controls);
 
   // ---- sync UI from the canvas ----
   const syncTool = () =>
@@ -760,9 +820,13 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const saveColor = debounce(() => setPref('color', pc.color as Prefs['color']), 400);
   disposers.push(() => saveColor.flush());
   disposers.push(
-    pc.on('tool', syncTool),
+    pc.on('tool', () => {
+      syncTool();
+      paint3d.sync();
+    }),
     pc.on('settings', (s) => {
       syncColors();
+      paint3d.sync();
       const c = pc.color;
       if (c.some((v, i) => v !== prefs.color[i])) saveColor();
       brushSlider.setValue(s.brushSize);
@@ -776,8 +840,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     pc.on('history', syncHistory),
   );
 
-  primarySwatch.addEventListener('click', () => togglePopover(primarySwatch, () => openColorPopover()));
-  const openColorPopover = (): PopoverHandle => {
+  primarySwatch.addEventListener('click', () => togglePopover(primarySwatch, () => openColorPopover(primarySwatch)));
+  const openColorPopover = (anchor: HTMLElement, placement?: 'top-start'): PopoverHandle => {
     const phone = window.matchMedia('(max-width: 720px)').matches;
     const content = h('div', { class: 'sk-color-pop' });
     const group = SKIN_PALETTES.find((g) => g.id === prefs.palette) ?? SKIN_PALETTES[0];
@@ -809,7 +873,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     }
     build(group.id);
     content.append(chips, slot);
-    const pop = openPopover(primarySwatch, content, { placement: phone ? 'top-start' : 'right-start', label: 'Paint colour', focus: true, class: 'sk-color-popover' });
+    const pop = openPopover(anchor, content, { placement: placement ?? (phone ? 'top-start' : 'right-start'), label: 'Paint colour', focus: true, class: 'sk-color-popover' });
     return pop;
   };
   secondarySwatch.addEventListener('click', () => {
@@ -860,8 +924,11 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     tip.style.transform = `translate(${Math.round(Math.max(4, x))}px, ${Math.round(Math.max(4, y))}px)`;
   };
   /** Why the hovered pixel can't be painted, or null when it can. */
-  const lockReason = (r: FaceRect): string | null => {
-    if (!hoverPixel || mask[hoverPixel.y * 64 + hoverPixel.x]) return null;
+  const lockReason = (r: FaceRect): string | null => (hoverPixel ? lockReasonAt(hoverPixel.x, hoverPixel.y, r) : null);
+  /** Why a pixel can't be painted (locked part or layer), or null when it can. */
+  const lockReasonAt = (x: number, y: number, r: FaceRect | null = partAt(x, y, model)): string | null => {
+    if (mask[y * 64 + x]) return null;
+    if (!r) return 'Unused area (not shown in game)';
     if (prefs.layers !== 'both' && r.layer !== prefs.layers) {
       return `Locked: painting the ${prefs.layers} layer only (press 3 for both)`;
     }
@@ -908,6 +975,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       hoverRect = p ? partAt(p.x, p.y, model) : null;
       updateHoverUi();
       pc.redraw();
+      paint3d.showTemplateHover(p);
     }),
   );
 
@@ -966,6 +1034,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       if (highlight) preview.setHighlight(highlight);
       applyLayers3d();
       if (prefs.seeThrough) applySeeThrough();
+      paint3d.attach(preview);
       disposers.push(() => preview?.destroy());
     })
     .catch(() => {
@@ -1100,6 +1169,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     layerSeg.setValue(v);
     updateMask();
     pc.redraw();
+    paint3d.sync();
   }
 
   function setMirror(v: boolean) {
@@ -1108,6 +1178,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     pc.setMirror(v, false);
     updateMask();
     pc.redraw();
+    paint3d.sync();
   }
 
   function setGuides(v: boolean) {
@@ -1300,6 +1371,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     updateMask();
     hoverRect = hoverPixel ? partAt(hoverPixel.x, hoverPixel.y, model) : null;
     pc.redraw();
+    paint3d.sync();
   }
 
   async function screenshot() {
@@ -1344,6 +1416,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
           { keys: ['2'], label: 'Paint on outer layer' },
           { keys: ['3'], label: 'Paint on both layers' },
           { keys: ['P'], label: 'Part guides on / off' },
+          { keys: ['D'], label: 'Paint on the 3D model on / off' },
           { keys: ['H'], label: 'Flip the selection' },
           { keys: ['R'], label: 'Rotate the selection' },
         ],
@@ -1370,6 +1443,17 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
           { keys: ['#'], label: 'Pixel grid' },
           { keys: ['Space'], label: 'Hold and drag to pan' },
           { keys: ['?'], label: 'This list' },
+        ],
+      },
+      {
+        title: 'Painting on the 3D model',
+        items: [
+          { keys: ['Drag'], label: 'Paint with the current tool' },
+          { keys: ['Right drag'], label: 'Turn the model' },
+          { keys: ['Space', 'Drag'], label: 'Turn the model (Alt works too)' },
+          { keys: ['Wheel'], label: 'Zoom to the pointer' },
+          { keys: ['Arrow keys'], label: 'Turn the player' },
+          { keys: ['Home'], label: 'Reset the view' },
         ],
       },
     ], 'Skin editor shortcuts');
@@ -1419,6 +1503,11 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       case 'P':
         setGuides(!prefs.guides);
         break;
+      case 'd':
+      case 'D':
+        paint3d.setEnabled(!paint3d.enabled());
+        if (paint3d.enabled() && layout.current() === 'center' && window.matchMedia('(max-width: 720px)').matches) layout.show('right');
+        break;
       default:
         handled = false;
     }
@@ -1449,6 +1538,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     },
     model: () => model,
     flush: () => flushSave(),
+    paint3d: () => paint3d.enabled(),
+    pixelTo3d: (x, y) => preview?.pixelToClient(x, y) ?? null,
+    hit3d: (cx, cy) => {
+      const hit = preview?.hitTest(cx, cy);
+      return hit ? { x: hit.x, y: hit.y, layer: hit.layer } : null;
+    },
   };
   Object.defineProperty(editorRoot, '__skinEditor', { value: api });
 

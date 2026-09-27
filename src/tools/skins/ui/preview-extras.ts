@@ -44,7 +44,8 @@ export function setOuterSeeThrough(preview: SkinPreview, on: boolean, opacity = 
   for (const p of parts) {
     skin[p]?.outerLayer?.traverse((o) => {
       const m = (o as unknown as MeshLike).material;
-      if (!(o as unknown as MeshLike).isMesh || !m) return;
+      // Pixel outlines drawn over the model (paint mode) keep their own look.
+      if (!(o as unknown as MeshLike).isMesh || !m || o.userData?.skinOverlay) return;
       for (const mat of Array.isArray(m) ? m : [m]) {
         if (seen.has(mat)) continue;
         seen.add(mat);
