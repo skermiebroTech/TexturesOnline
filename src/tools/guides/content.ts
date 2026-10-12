@@ -5,7 +5,8 @@
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../../app/markup';
-import { breadcrumbs, callout, code, ext, faqList, folderTable, link, steps, strong, tabbed, uiPath, type FaqItem } from '../../app/content/blocks';
+import { breadcrumbs, callout, code, ext, faqList, figure, folderTable, link, steps, strong, tabbed, uiPath, type FaqItem, type Shot } from '../../app/content/blocks';
+import { SHOTS } from '../../app/content/shots';
 import { guideCards } from '../../app/content/guide-cards';
 import { GUIDES, GUIDES_META, type GuideMeta } from '../../app/seo/meta';
 import { CONTENT_UPDATED, SITE_NAME } from '../../app/site';
@@ -21,6 +22,8 @@ export interface Guide {
   meta: GuideMeta;
   /** Opening paragraph: the direct answer */
   intro: Child[];
+  /** Main screenshot (link previews and the article's structured data) */
+  image?: Shot;
   /** Short numbered answer shown in a box under the intro */
   quick?: { title: string; items: Child[] };
   sections: GuideSection[];
@@ -116,6 +119,7 @@ export const GUIDE_CONTENT: Guide[] = [
   // ------------------------------------------------------------ make a texture pack
   {
     meta: meta('make-a-texture-pack'),
+    image: SHOTS.editor,
     intro: [
       p(
         'A Minecraft texture pack swaps the game’s pictures (blocks, items, mobs, the sky and the menus) for your own. Java Edition calls texture packs ',
@@ -152,6 +156,7 @@ export const GUIDE_CONTENT: Guide[] = [
             [strong('Resolution: '), '16× is the vanilla look (16×16 pixels per block face). 32× and 64× leave room for more detail; 128× and up are for realistic packs.'],
           ]),
           p('Your browser then downloads that version’s original textures straight from Mojang and keeps them on your device, so the next pack starts instantly.'),
+          figure(SHOTS.newPack),
         ],
       },
       {
@@ -167,6 +172,7 @@ export const GUIDE_CONTENT: Guide[] = [
             'Grass, leaves, vines and water are stored in grey and coloured by the game per biome. Keep them light grey.',
             'Animated textures, such as water, lava and sea lanterns, can be edited frame by frame.',
           ]),
+          figure(SHOTS.editor),
         ],
       },
       {
@@ -175,6 +181,7 @@ export const GUIDE_CONTENT: Guide[] = [
         body: [
           p(MAKE_PACK_STEPS[2]),
           p('Effects stack on top of each other and on top of your own painting without changing it, and are applied to every texture when you export. Combine Autumn with Smooth HD, or Dark Mode with a Neon Outline, then keep painting by hand.'),
+          figure(SHOTS.effects),
         ],
       },
       {
@@ -193,6 +200,8 @@ export const GUIDE_CONTENT: Guide[] = [
             code('pack_icon.png'),
             ' on Bedrock.',
           ),
+          figure(SHOTS.packSettings),
+          figure(SHOTS.export),
         ],
       },
       {
@@ -333,7 +342,7 @@ export const GUIDE_CONTENT: Guide[] = [
       {
         id: 'edit',
         q: 'Can I change an existing texture pack?',
-        a: [p('Yes. In the Texture Pack Maker choose ', strong('Open a pack'), ' and pick a ', code('.zip'), ' or ', code('.mcpack'), '. You can keep editing it and export again.')],
+        a: [p('Yes. In the Texture Pack Maker choose ', strong('Open a pack'), ' and pick a ', code('.zip'), ' or ', code('.mcpack'), '. You can keep editing it and export again.'), figure(SHOTS.openPack)],
       },
       {
         id: 'code',
@@ -373,6 +382,7 @@ export const GUIDE_CONTENT: Guide[] = [
   // ------------------------------------------------------------ troubleshooting
   {
     meta: meta('texture-pack-not-working'),
+    image: SHOTS.packSettings,
     intro: [
       p(
         'Most texture pack problems come from three things: the pack’s description file (',
@@ -433,6 +443,7 @@ export const GUIDE_CONTENT: Guide[] = [
             link('/guides/minecraft-pack-format-versions', 'Every version’s pack format'),
             '.',
           ),
+          figure(SHOTS.packSettings),
         ],
       },
       {
@@ -817,6 +828,7 @@ export const GUIDE_CONTENT: Guide[] = [
   // ------------------------------------------------------------ skin
   {
     meta: meta('make-a-skin'),
+    image: SHOTS.skin2d,
     intro: [
       p(
         'A Minecraft skin is a 64×64 pixel PNG image that wraps around the player model. You can design one in your browser: paint on the template, check it on a 3D model, then upload it in the Minecraft Launcher (Java) or import it as a skin pack (Bedrock).',
@@ -828,7 +840,7 @@ export const GUIDE_CONTENT: Guide[] = [
     },
     howto: { name: 'How to make a custom Minecraft skin online', steps: SKIN_STEPS },
     sections: [
-      { id: 'steps', title: 'Step by step', body: [steps(SKIN_STEPS)] },
+      { id: 'steps', title: 'Step by step', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d), figure(SHOTS.skin3d)] },
       {
         id: 'template',
         title: 'How the skin template works',
@@ -882,6 +894,7 @@ export const GUIDE_CONTENT: Guide[] = [
             'Open the .mcpack (double-click on Windows, Open with Minecraft on Android, Share › Minecraft on iPhone and iPad).',
             ['In Minecraft go to ', uiPath('Dressing Room', 'Classic Skins'), ', find your pack, choose the skin and press ', strong('Equip'), '.'],
           ]),
+          figure(SHOTS.skinPack),
           callout('warn', 'Things to know', 'Consoles cannot import skin files. Players who turn on Only Allow Trusted Skins see custom skins as default ones. Custom models are not allowed in imported skin packs, only classic and slim.'),
         ],
       },
@@ -908,6 +921,7 @@ export const GUIDE_CONTENT: Guide[] = [
   // ------------------------------------------------------------ shaders without mods
   {
     meta: meta('make-shaders-without-mods'),
+    image: SHOTS.shaderVanilla,
     intro: [
       p(
         strong('Yes, within limits.'),
@@ -936,6 +950,7 @@ export const GUIDE_CONTENT: Guide[] = [
           callout('warn', 'One exact version', 'Mojang changes these shader files often, so a vanilla shader pack only works on the version it was made for. A broken shader can make Minecraft turn off all your resource packs, which is why every shader the Shader Maker writes is compile-checked first.'),
           el('h3', { class: 'guide-sub' }, 'Make one'),
           steps(VANILLA_SHADER_STEPS),
+          figure(SHOTS.shaderVanilla),
         ],
       },
       {
@@ -967,6 +982,7 @@ export const GUIDE_CONTENT: Guide[] = [
             ['Open ', uiPath('Options…', 'Video Settings…', 'Shader Packs…'), ', click ', strong('Open Shader Pack Folder'), ' and drop a shader pack zip into it.'],
             'Pick the pack in the list and click Apply. Lighter packs suit laptops; heavier ones need a strong graphics card.',
           ]),
+          figure(SHOTS.shaderIris),
           p(
             'On Forge or NeoForge, look for a port of Iris for that loader. You can also build your own Iris / OptiFine shader pack, with presets and a live preview, in the ',
             link('/shaders', 'Shader Maker'),
@@ -987,6 +1003,7 @@ export const GUIDE_CONTENT: Guide[] = [
   // ------------------------------------------------------------ vibrant visuals
   {
     meta: meta('bedrock-vibrant-visuals-settings'),
+    image: SHOTS.vibrantVisuals,
     intro: [
       p(
         strong('Vibrant Visuals'),
@@ -1038,6 +1055,7 @@ export const GUIDE_CONTENT: Guide[] = [
             'Vibrant Visuals greyed out?',
             'Minecraft only allows it when every active resource pack supports it. Classic texture packs switch it off, so deactivate them (or use a pack made for Vibrant Visuals). The option also needs a supported device.',
           ),
+          figure(SHOTS.vibrantVisuals),
         ],
       },
     ],

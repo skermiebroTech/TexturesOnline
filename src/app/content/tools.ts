@@ -4,7 +4,8 @@
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../markup';
-import { breadcrumbs, code, link, steps, strong, faqList, type FaqItem } from './blocks';
+import { breadcrumbs, code, figure, link, steps, strong, faqList, type FaqItem } from './blocks';
+import { SHOTS } from './shots';
 import { guideCards } from './guide-cards';
 import { TOOL_META } from '../seo/meta';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../editions/java/packformats';
@@ -168,6 +169,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         ],
       },
     ],
+    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
     guides: ['make-a-texture-pack', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: 'Start a texture pack',
   },
@@ -259,6 +261,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         a: [el('p', null, 'On Bedrock, players who turn on ', strong('Only Allow Trusted Skins'), ' see custom skins as default ones. It is a setting on their side.')],
       },
     ],
+    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d))],
     guides: ['make-a-skin', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: 'Start a skin',
   },
@@ -300,6 +303,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       ['In Minecraft go to ', strong('Dressing Room'), ' › ', strong('Classic Skins'), ', find your pack, pick a skin and press ', strong('Equip'), '.'],
     ],
     extra: (sub) => [
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skinPack), figure(SHOTS.skin3d)),
       el(
         'div',
         { class: 'tool-intro-card' },
@@ -434,6 +438,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         a: [el('p', null, 'Java 26.2 and newer can use an experimental Vulkan renderer, but Iris needs OpenGL. Set ', strong('Graphics API'), ' in Minecraft’s options to ', strong('Default'), ' or ', strong('Prefer OpenGL'), '.')],
       },
     ],
+    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.shaderIris), figure(SHOTS.vibrantVisuals))],
     guides: ['make-shaders-without-mods', 'bedrock-vibrant-visuals-settings', 'install-resource-packs'],
     cta: 'Start a shader',
   },

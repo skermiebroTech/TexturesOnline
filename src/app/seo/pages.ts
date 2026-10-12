@@ -58,7 +58,7 @@ export interface PrerenderPage {
 export const SCREENSHOTS: Record<IntroTool | 'home', Screenshot> = {
   home: DEFAULT_SCREENSHOT,
   textures: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker texture tool: one-click styles and a new pack for Java 26.3 or Bedrock' },
-  skinpack: { path: 'screenshots/skins.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker skin pack maker: paint skins, then bundle them into one Bedrock .mcpack' },
+  skinpack: { path: 'screenshots/guides/skin-pack-export.jpg', width: 1078, height: 674, caption: 'Texture Pack Maker skin pack maker: three skins, classic and slim, bundled into one Bedrock .mcpack' },
   skins: { path: 'screenshots/skins.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker skin editor: starter skins, classic or slim arms' },
   shaders: { path: 'screenshots/shaders.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker shader maker: Iris / OptiFine, vanilla Java or Bedrock Vibrant Visuals' },
 };
@@ -197,6 +197,8 @@ function guidesIndexEntry(): PrerenderPage {
 function guideEntry(slug: string): PrerenderPage {
   const g = GUIDE_CONTENT.find((x) => x.meta.slug === slug)!;
   const meta = g.meta;
+  // The guide's main screenshot, when it has one, for link previews and the article image
+  const shot: Screenshot = g.image ? { path: g.image.src.replace(/^\//, ''), width: g.image.width, height: g.image.height, caption: g.image.alt } : SCREENSHOTS.home;
   return {
     meta,
     tool: 'help',
@@ -208,14 +210,14 @@ function guideEntry(slug: string): PrerenderPage {
     body: (year) => [guidePage(g), footer(year)],
     content: () => [guidePage(g)],
     preconnect: false,
-    og: { type: 'article', image: SCREENSHOTS.home },
+    og: { type: 'article', image: shot },
     jsonld: () =>
       graph([
         organization(),
         website(),
         webPage(meta, { breadcrumb: true }),
         breadcrumbList(meta, crumbsFor({ label: GUIDES_META.label, to: GUIDES_META.path }, { label: meta.label })),
-        techArticle(meta),
+        techArticle(meta, shot),
         ...(g.howto ? [howTo(meta, 'steps', g.howto.name, g.howto.steps)] : []),
         ...(g.faq?.length ? [faqPage(meta, g.faq)] : []),
       ]),

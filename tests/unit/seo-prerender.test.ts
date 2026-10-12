@@ -2,6 +2,8 @@
 // matches visible content, correct relative asset and link paths; plus sitemap, robots, llms files.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { buildSite, iconNamesUsed, pageFileName, relativeHref, rootPrefix, type SiteFile } from '../../src/app/seo/build';
 import { prerenderPages } from '../../src/app/seo/pages';
 import { GUIDES, PUBLIC_PAGES } from '../../src/app/seo/meta';
@@ -192,6 +194,9 @@ test('page kinds carry the expected structured data', () => {
   assert.ok(types('/guides/install-resource-packs').includes('HowTo'));
 });
 
+/** Files copied from public/ (screenshots and other images) */
+const inPublic = (rel: string) => existsSync(fileURLToPath(new URL(`../../public/${rel}`, import.meta.url)));
+
 test('asset URLs and internal links are correct for the page depth', () => {
   const known = new Set(files.map((f) => f.fileName));
   const publicFiles = new Set(['favicon.svg', 'site.webmanifest', 'fonts/texel-regular.woff2', 'fonts/OFL.txt', 'og-image.png']);
@@ -210,7 +215,7 @@ test('asset URLs and internal links are correct for the page depth', () => {
       const rel = u.pathname.slice('/base/'.length);
       if (rel.startsWith('assets/')) continue;
       const target = rel === '' || rel.endsWith('/') ? `${rel}index.html` : rel;
-      assert.ok(known.has(target) || publicFiles.has(target), `${file}: ${ref} -> ${target} exists`);
+      assert.ok(known.has(target) || publicFiles.has(target) || inPublic(target), `${file}: ${ref} -> ${target} exists`);
     }
     // shared chunk from the template is not preloaded twice
     assert.equal((html.match(/assets\/shared-abc\.js/g) ?? []).length, 1, `${file} dedupes preloads`);

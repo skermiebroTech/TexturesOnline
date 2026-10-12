@@ -124,7 +124,7 @@ export function howTo(meta: PageMeta, id: string, name: string, steps: Child[]):
   };
 }
 
-export function techArticle(meta: PageMeta & { h1: string }): JsonLd {
+export function techArticle(meta: PageMeta & { h1: string }, shot: Screenshot = DEFAULT_SCREENSHOT): JsonLd {
   const url = absoluteUrl(meta.path);
   return {
     '@type': 'TechArticle',
@@ -137,7 +137,7 @@ export function techArticle(meta: PageMeta & { h1: string }): JsonLd {
     dateModified: CONTENT_UPDATED,
     author: { '@id': ORG_ID },
     publisher: { '@id': ORG_ID },
-    image: image(DEFAULT_SCREENSHOT),
+    image: image(shot),
     inLanguage: 'en',
     isPartOf: { '@id': WEBSITE_ID },
   };
