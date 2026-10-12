@@ -56,6 +56,25 @@ export const TOOLS: ToolInfo[] = [
 
 export const HOME_FAQ: FaqItem[] = [
   {
+    id: 'how',
+    q: 'How do I make a Minecraft texture pack?',
+    a: [
+      el(
+        'p',
+        null,
+        'Open the ',
+        link('/textures', 'texture pack editor'),
+        ', choose Java or Bedrock and your game version, then repaint textures, upload your own images or apply a one-click effect. Export a ',
+        el('code', null, '.zip'),
+        ' (Java) or ',
+        el('code', null, '.mcpack'),
+        ' (Bedrock) and turn it on in game. ',
+        link('/guides/make-a-texture-pack', 'Step-by-step guide'),
+        '.',
+      ),
+    ],
+  },
+  {
     id: 'what',
     q: `What is ${SITE_NAME}?`,
     a: [
@@ -97,6 +116,34 @@ export const HOME_FAQ: FaqItem[] = [
         el('code', null, 'pack.mcmeta'),
         ' rules of the version you choose (26.3 uses resource pack format 97.1). ',
         link('/guides/minecraft-pack-format-versions', 'All pack formats'),
+        '.',
+      ),
+    ],
+  },
+  {
+    id: 'resource',
+    q: 'Is a texture pack the same as a resource pack?',
+    a: [
+      el(
+        'p',
+        null,
+        'Almost. Java Edition calls them resource packs: besides textures they can change models, sounds, fonts and shaders. Bedrock calls them resource packs too and uses ',
+        el('code', null, '.mcpack'),
+        ' files. This maker builds both.',
+      ),
+    ],
+  },
+  {
+    id: 'skinpack',
+    q: 'Can I make a custom skin pack?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes. Paint your skins (classic or slim arms) in the ',
+        link('/skins', 'skin editor'),
+        ' and export them together as one Bedrock skin pack, or download a PNG for Java. ',
+        link('/skin-pack-maker', 'Skin pack maker'),
         '.',
       ),
     ],
@@ -160,6 +207,40 @@ const VALUES: { icon: IconName; title: string; text: string }[] = [
   { icon: 'check-double', title: 'The right format, always', text: 'Pack files are written for the exact version you pick, so Minecraft loads them without complaints.' },
 ];
 
+/** What the texture pack maker does, in the words people search with. */
+const FEATURES: { icon: IconName; title: string; text: Child[] }[] = [
+  {
+    icon: 'box',
+    title: 'Texture pack editor with 3D models',
+    text: ['Paint every block, item and mob of the version you play, on its real 3D model: furnaces, chests, stairs and every side of a block.'],
+  },
+  {
+    icon: 'wand',
+    title: 'One-click texture pack generator',
+    text: ['Restyle the whole game at once with effects such as Dark Mode, Pastel, Retro 8-bit, Autumn or Smooth HD, then fine-tune by hand.'],
+  },
+  {
+    icon: 'upload',
+    title: 'Open and edit existing packs',
+    text: ['Load any Java ', el('code', null, '.zip'), ' or Bedrock ', el('code', null, '.mcpack'), ', change what you like and export it again, or upload your own PNGs.'],
+  },
+  {
+    icon: 'file-text',
+    title: 'Java and Bedrock resource packs',
+    text: ['A resource pack builder that writes the exact ', el('code', null, 'pack.mcmeta'), ' for Java 26.3 back to 1.6.1, or a Bedrock ', el('code', null, 'manifest.json'), '.'],
+  },
+  {
+    icon: 'human',
+    title: 'Skin editor and skin pack maker',
+    text: ['Design skins in 2D or 3D with classic or slim arms, and bundle them with the ', link('/skin-pack-maker', 'skin pack maker'), ' into one Bedrock .mcpack.'],
+  },
+  {
+    icon: 'sparkles',
+    title: 'Shader maker, with or without mods',
+    text: ['Build Iris and OptiFine shader packs, vanilla Java shaders that need no mods, or Bedrock Vibrant Visuals packs.'],
+  },
+];
+
 const sectionHead = (eyebrowIcon: IconName, eyebrow: string, id: string, title: string, lead?: Child): ElNode =>
   el(
     'div',
@@ -178,8 +259,12 @@ export function homePage(): ElNode[] {
       'div',
       { class: 'hero-copy' },
       el('span', { class: 'hero-chip' }, ic('sparkle'), 'Free · No sign-up', el('span', { class: 'hide-sm' }, ' · Works offline')),
-      el('h1', { class: 'hero-title' }, 'Craft your own ', el('span', { class: 'hero-accent' }, 'Minecraft'), ' look'),
-      el('p', { class: 'hero-lead' }, `${SITE_NAME} lets you make texture packs, skins and shaders right in your browser — for Java and Bedrock, ready to drop into the game.`),
+      el('h1', { class: 'hero-title' }, el('span', { class: 'hero-accent' }, 'Minecraft'), ' Texture Pack Maker'),
+      el(
+        'p',
+        { class: 'hero-lead' },
+        'Create your own texture packs, skins and shaders right in your browser — a free resource pack creator for Java and Bedrock, with downloads ready to drop into the game.',
+      ),
       el(
         'div',
         { class: 'hero-cta', 'data-md': 'skip' },
@@ -202,6 +287,23 @@ export function homePage(): ElNode[] {
     { class: 'section tools container', 'aria-labelledby': 'tools-title' },
     sectionHead('tools', 'Three tools, one place', 'tools-title', 'What do you want to make?', 'Everything you need to give Minecraft your own style. No installs, no accounts — just open a tool and start.'),
     el('div', { class: 'tool-grid' }, TOOLS.map(toolCard)),
+  );
+
+  const features = el(
+    'section',
+    { class: 'section home-features container', 'aria-labelledby': 'features-title' },
+    sectionHead(
+      'check-double',
+      'Free texture pack creator',
+      'features-title',
+      'Everything a texture pack maker needs',
+      'From a single repainted sword to a full HD resource pack, made and exported without leaving the browser.',
+    ),
+    el(
+      'div',
+      { class: 'values feature-grid' },
+      FEATURES.map((v) => el('div', { class: 'value' }, el('span', { class: 'value-icon' }, ic(v.icon)), el('div', null, el('h3', null, v.title), el('p', { class: 'muted' }, v.text)))),
+    ),
   );
 
   const how = el(
@@ -231,7 +333,7 @@ export function homePage(): ElNode[] {
     'section',
     { class: 'section home-guides container', 'aria-labelledby': 'guides-title' },
     sectionHead('book-open', 'Guides', 'guides-title', 'Learn the ropes', 'Short, fact-checked guides for making and installing packs, skins and shaders.'),
-    guideCards(['make-a-texture-pack', 'install-resource-packs', 'minecraft-pack-format-versions', 'make-a-skin', 'make-shaders-without-mods', 'java-vs-bedrock-packs']),
+    guideCards(['make-a-texture-pack', 'install-resource-packs', 'texture-pack-not-working', 'make-a-skin', 'make-shaders-without-mods', 'java-vs-bedrock-packs']),
     el('p', { class: 'home-guides-more' }, link('/guides', 'All guides', ic('arrow-right'))),
   );
 
@@ -253,5 +355,5 @@ export function homePage(): ElNode[] {
     ),
   );
 
-  return [hero, tools, how, guides, faq, cta];
+  return [hero, tools, features, how, guides, faq, cta];
 }

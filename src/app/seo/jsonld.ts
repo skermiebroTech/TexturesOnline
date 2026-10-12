@@ -40,7 +40,7 @@ export function website(): JsonLd {
     '@id': WEBSITE_ID,
     url: SITE_URL,
     name: SITE_NAME,
-    alternateName: [SITE_ALT_NAME],
+    alternateName: [SITE_ALT_NAME, `Minecraft ${SITE_NAME}`],
     description: SITE_SUMMARY,
     inLanguage: 'en',
     publisher: { '@id': ORG_ID },

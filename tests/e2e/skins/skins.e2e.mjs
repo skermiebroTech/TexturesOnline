@@ -262,6 +262,89 @@ const RED = [230, 30, 40, 255];
 }
 
 // =============================================================================================
+// 1b. Skin pack maker: bundle two saved skins into one .mcpack
+{
+  const { page, context, errors } = await newPage();
+  const rename = async (name) => {
+    await page.fill('.sk-name', name);
+    await page.keyboard.press('Enter');
+    await api(page, (e) => e.flush());
+  };
+  await page.goto(`${base}#/skins`);
+  await page.waitForSelector('.sk-starter-template');
+  await page.click('.sk-starter-template');
+  await waitEditor(page);
+  check('first skin starts classic', (await api(page, (e) => e.model())) === 'classic');
+  await rename('Classic Pal');
+  await page.click('.sk-bar [aria-label="All skins"]');
+  await page.waitForSelector('.sk-model-pick .segmented-item[data-value="slim"]');
+  await page.click('.sk-model-pick .segmented-item[data-value="slim"]');
+  await page.click('.sk-starter-robot');
+  await waitEditor(page);
+  check('second skin starts slim', (await api(page, (e) => e.model())) === 'slim');
+  await rename('Slim Bot');
+
+  // The pack modal lists the current skin first plus the other saved skin.
+  await page.click('.sk-export-btn');
+  await page.click('.sk-export-item[data-kind="bedrock-pack"]');
+  await page.waitForSelector('.sk-pack-list .sk-pack-skin:not(.is-current)');
+  const rows = await page.$$eval('.sk-pack-skin', (els) => els.map((e) => ({ text: e.textContent, current: e.classList.contains('is-current'), checked: e.querySelector('input').checked })));
+  check('pack modal shows this skin first, always included', rows[0]?.current && rows[0].checked && /Slim Bot/.test(rows[0].text) && /Slim arms/.test(rows[0].text), JSON.stringify(rows));
+  check('pack modal lists the other saved skin, unticked', rows.length === 2 && /Classic Pal/.test(rows[1].text) && /Classic arms/.test(rows[1].text) && !rows[1].checked, JSON.stringify(rows));
+  check('pack name defaults to the skin name', (await page.inputValue('.sk-pack .input')) === 'Slim Bot');
+  await page.click('.sk-pack-skin:not(.is-current)');
+  check('ticking a skin updates the count', (await page.textContent('.sk-pack-count')) === '2 skins', await page.textContent('.sk-pack-count'));
+  await page.fill('.sk-pack .input', 'Duo Pack');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(shots, 'e2e-skin-pack.png') });
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.click('.modal-footer >> text=Download pack')]);
+  const readPack = async (d) => unzipSync(new Uint8Array(readFileSync(await d.path())));
+  const files = await readPack(dl);
+  const skins = JSON.parse(strFromU8(files['skins.json']));
+  const manifest = JSON.parse(strFromU8(files['manifest.json']));
+  const lang = strFromU8(files['texts/en_US.lang']);
+  check('pack file is named after the pack', dl.suggestedFilename() === 'Duo Pack.mcpack', dl.suggestedFilename());
+  check('skins.json has 2 skins with their own geometry', eq(skins.skins?.map((x) => x.geometry), ['geometry.humanoid.customSlim', 'geometry.humanoid.custom']), JSON.stringify(skins));
+  check('both skin PNGs are in the pack', skins.skins.every((x) => files[x.texture] && decodePng(files[x.texture]).width === 64));
+  check('lang names the pack and both skins', lang.includes('=Duo Pack\n') && lang.includes('=Slim Bot\n') && lang.includes('=Classic Pal\n'), lang);
+  check('manifest header uses the pack name', manifest.header?.name === 'Duo Pack', JSON.stringify(manifest.header));
+  await page.waitForSelector('.sk-export-meta');
+  const meta = await page.textContent('.sk-export-meta');
+  check('ready modal counts the skins', /Pack v1\.0\.0 · 2 skins/.test(meta || ''), meta);
+  check('ready modal is titled for a pack', /skin pack is ready/.test((await page.textContent('.modal-title')) || ''));
+  await closeModal(page);
+
+  // The choice is saved with the project: after a reload the pack keeps both skins.
+  await api(page, (e) => e.flush());
+  await page.reload();
+  await waitEditor(page);
+  await page.click('.sk-export-btn');
+  await page.click('.sk-export-item[data-kind="bedrock-pack"]');
+  await page.waitForSelector('.sk-pack-list .sk-pack-skin:not(.is-current)');
+  check('pack modal remembers the chosen skins', await page.isChecked('.sk-pack-skin:not(.is-current) input'));
+  check('pack modal remembers the pack name', (await page.inputValue('.sk-pack .input')) === 'Duo Pack');
+  const [dl2] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.click('.modal-footer >> text=Download pack')]);
+  const files2 = await readPack(dl2);
+  const manifest2 = JSON.parse(strFromU8(files2['manifest.json']));
+  check('re-export keeps both skins', JSON.parse(strFromU8(files2['skins.json'])).skins.length === 2);
+  check('re-export keeps the uuids and bumps the version', manifest2.header.uuid === manifest.header.uuid && eq(manifest2.header.version, [1, 0, 1]), JSON.stringify(manifest2.header));
+  await closeModal(page);
+
+  // Cancel downloads nothing.
+  let downloads = 0;
+  page.on('download', () => downloads++);
+  await page.click('.sk-export-btn');
+  await page.click('.sk-export-item[data-kind="bedrock-pack"]');
+  await page.waitForSelector('.sk-pack-list');
+  await page.click('.modal-footer >> text=Cancel');
+  await page.waitForTimeout(500);
+  check('cancelling the pack modal downloads nothing', downloads === 0 && !(await page.$('dialog[open]')));
+
+  check('no page errors (skin pack)', errors.length === 0, errors.join(' | '));
+  await context.close();
+}
+
+// =============================================================================================
 // 2. Upload a legacy 64x32 PNG
 {
   const { page, context, errors } = await newPage();

@@ -75,13 +75,11 @@ export function formatGroups(): { format: string; versions: string[] }[] {
 // ---------------------------------------------------------------- guides
 
 const MAKE_PACK_STEPS: Child[] = [
-  ['Open the ', link('/textures', 'Texture Pack Maker'), ' and fill in the ', strong('New texture pack'), ' card: a pack name, the edition (Java or Bedrock) and the game version. Java 26.3 is selected by default.'],
-  ['Choose a resolution. 16× is the classic look, where every block face is 16×16 pixels; higher resolutions give you room for finer detail. Click ', strong('Create pack'), '.'],
-  'Wait a moment while your browser downloads that version’s textures straight from Mojang. They are kept on your device, so the next pack starts instantly.',
-  'Find a texture with the search box or the categories and paint it in the pixel editor, or upload your own PNG (it is resized to fit the texture).',
-  'Optional: add whole-pack effects such as Dark Mode, Pastel or Retro 8-bit. They stack without changing your own edits and are applied when you export.',
-  ['Open the ', strong('Pack'), ' tab to set the description and icon. On Java you can also choose a compatibility range so one pack works on several versions.'],
-  ['Export. Java gives you a ', code('.zip'), ' and Bedrock an ', code('.mcpack'), '. Then ', link('/guides/install-resource-packs', 'install it'), '.'],
+  ['Open the ', link('/textures', 'Texture Pack Maker'), ', name your pack and choose Java or Bedrock, the game version you play and a resolution, then click ', strong('Create pack'), '.'],
+  'Find a texture with the search box or the categories and repaint it in the pixel editor, or upload your own PNG.',
+  'Optional: restyle the whole pack with one-click effects such as Dark Mode, Pastel or Retro 8-bit.',
+  ['Open the ', strong('Pack'), ' tab to set the description and icon, then export a ', code('.zip'), ' (Java) or an ', code('.mcpack'), ' (Bedrock).'],
+  ['Install the pack in Minecraft and test it. ', link('/guides/install-resource-packs', 'How to install it'), '.'],
 ];
 
 const INSTALL_JAVA_STEPS: Child[] = [
@@ -94,7 +92,7 @@ const INSTALL_JAVA_STEPS: Child[] = [
 const SKIN_STEPS: Child[] = [
   ['Open the ', link('/skins', 'Skin Maker'), ' and pick a starting point: a blank skin, a colour-coded template, a starter character, a PNG you already have, a Java player’s skin by username, or one of the default skins.'],
   'Choose the arm style: classic (4 pixels wide) or slim (3 pixels wide).',
-  'Paint on the 64×64 template while the 3D preview updates. Use mirroring to paint both arms or legs at once, and lock parts you have finished.',
+  'Paint on the 64×64 template or switch to 3D and paint right on the model, hiding body parts to reach the sides underneath. Use mirroring to paint both arms or legs at once, and lock parts you have finished.',
   'Add depth with the outer layer: hats, hair, jackets, sleeves and trouser legs sit slightly above the body.',
   ['Export a ', code('.png'), ' for Java (add a legacy 64×32 copy for 1.7.10 and older) or a skin pack ', code('.mcpack'), ' for Bedrock.'],
   'Upload it: in the Minecraft Launcher (Java) or by opening the .mcpack and choosing it in the Dressing Room (Bedrock).',
@@ -144,9 +142,70 @@ export const GUIDE_CONTENT: Guide[] = [
     howto: { name: 'How to make a Minecraft texture pack with Texture Pack Maker', steps: MAKE_PACK_STEPS },
     sections: [
       {
-        id: 'steps',
-        title: 'Step by step',
-        body: [steps(MAKE_PACK_STEPS)],
+        id: 'step-1',
+        title: 'Step 1 — Create the pack and pick your version',
+        body: [
+          p(MAKE_PACK_STEPS[0]),
+          ul([
+            [strong('Edition: '), 'Java Edition (PC, Mac and Linux from the Minecraft Launcher) or Bedrock Edition (Windows, phones, tablets and consoles). The two need different files, so make one project per edition. ', link('/guides/java-vs-bedrock-packs', 'Which one do I have?')],
+            [strong('Version: '), 'Java ', LATEST, ' is selected by default; every release back to 1.6.1 works, so you can make a pack for 1.21.11, 26.2 or 1.8.9 just as easily. The pack gets the right ', code('pack.mcmeta'), ' for that version.'],
+            [strong('Resolution: '), '16× is the vanilla look (16×16 pixels per block face). 32× and 64× leave room for more detail; 128× and up are for realistic packs.'],
+          ]),
+          p('Your browser then downloads that version’s original textures straight from Mojang and keeps them on your device, so the next pack starts instantly.'),
+        ],
+      },
+      {
+        id: 'step-2',
+        title: 'Step 2 — Find and repaint textures',
+        body: [
+          p(MAKE_PACK_STEPS[1]),
+          p(
+            'Every texture is shown on its real 3D model: a furnace shows its front, sides and top, stairs and slabs show their shape, and mobs show their body parts. Paint with the pencil, fill, line, shapes, noise and colour picker, mirror your strokes, and undo anything. The tiled preview shows how a block repeats across the ground, so seams do not show.',
+          ),
+          ul([
+            'Start with blocks you see all the time: grass, dirt, stone, logs and planks.',
+            'Grass, leaves, vines and water are stored in grey and coloured by the game per biome. Keep them light grey.',
+            'Animated textures, such as water, lava and sea lanterns, can be edited frame by frame.',
+          ]),
+        ],
+      },
+      {
+        id: 'step-3',
+        title: 'Step 3 — Restyle the whole pack in one click (optional)',
+        body: [
+          p(MAKE_PACK_STEPS[2]),
+          p('Effects stack on top of each other and on top of your own painting without changing it, and are applied to every texture when you export. Combine Autumn with Smooth HD, or Dark Mode with a Neon Outline, then keep painting by hand.'),
+        ],
+      },
+      {
+        id: 'step-4',
+        title: 'Step 4 — Add an icon and description, then export',
+        body: [
+          p(MAKE_PACK_STEPS[3]),
+          p(
+            'On Java you can also choose a compatibility range, so one pack loads on several versions without the “made for an older version” warning. The export writes every file the game needs: ',
+            code('pack.mcmeta'),
+            ' and ',
+            code('pack.png'),
+            ' on Java, or ',
+            code('manifest.json'),
+            ' with fresh unique IDs and ',
+            code('pack_icon.png'),
+            ' on Bedrock.',
+          ),
+        ],
+      },
+      {
+        id: 'step-5',
+        title: 'Step 5 — Install and test it',
+        body: [
+          p(MAKE_PACK_STEPS[4]),
+          ul([
+            ['Java: open ', uiPath('Options…', 'Resource Packs…', 'Open Pack Folder'), ', drop the ', code('.zip'), ' in (keep it zipped) and move the pack to ', strong('Selected'), '. Press F3 + T in game to reload after changes.'],
+            ['Bedrock: open the ', code('.mcpack'), ', then activate it under ', uiPath('Settings', 'Global Resources'), '.'],
+          ]),
+          p('Something looks wrong? ', link('/guides/texture-pack-not-working', 'Texture pack not working: fixes'), '.'),
+        ],
       },
       {
         id: 'inside',
@@ -166,6 +225,33 @@ export const GUIDE_CONTENT: Guide[] = [
             ['Textures under ', code('textures/'), ', for example ', code('textures/blocks/stone.png'), '. Some vanilla textures are ', code('.tga'), ' files; keep the same name and extension as the original.'],
           ]),
           callout('tip', 'File names matter', 'Minecraft only replaces a texture when your file has exactly the same path as the original. On Java, paths must be lowercase (a-z, 0-9, _ - . and /). The Texture Pack Maker handles this for you.'),
+          el('h3', { class: 'guide-sub' }, 'Folder layout side by side'),
+          pre(
+            [
+              'Java: MyPack.zip',
+              '├── pack.mcmeta',
+              '├── pack.png',
+              '└── assets/minecraft/textures/',
+              '    ├── block/stone.png',
+              '    └── item/diamond_sword.png',
+              '',
+              'Bedrock: MyPack.mcpack',
+              '├── manifest.json',
+              '├── pack_icon.png',
+              '└── textures/',
+              '    ├── blocks/stone.png',
+              '    └── items/diamond_sword.png',
+            ].join('\n'),
+          ),
+          table(
+            ['', 'Java pack.mcmeta', 'Bedrock manifest.json'],
+            [
+              ['Required', 'Yes, at the top of the zip', 'Yes, at the top of the .mcpack'],
+              ['Identifies the pack by', 'Its file or folder name', 'Two unique IDs (UUIDs)'],
+              ['Game version', 'Pack format numbers (26.3 uses ' + F(LATEST) + ')', [code('min_engine_version'), ', the oldest game version supported']],
+              ['Updates', 'Replace the file', 'Raise the version number, keep the IDs'],
+            ],
+          ),
         ],
       },
       {
@@ -199,6 +285,27 @@ export const GUIDE_CONTENT: Guide[] = [
         ],
       },
       {
+        id: 'by-hand',
+        title: 'Making a texture pack by hand',
+        body: [
+          p('You can also build a pack yourself with any image editor. It takes longer, but it shows how a pack works:'),
+          el('h3', { class: 'guide-sub' }, 'Java Edition'),
+          steps([
+            ['Find the original textures: copy ', code('versions/<version>/<version>.jar'), ' from your ', code('.minecraft'), ' folder, rename the copy to ', code('.zip'), ' and open it. The images are in ', code('assets/minecraft/textures'), '.'],
+            ['Make a new folder for your pack with a ', code('pack.mcmeta'), ' (see below) and the same ', code('assets/minecraft/textures/…'), ' folders as the originals.'],
+            'Copy in only the PNGs you want to change and edit them, keeping their names and sizes in proportion (16×16, 32×32 and so on).',
+            ['Zip the ', strong('contents'), ' of the folder, not the folder itself, so ', code('pack.mcmeta'), ' sits at the top of the zip. Drop the zip into ', code('resourcepacks'), '.'],
+          ]),
+          el('h3', { class: 'guide-sub' }, 'Bedrock Edition'),
+          steps([
+            ['Get the original textures from Mojang’s ', ext('https://github.com/Mojang/bedrock-samples', 'bedrock-samples'), ' repository (', code('resource_pack/textures'), ').'],
+            ['Make a folder with a ', code('manifest.json'), ' holding two new unique IDs (UUIDs) and your edited images under ', code('textures/'), '.'],
+            ['Zip the folder’s contents and rename the file from ', code('.zip'), ' to ', code('.mcpack'), ', then open it to import.'],
+          ]),
+          callout('tip', 'Skip the busywork', 'The Texture Pack Maker does the copying, folder names, pack.mcmeta, UUIDs and zipping for you, and shows each texture on its 3D model while you paint.'),
+        ],
+      },
+      {
         id: 'tips',
         title: 'Tips for a good pack',
         body: [
@@ -228,8 +335,225 @@ export const GUIDE_CONTENT: Guide[] = [
         q: 'Can I change an existing texture pack?',
         a: [p('Yes. In the Texture Pack Maker choose ', strong('Open a pack'), ' and pick a ', code('.zip'), ' or ', code('.mcpack'), '. You can keep editing it and export again.')],
       },
+      {
+        id: 'code',
+        q: 'Do I need to know how to code to make a texture pack?',
+        a: [p('No. A texture pack is images plus one small description file, and the Texture Pack Maker writes that file for you. You only need to paint.')],
+      },
+      {
+        id: 'older',
+        q: 'How do I make a texture pack for an older version, like 1.21.11 or 1.8.9?',
+        a: [p('Pick that version when you create the pack. The maker loads that version’s own textures and folder names and writes its pack format. ', link('/guides/minecraft-pack-format-versions', 'Pack formats of every version'), '.')],
+      },
+      {
+        id: 'originals',
+        q: 'Where do I find the original Minecraft textures?',
+        a: [p('Inside the game’s ', code('.jar'), ' file for Java (', code('assets/minecraft/textures'), ') and in Mojang’s bedrock-samples repository for Bedrock. The Texture Pack Maker loads them for you from Mojang when you pick a version.')],
+      },
+      {
+        id: 'mobile',
+        q: 'Can I make a texture pack on my phone?',
+        a: [p('Yes. The Texture Pack Maker works in the browser on Android, iPhone and iPad as well as on computers and Chromebooks. On Bedrock, open the exported ', code('.mcpack'), ' and Minecraft imports it.')],
+      },
+      {
+        id: 'time',
+        q: 'How long does it take to make a texture pack?',
+        a: [p('A few minutes for a small pack that changes a handful of blocks, or for a whole-pack effect such as Dark Mode. A complete hand-painted pack with hundreds of textures can take weeks; you can export and test it at any point along the way.')],
+      },
+      {
+        id: 'hd',
+        q: 'What resolution should my texture pack be?',
+        a: [p('16× matches the vanilla game and is the quickest to paint. 32× and 64× leave room for more detail; 128× and up are for realistic packs and need a stronger computer. Keep one resolution across the whole pack.')],
+      },
     ],
-    related: ['install-resource-packs', 'minecraft-pack-format-versions', 'java-vs-bedrock-packs'],
+    related: ['install-resource-packs', 'texture-pack-not-working', 'minecraft-pack-format-versions', 'java-vs-bedrock-packs'],
+    cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'image' },
+  },
+
+  // ------------------------------------------------------------ troubleshooting
+  {
+    meta: meta('texture-pack-not-working'),
+    intro: [
+      p(
+        'Most texture pack problems come from three things: the pack’s description file (',
+        code('pack.mcmeta'),
+        ' on Java, ',
+        code('manifest.json'),
+        ' on Bedrock) is missing or in the wrong place, the pack was made for a different game version, or a texture is not at exactly the path Minecraft looks for. Find what you see below and apply the fix.',
+      ),
+    ],
+    quick: {
+      title: 'Check these first',
+      items: [
+        ['Java: the zip opens straight onto ', code('pack.mcmeta'), ' and ', code('assets'), ', not onto a folder.'],
+        'The pack was made for the version you play (or its compatibility range includes it).',
+        'The pack is in the Selected (Java) or active (Bedrock) list, above packs that change the same textures.',
+        'File names and folders match the originals exactly, in lowercase on Java.',
+      ],
+    },
+    sections: [
+      {
+        id: 'not-listed',
+        title: 'The pack is not in the list',
+        body: [
+          p('Java only lists a pack when it finds a valid ', code('pack.mcmeta'), ' at the top level of the zip or folder.'),
+          ul([
+            [strong('Nested folder: '), 'zipping the pack folder itself puts everything one level too deep (', code('MyPack.zip/MyPack/pack.mcmeta'), '). Zip the contents of the folder instead.'],
+            [strong('Broken pack.mcmeta: '), 'a missing comma or quote makes it invalid JSON. On Java 26.3 a pack with no description is not listed either.'],
+            [strong('Wrong folder: '), 'the zip must be in ', code('resourcepacks'), ', not ', code('shaderpacks'), ' or ', code('mods'), '. Use ', uiPath('Options…', 'Resource Packs…', 'Open Pack Folder'), ' to open the right one.'],
+            [strong('Still downloading or blocked: '), 'browsers sometimes save a partly downloaded file as ', code('.crdownload'), ' or ', code('.part'), '. Download the pack again.'],
+          ]),
+        ],
+      },
+      {
+        id: 'version',
+        title: '“Made for an older / newer version of Minecraft”',
+        body: [
+          p(
+            'Java compares the pack format in ',
+            code('pack.mcmeta'),
+            ' with its own (',
+            LATEST,
+            ' uses ',
+            strong(F(LATEST)),
+            '). A pack that only changes textures usually still works if you click ',
+            strong('Yes'),
+            ', but missing or renamed textures can look wrong. The clean fix is to export the pack again for your version, or give it a compatibility range that includes it.',
+          ),
+          p(
+            'From 1.21.9, a pack with only a ',
+            code('pack_format'),
+            ' number, or with fields that break the new rules, can show as ',
+            el('em', null, 'broken or incompatible'),
+            '. Newer packs use ',
+            code('min_format'),
+            ' and ',
+            code('max_format'),
+            '. ',
+            link('/guides/minecraft-pack-format-versions', 'Every version’s pack format'),
+            '.',
+          ),
+        ],
+      },
+      {
+        id: 'purple',
+        title: 'Purple and black blocks',
+        body: [
+          p(
+            'The purple-and-black checkerboard is the “missing texture”. A model asks for an image that does not exist at that path: the file was renamed, put in the wrong folder, or the pack uses folder names from another version. For example, versions before 1.13 use ',
+            code('textures/blocks'),
+            ' and ',
+            code('textures/items'),
+            ', while 1.13 and newer use ',
+            code('textures/block'),
+            ' and ',
+            code('textures/item'),
+            '.',
+          ),
+          p('If you added custom models, check every texture path inside them. Packs made with the Texture Pack Maker use the exact paths of the version you picked.'),
+        ],
+      },
+      {
+        id: 'some-textures',
+        title: 'Only some textures changed',
+        body: [
+          ul([
+            [strong('Name or path is off by a letter: '), 'the file must have exactly the same name and folder as the original. Java ignores paths with capital letters or spaces.'],
+            [strong('Another pack wins: '), 'packs higher in the list replace the same textures. Move yours to the top.'],
+            [strong('Wrong file for that block: '), 'some blocks use several images (the furnace front, side and top; the grass block top, side and side overlay). Edit all of them, or use the 3D preview to see which image goes where.'],
+            [strong('Wrong image type on Bedrock: '), 'some vanilla Bedrock textures are ', code('.tga'), ' files. Keep the same name and file type as the original so yours replaces it.'],
+          ]),
+        ],
+      },
+      {
+        id: 'grey',
+        title: 'Grass and leaves look grey',
+        body: [
+          p(
+            'That is normal in the image file. Grass, leaves, vines, water and a few other textures are stored in grey and coloured by the game for each biome, so paint them in light greys and check them in game. Painting them green makes them look much darker or oddly coloured once the game tints them.',
+          ),
+        ],
+      },
+      {
+        id: 'animation',
+        title: 'An animated texture shows as a long strip',
+        body: [
+          p(
+            'Animated textures are a tall image of frames stacked on top of each other, plus a ',
+            code('.png.mcmeta'),
+            ' file with the same name (for example ',
+            code('sea_lantern.png.mcmeta'),
+            '). Without that file Java squashes the whole strip into one block. Bedrock lists animated textures in ',
+            code('textures/flipbook_textures.json'),
+            ' instead. The Texture Pack Maker writes these files when you edit animation frames.',
+          ),
+        ],
+      },
+      {
+        id: 'all-off',
+        title: 'All my resource packs turned off (Java)',
+        body: [
+          p(
+            'When a resource pack contains a shader that does not compile, Java turns off every pack and goes back to the defaults. This happens with vanilla shader packs that were made for a different version, because Mojang changes those shader files often. Remove the pack or export it again for your exact version; every shader the ',
+            link('/shaders', 'Shader Maker'),
+            ' writes is compile-checked first.',
+          ),
+        ],
+      },
+      {
+        id: 'bedrock-import',
+        title: 'Bedrock: the import failed',
+        body: [
+          ul([
+            [strong('Import failed: '), code('manifest.json'), ' is missing, invalid, or not at the top level of the file. Export the pack again and open the new file.'],
+            [strong('Duplicate pack: '), 'a pack with the same IDs and version number is already installed. Raise the version (the Texture Pack Maker does this on every export) or delete the old copy in ', uiPath('Settings', 'Storage'), '.'],
+            [strong('Wrong file type: '), 'a Java ', code('.zip'), ' renamed to ', code('.mcpack'), ' does not work; Bedrock needs its own files and folders. ', link('/guides/java-vs-bedrock-packs', 'Java vs Bedrock packs'), '.'],
+            [strong('Console: '), 'Xbox, PlayStation and Switch cannot import files at all. Join a world, Realm or server that carries the pack.'],
+          ]),
+        ],
+      },
+      {
+        id: 'bedrock-nothing',
+        title: 'Bedrock: imported, but nothing changes',
+        body: [
+          ul([
+            ['Activate it: ', uiPath('Settings', 'Global Resources', 'My Packs'), ', select the pack and press ', strong('Activate'), '. For one world, use ', uiPath('Edit world', 'Resource Packs'), '.'],
+            'Move it above other active packs that change the same textures.',
+            ['If the pack needs a newer game than yours, its ', code('min_engine_version'), ' is too high: update Minecraft or export with a lower minimum.'],
+            'Packs made for classic graphics can look different, or be turned off, with Vibrant Visuals on. Try switching Graphics Mode.',
+          ]),
+        ],
+      },
+      {
+        id: 'shaders',
+        title: 'A shader pack does not show up',
+        body: [
+          ul([
+            ['Iris and OptiFine shader packs go in the ', code('shaderpacks'), ' folder, opened from ', uiPath('Options…', 'Video Settings…', 'Shader Packs…'), ', not in ', code('resourcepacks'), '.'],
+            ['Iris needs OpenGL. On Java 26.2 and newer, set ', strong('Graphics API'), ' to ', strong('Default'), ' or ', strong('Prefer OpenGL'), ' if Iris says it cannot run with Vulkan.'],
+            ['Vanilla (no-mod) shader packs are resource packs and only work on the version they were made for. ', link('/guides/make-shaders-without-mods', 'Shaders without mods'), '.'],
+          ]),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'why-red',
+        q: 'Why is my texture pack red in the Resource Packs list?',
+        a: [p('Red means the pack’s format does not match your game version. It may still work; export it again for your version to be sure.')],
+      },
+      {
+        id: 'reload',
+        q: 'Do I need to restart Minecraft after changing a pack?',
+        a: [p('No. On Java press F3 + T to reload resource packs, or turn the pack off and on. On Bedrock, leave and rejoin the world.')],
+      },
+      {
+        id: 'server',
+        q: 'Why does a server change my textures?',
+        a: [p('Servers can send their own resource pack, which goes above yours. You can decline it in the server’s settings on the multiplayer screen, but some servers require it.')],
+      },
+    ],
+    related: ['install-resource-packs', 'make-a-texture-pack', 'minecraft-pack-format-versions'],
     cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'image' },
   },
 
@@ -251,12 +575,38 @@ export const GUIDE_CONTENT: Guide[] = [
         ' file and Minecraft imports it; then activate it under Settings › Global Resources. Shader packs for Java need Iris or OptiFine.',
       ),
     ],
+    quick: {
+      title: 'Quick answer',
+      items: [
+        ['Java: ', uiPath('Options…', 'Resource Packs…', 'Open Pack Folder'), ', drop the ', code('.zip'), ' in, then move the pack to Selected and click Done.'],
+        ['Bedrock: open the ', code('.mcpack'), ' file, then activate it under ', uiPath('Settings', 'Global Resources'), '.'],
+        ['Shaders (Java): install Iris or OptiFine and put the shader zip in the ', code('shaderpacks'), ' folder.'],
+      ],
+    },
     howto: { name: 'How to install a resource pack in Minecraft Java Edition', steps: INSTALL_JAVA_STEPS },
     sections: [
       {
         id: 'java',
         title: 'Install a resource pack on Java',
-        body: [steps(INSTALL_JAVA_STEPS), el('h3', { class: 'guide-sub' }, 'Where the folder is'), folderTable('resourcepacks')],
+        body: [steps(INSTALL_JAVA_STEPS), el('h3', { class: 'guide-sub' }, 'Where is the resourcepacks folder?'), folderTable('resourcepacks')],
+      },
+      {
+        id: 'order',
+        title: 'Using more than one pack',
+        body: [
+          p(
+            'You can turn on as many packs as you like. When two packs change the same texture, the one higher in the ',
+            strong('Selected'),
+            ' list (Java) or the active list (Bedrock) wins, and everything it does not change falls through to the packs below it. A common setup is a small pack with your own tweaks at the top and a full pack under it.',
+          ),
+          p(
+            'Third-party launchers such as Lunar Client and Badlion Client use the same ',
+            code('resourcepacks'),
+            ' folder in ',
+            code('.minecraft'),
+            ' by default and have their own Resource Packs menu to turn packs on.',
+          ),
+        ],
       },
       {
         id: 'bedrock',
@@ -324,6 +674,7 @@ export const GUIDE_CONTENT: Guide[] = [
         id: 'troubleshooting',
         title: 'Pack not working?',
         body: [
+          p('The most common problems are below. ', link('/guides/texture-pack-not-working', 'All fixes, with explanations'), '.'),
           table(
             ['What you see', 'Why', 'Fix'],
             [
@@ -354,7 +705,7 @@ export const GUIDE_CONTENT: Guide[] = [
         a: [p('Not by importing files. They can join a world, Realm or server that carries the pack.')],
       },
     ],
-    related: ['make-a-texture-pack', 'minecraft-pack-format-versions', 'make-shaders-without-mods'],
+    related: ['texture-pack-not-working', 'make-a-texture-pack', 'minecraft-pack-format-versions', 'make-shaders-without-mods'],
     cta: { label: 'Full install guide for every platform', to: '/help', icon: 'book-open' },
   },
 
@@ -504,7 +855,7 @@ export const GUIDE_CONTENT: Guide[] = [
       },
       {
         id: 'bedrock',
-        title: 'Make a Bedrock skin pack',
+        title: 'Make a custom Bedrock skin pack',
         body: [
           p(
             'A skin pack is an ',
@@ -526,7 +877,8 @@ export const GUIDE_CONTENT: Guide[] = [
             '.',
           ),
           steps([
-            ['Export as a ', strong('Bedrock skin pack'), '.'],
+            ['Paint each skin as its own project. Classic and slim skins can share one pack.'],
+            ['Choose ', strong('Export'), ' › ', strong('Bedrock skin pack'), ', name the pack and tick the other skins to include.'],
             'Open the .mcpack (double-click on Windows, Open with Minecraft on Android, Share › Minecraft on iPhone and iPad).',
             ['In Minecraft go to ', uiPath('Dressing Room', 'Classic Skins'), ', find your pack, choose the skin and press ', strong('Equip'), '.'],
           ]),
@@ -538,6 +890,16 @@ export const GUIDE_CONTENT: Guide[] = [
       { id: 'size', q: 'What size should a Minecraft skin be?', a: [p('64×64 pixels, saved as PNG. Use 64×32 only for Java 1.7.10 and older.')] },
       { id: 'username', q: 'Can I start from someone’s skin?', a: [p('Yes. The Skin Maker can load any Java player’s current skin by username, so you can remix it. Please respect other people’s work.')] },
       { id: 'phone', q: 'Can I make a skin on my phone?', a: [p('Yes. The editor works with touch, including pinch-to-zoom.')] },
+      {
+        id: 'slim-pack',
+        q: 'Can a skin pack mix classic and slim skins?',
+        a: [p('Yes. Every skin in a pack has its own model, so a custom skin pack can hold classic (4-pixel arms) and slim (3-pixel arms) skins side by side.')],
+      },
+      {
+        id: 'update-pack',
+        q: 'How do I update a skin pack I already imported?',
+        a: [p('Export it again from the same project and open the new .mcpack. The pack keeps its IDs and gets a higher version number, so Minecraft replaces the old one instead of adding a copy.')],
+      },
     ],
     related: ['install-resource-packs', 'java-vs-bedrock-packs', 'make-a-texture-pack'],
     cta: { label: 'Open the Skin Maker', to: '/skins', icon: 'human' },
@@ -549,7 +911,7 @@ export const GUIDE_CONTENT: Guide[] = [
     intro: [
       p(
         strong('Yes, within limits.'),
-        ' On Java 1.17 and newer an ordinary resource pack can replace some of Minecraft’s own shader files, so you get colour grading, a vignette, fog changes and, on 26.3, bloom without installing anything. On Bedrock, custom shader code is not allowed, but a Vibrant Visuals pack tunes the built-in lighting, sky, fog and water. Real shadows and reflections on Java still need Iris or OptiFine.',
+        ' You do not need OptiFine, Iris or any other mod for basic shader effects. On Java 1.17 and newer an ordinary resource pack can replace some of Minecraft’s own shader files, so you get colour grading, a vignette, fog changes and, on 26.3, bloom without installing anything. On Bedrock, custom shader code is not allowed, but a Vibrant Visuals pack tunes the built-in lighting, sky, fog and water. Real shadows and reflections on Java still need Iris or OptiFine.',
       ),
     ],
     howto: { name: 'How to make a Minecraft Java shader pack without mods', steps: VANILLA_SHADER_STEPS },
@@ -594,12 +956,21 @@ export const GUIDE_CONTENT: Guide[] = [
       },
       {
         id: 'mods',
-        title: 'When you do want mods',
+        title: 'Shaders without OptiFine: use Iris',
         body: [
           p(
-            'For the classic shader look (real sun shadows, waving leaves, reflective water, god rays) use an Iris or OptiFine shader pack. Iris is available for Java 1.16.5 to 26.3 and is the easiest to install; at the time of writing OptiFine goes up to 26.2. The ',
+            'If “without mods” means “without OptiFine”, the answer is Iris. It loads the same shader packs (real sun shadows, waving leaves, reflective water, god rays), runs alongside the Sodium performance mod, and is available for Java 1.16.5 to 26.3. At the time of writing OptiFine goes up to 26.2.',
+          ),
+          steps([
+            ['Download the Iris installer from ', ext('https://www.irisshaders.dev/', 'irisshaders.dev'), ' and run it. It installs Iris and Sodium for the version you choose.'],
+            'Start the game once with the new Iris profile in the Minecraft Launcher.',
+            ['Open ', uiPath('Options…', 'Video Settings…', 'Shader Packs…'), ', click ', strong('Open Shader Pack Folder'), ' and drop a shader pack zip into it.'],
+            'Pick the pack in the list and click Apply. Lighter packs suit laptops; heavier ones need a strong graphics card.',
+          ]),
+          p(
+            'On Forge or NeoForge, look for a port of Iris for that loader. You can also build your own Iris / OptiFine shader pack, with presets and a live preview, in the ',
             link('/shaders', 'Shader Maker'),
-            ' builds these packs too.',
+            '.',
           ),
         ],
       },
@@ -703,6 +1074,14 @@ export const GUIDE_CONTENT: Guide[] = [
         '. To support both, you make the pack twice.',
       ),
     ],
+    quick: {
+      title: 'Quick answer: do Java texture packs work on Bedrock?',
+      items: [
+        'No. Bedrock cannot load a Java .zip, and renaming it to .mcpack does not help.',
+        'The two editions use different folders, file names and description files.',
+        'You can convert a pack by moving and renaming its images and adding a manifest.json, or remake it in a Bedrock project.',
+      ],
+    },
     sections: [
       {
         id: 'compare',
@@ -737,6 +1116,46 @@ export const GUIDE_CONTENT: Guide[] = [
         ],
       },
       {
+        id: 'convert',
+        title: 'Can you convert a Java texture pack to Bedrock?',
+        body: [
+          p('Yes, but not by renaming the file. A conversion means rebuilding the pack in Bedrock’s layout:'),
+          steps([
+            ['Copy the images from ', code('assets/minecraft/textures/'), ' into Bedrock’s ', code('textures/'), ' folders (', code('block'), ' → ', code('blocks'), ', ', code('item'), ' → ', code('items'), ').'],
+            ['Rename files whose names differ, for example ', code('grass_block_top.png'), ' → ', code('grass_top.png'), '. Textures with no Bedrock counterpart are skipped.'],
+            ['Write a ', code('manifest.json'), ' with two new UUIDs, a version and a ', code('min_engine_version'), ', and rename ', code('pack.png'), ' to ', code('pack_icon.png'), '.'],
+            ['Check the special cases: Bedrock animations are listed in ', code('textures/flipbook_textures.json'), ' instead of ', code('.png.mcmeta'), ' files, and some textures are ', code('.tga'), ' files that store tint masks in their transparent pixels.'],
+            ['Zip the contents and rename the zip to ', code('.mcpack'), '.'],
+          ]),
+          p(
+            'Mojang’s own reference is ',
+            ext('https://learn.microsoft.com/en-us/minecraft/creator/documents/convertingtexturepacks', 'Converting Texture Packs from Java Edition to Bedrock Edition'),
+            '. The simpler route for a small pack is to create a Bedrock project in the ',
+            link('/textures', 'Texture Pack Maker'),
+            ' and upload your Java images onto the matching Bedrock textures; it writes the manifest and keeps the exact Bedrock file names.',
+          ),
+        ],
+      },
+      {
+        id: 'mcpack',
+        title: 'Is a .mcpack just a zip file?',
+        body: [
+          p(
+            'Yes. An ',
+            code('.mcpack'),
+            ' is an ordinary zip with a different extension, so Bedrock knows to import it. Rename it to ',
+            code('.zip'),
+            ' to look inside. What makes it a Bedrock pack is its contents: ',
+            code('manifest.json'),
+            ' at the top level and Bedrock’s folder layout. ',
+            code('.mcaddon'),
+            ' files bundle several packs, and ',
+            code('.mcworld'),
+            ' files hold a whole world.',
+          ),
+        ],
+      },
+      {
         id: 'both',
         title: 'Making a pack for both',
         body: [
@@ -749,7 +1168,9 @@ export const GUIDE_CONTENT: Guide[] = [
       },
     ],
     faq: [
-      { id: 'convert', q: 'Can I convert a Java pack to Bedrock?', a: [p('Not by renaming the file. The folders, names and description file differ. Open the Java pack for reference and repaint the textures in a Bedrock project.')] },
+      { id: 'convert', q: 'Can I convert a Java pack to Bedrock?', a: [p('Not by renaming the file. The folders, names and description file differ, so the images have to be moved, renamed and given a manifest.json, as described above.')] },
+      { id: 'back', q: 'Can I convert a Bedrock pack to Java?', a: [p('The same way in reverse: move the images into ', code('assets/minecraft/textures/'), ', rename them to Java’s names, convert any .tga files to PNG and add a ', code('pack.mcmeta'), '.')] },
+      { id: 'missing', q: 'Why are some textures missing after converting?', a: [p('Each edition has textures the other does not, and some are split or combined differently (for example chests, paintings and the GUI). Those need repainting for the other edition.')] },
       { id: 'which', q: 'Which edition am I playing?', a: [p('If you play on a console, phone or tablet, or got Minecraft from the Microsoft Store as “Minecraft for Windows”, it is Bedrock. Java runs on Windows, macOS and Linux from the Minecraft Launcher.')] },
     ],
     related: ['make-a-texture-pack', 'install-resource-packs', 'minecraft-pack-format-versions'],

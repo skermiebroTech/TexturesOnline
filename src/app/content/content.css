@@ -258,6 +258,28 @@
 .guide-list li::marker {
   color: var(--tool-accent);
 }
+/* Screenshots in guides and tool pages */
+.guide-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0;
+}
+.guide-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-1);
+}
+.guide-figure figcaption {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
 .guide-code {
   margin: 0;
   padding: 14px 16px;

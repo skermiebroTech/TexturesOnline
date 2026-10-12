@@ -222,7 +222,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
             icon: 'copy',
             onClick: async () => {
               const now = Date.now();
-              const copy: SkinProjectData = { ...p, id: uuidv4(), name: `${p.name} copy`, createdAt: now, updatedAt: now, bedrockUuids: undefined, packVersion: undefined };
+              const copy: SkinProjectData = { ...p, id: uuidv4(), name: `${p.name} copy`, createdAt: now, updatedAt: now, bedrockUuids: undefined, packVersion: undefined, packSkinIds: undefined, packName: undefined };
               await saveProject(copy);
               toast(`Made a copy of "${p.name}"`, { tone: 'success' });
               void renderRecent(list, section, urls);

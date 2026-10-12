@@ -131,7 +131,7 @@ test('structured data parses and has the required properties', () => {
     assert.match(String(org.url), /^https:\/\/github\.com\//);
     const [site] = ofType(g, 'WebSite');
     assert.equal(site.name, 'Texture Pack Maker');
-    assert.deepEqual(site.alternateName, ['TexturePackMaker']);
+    assert.deepEqual(site.alternateName, ['TexturePackMaker', 'Minecraft Texture Pack Maker']);
     assert.equal(site.url, SITE_URL);
 
     for (const app of ofType(g, 'WebApplication')) {

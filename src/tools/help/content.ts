@@ -512,8 +512,8 @@ export function helpPage(): ElNode[] {
       { class: 'help-hero container' },
       breadcrumbs([{ label: 'Home', to: '/' }, { label: 'Help' }]),
       el('span', { class: 'eyebrow' }, ic('book-open'), 'Install guide & help'),
-      el('h1', { class: 'pixel-shadow' }, 'Get your creations into Minecraft'),
-      el('p', { class: 'lead' }, 'Step-by-step guides for Java and Bedrock on every platform, plus answers to common questions.'),
+      el('h1', { class: 'pixel-shadow' }, 'How to install texture packs, skins and shaders'),
+      el('p', { class: 'lead' }, 'Get your creations into Minecraft: step-by-step guides for Java and Bedrock on PC, Mac, phones and consoles, plus answers to common questions.'),
       el(
         'div',
         { class: 'help-quick', 'data-md': 'skip' },

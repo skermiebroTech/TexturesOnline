@@ -30,12 +30,14 @@ const PAGES = [
   { path: '', tool: 'home', ready: '.home .hero-title' },
   { path: 'textures/', tool: 'textures', ready: '[data-tool-intro="textures"].is-below' },
   { path: 'skins/', tool: 'skins', ready: '[data-tool-intro="skins"].is-below' },
+  { path: 'skin-pack-maker/', tool: 'skins', ready: '[data-tool-intro="skinpack"].is-below' },
   { path: 'shaders/', tool: 'shaders', ready: '[data-tool-intro="shaders"].is-below' },
   { path: 'help/', tool: 'help', ready: '.help .help-section' },
   { path: 'guides/', tool: 'help', ready: '.guides-index .guide-card' },
   { path: 'guides/make-a-texture-pack/', tool: 'help', ready: '.guide-page h1' },
   { path: 'guides/minecraft-pack-format-versions/', tool: 'help', ready: '.formats-table' },
   { path: 'guides/install-resource-packs/', tool: 'help', ready: '.guide-page .guide-tabs' },
+  { path: 'guides/texture-pack-not-working/', tool: 'help', ready: '.guide-page h1' },
 ];
 
 let failed = 0;

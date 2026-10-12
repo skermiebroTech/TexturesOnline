@@ -542,6 +542,25 @@
   color: var(--gold);
 }
 
+/* ---------- Features ---------- */
+.values.feature-grid {
+  margin-top: 0;
+}
+.feature-grid .value {
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+.feature-grid .value-icon {
+  color: var(--green);
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .values.feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ---------- Final call to action ---------- */
 .final-cta {
   padding-top: 0;

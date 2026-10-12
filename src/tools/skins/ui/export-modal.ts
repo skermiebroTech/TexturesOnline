@@ -1,16 +1,32 @@
 // Export: the format menu, the download itself and a modal that explains where the file goes.
 
-import { convertLegacySkin } from '../../../core/image';
+import { convertLegacySkin, decodeImage } from '../../../core/image';
+import { listProjects } from '../../../core/storage';
 import { href as routeHref } from '../../../core/router';
 import { saveBlob } from '../../../core/download';
 import type { SkinModel } from '../../../core/types';
-import { button, openPopover, withBusy } from '../../../ui/components';
+import { badge, button, openPopover, textInput, withBusy } from '../../../ui/components';
 import type { PopoverHandle } from '../../../ui/popover';
 import { h } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { openModal } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
-import { exportBedrockPack, exportBedrockPng, exportJavaLegacy, exportJavaPng, legacyLosses, legacySource, type ExportKind, type ExportResult, type SkinProjectData } from '../export';
+import {
+  exportBedrockPack,
+  exportBedrockPng,
+  exportJavaLegacy,
+  exportJavaPng,
+  legacyLosses,
+  legacySource,
+  orderPackSkinIds,
+  packNameOf,
+  pickPackSkins,
+  skinCountLabel,
+  type ExportKind,
+  type ExportResult,
+  type PackSkinSource,
+  type SkinProjectData,
+} from '../export';
 import { drawFigure } from './figure';
 
 interface FormatInfo {
@@ -23,7 +39,7 @@ interface FormatInfo {
 
 export const EXPORT_FORMATS: readonly FormatInfo[] = [
   { kind: 'java', title: 'Java skin (.png)', sub: 'For the Launcher or minecraft.net', icon: 'monitor', edition: 'Java' },
-  { kind: 'bedrock-pack', title: 'Bedrock skin pack (.mcpack)', sub: 'Opens straight in Minecraft', icon: 'package', edition: 'Bedrock' },
+  { kind: 'bedrock-pack', title: 'Bedrock skin pack (.mcpack)', sub: 'One or more skins, opens in Minecraft', icon: 'package', edition: 'Bedrock' },
   { kind: 'bedrock-png', title: 'Bedrock skin (.png)', sub: 'For the Dressing Room import slot', icon: 'smartphone', edition: 'Bedrock' },
   { kind: 'java-legacy', title: 'Old Java skin (64×32)', sub: 'Java 1.7.10 and older', icon: 'clock', edition: 'Java' },
 ];
@@ -79,7 +95,7 @@ function modelName(m: SkinModel): string {
   return m === 'slim' ? 'Slim (3-pixel arms)' : 'Classic (4-pixel arms)';
 }
 
-function instructions(kind: ExportKind, model: SkinModel, filename: string, packName: string): Node[] {
+function instructions(kind: ExportKind, model: SkinModel, filename: string, packName: string, skinCount = 1): Node[] {
   switch (kind) {
     case 'java':
       return [
@@ -103,7 +119,7 @@ function instructions(kind: ExportKind, model: SkinModel, filename: string, pack
           ['Open ', h('code', null, filename), ': double-click it on Windows, or tap it and choose ', strong('Open with Minecraft'), ' on phones and tablets.'],
           'Minecraft starts and says the import was successful.',
           ['Go to ', path('Dressing Room', 'Classic Skins'), ' and scroll to the pack ', strong(packName), '.'],
-          ['Pick your skin and press ', strong('Equip'), '.'],
+          skinCount > 1 ? ['Pick one of the ', strong(String(skinCount)), ' skins and press ', strong('Equip'), '.'] : ['Pick your skin and press ', strong('Equip'), '.'],
         ),
         h('p', { class: 'sk-note' }, icon('info'), "Consoles can't import skin packs. Friends with “Only Allow Trusted Skins” turned on will see a default skin."),
       ];
@@ -119,7 +135,7 @@ function instructions(kind: ExportKind, model: SkinModel, filename: string, pack
   }
 }
 
-async function runExport(kind: ExportKind, project: SkinProjectData, img: ImageData): Promise<ExportResult> {
+async function runExport(kind: ExportKind, project: SkinProjectData, img: ImageData, packSkins: readonly PackSkinSource[] = []): Promise<ExportResult> {
   switch (kind) {
     case 'java':
       return exportJavaPng(img, project.name, project.model);
@@ -128,7 +144,7 @@ async function runExport(kind: ExportKind, project: SkinProjectData, img: ImageD
     case 'bedrock-png':
       return exportBedrockPng(img, project.name);
     case 'bedrock-pack':
-      return exportBedrockPack(project, img);
+      return exportBedrockPack(project, img, packSkins);
   }
 }
 
@@ -136,6 +152,127 @@ function figure(img: ImageData, model: SkinModel, label: string): HTMLElement {
   const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
   requestAnimationFrame(() => drawFigure(c, img, model));
   return h('figure', { class: 'sk-export-figure' }, h('div', { class: 'sk-export-stage' }, c), h('figcaption', null, label));
+}
+
+function armsLabel(m: SkinModel): string {
+  return m === 'slim' ? 'Slim arms' : 'Classic arms';
+}
+
+function packRow(opts: { name: string; model: SkinModel; image: ImageData | Blob; checked: boolean; current?: boolean; id?: string }): HTMLLabelElement {
+  const thumb = h('span', { class: 'sk-pack-thumb' });
+  const draw = (img: ImageData) => {
+    if (img.width !== 64 || img.height !== 64) return;
+    const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
+    thumb.appendChild(c);
+    requestAnimationFrame(() => drawFigure(c, img, opts.model));
+  };
+  if (opts.image instanceof Blob) {
+    void decodeImage(opts.image, 'png')
+      .then(draw)
+      .catch(() => thumb.appendChild(icon('human')));
+  } else draw(opts.image);
+  const check = h('input', { type: 'checkbox', class: 'sk-pack-check', checked: opts.checked, disabled: !!opts.current, value: opts.id ?? '' });
+  return h(
+    'label',
+    { class: ['sk-pack-skin', opts.current ? 'is-current' : null] },
+    check,
+    thumb,
+    h('span', { class: 'sk-pack-info' }, h('span', { class: 'sk-pack-name truncate' }, opts.name || 'Untitled'), h('span', { class: 'sk-pack-meta' }, armsLabel(opts.model))),
+    opts.current ? badge('This skin', 'blue') : null,
+  );
+}
+
+/**
+ * Lets the user add other saved skins to the .mcpack. Resolves to the extra skins (in pack order),
+ * or null when cancelled. With no other saved skins it resolves to [] straight away (one click).
+ * Stores the choice on `project` (packSkinIds / packName).
+ */
+async function choosePackSkins(project: SkinProjectData, img: ImageData): Promise<PackSkinSource[] | null> {
+  let saved: SkinProjectData[] = [];
+  try {
+    saved = ((await listProjects('skin')) as SkinProjectData[]).filter((p) => p.id !== project.id && p.image instanceof Blob);
+  } catch {
+    saved = [];
+  }
+  if (!saved.length) return [];
+
+  // Skins already in the pack first (pack order), then the rest, most recently edited first.
+  const inPack = pickPackSkins(project.packSkinIds, saved, project.id);
+  const inPackIds = new Set(inPack.map((p) => p.id));
+  const listed = [...inPack, ...saved.filter((p) => !inPackIds.has(p.id))];
+
+  let packName = packNameOf(project);
+  const nameField = textInput({
+    label: 'Pack name',
+    value: packName,
+    maxLength: 60,
+    description: 'Shown in the Dressing Room under Classic Skins.',
+    onInput: (v) => (packName = v),
+    onEnter: () => (modal.el.querySelector('.modal-footer .btn-primary') as HTMLButtonElement | null)?.click(),
+  });
+  const rows = listed.map((p) => packRow({ name: p.name, model: p.model, image: p.image, checked: inPackIds.has(p.id), id: p.id }));
+  const boxes = rows.map((r) => r.querySelector('input') as HTMLInputElement);
+  const count = h('span', { class: 'badge tone-gray sk-pack-count', 'aria-live': 'polite' });
+  const allBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm sk-pack-all' }, h('span', { class: 'btn-label' }));
+  const sync = () => {
+    const n = boxes.filter((b) => b.checked).length;
+    count.textContent = skinCountLabel(n + 1);
+    const all = n === boxes.length;
+    allBtn.querySelector('.btn-label')!.textContent = all ? 'Clear' : 'Select all';
+  };
+  boxes.forEach((b) => b.addEventListener('change', sync));
+  allBtn.addEventListener('click', () => {
+    const all = boxes.every((b) => b.checked);
+    boxes.forEach((b) => (b.checked = !all));
+    sync();
+  });
+  sync();
+
+  const body = h(
+    'div',
+    { class: 'sk-export sk-pack' },
+    nameField,
+    h(
+      'div',
+      { class: 'sk-pack-head' },
+      h('h3', { class: 'sk-guide-title' }, icon('package'), 'Skins in this pack'),
+      count,
+      allBtn,
+    ),
+    h(
+      'div',
+      { class: 'sk-pack-list', role: 'group', 'aria-label': 'Skins in this pack' },
+      packRow({ name: project.name, model: project.model, image: img, checked: true, current: true }),
+      rows,
+    ),
+    h('p', { class: 'sk-note' }, icon('info'), 'Each skin keeps its own name and arm model. Exporting again updates the installed pack.'),
+  );
+
+  let result: PackSkinSource[] | null = null;
+  let resolveChoice: (v: PackSkinSource[] | null) => void = () => {};
+  const choice = new Promise<PackSkinSource[] | null>((resolve) => (resolveChoice = resolve));
+  const modal = openModal({
+    title: 'Make a skin pack',
+    body,
+    width: 560,
+    initialFocus: nameField.input,
+    // Runs once the dialog is gone, so the next dialog returns focus properly.
+    onClose: () => resolveChoice(result),
+    actions: [
+      { label: 'Cancel', variant: 'ghost' },
+      {
+        label: 'Download pack',
+        variant: 'primary',
+        onClick: () => {
+          const name = packName.trim();
+          project.packName = name && name !== (project.name || '').trim() ? name : undefined;
+          project.packSkinIds = orderPackSkinIds(project.packSkinIds, boxes.filter((b) => b.checked).map((b) => b.value));
+          result = pickPackSkins(project.packSkinIds, saved, project.id);
+        },
+      },
+    ],
+  });
+  return choice;
 }
 
 /**
@@ -176,9 +313,16 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
     return;
   }
 
+  let packSkins: PackSkinSource[] = [];
+  if (kind === 'bedrock-pack') {
+    const chosen = await choosePackSkins(project, img);
+    if (!chosen || !isOpen()) return;
+    packSkins = chosen;
+  }
+
   let res: ExportResult;
   try {
-    res = await runExport(kind, project, img);
+    res = await runExport(kind, project, img, packSkins);
   } catch (err) {
     toast(err instanceof Error ? err.message : 'Export failed.', { tone: 'error' });
     return;
@@ -188,6 +332,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
   // Left the editor while the file was being built: the download still happens, but no dialog.
   if (!isOpen()) return;
 
+  const skinCount = res.skinCount ?? 1;
   const again = button({ label: 'Download again', icon: 'download', variant: 'secondary', size: 'sm' });
   again.addEventListener('click', () =>
     void withBusy(again, async () => {
@@ -208,15 +353,15 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
         { class: 'sk-export-file' },
         h('span', { class: 'sk-export-ok' }, icon('check'), 'Download started'),
         h('code', { class: 'sk-export-name' }, res.filename),
-        h('span', { class: 'muted small' }, [`${info.edition} Edition`, `${project.model === 'slim' ? 'Slim' : 'Classic'} arms`, res.meta].filter(Boolean).join(' · ')),
+        h('span', { class: 'muted small sk-export-meta' }, [`${info.edition} Edition`, skinCount > 1 ? null : armsLabel(project.model), res.meta].filter(Boolean).join(' · ')),
         h('div', { class: 'row', style: { '--gap': '8px', marginTop: '8px' } }, again),
       ),
     ),
     res.notes.length ? h('ul', { class: 'sk-export-notes' }, res.notes.map((n) => h('li', null, icon('info'), h('span', null, n)))) : null,
-    ...instructions(kind, project.model, res.filename, project.name),
+    ...instructions(kind, project.model, res.filename, kind === 'bedrock-pack' ? packNameOf(project) : project.name, skinCount),
     help,
   );
-  const m = openModal({ title: `Your ${info.edition} skin is ready`, body, width: 620, actions: [{ label: 'Done', variant: 'primary' }] });
+  const m = openModal({ title: skinCount > 1 ? `Your ${info.edition} skin pack is ready` : `Your ${info.edition} skin is ready`, body, width: 620, actions: [{ label: 'Done', variant: 'primary' }] });
   help.addEventListener('click', () => m.close());
 }
 

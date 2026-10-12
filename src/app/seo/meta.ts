@@ -36,36 +36,45 @@ export const HOME_META: PageMeta = {
   path: '/',
   kind: 'home',
   tool: 'home',
-  title: `${SITE_NAME} — Make Minecraft Texture Packs Online`,
+  title: 'Minecraft Texture Pack Maker — Free Online, Java & Bedrock',
   description:
-    'Make Minecraft texture packs, skins and shaders in your browser. Free, no sign-up, works offline. Java 26.3, every version since 1.6.1, and Bedrock.',
+    'Free Minecraft texture pack maker: create resource packs, skins and shaders in your browser for Java 26.3, every version since 1.6.1 and Bedrock.',
   label: 'Home',
 };
 
-export const TOOL_META: Record<'textures' | 'skins' | 'shaders', PageMeta> = {
+export const TOOL_META: Record<'textures' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
   textures: {
     path: '/textures',
     kind: 'tool',
     tool: 'textures',
-    title: 'Minecraft Texture Pack Maker Online — Java & Bedrock',
+    title: 'Texture Pack Editor & Resource Pack Creator (Java, Bedrock)',
     description:
-      'Repaint any block, item or mob, upload your own PNGs or restyle the game in one click, then export a ready-to-use .zip or .mcpack. Free, in your browser.',
+      'Edit any Minecraft texture: repaint blocks, items and mobs on real 3D models, upload PNGs or restyle the game in one click, then export a .zip or .mcpack.',
     label: 'Texture packs',
   },
   skins: {
     path: '/skins',
     kind: 'tool',
     tool: 'skins',
-    title: `Minecraft Skin Editor Online — ${SITE_NAME}`,
+    title: 'Minecraft Skin Editor & Custom Skin Pack Maker',
     description:
-      'Paint a custom Minecraft skin on the 64×64 template with a live 3D preview. Classic or slim arms, both layers, and Java PNG or Bedrock skin pack export.',
+      'Paint a custom Minecraft skin in 2D or 3D, classic or slim arms, then export a Java PNG or bundle your skins into a Bedrock skin pack (.mcpack). Free.',
     label: 'Skins',
+  },
+  skinpack: {
+    path: '/skin-pack-maker',
+    kind: 'tool',
+    tool: 'skins',
+    title: 'Minecraft Skin Pack Maker — Free Bedrock .mcpack Creator',
+    description:
+      'Make a custom Minecraft skin pack online: paint or upload skins, mix classic and slim arms, and download one Bedrock .mcpack that opens in the game. Free.',
+    label: 'Skin pack maker',
   },
   shaders: {
     path: '/shaders',
     kind: 'tool',
     tool: 'shaders',
-    title: `Make Minecraft Shaders Online — ${SITE_NAME}`,
+    title: 'Minecraft Shader Maker — Iris, OptiFine & No-Mod Shaders',
     description:
       'Build Iris or OptiFine shader packs, no-mod vanilla shaders for Java, or Bedrock Vibrant Visuals packs, with presets, sliders and a live 3D preview.',
     label: 'Shaders',
@@ -76,9 +85,9 @@ export const HELP_META: PageMeta = {
   path: '/help',
   kind: 'help',
   tool: 'help',
-  title: `Install Guide & FAQ — ${SITE_NAME}`,
+  title: 'How to Install Texture Packs, Skins & Shaders in Minecraft',
   description:
-    'How to install texture packs, skins and shaders in Minecraft Java and Bedrock on PC, phone and console, where the Minecraft folder is, plus a FAQ.',
+    'Add a texture pack, skin or shader in Minecraft Java and Bedrock on PC, Mac, phone and console, find the resourcepacks folder and fix common errors.',
   label: 'Help',
 };
 
@@ -98,10 +107,10 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'make-a-texture-pack',
     blurb: 'Pick a version, repaint textures and export a pack Minecraft loads.',
-    title: `How to Make a Minecraft Texture Pack — ${SITE_NAME}`,
+    title: 'How to Make a Minecraft Texture Pack (Java & Bedrock)',
     h1: 'How to make a Minecraft texture pack',
     description:
-      'Make a Minecraft texture pack for Java or Bedrock: pick a version, repaint textures, then export a .zip with the right pack.mcmeta or an .mcpack.',
+      'Make your own Minecraft texture pack for free: pick a version, repaint textures, export a .zip with pack.mcmeta (Java) or .mcpack (Bedrock), then install.',
     label: 'Make a texture pack',
     icon: 'image',
     accent: 'accent-green',
@@ -118,6 +127,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-green',
   }),
   guide({
+    slug: 'texture-pack-not-working',
+    blurb: 'Missing packs, version warnings, purple-and-black blocks and other fixes.',
+    title: 'Minecraft Texture Pack Not Working? Fixes for Java & Bedrock',
+    h1: 'Minecraft texture pack not working? How to fix it',
+    description:
+      'Pack not in the list, “made for an older version”, purple and black blocks, grey grass, failed .mcpack imports: what each problem means and how to fix it.',
+    label: 'Pack not working? Fixes',
+    icon: 'warning-diamond',
+    accent: 'accent-gold',
+  }),
+  guide({
     slug: 'minecraft-pack-format-versions',
     blurb: 'The pack format of every Java release from 1.6.1 to 26.3.',
     title: 'Minecraft Resource Pack Formats: Every Version to 26.3',
@@ -131,10 +151,10 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'make-a-skin',
     blurb: 'Paint the 64×64 template and use it on Java or in a Bedrock skin pack.',
-    title: `How to Make a Custom Minecraft Skin — ${SITE_NAME}`,
+    title: 'How to Make a Custom Minecraft Skin (Java & Bedrock)',
     h1: 'How to make a custom Minecraft skin',
     description:
-      'Design a Minecraft skin online: paint the 64×64 template with a live 3D preview, pick classic or slim arms, then use it on Java or in a Bedrock skin pack.',
+      'Make a Minecraft skin free online: paint the 64×64 template in 2D or 3D, pick classic or slim arms, then upload it on Java or import a Bedrock skin pack.',
     label: 'Make a skin',
     icon: 'human',
     accent: 'accent-blue',
@@ -142,10 +162,10 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'make-shaders-without-mods',
     blurb: 'What vanilla Java shader packs and Bedrock Vibrant Visuals can do.',
-    title: 'Minecraft Shaders Without Mods (Java & Bedrock)',
-    h1: 'Can you make Minecraft shaders without mods?',
+    title: 'Minecraft Shaders Without Mods or OptiFine (Java & Bedrock)',
+    h1: 'Can you get Minecraft shaders without mods?',
     description:
-      'Yes, within limits: Java 1.17+ resource packs can change the game’s own shaders and Bedrock uses Vibrant Visuals packs. What works, what does not, and how.',
+      'Yes: Java 1.17+ resource packs can replace the game’s own shaders (no OptiFine or Iris) and Bedrock has Vibrant Visuals. What works, the limits, and how.',
     label: 'Shaders without mods',
     icon: 'sun',
     accent: 'accent-purple',
@@ -153,7 +173,7 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'bedrock-vibrant-visuals-settings',
     blurb: 'Sun, sky, fog, water and colour settings, and supported devices.',
-    title: `Vibrant Visuals Settings for Bedrock — ${SITE_NAME}`,
+    title: 'Minecraft Bedrock Vibrant Visuals Settings Explained',
     h1: 'Bedrock Vibrant Visuals settings explained',
     description:
       'What a Vibrant Visuals pack can change in Minecraft Bedrock (sun, sky, fog, water, shadows and colour grading), supported devices and how to turn it on.',
@@ -164,10 +184,10 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'java-vs-bedrock-packs',
     blurb: 'Files, folders, formats, shaders and skins compared side by side.',
-    title: 'Java vs Bedrock Texture Packs: What Is the Difference?',
-    h1: 'Java vs Bedrock packs: what is the difference?',
+    title: 'Java vs Bedrock Texture Packs: Differences & Compatibility',
+    h1: 'Java vs Bedrock texture packs: differences and how to convert',
     description:
-      'Java uses .zip packs with pack.mcmeta; Bedrock uses .mcpack files with manifest.json. Paths, image formats, shaders, skins and installing compared.',
+      'Do Java texture packs work on Bedrock? No: Java uses .zip + pack.mcmeta, Bedrock .mcpack + manifest.json. Folders, file names, shaders and skins compared.',
     label: 'Java vs Bedrock packs',
     icon: 'gamepad',
     accent: 'accent-blue',
@@ -175,7 +195,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.skins, TOOL_META.shaders, HELP_META, GUIDES_META, ...GUIDES];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, GUIDES_META, ...GUIDES];
 
 /** Meta for a route path ('/help', '/help/'), or undefined for private and unknown paths. */
 export function publicPageMeta(path: string): PageMeta | undefined {

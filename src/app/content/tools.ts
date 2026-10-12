@@ -9,10 +9,12 @@ import { guideCards } from './guide-cards';
 import { TOOL_META } from '../seo/meta';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../editions/java/packformats';
 
-export type IntroTool = 'textures' | 'skins' | 'shaders';
+export type IntroTool = 'textures' | 'skins' | 'skinpack' | 'shaders';
 
 export interface ToolIntro {
   tool: IntroTool;
+  /** Tool whose start screen the page boots into, when it is not the page's own (skin pack maker → skins) */
+  base?: 'textures' | 'skins' | 'shaders';
   accent: string;
   icon: IconName;
   eyebrow: string;
@@ -25,7 +27,8 @@ export interface ToolIntro {
   featureList: string[];
   howTitle: string;
   steps: Child[];
-  extra?: Child[];
+  /** Extra sections between the steps and the questions (sub = heading tag for their titles) */
+  extra?: (sub: 'h2' | 'h3') => Child[];
   faq: FaqItem[];
   guides: string[];
   cta: string;
@@ -39,10 +42,10 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
     accent: 'accent-green',
     icon: 'image',
     eyebrow: 'Texture packs',
-    heading: 'Make a Minecraft texture pack online',
+    heading: 'Minecraft texture pack editor & resource pack creator',
     appName: 'Minecraft Texture Pack Maker',
     lead: [
-      'Repaint any block, item or mob using the real textures of the version you play, then download a pack Minecraft loads straight away. It works for ',
+      'Make a Minecraft texture pack online: repaint any block, item or mob on its real 3D model using the textures of the version you play, then download a resource pack Minecraft loads straight away. It works for ',
       strong('Java Edition'),
       ' (26.3 and every version back to 1.6.1) and ',
       strong('Bedrock Edition'),
@@ -107,9 +110,47 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         ],
       },
       {
+        id: 'resource',
+        q: 'Is a texture pack the same as a resource pack?',
+        a: [el('p', null, 'Yes, for textures. Java Edition renamed texture packs to resource packs in 1.6.1, because they can also change models, sounds, fonts and shaders. This editor makes the texture part and writes the files every resource pack needs.')],
+      },
+      {
+        id: 'photoshop',
+        q: 'Do I need Photoshop or another image editor?',
+        a: [el('p', null, 'No. The pixel editor has everything a texture needs: pencil, fill, shapes, colour picker, noise, selection, mirror painting and animation frames. If you prefer your own editor, upload the PNG instead.')],
+      },
+      {
+        id: 'hd',
+        q: 'Can I make an HD texture pack?',
+        a: [el('p', null, 'Yes. Pick a resolution from 16× (the vanilla look) up to 512× when you create the pack. Uploaded images are resized to fit, and the one-click Smooth HD effect upscales every texture at once.')],
+      },
+      {
+        id: 'devices',
+        q: 'Can I make a texture pack on a phone, tablet or Chromebook?',
+        a: [el('p', null, 'Yes. The editor runs in any modern browser, with touch painting and zoom, and nothing to install. Bedrock players on phones can open the exported ', code('.mcpack'), ' straight in Minecraft.')],
+      },
+      {
         id: 'existing',
         q: 'Can I edit a texture pack I already have?',
         a: [el('p', null, 'Yes. Choose ', strong('Open a pack'), ' and pick a Java ', code('.zip'), ' or Bedrock ', code('.mcpack'), '. The edition and version are detected from the pack.')],
+      },
+      {
+        id: 'purple',
+        q: 'Why are some blocks purple and black in my pack?',
+        a: [
+          el(
+            'p',
+            null,
+            'The purple-and-black checkerboard is Minecraft’s “missing texture”: a model points to an image that is not where it expects. It happens with renamed files, a wrong folder, or a pack made for a different version. Packs exported here keep the exact vanilla paths of the version you picked. ',
+            link('/guides/texture-pack-not-working', 'Fix a pack that is not working'),
+            '.',
+          ),
+        ],
+      },
+      {
+        id: 'unzip',
+        q: 'Do I need to unzip the download?',
+        a: [el('p', null, 'No. On Java, put the ', code('.zip'), ' in the ', code('resourcepacks'), ' folder as it is. On Bedrock, open the ', code('.mcpack'), ' and Minecraft imports it.')],
       },
       {
         id: 'older',
@@ -127,7 +168,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         ],
       },
     ],
-    guides: ['make-a-texture-pack', 'install-resource-packs', 'minecraft-pack-format-versions', 'java-vs-bedrock-packs'],
+    guides: ['make-a-texture-pack', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: 'Start a texture pack',
   },
   skins: {
@@ -135,7 +176,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
     accent: 'accent-blue',
     icon: 'human',
     eyebrow: 'Skins',
-    heading: 'Make a custom Minecraft skin online',
+    heading: 'Make a custom Minecraft skin or skin pack',
     appName: 'Minecraft Skin Editor',
     lead: [
       'Paint your character on the standard skin template while a 3D model updates live, then use it in ',
@@ -151,15 +192,17 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       'Per-part locking and separate base and outer layer editing',
       'Start from a blank skin, a colour-coded template, starter characters, an uploaded PNG, a Java player name or the default skins from the game files',
       'Legacy 64×32 skins are converted when you open them',
-      'Export a Java PNG (plus legacy 64×32) or a Bedrock skin pack (.mcpack)',
+      'Export a Java PNG (plus legacy 64×32) or a Bedrock skin pack (.mcpack) with one or more skins',
+      'Paint in 2D on the template or directly on the 3D model, with body part toggles',
     ],
     features: [
       ['Paint on the 64×64 template with part outlines and a live 3D preview.'],
       ['Classic (4-pixel arms) and slim (3-pixel arms) models.'],
       ['True mirroring: paint the left arm and the right arm follows. Lock body parts and edit the base or outer layer on its own.'],
+      ['Paint on the flat template or straight onto the 3D model, and hide body parts to reach every side.'],
       ['Start from a blank skin, a colour-coded template, original starter characters, an uploaded PNG, any Java player’s skin by username, or the default skins from the game files.'],
       ['Legacy 64×32 skins are converted to 64×64 when you open them.'],
-      ['Export a Java ', code('.png'), ' (plus a legacy 64×32 copy for 1.7.10 and older) or a Bedrock skin pack ', code('.mcpack'), '.'],
+      ['Export a Java ', code('.png'), ' (plus a legacy 64×32 copy for 1.7.10 and older), or a Bedrock skin pack ', code('.mcpack'), ' holding one skin or a whole set, classic and slim mixed.'],
     ],
     howTitle: 'How to make a skin here',
     steps: [
@@ -196,6 +239,21 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         ],
       },
       {
+        id: 'pack',
+        q: 'How do I make a custom skin pack?',
+        a: [
+          el(
+            'p',
+            null,
+            'Paint each skin as its own project, then choose ',
+            strong('Bedrock skin pack (.mcpack)'),
+            ' and tick the other skins to add. Every skin keeps its own name and classic or slim arms, and exporting again updates the installed pack instead of adding a copy. ',
+            link('/skin-pack-maker', 'More about the skin pack maker'),
+            '.',
+          ),
+        ],
+      },
+      {
         id: 'trusted',
         q: 'Why do my friends see a default skin?',
         a: [el('p', null, 'On Bedrock, players who turn on ', strong('Only Allow Trusted Skins'), ' see custom skins as default ones. It is a setting on their side.')],
@@ -203,6 +261,111 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
     ],
     guides: ['make-a-skin', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: 'Start a skin',
+  },
+  skinpack: {
+    tool: 'skinpack',
+    base: 'skins',
+    accent: 'accent-blue',
+    icon: 'package',
+    eyebrow: 'Skin packs',
+    heading: 'Minecraft Skin Pack Maker',
+    appName: 'Minecraft Skin Pack Maker',
+    lead: [
+      'Paint or upload your skins, then download them together as one Bedrock ',
+      code('.mcpack'),
+      ' that Minecraft imports when you open it. Classic and slim skins can share a pack, and it is free, with no account and nothing uploaded.',
+    ],
+    featureList: [
+      'Bundle one or more skins into a single Bedrock skin pack (.mcpack)',
+      'Classic (4-pixel arms) and slim (3-pixel arms) skins in the same pack',
+      'Paint skins on the 64×64 template or directly on the 3D model',
+      'Start from a template, an uploaded PNG, a Java player name or the default skins',
+      'Writes manifest.json, skins.json and the language file for you',
+      'Re-exporting keeps the pack IDs and raises the version, so the installed pack updates',
+    ],
+    features: [
+      ['Put one skin or a whole set in a single ', code('.mcpack'), ', each with its own name.'],
+      ['Mix classic (Steve, 4-pixel arms) and slim (Alex, 3-pixel arms) skins in one pack.'],
+      ['Paint on the 64×64 template or right on the 3D model, with mirroring, part locks and both layers.'],
+      ['Start from a blank or colour-coded template, an uploaded PNG (64×64 or legacy 64×32), any Java player’s skin by username, or the default skins.'],
+      [code('manifest.json'), ', ', code('skins.json'), ' and the language file are written for you, with fresh unique IDs.'],
+      ['Export again after a change and the installed pack updates instead of appearing twice.'],
+    ],
+    howTitle: 'How to make a skin pack',
+    steps: [
+      'Create a skin: pick a starting point and the arm style, then paint it. Every skin is saved on this device as its own project.',
+      'Make the other skins you want in the pack the same way.',
+      ['Open one of them, choose ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', name the pack and tick the other skins to include.'],
+      ['Open the downloaded ', code('.mcpack'), ': double-click it on Windows, or tap it and choose Minecraft on Android, iPhone and iPad.'],
+      ['In Minecraft go to ', strong('Dressing Room'), ' › ', strong('Classic Skins'), ', find your pack, pick a skin and press ', strong('Equip'), '.'],
+    ],
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-card' },
+        el(sub, null, 'What is inside a Bedrock skin pack?'),
+        el(
+          'p',
+          null,
+          'A skin pack is a zip file renamed to ',
+          code('.mcpack'),
+          '. It holds a ',
+          code('manifest.json'),
+          ' (module type ',
+          code('skin_pack'),
+          '), a ',
+          code('skins.json'),
+          ' that lists every skin with the classic (',
+          code('geometry.humanoid.custom'),
+          ') or slim (',
+          code('geometry.humanoid.customSlim'),
+          ') model, the skin PNGs, and ',
+          code('texts/en_US.lang'),
+          ' with the pack and skin names. ',
+          link('/guides/make-a-skin', 'More about skins and the template'),
+          '.',
+        ),
+      ),
+    ],
+    faq: [
+      {
+        id: 'java',
+        q: 'Do skin packs work on Java Edition?',
+        a: [el('p', null, 'No. Skin packs are a Bedrock feature. On Java you use one skin at a time: export it as a ', code('.png'), ' from the ', link('/skins', 'skin editor'), ' and add it in the Minecraft Launcher.')],
+      },
+      {
+        id: 'console',
+        q: 'Can I use a custom skin pack on Xbox, PlayStation or Switch?',
+        a: [el('p', null, 'No. Consoles cannot import skin packs or skin files. Windows, Android, iPhone and iPad can.')],
+      },
+      {
+        id: 'slim',
+        q: 'Can one pack hold classic and slim skins?',
+        a: [el('p', null, 'Yes. Every skin keeps the arm model it was painted with, so classic and slim skins sit side by side in the same pack.')],
+      },
+      {
+        id: 'update',
+        q: 'How do I update a skin pack I already imported?',
+        a: [el('p', null, 'Change the skins and export the pack again, then open the new file. The pack keeps its IDs and gets a higher version number, so Minecraft replaces the old copy.')],
+      },
+      {
+        id: 'where',
+        q: 'Where do I find my skin pack in Minecraft?',
+        a: [el('p', null, 'In the Dressing Room under Classic Skins, listed by the pack name you chose. If it is missing, open the ', code('.mcpack'), ' again and wait for the “Successfully imported” message.')],
+      },
+      {
+        id: 'trusted',
+        q: 'Why do my friends see a default skin?',
+        a: [el('p', null, 'Players who turn on ', strong('Only Allow Trusted Skins'), ' see custom skins as default ones. It is a setting on their side.')],
+      },
+      {
+        id: 'private',
+        q: 'Are my skins uploaded anywhere?',
+        a: [el('p', null, 'No. The skins and the pack are made in your browser and stay on your device until you share the file.')],
+      },
+    ],
+    guides: ['make-a-skin', 'install-resource-packs', 'java-vs-bedrock-packs'],
+    cta: 'Start a skin pack',
   },
   shaders: {
     tool: 'shaders',
@@ -318,7 +481,7 @@ export function toolIntro(tool: IntroTool, opts: { prerender: boolean }): ElNode
       ),
       el('div', { class: 'tool-intro-card' }, el(sub, null, t.howTitle), steps(t.steps)),
     ),
-    t.extra ?? null,
+    t.extra ? t.extra(sub) : null,
     el('div', { class: 'tool-intro-faq' }, el(sub, null, 'Questions'), el('div', { class: 'tool-intro-card flush' }, faqList(t.faq, { idPrefix: `${tool}-faq` }))),
     el('div', { class: 'tool-intro-guides' }, el(sub, null, 'Guides'), guideCards(t.guides, opts.prerender ? 'h3' : 'h4', 2)),
   );

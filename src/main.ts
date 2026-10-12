@@ -18,7 +18,12 @@ initToasts();
 initHead();
 
 // The texture, skin and shader start screens get the same introduction as their prerendered pages.
-const INTRO_ROUTES: Record<string, 'textures' | 'skins' | 'shaders'> = { '/textures': 'textures', '/skins': 'skins', '/shaders': 'shaders' };
+const INTRO_ROUTES: Record<string, 'textures' | 'skins' | 'skinpack' | 'shaders'> = {
+  '/textures': 'textures',
+  '/skins': 'skins',
+  '/skin-pack-maker': 'skinpack',
+  '/shaders': 'shaders',
+};
 onViewRendered((state, view) => {
   const tool = state.pattern ? INTRO_ROUTES[state.pattern] : undefined;
   if (!tool) return;

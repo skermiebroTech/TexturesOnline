@@ -6,7 +6,7 @@ import { sanitizeFilename } from '../../core/download';
 import { writeZip } from '../../core/zip';
 import { uuidv4 } from '../../core/uuid';
 import type { SkinModel, SkinProject } from '../../core/types';
-import { buildSkinPackFiles, bumpPackVersion } from '../../editions/bedrock/manifest';
+import { buildSkinPackFiles, bumpPackVersion, prepareSkinPngSync } from '../../editions/bedrock/manifest';
 import { convertArms, countBaseHoles, countOuterPixels, faceRects, mirrorPixel, type SkinPart } from './templates';
 
 /** Skin project with the extra fields the skin tool stores (IndexedDB keeps any shape). */
@@ -17,7 +17,14 @@ export interface SkinProjectData extends SkinProject {
   packVersion?: [number, number, number];
   /** How the project was started ('template', 'upload', 'username', ...) */
   source?: string;
+  /** Other saved skin projects bundled into this project's .mcpack (in pack order) */
+  packSkinIds?: string[];
+  /** Skin pack name, when it differs from the project name */
+  packName?: string;
 }
+
+/** A saved skin added to another project's skin pack. */
+export type PackSkinSource = Pick<SkinProjectData, 'id' | 'name' | 'model' | 'image'>;
 
 export type ExportKind = 'java' | 'java-legacy' | 'bedrock-pack' | 'bedrock-png';
 
@@ -28,6 +35,8 @@ export interface ExportResult {
   notes: string[];
   /** Short extra detail shown next to the file name */
   meta?: string;
+  /** Skins in a .mcpack */
+  skinCount?: number;
 }
 
 function pngBlob(img: ImageData): Blob {
@@ -98,26 +107,72 @@ export function exportBedrockPng(img: ImageData, name: string): ExportResult {
   return { blob: pngBlob(img), filename: `${baseName(name)}-bedrock.png`, notes };
 }
 
+/** Name shown for the pack in the Dressing Room: the stored pack name, else the project name. */
+export function packNameOf(project: Pick<SkinProjectData, 'name' | 'packName'>): string {
+  return project.packName?.trim() || project.name?.trim() || 'My Skin';
+}
+
 /**
- * Bedrock skin pack (.mcpack). Uuids are created once per project and kept, and the pack version
+ * The saved skins to bundle with `selfId`, in `ids` order: duplicates, the project itself and ids
+ * whose project was deleted are skipped.
+ */
+export function pickPackSkins<T extends { id: string }>(ids: readonly string[] | undefined, available: readonly T[], selfId: string): T[] {
+  const byId = new Map(available.map((p) => [p.id, p]));
+  const seen = new Set<string>([selfId]);
+  const out: T[] = [];
+  for (const id of ids ?? []) {
+    const p = byId.get(id);
+    if (!p || seen.has(id)) continue;
+    seen.add(id);
+    out.push(p);
+  }
+  return out;
+}
+
+/**
+ * Pack order after the user changed the checklist: skins already in the pack keep their place,
+ * newly ticked ones go after them in the order they are listed.
+ */
+export function orderPackSkinIds(previous: readonly string[] | undefined, checkedInListOrder: readonly string[]): string[] {
+  const checked = new Set(checkedInListOrder);
+  const kept = [...new Set((previous ?? []).filter((id) => checked.has(id)))];
+  const keptSet = new Set(kept);
+  return [...kept, ...[...checked].filter((id) => !keptSet.has(id))];
+}
+
+export function skinCountLabel(n: number): string {
+  return `${n} skin${n === 1 ? '' : 's'}`;
+}
+
+/**
+ * Bedrock skin pack (.mcpack) with this skin first, then `extras` (other saved skins), each with
+ * its own name and arm model. Uuids are created once per project and kept, and the pack version
  * goes up on every export so re-importing updates the installed pack. Mutates `project`
  * (bedrockUuids / packVersion) — save it afterwards.
  */
-export async function exportBedrockPack(project: SkinProjectData, img: ImageData): Promise<ExportResult> {
+export async function exportBedrockPack(project: SkinProjectData, img: ImageData, extras: readonly PackSkinSource[] = []): Promise<ExportResult> {
+  const skinName = (project.name || 'My Skin').trim() || 'My Skin';
+  const packName = packNameOf(project);
+  const others = await Promise.all(
+    extras.map(async (p) => {
+      const name = (p.name || 'Skin').trim() || 'Skin';
+      try {
+        return { name, model: p.model, png: prepareSkinPngSync(new Uint8Array(await p.image.arrayBuffer())) };
+      } catch (err) {
+        throw new Error(`"${name}" could not be added to the pack: ${err instanceof Error ? err.message : 'the image is unreadable.'}`);
+      }
+    }),
+  );
   if (!project.bedrockUuids) project.bedrockUuids = { header: uuidv4(), module: uuidv4() };
   project.packVersion = bumpPackVersion(project.packVersion);
-  const name = (project.name || 'My Skin').trim() || 'My Skin';
-  const files = buildSkinPackFiles({
-    name,
-    skins: [{ name, model: project.model, png: encodePng(cloneImageData(img)) }],
-    uuids: project.bedrockUuids,
-    version: project.packVersion,
-  });
+  const skins = [{ name: skinName, model: project.model, png: encodePng(cloneImageData(img)) }, ...others];
+  const files = buildSkinPackFiles({ name: packName, skins, uuids: project.bedrockUuids, version: project.packVersion });
   const blob = await writeZip(files, { mimeType: 'application/octet-stream' });
   return {
     blob,
-    filename: `${baseName(name)}.mcpack`,
+    filename: `${baseName(packName)}.mcpack`,
     notes: [],
-    meta: `Pack v${project.packVersion.join('.')}`,
+    meta: `Pack v${project.packVersion.join('.')} · ${skinCountLabel(skins.length)}`,
+    skinCount: skins.length,
   };
 }

@@ -1569,6 +1569,96 @@
   color: var(--text-2);
 }
 
+/* Skin pack maker (modal) */
+.sk-pack-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: -8px;
+}
+.sk-pack-head .sk-guide-title {
+  margin-top: 0;
+}
+.sk-pack-all {
+  margin-left: auto;
+}
+.sk-pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(340px, 42vh);
+  margin: 0 -4px;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sk-pack-skin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 6px 12px 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
+}
+.sk-pack-skin:hover {
+  border-color: color-mix(in srgb, var(--tool-accent) 45%, var(--border));
+}
+.sk-pack-skin:has(.sk-pack-check:checked) {
+  border-color: color-mix(in srgb, var(--tool-accent) 60%, var(--border));
+  background: color-mix(in srgb, var(--tool-accent) 7%, var(--surface));
+}
+.sk-pack-skin:has(.sk-pack-check:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+.sk-pack-skin.is-current {
+  cursor: default;
+}
+.sk-pack-check {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--tool-accent);
+  cursor: inherit;
+}
+.sk-pack-check:focus-visible {
+  outline: none;
+}
+.sk-pack-thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 52px;
+  padding: 3px 0 2px;
+  border-radius: var(--r-sm);
+  background:
+    radial-gradient(circle at 50% 42%, var(--tool-accent-soft), transparent 68%),
+    var(--bg-elev);
+  color: var(--text-3);
+}
+.sk-pack-info {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sk-pack-name {
+  font-weight: 700;
+}
+.sk-pack-meta {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
 .sk-missing {
   display: flex;
   flex: 1 1 auto;

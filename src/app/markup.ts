@@ -94,6 +94,9 @@ export function resolvedAttrs(attrs: Attrs, link: (to: string) => string): [stri
       if (cls) out.push(['class', cls]);
     } else if (k === 'to') {
       if (typeof v === 'string') out.push(['href', link(v)]);
+    } else if (k === 'src' && typeof v === 'string' && v.startsWith('/')) {
+      // site files ('/screenshots/x.jpg') resolve against the site root like links do
+      out.push(['src', link(v)]);
     } else if (v === true) {
       out.push([k, '']);
     } else if (v !== false && v !== null && v !== undefined) {

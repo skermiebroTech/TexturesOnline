@@ -44,6 +44,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/textures', load: textures, title: TOOL_META.textures.title, tool: 'textures' },
   { pattern: '/textures/:id', load: textures, title: `Texture packs — ${APP}`, tool: 'textures' },
   { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
+  { pattern: '/skin-pack-maker', load: skins, title: TOOL_META.skinpack.title, tool: 'skins' },
   { pattern: '/skins/:id', load: skins, title: `Skin editor — ${APP}`, tool: 'skins' },
   { pattern: '/shaders', load: shaders, title: TOOL_META.shaders.title, tool: 'shaders' },
   { pattern: '/shaders/:id', load: shaders, title: `Shader maker — ${APP}`, tool: 'shaders' },

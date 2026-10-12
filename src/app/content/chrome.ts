@@ -95,9 +95,10 @@ export function footer(year: number): ElNode {
           'div',
           { class: 'footer-col' },
           el('div', { class: 'section-title' }, 'Make'),
-          el('a', { to: '/textures' }, 'Texture packs'),
-          el('a', { to: '/skins' }, 'Skins'),
-          el('a', { to: '/shaders' }, 'Shaders'),
+          el('a', { to: '/textures' }, 'Texture pack editor'),
+          el('a', { to: '/skins' }, 'Skin editor'),
+          el('a', { to: '/skin-pack-maker' }, 'Skin pack maker'),
+          el('a', { to: '/shaders' }, 'Shader maker'),
         ),
         el(
           'div',

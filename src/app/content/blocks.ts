@@ -42,6 +42,24 @@ export const ext = (href: string, label: string): ElNode => el('a', { href, targ
 export const link = (to: string, ...label: Child[]): ElNode => el('a', { to }, ...label);
 
 export const code = (text: string): ElNode => el('code', null, text);
+
+export interface Shot {
+  /** Site path, e.g. '/screenshots/guides/texture-editor.jpg' */
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  caption?: string;
+}
+
+/** A screenshot with a caption (lazy-loaded, sized to avoid layout shift). */
+export const figure = (shot: Shot): ElNode =>
+  el(
+    'figure',
+    { class: 'guide-figure' },
+    el('img', { src: shot.src, alt: shot.alt, width: shot.width, height: shot.height, loading: 'lazy', decoding: 'async' }),
+    shot.caption ? el('figcaption', null, shot.caption) : null,
+  );
 export const strong = (...text: Child[]): ElNode => el('strong', null, ...text);
 
 export interface TabOption {
