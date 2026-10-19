@@ -44,8 +44,11 @@ const base = (n: string): string => {
   return p.slice(p.lastIndexOf('/') + 1);
 };
 
-/** Table file for a version; versions without their own table borrow a same-format neighbour. */
-const TABLE_ALIASES: Record<string, string> = { '1.21.7': '1.21.8' };
+/**
+ * Table file for a version; versions without their own table borrow a neighbour whose pipelines are
+ * identical (26.1.1 and 26.1.2 ship the same RenderPipelines class and shader files as 26.1).
+ */
+const TABLE_ALIASES: Record<string, string> = { '1.21.7': '1.21.8', '26.1.1': '26.1', '26.1.2': '26.1' };
 
 function pipelineTable(version: string): { location: string; vsh: string; fsh: string; defines: string[]; uniforms: string[] }[] | null {
   const dir = fixturesDir();
