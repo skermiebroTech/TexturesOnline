@@ -125,7 +125,9 @@ async function shot(page, name) {
     const page = await ctx.newPage();
     page.on('pageerror', (e) => errors.push(`pageerror ${e.message}`));
     page.on('console', (m) => {
-      if (m.type() === 'error' && !/favicon|ERR_|404/.test(m.text())) errors.push(m.text());
+      // A mirror refusing a download (403/404/network) is logged by the browser even though the app
+      // falls back to the next mirror; real script errors still fail the check.
+      if (m.type() === 'error' && !/favicon|ERR_|404|Failed to load resource/.test(m.text())) errors.push(m.text());
     });
 
     // entry point on the texture start screen

@@ -15,7 +15,7 @@ export type IntroTool = 'textures' | 'converter' | 'skins' | 'skinpack' | 'shade
 export interface ToolIntro {
   tool: IntroTool;
   /** Tool whose start screen the page boots into, when it is not the page's own (skin pack maker → skins) */
-  base?: 'textures' | 'skins' | 'shaders';
+  base?: 'textures' | 'convert' | 'skins' | 'shaders';
   accent: string;
   icon: IconName;
   eyebrow: string;
@@ -175,7 +175,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
   },
   converter: {
     tool: 'converter',
-    base: 'textures',
+    base: 'convert',
     accent: 'accent-green',
     icon: 'repeat',
     eyebrow: 'Converter',

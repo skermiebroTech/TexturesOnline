@@ -18,7 +18,7 @@ export type ViewModule = {
   default: (root: HTMLElement, ctx: RouteContext) => void | (() => void) | Promise<void | (() => void)>;
 };
 
-export type ToolId = 'home' | 'textures' | 'skins' | 'shaders' | 'help' | 'kit';
+export type ToolId = 'home' | 'textures' | 'convert' | 'skins' | 'shaders' | 'help' | 'kit';
 
 export interface RouteDef {
   pattern: string;
@@ -44,7 +44,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/', load: () => import('../tools/home/home'), title: HOME_META.title, tool: 'home' },
   { pattern: '/textures', load: textures, title: TOOL_META.textures.title, tool: 'textures' },
   { pattern: '/textures/:id', load: textures, title: `Texture packs — ${APP}`, tool: 'textures' },
-  { pattern: '/texture-pack-converter', load: converter, title: TOOL_META.converter.title, tool: 'textures' },
+  { pattern: '/texture-pack-converter', load: converter, title: TOOL_META.converter.title, tool: 'convert' },
   { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
   { pattern: '/skin-pack-maker', load: skins, title: TOOL_META.skinpack.title, tool: 'skins' },
   { pattern: '/skins/:id', load: skins, title: `Skin editor — ${APP}`, tool: 'skins' },

@@ -49,6 +49,7 @@
 }
 .topbar.scrolled,
 body[data-route='textures'] .topbar,
+body[data-route='convert'] .topbar,
 body[data-route='skins'] .topbar,
 body[data-route='shaders'] .topbar {
   border-bottom-color: var(--border);
@@ -163,9 +164,20 @@ body[data-route='shaders'] .topbar {
 }
 
 /* small laptops / tablets in landscape: text-only nav so the bar never overflows */
-@media (max-width: 1120px) {
+@media (max-width: 1260px) {
   .mainnav .nav-link .icon {
     display: none;
+  }
+}
+@media (max-width: 1060px) {
+  .topbar-inner {
+    gap: 12px;
+  }
+  .mainnav {
+    margin-left: 0;
+  }
+  .nav-link {
+    padding: 0 8px 2px;
   }
 }
 @media (max-width: 900px) {

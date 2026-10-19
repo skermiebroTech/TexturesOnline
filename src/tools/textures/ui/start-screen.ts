@@ -448,6 +448,13 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
         h('span', { class: 'eyebrow' }, icon('image'), 'Texture Pack Maker'),
         h('h1', { class: 'pixel-shadow' }, 'Make Minecraft look ', h('span', { class: 'accent' }, 'your'), ' way'),
         h('p', { class: 'lead' }, 'Repaint any block, item or mob, upload your own pictures, or restyle everything with one click. Works for Java and Bedrock.'),
+        h(
+          'a',
+          { class: 'tx-hero-convert', href: routeHref('/texture-pack-converter') },
+          icon('repeat'),
+          h('span', null, 'Pack for the other edition? ', h('strong', null, 'Convert it')),
+          icon('arrow-right'),
+        ),
       ),
       heroArt(),
     ),

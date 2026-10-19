@@ -287,6 +287,18 @@ export function homePage(): ElNode[] {
     { class: 'section tools container', 'aria-labelledby': 'tools-title' },
     sectionHead('tools', 'Three tools, one place', 'tools-title', 'What do you want to make?', 'Everything you need to give Minecraft your own style. No installs, no accounts — just open a tool and start.'),
     el('div', { class: 'tool-grid' }, TOOLS.map(toolCard)),
+    el(
+      'a',
+      { class: 'convert-banner accent-green', to: '/texture-pack-converter' },
+      el('span', { class: 'convert-banner-icon' }, ic('repeat')),
+      el(
+        'span',
+        { class: 'convert-banner-text' },
+        el('strong', { class: 'convert-banner-title' }, 'Texture Pack Converter'),
+        el('span', { class: 'muted' }, 'Turn a Java pack into a Bedrock one or back, update an old pack to 26.3, or turn PNGs into an .mcpack.'),
+      ),
+      el('span', { class: 'convert-banner-cta', 'data-md': 'skip' }, 'Convert a pack', ic('arrow-right')),
+    ),
   );
 
   const features = el(

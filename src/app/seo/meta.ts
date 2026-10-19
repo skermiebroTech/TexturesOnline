@@ -4,7 +4,7 @@
 import { SITE_NAME } from '../site';
 
 export type PageKind = 'home' | 'tool' | 'help' | 'guides' | 'guide';
-export type PageTool = 'home' | 'textures' | 'skins' | 'shaders' | 'help';
+export type PageTool = 'home' | 'textures' | 'convert' | 'skins' | 'shaders' | 'help';
 
 export interface PageMeta {
   /** Route path without trailing slash ('/', '/textures', '/guides/make-a-skin') */
@@ -55,7 +55,7 @@ export const TOOL_META: Record<'textures' | 'converter' | 'skins' | 'skinpack' |
   converter: {
     path: '/texture-pack-converter',
     kind: 'tool',
-    tool: 'textures',
+    tool: 'convert',
     title: 'Minecraft Texture Pack Converter — Java to Bedrock & Back',
     description:
       'Convert a Minecraft texture pack from Java to Bedrock, Bedrock to Java or between Java versions, or turn PNGs into an .mcpack. Free, in your browser.',

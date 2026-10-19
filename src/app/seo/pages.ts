@@ -30,7 +30,7 @@ import { GUIDE_CONTENT, guidePage, guidesIndexPage } from '../../tools/guides/co
 export interface PrerenderPage {
   meta: PageMeta;
   /** <html data-tool> and <body data-route> */
-  tool: 'home' | 'textures' | 'skins' | 'shaders' | 'help';
+  tool: 'home' | 'textures' | 'convert' | 'skins' | 'shaders' | 'help';
   /** Highlighted main-nav link */
   nav: NavTool;
   /** Classes of the view element (same as the router + view add at runtime) */

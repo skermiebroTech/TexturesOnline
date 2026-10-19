@@ -5,7 +5,7 @@ import { el, ic, logo, type ElNode } from '../markup';
 import { GUIDES } from '../seo/meta';
 import { REPO_URL, SITE_NAME } from '../site';
 
-export type NavTool = 'home' | 'textures' | 'skins' | 'shaders' | 'help';
+export type NavTool = 'home' | 'textures' | 'convert' | 'skins' | 'shaders' | 'help';
 
 export interface NavItem {
   path: string;
@@ -18,6 +18,7 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   { path: '/', label: 'Home', icon: 'home', tool: 'home', accent: 'accent-green' },
   { path: '/textures', label: 'Textures', icon: 'image', tool: 'textures', accent: 'accent-green' },
+  { path: '/texture-pack-converter', label: 'Convert', icon: 'repeat', tool: 'convert', accent: 'accent-green' },
   { path: '/skins', label: 'Skins', icon: 'human', tool: 'skins', accent: 'accent-blue' },
   { path: '/shaders', label: 'Shaders', icon: 'sparkles', tool: 'shaders', accent: 'accent-purple' },
   { path: '/help', label: 'Help', icon: 'circle-question', tool: 'help', accent: 'accent-gold' },

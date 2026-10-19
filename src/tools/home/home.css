@@ -542,6 +542,83 @@
   color: var(--gold);
 }
 
+/* ---------- Converter banner (under the tool cards) ---------- */
+.convert-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+  padding: 20px 24px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(420px 120px at 0% 50%, color-mix(in srgb, var(--green) 12%, transparent), transparent 70%),
+    var(--surface);
+  color: var(--text-2);
+  text-decoration: none;
+  transition:
+    border-color var(--dur-2) var(--ease),
+    transform var(--dur-2) var(--ease);
+}
+.convert-banner:hover {
+  border-color: color-mix(in srgb, var(--green) 55%, var(--border));
+  transform: translateY(-2px);
+}
+.convert-banner:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.convert-banner-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  color: var(--green);
+}
+.convert-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.convert-banner-title {
+  color: var(--text);
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+}
+.convert-banner-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  color: var(--green);
+  font-weight: 700;
+}
+.convert-banner:hover .convert-banner-cta .icon {
+  transform: translateX(3px);
+}
+.convert-banner-cta .icon {
+  transition: transform var(--dur-1) var(--ease);
+}
+@media (max-width: 640px) {
+  .convert-banner {
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 14px;
+  }
+  .convert-banner-text {
+    flex-basis: calc(100% - 64px);
+  }
+  .convert-banner-cta {
+    margin-left: 62px;
+  }
+}
+
 /* ---------- Features ---------- */
 .values.feature-grid {
   margin-top: 0;
