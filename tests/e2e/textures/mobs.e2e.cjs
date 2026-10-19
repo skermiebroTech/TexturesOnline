@@ -1,7 +1,9 @@
 // End-to-end checks for mob models in the texture pack maker: the Mobs list, opening a mob texture
 // shows its mob, painting the creeper's face on the 3D model (one undo step, the texture's history),
-// the hover names the body part, hiding / soloing body parts, the "Used by" chip, a phone tap, and the
-// Bedrock creeper drawn from Bedrock's own geometry.
+// the hover names the body part, hiding / soloing body parts, the "Used by" chip, a phone tap, things
+// mobs wear (a saddle on the pig painted on its own texture, iron armour on the zombie with the
+// chestplate hidden to paint the body, armour opening on the armour stand), and the Bedrock creeper
+// drawn from Bedrock's own geometry and a Bedrock horse in armour.
 // Usage: NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs [baseUrl] [--no-bedrock] [--shots <dir>]
 const fs = require('node:fs');
 const path = require('node:path');
@@ -22,6 +24,10 @@ function check(name, ok, detail = '') {
 }
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const CREEPER = 'assets/minecraft/textures/entity/creeper/creeper.png';
+const SADDLE = 'assets/minecraft/textures/entity/equipment/pig_saddle/saddle.png';
+const PIG = 'assets/minecraft/textures/entity/pig/pig_temperate.png';
+const IRON = 'assets/minecraft/textures/entity/equipment/humanoid/iron.png';
+const ZOMBIE = 'assets/minecraft/textures/entity/zombie/zombie.png';
 
 async function newPack(page, base, name, bedrock = false) {
   await page.goto(base + '#/textures');
@@ -55,6 +61,23 @@ async function texelPoint(page, p, x, y, w, h, tries = 40) {
 }
 
 const pixel = (page, x, y) => page.evaluate(([xx, yy]) => window.__tx.pixel(xx, yy), [x, y]);
+
+/** The first opaque texel of the open texture in a region that a face shows on screen. */
+async function shownTexel(page, p, w, h, [u0, v0, u1, v1]) {
+  const opaque = await page.evaluate(
+    ([a, b, c, d]) => {
+      const out = [];
+      for (let v = b; v < d; v++) for (let u = a; u < c; u++) if (window.__tx.pixel(u, v)?.[3] === 255) out.push([u, v]);
+      return out;
+    },
+    [u0, v0, u1, v1],
+  );
+  for (const [u, v] of opaque) {
+    const pt = await page.evaluate(([pp, uu, vv, ww, hh]) => window.__tx.preview.view3d()?.texelPoint(pp, uu, vv, ww, hh) ?? null, [p, u, v, w, h]);
+    if (pt) return { u, v, pt };
+  }
+  return null;
+}
 const setColor = (page, c) => page.evaluate((cc) => window.__tx.canvas.canvas().setColor(cc), c);
 const setTool = (page, t) => page.evaluate((tt) => window.__tx.canvas.canvas().setTool(tt), t);
 const isEdited = (page, p) => page.evaluate((pp) => window.__tx.store.isEdited(pp), p);
@@ -192,6 +215,106 @@ const partChips = (page) =>
     check('the sheep draws its body and wool', sheepTex.some((p) => /sheep\.png$/.test(p) || /sheep_temperate|sheep\/sheep/.test(p)) && sheepTex.some((p) => /wool/.test(p)), sheepTex.join(', '));
     const pageNoScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
     check('desktop: no horizontal scroll', pageNoScroll);
+
+    // ---------------------------------------------------------------- things mobs wear
+    const current = () => page.evaluate(() => window.__tx.preview.current() && { id: window.__tx.preview.current().entry.id, state: window.__tx.preview.current().state });
+    const shownTextures = () =>
+      page.evaluate(() => {
+        const c = window.__tx.preview.current();
+        return window.__tx.models.lib
+          .resolve(c.entry, c.state)
+          .textures.filter((t) => t.faces > 0)
+          .map((t) => t.path);
+      });
+    // the creeper wears nothing: no "Wearing" choices
+    await page.evaluate(() => window.__tx.showMob('creeper'));
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'creeper', null, { timeout: 30000 });
+    await page.waitForTimeout(400);
+    check('a mob that wears nothing has no "Wearing" choices', !(await page.isVisible('.tx-pv-gearhead')));
+    // a saddle on the pig
+    await page.evaluate(() => window.__tx.showMob('pig'));
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'pig', null, { timeout: 30000 });
+    await page.waitForSelector('.tx-pv-state[data-prop="saddle"]', { timeout: 30000 });
+    check('the pig offers a saddle under "Wearing"', await page.isVisible('.tx-pv-gearhead'));
+    await page.click('.tx-pv-state[data-prop="saddle"] .segmented-item[data-value="on"]');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.saddle === 'on', null, { timeout: 10000 });
+    await page.waitForTimeout(800);
+    check('the saddle is drawn on its own texture', (await shownTextures()).includes(SADDLE), (await shownTextures()).join(', '));
+    st = await partChips(page);
+    check('the saddle is a part of its own', st.some((c) => c.name === 'gear:saddle' && c.label === 'Saddle' && c.on), st.map((c) => c.label).join(', '));
+    // paint the saddle on the model: the first opaque saddle texel on screen
+    await page.evaluate((p) => window.__tx.open(p), SADDLE);
+    await page.waitForFunction((p) => window.__tx.canvas.current()?.key === p && !!window.__tx.canvas.canvas(), SADDLE, { timeout: 30000 });
+    await page.waitForTimeout(500);
+    check('opening the saddle keeps the saddled pig', eq(await current(), { id: 'pig', state: { variant: 'temperate', age: 'adult', saddle: 'on' } }), JSON.stringify(await current()));
+    await setTool(page, 'pencil');
+    await setColor(page, [250, 20, 200, 255]);
+    const saddleHit = await shownTexel(page, SADDLE, 64, 64, [28, 8, 64, 32]);
+    check('a saddle texel is on screen', !!saddleHit, JSON.stringify(saddleHit));
+    if (saddleHit) {
+      await page.mouse.click(saddleHit.pt.x, saddleHit.pt.y);
+      await page.waitForTimeout(400);
+      check('a click paints the saddle', eq(await pixel(page, saddleHit.u, saddleHit.v), [250, 20, 200, 255]) && (await isEdited(page, SADDLE)), JSON.stringify(await pixel(page, saddleHit.u, saddleHit.v)));
+      check('the pig under the saddle is untouched', !(await isEdited(page, PIG)));
+      if (shotsDir) await page.screenshot({ path: path.join(shotsDir, 'mobs-pig-saddle.png') });
+      await page.keyboard.press('Control+z');
+      await page.waitForTimeout(250);
+      check('undo restores the saddle', !(await isEdited(page, SADDLE)));
+    }
+    const usedSaddle = await page.evaluate(() => [...document.querySelectorAll('.tx-usedby-chip')].map((b) => b.dataset.id));
+    check('"Used by" on the saddle names the pig', usedSaddle[0] === 'pig', usedSaddle.join(', '));
+
+    // humanoid armour opens on the armour stand
+    await page.evaluate((p) => window.__tx.open(p), IRON);
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'armor_stand', null, { timeout: 30000 }).catch(() => undefined);
+    const stand = await current();
+    check('opening iron armour shows it on the armour stand', stand?.id === 'armor_stand' && stand.state.helmet === 'iron' && stand.state.chestplate === 'iron' && stand.state.boots === 'iron', JSON.stringify(stand));
+    const usedIron = await page.evaluate(() => [...document.querySelectorAll('.tx-usedby-chip, .tx-usedby-more')].map((b) => b.dataset.id ?? b.textContent));
+    check('"Used by" on armour lists its wearers, the armour stand first', usedIron[0] === 'armor_stand' && usedIron.length >= 4, usedIron.join(', '));
+
+    // iron armour on the zombie, chestplate hidden to paint the body under it
+    await page.evaluate(() => window.__tx.showMob('zombie'));
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'zombie', null, { timeout: 30000 });
+    await page.waitForSelector('.tx-pv-state[data-prop="armor"] select', { timeout: 30000 });
+    await page.selectOption('.tx-pv-state[data-prop="armor"] select', 'iron');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.chestplate === 'iron', null, { timeout: 10000 });
+    await page.waitForTimeout(800);
+    const zs = (await current()).state;
+    check('"Armour: Iron" puts on the whole set', ['helmet', 'chestplate', 'leggings', 'boots'].every((k) => zs[k] === 'iron'), JSON.stringify(zs));
+    check('the armour pieces show as toggles', (await page.locator('.tx-pv-piece[aria-pressed="true"]').count()) === 4);
+    st = await partChips(page);
+    check('each armour piece is a part', ['Helmet', 'Chestplate', 'Leggings', 'Boots'].every((l) => st.some((c) => c.label === l && c.name.startsWith('gear:'))), st.map((c) => c.label).join(', '));
+    await page.evaluate((p) => window.__tx.open(p), ZOMBIE);
+    await page.waitForFunction((p) => window.__tx.canvas.current()?.key === p && !!window.__tx.canvas.canvas(), ZOMBIE, { timeout: 30000 });
+    await page.waitForTimeout(500);
+    check('the chestplate covers the body', !!(await texelPoint(page, IRON, 22, 22, 64, 32, 10)));
+    await page.click('.tx-pv-partsection .tx-pv-part[data-part="gear:chestplate"]');
+    await page.waitForTimeout(600);
+    check('hiding the chestplate takes it off the model', !(await texelPoint(page, IRON, 22, 22, 64, 32, 5)));
+    check('the helmet stays', !!(await texelPoint(page, IRON, 12, 12, 64, 32, 10)));
+    await setColor(page, [10, 200, 90, 255]);
+    // the body (u 16..40, v 16..32), mostly behind the raised arms: a texel of it that shows
+    const body = await shownTexel(page, ZOMBIE, 64, 64, [16, 20, 40, 32]);
+    check('the zombie body under the chestplate is on screen', !!body);
+    if (body) {
+      await page.mouse.click(body.pt.x, body.pt.y);
+      await page.waitForTimeout(400);
+      check('a click paints the zombie body', eq(await pixel(page, body.u, body.v), [10, 200, 90, 255]), JSON.stringify(await pixel(page, body.u, body.v)));
+      check('the armour is untouched', !(await isEdited(page, IRON)));
+      if (shotsDir) await page.screenshot({ path: path.join(shotsDir, 'mobs-zombie-armour.png') });
+      await page.keyboard.press('Control+z');
+      await page.waitForTimeout(250);
+    }
+    await page.click('.tx-pv-partsection .tx-pv-parts-all');
+    // a piece off, then the leather dye
+    await page.click('.tx-pv-piece[data-piece="boots"]');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.boots === 'none', null, { timeout: 10000 });
+    check('a piece toggle takes one piece off', (await current()).state.helmet === 'iron');
+    check('no dye choice without leather', !(await page.isVisible('.tx-pv-state[data-prop="dye"]')));
+    await page.selectOption('.tx-pv-state[data-prop="armor"] select', 'leather');
+    await page.waitForSelector('.tx-pv-state[data-prop="dye"]', { timeout: 10000 });
+    check('leather armour offers a dye', await page.isVisible('.tx-pv-state[data-prop="dye"] select'));
+    check('desktop: no horizontal scroll with armour choices', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
     await ctx.close();
 
     // ------------------------------------------------------------------ phone: tap paints the mob
@@ -244,7 +367,7 @@ const partChips = (page) =>
       }
       // a Bedrock-only pose: the wolf stands on four legs (its body turned by its setup animation)
       await bp.evaluate(() => window.__tx.showMob('wolf'));
-      await bp.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'wolf', null, { timeout: 30000 });
+      await bp.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'wolf' && window.__tx.models.lib.ready(window.__tx.preview.current().entry), null, { timeout: 30000 });
       await bp.waitForTimeout(800);
       const wolf = await bp.evaluate(() => {
         const c = window.__tx.preview.current();
@@ -254,6 +377,28 @@ const partChips = (page) =>
         return { y: span(1) * 16, z: span(2) * 16 };
       });
       check('Bedrock: the wolf body lies along the wolf', wolf.z > wolf.y, JSON.stringify(wolf));
+      // horse armour: another texture of the horse model, a part of its own
+      await bp.evaluate(() => window.__tx.showMob('horse'));
+      await bp.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'horse', null, { timeout: 30000 });
+      await bp.waitForSelector('.tx-pv-state[data-prop="armor"] select', { timeout: 30000 });
+      await bp.selectOption('.tx-pv-state[data-prop="armor"] select', 'iron');
+      await bp.waitForFunction(() => window.__tx.preview.current()?.state.armor === 'iron', null, { timeout: 10000 });
+      await bp.waitForTimeout(800);
+      const horse = await bp.evaluate(() => {
+        const c = window.__tx.preview.current();
+        const v = window.__tx.models.lib.resolve(c.entry, c.state);
+        return { textures: v.textures.filter((t) => t.faces > 0).map((t) => t.path), parts: v.parts.map((p) => p.label) };
+      });
+      check('Bedrock: horse armour is drawn from its texture', horse.textures.includes('textures/entity/horse2/armor/horse_armor_iron.png'), horse.textures.join(', '));
+      check('Bedrock: horse armour is a part of its own', horse.parts.includes('Horse armour'), horse.parts.join(', '));
+      const HA = 'textures/entity/horse2/armor/horse_armor_iron.png';
+      await bp.evaluate((p) => window.__tx.open(p), HA);
+      await bp.waitForFunction((p) => window.__tx.canvas.current()?.key === p && !!window.__tx.canvas.canvas(), HA, { timeout: 30000 });
+      await bp.waitForTimeout(500);
+      check('Bedrock: opening the armour keeps the armoured horse', await bp.evaluate(() => window.__tx.preview.current()?.state.armor === 'iron'));
+      const hpt = await shownTexel(bp, HA, 64, 64, [0, 0, 64, 64]);
+      check('Bedrock: the horse armour is on screen', !!hpt);
+      if (shotsDir) await bp.screenshot({ path: path.join(shotsDir, 'mobs-bedrock-horse.png') });
       if (shotsDir) await bp.screenshot({ path: path.join(shotsDir, 'mobs-bedrock.png') });
       await bctx.close();
     }

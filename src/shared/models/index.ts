@@ -263,16 +263,18 @@ export class ModelLibrary {
     const v = eb.resolve(entry.id, s);
     const faces = new Map<string, number>();
     for (const q of v.quads) if (q.texture) faces.set(q.texture, (faces.get(q.texture) ?? 0) + 1);
+    const all = this.textureStates(entry);
+    const worn = new Set(all.filter((t) => t.gear).map((t) => t.path));
     const textures: ModelTexture[] = [];
     const seen = new Set<string>();
     for (const [path, n] of faces) {
       seen.add(path);
-      textures.push({ path, label: v.labels.get(path) ?? 'Body', role: v.labels.get(path) ?? 'body', faces: n, missing: !this.backend!.hasTexture(path) || undefined });
+      textures.push({ path, label: v.labels.get(path) ?? 'Body', role: v.labels.get(path) ?? 'body', faces: n, missing: !this.backend!.hasTexture(path) || undefined, gear: worn.has(path) || undefined });
     }
-    for (const t of this.textureStates(entry)) {
+    for (const t of all) {
       if (seen.has(t.path)) continue;
       seen.add(t.path);
-      textures.push({ path: t.path, label: t.role, role: t.role, faces: 0, state: { ...s, ...closestState(t.states, s) } });
+      textures.push({ path: t.path, label: t.role, role: t.role, faces: 0, state: { ...s, ...closestState(t.states, s) }, gear: t.gear || undefined });
     }
     return { entry, state: s, shape: 'model', quads: v.quads, sprite: [], textures, category: 'mob', parts: v.parts, texSizes: v.texSizes, note: v.note };
   }
@@ -396,6 +398,8 @@ export class ModelLibrary {
 
   private *usageJob(): Generator<void, void, void> {
     const map = new Map<string, TextureUsage>();
+    /** texture -> mobs it opens on first (worn textures: the armour stand for armour...) */
+    const homes = new Map<string, Set<string>>();
     const add = (path: string, kind: 'blocks' | 'items' | 'entities', id: string) => {
       let u = map.get(path);
       if (!u) map.set(path, (u = { blocks: [], items: [], entities: [] }));
@@ -421,7 +425,10 @@ export class ModelLibrary {
       }
     for (const e of this.entityEntries) {
       try {
-        for (const t of this.textureStates(e)) add(t.path, 'entities', e.id);
+        for (const t of this.textureStates(e)) {
+          add(t.path, 'entities', e.id);
+          if (t.home) homes.set(t.path, (homes.get(t.path) ?? new Set()).add(e.id));
+        }
       } catch {
         /* skip */
       }
@@ -433,7 +440,9 @@ export class ModelLibrary {
       const byName = (kind: 'block' | 'item' | 'entity') => (a: string, b: string) => rank(a) - rank(b) || (this.get(kind, a)?.name ?? a).localeCompare(this.get(kind, b)?.name ?? b);
       u.blocks.sort(byName('block'));
       u.items.sort(byName('item'));
-      u.entities.sort(byName('entity'));
+      const home = homes.get(path);
+      const homeRank = (id: string) => (home?.has(id) ? 0 : 1);
+      u.entities.sort((a, b) => homeRank(a) - homeRank(b) || byName('entity')(a, b));
     }
     if (!this.usageCache) this.usageCache = map;
   }

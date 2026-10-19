@@ -3244,6 +3244,53 @@
 .tx-pv-state .select-input {
   height: 36px;
 }
+/* Things a mob wears (saddle, armour...), under their own small heading */
+.tx-pv-gearhead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.125em;
+}
+.tx-pv-gearhead .icon {
+  color: var(--text-3);
+}
+.tx-pv-pieces-row {
+  align-items: start;
+}
+.tx-pv-pieces-row .tx-pv-state-label {
+  padding-top: 6px;
+}
+.tx-pv-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.tx-pv-piece {
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.tx-pv-piece[aria-pressed='false'] {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-3);
+}
+.tx-pv-piece:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
 .tx-pv-texsection {
   gap: 4px;
 }

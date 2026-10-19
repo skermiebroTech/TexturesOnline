@@ -73,7 +73,7 @@ test('Java mobs: every layer the mob list draws is in the part tables, with its 
       for (const l of layers) {
         used.add(l.model);
         assert.ok(mobLayer(l.model), `${spec.id}: no layer ${l.model}`);
-        assert.ok(!/\.png$|^\/|textures\//.test(l.texture), `${spec.id}: texture is relative to textures/entity: ${l.texture}`);
+        for (const t of Array.isArray(l.texture) ? l.texture : [l.texture]) assert.ok(!/\.png$|textures\//.test(t) && (!t.startsWith('/') || t.startsWith('/models/armor/')), `${spec.id}: texture is relative to textures/entity (or /models/armor): ${t}`);
       }
     }
   }
@@ -114,7 +114,7 @@ test('Java sheep: the wool layer wraps the body a little bigger, on the wool tex
   for (let i = 0; i < 3; i++) assert.ok(wool.min[i] < body.min[i] && wool.max[i] > body.max[i], `axis ${i}: ${JSON.stringify({ body, wool })}`);
   const spec = JAVA_MOBS.find((s) => s.id === 'sheep')!;
   const layers = spec.layers(looks(spec)[0]);
-  assert.ok(layers.some((l) => l.model === 'sheep#wool' && /wool/.test(l.texture)), JSON.stringify(layers));
+  assert.ok(layers.some((l) => l.model === 'sheep#wool' && /wool/.test(String(l.texture))), JSON.stringify(layers));
 });
 
 // ------------------------------------------------------------------------------------------ Molang
@@ -241,7 +241,8 @@ test('Java 26.3: each mob layer’s texture exists with the size its part table 
   for (const spec of JAVA_MOBS) {
     for (const st of looks(spec)) {
       for (const l of spec.layers(st)) {
-        const path = `assets/minecraft/textures/entity/${l.texture}.png`;
+        // the newest place a texture is kept comes first
+        const path = `assets/minecraft/textures/entity/${Array.isArray(l.texture) ? l.texture[0] : l.texture}.png`;
         const size = sizes.get(path);
         if (!size) {
           missing.push(path);

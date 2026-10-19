@@ -105,7 +105,7 @@ export function bedrockAssets(): AssetIndex | null {
   const samples = bedrockSamplesDir();
   const read = async (p: string) => {
     if (src[p]) return new Uint8Array(readFileSync(src[p]));
-    if (samples && /^(entity|models|animations|animation_controllers|render_controllers)\//.test(p) && existsSync(join(samples, p))) return new Uint8Array(readFileSync(join(samples, p)));
+    if (samples && /^(entity|models|animations|animation_controllers|render_controllers|attachables)\//.test(p) && existsSync(join(samples, p))) return new Uint8Array(readFileSync(join(samples, p)));
     throw new Error(`not in the Bedrock fixture: ${p}`);
   };
   bedrockCache = {

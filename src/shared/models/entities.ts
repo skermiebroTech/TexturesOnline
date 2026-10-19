@@ -5,12 +5,13 @@
 // geometry files and pose animations (loaded per mob on first use, like other Bedrock files).
 // Pure apart from the asset reads.
 
-import type { BakedQuad, Tint } from './geometry';
+import type { BakedQuad, RGB, Tint } from './geometry';
 import { bakeEntityModel, mat4Chain, mat4Scale, mat4Translation, type EntityModel, type EntityPart } from './entity-models';
 import { addAnimation, flattenGeo, geoToModel, parseGeoFile, type GeoDef, type NativeTurns, type RestPose } from './bedrock-geo';
 import { evalMolang } from './molang';
-import { JAVA_MOBS, type JavaMobSpec, type MobLayerRef, type MobState } from './mobs-java';
-import type { BlockState, StateProperty, TextureStates } from './types';
+import { ARMOR_MATERIALS, ARMOR_SLOTS, JAVA_MOBS, LEATHER_RGB, type JavaMobSpec, type MobLayerRef, type MobProp, type MobState } from './mobs-java';
+import { DYE_COLORS, DYE_RGB } from './block-entities';
+import type { BlockState, StateProperty, StateValue, TextureStates } from './types';
 
 export interface EntityPartInfo {
   /** Part (bone) name */
@@ -74,27 +75,45 @@ interface LayerInput {
   texture: string;
   label: string;
   tint?: Tint | null;
+  /** A worn thing (saddle, helmet...): all of the layer's boxes are this one entry of the parts list */
+  part?: { name: string; label: string };
+  /** Only the parts (bones) with these names, by lowercase name */
+  only?: (name: string) => boolean;
+  /** Bedrock: the texture's alpha is where the dye goes (leather armour) */
+  tintMask?: boolean | 'armor';
 }
 
-/** Bakes the layers of a look, part by part (quad.part = index into the returned parts). */
+/**
+ * Bakes the layers of a look, part by part (quad.part = index into the returned parts): body parts by
+ * name (overlay layers share them), each worn thing as one entry (the layers come body first).
+ */
 function bakeLayers(layers: LayerInput[]): EntityView {
   const parts: EntityPartInfo[] = [];
   const index = new Map<string, number>();
   const quads: BakedQuad[] = [];
   const labels = new Map<string, string>();
   const texSizes = new Map<string, [number, number]>();
+  const partIndex = (key: string, label: string) => {
+    let i = index.get(key);
+    if (i === undefined) {
+      i = parts.length;
+      index.set(key, i);
+      parts.push({ name: key, label });
+    }
+    return i;
+  };
   for (const l of layers) {
     if (!labels.has(l.texture)) labels.set(l.texture, l.label);
     if (!texSizes.has(l.texture)) texSizes.set(l.texture, l.model.texSize);
     for (const path of partPaths(l.model)) {
       const name = partName(path);
-      let i = index.get(name);
-      if (i === undefined) {
-        i = parts.length;
-        index.set(name, i);
-        parts.push({ name, label: pretty(name) });
-      }
-      quads.push(...bakeEntityModel(l.model, MOB_TRANSFORM, { texture: l.texture, role: l.label, part: i, tint: l.tint ?? null, only: (p) => p === path }));
+      if (l.only && !l.only(name.toLowerCase())) continue;
+      // a worn thing named like a body part (a villager's "helmet" hat) reads as the worn one
+      const gearLabel = l.part && parts.some((p) => !p.name.startsWith('gear:') && p.label === l.part!.label) ? `${l.part.label} (worn)` : l.part?.label;
+      const i = l.part ? partIndex(`gear:${l.part.name}`, gearLabel!) : partIndex(name, pretty(name));
+      const baked = bakeEntityModel(l.model, MOB_TRANSFORM, { texture: l.texture, role: l.label, part: i, tint: l.tint ?? null, only: (p) => p === path });
+      if (l.tintMask && l.tint) for (const q of baked) q.tintMask = l.tintMask;
+      quads.push(...baked);
     }
   }
   return { quads, parts, labels, texSizes };
@@ -111,17 +130,35 @@ function allStates(props: StateProperty[], cap = 768): BlockState[] {
   return out;
 }
 
-function collectTextures(states: BlockState[], layersOf: (s: BlockState) => { path: string; label: string }[]): TextureStates[] {
+interface TextureRef {
+  path: string;
+  label: string;
+  /** Worn (armour, saddle...) */
+  gear?: boolean;
+  /** This mob is where the worn texture opens first */
+  home?: boolean;
+}
+
+function collectTextures(states: BlockState[], layersOf: (s: BlockState) => TextureRef[]): TextureStates[] {
   const by = new Map<string, TextureStates>();
   for (const s of states) {
     for (const l of layersOf(s)) {
       let t = by.get(l.path);
-      if (!t) by.set(l.path, (t = { path: l.path, role: l.label, states: [], dirs: [] }));
+      if (!t) by.set(l.path, (t = { path: l.path, role: l.label, states: [], dirs: [], gear: l.gear || undefined, home: l.home || undefined }));
+      else {
+        // a texture of the mob's own look is not worn, even when a worn thing uses it too (an old saddle)
+        if (!l.gear) t.gear = undefined;
+        if (l.home) t.home = true;
+      }
       t.states.push(s);
     }
   }
   return [...by.values()];
 }
+
+/** The props a mob's looks are made of (worn things are collected one by one, not combined). */
+const lookProps = (props: StateProperty[]) => props.filter((p) => !p.gear);
+
 
 // ---------------------------------------------------------------------------------------------
 // Java
@@ -143,23 +180,47 @@ export class JavaEntities implements EntityBackend {
     for (const s of JAVA_MOBS) if (this.paths(s, this.firstState(s)).length) this.specs.set(s.id, s);
   }
 
+  /** Pack path of a texture name: relative to textures/entity/, or to textures/ with a leading '/' */
   private path(rel: string): string {
-    return `assets/minecraft/textures/entity/${rel}.png`;
+    return rel.startsWith('/') ? `assets/minecraft/textures${rel}.png` : `assets/minecraft/textures/entity/${rel}.png`;
+  }
+
+  /** The texture a layer draws in this version: the first of its places the version has */
+  private texture(l: MobLayerRef): string | null {
+    for (const t of Array.isArray(l.texture) ? l.texture : [l.texture]) {
+      const p = this.path(t);
+      if (this.ctx.hasFile(p)) return p;
+    }
+    return null;
   }
 
   private firstState(s: JavaMobSpec): MobState {
     return Object.fromEntries(s.props.map((p) => [p.name, p.values[0].value]));
   }
 
-  /** The look's layers whose textures exist (none when the base texture is missing). */
-  private layers(s: JavaMobSpec, state: MobState): MobLayerRef[] {
+  /** The look's layers with the textures the version has (none when the base texture is missing). */
+  private layers(s: JavaMobSpec, state: MobState): (MobLayerRef & { path: string })[] {
     const all = s.layers(state);
-    if (!all.length || !this.ctx.hasFile(this.path(all[0].texture))) return [];
-    return all.filter((l) => this.ctx.hasFile(this.path(l.texture)));
+    const out: (MobLayerRef & { path: string })[] = [];
+    for (const l of all) {
+      const path = this.texture(l);
+      if (path) out.push({ ...l, path });
+      else if (l === all[0]) return [];
+    }
+    return out;
   }
 
-  private paths(s: JavaMobSpec, state: MobState): { path: string; label: string }[] {
-    return this.layers(s, state).map((l) => ({ path: this.path(l.texture), label: l.label }));
+  private paths(s: JavaMobSpec, state: MobState): TextureRef[] {
+    return this.layers(s, state).map((l) => ({ path: l.path, label: l.label, gear: !!l.gear, home: !!l.gear && !!s.home?.includes(l.gear) }));
+  }
+
+  /** Whether a gear choice's value shows in this version (its textures are there, or it's "none"). */
+  private gearShows(s: JavaMobSpec, base: MobState, p: MobProp, value: string): boolean {
+    if (value === p.values[0].value) return true;
+    if (p.since && !this.ctx.hasFile(this.path(p.since))) return false;
+    const layers = this.layers(s, { ...base, ...p.with, [p.name]: value });
+    // a dye colour tints a worn layer; other gear draws layers of its own
+    return layers.some((l) => (p.tint ? !!l.tint && !!l.gear : l.gear === p.name));
   }
 
   ids(): string[] {
@@ -176,9 +237,17 @@ export class JavaEntities implements EntityBackend {
     const s = this.specs.get(id);
     if (!s) return [];
     const base = this.firstState(s);
-    // Values the version has textures for (older versions have no baby textures, fewer variants...)
-    const props = s.props
-      .map((p) => ({ name: p.name, label: p.label, values: p.values.filter((v) => this.paths(s, { ...base, [p.name]: v.value }).length > 0) }))
+    // Values the version has textures for (older versions have no baby textures, fewer variants, no
+    // copper armour...)
+    const props: StateProperty[] = s.props
+      .map((p) => {
+        const values = p.gear ? p.values.filter((v) => this.gearShows(s, base, p, v.value)) : p.values.filter((v) => this.paths(s, { ...base, [p.name]: v.value }).length > 0);
+        const out: StateProperty = { name: p.name, label: p.label, values };
+        if (p.gear) out.gear = true;
+        if (p.group) out.group = p.group;
+        if (p.showIf) out.showIf = p.showIf;
+        return out;
+      })
       .filter((p) => p.values.length > 1);
     this.propCache.set(id, props);
     return props;
@@ -194,7 +263,17 @@ export class JavaEntities implements EntityBackend {
     const s = this.specs.get(id);
     if (!s) return [];
     const base = this.firstState(s);
-    const out = collectTextures(allStates(this.properties(id)), (st) => this.paths(s, { ...base, ...st }));
+    const props = this.properties(id);
+    // every look; then each worn thing on the default look, at each age that can wear it
+    const states = allStates(lookProps(props));
+    const shown = new Set(props.map((p) => p.name));
+    const ages = props.find((p) => p.name === 'age')?.values.map((v) => v.value) ?? [base.age ?? ''];
+    for (const g of s.gearStates ?? []) {
+      const gear = Object.fromEntries(Object.entries(g).filter(([k]) => shown.has(k)));
+      if (!Object.keys(gear).length) continue;
+      for (const age of ages) states.push({ ...this.defaultState(id), ...(age ? { age } : {}), ...gear });
+    }
+    const out = collectTextures(states, (st) => this.paths(s, { ...base, ...st }));
     this.texCache.set(id, out);
     return out;
   }
@@ -225,7 +304,7 @@ export class JavaEntities implements EntityBackend {
     for (const l of this.layers(s, { ...this.firstState(s), ...state })) {
       const model = this.layerOf(l.model);
       if (!model) continue;
-      inputs.push({ model, texture: this.path(l.texture), label: l.label, tint: l.tint ? { kind: 'fixed', rgb: l.tint } : null });
+      inputs.push({ model, texture: l.path, label: l.label, tint: l.tint ? { kind: 'fixed', rgb: l.tint } : null, part: l.part });
     }
     return bakeLayers(inputs);
   }
@@ -247,6 +326,15 @@ interface BedrockMobSpec {
   over?: (key: string, keys: string[]) => string | null;
   /** Molang variables the game sets for the mob standing around (its animation controllers read them) */
   vars?: Record<string, number>;
+  /** Wears humanoid armour (the armour items' attachables) */
+  armor?: boolean;
+  /**
+   * Worn textures open on this mob first; the folders / file prefixes of the ones it wears that are
+   * outside its own folders (known before its entity file is read)
+   */
+  home?: string[];
+  /** The trader llama: its decor is always on */
+  trader?: boolean;
 }
 
 /** Cats' animation controllers: standing around is their walking state at speed 0 */
@@ -276,25 +364,26 @@ const VILLAGER_OVERLAY = /^(baby_)?(desert|jungle|plains|savanna|snow|swamp|taig
 
 const BEDROCK_MOBS: BedrockMobSpec[] = [
   { id: 'creeper', name: 'Creeper', file: 'creeper', dirs: ['creeper'] },
-  { id: 'zombie', name: 'Zombie', file: 'zombie', dirs: ['zombie'] },
-  { id: 'husk', name: 'Husk', file: 'husk', dirs: ['zombie'] },
-  { id: 'drowned', name: 'Drowned', file: 'drowned', dirs: ['zombie'] },
+  { id: 'zombie', name: 'Zombie', file: 'zombie', dirs: ['zombie'], armor: true },
+  { id: 'husk', name: 'Husk', file: 'husk', dirs: ['zombie'], armor: true },
+  { id: 'drowned', name: 'Drowned', file: 'drowned', dirs: ['zombie'], armor: true },
   {
     id: 'zombie_villager',
     name: 'Zombie Villager',
     file: 'zombie_villager_v2',
     dirs: ['zombie_villager2', 'zombie_villager'],
     over: (k, keys) => (VILLAGER_OVERLAY.test(k) ? (k.startsWith('baby_') ? firstWith(keys, /^baby_default$/) : 'default') : null),
+    armor: true,
   },
-  { id: 'skeleton', name: 'Skeleton', file: 'skeleton', dirs: ['skeleton'] },
-  { id: 'stray', name: 'Stray', file: 'stray', dirs: ['skeleton'], over: (k) => (k === 'overlay' ? 'default' : null) },
-  { id: 'bogged', name: 'Bogged', file: 'bogged', dirs: ['skeleton'], over: (k) => (k === 'overlay' ? 'default' : null) },
-  { id: 'wither_skeleton', name: 'Wither Skeleton', file: 'wither_skeleton', dirs: ['skeleton'] },
-  { id: 'parched', name: 'Parched', file: 'parched', dirs: ['skeleton'] },
+  { id: 'skeleton', name: 'Skeleton', file: 'skeleton', dirs: ['skeleton'], armor: true },
+  { id: 'stray', name: 'Stray', file: 'stray', dirs: ['skeleton'], over: (k) => (k === 'overlay' ? 'default' : null), armor: true },
+  { id: 'bogged', name: 'Bogged', file: 'bogged', dirs: ['skeleton'], over: (k) => (k === 'overlay' ? 'default' : null), armor: true },
+  { id: 'wither_skeleton', name: 'Wither Skeleton', file: 'wither_skeleton', dirs: ['skeleton'], armor: true },
+  { id: 'parched', name: 'Parched', file: 'parched', dirs: ['skeleton'], armor: true },
   { id: 'spider', name: 'Spider', file: 'spider', dirs: ['spider'] },
   { id: 'cave_spider', name: 'Cave Spider', file: 'cave_spider', dirs: ['spider'] },
   { id: 'enderman', name: 'Enderman', file: 'enderman', dirs: ['enderman'] },
-  { id: 'pig', name: 'Pig', file: 'pig', dirs: ['pig'] },
+  { id: 'pig', name: 'Pig', file: 'pig', dirs: ['pig'], home: ['textures/entity/saddle_v2'] },
   { id: 'cow', name: 'Cow', file: 'cow', dirs: ['cow'] },
   { id: 'mooshroom', name: 'Mooshroom', file: 'mooshroom', dirs: ['cow'] },
   { id: 'sheep', name: 'Sheep', file: 'sheep', dirs: ['sheep'] },
@@ -316,7 +405,7 @@ const BEDROCK_MOBS: BedrockMobSpec[] = [
   { id: 'vex', name: 'Vex', file: 'vex', dirs: ['vex', 'illager'] },
   { id: 'iron_golem', name: 'Iron Golem', file: 'iron_golem', dirs: ['iron_golem'], over: (k) => (k.startsWith('cracked_') ? 'default' : null) },
   { id: 'snow_golem', name: 'Snow Golem', file: 'snow_golem', dirs: [''] },
-  { id: 'wolf', name: 'Wolf', file: 'wolf', dirs: ['wolf'] },
+  { id: 'wolf', name: 'Wolf', file: 'wolf', dirs: ['wolf'], home: [] },
   { id: 'cat', name: 'Cat', file: 'cat', dirs: ['cat'], vars: WALKING },
   { id: 'ocelot', name: 'Ocelot', file: 'ocelot', dirs: ['cat'], vars: WALKING },
   { id: 'fox', name: 'Fox', file: 'fox', dirs: ['fox'] },
@@ -326,20 +415,22 @@ const BEDROCK_MOBS: BedrockMobSpec[] = [
     file: 'horse_v3',
     dirs: ['horse2', 'horse'],
     over: (k, keys) => (/^(baby_)?markings_/.test(k) ? firstWith(keys, k.startsWith('baby_') ? /^baby_base_/ : /^base_/) : null),
+    home: ['textures/entity/horse2/armor/', 'textures/entity/horse/armor/'],
   },
   { id: 'donkey', name: 'Donkey', file: 'donkey_v3', dirs: ['horse2', 'horse'] },
   { id: 'mule', name: 'Mule', file: 'mule_v3', dirs: ['horse2', 'horse'] },
   { id: 'skeleton_horse', name: 'Skeleton Horse', file: 'skeleton_horse_v3', dirs: ['horse2', 'horse'] },
   { id: 'zombie_horse', name: 'Zombie Horse', file: 'zombie_horse_v3', dirs: ['horse2', 'horse'] },
-  { id: 'llama', name: 'Llama', file: 'llama', dirs: ['llama'] },
+  { id: 'llama', name: 'Llama', file: 'llama', dirs: ['llama'], home: ['textures/entity/llama/decor/'] },
+  { id: 'trader_llama', name: 'Trader Llama', file: 'trader_llama', dirs: ['llama'], trader: true },
   { id: 'slime', name: 'Slime', file: 'slime', dirs: ['slime'] },
   { id: 'magma_cube', name: 'Magma Cube', file: 'magma_cube', dirs: ['slime'] },
   { id: 'ghast', name: 'Ghast', file: 'ghast', dirs: ['ghast'] },
-  { id: 'happy_ghast', name: 'Happy Ghast', file: 'happy_ghast', dirs: ['ghast', 'happy_ghast'] },
+  { id: 'happy_ghast', name: 'Happy Ghast', file: 'happy_ghast', dirs: ['ghast', 'happy_ghast'], home: ['textures/entity/harness/'] },
   { id: 'blaze', name: 'Blaze', file: 'blaze', dirs: [''] },
-  { id: 'piglin', name: 'Piglin', file: 'piglin', dirs: ['piglin'] },
-  { id: 'piglin_brute', name: 'Piglin Brute', file: 'piglin_brute', dirs: ['piglin'] },
-  { id: 'zombified_piglin', name: 'Zombified Piglin', file: 'zombie_pigman', dirs: ['piglin', 'pigzombie'] },
+  { id: 'piglin', name: 'Piglin', file: 'piglin', dirs: ['piglin'], armor: true },
+  { id: 'piglin_brute', name: 'Piglin Brute', file: 'piglin_brute', dirs: ['piglin'], armor: true },
+  { id: 'zombified_piglin', name: 'Zombified Piglin', file: 'zombie_pigman', dirs: ['piglin', 'pigzombie'], armor: true },
   { id: 'hoglin', name: 'Hoglin', file: 'hoglin', dirs: ['hoglin'] },
   { id: 'zoglin', name: 'Zoglin', file: 'zoglin', dirs: ['hoglin', 'zoglin'] },
   { id: 'phantom', name: 'Phantom', file: 'phantom', dirs: ['phantom'] },
@@ -349,7 +440,7 @@ const BEDROCK_MOBS: BedrockMobSpec[] = [
   { id: 'tadpole', name: 'Tadpole', file: 'tadpole', dirs: ['tadpole'] },
   { id: 'allay', name: 'Allay', file: 'allay', dirs: ['allay'] },
   { id: 'warden', name: 'Warden', file: 'warden', dirs: ['warden'], over: (k) => (k !== 'default' ? 'default' : null) },
-  { id: 'armor_stand', name: 'Armor Stand', file: 'armor_stand', dirs: [''] },
+  { id: 'armor_stand', name: 'Armor Stand', file: 'armor_stand', dirs: [''], armor: true, home: ['textures/models/armor/'] },
   { id: 'polar_bear', name: 'Polar Bear', file: 'polar_bear', dirs: ['polarbear', 'bear'] },
   { id: 'panda', name: 'Panda', file: 'panda', dirs: ['panda'] },
   { id: 'rabbit', name: 'Rabbit', file: 'rabbit', dirs: ['rabbit'] },
@@ -368,6 +459,8 @@ const BEDROCK_MOBS: BedrockMobSpec[] = [
   { id: 'sniffer', name: 'Sniffer', file: 'sniffer', dirs: ['sniffer'] },
   { id: 'camel', name: 'Camel', file: 'camel', dirs: ['camel'] },
   { id: 'camel_husk', name: 'Camel Husk', file: 'camel_husk', dirs: ['camel', 'camel_husk'] },
+  { id: 'nautilus', name: 'Nautilus', file: 'nautilus', dirs: ['nautilus'], home: ['textures/entity/nautilus/armor/'] },
+  { id: 'zombie_nautilus', name: 'Zombie Nautilus', file: 'zombie_nautilus', dirs: ['nautilus'] },
   { id: 'armadillo', name: 'Armadillo', file: 'armadillo', dirs: ['armadillo'] },
   { id: 'breeze', name: 'Breeze', file: 'breeze', dirs: ['breeze'], over: (k) => (k === 'breeze_eyes' ? 'default' : null) },
   { id: 'creaking', name: 'Creaking', file: 'creaking', dirs: ['creaking'], over: (k) => (k === 'eyes' ? 'default' : null) },
@@ -400,12 +493,55 @@ interface BedrockLook {
   label: string;
   /** Base first, then overlays */
   layers: { key: string; path: string; geo: string }[];
+  /** A baby look (babies wear nothing, or their own armour) */
+  baby: boolean;
+}
+
+/** Something a Bedrock mob wears: a choice and the layers each value draws over a look. */
+interface BedrockGear {
+  prop: StateProperty;
+  /** Layers for the chosen value on a look ('none' draws nothing; a colour choice draws through others) */
+  layers?(value: string, look: BedrockLook, state: BlockState): LayerInput[];
+  /** Replaces the look's own textures (a saddled strider's texture) */
+  swap?(value: string, look: BedrockLook): BedrockLook;
+  /** The mob's own model hides bones while this is on (a nautilus's shell under its armour) */
+  hidesBase?: boolean;
+  /** Looks that together show every texture of the choice */
+  states: BlockState[];
 }
 
 interface BedrockLoaded {
   looks: BedrockLook[];
   models: Map<string, EntityModel>;
+  /** The mob's own models with armour on, where armour hides bones */
+  armored: Map<string, EntityModel>;
+  gear: BedrockGear[];
+  /** Worn textures open on this mob first */
+  home: boolean;
 }
+
+/** A render controller of the entity: what it draws and the bones it shows, by Molang condition. */
+interface RenderController {
+  id: string;
+  geometry: string;
+  textures: string[];
+  arrays: Record<string, string[]>;
+  rules: { re: RegExp; cond: unknown }[];
+}
+
+const SADDLED = { 'query.is_saddled': 1 };
+const ARMORED = { 'variable.has_armor': 1 };
+const SADDLE_PART = { name: 'saddle', label: 'Saddle' };
+const NONE: StateValue = { value: 'none', label: 'None' };
+const DYE_VALUES: StateValue[] = [{ value: 'none', label: 'Undyed' }, ...DYE_COLORS.map((c) => ({ value: c, label: pretty(c) }))];
+const dyeTint = (s: BlockState, undyed: RGB | null): Tint | null => {
+  const rgb = s.dye && s.dye !== 'none' ? (DYE_RGB[s.dye as keyof typeof DYE_RGB] ?? undyed) : undyed;
+  return rgb ? { kind: 'fixed', rgb } : null;
+};
+/** Bedrock armour item names to the material names used here */
+const BEDROCK_MATERIAL: Record<string, string> = { golden: 'gold', turtle_shell: 'turtle_scute' };
+/** Bedrock armour texture stems (textures/models/armor/<stem>) to their baby texture */
+const BABY_ARMOR: Record<string, string> = { chain_1: 'chainmail_baby', cloth_1: 'leather_baby', turtle_1: 'turtle_scute_baby' };
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
@@ -431,23 +567,24 @@ export class BedrockEntities implements EntityBackend {
 
   properties(id: string): StateProperty[] {
     const l = this.loaded.get(id);
-    if (!l || l.looks.length < 2) return [];
-    return [{ name: 'look', label: 'Look', values: l.looks.map((k) => ({ value: k.key, label: k.label })) }];
+    if (!l) return [];
+    const out: StateProperty[] = [];
+    if (l.looks.length > 1) out.push({ name: 'look', label: 'Look', values: l.looks.map((k) => ({ value: k.key, label: k.label })) });
+    for (const g of l.gear) if (g.prop.values.length > 1) out.push(g.prop);
+    return out;
   }
 
   defaultState(id: string): BlockState {
-    const l = this.loaded.get(id);
-    return l && l.looks.length > 1 ? { look: l.looks[0].key } : {};
+    return Object.fromEntries(this.properties(id).map((p) => [p.name, p.values[0].value]));
   }
 
   textureStates(id: string): TextureStates[] {
     const l = this.loaded.get(id);
     if (l) {
       const states: BlockState[] = l.looks.length > 1 ? l.looks.map((k) => ({ look: k.key })) : [{}];
-      return collectTextures(states, (s) => {
-        const look = l.looks.find((k) => k.key === s.look) ?? l.looks[0];
-        return look ? look.layers.map((x, i) => ({ path: x.path, label: i ? pretty(x.key) : 'Body' })) : [];
-      });
+      const base = this.defaultState(id);
+      for (const g of l.gear) for (const st of g.states) states.push({ ...base, ...st });
+      return collectTextures(states, (s) => this.layersOf(l, { ...base, ...s }).map((x) => ({ path: x.texture, label: x.label, gear: !!x.part || x.gear, home: (!!x.part || x.gear) && l.home })));
     }
     // Before the entity file is read: the textures in the mob's folders whose names fit it.
     if (!this.specs.has(id)) return [];
@@ -476,6 +613,9 @@ export class BedrockEntities implements EntityBackend {
         for (const s of owners) out.set(s.id, [...(out.get(s.id) ?? []), p]);
       }
     }
+    // worn textures kept outside the mob's folders (armour, harnesses...)
+    for (const s of this.specs.values())
+      for (const prefix of s.home ?? []) for (const p of this.ctx.listFiles(prefix)) if (/\.(png|tga)$/i.test(p) && !/_none\./.test(p)) out.set(s.id, [...(out.get(s.id) ?? []), p]);
     this.guessCache = out;
     return out;
   }
@@ -626,10 +766,10 @@ export class BedrockEntities implements EntityBackend {
   }
 
   /**
-   * Part visibility rules of each of the entity's render controllers, for an entity standing still
-   * (each controller draws the model once; a bone shows when any of them shows it).
+   * The entity's render controllers: what each draws and its part visibility rules (each controller
+   * draws the model once; a bone shows when any of them shows it).
    */
-  private async visibility(desc: Record<string, unknown>): Promise<{ re: RegExp; show: boolean }[][]> {
+  private async controllers(desc: Record<string, unknown>): Promise<RenderController[]> {
     const list = Array.isArray(desc.render_controllers) ? desc.render_controllers : [];
     const ids: string[] = [];
     for (const c of list) {
@@ -637,20 +777,64 @@ export class BedrockEntities implements EntityBackend {
       else if (isObj(c)) for (const [id, cond] of Object.entries(c)) if ((evalMolang(cond) ?? 0) !== 0) ids.push(id);
     }
     const defs = await this.findDefs('render_controllers', 'render_controllers', ids);
-    const out: { re: RegExp; show: boolean }[][] = [];
+    const out: RenderController[] = [];
     for (const id of ids) {
       const d = defs.get(id);
       const pv = isObj(d) && Array.isArray(d.part_visibility) ? d.part_visibility : [];
-      const rules: { re: RegExp; show: boolean }[] = [];
-      out.push(rules);
+      const rules: RenderController['rules'] = [];
       for (const entry of pv) {
         if (!isObj(entry)) continue;
         for (const [pattern, cond] of Object.entries(entry)) {
           const src = pattern.toLowerCase().replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
-          rules.push({ re: new RegExp(`^${src}$`), show: (evalMolang(cond) ?? 1) !== 0 });
+          rules.push({ re: new RegExp(`^${src}$`), cond });
         }
       }
+      const arrays: Record<string, string[]> = {};
+      const ar = isObj(d) && isObj(d.arrays) && isObj(d.arrays.textures) ? d.arrays.textures : {};
+      for (const [k, v] of Object.entries(ar)) if (Array.isArray(v)) arrays[k.toLowerCase()] = v.filter((x): x is string => typeof x === 'string');
+      const textures = isObj(d) && Array.isArray(d.textures) ? d.textures.filter((x): x is string => typeof x === 'string') : [];
+      out.push({ id, geometry: isObj(d) && typeof d.geometry === 'string' ? d.geometry : 'Geometry.default', textures, arrays, rules });
     }
+    return out;
+  }
+
+  /** Bones none of the controllers shows (lowercase names), with the Molang values given. */
+  private hiddenBones(def: GeoDef, ctrls: RenderController[], vars?: Record<string, number>): Set<string> {
+    const hidden = new Set<string>();
+    if (!ctrls.length) return hidden;
+    for (const b of def.bones) {
+      const name = b.name.toLowerCase();
+      const shows = (c: RenderController) => {
+        let show = true;
+        for (const r of c.rules) if (r.re.test(name)) show = (evalMolang(r.cond, { vars }) ?? 1) !== 0;
+        return show;
+      };
+      if (!ctrls.some(shows)) hidden.add(name);
+    }
+    return hidden;
+  }
+
+  /** Bones a controller shows on its own (lowercase names), with the Molang values given. */
+  private shownBones(def: GeoDef, ctrl: RenderController, vars?: Record<string, number>): Set<string> {
+    const hidden = this.hiddenBones(def, [ctrl], vars);
+    return new Set(def.bones.map((b) => b.name.toLowerCase()).filter((n) => !hidden.has(n)));
+  }
+
+  /** The look's layers and the worn things' layers for a state (base first). */
+  private layersOf(l: BedrockLoaded, state: BlockState): (LayerInput & { gear?: boolean })[] {
+    const look = l.looks.find((k) => k.key === state.look) ?? l.looks[0];
+    if (!look) return [];
+    let own = look;
+    const on = (g: BedrockGear) => !!state[g.prop.name] && state[g.prop.name] !== 'none' && g.prop.values.some((v) => v.value === state[g.prop.name]);
+    for (const g of l.gear) if (g.swap && on(g)) own = g.swap(state[g.prop.name], own);
+    const armored = l.gear.some((g) => g.hidesBase && on(g));
+    const out: (LayerInput & { gear?: boolean })[] = own.layers.map((x, i) => ({
+      model: (armored && l.armored.get(x.geo)) || l.models.get(x.geo)!,
+      texture: x.path,
+      label: i ? pretty(x.key) : 'Body',
+      gear: own !== look && x.path !== look.layers[i]?.path,
+    }));
+    for (const g of l.gear) if (g.layers && on(g)) out.push(...g.layers(state[g.prop.name], look, state));
     return out;
   }
 
@@ -700,36 +884,344 @@ export class BedrockEntities implements EntityBackend {
       if (seenPaths.has(tag)) continue;
       seenPaths.add(tag);
       // a base that only shows under overlays isn't a look of its own twice
-      looks.push({ key, label: pretty(key === 'default' ? 'Default' : key), layers: base ? [base, own] : [own] });
+      const baby = geoFor(key) === 'baby' || /(^|_)baby(_|$)|^ghastling$/.test(key);
+      looks.push({ key, label: pretty(key === 'default' ? 'Default' : key), layers: base ? [base, own] : [own], baby });
     }
     // Overlays come after the plain looks; bases that other keys draw on stay first.
-    looks.sort((a, b) => a.layers.length - b.layers.length);
-    const [pose, controllers] = await Promise.all([this.restPose(desc, s.vars), this.visibility(desc)]);
+    looks.sort((a, b) => a.layers.length - b.layers.length || Number(a.baby) - Number(b.baby));
+    const [pose, controllers] = await Promise.all([this.restPose(desc, s.vars), this.controllers(desc)]);
+    // controllers drawing a saddle or armour on their own; the others draw the mob
+    const isGear = (c: RenderController) => /^Texture\.\w*saddle\w*$|^Array\.armor\[/i.test((c.textures[0] ?? '').trim());
+    const main = controllers.filter((c) => !isGear(c));
     const models = new Map<string, EntityModel>();
+    const armored = new Map<string, EntityModel>();
+    const defs = new Map<string, GeoDef>();
     for (const g of new Set(looks.flatMap((l) => l.layers.map((x) => x.geo)))) {
       const def = await this.flat(g);
       if (!def) continue;
+      defs.set(g, def);
       // per controller the last rule matching a bone decides; a bone shows when any controller shows it
-      const hidden = new Set<string>();
-      for (const b of def.bones) {
-        const name = b.name.toLowerCase();
-        const shows = (rules: { re: RegExp; show: boolean }[]) => {
-          let show = true;
-          for (const r of rules) if (r.re.test(name)) show = r.show;
-          return show;
-        };
-        if (controllers.length && !controllers.some(shows)) hidden.add(name);
-      }
+      const hidden = this.hiddenBones(def, main);
       models.set(g, geoToModel(def, pose, [64, 64], hidden, NATIVE_TURNS[g]));
+      const hiddenArmored = this.hiddenBones(def, main, ARMORED);
+      if ([...hiddenArmored].some((b) => !hidden.has(b))) armored.set(g, geoToModel(def, pose, [64, 64], hiddenArmored, NATIVE_TURNS[g]));
     }
-    this.loaded.set(id, { looks: looks.filter((l) => l.layers.every((x) => models.has(x.geo))), models });
+    const shown = looks.filter((l) => l.layers.every((x) => models.has(x.geo)));
+    const ctx: GearContext = { spec: s, textures, geometry, looks: shown, models, defs, pose, main, gearCtrls: controllers.filter(isGear), desc };
+    const gear = await this.gearOf(ctx);
+    this.loaded.set(id, { looks: shown, models, armored, gear, home: !!s.home });
     return true;
+  }
+
+  /** Model of a worn geometry drawn over a look (bones of the wearer's names sit like the wearer's). */
+  private wornModel(c: GearContext, geoId: string, def: GeoDef, look: BedrockLook, hidden?: Set<string>, tex: [number, number] = [64, 64]): EntityModel {
+    const own = look.layers[0].geo;
+    return geoToModel(def, c.pose, tex, hidden, NATIVE_TURNS[geoId], geoId === own ? undefined : c.defs.get(own));
+  }
+
+  /** Geometry id of a controller's geometry expression for an adult ("Geometry.saddle", "q.is_baby ? ... : Geometry.default"). */
+  private static geometryKey(expr: string): string | null {
+    const t = /^(.+?)\?\s*Geometry\.(\w+)\s*:\s*Geometry\.(\w+)\s*$/i.exec(expr.trim());
+    if (t) return (evalMolang(t[1]) ?? 0) !== 0 ? t[2] : t[3];
+    return /^Geometry\.(\w+)$/i.exec(expr.trim())?.[1] ?? null;
+  }
+
+  /** The things a mob wears: saddles, armour, carpets, harnesses (what its files and the game draw). */
+  private async gearOf(c: GearContext): Promise<BedrockGear[]> {
+    const gear: BedrockGear[] = [];
+    const { textures, looks, spec } = c;
+    const lookOf = (st: BlockState) => looks.find((k) => k.key === st.look) ?? looks[0];
+    const adults = looks.filter((l) => !l.baby);
+    const firstAdult = adults[0];
+    if (!firstAdult) return gear;
+    const adultOnly = (st: BlockState) => !lookOf(st)?.baby;
+    const path = (key: string) => (typeof textures[key] === 'string' ? this.texturePath(String(textures[key])) : null);
+    const keys = Object.keys(textures);
+    /** Which choices a colour applies to (shown with any of them) */
+    const dyed: ((st: BlockState) => boolean)[] = [];
+    const tinted = (p: string, st: BlockState, undyed: RGB | null): Pick<LayerInput, 'tint' | 'tintMask'> => {
+      const tint = dyeTint(st, undyed);
+      return tint ? { tint, tintMask: /\.tga$/i.test(p) ? 'armor' : undefined } : {};
+    };
+
+    // ---- saddles
+    const saddles = new Map<string, LayerInput[]>();
+    for (const look of adults) {
+      const geo = look.layers[0].geo;
+      const def = c.defs.get(geo);
+      if (!def) continue;
+      const out: LayerInput[] = [];
+      // bones the mob's own controllers show once saddled (horses, camels): drawn with its texture
+      const plain = this.hiddenBones(def, c.main);
+      const saddled = this.hiddenBones(def, c.main, SADDLED);
+      const bones = new Set([...plain].filter((b) => !saddled.has(b)));
+      if (bones.size) out.push({ model: geoToModel(def, c.pose, [64, 64], saddled, NATIVE_TURNS[geo]), texture: look.layers[0].path, label: 'Saddle', part: SADDLE_PART, only: (n) => bones.has(n) });
+      // a saddle drawn by its own controller (pigs, nautiluses)
+      for (const ctrl of c.gearCtrls) {
+        const key = /^Texture\.(\w*saddle\w*)$/i.exec(ctrl.textures[0].trim())?.[1];
+        const p = key ? path(key) : null;
+        const gk = BedrockEntities.geometryKey(ctrl.geometry);
+        const gid = gk && typeof c.geometry[gk] === 'string' ? String(c.geometry[gk]) : null;
+        if (!p || !gid) continue;
+        const sdef = gid === geo ? def : await this.flat(gid);
+        if (!sdef) continue;
+        // the controller hides every bone but the saddled ones (a hidden parent still draws its children)
+        const shows = this.shownBones(sdef, ctrl, SADDLED);
+        out.push({ model: this.wornModel(c, gid, sdef, look), texture: p, label: 'Saddle', part: SADDLE_PART, only: (n) => shows.has(n) });
+      }
+      if (out.length) saddles.set(look.key, out);
+    }
+    // a saddled texture in place of the mob's own, when the mob's controller swaps to it (striders)
+    const drawn = (key: string) => c.main.some((ctrl) => [...ctrl.textures, ...Object.values(ctrl.arrays).flat()].some((t) => new RegExp(`\\bTexture\\.${key}\\b`, 'i').test(t)));
+    const saddledKey = (look: BedrockLook) => {
+      const k = look.layers[0].key;
+      const sk = k === 'default' ? 'saddled' : `${k}_saddled`;
+      return keys.includes(sk) && path(sk) && drawn(sk) ? sk : null;
+    };
+    const swaps = adults.filter((l) => saddledKey(l));
+    if (saddles.size || swaps.length) {
+      gear.push({
+        prop: { name: 'saddle', label: 'Saddle', values: [{ value: 'none', label: 'Off' }, { value: 'on', label: 'On' }], gear: true, showIf: (st) => saddles.has(lookOf(st)?.key) || !!(lookOf(st) && !lookOf(st)!.baby && saddledKey(lookOf(st)!)) },
+        layers: (_v, look) => saddles.get(look.key) ?? [],
+        swap: (_v, look) => {
+          const sk = look.baby ? null : saddledKey(look);
+          return sk ? { ...look, layers: [{ ...look.layers[0], key: sk, path: path(sk)! }, ...look.layers.slice(1)] } : look;
+        },
+        states: [{ look: (saddles.size ? [...saddles.keys()][0] : swaps[0].key), saddle: 'on' }, ...swaps.map((l) => ({ look: l.key, saddle: 'on' }))],
+      });
+    }
+
+    // ---- armour drawn as another texture of the mob's own model (horses)
+    // the armour array a controller draws from (horses: the mob's own controller; nautiluses: their own)
+    const mainArmorCtrl = c.main.find((ctrl) => ctrl.arrays['array.armor'] && ctrl.textures.some((t) => /Array\.armor\[/i.test(t)));
+    const ctrlArmor = c.gearCtrls.find((ctrl) => ctrl.arrays['array.armor'] && /^Array\.armor\[/i.test(ctrl.textures[0].trim()));
+    const mainArmor = !!mainArmorCtrl;
+    const armorKeys = ((mainArmorCtrl ?? ctrlArmor)?.arrays['array.armor'] ?? []).map((t) => t.replace(/^Texture\./i, '')).filter((k) => /^armor_(?!none$)/.test(k) && path(k));
+    if (armorKeys.length) {
+      const order = ['leather', 'copper', 'chainmail', 'iron', 'gold', 'diamond', 'netherite'];
+      const mats = armorKeys.map((k) => k.slice(6)).sort((a, b) => (order.indexOf(a) + 99) % 99 - (order.indexOf(b) + 99) % 99);
+      const values = [NONE, ...mats.map((m) => ({ value: m, label: pretty(m) }))];
+      const part = mainArmor ? { name: 'horse_armor', label: 'Horse armour' } : { name: 'armor', label: 'Armour' };
+      let layer: (m: string, look: BedrockLook, st: BlockState) => LayerInput[];
+      if (mainArmor) {
+        layer = (m, look, st) => {
+          const p = path(`armor_${m}`);
+          const model = c.models.get(look.layers[0].geo);
+          return p && model ? [{ model, texture: p, label: 'Horse armour', part, ...(m === 'leather' ? tinted(p, st, LEATHER_RGB) : {}) }] : [];
+        };
+      } else {
+        const gk = BedrockEntities.geometryKey(ctrlArmor!.geometry);
+        const gid = gk && typeof c.geometry[gk] === 'string' ? String(c.geometry[gk]) : null;
+        const adef = gid ? await this.flat(gid) : null;
+        const shows = adef ? this.shownBones(adef, ctrlArmor!, ARMORED) : new Set<string>();
+        const byLook = new Map(adef && gid ? adults.map((l) => [l.key, this.wornModel(c, gid, adef, l, undefined, [128, 128])]) : []);
+        layer = (m, look) => {
+          const p = path(`armor_${m}`);
+          const model = byLook.get(look.key);
+          return p && model ? [{ model, texture: p, label: 'Armour', part, only: (n) => shows.has(n) }] : [];
+        };
+      }
+      gear.push({
+        prop: { name: 'armor', label: 'Armour', values, gear: true, showIf: adultOnly },
+        layers: (m, look, st) => (look.baby ? [] : layer(m, look, st)),
+        hidesBase: !mainArmor,
+        states: mats.map((m) => ({ look: firstAdult.key, armor: m })),
+      });
+      if (mats.includes('leather')) dyed.push((st) => adultOnly(st) && st.armor === 'leather');
+    }
+
+    // ---- llama carpets and the trader llama's decor
+    const decorKeys = keys.filter((k) => /^decor_(?!none$)/.test(k) && path(k));
+    if (decorKeys.length) {
+      const colour = (k: string) => (k === 'decor_wandering_trader' ? 'trader' : k.slice(6) === 'silver' ? 'light_gray' : k.slice(6));
+      const byValue = new Map(decorKeys.map((k) => [colour(k), k]));
+      const carpets = DYE_COLORS.filter((d) => byValue.has(d)).map((d) => ({ value: d, label: pretty(d) }));
+      const values = spec.trader && byValue.has('trader') ? [{ value: 'trader', label: 'Trader' }, ...carpets] : [NONE, ...carpets];
+      const part = { name: 'decor', label: spec.trader ? 'Decor' : 'Carpet' };
+      gear.push({
+        prop: { name: 'decor', label: 'Carpet', values, gear: true, showIf: adultOnly },
+        layers: (v, look) => {
+          // babies wear no carpet; a baby trader llama has its own decor
+          const key = look.baby ? (spec.trader && keys.includes('baby_decor_wandering_trader') ? 'baby_decor_wandering_trader' : null) : byValue.get(v);
+          const p = key ? path(key) : null;
+          const model = c.models.get(look.layers[0].geo);
+          return p && model ? [{ model, texture: p, label: v === 'trader' || look.baby ? 'Trader decor' : 'Carpet', part }] : [];
+        },
+        states: values.filter((v) => v.value !== 'none').map((v) => ({ look: firstAdult.key, decor: v.value })),
+      });
+    }
+
+    // ---- wolf armour (drawn on the wolf's bones with its own geometry)
+    if (spec.id === 'wolf' && this.ctx.hasFile('textures/entity/wolf/wolf_armor.png')) {
+      const adef = await this.flat('geometry.wolf.armor');
+      if (adef) {
+        const byLook = new Map(adults.map((l) => [l.key, this.wornModel(c, 'geometry.wolf.armor', adef, l)]));
+        const part = { name: 'wolf_armor', label: 'Wolf armour' };
+        const tex = (n: string) => this.texturePath(`textures/entity/wolf/${n}`);
+        gear.push({
+          prop: { name: 'armor', label: 'Armour', values: [NONE, { value: 'armadillo_scute', label: 'Wolf armour' }], gear: true, showIf: adultOnly },
+          layers: (_v, look, st) => {
+            const model = byLook.get(look.key);
+            if (!model || look.baby) return [];
+            const dye = st.dye && st.dye !== 'none' ? tex('wolf_armor_dyed') : null;
+            const base = dye ?? tex('wolf_armor');
+            const out: LayerInput[] = base ? [{ model, texture: base, label: dye ? 'Wolf armour (dyed)' : 'Wolf armour', part, ...(dye ? tinted(dye, st, null) : {}) }] : [];
+            const crack = st.cracks && st.cracks !== 'none' ? tex(`wolf_armor_cracked_${st.cracks}`) : null;
+            if (crack) out.push({ model, texture: crack, label: 'Wolf armour cracks', part });
+            return out;
+          },
+          states: [{ look: firstAdult.key, armor: 'armadillo_scute' }],
+        });
+        const on = (st: BlockState) => adultOnly(st) && st.armor === 'armadillo_scute';
+        if (tex('wolf_armor_dyed')) {
+          dyed.push(on);
+          gear.push({ prop: { name: 'dye', label: 'Dye', values: [], gear: true }, states: [{ look: firstAdult.key, armor: 'armadillo_scute', dye: 'red' }] });
+        }
+        const cracks = ['low', 'medium', 'high'].filter((x) => tex(`wolf_armor_cracked_${x}`));
+        if (cracks.length)
+          gear.push({
+            prop: { name: 'cracks', label: 'Cracks', values: [NONE, ...cracks.map((x) => ({ value: x, label: pretty(x) }))], gear: true, showIf: on },
+            states: cracks.map((x) => ({ look: firstAdult.key, armor: 'armadillo_scute', cracks: x })),
+          });
+      }
+    }
+
+    // ---- the happy ghast's harness (goggles up: nobody riding)
+    if (spec.id === 'happy_ghast') {
+      const hdef = await this.flat('geometry.harness');
+      const colours = DYE_COLORS.filter((d) => this.texturePath(`textures/entity/harness/harness_${d}`));
+      if (hdef && colours.length) {
+        const byLook = new Map(adults.map((l) => [l.key, this.wornModel(c, 'geometry.harness', hdef, l, new Set(['goggles']))]));
+        gear.push({
+          prop: { name: 'harness', label: 'Harness', values: [NONE, ...colours.map((d) => ({ value: d, label: pretty(d) }))], gear: true, showIf: adultOnly },
+          layers: (v, look) => {
+            const p = this.texturePath(`textures/entity/harness/harness_${v}`);
+            const model = byLook.get(look.key);
+            return p && model ? [{ model, texture: p, label: 'Harness', part: { name: 'harness', label: 'Harness' } }] : [];
+          },
+          states: colours.map((d) => ({ look: firstAdult.key, harness: d })),
+        });
+      }
+    }
+
+    // ---- humanoid armour: the armour items' attachables, on the mob's bones
+    if (spec.armor) gear.push(...(await this.armorGear(c, dyed)));
+
+    // ---- one dye colour for whatever leather / dyeable thing is worn
+    const dyeAt = gear.findIndex((g) => g.prop.name === 'dye');
+    if (dyed.length) {
+      const prop: StateProperty = { name: 'dye', label: 'Dye', values: DYE_VALUES, gear: true, showIf: (st) => dyed.some((f) => f(st)) };
+      if (dyeAt >= 0) gear[dyeAt] = { ...gear[dyeAt], prop };
+      else gear.push({ prop, states: [] });
+    } else if (dyeAt >= 0) gear.splice(dyeAt, 1);
+    return gear;
+  }
+
+  private attachables: Promise<{ material: string; slot: string; geo: string; texture: string; leather: boolean }[]> | null = null;
+
+  /** The armour items' attachables (attachables/<material>_<slot>.json): geometry and texture. */
+  private armorItems() {
+    this.attachables ??= (async () => {
+      const files = this.ctx.listFiles('attachables/').filter((f) => /\/[a-z_]+_(helmet|chestplate|leggings|boots)\.json$/.test(f));
+      const out: { material: string; slot: string; geo: string; texture: string; leather: boolean }[] = [];
+      await Promise.all(
+        files.map(async (f) => {
+          const m = /\/([a-z_]+)_(helmet|chestplate|leggings|boots)\.json$/.exec(f)!;
+          const json = await this.ctx.readJson(f);
+          const d = isObj(json) && isObj(json['minecraft:attachable']) && isObj(json['minecraft:attachable'].description) ? json['minecraft:attachable'].description : null;
+          const geo = d && isObj(d.geometry) && typeof d.geometry.default === 'string' ? d.geometry.default : null;
+          const tex = d && isObj(d.textures) && typeof d.textures.default === 'string' ? d.textures.default : null;
+          if (!geo || !tex) return;
+          const mat = isObj(d!.materials) ? String(d!.materials.default ?? '') : '';
+          out.push({ material: BEDROCK_MATERIAL[m[1]] ?? m[1], slot: m[2], geo, texture: tex, leather: /leather/.test(mat) });
+        }),
+      );
+      return out;
+    })();
+    return this.attachables;
+  }
+
+  private async armorGear(c: GearContext, dyed: ((st: BlockState) => boolean)[]): Promise<BedrockGear[]> {
+    const items = await this.armorItems();
+    if (!items.length) return [];
+    const { looks } = c;
+    const lookOf = (st: BlockState) => looks.find((k) => k.key === st.look) ?? looks[0];
+    // babies wear their own armour where the mob says so
+    const babyArmor = (Array.isArray(isObj(c.desc.scripts) ? c.desc.scripts.pre_animation : null) ? ((c.desc.scripts as Record<string, unknown>).pre_animation as unknown[]) : []).some((x) => typeof x === 'string' && /use_dedicated_baby_armor\s*=\s*(true|1)/.test(x));
+    const wears = (look: BedrockLook) => !look.baby || babyArmor;
+    const models = new Map<string, EntityModel | null>();
+    const modelFor = async (geoId: string, look: BedrockLook) => {
+      const key = `${geoId}|${look.layers[0].geo}`;
+      if (!models.has(key)) {
+        const def = await this.flat(geoId);
+        models.set(key, def ? this.wornModel(c, geoId, def, look, undefined, [64, 32]) : null);
+      }
+      return models.get(key)!;
+    };
+    // the pieces for each look: material -> slot -> layer
+    const pieces = new Map<string, Map<string, LayerInput>>();
+    for (const look of looks) {
+      if (!wears(look)) continue;
+      for (const it of items) {
+        let geo = it.geo;
+        let texture = this.texturePath(it.texture);
+        if (look.baby) {
+          geo = `geometry.humanoid.baby.armor.${it.slot}`;
+          const stem = it.texture.slice(it.texture.lastIndexOf('/') + 1);
+          const dir = it.texture.slice(0, it.texture.lastIndexOf('/') + 1);
+          texture = this.texturePath(dir + (BABY_ARMOR[stem] ?? stem.replace(/_[12]$/, '_baby')));
+        }
+        if (!texture) continue;
+        const model = await modelFor(geo, look);
+        if (!model) continue;
+        const key = `${look.key}|${it.material}`;
+        if (!pieces.has(key)) pieces.set(key, new Map());
+        const label = it.slot === 'leggings' && !look.baby ? 'Leggings armour' : 'Armour';
+        pieces.get(key)!.set(it.slot, { model, texture, label, part: { name: it.slot, label: pretty(it.slot) }, tint: it.leather ? { kind: 'fixed', rgb: LEATHER_RGB } : null, tintMask: it.leather && /\.tga$/i.test(texture) ? 'armor' : undefined });
+      }
+    }
+    const order = ARMOR_MATERIALS.map(([m]) => m);
+    const label = new Map(ARMOR_MATERIALS);
+    const gear: BedrockGear[] = [];
+    const firstAdult = looks.find((l) => !l.baby)!;
+    for (const [slot, slotLabel] of ARMOR_SLOTS) {
+      const mats = [...new Set(items.filter((i) => i.slot === slot).map((i) => i.material))].sort((a, b) => ((order.indexOf(a) + 99) % 99) - ((order.indexOf(b) + 99) % 99));
+      if (!mats.length) continue;
+      gear.push({
+        prop: { name: slot, label: slotLabel, values: [NONE, ...mats.map((m) => ({ value: m, label: label.get(m) ?? pretty(m) }))], gear: true, group: 'armor', showIf: (st) => !!lookOf(st) && wears(lookOf(st)!) },
+        layers: (m, look, st) => {
+          const layer = pieces.get(`${look.key}|${m}`)?.get(slot);
+          if (!layer) return [];
+          return [layer.tint ? { ...layer, tint: dyeTint(st, LEATHER_RGB) } : layer];
+        },
+        states: [],
+      });
+    }
+    // a full set of each material
+    if (gear.length) {
+      const sets = order.filter((m) => items.some((i) => i.material === m));
+      gear[0] = { ...gear[0], states: sets.map((m) => ({ look: firstAdult.key, ...Object.fromEntries(items.filter((i) => i.material === m).map((i) => [i.slot, m])) })) };
+      if (items.some((i) => i.leather)) dyed.push((st) => !!lookOf(st) && wears(lookOf(st)!) && ARMOR_SLOTS.some(([slot]) => st[slot] === 'leather'));
+    }
+    return gear;
   }
 
   resolve(id: string, state: BlockState): EntityView {
     const l = this.loaded.get(id);
-    const look = l ? (l.looks.find((k) => k.key === state.look) ?? l.looks[0]) : null;
-    if (!l || !look) return { quads: [], parts: [], labels: new Map(), texSizes: new Map() };
-    return bakeLayers(look.layers.map((x, i) => ({ model: l.models.get(x.geo)!, texture: x.path, label: i ? pretty(x.key) : 'Body' })));
+    if (!l || !l.looks.length) return { quads: [], parts: [], labels: new Map(), texSizes: new Map() };
+    return bakeLayers(this.layersOf(l, { ...this.defaultState(id), ...state }));
   }
+}
+
+interface GearContext {
+  spec: BedrockMobSpec;
+  textures: Record<string, unknown>;
+  geometry: Record<string, unknown>;
+  looks: BedrockLook[];
+  models: Map<string, EntityModel>;
+  defs: Map<string, GeoDef>;
+  pose: RestPose;
+  main: RenderController[];
+  gearCtrls: RenderController[];
+  desc: Record<string, unknown>;
 }

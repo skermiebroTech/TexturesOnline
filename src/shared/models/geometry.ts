@@ -38,8 +38,11 @@ export interface BakedQuad {
   tintindex: number;
   /** Resolved tint, when the game colours this face */
   tint: Tint | null;
-  /** Bedrock: the texture's alpha channel is a tint mask (overlay_color) rather than transparency */
-  tintMask?: boolean;
+  /**
+   * Bedrock: the texture's alpha channel is a tint mask (overlay_color) rather than transparency;
+   * 'armor': leather armour's mask (alpha 0 see-through, low alpha drawn undyed, full alpha dyed)
+   */
+  tintMask?: boolean | 'armor';
   /** Directional shading applies (Java "shade": false turns it off) */
   shade: boolean;
   /** Shade as if facing this way (26.x "shade_direction_override", e.g. plants lit like a top face) */
