@@ -472,7 +472,7 @@ export const GUIDE_CONTENT: Guide[] = [
         body: [
           ul([
             [strong('Name or path is off by a letter: '), 'the file must have exactly the same name and folder as the original. Java ignores paths with capital letters or spaces.'],
-            [strong('Another pack wins: '), 'packs higher in the list replace the same textures. Move yours to the top.'],
+            [strong('Another pack wins: '), 'packs higher in the list replace the same textures. Move yours to the top, or combine the packs into one with ', link('/merge-texture-packs', 'Merge Texture Packs'), ', in the order you want.'],
             [strong('Wrong file for that block: '), 'some blocks use several images (the furnace front, side and top; the grass block top, side and side overlay). Edit all of them, or use the 3D preview to see which image goes where.'],
             [strong('Wrong image type on Bedrock: '), 'some vanilla Bedrock textures are ', code('.tga'), ' files. Keep the same name and file type as the original so yours replaces it.'],
           ]),
@@ -613,6 +613,11 @@ export const GUIDE_CONTENT: Guide[] = [
             ' list (Java) or the active list (Bedrock) wins, and everything it does not change falls through to the packs below it. A common setup is a small pack with your own tweaks at the top and a full pack under it.',
           ),
           p(
+            'To turn such a stack into one pack, for sharing or for a server that sends a single resource pack, use ',
+            link('/merge-texture-packs', 'Merge Texture Packs'),
+            ': it follows the same rule, so the pack at the top of its list wins.',
+          ),
+          p(
             'Third-party launchers such as Lunar Client and Badlion Client use the same ',
             code('resourcepacks'),
             ' folder in ',
@@ -710,7 +715,7 @@ export const GUIDE_CONTENT: Guide[] = [
       {
         id: 'order',
         q: 'Which pack wins when two change the same texture?',
-        a: [p('The one higher in the Selected (Java) or active (Bedrock) list.')],
+        a: [p('The one higher in the Selected (Java) or active (Bedrock) list. ', link('/merge-texture-packs', 'Merge Texture Packs'), ' uses the same order to combine several packs into one.')],
       },
       {
         id: 'realms',

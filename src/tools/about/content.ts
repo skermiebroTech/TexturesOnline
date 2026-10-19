@@ -129,6 +129,7 @@ export function aboutPage(): ElNode {
             { class: 'guide-list' },
             el('li', null, link('/textures', 'Texture pack maker'), ': repaint any block, item or mob on its 3D model, upload your own images, restyle the whole pack in one click, or open an existing pack.'),
             el('li', null, link('/texture-pack-converter', 'Texture pack converter'), ': Java to Bedrock, Bedrock to Java, between Java versions, or PNG textures to an .mcpack.'),
+            el('li', null, link('/merge-texture-packs', 'Merge texture packs'), ': combine up to eight packs into one, in the order you choose.'),
             el('li', null, link('/skins', 'Skin editor'), ' and ', link('/skin-pack-maker', 'skin pack maker'), ': paint skins in 2D or 3D with classic or slim arms, and bundle them into a Bedrock skin pack.'),
             el('li', null, link('/shaders', 'Shader maker'), ': Iris and OptiFine shader packs, vanilla Java shaders that need no mods, and Bedrock Vibrant Visuals packs.'),
             el('li', null, link('/guides', 'Guides'), ': making, installing and fixing packs, and the pack format of every Java version.'),

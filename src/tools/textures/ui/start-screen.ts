@@ -244,6 +244,13 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       h('span', { class: 'tx-convert-text' }, h('strong', null, 'Convert a pack'), h('span', { class: 'faint small' }, 'Java to Bedrock, Bedrock to Java, or another Java version')),
       icon('arrow-right'),
     ),
+    h(
+      'a',
+      { class: 'tx-convert-link tx-merge-link', href: routeHref('/merge-texture-packs') },
+      h('span', { class: 'tx-convert-icon' }, icon('git-merge')),
+      h('span', { class: 'tx-convert-text' }, h('strong', null, 'Merge packs'), h('span', { class: 'faint small' }, 'Combine several packs into one, top pack first')),
+      icon('arrow-right'),
+    ),
   );
 
   async function openFile(file: File | undefined) {
