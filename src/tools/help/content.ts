@@ -344,6 +344,25 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'gear',
+    q: 'Can I edit saddles, armour and horse armour?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes. Mobs that wear things show a ',
+        strong('Wearing'),
+        ' group in their choices: put a saddle on a pig, strider, horse, camel or nautilus; dress zombies, skeletons, piglins and the armour stand in armour (pick a material for the whole set, then switch single pieces on or off, and dye leather with ',
+        strong('Dye'),
+        '); give horses, wolves and nautiluses their armour, llamas a carpet and the happy ghast a harness. Each worn item paints on its own texture and has its own entry under ',
+        strong('Parts'),
+        ', so you can hide it to paint the mob underneath. Opening an armour, saddle or carpet texture shows it being worn, and ',
+        strong('Used by'),
+        ' lists every mob that wears it. Older versions use the armour and saddle textures they had.',
+      ),
+    ],
+  },
+  {
     id: 'upload',
     q: 'Is anything uploaded?',
     a: [

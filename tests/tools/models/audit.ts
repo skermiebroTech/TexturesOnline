@@ -2,7 +2,8 @@
  * Audit: resolves every block (and every state of it) of a Java version or Bedrock and reports the
  * ones that fall back to a flat texture sheet, have no geometry, reference missing textures in any
  * state, or are only approximated; plus how items are drawn.
- * With --mobs, every mob in each of its looks: parts, textures, UVs and texture sizes against the files.
+ * With --mobs, every mob in each of its looks: parts, textures, UVs and texture sizes against the files,
+ * and everything it can wear (saddles, armour, carpets, harnesses) shown in the look that wears it.
  * Usage: TO_FIXTURES=<dir> npx tsx tests/tools/models/audit.ts [26.3|1.20.1|...|bedrock] [--states] [--items] [--mobs] [--no-java]
  * Bedrock takes its built-in shapes from the 26.3 jar's block models (--no-java: without them).
  */
@@ -104,6 +105,7 @@ if (withMobs) {
   const issues: string[] = [];
   const rows: string[] = [];
   let looks = 0;
+  let wornChecked = 0;
   for (const e of mobs) {
     if (!(await lib.prepare(e))) {
       issues.push(`${e.id}: did not load`);
@@ -128,9 +130,26 @@ if (withMobs) {
         if (s && s[0] * h !== s[1] * w) issues.push(`${e.id}: ${p} is ${s.join('x')}, the model maps ${w}x${h}`);
       }
     }
-    rows.push(`${e.id.padEnd(22)} ${String(parts).padStart(3)} parts ${String(quads).padStart(4)} faces ${String(states.length).padStart(3)} looks  ${[...textures].map((t) => t.replace(/^.*textures\/entity\//, '')).join(', ')}`);
+    // worn things: each worn texture shows (as its own part) in the look that wears it
+    for (const t of lib.textureStates(e).filter((x) => x.gear)) {
+      const st = { ...lib.defaultState(e), ...t.states[0] };
+      const v = lib.resolve(e, st);
+      wornChecked++;
+      const qs = v.quads.filter((q) => q.texture === t.path);
+      if (!qs.length) issues.push(`${e.id}: worn ${t.path} doesn't show in ${JSON.stringify(st)}`);
+      else if (!/saddled/.test(t.path) && !qs.every((q) => v.parts?.[q.part ?? -1]?.name.startsWith('gear:'))) issues.push(`${e.id}: worn ${t.path} isn't a part of its own`);
+      const want = v.texSizes?.get(t.path);
+      const s = sizeOf(t.path);
+      if (want && s && s[0] * want[1] !== s[1] * want[0]) issues.push(`${e.id}: worn ${t.path} is ${s.join('x')}, the model maps ${want.join('x')}`);
+      for (const m of missingOf(v)) issues.push(`${e.id} ${JSON.stringify(st)}: missing ${m}`);
+    }
+    const gear = lib
+      .properties(e)
+      .filter((p) => p.gear)
+      .map((p) => `${p.name}(${p.values.length - 1})`);
+    rows.push(`${e.id.padEnd(22)} ${String(parts).padStart(3)} parts ${String(quads).padStart(4)} faces ${String(states.length).padStart(3)} looks  ${[...textures].map((t) => t.replace(/^.*textures\/entity\//, '')).join(', ')}${gear.length ? `  | wears ${gear.join(' ')}` : ''}`);
   }
-  console.log(`\nmobs: ${mobs.length}, ${looks} looks checked`);
+  console.log(`\nmobs: ${mobs.length}, ${looks} looks and ${wornChecked} worn textures checked`);
   console.log(`  ${rows.join('\n  ')}`);
   console.log(`\nmob issues (${issues.length}):${issues.length ? `\n  ${[...new Set(issues)].join('\n  ')}` : ''}`);
 }

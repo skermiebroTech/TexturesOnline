@@ -24,7 +24,9 @@ repository keeps its original name, `TexturesOnline`).
   mirror, in the same undo history as the flat editor.
 - Mob textures on their mob models (Java: about 80 mobs with baby, variant, wool, profession and collar
   choices; Bedrock: drawn from Bedrock's own geometry, posed the way they stand still), paintable in 3D,
-  with overlay layers (wool, eyes, clothes) and body parts you can hide or show on their own.
+  with overlay layers (wool, eyes, clothes) and body parts you can hide or show on their own. Mobs can
+  wear what the game puts on them: saddles, horse, wolf and nautilus armour, llama carpets, the happy
+  ghast's harness and humanoid armour (leather dyeable), each its own part on its own texture.
 - Exports a `.zip` with the exact `pack.mcmeta` rules of the chosen Java version, or a Bedrock `.mcpack`.
 
 ### Skins
@@ -80,7 +82,7 @@ Browser end-to-end suites (need Playwright + Chromium):
 ```sh
 NODE_PATH=$(npm root -g) node tests/e2e/textures/e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/textures/paint3d.e2e.cjs   # painting textures on the 3D model
-NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs      # mob models: painting, body parts, Bedrock
+NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs      # mob models: painting, body parts, saddles and armour, Bedrock
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

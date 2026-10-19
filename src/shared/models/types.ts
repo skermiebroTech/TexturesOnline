@@ -24,6 +24,12 @@ export interface StateProperty {
   name: string;
   label: string;
   values: StateValue[];
+  /** Mobs: something the mob wears (saddle, armour, carpet...); the first value is "none" */
+  gear?: boolean;
+  /** Choices shown as one control ('armor': the four armour pieces) */
+  group?: string;
+  /** Only offered in states it applies to (a saddle on adults, a dye colour with leather on) */
+  showIf?: (state: BlockState) => boolean;
 }
 
 export interface ModelTexture {
@@ -41,6 +47,8 @@ export interface ModelTexture {
   missing?: boolean;
   /** Animated (Java .mcmeta / Bedrock flipbook) */
   animated?: boolean;
+  /** Mobs: worn by the mob (armour, saddle...) rather than part of its look */
+  gear?: boolean;
 }
 
 /** A flat texture layer (generated item sprites, special-block fallbacks). */
@@ -109,6 +117,10 @@ export interface TextureStates {
   role: string;
   states: BlockState[];
   dirs: string[];
+  /** Mobs: a worn thing's texture (armour, saddle...) */
+  gear?: boolean;
+  /** Mobs: the mob this worn texture opens on first (humanoid armour on the armour stand) */
+  home?: boolean;
 }
 
 export interface RawView {

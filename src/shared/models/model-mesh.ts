@@ -92,7 +92,12 @@ void main() {
   }
   vec3 rgb = t.rgb;
   float a = t.a;
-  if (vMask > 0.5) {
+  if (vMask > 1.5) {
+    // armour mask: no alpha is see-through, a little is drawn as it is, full alpha takes the dye
+    if (t.a < 0.002) discard;
+    rgb *= mix(vec3(1.0), vTint, t.a);
+    a = 1.0;
+  } else if (vMask > 0.5) {
     rgb *= mix(vec3(1.0), vTint, t.a);
     a = 1.0;
   } else {
@@ -234,7 +239,7 @@ export class ModelMesh {
           uv.set([q.uvs[c][0] / 16, q.uvs[c][1] / 16], v * 2);
           tintA.set([rgb[0] / 255, rgb[1] / 255, rgb[2] / 255], v * 3);
           shade[v] = sh;
-          mask[v] = q.tintMask && q.tint ? 1 : 0;
+          mask[v] = q.tintMask && q.tint ? (q.tintMask === 'armor' ? 2 : 1) : 0;
           face[v] = qi;
           corner.set(CORNERS[c], v * 2);
         }
@@ -367,14 +372,16 @@ export class ModelMesh {
     const g = this.groups.get(path);
     if (!g?.image) return 255;
     const q = quadIndex !== undefined ? this.quads[quadIndex] : undefined;
-    if (q?.tintMask && q.tint) return 255;
-    if ((g.material.uniforms.uAlphaTest.value as number) <= 0) return 255;
+    const armorMask = q?.tintMask === 'armor' && !!q.tint;
+    if (q?.tintMask && q.tint && !armorMask) return 255;
+    if (!armorMask && (g.material.uniforms.uAlphaTest.value as number) <= 0) return 255;
     const img = g.image;
     const fh = Math.max(1, Math.floor(img.height / g.frames));
     const frame = Math.min(g.frames - 1, Math.max(0, g.material.uniforms.uFrame.value as number));
     const x = Math.min(img.width - 1, Math.max(0, Math.floor(uv[0] * img.width)));
     const y = Math.min(fh - 1, Math.max(0, Math.floor(uv[1] * fh)));
-    return img.data[((frame * fh + y) * img.width + x) * 4 + 3];
+    const a = img.data[((frame * fh + y) * img.width + x) * 4 + 3];
+    return armorMask ? (a ? 255 : 0) : a;
   }
 
   /** Outlines the texels a brush would paint on one texture (null clears). */
@@ -455,7 +462,8 @@ export class ModelMesh {
       if (!g || h.faceIndex === undefined || h.faceIndex === null) continue;
       const qi = g.quads[h.faceIndex >> 1];
       const q = this.quads[qi];
-      if (g.image && h.uv && g.material.uniforms.uAlphaTest.value > 0 && !(q.tintMask && q.tint)) {
+      const armorMask = q.tintMask === 'armor' && !!q.tint;
+      if (g.image && h.uv && (armorMask || (g.material.uniforms.uAlphaTest.value > 0 && !(q.tintMask && q.tint)))) {
         const img = g.image;
         const fh = img.height / g.frames;
         const x = Math.min(img.width - 1, Math.max(0, Math.floor(h.uv.x * img.width)));

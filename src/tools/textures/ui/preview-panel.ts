@@ -461,24 +461,87 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       statesEl.hidden = true;
       return;
     }
-    const props: StateProperty[] = lib.properties(entry);
-    statesEl.hidden = !props.length;
-    statesEl.replaceChildren(
-      ...props.map((p) => {
-        const value = state[p.name] ?? p.values[0]?.value ?? '';
-        const setValue = (v: string) => {
-          state = { ...state, [p.name]: v };
-          userState = true;
-          void render({ keepView: true });
-        };
-        const short = p.values.length <= 4 && p.values.reduce((a, v) => a + v.label.length, 0) <= 14;
-        const control = short
-          ? segmented<string>({ value, size: 'sm', label: p.label, options: p.values.map((v) => ({ value: v.value, label: v.label })), onChange: setValue })
-          : select<string>({ value, options: p.values.map((v) => ({ value: v.value, label: v.label })), onChange: setValue });
-        if (!short) control.querySelector('select')?.setAttribute('aria-label', p.label);
-        return h('div', { class: 'tx-pv-state', dataset: { prop: p.name } }, h('span', { class: 'tx-pv-state-label' }, p.label), control);
-      }),
+    // choices that apply to the look on show (a saddle on adults, a dye colour with leather on)
+    const props: StateProperty[] = lib.properties(entry).filter((p) => !p.showIf || p.showIf(state));
+    const set = (patch: BlockState) => {
+      state = { ...state, ...patch };
+      userState = true;
+      void render({ keepView: true });
+    };
+    const row = (p: StateProperty) => {
+      const value = state[p.name] ?? p.values[0]?.value ?? '';
+      const short = p.values.length <= 4 && p.values.reduce((a, v) => a + v.label.length, 0) <= 14;
+      const control = short
+        ? segmented<string>({ value, size: 'sm', label: p.label, options: p.values.map((v) => ({ value: v.value, label: v.label })), onChange: (v) => set({ [p.name]: v }) })
+        : select<string>({ value, options: p.values.map((v) => ({ value: v.value, label: v.label })), onChange: (v) => set({ [p.name]: v }) });
+      if (!short) control.querySelector('select')?.setAttribute('aria-label', p.label);
+      return h('div', { class: 'tx-pv-state', dataset: { prop: p.name } }, h('span', { class: 'tx-pv-state-label' }, p.label), control);
+    };
+    const nodes: HTMLElement[] = props.filter((p) => !p.gear).map(row);
+    // things the mob wears, under their own heading
+    const gear = props.filter((p) => p.gear);
+    if (gear.length) {
+      nodes.push(h('div', { class: 'tx-pv-gearhead', role: 'presentation' }, icon('shirt', { size: 16 }), h('span', null, 'Wearing')));
+      const armor = gear.filter((p) => p.group === 'armor');
+      for (const p of gear) {
+        if (p.group !== 'armor') nodes.push(row(p));
+        else if (p === armor[0]) nodes.push(...armorRows(armor, set));
+      }
+    }
+    statesEl.hidden = !nodes.length;
+    statesEl.replaceChildren(...nodes);
+  }
+
+  /** Material last picked for armour (a piece put back on gets it) */
+  let armorMaterial = '';
+
+  /**
+   * Humanoid armour as one choice: a material for the whole set ("Mixed" when the pieces differ) and,
+   * with armour on, a toggle per piece.
+   */
+  function armorRows(slots: StateProperty[], set: (patch: BlockState) => void): HTMLElement[] {
+    const worn = slots.filter((p) => (state[p.name] ?? 'none') !== 'none');
+    const mats = [...new Set(worn.map((p) => state[p.name]))];
+    const current = !worn.length ? 'none' : mats.length === 1 ? mats[0] : 'mixed';
+    const options: { value: string; label: string }[] = [];
+    for (const p of slots) for (const v of p.values) if (!options.some((o) => o.value === v.value)) options.push({ value: v.value, label: v.label });
+    if (current === 'mixed') options.push({ value: 'mixed', label: 'Mixed' });
+    const fits = (p: StateProperty, m: string) => p.values.some((v) => v.value === m);
+    const control = select<string>({
+      value: current,
+      options,
+      onChange: (m) => {
+        if (m === 'mixed') return;
+        if (m !== 'none') armorMaterial = m;
+        set(Object.fromEntries(slots.map((p) => [p.name, fits(p, m) ? m : 'none'])));
+      },
+    });
+    control.querySelector('select')?.setAttribute('aria-label', 'Armour');
+    const out = [h('div', { class: 'tx-pv-state', dataset: { prop: 'armor' } }, h('span', { class: 'tx-pv-state-label' }, 'Armour'), control)];
+    if (current === 'none') return out;
+    // a piece put on takes the set's material (the last one picked when they differ)
+    const material = current !== 'mixed' ? current : armorMaterial && mats.includes(armorMaterial) ? armorMaterial : mats[0];
+    const chips = slots.map((p) => {
+      const on = (state[p.name] ?? 'none') !== 'none';
+      const can = on || fits(p, material);
+      const b = h(
+        'button',
+        { type: 'button', class: 'chip tx-pv-piece', 'aria-pressed': String(on), disabled: !can, dataset: { piece: p.name } },
+        h('span', { class: 'truncate' }, p.label),
+      );
+      tooltip(b, on ? `Take off the ${p.label.toLowerCase()}` : can ? `Put on a ${p.label.toLowerCase()}` : `No ${p.label.toLowerCase()} in this material`);
+      b.addEventListener('click', () => set({ [p.name]: on ? 'none' : material }));
+      return b;
+    });
+    out.push(
+      h(
+        'div',
+        { class: 'tx-pv-state tx-pv-pieces-row', dataset: { prop: 'pieces' } },
+        h('span', { class: 'tx-pv-state-label' }, 'Pieces'),
+        h('div', { class: 'tx-pv-pieces', role: 'group', 'aria-label': 'Armour pieces worn' }, chips),
+      ),
     );
+    return out;
   }
 
   const rowFor = (path: string) => texList.querySelector<HTMLElement>(`li[data-path="${CSS.escape(path)}"]`);
@@ -489,7 +552,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       return;
     }
     // Textures the game generates (armor trim colours) have no file: list them only where they show.
-    const list = view.textures.filter((t) => !t.missing || t.faces > 0 || store.isEdited(t.path));
+    // Worn things (armour, saddles...) are listed while worn, not as other states of the mob.
+    const list = view.textures.filter((t) => (!t.missing || t.faces > 0 || store.isEdited(t.path)) && !(t.gear && t.faces === 0));
     texSection.hidden = list.length === 0;
     const inState = list.filter((t) => t.faces > 0 || view!.shape !== 'model');
     const other = list.length - inState.length;

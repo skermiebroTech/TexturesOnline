@@ -33,6 +33,8 @@ export interface GeoBone {
   neverRender?: boolean;
   /** Replaces the inherited bone of the same name instead of adding to it */
   reset?: boolean;
+  /** The file gives the pivot (a child geometry's bone without one keeps the inherited pivot) */
+  hasPivot?: boolean;
 }
 
 export interface GeoDef {
@@ -88,6 +90,7 @@ function parseBones(list: unknown): GeoBone[] {
       bindPoseRotation: Array.isArray(b.bind_pose_rotation) ? vec(b.bind_pose_rotation) : undefined,
       neverRender: b.neverRender === true || b.never_render === true,
       reset: b.reset === true || undefined,
+      hasPivot: Array.isArray(b.pivot) || undefined,
     });
   }
   return out;
@@ -139,11 +142,24 @@ export function flattenGeo(id: string, lookup: (id: string) => GeoDef | undefine
     if (g.texSize) texSize = g.texSize;
     for (const b of g.bones) {
       const old = bones.get(b.name);
-      if (!old || b.reset) bones.set(b.name, b);
+      if (!old) {
+        bones.set(b.name, b);
+        continue;
+      }
+      // what the child bone doesn't say it inherits (armour bones give only an inflate, or `reset`)
+      const merged: GeoBone = {
+        ...b,
+        pivot: b.hasPivot ? b.pivot : old.pivot,
+        hasPivot: b.hasPivot ?? old.hasPivot,
+        parent: b.parent ?? old.parent,
+        rotation: b.rotation ?? old.rotation,
+        bindPoseRotation: b.bindPoseRotation ?? old.bindPoseRotation,
+      };
+      if (b.reset) bones.set(b.name, merged);
       else {
-        // the inherited boxes keep their bone's inflate and mirror
-        const kept = old.cubes.map((c) => ({ ...c, inflate: c.inflate ?? old.inflate, mirror: c.mirror ?? old.mirror }));
-        bones.set(b.name, { ...b, cubes: [...kept, ...b.cubes] });
+        // the inherited boxes keep their bone's inflate and mirror, unless the child bone sets an inflate
+        const kept = old.cubes.map((c) => ({ ...c, inflate: b.inflate ?? c.inflate ?? old.inflate, mirror: c.mirror ?? old.mirror }));
+        bones.set(b.name, { ...merged, cubes: [...kept, ...b.cubes] });
       }
     }
   }
@@ -165,7 +181,9 @@ export type NativeTurns = Record<string, { bone?: Vec3; boxes?: Vec3 }>;
  * parts nested like the bones (pivots relative to the parent), cubes with their own rotation become
  * child parts, per-face UVs keep their rectangles. `rest` poses the bones the way the entity's idle
  * animations do; `hidden` bones (render controller part visibility) are left out with their children;
- * `turns` adds the turns the game applies without them being in the files.
+ * `turns` adds the turns the game applies without them being in the files. `bind`: the geometry of the
+ * entity wearing this one (armour, saddles drawn as attachables): bones of the same name sit and turn
+ * like the wearer's bones.
  */
 export function geoToModel(
   g: GeoDef,
@@ -173,8 +191,19 @@ export function geoToModel(
   fallbackTex: [number, number] = [64, 64],
   hidden?: Set<string>,
   turns?: NativeTurns,
+  bind?: GeoDef,
 ): EntityModel {
   const tex = g.texSize ?? fallbackTex;
+  if (bind) {
+    const wearer = new Map(bind.bones.map((b) => [b.name.toLowerCase(), b]));
+    g = {
+      ...g,
+      bones: g.bones.map((b) => {
+        const w = wearer.get(b.name.toLowerCase());
+        return w ? { ...b, pivot: w.pivot, rotation: w.rotation, bindPoseRotation: w.bindPoseRotation } : b;
+      }),
+    };
+  }
   const byName = new Map(g.bones.map((b) => [b.name, b]));
   const kids = new Map<string, GeoBone[]>();
   const roots: GeoBone[] = [];
