@@ -50,6 +50,7 @@
 .topbar.scrolled,
 body[data-route='textures'] .topbar,
 body[data-route='convert'] .topbar,
+body[data-route='merge'] .topbar,
 body[data-route='skins'] .topbar,
 body[data-route='shaders'] .topbar {
   border-bottom-color: var(--border);

@@ -30,7 +30,7 @@ import { GUIDE_CONTENT, guidePage, guidesIndexPage } from '../../tools/guides/co
 export interface PrerenderPage {
   meta: PageMeta;
   /** <html data-tool> and <body data-route> */
-  tool: 'home' | 'textures' | 'convert' | 'skins' | 'shaders' | 'help';
+  tool: 'home' | 'textures' | 'convert' | 'merge' | 'skins' | 'shaders' | 'help';
   /** Highlighted main-nav link */
   nav: NavTool;
   /** Classes of the view element (same as the router + view add at runtime) */
@@ -59,6 +59,7 @@ export const SCREENSHOTS: Record<IntroTool | 'home', Screenshot> = {
   home: DEFAULT_SCREENSHOT,
   textures: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker texture tool: one-click styles and a new pack for Java 26.3 or Bedrock' },
   converter: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker texture pack converter: Java to Bedrock, Bedrock to Java and Java version updates' },
+  merge: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker pack merger: several Java or Bedrock texture packs combined into one, top pack first' },
   skinpack: { path: 'screenshots/guides/skin-pack-export.jpg', width: 1078, height: 674, caption: 'Texture Pack Maker skin pack maker: three skins, classic and slim, bundled into one Bedrock .mcpack' },
   skins: { path: 'screenshots/skins.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker skin editor: starter skins, classic or slim arms' },
   shaders: { path: 'screenshots/shaders.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker shader maker: Iris / OptiFine, vanilla Java or Bedrock Vibrant Visuals' },
@@ -77,6 +78,7 @@ const TOOL_ROUTE_MODULE: Record<IntroTool, string> = {
   skins: 'src/tools/skins/view.ts',
   skinpack: 'src/tools/skins/view.ts',
   converter: 'src/tools/convert/view.ts',
+  merge: 'src/tools/merge/view.ts',
   shaders: 'src/tools/shaders/view.ts',
 };
 
@@ -118,7 +120,7 @@ function toolEntry(tool: IntroTool): PrerenderPage {
   const intro = TOOL_INTROS[tool];
   const url = absoluteUrl(meta.path);
   const crumbs = crumbsFor({ label: meta.label });
-  const base = intro.base ?? (tool as Exclude<IntroTool, 'skinpack' | 'converter'>);
+  const base = intro.base ?? (tool as Exclude<IntroTool, 'skinpack' | 'converter' | 'merge'>);
   return {
     meta,
     tool: base,
@@ -228,5 +230,5 @@ function guideEntry(slug: string): PrerenderPage {
 
 /** All prerendered pages, in sitemap order. */
 export function prerenderPages(): PrerenderPage[] {
-  return [homeEntry(), toolEntry('textures'), toolEntry('converter'), toolEntry('skins'), toolEntry('skinpack'), toolEntry('shaders'), helpEntry(), guidesIndexEntry(), ...GUIDES.map((g) => guideEntry(g.slug))];
+  return [homeEntry(), toolEntry('textures'), toolEntry('converter'), toolEntry('merge'), toolEntry('skins'), toolEntry('skinpack'), toolEntry('shaders'), helpEntry(), guidesIndexEntry(), ...GUIDES.map((g) => guideEntry(g.slug))];
 }

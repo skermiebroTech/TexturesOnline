@@ -192,6 +192,9 @@
   transform: translateX(3px);
   color: var(--tool-accent);
 }
+.tx-convert-link + .tx-convert-link {
+  margin-top: -12px;
+}
 .tx-convert-icon {
   display: grid;
   place-items: center;
@@ -445,6 +448,9 @@
   }
   .tx-convert-link {
     margin: 0 16px 16px;
+  }
+  .tx-convert-link + .tx-convert-link {
+    margin-top: -8px;
   }
   .tx-recent {
     padding-top: 48px;

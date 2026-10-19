@@ -150,6 +150,7 @@ import flattenSvg from 'pixelarticons/svg/flatten.svg?raw';
 import bulletlistSvg from 'pixelarticons/svg/bulletlist.svg?raw';
 import penSquareSvg from 'pixelarticons/svg/pen-square.svg?raw';
 import wifiSvg from 'pixelarticons/svg/wifi.svg?raw';
+import gitMergeSvg from 'pixelarticons/svg/git-merge.svg?raw';
 
 const PIXELARTICONS = {
   'pencil': pencilSvg,
@@ -301,10 +302,25 @@ const PIXELARTICONS = {
   'bulletlist': bulletlistSvg,
   'pen-square': penSquareSvg,
   'wifi': wifiSvg,
+  'git-merge': gitMergeSvg,
 } as const;
 
 /** Custom glyphs: 12x12 bitmaps, each cell is 2x2 SVG units on the 24x24 icon grid. */
 const CUSTOM = {
+  grip: [
+    '............',
+    '............',
+    '....##.##...',
+    '....##.##...',
+    '............',
+    '....##.##...',
+    '....##.##...',
+    '............',
+    '....##.##...',
+    '....##.##...',
+    '............',
+    '............',
+  ],
   fill: [
     '....##......',
     '...#..#.....',

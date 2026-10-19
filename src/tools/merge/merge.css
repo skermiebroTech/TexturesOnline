@@ -1,0 +1,426 @@
+/* Texture pack merger. Builds on the converter's layout (cv-*); its own classes are prefixed mg-. */
+
+/* ----------------------------------------------------------------------------- hero */
+.mg-hero-stack {
+  position: relative;
+  width: 124px;
+  height: 112px;
+}
+.cv-hero-art .mg-hero-stack canvas {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+}
+.cv-hero-art .mg-hero-stack canvas:nth-child(1) {
+  left: 0;
+  top: 0;
+  animation-delay: -0.4s;
+}
+.cv-hero-art .mg-hero-stack canvas:nth-child(2) {
+  left: 26px;
+  top: 20px;
+  animation-delay: -0.8s;
+}
+.cv-hero-art .mg-hero-stack canvas:nth-child(3) {
+  left: 52px;
+  top: 40px;
+  animation-delay: -1.2s;
+}
+
+/* ----------------------------------------------------------------------------- step 1: packs */
+.mg-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+.mg-dz.compact {
+  min-height: 0;
+}
+.mg-list-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mg-list-box[hidden],
+.mg-full[hidden] {
+  display: none;
+}
+.mg-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.mg-end-top {
+  color: var(--text-2);
+}
+.mg-end-top .icon {
+  color: var(--gold);
+}
+.mg-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mg-list.is-sorting {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mg-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 6px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 2px var(--border);
+  transition: box-shadow var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.mg-row.is-dragging {
+  z-index: 2;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 2px var(--tool-accent), 0 14px 28px rgba(0, 0, 0, 0.35);
+  transition: none;
+}
+.mg-row.is-odd-edition {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold) 55%, var(--border));
+}
+.mg-handle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-3);
+  cursor: grab;
+  touch-action: none;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.mg-handle:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.mg-handle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  color: var(--text);
+}
+.mg-row.is-dragging .mg-handle {
+  cursor: grabbing;
+  color: var(--tool-accent);
+}
+.mg-handle:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+.mg-rank {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1;
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.mg-row:first-child .mg-rank,
+.mg-contrib-row:first-child .mg-rank {
+  background: var(--tool-accent);
+  color: var(--on-accent);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
+}
+.mg-thumb {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.mg-thumb img,
+.mg-thumb canvas,
+.mg-contrib-thumb img,
+.mg-contrib-thumb canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.mg-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.mg-name {
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+}
+.mg-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mg-top-badge:empty {
+  display: none;
+}
+.mg-notes summary {
+  font-size: var(--fs-sm);
+}
+.mg-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.mg-full {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.mg-full .icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--blue);
+}
+
+/* ----------------------------------------------------------------------------- step 2: settings */
+.mg-desc {
+  margin-top: -12px;
+  overflow-wrap: anywhere;
+}
+.mg-desc[hidden],
+.mg-icon-field[hidden] {
+  display: none;
+}
+.mg-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mg-icon-opt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--border);
+  transition: box-shadow var(--dur-1) var(--ease);
+}
+.mg-icon-opt img,
+.mg-icon-opt canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.mg-icon-opt:hover {
+  box-shadow: inset 0 0 0 2px var(--border-strong);
+}
+.mg-icon-opt[aria-checked='true'] {
+  box-shadow: inset 0 0 0 3px var(--tool-accent);
+}
+.mg-icon-opt:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--tool-accent), var(--focus-ring);
+}
+.mg-icon-check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-xs);
+  background: var(--tool-accent);
+  color: var(--on-accent);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.mg-icon-opt[aria-checked='true'] .mg-icon-check {
+  opacity: 1;
+  transform: none;
+}
+.mg-hint.is-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gold) 45%, transparent);
+  color: var(--text);
+}
+.mg-hint.is-alert > .icon {
+  flex: none;
+  color: var(--gold);
+}
+.mg-hint a {
+  color: var(--tool-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ----------------------------------------------------------------------------- result */
+.mg-prog-steps {
+  grid-template-columns: repeat(var(--steps, 3), minmax(0, 1fr));
+}
+.mg-contrib-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.mg-sub {
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+}
+.mg-contrib {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mg-contrib-row {
+  display: grid;
+  grid-template-columns: auto 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.mg-contrib-thumb {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+.mg-contrib-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.mg-contrib-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.mg-contrib-head > span {
+  flex: none;
+}
+.mg-bar {
+  display: flex;
+  height: 12px;
+  border-radius: var(--r-xs);
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 2px var(--border);
+  overflow: hidden;
+}
+.mg-seg {
+  display: block;
+  height: 100%;
+}
+.mg-seg.is-kept {
+  background: var(--tool-accent);
+}
+.mg-seg.is-merged {
+  background: var(--blue);
+}
+.mg-seg.is-lost {
+  background: color-mix(in srgb, var(--text-3) 45%, transparent);
+}
+.mg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.mg-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mg-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+}
+.mg-from strong {
+  color: var(--text);
+  font-weight: inherit;
+}
+
+/* ----------------------------------------------------------------------------- responsive */
+@media (max-width: 960px) {
+  .mg-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .mg-row {
+    grid-template-columns: auto 40px minmax(0, 1fr);
+    grid-template-areas:
+      'handle thumb info'
+      'handle actions actions';
+    gap: 8px 10px;
+    padding: 8px 8px 8px 2px;
+  }
+  .mg-handle {
+    grid-area: handle;
+    align-self: stretch;
+    height: auto;
+    min-height: 44px;
+  }
+  .mg-row .mg-rank {
+    display: none;
+  }
+  .mg-thumb {
+    grid-area: thumb;
+    align-self: start;
+    width: 40px;
+    height: 40px;
+  }
+  .mg-info {
+    grid-area: info;
+  }
+  .mg-row-actions {
+    grid-area: actions;
+    justify-content: flex-end;
+    margin-top: -4px;
+  }
+  .mg-prog-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mg-contrib-box {
+    padding: 12px;
+  }
+  .mg-contrib-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+  .mg-contrib-row .mg-rank {
+    display: none;
+  }
+  .mg-contrib-head {
+    flex-direction: column;
+    gap: 0;
+  }
+}

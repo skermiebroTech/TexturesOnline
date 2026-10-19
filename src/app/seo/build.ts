@@ -266,6 +266,8 @@ export function llmsTxt(): string {
     '## Tools',
     '',
     `- ${mdLink(TOOL_META.textures, 'Texture pack maker')}: ${TOOL_META.textures.description}`,
+    `- ${mdLink(TOOL_META.converter, 'Texture pack converter')}: ${TOOL_META.converter.description}`,
+    `- ${mdLink(TOOL_META.merge, 'Merge texture packs')}: ${TOOL_META.merge.description}`,
     `- ${mdLink(TOOL_META.skins, 'Skin editor')}: ${TOOL_META.skins.description}`,
     `- ${mdLink(TOOL_META.shaders, 'Shader maker')}: ${TOOL_META.shaders.description}`,
     '',
