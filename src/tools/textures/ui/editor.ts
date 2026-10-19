@@ -1,10 +1,11 @@
 // Texture pack editor at #/textures/:id — loads the project and vanilla assets, then lays out the
 // browser, canvas and side panels (3 panes on desktop, 2 on tablets, tabbed on phones), with the
-// top bar (name, save state, undo/redo, export), keyboard shortcuts and autosave.
+// top bar (name, save state, undo/redo, export), keyboard shortcuts and autosave. The 2D / 3D
+// workspace switch swaps the pixel editor and the 3D model between the centre and the side panel.
 
 import type { AssetIndex, TexturePackProject } from '../../../core/types';
 import { h, isTypingTarget } from '../../../ui/dom';
-import { icon, type IconName } from '../../../ui/icons';
+import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { badge, button, emptyState, iconButton, segmented, spinner, tabs, tooltip } from '../../../ui/components';
 import { assetLoadingPanel } from '../../../ui/version-picker';
 import { openShortcutsSheet } from '../../../ui/modal';
@@ -21,7 +22,8 @@ import { createModelBrowser } from './model-browser';
 import { ModelService } from './models';
 import { createUsedBy } from './used-by';
 import type { ModelEntry } from '../../../shared/models/index';
-import { createCanvasPanel } from './canvas-panel';
+import { createCanvasPanel, type Workspace } from './canvas-panel';
+import { createPaint3d } from './paint3d';
 import { createPreviewPanel } from './preview-panel';
 import { createEffectsPanel } from './effects-panel';
 import { createPackPanel } from './pack-panel';
@@ -32,6 +34,7 @@ import { packIconImage } from './icon';
 type Side = 'textures' | 'preview' | 'effects' | 'pack';
 type LibMode = 'blocks' | 'items' | 'textures';
 const LIB_KEY = 'to-tex-library-mode';
+const WS_KEY = 'to-tex-workspace';
 type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pack';
 
 const PHONE = '(max-width: 760px)';
@@ -133,9 +136,14 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       preview.setTexture(t);
       browser.setSelected(t && t.key !== ICON_KEY ? t.key : null, true);
       usedBy.setPath(t && t.key !== ICON_KEY ? t.key : null);
+      paint3d.textureChanged();
     },
     onHistory: () => paintHistory(),
     onBrowse: () => showMobile('textures', true),
+    onWorkspace: (v) => setWorkspace(v, true),
+    onFrame: () => paint3d.textureChanged(),
+    onSettings: () => paint3d.sync(),
+    onCanvasHover: (p) => paint3d.canvasHover(p),
   });
   const browser = createBrowser({
     store,
@@ -169,6 +177,39 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       usedBy.setCurrent(e);
     },
   });
+
+  const paint3d = createPaint3d({ store, canvas, preview });
+  let workspace: Workspace = '2d';
+  /** 2D: the pixel editor in the centre. 3D: the model in the centre, painted directly; the pixel editor in the side panel. */
+  function setWorkspace(ws: Workspace, user = false) {
+    if (ws === workspace) return;
+    workspace = ws;
+    shell.dataset.workspace = ws;
+    if (user) {
+      try {
+        localStorage.setItem(WS_KEY, ws);
+      } catch {
+        /* storage blocked */
+      }
+    }
+    canvas.setWorkspace(ws);
+    if (ws === '3d') {
+      preview.dock(canvas.stage3d, canvas.canvasBox);
+      paint3d.setEnabled(true);
+    } else {
+      paint3d.setEnabled(false);
+      preview.dock(null, null);
+    }
+    // The Preview tab holds the flat texture in 3D.
+    for (const tab of [tabbarButtons.get('preview'), sideTabs.querySelector<HTMLElement>('.tab[data-value="preview"]')]) {
+      const label = tab?.querySelector('span:not(.icon)');
+      const ic = tab?.querySelector<HTMLElement>('.icon');
+      if (label) label.textContent = ws === '3d' ? 'Texture' : 'Preview';
+      if (ic) setIcon(ic, ws === '3d' ? 'grid' : 'cube');
+    }
+    notifyVisibility();
+    if (user && isPhone() && mobile !== 'editor') showMobile('editor');
+  }
 
   /** Shows a block / item in the model workspace and opens its main texture (unless one of its textures is open). */
   function showEntry(e: ModelEntry, how: 'pointer' | 'keyboard' | 'enter' | 'chip') {
@@ -348,7 +389,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   function notifyVisibility() {
     const phone = isPhone();
     const vis = (t: Side) => (phone ? mobile === t : side === t);
-    preview.setVisible(vis('preview'));
+    // In the 3D workspace the model is in the centre, which is on screen unless a phone shows another tab.
+    preview.setVisible(vis('preview') || (workspace === '3d' && (!phone || mobile === 'editor')));
     effects.setVisible(vis('effects'));
     pack.setVisible(vis('pack'));
   }
@@ -376,6 +418,11 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   setSide(side);
   showMobile('editor');
   setLibMode(libMode);
+  try {
+    if (localStorage.getItem(WS_KEY) === '3d') setWorkspace('3d');
+  } catch {
+    /* storage blocked */
+  }
   // The "Used by" chips need the model library: fetch it shortly after opening.
   const libTimer = setTimeout(() => void models.load(), 700);
   cleanups.push(
@@ -432,6 +479,18 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         ],
       },
       {
+        title: 'Painting on the 3D model',
+        items: [
+          { keys: ['D'], label: 'Paint on the 3D model / the flat texture' },
+          { keys: ['Drag'], label: 'Paint with the current tool' },
+          { keys: ['Alt', 'Click'], label: 'Pick a colour from the model' },
+          { keys: ['Right drag'], label: 'Turn the model (or drag the background)' },
+          { keys: ['Space', 'Drag'], label: 'Turn the model' },
+          { keys: ['Wheel'], label: 'Zoom' },
+          { keys: ['Arrow keys'], label: 'Turn the model' },
+        ],
+      },
+      {
         title: 'Texture list',
         items: [
           { keys: ['Click'], label: 'On the 3D model: paint the texture of that face' },
@@ -467,6 +526,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       if (isPhone()) showMobile('textures');
       else if (isTablet()) setSide('textures');
       requestAnimationFrame(() => focusSearch_());
+    } else if (e.key === 'd' || e.key === 'D') {
+      if (e.shiftKey || !canvas.current()) return;
+      e.preventDefault();
+      setWorkspace(workspace === '3d' ? '2d' : '3d', true);
     } else if (e.key === ',' || e.key === '.') {
       if ((e.target as HTMLElement | null)?.closest?.('[role="listbox"],[role="menu"]')) return;
       e.preventDefault();
@@ -511,6 +574,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       models,
       preview,
       setLibraryMode: (m: LibMode) => setLibMode(m),
+      setWorkspace: (ws: Workspace) => setWorkspace(ws, true),
+      workspace: () => workspace,
       showBlock: (id: string) => {
         const e = models.lib?.block(id);
         if (e) showEntry(e, 'pointer');
@@ -532,6 +597,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     browser.destroy();
     modelBrowser.destroy();
     usedBy.destroy();
+    paint3d.destroy();
     canvas.destroy();
     preview.destroy();
     models.dispose();

@@ -2,9 +2,10 @@
 // the real in-game model in 3D (hover a face to see which texture it is, click it to paint it), a
 // state picker (lit, facing, half, age...) and the list of textures the model uses, labelled by role.
 // Other textures show on a rotating cube or as a flat sprite. A tiled 3x3 view and the pack's effects
-// complete it.
+// complete it. In the 3D workspace the 3D view moves to the main editor area to be painted on, and the
+// pixel editor takes its place here.
 
-import type { BlockPreview, ModelHit } from '../../../shared/preview/block-preview';
+import type { BlockPreview, ModelCameraView, ModelHit, ModelPaintHandler, PaintCursor } from '../../../shared/preview/block-preview';
 import type { BlockState, ModelEntry, ModelTexture, ModelView, StateProperty } from '../../../shared/models/index';
 import { cloneImageData } from '../../../core/image';
 import { h } from '../../../ui/dom';
@@ -29,7 +30,36 @@ export interface PreviewPanel {
   current(): { entry: ModelEntry; state: BlockState } | null;
   /** Screen point of the most visible face drawn with a texture (tests) */
   facePoint(path: string): { x: number; y: number } | null;
+  /**
+   * 3D workspace: moves the 3D view into `target` (null: back here) and shows `canvasBox` (the pixel
+   * editor) where the 3D view was.
+   */
+  dock(target: HTMLElement | null, canvasBox: HTMLElement | null): void;
+  /** Paint on the model while docked (null: clicking a face opens its texture) */
+  setPaintHandler(h: ModelPaintHandler | null): void;
+  setPaintCursor(c: PaintCursor | null): void;
+  /** What the pointer is over while painting (null: the idle hint) */
+  setPaintHint(hint: PaintHint | null): void;
+  /** Holds animations still (painting); `path` shows `frame`, null path with frame < 0 plays them again */
+  pinFrame(path: string | null, frame: number): void;
+  refreshPaintHover(): void;
+  /** Role label of a texture of the model on show ('Front', 'Side'...) */
+  textureLabel(path: string): string | null;
+  /** The 3D view (tests) */
+  view3d(): BlockPreview | null;
   destroy(): void;
+}
+
+export interface PaintHint {
+  label: string;
+  name: string;
+  /** Texel under the pointer */
+  x: number;
+  y: number;
+  /** Colour of that texel (straight RGBA) */
+  color?: [number, number, number, number];
+  /** Why it can't be painted */
+  locked?: string;
 }
 
 export interface PreviewHooks {
@@ -64,6 +94,12 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   let userState = false;
   let shownKey = '';
   let hoverPath: string | null = null;
+  // 3D workspace
+  let docked = false;
+  let paintHandler: ModelPaintHandler | null = null;
+  let pin: { path: string | null; frame: number } | null = null;
+  /** Entry, state and options of the scene on show (setTexture skips rebuilding the same scene) */
+  let sceneKey = '';
 
   // ---------------------------------------------------------------- DOM
   const stage = h('div', { class: 'tx-pv-stage' });
@@ -103,10 +139,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   }, { size: 'sm', active: spinTexture });
   const resetBtn = iconButton('aspect-ratio', 'Reset the view', () => preview?.resetView(), { size: 'sm' });
   const syncSpin = () => {
-    const on = entry ? spinModel : spinTexture;
+    const on = !docked && (entry ? spinModel : spinTexture);
     rotateBtn.setActive(on);
     preview?.setAutoRotate(on);
   };
+  const pinMap = (): Map<string, number> | null => (pin ? new Map(pin.path ? [[pin.path, pin.frame]] : []) : null);
   const fxToggle = toggle({
     label: 'Show effects',
     value: showFx,
@@ -156,9 +193,27 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     texHint,
     texList,
   );
-  const hero = h('div', { class: 'tx-pv-hero checker-soft' }, stage, stageLabel, hoverTag, h('div', { class: 'tx-pv-float' }, rotateBtn, resetBtn));
+  const views = h('div', { class: 'tx-pv-views', role: 'group', 'aria-label': 'Camera views', hidden: true });
+  for (const [v, key, label] of [
+    ['front', 'F', 'Front view'],
+    ['back', 'B', 'Back view'],
+    ['left', 'L', 'Left side view'],
+    ['right', 'R', 'Right side view'],
+    ['top', 'T', 'Top view'],
+  ] as [ModelCameraView, string, string][]) {
+    const b = h('button', { type: 'button', class: 'tx-pv-view-btn', dataset: { view: v }, 'aria-label': label }, key);
+    tooltip(b, label);
+    b.addEventListener('click', () => preview?.setCameraView(v));
+    views.appendChild(b);
+  }
+  const paintHintDot = h('span', { class: 'tx-pv-hint-dot', 'aria-hidden': 'true' });
+  const paintHintText = h('span', { class: 'tx-pv-hint-text' });
+  const paintHint = h('div', { class: 'tx-pv-hint is-idle', hidden: true }, paintHintDot, paintHintText);
+  const noModel = h('div', { class: 'tx-pv-nomodel', hidden: true }, icon('info'), h('span', null, 'No 3D model to paint for this texture. Paint it in 2D, or pick a block that uses it.'));
+  const hero = h('div', { class: 'tx-pv-hero checker-soft' }, stage, stageLabel, hoverTag, paintHint, noModel, views, h('div', { class: 'tx-pv-float' }, rotateBtn, resetBtn));
+  const canvasSlot = h('div', { class: 'tx-pv-canvasslot', hidden: true });
   const controls = h('div', { class: 'tx-pv-controls' }, modeSeg, itemSeg);
-  const body = h('div', { class: 'tx-pv' }, head, hero, note, statesEl, controls, texSection, fxToggle, tiledSection);
+  const body = h('div', { class: 'tx-pv' }, head, hero, canvasSlot, note, statesEl, controls, texSection, fxToggle, tiledSection);
   const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, 'Loading the model…'));
   hero.appendChild(loadingModel);
   const el = h('div', { class: 'tx-pv-wrap' }, body, empty);
@@ -171,11 +226,13 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         .then((m) => {
           // the panel may be gone by the time the 3D code arrives: don't open a WebGL context then
           if (destroyed) return null;
-          preview = m.createBlockPreview(stage, { autoRotate: entry ? spinModel : spinTexture });
+          preview = m.createBlockPreview(stage, { autoRotate: !docked && (entry ? spinModel : spinTexture) });
           preview.setModelHandlers({
             hover: (hit) => onHover(hit),
             pick: (hit) => onPick(hit),
           });
+          if (docked && paintHandler) preview.setPaintMode(paintHandler);
+          if (pin) preview.pinFrames(pinMap());
           return preview;
         })
         .catch((err) => {
@@ -310,8 +367,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const inState = list.filter((t) => t.faces > 0 || view!.shape !== 'model');
     const other = list.length - inState.length;
     texCount.textContent = String(list.length);
-    texHint.textContent =
-      view.shape === 'special'
+    texHint.textContent = docked
+      ? view.shape === 'special'
+        ? 'Paint the texture sheet in 2D.'
+        : 'Paint on the model, or pick a texture here to open it.'
+      : view.shape === 'special'
         ? 'Click the texture sheet to paint it.'
         : view.shape === 'sprite'
           ? 'Click a layer to paint it.'
@@ -503,7 +563,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     return false;
   }
 
-  async function render(opts: { keepView?: boolean } = {}) {
+  function syncNoModel(pv: BlockPreview | null) {
+    noModel.hidden = !docked || !tex || (!!pv && pv.mode === 'model' && !!entry);
+  }
+
+  async function render(opts: { keepView?: boolean; sameScene?: boolean } = {}) {
     const my = ++token;
     const t = tex;
     const lib = models.lib;
@@ -524,7 +588,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     modeSeg.hidden = modelMode;
     itemSeg.hidden = !(modelMode && view?.shape === 'sprite');
     controls.hidden = modelMode && itemSeg.hidden;
-    rotateBtn.setActive(modelMode ? spinModel : spinTexture);
+    rotateBtn.setActive(!docked && (modelMode ? spinModel : spinTexture));
     if (modelMode) {
       paintHead();
       paintNote();
@@ -543,11 +607,21 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     if (!visible) return;
     const pv = await ensure();
     if (!pv || my !== token) return;
-    pv.setAutoRotate(modelMode ? spinModel : spinTexture);
+    pv.setAutoRotate(!docked && (modelMode ? spinModel : spinTexture));
     if (modelMode) {
+      const key = `${entry!.kind}:${entry!.id}|${JSON.stringify(state)}|${fxOn()}|${itemFlat}|${fxOn() ? models.effectsKey : ''}`;
+      // The open texture changed but the model on show didn't: its faces already show the pack's pixels.
+      if (opts.sameScene && key === sceneKey && pv.mode === 'model') {
+        syncNoModel(pv);
+        return;
+      }
       await renderModel(pv, my, !!opts.keepView);
+      if (my === token) sceneKey = key;
+      syncNoModel(pv);
       return;
     }
+    sceneKey = '';
+    syncNoModel(pv);
     if (!t) return;
     await loadTints();
     if (my !== token) return;
@@ -713,9 +787,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       tex = t;
       // "Texture on its own" (the close button) lasts until another texture opens.
       if (changed) pinned = false;
+      const before = entry;
+      const beforeState = JSON.stringify(state);
       if (changed) follow();
       syncRows();
-      void render({ keepView: true });
+      void render({ keepView: true, sameScene: entry === before && JSON.stringify(state) === beforeState });
     },
     setVisible(v) {
       visible = v;
@@ -733,6 +809,55 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     },
     current: () => (entry ? { entry, state: { ...state } } : null),
     facePoint: (path) => preview?.facePoint(path) ?? null,
+    dock(target, canvasBox) {
+      const on = !!target;
+      if (on === docked && (!on || hero.parentElement === target)) return;
+      docked = on;
+      body.classList.toggle('is-docked', on);
+      if (on) {
+        target!.appendChild(hero);
+        if (canvasBox) canvasSlot.appendChild(canvasBox);
+        canvasSlot.hidden = false;
+      } else {
+        canvasSlot.hidden = true;
+        if (hero.parentElement !== body) head.after(hero);
+      }
+      hero.classList.toggle('is-docked', on);
+      views.hidden = !on;
+      paintHint.hidden = !on || !paintHandler;
+      hoverTag.hidden = true;
+      hoverPath = null;
+      syncRows();
+      syncSpin();
+      preview?.setPaintMode(on ? paintHandler : null);
+      syncNoModel(preview);
+      void render({ keepView: true });
+    },
+    setPaintHandler(hd) {
+      paintHandler = hd;
+      paintHint.hidden = !docked || !hd;
+      preview?.setPaintMode(docked ? hd : null);
+    },
+    setPaintCursor: (c) => preview?.setPaintCursor(c),
+    setPaintHint(hint) {
+      paintHint.classList.toggle('is-idle', !hint);
+      paintHint.classList.toggle('is-locked', !!hint?.locked);
+      if (!hint) {
+        paintHintDot.style.background = '';
+        paintHintText.textContent = matchMedia('(pointer: coarse)').matches ? 'One finger paints · two fingers turn' : 'Drag to paint · right-drag to turn · scroll to zoom';
+        return;
+      }
+      const c = hint.color;
+      paintHintDot.style.background = c ? `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${(c[3] / 255).toFixed(3)})` : '';
+      paintHintText.replaceChildren(h('strong', null, hint.label), h('span', null, hint.locked ? ` · ${hint.locked}` : ` · ${hint.name} · ${hint.x}, ${hint.y}`));
+    },
+    pinFrame(path, frame) {
+      pin = path === null && frame < 0 ? null : { path, frame };
+      preview?.pinFrames(pinMap());
+    },
+    refreshPaintHover: () => preview?.refreshPaintHover(),
+    textureLabel: (path) => view?.textures.find((t) => t.path === path)?.label ?? null,
+    view3d: () => preview,
     destroy() {
       destroyed = true;
       token++;

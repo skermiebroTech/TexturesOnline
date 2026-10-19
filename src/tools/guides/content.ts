@@ -167,6 +167,11 @@ export const GUIDE_CONTENT: Guide[] = [
           p(
             'Every texture is shown on its real 3D model: a furnace shows its front, sides and top, stairs and slabs show their shape, and mobs show their body parts. Paint with the pencil, fill, line, shapes, noise and colour picker, mirror your strokes, and undo anything. The tiled preview shows how a block repeats across the ground, so seams do not show.',
           ),
+          p(
+            'Prefer to see the block as you paint? Switch the editor to ',
+            strong('3D'),
+            ' (or press D) and paint straight onto the model: each face paints the texture it shows. Drag the background or use two fingers to turn the block.',
+          ),
           ul([
             'Start with blocks you see all the time: grass, dirt, stone, logs and planks.',
             'Grass, leaves, vines and water are stored in grey and coloured by the game per biome. Keep them light grey.',

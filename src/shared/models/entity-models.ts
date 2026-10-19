@@ -281,6 +281,7 @@ export function bakeEntityModel(model: EntityModel, transform: Mat4, opts: Entit
               shade: true,
               part: opts.part ?? 0,
               element: el,
+              boxUv: true,
             });
           }
         }

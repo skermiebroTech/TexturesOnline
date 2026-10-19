@@ -18,6 +18,10 @@ repository keeps its original name, `TexturesOnline`).
   Smooth HD and more), stacked non-destructively and applied on export.
 - Open an existing `.zip` / `.mcpack` pack and keep editing.
 - 3D block preview, pack icon and description, and a Java compatibility range.
+- Paint straight onto the 3D model (2D / 3D switch, or press D): each face paints the texture and pixel it
+  shows, through rotated faces, overlays such as the grass side, lit and unlit states, stairs, slabs and the
+  blocks the game draws itself (chests, beds...), with pencil, eraser, fill, colour picker, brush size and
+  mirror, in the same undo history as the flat editor.
 - Exports a `.zip` with the exact `pack.mcmeta` rules of the chosen Java version, or a Bedrock `.mcpack`.
 
 ### Skins
@@ -72,6 +76,7 @@ Browser end-to-end suites (need Playwright + Chromium):
 
 ```sh
 NODE_PATH=$(npm root -g) node tests/e2e/textures/e2e.cjs
+NODE_PATH=$(npm root -g) node tests/e2e/textures/paint3d.e2e.cjs   # painting textures on the 3D model
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

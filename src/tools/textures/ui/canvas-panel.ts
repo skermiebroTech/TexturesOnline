@@ -1,7 +1,9 @@
 // Centre panel: the pixel editor for the selected texture with its tool rail, options bar, colour dock,
 // animation frames, compare-with-vanilla, upload / reset, HD upscaling and Bedrock alpha-mask mode.
+// In the 3D workspace the stage holds the 3D model instead (painted with the same tools) and the pixel
+// editor moves to the side panel. Each texture keeps its own undo history while you switch between them.
 
-import { PixelCanvas, type Tool, type PixelCanvasSettings } from '../../../shared/pixel-canvas';
+import { PixelCanvas, type PixelHistory, type PixelView, type Tool, type PixelCanvasSettings } from '../../../shared/pixel-canvas';
 import { cloneImageData, decodeImage, encodePng } from '../../../core/image';
 import { saveBlob } from '../../../core/download';
 import { h, isTypingTarget } from '../../../ui/dom';
@@ -66,8 +68,24 @@ export interface CanvasPanel {
   setCompare(on: boolean): void;
   stepFrame(d: number): void;
   focusCanvas(): void;
+  /** '3d': the stage shows `stage3d` (the model) and the pixel editor (`canvasBox`) is placed elsewhere */
+  setWorkspace(ws: Workspace): void;
+  workspace(): Workspace;
+  /** The pixel editor with its compare overlay */
+  readonly canvasBox: HTMLElement;
+  /** Where the 3D model goes in the 3D workspace */
+  readonly stage3d: HTMLElement;
+  /** Shows a stroke in progress in the previews (at most once per frame) */
+  live(): void;
+  /** Outlines texels on the pixel editor (what a press on the model would paint); null clears */
+  showHover(h: { pixels: readonly number[]; echo?: readonly number[] } | null): void;
   destroy(): void;
 }
+
+export type Workspace = '2d' | '3d';
+
+/** Tools that work on the 3D model (the others need the flat texture). */
+export const TOOLS_3D = new Set<Tool>(['pencil', 'eraser', 'fill', 'picker', 'lighten', 'darken', 'noise']);
 
 export interface CanvasPanelOptions {
   store: TexStore;
@@ -76,6 +94,14 @@ export interface CanvasPanelOptions {
   onOpened(t: OpenTexture | null): void;
   onHistory(): void;
   onBrowse(): void;
+  /** The 2D / 3D switch over the stage was used */
+  onWorkspace?(ws: Workspace): void;
+  /** Another animation frame of the open texture is being edited */
+  onFrame?(t: OpenTexture): void;
+  /** Tool, colour, brush, mirror or another setting changed */
+  onSettings?(): void;
+  /** The pointer moved over another texel of the pixel editor (null = off it) */
+  onCanvasHover?(p: { x: number; y: number } | null): void;
 }
 
 const TOOLS: { tool: Tool; label: string; icon: IconName; key?: string; hint?: string }[] = [
@@ -96,6 +122,8 @@ const TOOLS: { tool: Tool; label: string; icon: IconName; key?: string; hint?: s
 const PAINT_TOOLS = new Set<Tool>(['pencil', 'fill', 'line', 'rect', 'rect-fill', 'ellipse']);
 const SIZE_TOOLS = new Set<Tool>(['pencil', 'eraser', 'line', 'rect', 'ellipse', 'lighten', 'darken', 'noise']);
 const MAX_HD_PIXELS = 4 * 1024 * 1024;
+/** Undo histories kept for textures you switched away from */
+const KEPT_HISTORIES = 48;
 
 function samePixels(a: ImageData, b: ImageData): boolean {
   if (a.width !== b.width || a.height !== b.height) return false;
@@ -124,6 +152,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   let token = 0;
   let comparing = false;
   const offs: (() => void)[] = [];
+  let ws: Workspace = '2d';
+  /** Undo / redo of textures (and animation frames) switched away from, with their untouched pixels */
+  const histories = new Map<string, { history: PixelHistory; base: ImageData | null; baseUpscaled: boolean }>();
+  const historyKey = (t: OpenTexture) => `${t.key}#${t.anim ? t.frame : 0}`;
 
   // ---------------------------------------------------------------- header
   const headThumb = h('canvas', { class: 'tx-head-thumb pixelated', 'aria-hidden': 'true' });
@@ -141,6 +173,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       { label: 'Download PNG', icon: 'download', onClick: () => void panel.download(t.key) },
       { label: 'Copy texture name', icon: 'copy', onClick: () => void navigator.clipboard?.writeText(t.entry?.id ?? t.name).then(() => toast('Copied', { tone: 'success', duration: 1600 })) },
       { label: 'Fit to screen', icon: 'expand', onClick: () => pc?.zoomToFit() },
+      { label: ws === '3d' ? 'Paint the flat texture (2D)' : 'Paint on the 3D model', icon: ws === '3d' ? 'grid' : 'cube', onClick: () => opts.onWorkspace?.(ws === '3d' ? '2d' : '3d') },
     ]);
   }, { size: 'sm' });
   const actions = h('div', { class: 'tx-head-actions' }, compareBtn, uploadBtn, resetBtn, moreBtn);
@@ -192,15 +225,20 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     tooltip(b, `${t.label}${t.key ? ` — ${t.key}` : ''}${t.hint ? ` ${t.hint}` : ''}`);
     b.addEventListener('click', () => {
       if (!pc) return;
+      if (ws === '3d' && !TOOLS_3D.has(t.tool)) {
+        toast(`${t.label} works on the flat texture: switch to 2D to use it.`, { duration: 3200 });
+        return;
+      }
       if (t.tool === 'rect' && (pc.tool === 'rect' || pc.tool === 'rect-fill')) pc.setTool(pc.tool === 'rect' ? 'rect-fill' : 'rect');
       else pc.setTool(t.tool);
     });
     railButtons.set(t.tool, b);
     rail.appendChild(b);
-    if (i === 3 || i === 6 || i === 9) rail.appendChild(h('span', { class: 'tx-rail-sep', 'aria-hidden': 'true' }));
+    // (the shapes and the selection tools need the flat texture: the 3D workspace hides them and their separators)
+    if (i === 3 || i === 6 || i === 9) rail.appendChild(h('span', { class: ['tx-rail-sep', i !== 3 && 'tx-2d-only'], 'aria-hidden': 'true' }));
   });
   rail.addEventListener('keydown', (e) => {
-    const bs = [...railButtons.values()];
+    const bs = [...railButtons.values()].filter((b) => b.offsetParent !== null);
     const i = bs.indexOf(document.activeElement as HTMLButtonElement);
     if (i < 0) return;
     let n = -1;
@@ -218,7 +256,27 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const loading = h('div', { class: 'tx-stage-loading', hidden: true }, spinner(24), h('span', null, 'Loading texture…'));
   const dropHint = h('div', { class: 'tx-drop-hint', 'aria-hidden': 'true' }, icon('upload', { size: 48 }), h('span', null, 'Drop to replace this texture'));
   const emptyEl = h('div', { class: 'tx-stage-empty' });
-  const stage = h('div', { class: 'tx-stage' }, host, compareCanvas, compareTag, loading, dropHint, emptyEl);
+  const canvasBox = h('div', { class: 'tx-canvas-box' }, host, compareCanvas, compareTag);
+  const stage3d = h('div', { class: 'tx-stage3d', hidden: true });
+  const wsSwitch = segmented<Workspace>({
+    value: ws,
+    size: 'sm',
+    label: 'Paint on',
+    options: [
+      { value: '2d', label: '2D', icon: 'grid' },
+      { value: '3d', label: '3D', icon: 'cube' },
+    ],
+    onChange: (v) => {
+      wsSwitch.setValue(ws);
+      opts.onWorkspace?.(v);
+    },
+  });
+  wsSwitch.classList.add('tx-ws-switch');
+  const ws2d = wsSwitch.querySelector<HTMLElement>('[data-value="2d"]');
+  const ws3d = wsSwitch.querySelector<HTMLElement>('[data-value="3d"]');
+  if (ws2d) tooltip(ws2d, 'Paint the flat texture (D)');
+  if (ws3d) tooltip(ws3d, 'Paint on the 3D model (D)');
+  const stage = h('div', { class: 'tx-stage' }, canvasBox, stage3d, wsSwitch, loading, dropHint, emptyEl);
 
   // ---------------------------------------------------------------- options bar
   const sizeVal = h('output', { class: 'tx-size-val', 'aria-live': 'polite' }, '1');
@@ -251,16 +309,18 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const zoomVal = h('button', { type: 'button', class: 'tx-zoom-val' }, '100%');
   tooltip(zoomVal, 'Fit to screen — 0');
   zoomVal.addEventListener('click', () => pc?.zoomToFit());
+  // Grid, tiling and zoom belong to the flat view: the 3D workspace hides them.
+  for (const b of [gridBtn, tiledBtn, zoomOut, zoomVal, zoomIn]) b.classList.add('tx-2d-only');
   const viewOpts = h(
     'div',
     { class: 'tx-optgroup tx-optgroup-view' },
     gridBtn,
     tiledBtn,
-    h('span', { class: 'toolbar-sep' }),
+    h('span', { class: 'toolbar-sep tx-2d-only' }),
     flipH,
     flipV,
     rotate,
-    h('span', { class: 'toolbar-sep' }),
+    h('span', { class: 'toolbar-sep tx-2d-only' }),
     zoomOut,
     zoomVal,
     zoomIn,
@@ -353,7 +413,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   // ---------------------------------------------------------------- canvas lifecycle
   const ensureCanvas = (img: ImageData): PixelCanvas => {
     if (pc) return pc;
-    pc = new PixelCanvas(host, { image: img, showGrid: true, label: 'Texture pixels', decodeImage: (b) => decodeImage(b) });
+    pc = new PixelCanvas(host, { image: img, showGrid: true, label: 'Texture pixels', decodeImage: (b) => decodeImage(b), overlay: (ctx, view) => drawHover(ctx, view) });
     pc.setColor([91, 211, 91, 255]);
     offs.push(
       pc.on('change', (img2) => onChange(img2)),
@@ -365,13 +425,26 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         if (comparing) drawCompare();
       }),
       pc.on('colorpick', () => dock.sync()),
+      pc.on('hover', (p) => opts.onCanvasHover?.(p)),
     );
     syncSettings(pc.getSettings());
     return pc;
   };
 
   function syncSettings(s: PixelCanvasSettings) {
-    for (const [tool, b] of railButtons) b.setAttribute('aria-pressed', String(tool === s.tool || (tool === 'rect' && s.tool === 'rect-fill')));
+    // A shortcut picked a tool the model can't take (a shape, the selection): back to the pencil.
+    if (ws === '3d' && pc && !TOOLS_3D.has(s.tool === 'rect-fill' ? 'rect' : s.tool)) {
+      const label = TOOLS.find((t) => t.tool === (s.tool === 'rect-fill' ? 'rect' : s.tool))?.label ?? 'That tool';
+      toast(`${label} works on the flat texture: press D for 2D.`, { duration: 3000 });
+      pc.setTool('pencil');
+      return;
+    }
+    for (const [tool, b] of railButtons) {
+      b.setAttribute('aria-pressed', String(tool === s.tool || (tool === 'rect' && s.tool === 'rect-fill')));
+      const off = ws === '3d' && !TOOLS_3D.has(tool);
+      b.classList.toggle('is-2d-only', off);
+      b.setAttribute('aria-disabled', String(off));
+    }
     const rectB = railButtons.get('rect');
     const rectIcon = rectB?.querySelector<HTMLElement>('.icon');
     if (rectIcon) setIcon(rectIcon, s.tool === 'rect-fill' ? 'rect-fill' : 'rect');
@@ -395,6 +468,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       paintRailFade();
       paintOptFade();
     });
+    opts.onSettings?.();
   }
 
   let paletteTimer: ReturnType<typeof setTimeout> | null = null;
@@ -421,6 +495,60 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     paintHeader();
     if (paletteTimer) clearTimeout(paletteTimer);
     paletteTimer = setTimeout(() => dock.setPalette(pc ? paletteSource(pc.getImage()) : null), 400);
+  }
+
+  let hover3d: { pixels: readonly number[]; echo?: readonly number[] } | null = null;
+  /** Texels a press on the 3D model would paint, outlined on the flat texture */
+  function drawHover(ctx: CanvasRenderingContext2D, view: PixelView) {
+    if (!hover3d || !pc) return;
+    const w = pc.width;
+    if (hover3d.echo?.length) outlineTexels(ctx, view, hover3d.echo, w, 0.55);
+    outlineTexels(ctx, view, hover3d.pixels, w, 1);
+  }
+
+  let liveRaf = 0;
+  /** A stroke in progress (painting on the model): the previews get its pixels without saving them yet. */
+  function live() {
+    if (liveRaf) return;
+    liveRaf = requestAnimationFrame(() => {
+      liveRaf = 0;
+      const t = cur;
+      if (!t || !pc) return;
+      const img = pc.getImage();
+      let full = img;
+      if (t.anim) {
+        full = cloneImageData(t.full);
+        putFrame(full, t.anim, t.frame, img);
+      }
+      store.events.emit('image', { path: t.key, full });
+    });
+  }
+
+  /** Keeps the open texture's undo steps for when it is opened again. */
+  function stashHistory() {
+    const t = cur;
+    if (!t || !pc || t.key === ICON_KEY) return;
+    if (!pc.canUndo() && !pc.canRedo()) {
+      histories.delete(historyKey(t));
+      return;
+    }
+    const k = historyKey(t);
+    histories.delete(k);
+    histories.set(k, { history: pc.saveHistory(), base: t.base, baseUpscaled: t.baseUpscaled });
+    while (histories.size > KEPT_HISTORIES) histories.delete(histories.keys().next().value!);
+  }
+
+  /** Brings back the undo steps of a texture opened again, when its pixels are still the ones they lead to. */
+  function restoreHistory(t: OpenTexture) {
+    if (!pc) return;
+    const k = historyKey(t);
+    const kept = histories.get(k);
+    if (!kept) return;
+    histories.delete(k);
+    if (pc.restoreHistory(kept.history)) {
+      t.base = kept.base;
+      t.baseUpscaled = kept.baseUpscaled;
+    }
   }
 
   // ---------------------------------------------------------------- header paint
@@ -516,11 +644,13 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     }
     if (my !== token) return;
     loading.hidden = true;
+    stashHistory();
     cur = t;
     el.classList.remove('is-empty');
     const frameImg = getFrame(t.full, t.anim, 0);
     const canvas = ensureCanvas(frameImg);
     canvas.setImage(frameImg, { resetHistory: true, resetView: true });
+    restoreHistory(t);
     // Alpha that is data (tint / dye / glow masks): paint colours by default so the mask survives.
     canvas.setChannelMode(t.alphaData ? 'rgb' : 'rgba');
     paintBanner(t);
@@ -542,12 +672,34 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   function selectFrame(i: number) {
     const t = cur;
     if (!t?.anim || !pc) return;
+    stashHistory();
     t.frame = i;
     const f = getFrame(t.full, t.anim, i);
     pc.setImage(f, { resetHistory: true, resetView: false });
+    restoreHistory(t);
     dock.setPalette(paletteSource(f));
     opts.onHistory();
+    opts.onFrame?.(t);
     if (comparing) drawCompare();
+  }
+
+  function setWorkspace(next: Workspace) {
+    if (next === ws) return;
+    ws = next;
+    wsSwitch.setValue(ws);
+    el.dataset.workspace = ws;
+    stage3d.hidden = ws !== '3d';
+    if (ws === '3d') {
+      setCompare(false);
+      if (pc && !TOOLS_3D.has(pc.tool === 'rect-fill' ? 'rect' : pc.tool)) {
+        if (pc.getSelection()) pc.deselect();
+        pc.setTool('pencil');
+      }
+    } else if (!canvasBox.isConnected || canvasBox.parentElement !== stage) {
+      stage.insertBefore(canvasBox, stage3d);
+    }
+    if (pc) syncSettings(pc.getSettings());
+    requestAnimationFrame(() => pc?.redraw());
   }
 
   // ---------------------------------------------------------------- compare with vanilla
@@ -760,8 +912,20 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       frames.set(cur.full, cur.anim, cur.frame);
     },
     focusCanvas: () => pc?.focus(),
+    setWorkspace,
+    workspace: () => ws,
+    canvasBox,
+    stage3d,
+    live,
+    showHover(hv) {
+      if (!hv && !hover3d) return;
+      hover3d = hv;
+      pc?.redraw();
+    },
     destroy() {
       offs.forEach((f) => f());
+      if (liveRaf) cancelAnimationFrame(liveRaf);
+      histories.clear();
       frames.destroy();
       dock.destroy();
       pc?.destroy();
@@ -790,4 +954,35 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
 
   paintHeader();
   return panel;
+}
+
+/** Texels (y * width + x) as an outline on the pixel editor: dark halo, light line, in screen space. */
+function outlineTexels(ctx: CanvasRenderingContext2D, view: PixelView, pixels: readonly number[], width: number, alpha: number): void {
+  if (!pixels.length) return;
+  const set = new Set(pixels);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  const edge = (x0: number, y0: number, x1: number, y1: number) => {
+    const [ax, ay] = view.toScreen(x0, y0);
+    const [bx, by] = view.toScreen(x1, y1);
+    ctx.moveTo(Math.round(ax) + 0.5, Math.round(ay) + 0.5);
+    ctx.lineTo(Math.round(bx) + 0.5, Math.round(by) + 0.5);
+  };
+  for (const p of set) {
+    const x = p % width;
+    const y = (p - x) / width;
+    if (!set.has(p - width)) edge(x, y, x + 1, y);
+    if (!set.has(p + width)) edge(x, y + 1, x + 1, y + 1);
+    if (x === 0 || !set.has(p - 1)) edge(x, y, x, y + 1);
+    if (x === width - 1 || !set.has(p + 1)) edge(x + 1, y, x + 1, y + 1);
+  }
+  ctx.lineCap = 'square';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.stroke();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.stroke();
+  ctx.restore();
 }
