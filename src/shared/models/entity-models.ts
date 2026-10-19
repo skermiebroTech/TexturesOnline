@@ -92,6 +92,11 @@ export interface EntityCube {
   mirror?: boolean;
   /** Faces to build (default all six), in the model's own directions */
   faces?: readonly Dir[];
+  /**
+   * Texture rectangle per face instead of the box layout, as [u1, v1, u2, v2] in the order the box
+   * layout lists them (Bedrock per-face UVs); faces without one keep the box layout.
+   */
+  faceUv?: Partial<Record<Dir, [number, number, number, number]>>;
 }
 
 export interface EntityPose {
@@ -185,6 +190,8 @@ export function cubePolygons(c: EntityCube): EntityPolygon[] {
   const out: EntityPolygon[] = [];
   const poly = (dir: Dir, corners: [Vec3, Vec3, Vec3, Vec3], a: number, b: number, cc: number, dd: number) => {
     if (!faces.includes(dir)) return;
+    const own = c.faceUv?.[dir];
+    if (own) [a, b, cc, dd] = own;
     const uvs: EntityPolygon['uvs'] = [
       [cc, b],
       [a, b],

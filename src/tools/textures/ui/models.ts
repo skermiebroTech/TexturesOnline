@@ -1,6 +1,7 @@
-// Model support for the texture pack editor: loads the version's block / item model library, turns a
-// resolved model into a 3D scene made of the pack's own textures (edits, effects, animation strips,
-// biome colours from the pack's colour maps) and draws inventory-style icons for the browser.
+// Model support for the texture pack editor: loads the version's block / item / mob model library,
+// turns a resolved model into a 3D scene made of the pack's own textures (edits, effects, animation
+// strips, biome colours from the pack's colour maps; a mob texture whose shape doesn't fit its model is
+// left off) and draws inventory-style icons for the browser.
 
 import type { Progress } from '../../../core/types';
 import { Emitter } from '../../../core/events';
@@ -26,9 +27,11 @@ export interface LiveTexture {
 
 export interface BuiltScene {
   scene: ModelScene;
-  view: 'block' | 'item';
+  view: 'block' | 'item' | 'mob';
   /** Flat image for 'special' entries (the game's own model code) */
   flat?: ImageData;
+  /** Mob textures left off because their size doesn't fit the model (a pack's own layout) */
+  misfit?: string[];
 }
 
 type Icon = HTMLCanvasElement | ImageData;
@@ -78,6 +81,29 @@ export class ModelService {
       );
     }
     return this.loading;
+  }
+
+  /** Loads what an entry needs to be drawn (a mob's geometry). */
+  async prepare(entry: ModelEntry): Promise<boolean> {
+    const lib = this.lib ?? (await this.load());
+    if (!lib) return false;
+    return lib.prepare(entry);
+  }
+
+  /**
+   * The mob showing a texture, checking candidates in order (a Bedrock mob's textures are only known
+   * for sure once its entity file is read). null when no mob uses it.
+   */
+  async entityFor(path: string): Promise<ModelEntry | null> {
+    const lib = this.lib;
+    if (!lib?.usageReady) return null;
+    for (const id of lib.usageOf(path).entities.slice(0, 6)) {
+      const e = lib.entity(id);
+      if (!e) continue;
+      if (!(await lib.prepare(e))) continue;
+      if (lib.textureStates(e).some((t) => t.path === path)) return e;
+    }
+    return null;
   }
 
   get effectsKey(): string {
@@ -149,7 +175,7 @@ export class ModelService {
   }
 
   /** A texture as the 3D view needs it: a strip of square frames, effects applied, alpha data made visible. */
-  textureFromPixels(path: string, full: ImageData, anim: AnimInfo | null, opts: { fx: boolean; mask?: boolean }): ModelTextureImage {
+  textureFromPixels(path: string, full: ImageData, anim: AnimInfo | null, opts: { fx: boolean; mask?: boolean; whole?: boolean }): ModelTextureImage {
     let img = full;
     let frames = 1;
     let frametime = 0;
@@ -163,7 +189,7 @@ export class ModelService {
         frames = anim.count;
       } else img = getFrame(full, anim, 0);
       frametime = frames > 1 ? anim.frametime : 0;
-    } else if (full.height > full.width && full.height % full.width === 0) {
+    } else if (!opts.whole && full.height > full.width && full.height % full.width === 0) {
       img = getFrame(full, { frameW: full.width, frameH: full.width, count: full.height / full.width, cols: 1, frametime: 1, sequence: [] }, 0);
     }
     img = this.fx(img, path, frames > 1, opts.fx);
@@ -173,7 +199,8 @@ export class ModelService {
     return { image: img, frames, frametime };
   }
 
-  async texture(path: string, opts: { fx: boolean; mask?: boolean; live?: LiveTexture | null }): Promise<ModelTextureImage | null> {
+  /** `whole`: the model maps the whole image (a tall mob texture is not a strip of frames). */
+  async texture(path: string, opts: { fx: boolean; mask?: boolean; whole?: boolean; live?: LiveTexture | null }): Promise<ModelTextureImage | null> {
     try {
       if (opts.live && opts.live.path === path) return this.textureFromPixels(path, opts.live.full, opts.live.anim, opts);
       const full = await this.store.getFull(path);
@@ -207,14 +234,29 @@ export class ModelService {
     }
     const masks = new Set(view.quads.filter((q) => q.tintMask && q.texture).map((q) => q.texture!));
     const paths = [...new Set(view.quads.map((q) => q.texture).filter((p): p is string => !!p))];
+    const misfit: string[] = [];
     await Promise.all(
       paths.map(async (p) => {
         if (!this.store.assets.hasFile(p) && !this.store.isEdited(p)) return;
-        const t = await this.texture(p, { ...opts, mask: masks.has(p) });
-        if (t) textures.set(p, t);
+        const t = await this.texture(p, { ...opts, mask: masks.has(p), whole: !!view.texSizes?.has(p) });
+        if (!t) return;
+        // A mob texture of another shape than its model maps (older layouts, a pack's own) would be
+        // painted in the wrong places: leave it off.
+        const want = view.texSizes?.get(p);
+        if (want) {
+          const w = t.image.width;
+          const h = Math.floor(t.image.height / Math.max(1, t.frames));
+          if (Math.abs(w / h - want[0] / want[1]) > 1e-3 || w < want[0] / 4) {
+            misfit.push(p);
+            return;
+          }
+        }
+        textures.set(p, t);
       }),
     );
-    return { scene: { quads: view.quads, textures, tint }, view: view.entry.kind === 'item' ? 'item' : 'block' };
+    const quads = misfit.length ? view.quads.filter((q) => !q.texture || !misfit.includes(q.texture)) : view.quads;
+    if (view.category === 'mob' && !quads.length) return null;
+    return { scene: { quads, textures, tint }, view: view.category === 'mob' ? 'mob' : view.entry.kind === 'item' ? 'item' : 'block', misfit: misfit.length ? misfit : undefined };
   }
 
   // ------------------------------------------------------------------ icons
@@ -237,6 +279,7 @@ export class ModelService {
     if (!p && this.lib) {
       try {
         const e = (entry.kind === 'block' && this.lib.item(entry.id)) || entry;
+        if (e.kind === 'entity') return this.lib.textureStates(e).map((t) => t.path);
         const v = this.lib.resolve(e, this.lib.defaultState(e));
         p = [...new Set([...v.quads.map((q) => q.texture).filter((x): x is string => !!x), ...v.sprite.map((s) => s.path)])];
       } catch {
@@ -266,6 +309,7 @@ export class ModelService {
     if (!p) {
       const run = async (): Promise<Icon | null> => {
         if (this.disposed || !this.lib) return null;
+        if (entry.kind === 'entity' && !(await this.lib.prepare(entry))) return null;
         // Blocks look like their item in the inventory (doors and torches are flat sprites there).
         const asItem = entry.kind === 'block' ? this.lib.item(entry.id) : undefined;
         let view = this.lib.resolve(asItem ?? entry, this.lib.defaultState(asItem ?? entry));
@@ -274,7 +318,7 @@ export class ModelService {
         let icon: Icon | null = null;
         if (built?.flat) icon = built.flat;
         else if (built && built.view === 'item' && view.shape === 'sprite') icon = composeSprite(built.scene, view);
-        else if (built) icon = (await this.renderer())?.render(built.scene) ?? null;
+        else if (built) icon = (await this.renderer())?.render(built.scene, { mob: built.view === 'mob' }) ?? null;
         if (!icon) {
           const thumb = this.lib.thumbnail(entry);
           if (thumb) {
@@ -300,7 +344,7 @@ export class ModelService {
   entriesUsing(path: string): ModelEntry[] {
     if (!this.lib?.usageReady) return [];
     const u = this.lib.usageOf(path);
-    return [...u.blocks.map((id) => this.lib!.block(id)), ...u.items.map((id) => this.lib!.item(id))].filter((e): e is ModelEntry => !!e);
+    return [...u.blocks.map((id) => this.lib!.block(id)), ...u.items.map((id) => this.lib!.item(id)), ...u.entities.map((id) => this.lib!.entity(id))].filter((e): e is ModelEntry => !!e);
   }
 
   dispose(): void {

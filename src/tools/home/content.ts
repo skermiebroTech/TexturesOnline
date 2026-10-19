@@ -213,7 +213,7 @@ const FEATURES: { icon: IconName; title: string; text: Child[] }[] = [
   {
     icon: 'box',
     title: 'Texture pack editor with 3D models',
-    text: ['Paint every block, item and mob of the version you play, on its real 3D model: furnaces, chests, stairs and every side of a block.'],
+    text: ['Paint every block, item and mob of the version you play, right on its real 3D model: furnaces, chests, stairs, and over 80 mobs from creepers to villagers.'],
   },
   {
     icon: 'wand',

@@ -21,14 +21,19 @@ export interface ModelScene {
 }
 
 export interface ModelShowOptions {
-  /** 'block' looks at the north-east corner like the inventory; 'item' at the front (south) of a flat item */
-  view?: 'block' | 'item';
+  /**
+   * 'block' looks at the north-east corner like the inventory; 'item' at the front (south) of a flat
+   * item; 'mob' at a mob's face from its front left (mobs face south)
+   */
+  view?: 'block' | 'item' | 'mob';
   /** Keep the camera where the user left it (e.g. when only the block state changed) */
   keepView?: boolean;
   /** Start from another angle than the view's standard one (radians; azimuth 0 looks at the south face) */
   angle?: { azimuth?: number; elevation?: number };
   /** Azimuth that looks at the model's front, for the camera views (default: north for blocks, south for items) */
   front?: number;
+  /** Faces to frame instead of the shown ones (a mob with parts hidden keeps its place and size) */
+  frame?: readonly BakedQuad[];
 }
 
 /** A ray from the pointer onto a face of the model (paint mode). */
@@ -175,6 +180,7 @@ void main() {
 
 const DEFAULT_VIEW = { azimuth: (3 * Math.PI) / 4, elevation: 0.52, distance: 3.6 };
 const ITEM_VIEW = { azimuth: 0.42, elevation: 0.24, distance: 3.3 };
+const MOB_VIEW = { azimuth: 0.6, elevation: 0.3, distance: 3.4 };
 const CLICK_SLOP = 6;
 const VIEW_LABEL = 'Block preview. Drag or use the arrow keys to rotate, scroll to zoom, double-click or press Home to reset.';
 const PAINT_LABEL = '3D model, paint mode. Drag on the model to paint; right-drag, drag the background or hold Space to turn; scroll to zoom.';
@@ -890,17 +896,18 @@ class BlockPreviewImpl implements BlockPreview {
     if (accent) mesh.setAccent(accent);
     if (this.pins) mesh.pinFrames(this.pins);
     if (this.paintCursor) mesh.setCursor(this.paintCursor);
-    this.front = opts.front ?? (opts.view === 'item' ? 0 : Math.PI);
+    this.front = opts.front ?? (opts.view === 'item' || opts.view === 'mob' ? 0 : Math.PI);
     // Frame the model like a unit cube: centred, scaled down when it spans more than one block.
     const min = [Infinity, Infinity, Infinity];
     const max = [-Infinity, -Infinity, -Infinity];
-    for (const q of scene.quads)
+    const framed = opts.frame?.length ? opts.frame : scene.quads;
+    for (const q of framed)
       for (const p of q.positions)
         for (let i = 0; i < 3; i++) {
           min[i] = Math.min(min[i], p[i]);
           max[i] = Math.max(max[i], p[i]);
         }
-    if (!scene.quads.length) {
+    if (!framed.length) {
       min.fill(0);
       max.fill(1);
     }
@@ -908,18 +915,20 @@ class BlockPreviewImpl implements BlockPreview {
     // (elements may poke a little outside their block, like a wall torch's base: that isn't another block)
     const cellMin = min.map((v, i) => Math.min(Math.floor(v + 0.3), Math.floor(max[i] - 1e-4)));
     const cellMax = max.map((v, i) => Math.max(cellMin[i] + 1, Math.ceil(v - 0.3)));
-    const fmin = cellMin.map((v, i) => Math.min(v, min[i]));
-    const fmax = cellMax.map((v, i) => Math.max(v, max[i]));
+    // Mobs are framed by their own size (a chicken as large as a cow), never blown up past twice their size.
+    const mob = opts.view === 'mob';
+    const fmin = mob ? min : cellMin.map((v, i) => Math.min(v, min[i]));
+    const fmax = mob ? max : cellMax.map((v, i) => Math.max(v, max[i]));
     const center = fmin.map((v, i) => (v + fmax[i]) / 2);
     const extent = Math.max(fmax[0] - fmin[0], fmax[1] - fmin[1], fmax[2] - fmin[2]);
-    const scale = 1 / Math.max(1, extent);
+    const scale = mob ? 1.15 / Math.max(0.55, extent) : 1 / Math.max(1, extent);
     const pivot = new THREE.Group();
     mesh.group.position.set(-center[0], -center[1], -center[2]);
     pivot.add(mesh.group);
     pivot.scale.setScalar(scale);
     // Faint outline of the block cells when the model doesn't fill them (torches, flowers, fences...).
     const fills = scene.quads.length > 0 && [0, 1, 2].every((i) => Math.abs(min[i] - cellMin[i]) < 1e-3 && Math.abs(max[i] - cellMax[i]) < 1e-3);
-    if (!fills && opts.view !== 'item') {
+    if (!fills && opts.view !== 'item' && opts.view !== 'mob') {
       const w = cellMax[0] - cellMin[0];
       const hgt = cellMax[1] - cellMin[1];
       const d = cellMax[2] - cellMin[2];
@@ -938,7 +947,7 @@ class BlockPreviewImpl implements BlockPreview {
       this.shadow.scale.setScalar(Math.max(0.6, Math.max(fmax[0] - fmin[0], fmax[2] - fmin[2]) * scale));
     }
     if (!opts.keepView) {
-      const home = opts.view === 'item' ? ITEM_VIEW : DEFAULT_VIEW;
+      const home = opts.view === 'item' ? ITEM_VIEW : opts.view === 'mob' ? MOB_VIEW : DEFAULT_VIEW;
       this.orbit.setHome({ ...home, azimuth: opts.angle?.azimuth ?? home.azimuth, elevation: opts.angle?.elevation ?? home.elevation });
     }
     this.loop.invalidate();

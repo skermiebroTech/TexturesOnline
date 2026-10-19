@@ -318,6 +318,32 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'paint-3d',
+    q: 'Can I paint on the 3D model instead of the flat texture?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes. In the texture editor use the ',
+        strong('2D / 3D'),
+        ' switch above the canvas (or press D). Each face paints the exact pixel it shows, including rotated faces, overlays like the grass side, lit and unlit states, chests and beds. Pencil, eraser, fill, colour picker (or Alt-click), brush size and mirror all work, and each texture keeps its own undo. Right-drag or two fingers turn the model, scroll or pinch zooms, and F, B, L, R and T jump to a side.',
+      ),
+    ],
+  },
+  {
+    id: 'mobs',
+    q: 'Can I edit mob textures?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes. Choose ',
+        strong('Mobs'),
+        ' in the texture list (Blocks · Items · Mobs · All), or open any texture from the entity folder. The mob appears in 3D and paints like a block. Use the choices next to it (variant, age, wool colour, profession and so on) to reach every texture it uses; overlays such as sheep wool, glowing eyes and villager clothes paint on their own textures. In the Parts list, click a part to hide it and paint what it covers, double-click to show only that part, and use Show all to bring everything back. Bedrock mobs use Bedrock’s own models, and the tint masks hidden in their transparent pixels are kept.',
+      ),
+    ],
+  },
+  {
     id: 'upload',
     q: 'Is anything uploaded?',
     a: [

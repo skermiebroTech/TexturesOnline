@@ -61,6 +61,28 @@ export function javaJarAssets(version: string): AssetIndex | null {
 
 let bedrockCache: AssetIndex | null | undefined;
 
+/** The Bedrock samples resource pack (entities, geometry, entity textures) in the fixtures, if there. */
+export function bedrockSamplesDir(): string | null {
+  const dir = join(fixturesDir(), 'research-cache', 'bedrock-samples-v1.26.50.4', 'resource_pack');
+  return existsSync(join(dir, 'entity')) ? dir : null;
+}
+
+/** Width and height of a PNG from its header. */
+export function pngSize(b: Uint8Array): [number, number] {
+  const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  return [v.getUint32(16), v.getUint32(20)];
+}
+
+/** Sizes of the entity textures of a Java jar (pack path to [width, height]). */
+export function javaEntityTextureSizes(version: string): Map<string, [number, number]> {
+  const out = new Map<string, [number, number]>();
+  const jar = javaJarPath(version);
+  if (!jar) return out;
+  const files = unzipSync(new Uint8Array(readFileSync(jar)), { filter: (f) => /^assets\/minecraft\/textures\/entity\/.*\.png$/.test(f.name) });
+  for (const [name, data] of Object.entries(files)) out.set(name, pngSize(data));
+  return out;
+}
+
 /** Bedrock vanilla file list (bundled index) plus blocks.json and the atlases from the fixtures. */
 export function bedrockAssets(): AssetIndex | null {
   if (bedrockCache !== undefined) return bedrockCache;
@@ -79,9 +101,12 @@ export function bedrockAssets(): AssetIndex | null {
   const catalog = catalogFromIndex(JSON.parse(readFileSync(indexFile, 'utf8')) as BedrockIndexFile);
   const flip = new Set(flipbookStems(parseLenientJson(readFileSync(src['textures/flipbook_textures.json'], 'utf8'))));
   const set = new Set(catalog.files);
+  // mob files (entities, geometry, animations...) from the Bedrock samples, when present
+  const samples = bedrockSamplesDir();
   const read = async (p: string) => {
-    if (!src[p]) throw new Error(`not in the Bedrock fixture: ${p}`);
-    return new Uint8Array(readFileSync(src[p]));
+    if (src[p]) return new Uint8Array(readFileSync(src[p]));
+    if (samples && /^(entity|models|animations|animation_controllers|render_controllers)\//.test(p) && existsSync(join(samples, p))) return new Uint8Array(readFileSync(join(samples, p)));
+    throw new Error(`not in the Bedrock fixture: ${p}`);
   };
   bedrockCache = {
     edition: 'bedrock',

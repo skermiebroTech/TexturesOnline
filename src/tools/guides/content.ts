@@ -170,7 +170,7 @@ export const GUIDE_CONTENT: Guide[] = [
           p(
             'Prefer to see the block as you paint? Switch the editor to ',
             strong('3D'),
-            ' (or press D) and paint straight onto the model: each face paints the texture it shows. Drag the background or use two fingers to turn the block.',
+            ' (or press D) and paint straight onto the model: each face paints the texture it shows. Drag the background or use two fingers to turn the block. Mob textures work the same way: choose Mobs in the texture list and hide body parts to reach the sides underneath.',
           ),
           ul([
             'Start with blocks you see all the time: grass, dirt, stone, logs and planks.',

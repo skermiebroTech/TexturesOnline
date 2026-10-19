@@ -38,8 +38,11 @@ export class ModelIconRenderer {
     return !!this.renderer && !this.disposed;
   }
 
-  /** Draws a model and returns a copy of the picture (null without WebGL or quads). */
-  render(model: ModelScene): HTMLCanvasElement | null {
+  /**
+   * Draws a model and returns a copy of the picture (null without WebGL or quads). `mob`: a three
+   * quarter view of the front (south), framed to the model's own size.
+   */
+  render(model: ModelScene, opts: { mob?: boolean } = {}): HTMLCanvasElement | null {
     const r = this.renderer;
     if (!r || this.disposed || !model.quads.length) return null;
     if (r.getContext().isContextLost()) return null;
@@ -55,14 +58,14 @@ export class ModelIconRenderer {
     const c = min.map((v, i) => (v + max[i]) / 2);
     this.mesh.group.position.set(-c[0], -c[1], -c[2]);
     // Fit the bounding box (projected at the inventory angle) with a small margin, like a full block.
-    const ext = Math.max(1, max[0] - min[0], max[1] - min[1], max[2] - min[2]);
-    const half = 0.9 * ext;
+    const ext = Math.max(opts.mob ? 0.05 : 1, max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+    const half = (opts.mob ? 0.78 : 0.9) * ext;
     this.camera.left = -half;
     this.camera.right = half;
     this.camera.top = half;
     this.camera.bottom = -half;
-    const az = (3 * Math.PI) / 4;
-    const el = Math.PI / 6;
+    const az = opts.mob ? Math.PI / 5 : (3 * Math.PI) / 4;
+    const el = opts.mob ? Math.PI / 9 : Math.PI / 6;
     const d = 6;
     this.camera.position.set(Math.sin(az) * Math.cos(el) * d, Math.sin(el) * d, Math.cos(az) * Math.cos(el) * d);
     this.camera.lookAt(0, 0, 0);
