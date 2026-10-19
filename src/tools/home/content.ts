@@ -222,7 +222,7 @@ const FEATURES: { icon: IconName; title: string; text: Child[] }[] = [
   {
     icon: 'upload',
     title: 'Open and edit existing packs',
-    text: ['Load any Java ', el('code', null, '.zip'), ' or Bedrock ', el('code', null, '.mcpack'), ', change what you like and export it again, or upload your own PNGs.'],
+    text: ['Load any Java ', el('code', null, '.zip'), ' or Bedrock ', el('code', null, '.mcpack'), ' and keep editing, or switch it to the other edition with the ', link('/texture-pack-converter', 'pack converter'), '.'],
   },
   {
     icon: 'file-text',

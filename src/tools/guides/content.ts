@@ -332,7 +332,7 @@ export const GUIDE_CONTENT: Guide[] = [
       {
         id: 'both',
         q: 'Does one texture pack work on Java and Bedrock?',
-        a: [p('No. The two editions use different files and folders. Make one project for each edition; you can export the same artwork twice. ', link('/guides/java-vs-bedrock-packs', 'Java vs Bedrock packs'), '.')],
+        a: [p('No. The two editions use different files and folders. Make the pack for one edition, then turn it into the other with the ', link('/texture-pack-converter', 'Texture Pack Converter'), '. ', link('/guides/java-vs-bedrock-packs', 'Java vs Bedrock packs'), '.')],
       },
       {
         id: 'free',
@@ -428,7 +428,9 @@ export const GUIDE_CONTENT: Guide[] = [
             strong(F(LATEST)),
             '). A pack that only changes textures usually still works if you click ',
             strong('Yes'),
-            ', but missing or renamed textures can look wrong. The clean fix is to export the pack again for your version, or give it a compatibility range that includes it.',
+            ', but missing or renamed textures can look wrong. The clean fix is to export the pack again for your version, or give it a compatibility range that includes it. For an old pack you did not make, the ',
+            link('/texture-pack-converter', 'Texture Pack Converter'),
+            ' renames its textures for your version and writes a new pack.mcmeta.',
           ),
           p(
             'From 1.21.9, a pack with only a ',
@@ -518,7 +520,7 @@ export const GUIDE_CONTENT: Guide[] = [
           ul([
             [strong('Import failed: '), code('manifest.json'), ' is missing, invalid, or not at the top level of the file. Export the pack again and open the new file.'],
             [strong('Duplicate pack: '), 'a pack with the same IDs and version number is already installed. Raise the version (the Texture Pack Maker does this on every export) or delete the old copy in ', uiPath('Settings', 'Storage'), '.'],
-            [strong('Wrong file type: '), 'a Java ', code('.zip'), ' renamed to ', code('.mcpack'), ' does not work; Bedrock needs its own files and folders. ', link('/guides/java-vs-bedrock-packs', 'Java vs Bedrock packs'), '.'],
+            [strong('Wrong file type: '), 'a Java ', code('.zip'), ' renamed to ', code('.mcpack'), ' does not work; Bedrock needs its own files and folders. Convert it with the ', link('/texture-pack-converter', 'Texture Pack Converter'), ' instead.'],
             [strong('Console: '), 'Xbox, PlayStation and Switch cannot import files at all. Join a world, Realm or server that carries the pack.'],
           ]),
         ],
@@ -1156,9 +1158,9 @@ export const GUIDE_CONTENT: Guide[] = [
           p(
             'Mojang’s own reference is ',
             ext('https://learn.microsoft.com/en-us/minecraft/creator/documents/convertingtexturepacks', 'Converting Texture Packs from Java Edition to Bedrock Edition'),
-            '. The simpler route for a small pack is to create a Bedrock project in the ',
-            link('/textures', 'Texture Pack Maker'),
-            ' and upload your Java images onto the matching Bedrock textures; it writes the manifest and keeps the exact Bedrock file names.',
+            '. The quick route is the ',
+            link('/texture-pack-converter', 'Texture Pack Converter'),
+            ': it moves and renames every texture, turns animations into flipbook entries, writes the manifest and lists anything it could not convert.',
           ),
         ],
       },
@@ -1194,7 +1196,7 @@ export const GUIDE_CONTENT: Guide[] = [
       },
     ],
     faq: [
-      { id: 'convert', q: 'Can I convert a Java pack to Bedrock?', a: [p('Not by renaming the file. The folders, names and description file differ, so the images have to be moved, renamed and given a manifest.json, as described above.')] },
+      { id: 'convert', q: 'Can I convert a Java pack to Bedrock?', a: [p('Not by renaming the file. The folders, names and description file differ, so the images have to be moved, renamed and given a manifest.json. The ', link('/texture-pack-converter', 'Texture Pack Converter'), ' does this for you.')] },
       { id: 'back', q: 'Can I convert a Bedrock pack to Java?', a: [p('The same way in reverse: move the images into ', code('assets/minecraft/textures/'), ', rename them to Java’s names, convert any .tga files to PNG and add a ', code('pack.mcmeta'), '.')] },
       { id: 'missing', q: 'Why are some textures missing after converting?', a: [p('Each edition has textures the other does not, and some are split or combined differently (for example chests, paintings and the GUI). Those need repainting for the other edition.')] },
       { id: 'which', q: 'Which edition am I playing?', a: [p('If you play on a console, phone or tablet, or got Minecraft from the Microsoft Store as “Minecraft for Windows”, it is Bedrock. Java runs on Windows, macOS and Linux from the Minecraft Launcher.')] },

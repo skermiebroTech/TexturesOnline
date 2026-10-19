@@ -18,8 +18,9 @@ initToasts();
 initHead();
 
 // The texture, skin and shader start screens get the same introduction as their prerendered pages.
-const INTRO_ROUTES: Record<string, 'textures' | 'skins' | 'skinpack' | 'shaders'> = {
+const INTRO_ROUTES: Record<string, 'textures' | 'converter' | 'skins' | 'skinpack' | 'shaders'> = {
   '/textures': 'textures',
+  '/texture-pack-converter': 'converter',
   '/skins': 'skins',
   '/skin-pack-maker': 'skinpack',
   '/shaders': 'shaders',

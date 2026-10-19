@@ -96,6 +96,7 @@ export function footer(year: number): ElNode {
           { class: 'footer-col' },
           el('div', { class: 'section-title' }, 'Make'),
           el('a', { to: '/textures' }, 'Texture pack editor'),
+          el('a', { to: '/texture-pack-converter' }, 'Pack converter'),
           el('a', { to: '/skins' }, 'Skin editor'),
           el('a', { to: '/skin-pack-maker' }, 'Skin pack maker'),
           el('a', { to: '/shaders' }, 'Shader maker'),

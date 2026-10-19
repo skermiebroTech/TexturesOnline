@@ -237,6 +237,13 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     { class: 'card tx-open', 'aria-labelledby': 'tx-open-title' },
     h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('folder')), h('div', null, h('h2', { id: 'tx-open-title' }, 'Open a pack'), h('p', { class: 'muted' }, 'Keep editing a pack you made here or anywhere else.'))),
     h('div', { class: 'tx-open-body' }, dz, busy),
+    h(
+      'a',
+      { class: 'tx-convert-link', href: routeHref('/texture-pack-converter') },
+      h('span', { class: 'tx-convert-icon' }, icon('repeat')),
+      h('span', { class: 'tx-convert-text' }, h('strong', null, 'Convert a pack'), h('span', { class: 'faint small' }, 'Java to Bedrock, Bedrock to Java, or another Java version')),
+      icon('arrow-right'),
+    ),
   );
 
   async function openFile(file: File | undefined) {

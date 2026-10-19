@@ -29,6 +29,7 @@ if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const PAGES = [
   { path: '', tool: 'home', ready: '.home .hero-title' },
   { path: 'textures/', tool: 'textures', ready: '[data-tool-intro="textures"].is-below' },
+  { path: 'texture-pack-converter/', tool: 'textures', ready: '[data-tool-intro="converter"].is-below' },
   { path: 'skins/', tool: 'skins', ready: '[data-tool-intro="skins"].is-below' },
   { path: 'skin-pack-maker/', tool: 'skins', ready: '[data-tool-intro="skinpack"].is-below' },
   { path: 'shaders/', tool: 'shaders', ready: '[data-tool-intro="shaders"].is-below' },

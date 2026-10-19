@@ -42,7 +42,7 @@ export const HOME_META: PageMeta = {
   label: 'Home',
 };
 
-export const TOOL_META: Record<'textures' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
+export const TOOL_META: Record<'textures' | 'converter' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
   textures: {
     path: '/textures',
     kind: 'tool',
@@ -51,6 +51,15 @@ export const TOOL_META: Record<'textures' | 'skins' | 'skinpack' | 'shaders', Pa
     description:
       'Edit any Minecraft texture: repaint blocks, items and mobs on real 3D models, upload PNGs or restyle the game in one click, then export a .zip or .mcpack.',
     label: 'Texture packs',
+  },
+  converter: {
+    path: '/texture-pack-converter',
+    kind: 'tool',
+    tool: 'textures',
+    title: 'Minecraft Texture Pack Converter — Java to Bedrock & Back',
+    description:
+      'Convert a Minecraft texture pack from Java to Bedrock, Bedrock to Java or between Java versions, or turn PNGs into an .mcpack. Free, in your browser.',
+    label: 'Texture pack converter',
   },
   skins: {
     path: '/skins',
@@ -195,7 +204,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, GUIDES_META, ...GUIDES];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, GUIDES_META, ...GUIDES];
 
 /** Meta for a route path ('/help', '/help/'), or undefined for private and unknown paths. */
 export function publicPageMeta(path: string): PageMeta | undefined {
