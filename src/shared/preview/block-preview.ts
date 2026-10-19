@@ -1,13 +1,16 @@
 // Rotating 3D block preview (per-face textures, Minecraft UV orientation) with a crisp flat mode for
-// items / GUI textures. Transparent background.
+// items / GUI textures, and a paint mode for models: rays from the pointer to texels of the model's
+// textures, a brush outline on the model, camera views, and camera controls that leave the left button
+// (or one finger) to the brush. Transparent background.
 
 import * as THREE from 'three';
 import { alphaMode, makePixelTexture, stripFrames, type PixelImage } from './three-utils';
 import { createStage, OrbitController, prefersReducedMotion, ViewportLoop } from './viewport';
-import { ModelMesh, type ModelHit, type ModelTextureImage } from '../models/model-mesh';
-import type { BakedQuad, RGB, Tint } from '../models/geometry';
+import { ModelMesh, type ModelHit, type ModelTextureImage, type PaintCursor } from '../models/model-mesh';
+import type { BakedQuad, RGB, Tint, Vec3 } from '../models/geometry';
+import { liftedPositions, pointForUv, quadTexelRect, raycastQuads } from '../models/model-paint';
 
-export type { ModelHit, ModelTextureImage } from '../models/model-mesh';
+export type { ModelHit, ModelTextureImage, PaintCursor } from '../models/model-mesh';
 
 /** Baked model quads plus the (pack) images of every texture they use. */
 export interface ModelScene {
@@ -24,7 +27,43 @@ export interface ModelShowOptions {
   keepView?: boolean;
   /** Start from another angle than the view's standard one (radians; azimuth 0 looks at the south face) */
   angle?: { azimuth?: number; elevation?: number };
+  /** Azimuth that looks at the model's front, for the camera views (default: north for blocks, south for items) */
+  front?: number;
 }
+
+/** A ray from the pointer onto a face of the model (paint mode). */
+export interface ModelPaintHit {
+  /** Index into the quads of the shown model */
+  index: number;
+  quad: BakedQuad;
+  /** Pack path (null = missing texture) */
+  texture: string | null;
+  /** Texture point within one frame (0..1, v down) */
+  uv: [number, number];
+  /** Size of one frame of the texture as the model draws it (null = missing texture) */
+  frame: [number, number] | null;
+  /** Distance from the camera, in scene units */
+  distance: number;
+}
+
+export type PaintCursorKind = 'paint' | 'pick' | 'locked';
+
+/** Receives the pointer on the model while the preview is in paint mode. */
+export interface ModelPaintHandler {
+  /** A press on the model; return true to take the drag (a stroke). `pick` is true while Alt is held. */
+  begin(hit: ModelPaintHit, e: PointerEvent, pick: boolean): boolean;
+  /** More points of the drag, in order (fast drags are sampled along the way) */
+  extend(hits: ModelPaintHit[]): void;
+  /** The drag ended (commit) or was taken back (a second finger came down, paint mode was left) */
+  end(commit: boolean): void;
+  /** What is under a mouse or pen (null = off the model); returns the cursor to show */
+  hover(hit: ModelPaintHit | null, pick: boolean): PaintCursorKind;
+  /** Two-finger tap */
+  undo(): void;
+}
+
+/** Standard camera angles around a model (relative to its front). */
+export type ModelCameraView = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom';
 
 export interface ModelHandlers {
   /** Pointer moved onto another face (null = off the model) */
@@ -57,6 +96,28 @@ export interface BlockPreview {
   highlightTexture(path: string | null): void;
   /** Where the most visible face drawn with `path` is on screen (client CSS pixels), or null */
   facePoint(path: string): { x: number; y: number } | null;
+  /**
+   * Paint mode (models only): presses on the model go to `handler`; the camera turns with the right or
+   * middle button, a drag off the model, Space + drag or two fingers; the wheel or a pinch zooms. null
+   * goes back to viewing (click a face to pick it).
+   */
+  setPaintMode(handler: ModelPaintHandler | null): void;
+  readonly painting: boolean;
+  /** Outlines the texels a brush would paint (null clears) */
+  setPaintCursor(c: PaintCursor | null): void;
+  /** Holds animations still, showing these frames (null: play them) */
+  pinFrames(frames: Map<string, number> | null): void;
+  /** Turns the camera to a standard view of the model */
+  setCameraView(v: ModelCameraView): void;
+  /** Asks the paint handler for the hover again (the tool or the brush changed) */
+  refreshPaintHover(): void;
+  /** What a press at a client point would paint (paint rays), or null */
+  paintHitAt(clientX: number, clientY: number): ModelPaintHit | null;
+  /**
+   * Screen point (client CSS pixels) where texel (x, y) of a texture shows on the model, facing the
+   * camera and not covered, for a frame of `width` x `height`; null when it can't be seen.
+   */
+  texelPoint(path: string, x: number, y: number, width: number, height: number): { x: number; y: number } | null;
   readonly mode: 'empty' | 'cube' | 'flat' | 'model';
   setAutoRotate(v: boolean): void;
   /** Back to the standard inventory angle */
@@ -115,6 +176,14 @@ void main() {
 const DEFAULT_VIEW = { azimuth: (3 * Math.PI) / 4, elevation: 0.52, distance: 3.6 };
 const ITEM_VIEW = { azimuth: 0.42, elevation: 0.24, distance: 3.3 };
 const CLICK_SLOP = 6;
+const VIEW_LABEL = 'Block preview. Drag or use the arrow keys to rotate, scroll to zoom, double-click or press Home to reset.';
+const PAINT_LABEL = '3D model, paint mode. Drag on the model to paint; right-drag, drag the background or hold Space to turn; scroll to zoom.';
+
+type PaintDrag =
+  | { kind: 'paint'; id: number; x: number; y: number; distance: number }
+  | { kind: 'orbit'; id: number; x: number; y: number }
+  | { kind: 'pinch'; ids: [number, number]; mx: number; my: number; d: number; mx0: number; my0: number; d0: number; t0: number; travel: number }
+  | { kind: 'ignore'; id: number };
 
 function asPixelImage(img: ImageData | PixelImage): PixelImage {
   return { width: img.width, height: img.height, data: img.data };
@@ -163,9 +232,22 @@ class BlockPreviewImpl implements BlockPreview {
   private lastFrame = -1;
   private cssW = 1;
   private destroyed = false;
+  // paint mode
+  private paint: ModelPaintHandler | null = null;
+  private paintDrag: PaintDrag | null = null;
+  private readonly touches = new Map<number, { x: number; y: number }>();
+  private paintPointer: { x: number; y: number; inside: boolean } | null = null;
+  private paintHoverRaf = 0;
+  private spaceHeld = false;
+  private altHeld = false;
+  private paintCursor: PaintCursor | null = null;
+  private pins: Map<string, number> | null = null;
+  private lifted: Vec3[][] | null = null;
+  private front = Math.PI;
+  private readonly invMatrix = new THREE.Matrix4();
 
   constructor(container: HTMLElement, opts: BlockPreviewOptions) {
-    this.stage = createStage(container, 'Block preview. Drag or use the arrow keys to rotate, scroll to zoom, double-click or press Home to reset.');
+    this.stage = createStage(container, VIEW_LABEL);
     this.stage.root.style.minHeight = '80px';
     this.flat = document.createElement('canvas');
     this.flat.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none;';
@@ -217,6 +299,12 @@ class BlockPreviewImpl implements BlockPreview {
     c.addEventListener('pointerdown', this.onPointerDown);
     c.addEventListener('pointerup', this.onPointerUp);
     c.addEventListener('pointerleave', this.onPointerLeave);
+    c.addEventListener('pointercancel', this.onPaintUp);
+    c.addEventListener('lostpointercapture', this.onLostCapture);
+    c.addEventListener('contextmenu', this.onContextMenu);
+    window.addEventListener('keydown', this.onHeldKey);
+    window.addEventListener('keyup', this.onHeldKey);
+    window.addEventListener('blur', this.onWindowBlur);
   }
 
   // ---- model picking ----
@@ -248,6 +336,10 @@ class BlockPreviewImpl implements BlockPreview {
   }
 
   private onPointerMove = (e: PointerEvent): void => {
+    if (this.paint) {
+      this.onPaintMove(e);
+      return;
+    }
     if (this.mode !== 'model') return;
     this.lastPointer = { x: e.clientX, y: e.clientY };
     if (this.down && Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > CLICK_SLOP) {
@@ -263,12 +355,20 @@ class BlockPreviewImpl implements BlockPreview {
   };
 
   private onPointerDown = (e: PointerEvent): void => {
+    if (this.paint) {
+      this.onPaintDown(e);
+      return;
+    }
     if (this.mode !== 'model') return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     this.down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
   };
 
   private onPointerUp = (e: PointerEvent): void => {
+    if (this.paint) {
+      this.onPaintUp(e);
+      return;
+    }
     const d = this.down;
     this.down = null;
     if (!d || d.id !== e.pointerId || this.mode !== 'model') return;
@@ -282,9 +382,376 @@ class BlockPreviewImpl implements BlockPreview {
     this.handlers?.pick?.(hit);
   };
 
-  private onPointerLeave = (): void => {
+  private onPointerLeave = (e: PointerEvent): void => {
+    if (this.paint) {
+      if (e.pointerType === 'touch') return;
+      if (this.paintPointer) this.paintPointer.inside = false;
+      if (!this.paintDrag) {
+        this.paint.hover(null, false);
+        this.setPaintCursorStyle('grab');
+      }
+      return;
+    }
     this.lastPointer = null;
     if (this.mode === 'model') this.setHover(null);
+  };
+
+  // ---- paint mode ----
+
+  get painting(): boolean {
+    return !!this.paint;
+  }
+
+  setPaintMode(handler: ModelPaintHandler | null): void {
+    if (this.destroyed || handler === this.paint) return;
+    this.endPaintDrag(false);
+    this.paint?.hover(null, false);
+    if (this.hoverRaf) cancelAnimationFrame(this.hoverRaf);
+    this.hoverRaf = 0;
+    this.down = null;
+    this.setHover(null);
+    this.paint = handler;
+    this.touches.clear();
+    this.spaceHeld = this.altHeld = false;
+    this.orbit.pointerEnabled = !handler;
+    this.stage.root.dataset.mode = handler ? 'paint' : 'view';
+    this.stage.canvas.setAttribute('aria-label', handler ? PAINT_LABEL : VIEW_LABEL);
+    if (!handler) {
+      this.setPaintCursor(null);
+      delete this.stage.root.dataset.cursor;
+      this.stage.canvas.style.cursor = 'grab';
+    } else this.setPaintCursorStyle('grab');
+    this.loop.invalidate();
+  }
+
+  setPaintCursor(c: PaintCursor | null): void {
+    this.paintCursor = c;
+    if (this.model) {
+      this.model.setCursor(c);
+      this.loop.invalidate();
+    }
+  }
+
+  pinFrames(frames: Map<string, number> | null): void {
+    this.pins = frames ? new Map(frames) : null;
+    if (this.model) {
+      this.model.pinFrames(this.pins);
+      this.loop.invalidate();
+    }
+  }
+
+  setCameraView(v: ModelCameraView): void {
+    const f = this.front;
+    const az = v === 'front' ? f : v === 'back' ? f + Math.PI : v === 'left' ? f - Math.PI / 2 : v === 'right' ? f + Math.PI / 2 : this.orbit.azimuth;
+    // the orbit limits keep the camera a little off the poles
+    const el = v === 'top' ? 1.35 : v === 'bottom' ? -1.2 : 0.12;
+    this.orbit.autoRotate = false;
+    this.orbit.turnTo(az, el);
+    this.loop.invalidate();
+  }
+
+  private setPaintCursorStyle(c: PaintCursorKind | 'grab' | 'grabbing'): void {
+    if (this.stage.root.dataset.cursor !== c) this.stage.root.dataset.cursor = c;
+    this.stage.canvas.style.cursor = c === 'paint' ? 'crosshair' : c === 'pick' ? 'copy' : c === 'locked' ? 'not-allowed' : c;
+  }
+
+  /** `prepared`: the camera and matrices are already up to date (several rays in a row). */
+  paintHitAt(clientX: number, clientY: number, prepared?: { rect: DOMRect }): ModelPaintHit | null {
+    if (this.mode !== 'model' || !this.model || !this.renderer || !this.modelPivot) return null;
+    const r = prepared?.rect ?? this.stage.canvas.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    const nx = ((clientX - r.left) / r.width) * 2 - 1;
+    const ny = -((clientY - r.top) / r.height) * 2 + 1;
+    if (nx < -1 || nx > 1 || ny < -1 || ny > 1) return null;
+    this.ndc.set(nx, ny);
+    if (!prepared) {
+      this.syncCamera();
+      this.scene.updateMatrixWorld(true);
+    }
+    this.raycaster.setFromCamera(this.ndc, this.camera);
+    const model = this.model;
+    this.invMatrix.copy(model.group.matrixWorld).invert();
+    const local = this.raycaster.ray.clone().applyMatrix4(this.invMatrix);
+    const quads = model.quadList();
+    this.lifted ??= liftedPositions(quads);
+    const o: Vec3 = [local.origin.x, local.origin.y, local.origin.z];
+    const d: Vec3 = [local.direction.x, local.direction.y, local.direction.z];
+    // A see-through texel lets the ray through to what is behind; with nothing behind, it takes paint.
+    const hit =
+      raycastQuads(quads, o, d, { accept: (h, q) => !q.texture || model.alphaAt(q.texture, h.uv, h.index) > 0 }, this.lifted) ?? raycastQuads(quads, o, d, {}, this.lifted);
+    if (!hit) return null;
+    const q = quads[hit.index];
+    const p = new THREE.Vector3(hit.point[0], hit.point[1], hit.point[2]).applyMatrix4(model.group.matrixWorld);
+    const frame = q.texture ? model.frameSize(q.texture) : null;
+    return { index: hit.index, quad: q, texture: frame ? q.texture : null, uv: hit.uv, frame, distance: p.distanceTo(this.camera.position) };
+  }
+
+  texelPoint(path: string, x: number, y: number, width: number, height: number): { x: number; y: number } | null {
+    if (this.mode !== 'model' || !this.model) return null;
+    this.syncCamera();
+    this.scene.updateMatrixWorld(true);
+    const model = this.model;
+    const quads = model.quadList();
+    const lifted = (this.lifted ??= liftedPositions(quads));
+    const uv: [number, number] = [(x + 0.5) / width, (y + 0.5) / height];
+    const r = this.stage.canvas.getBoundingClientRect();
+    const cam = this.camera.position;
+    const candidates: { x: number; y: number; score: number }[] = [];
+    quads.forEach((q, i) => {
+      if (q.texture !== path) return;
+      const t = quadTexelRect(q, width, height);
+      if (x < t.x || y < t.y || x >= t.x + t.w || y >= t.y + t.h) return;
+      const pt = pointForUv(q, uv, lifted[i]);
+      if (!pt) return;
+      const world = new THREE.Vector3(pt[0], pt[1], pt[2]).applyMatrix4(model.group.matrixWorld);
+      const n = new THREE.Vector3(q.normal[0], q.normal[1], q.normal[2]).transformDirection(model.group.matrixWorld);
+      const score = cam.clone().sub(world).normalize().dot(n);
+      if (score <= 0.05) return;
+      const ndc = world.clone().project(this.camera);
+      if (ndc.x < -1 || ndc.x > 1 || ndc.y < -1 || ndc.y > 1) return;
+      candidates.push({ x: r.left + ((ndc.x + 1) / 2) * r.width, y: r.top + ((1 - ndc.y) / 2) * r.height, score });
+    });
+    candidates.sort((a, b) => b.score - a.score);
+    for (const c of candidates) {
+      const hit = this.paintHitAt(c.x, c.y);
+      if (!hit || hit.texture !== path) continue;
+      if (Math.floor(hit.uv[0] * width + 1e-6) === x && Math.floor(hit.uv[1] * height + 1e-6) === y) return { x: c.x, y: c.y };
+    }
+    return null;
+  }
+
+  /** CSS pixels per scene unit at a distance from the camera. */
+  private pixelsPerUnit(distance: number): number {
+    const h = this.stage.canvas.clientHeight || 1;
+    const fov = (this.camera.fov * Math.PI) / 180;
+    return h / (2 * Math.tan(fov / 2) * Math.max(0.05, distance));
+  }
+
+  /** Raycasts the screen path from the drag's last position to (x, y), so fast strokes follow the surface. */
+  private walk(d: Extract<PaintDrag, { kind: 'paint' }>, x: number, y: number, out: ModelPaintHit[]): void {
+    const dx = x - d.x;
+    const dy = y - d.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.25) return;
+    // about a third of a texel of a 16x block texture per step
+    const scale = this.modelPivot?.scale.x || 1;
+    const step = Math.max(1, ((this.pixelsPerUnit(d.distance) * scale) / 16) * 0.35);
+    const n = Math.min(160, Math.max(1, Math.ceil(len / step)));
+    this.syncCamera();
+    this.scene.updateMatrixWorld(true);
+    const prepared = { rect: this.stage.canvas.getBoundingClientRect() };
+    for (let k = 1; k <= n; k++) {
+      const hit = this.paintHitAt(d.x + (dx * k) / n, d.y + (dy * k) / n, prepared);
+      if (!hit) continue;
+      out.push(hit);
+      d.distance = hit.distance;
+    }
+    d.x = x;
+    d.y = y;
+  }
+
+  private paintHoverAt(clientX: number, clientY: number): void {
+    const paint = this.paint;
+    if (!paint) return;
+    const hit = this.spaceHeld ? null : this.paintHitAt(clientX, clientY);
+    const cursor = paint.hover(hit, this.altHeld);
+    this.setPaintCursorStyle(this.spaceHeld || !hit ? 'grab' : cursor);
+  }
+
+  private schedulePaintHover(): void {
+    if (this.paintHoverRaf) return;
+    this.paintHoverRaf = requestAnimationFrame(() => {
+      this.paintHoverRaf = 0;
+      const p = this.paintPointer;
+      if (this.destroyed || !this.paint || this.paintDrag || !p?.inside) return;
+      this.paintHoverAt(p.x, p.y);
+    });
+  }
+
+  /** Brings the hover up to date (after the model, the tool or a held key changed). */
+  refreshPaintHover(): void {
+    if (!this.paint || this.paintDrag) return;
+    if (this.paintPointer?.inside) this.schedulePaintHover();
+    else this.setPaintCursorStyle('grab');
+  }
+
+  private onPaintDown(e: PointerEvent): void {
+    const paint = this.paint;
+    if (!paint || this.destroyed) return;
+    e.preventDefault();
+    if (document.activeElement !== this.stage.canvas) this.stage.canvas.focus({ preventScroll: true });
+    const touch = e.pointerType === 'touch';
+    if (touch) {
+      this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (this.touches.size === 2) {
+        // A second finger turns and zooms instead: the first finger's stroke is taken back.
+        if (this.paintDrag?.kind === 'paint') paint.end(false);
+        this.beginPinch();
+        return;
+      }
+      if (this.touches.size > 2) return;
+    } else {
+      this.paintPointer = { x: e.clientX, y: e.clientY, inside: true };
+    }
+    if (this.paintDrag) return;
+    try {
+      this.stage.canvas.setPointerCapture(e.pointerId);
+    } catch {
+      // synthetic events cannot always be captured
+    }
+    this.orbit.autoRotate = false;
+    const pick = e.altKey || this.altHeld;
+    const turn = e.button === 1 || e.button === 2 || this.spaceHeld;
+    if (!turn && (e.button === 0 || e.button === 5)) {
+      const hit = this.paintHitAt(e.clientX, e.clientY);
+      if (hit && paint.begin(hit, e, pick)) {
+        this.paintDrag = { kind: 'paint', id: e.pointerId, x: e.clientX, y: e.clientY, distance: hit.distance };
+        this.setPaintCursorStyle(touch ? 'paint' : paint.hover(hit, pick));
+        if (touch) paint.hover(null, false);
+        return;
+      }
+    }
+    this.paintDrag = { kind: 'orbit', id: e.pointerId, x: e.clientX, y: e.clientY };
+    paint.hover(null, false);
+    this.setPaintCursorStyle('grabbing');
+  }
+
+  private onPaintMove(e: PointerEvent): void {
+    const paint = this.paint;
+    if (!paint || this.destroyed) return;
+    const touch = e.pointerType === 'touch';
+    if (touch) {
+      if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    } else {
+      this.paintPointer = { x: e.clientX, y: e.clientY, inside: true };
+    }
+    const d = this.paintDrag;
+    if (d?.kind === 'pinch') {
+      if (d.ids.includes(e.pointerId)) this.movePinch(d);
+      return;
+    }
+    if (!d || d.id !== e.pointerId) {
+      if (!d && !touch) this.schedulePaintHover();
+      return;
+    }
+    if (d.kind === 'orbit') {
+      this.orbit.rotateBy(e.clientX - d.x, e.clientY - d.y);
+      d.x = e.clientX;
+      d.y = e.clientY;
+      this.loop.invalidate();
+      return;
+    }
+    if (d.kind !== 'paint') return;
+    const coalesced = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+    const hits: ModelPaintHit[] = [];
+    for (const ev of coalesced.length ? coalesced : [e]) this.walk(d, ev.clientX, ev.clientY, hits);
+    if (hits.length) paint.extend(hits);
+    if (!touch) {
+      const at = hits.length ? hits[hits.length - 1] : this.paintHitAt(e.clientX, e.clientY);
+      this.setPaintCursorStyle(paint.hover(at, this.altHeld));
+    }
+  }
+
+  private onPaintUp = (e: PointerEvent): void => {
+    const paint = this.paint;
+    if (!paint) return;
+    const touch = e.pointerType === 'touch';
+    if (touch) this.touches.delete(e.pointerId);
+    const d = this.paintDrag;
+    if (!d) return;
+    if (d.kind === 'pinch') {
+      if (d.ids.includes(e.pointerId)) this.endPinch(d, e.pointerId);
+      return;
+    }
+    if (d.id !== e.pointerId) return;
+    this.endPaintDrag(true);
+    if (!touch && e.type === 'pointerup') this.paintHoverAt(e.clientX, e.clientY);
+    else paint.hover(null, false);
+  };
+
+  private onLostCapture = (e: PointerEvent): void => {
+    const d = this.paintDrag;
+    if (d && d.kind !== 'pinch' && d.id === e.pointerId && !this.touches.has(e.pointerId)) this.endPaintDrag(true);
+  };
+
+  /** Ends the current drag; a stroke is kept (commit) or taken back. */
+  private endPaintDrag(commit: boolean): void {
+    const d = this.paintDrag;
+    if (!d) return;
+    this.paintDrag = null;
+    if (d.kind === 'paint') this.paint?.end(commit);
+    if (d.kind !== 'pinch') {
+      try {
+        if (this.stage.canvas.hasPointerCapture(d.id)) this.stage.canvas.releasePointerCapture(d.id);
+      } catch {
+        // ignore
+      }
+    }
+    if (this.paint) this.setPaintCursorStyle('grab');
+  }
+
+  private beginPinch(): void {
+    const [[a, pa], [b, pb]] = [...this.touches.entries()];
+    const mx = (pa.x + pb.x) / 2;
+    const my = (pa.y + pb.y) / 2;
+    const d = Math.max(1, Math.hypot(pb.x - pa.x, pb.y - pa.y));
+    this.paintDrag = { kind: 'pinch', ids: [a, b], mx, my, d, mx0: mx, my0: my, d0: d, t0: performance.now(), travel: 0 };
+    this.paint?.hover(null, false);
+    this.setPaintCursorStyle('grabbing');
+  }
+
+  private movePinch(g: Extract<PaintDrag, { kind: 'pinch' }>): void {
+    const a = this.touches.get(g.ids[0]);
+    const b = this.touches.get(g.ids[1]);
+    if (!a || !b) return;
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    const d = Math.max(1, Math.hypot(b.x - a.x, b.y - a.y));
+    this.orbit.rotateBy(mx - g.mx, my - g.my);
+    if (Math.abs(d - g.d) > 0.5) this.orbit.zoomBy(g.d / d);
+    g.travel = Math.max(g.travel, Math.abs(d - g.d0), Math.hypot(mx - g.mx0, my - g.my0));
+    g.mx = mx;
+    g.my = my;
+    g.d = d;
+    this.loop.invalidate();
+  }
+
+  private endPinch(g: Extract<PaintDrag, { kind: 'pinch' }>, lifted: number): void {
+    const other = g.ids[0] === lifted ? g.ids[1] : g.ids[0];
+    const tap = performance.now() - g.t0 < 300 && g.travel < 12;
+    this.paintDrag = this.touches.has(other) ? { kind: 'ignore', id: other } : null;
+    if (!this.paintDrag) this.setPaintCursorStyle('grab');
+    if (tap) this.paint?.undo();
+  }
+
+  private onContextMenu = (e: Event): void => {
+    if (this.paint) e.preventDefault();
+  };
+
+  /** Space held over the model: drags turn the camera. Alt held: presses pick colours. */
+  private onHeldKey = (e: KeyboardEvent): void => {
+    if (!this.paint || (e.key !== ' ' && e.key !== 'Alt')) return;
+    const down = e.type === 'keydown';
+    const over = !!this.paintPointer?.inside || document.activeElement === this.stage.canvas;
+    if (down) {
+      if (!over || e.ctrlKey || e.metaKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && t !== this.stage.canvas && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName))) return;
+      e.preventDefault();
+    }
+    if (e.key === ' ') {
+      if (this.spaceHeld === down) return;
+      this.spaceHeld = down;
+    } else {
+      if (this.altHeld === down) return;
+      this.altHeld = down;
+    }
+    this.refreshPaintHover();
+  };
+
+  private onWindowBlur = (): void => {
+    this.spaceHeld = this.altHeld = false;
+    this.refreshPaintHover();
   };
 
   private onLost = (e: Event): void => {
@@ -319,6 +786,7 @@ class BlockPreviewImpl implements BlockPreview {
     this.model?.dispose();
     this.model = null;
     this.modelPivot = null;
+    this.lifted = null;
     if (this.modelCells) {
       this.modelCells.geometry.dispose();
       (this.modelCells.material as THREE.Material).dispose();
@@ -420,6 +888,9 @@ class BlockPreviewImpl implements BlockPreview {
     mesh.build(scene.quads, scene.textures, scene.tint);
     const accent = getComputedStyle(this.stage.root).getPropertyValue('--tool-accent').trim();
     if (accent) mesh.setAccent(accent);
+    if (this.pins) mesh.pinFrames(this.pins);
+    if (this.paintCursor) mesh.setCursor(this.paintCursor);
+    this.front = opts.front ?? (opts.view === 'item' ? 0 : Math.PI);
     // Frame the model like a unit cube: centred, scaled down when it spans more than one block.
     const min = [Infinity, Infinity, Infinity];
     const max = [-Infinity, -Infinity, -Infinity];
@@ -471,6 +942,7 @@ class BlockPreviewImpl implements BlockPreview {
       this.orbit.setHome({ ...home, azimuth: opts.angle?.azimuth ?? home.azimuth, elevation: opts.angle?.elevation ?? home.elevation });
     }
     this.loop.invalidate();
+    if (this.paint) this.refreshPaintHover();
   }
 
   updateModelTexture(path: string, tex: ModelTextureImage): void {
@@ -728,6 +1200,13 @@ class BlockPreviewImpl implements BlockPreview {
     c.removeEventListener('pointerdown', this.onPointerDown);
     c.removeEventListener('pointerup', this.onPointerUp);
     c.removeEventListener('pointerleave', this.onPointerLeave);
+    c.removeEventListener('pointercancel', this.onPaintUp);
+    c.removeEventListener('lostpointercapture', this.onLostCapture);
+    c.removeEventListener('contextmenu', this.onContextMenu);
+    window.removeEventListener('keydown', this.onHeldKey);
+    window.removeEventListener('keyup', this.onHeldKey);
+    window.removeEventListener('blur', this.onWindowBlur);
+    if (this.paintHoverRaf) cancelAnimationFrame(this.paintHoverRaf);
     this.loop.dispose();
     this.orbit.dispose();
     this.clearCube();

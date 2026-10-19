@@ -44,6 +44,8 @@ export interface BakedQuad {
   shade: boolean;
   /** Shade as if facing this way (26.x "shade_direction_override", e.g. plants lit like a top face) */
   shadeDir?: Dir;
+  /** Entity box UV layout: every face has its own patch of the texture sheet (painting stays inside it) */
+  boxUv?: boolean;
   /** Which model part and element it came from */
   part: number;
   element: number;

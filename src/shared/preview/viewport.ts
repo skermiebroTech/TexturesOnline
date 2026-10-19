@@ -187,6 +187,8 @@ export class OrbitController {
   distance: number;
   autoRotate: boolean;
   autoRotateSpeed: number;
+  /** false: pointer drags and double-clicks are left to the owner (wheel and keys still work) */
+  pointerEnabled = true;
   private vAz = 0;
   private vEl = 0;
   private pointers = new Map<number, { x: number; y: number }>();
@@ -228,6 +230,7 @@ export class OrbitController {
   }
 
   private onDown = (e: PointerEvent): void => {
+    if (!this.pointerEnabled) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try {
@@ -320,8 +323,40 @@ export class OrbitController {
   };
 
   private onDbl = (): void => {
-    this.reset();
+    if (this.pointerEnabled) this.reset();
   };
+
+  /** Turns the view by a pointer movement in CSS pixels (same feel as a drag). */
+  rotateBy(dx: number, dy: number): void {
+    if (!dx && !dy) return;
+    const h = Math.max(200, this.el.clientHeight);
+    const k = (Math.PI * 1.6) / h;
+    this.azimuth -= dx * k;
+    this.elevation += dy * k;
+    this.vAz = 0;
+    this.vEl = 0;
+    this.clamp();
+    this.touch();
+  }
+
+  /** Moves closer (factor < 1) or further away. */
+  zoomBy(factor: number): void {
+    if (!(factor > 0)) return;
+    this.distance *= factor;
+    this.clamp();
+    this.touch();
+  }
+
+  /** Turns to an angle (radians), animated over `ms` unless the user prefers reduced motion. */
+  turnTo(azimuth: number, elevation: number, ms = 280): void {
+    let d = azimuth - this.azimuth;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    this.tween = { az0: this.azimuth, el0: this.elevation, az1: this.azimuth + d, el1: elevation, t0: performance.now(), ms: prefersReducedMotion() ? 0 : ms };
+    this.vAz = 0;
+    this.vEl = 0;
+    this.touch();
+  }
+  private tween: { az0: number; el0: number; az1: number; el1: number; t0: number; ms: number } | null = null;
 
   /** Changes the view that reset() (double-click / Home) returns to, and goes there. */
   setHome(view: { azimuth: number; elevation: number; distance: number }, jump = true): void {
@@ -332,6 +367,7 @@ export class OrbitController {
   }
 
   reset(): void {
+    this.tween = null;
     this.azimuth = this.opts.azimuth;
     this.elevation = this.opts.elevation;
     this.distance = this.opts.distance;
@@ -343,6 +379,17 @@ export class OrbitController {
   /** Advances inertia / auto-rotation. Returns true when the view changed. */
   update(dt: number): boolean {
     let changed = false;
+    const tw = this.tween;
+    if (tw) {
+      const t = tw.ms > 0 ? Math.min(1, (performance.now() - tw.t0) / tw.ms) : 1;
+      const k = 1 - Math.pow(1 - t, 3);
+      this.azimuth = tw.az0 + (tw.az1 - tw.az0) * k;
+      this.elevation = tw.el0 + (tw.el1 - tw.el0) * k;
+      this.clamp();
+      if (t >= 1) this.tween = null;
+      this.lastInteraction = performance.now();
+      changed = true;
+    }
     if (!this.dragging && (Math.abs(this.vAz) > 1e-4 || Math.abs(this.vEl) > 1e-4)) {
       this.vAz = Math.max(-6, Math.min(6, this.vAz));
       this.vEl = Math.max(-4, Math.min(4, this.vEl));
@@ -365,7 +412,7 @@ export class OrbitController {
 
   /** True while inertia or auto-rotation will keep moving the view. */
   get animating(): boolean {
-    return this.dragging || this.vAz !== 0 || this.vEl !== 0 || (this.autoRotate && !prefersReducedMotion());
+    return !!this.tween || this.dragging || this.vAz !== 0 || this.vEl !== 0 || (this.autoRotate && !prefersReducedMotion());
   }
 
   /** Camera position relative to the target. */

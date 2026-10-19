@@ -68,6 +68,15 @@ export interface PixelView {
   toScreen(x: number, y: number): [number, number];
 }
 
+/** Undo / redo steps saved from a canvas (opaque; see PixelCanvas.saveHistory). */
+export interface PixelHistory {
+  readonly width: number;
+  readonly height: number;
+  readonly pixels: Uint8ClampedArray;
+  readonly undo: readonly unknown[];
+  readonly redo: readonly unknown[];
+}
+
 /** Custom symmetry: returns the pixels that should also be painted when (x, y) is painted. */
 export type MirrorMap = (x: number, y: number) => ReadonlyArray<readonly [number, number]>;
 
@@ -696,6 +705,33 @@ export class PixelCanvas {
     return k === 'stroke' || k === 'shape' || k === 'move' || k === 'marquee' || k === 'external';
   }
   canRedo(): boolean { return this.redoStack.length > 0; }
+
+  /**
+   * The undo / redo steps with the pixels they lead up to, to put back later with restoreHistory()
+   * (e.g. per document when one canvas edits several images in turn). Ends a gesture in progress.
+   */
+  saveHistory(): PixelHistory {
+    this.endGesture();
+    this.finalizeFloat();
+    return { width: this.img.width, height: this.img.height, pixels: this.baseline.slice(), undo: [...this.undoStack], redo: [...this.redoStack] };
+  }
+
+  /**
+   * Puts back steps from saveHistory() when the image holds exactly the pixels it had then (otherwise
+   * nothing changes). Returns true when restored.
+   */
+  restoreHistory(h: PixelHistory): boolean {
+    if (this.destroyed || h.width !== this.img.width || h.height !== this.img.height) return false;
+    if (this.gesture || this.float) return false;
+    const a = h.pixels;
+    const b = this.img.data;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    this.undoStack = [...(h.undo as HistoryEntry[])];
+    this.redoStack = [...(h.redo as HistoryEntry[])];
+    this.emit('history', undefined);
+    return true;
+  }
 
   /** Forgets all undo/redo steps. */
   clearHistory(): void {
