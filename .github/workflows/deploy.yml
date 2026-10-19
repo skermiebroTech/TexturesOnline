@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      urls: ${{ steps.urls.outputs.urls }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -25,6 +27,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # Every public page, for the IndexNow ping after the deploy
+      - id: urls
+        run: echo "urls=$(grep -o '<loc>[^<]*' dist/sitemap.xml | sed 's/<loc>//' | jq -Rsc 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
@@ -43,3 +48,25 @@ jobs:
         uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-${{ github.run_attempt }}
+
+  # Tells Bing, Yandex and other IndexNow search engines that the pages changed, so they recrawl
+  # them now instead of whenever they next visit. The key file is public/<key>.txt.
+  indexnow:
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      HOST: texturepackmaker.com
+      KEY: 3d65d1ef24074d908f1b2919973352b2
+      URLS: ${{ needs.build.outputs.urls }}
+    steps:
+      - run: |
+          # Wait until the new key file is live, so the search engine can verify it
+          for i in $(seq 1 30); do
+            [ "$(curl -s "https://$HOST/$KEY.txt")" = "$KEY" ] && break
+            sleep 10
+          done
+          jq -n --arg host "$HOST" --arg key "$KEY" --argjson urls "$URLS" \
+            '{host: $host, key: $key, keyLocation: "https://\($host)/\($key).txt", urlList: $urls}' > body.json
+          curl -sS -o /dev/null -w 'IndexNow: HTTP %{http_code}\n' -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' --data @body.json

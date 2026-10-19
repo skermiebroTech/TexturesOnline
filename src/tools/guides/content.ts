@@ -734,6 +734,14 @@ export const GUIDE_CONTENT: Guide[] = [
         ' Resource packs started in 1.6.1; older versions used texture packs, which work differently.',
       ),
     ],
+    quick: {
+      title: `Quick answer: Minecraft ${LATEST}`,
+      items: [
+        ['Resource pack format: ', strong(F(LATEST)), '.'],
+        ['In ', code('pack.mcmeta'), ' write ', code('"min_format": [97, 1]'), ' and ', code('"max_format": 97'), ' (the format is split into a major and a minor number since 1.21.9).'],
+        ['A pack for older versions too also needs ', code('pack_format'), ' and ', code('supported_formats'), '. The table below lists every version.'],
+      ],
+    },
     sections: [
       {
         id: 'table',

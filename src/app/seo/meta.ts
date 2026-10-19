@@ -36,9 +36,9 @@ export const HOME_META: PageMeta = {
   path: '/',
   kind: 'home',
   tool: 'home',
-  title: 'Minecraft Texture Pack Maker — Free Online, Java & Bedrock',
+  title: 'Minecraft Texture Pack Maker & Creator: Free, Java & Bedrock',
   description:
-    'Free Minecraft texture pack maker: create resource packs, skins and shaders in your browser for Java 26.3, every version since 1.6.1 and Bedrock.',
+    'Make a Minecraft texture pack in minutes: repaint blocks on real 3D models, apply one-click styles, export a .zip or .mcpack. Free, no sign-up, Java 26.3.',
   label: 'Home',
 };
 
@@ -140,8 +140,8 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'minecraft-pack-format-versions',
     blurb: 'The pack format of every Java release from 1.6.1 to 26.3.',
-    title: 'Minecraft Resource Pack Formats: Every Version to 26.3',
-    h1: 'Minecraft resource pack format for every Java version',
+    title: 'Minecraft Pack Format 26.3 (97.1) and Every Java Version',
+    h1: 'Minecraft pack format for every Java version (26.3 uses 97.1)',
     description:
       'Every Minecraft Java release from 1.6.1 to 26.3 and its resource pack format (26.3 uses 97.1), plus how pack.mcmeta has changed over the years.',
     label: 'Pack format versions',
