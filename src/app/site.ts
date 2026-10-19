@@ -18,6 +18,13 @@ export const PUBLISHER = {
   url: 'https://github.com/skermiebroTech',
 };
 
+/**
+ * Official profiles besides GitHub (YouTube, Discord, Planet Minecraft...). Listed on the About page
+ * and as sameAs in the Organization structured data, which helps search engines and AI assistants
+ * recognise the site as one brand. Add each one as it is created.
+ */
+export const SOCIAL_PROFILES: { label: string; url: string }[] = [];
+
 /** Source code (the repository keeps its original name). */
 export const REPO_URL = 'https://github.com/skermiebroTech/TexturesOnline';
 

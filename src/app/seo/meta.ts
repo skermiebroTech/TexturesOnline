@@ -3,7 +3,7 @@
 
 import { SITE_NAME } from '../site';
 
-export type PageKind = 'home' | 'tool' | 'help' | 'guides' | 'guide';
+export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'guides' | 'guide';
 export type PageTool = 'home' | 'textures' | 'convert' | 'skins' | 'shaders' | 'help';
 
 export interface PageMeta {
@@ -98,6 +98,16 @@ export const HELP_META: PageMeta = {
   description:
     'Add a texture pack, skin or shader in Minecraft Java and Bedrock on PC, Mac, phone and console, find the resourcepacks folder and fix common errors.',
   label: 'Help',
+};
+
+export const ABOUT_META: PageMeta = {
+  path: '/about',
+  kind: 'about',
+  tool: 'help',
+  title: 'About Texture Pack Maker — Free, Open-Source Minecraft Tools',
+  description:
+    'Who makes Texture Pack Maker, what sets it apart (every Java version since 1.6.1, Bedrock, a converter, open source) and how it keeps your work private.',
+  label: 'About',
 };
 
 export const GUIDES_META: PageMeta = {
@@ -204,7 +214,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, GUIDES_META, ...GUIDES];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, GUIDES_META, ...GUIDES];
 
 /** Meta for a route path ('/help', '/help/'), or undefined for private and unknown paths. */
 export function publicPageMeta(path: string): PageMeta | undefined {

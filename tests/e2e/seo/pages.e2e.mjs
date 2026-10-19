@@ -34,6 +34,7 @@ const PAGES = [
   { path: 'skin-pack-maker/', tool: 'skins', ready: '[data-tool-intro="skinpack"].is-below' },
   { path: 'shaders/', tool: 'shaders', ready: '[data-tool-intro="shaders"].is-below' },
   { path: 'help/', tool: 'help', ready: '.help .help-section' },
+  { path: 'about/', tool: 'help', ready: '.about-page .diff-grid' },
   { path: 'guides/', tool: 'help', ready: '.guides-index .guide-card' },
   { path: 'guides/make-a-texture-pack/', tool: 'help', ready: '.guide-page h1' },
   { path: 'guides/minecraft-pack-format-versions/', tool: 'help', ready: '.formats-table' },

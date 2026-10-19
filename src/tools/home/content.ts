@@ -6,6 +6,7 @@ import { el, ic, logo, type Child, type ElNode } from '../../app/markup';
 import { faqList, link, type FaqItem } from '../../app/content/blocks';
 import { guideCards } from '../../app/content/guide-cards';
 import { SITE_NAME } from '../../app/site';
+import { differences } from '../about/content';
 
 export type ToolKey = 'textures' | 'skins' | 'shaders';
 
@@ -318,6 +319,13 @@ export function homePage(): ElNode[] {
     ),
   );
 
+  const why = el(
+    'section',
+    { class: 'section home-why container', 'aria-labelledby': 'why-title' },
+    sectionHead('star', 'Why it’s different', 'why-title', `Why ${SITE_NAME}?`, ['Free, open source and private, with every Java version since 1.6.1, Bedrock and five tools in one place. ', link('/about', 'About the project'), '.']),
+    differences('h3'),
+  );
+
   const how = el(
     'section',
     { class: 'section how container', 'aria-labelledby': 'how-title' },
@@ -367,5 +375,5 @@ export function homePage(): ElNode[] {
     ),
   );
 
-  return [hero, tools, features, how, guides, faq, cta];
+  return [hero, tools, features, why, how, guides, faq, cta];
 }

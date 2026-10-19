@@ -522,3 +522,58 @@
     padding: 8px 10px;
   }
 }
+
+/* ---------- What makes the site different (home page and About) ---------- */
+.diff-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.diff-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+.diff-item h2,
+.diff-item h3 {
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+}
+.diff-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  color: var(--green);
+}
+.guide-body .diff-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  list-style: none;
+  padding-left: 0;
+}
+@media (max-width: 900px) {
+  .diff-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .diff-grid,
+  .guide-body .diff-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -6,7 +6,7 @@ import { footer, type NavTool } from '../content/chrome';
 import type { Crumb } from '../content/blocks';
 import { TOOL_INTROS, toolIntro, type IntroTool } from '../content/tools';
 import { absoluteUrl, SITE_NAME, SITE_URL } from '../site';
-import { GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META, type PageMeta } from './meta';
+import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META, type PageMeta } from './meta';
 import {
   APP_ID,
   DEFAULT_SCREENSHOT,
@@ -26,6 +26,7 @@ import {
 import { HOME_FAQ, TOOLS, homePage } from '../../tools/home/content';
 import { FAQ as HELP_FAQ, SECTIONS as HELP_SECTIONS, helpPage } from '../../tools/help/content';
 import { GUIDE_CONTENT, guidePage, guidesIndexPage } from '../../tools/guides/content';
+import { ABOUT_FAQ, aboutPage } from '../../tools/about/content';
 
 export interface PrerenderPage {
   meta: PageMeta;
@@ -168,6 +169,30 @@ function helpEntry(): PrerenderPage {
   };
 }
 
+function aboutEntry(): PrerenderPage {
+  return {
+    meta: ABOUT_META,
+    tool: 'help',
+    nav: 'help',
+    viewClass: 'view view-help guides',
+    boot: 'keep',
+    styles: ['src/tools/about/about.ts'],
+    preload: ['src/tools/about/about.ts'],
+    body: (year) => [aboutPage(), footer(year)],
+    content: () => [aboutPage()],
+    preconnect: false,
+    og: { type: 'website', image: SCREENSHOTS.home },
+    jsonld: () =>
+      graph([
+        organization(),
+        website(),
+        { ...webPage(ABOUT_META, { type: 'AboutPage', breadcrumb: true }), mainEntity: { '@id': APP_ID } },
+        breadcrumbList(ABOUT_META, crumbsFor({ label: ABOUT_META.label })),
+        faqPage(ABOUT_META, ABOUT_FAQ),
+      ]),
+  };
+}
+
 function guidesIndexEntry(): PrerenderPage {
   const url = absoluteUrl(GUIDES_META.path);
   return {
@@ -228,5 +253,5 @@ function guideEntry(slug: string): PrerenderPage {
 
 /** All prerendered pages, in sitemap order. */
 export function prerenderPages(): PrerenderPage[] {
-  return [homeEntry(), toolEntry('textures'), toolEntry('converter'), toolEntry('skins'), toolEntry('skinpack'), toolEntry('shaders'), helpEntry(), guidesIndexEntry(), ...GUIDES.map((g) => guideEntry(g.slug))];
+  return [homeEntry(), toolEntry('textures'), toolEntry('converter'), toolEntry('skins'), toolEntry('skinpack'), toolEntry('shaders'), helpEntry(), aboutEntry(), guidesIndexEntry(), ...GUIDES.map((g) => guideEntry(g.slug))];
 }

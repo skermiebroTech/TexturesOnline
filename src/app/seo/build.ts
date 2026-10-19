@@ -5,10 +5,12 @@
 
 import type { IconName } from '../../ui/icons';
 import { logoSvgMarkup } from '../../ui/logo';
-import { el, escapeAttr, escapeHtml, flatten, renderHtml, renderMarkdown, type Child, type HtmlContext } from '../markup';
+import { el, escapeAttr, escapeHtml, flatten, renderHtml, renderMarkdown, renderText, type Child, type HtmlContext } from '../markup';
 import { skipLink, topbar } from '../content/chrome';
 import { BING_SITE_VERIFICATION, GOOGLE_SITE_VERIFICATION, REPO_URL, SITE_NAME, SITE_SUMMARY, SITE_URL, absoluteUrl } from '../site';
-import { GUIDES, GUIDES_META, HELP_META, PUBLIC_PAGES, TOOL_META, type PageMeta } from './meta';
+import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, PUBLIC_PAGES, TOOL_META, type PageMeta } from './meta';
+import { TOOL_INTROS } from '../content/tools';
+import { DIFFERENCES } from '../../tools/about/content';
 import { prerenderPages, type PrerenderPage } from './pages';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../editions/java/packformats';
 
@@ -254,6 +256,9 @@ export function robotsTxt(): string {
 
 const mdLink = (m: PageMeta, label = m.label) => `[${label}](${absoluteUrl(m.path)})`;
 
+/** Tool names as people search for them (llms.txt link text). */
+const TOOL_INTROS_NAMES: Record<string, string> = Object.fromEntries(Object.values(TOOL_INTROS).map((t) => [TOOL_META[t.tool].path, t.appName]));
+
 export function llmsTxt(): string {
   const f = formatPackFormat(KNOWN_RELEASE_FORMATS['26.3']);
   const lines = [
@@ -265,9 +270,11 @@ export function llmsTxt(): string {
     '',
     '## Tools',
     '',
-    `- ${mdLink(TOOL_META.textures, 'Texture pack maker')}: ${TOOL_META.textures.description}`,
-    `- ${mdLink(TOOL_META.skins, 'Skin editor')}: ${TOOL_META.skins.description}`,
-    `- ${mdLink(TOOL_META.shaders, 'Shader maker')}: ${TOOL_META.shaders.description}`,
+    ...Object.values(TOOL_META).map((m) => `- ${mdLink(m, TOOL_INTROS_NAMES[m.path] ?? m.label)}: ${m.description}`),
+    '',
+    '## What makes it different',
+    '',
+    ...DIFFERENCES.map((d) => `- **${d.title}**: ${renderText(d.text)}`),
     '',
     '## Guides',
     '',
@@ -276,6 +283,7 @@ export function llmsTxt(): string {
     '## Help',
     '',
     `- ${mdLink(HELP_META, 'Install guide & FAQ')}: ${HELP_META.description}`,
+    `- ${mdLink(ABOUT_META, 'About')}: ${ABOUT_META.description}`,
     `- ${mdLink(GUIDES_META, 'All guides')}: ${GUIDES_META.description}`,
     '',
     '## Optional',

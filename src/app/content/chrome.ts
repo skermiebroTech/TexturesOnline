@@ -115,6 +115,7 @@ export function footer(year: number): ElNode {
           el('div', { class: 'section-title' }, 'Learn'),
           el('a', { to: '/help' }, 'Install guide'),
           el('a', { to: '/help?s=faq' }, 'FAQ'),
+          el('a', { to: '/about' }, 'About'),
           el('a', { href: REPO_URL, target: '_blank', rel: 'noopener noreferrer' }, 'GitHub ', ic('external-link', { class: 'ext' })),
         ),
       ),

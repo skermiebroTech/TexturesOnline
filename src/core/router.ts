@@ -5,7 +5,7 @@
 // Pure helpers (parseLocation, matchRoute, resolveRoute, toHref, stripBase) have no DOM dependency.
 
 import { appBasePath } from './base';
-import { GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META } from '../app/seo/meta';
+import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META } from '../app/seo/meta';
 import { SITE_NAME } from '../app/site';
 
 export interface RouteContext {
@@ -51,6 +51,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/shaders', load: shaders, title: TOOL_META.shaders.title, tool: 'shaders' },
   { pattern: '/shaders/:id', load: shaders, title: `Shader maker — ${APP}`, tool: 'shaders' },
   { pattern: '/help', load: () => import('../tools/help/help'), title: HELP_META.title, tool: 'help' },
+  { pattern: '/about', load: () => import('../tools/about/about'), title: ABOUT_META.title, tool: 'help' },
   { pattern: '/guides', load: guides, title: GUIDES_META.title, tool: 'help' },
   ...GUIDES.map((g): RouteDef => ({ pattern: g.path, load: guides, title: g.title, tool: 'help' })),
   { pattern: '/kit', load: () => import('../tools/kit/kit'), title: `UI kit — ${APP}`, tool: 'kit' },

@@ -3,7 +3,7 @@
 
 import { renderText, type Child } from '../markup';
 import type { Crumb, FaqItem } from '../content/blocks';
-import { CONTENT_UPDATED, OG_IMAGE, PUBLISHER, REPO_URL, SITE_ALT_NAME, SITE_NAME, SITE_SUMMARY, SITE_URL, absoluteUrl } from '../site';
+import { CONTENT_UPDATED, OG_IMAGE, PUBLISHER, REPO_URL, SITE_ALT_NAME, SITE_NAME, SITE_SUMMARY, SITE_URL, SOCIAL_PROFILES, absoluteUrl } from '../site';
 import type { PageMeta } from './meta';
 
 export type JsonLd = Record<string, unknown>;
@@ -29,7 +29,7 @@ export function organization(): JsonLd {
     '@id': ORG_ID,
     name: PUBLISHER.name,
     url: PUBLISHER.url,
-    sameAs: [PUBLISHER.url, REPO_URL],
+    sameAs: [PUBLISHER.url, REPO_URL, ...SOCIAL_PROFILES.map((p) => p.url)],
     logo: { '@type': 'ImageObject', url: absoluteUrl('icons/icon-512.png'), width: 512, height: 512 },
   };
 }
