@@ -1,4 +1,4 @@
-// Right panel "Preview" tab. For textures that belong to a block or item it is the model workspace:
+// Right panel "Preview" tab. For textures that belong to a block, item or mob it is the model workspace:
 // the real in-game model in 3D (hover a face to see which texture it is, click it to paint it), a
 // state picker (lit, facing, half, age...) and the list of textures the model uses, labelled by role.
 // Other textures show on a rotating cube or as a flat sprite. A tiled 3x3 view and the pack's effects
@@ -10,7 +10,7 @@ import type { BlockState, ModelEntry, ModelTexture, ModelView, StateProperty } f
 import { cloneImageData } from '../../../core/image';
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
-import { badge, emptyState, iconButton, segmented, select, spinner, toggle, tooltip } from '../../../ui/components';
+import { badge, emptyState, iconButton, openPopover, segmented, select, spinner, toggle, tooltip, type PopoverHandle } from '../../../ui/components';
 import { DEFAULT_FOLIAGE_TINT, DEFAULT_GRASS_TINT, compositeOverlay, tintByAlphaMask, tintImage } from '../../../shared/preview/preview-textures';
 import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, firstSquare, getFrame, planCube, tile3, tintFor, transparentShare, type AnimInfo } from './meta';
@@ -45,6 +45,8 @@ export interface PreviewPanel {
   refreshPaintHover(): void;
   /** Role label of a texture of the model on show ('Front', 'Side'...) */
   textureLabel(path: string): string | null;
+  /** Body part of a mob quad ('Head', 'Left front leg'...), null for blocks */
+  partLabel(part: number | undefined): string | null;
   /** The 3D view (tests) */
   view3d(): BlockPreview | null;
   destroy(): void;
@@ -100,6 +102,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   let pin: { path: string | null; frame: number } | null = null;
   /** Entry, state and options of the scene on show (setTexture skips rebuilding the same scene) */
   let sceneKey = '';
+  /** Mob body parts hidden in 3D, per mob (to reach the sides they cover) */
+  const hiddenParts = new Map<string, Set<string>>();
+  let partsPop: PopoverHandle | null = null;
+  /** Texture whose mob is being looked up (Bedrock reads entity files to know) */
+  let entityLookup = '';
 
   // ---------------------------------------------------------------- DOM
   const stage = h('div', { class: 'tx-pv-stage' });
@@ -212,8 +219,22 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   const noModel = h('div', { class: 'tx-pv-nomodel', hidden: true }, icon('info'), h('span', null, 'No 3D model to paint for this texture. Paint it in 2D, or pick a block that uses it.'));
   const hero = h('div', { class: 'tx-pv-hero checker-soft' }, stage, stageLabel, hoverTag, paintHint, noModel, views, h('div', { class: 'tx-pv-float' }, rotateBtn, resetBtn));
   const canvasSlot = h('div', { class: 'tx-pv-canvasslot', hidden: true });
+  const partsList = h('div', { class: 'tx-pv-parts', role: 'group', 'aria-label': 'Body parts shown in 3D' });
+  const partsAll = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-pv-parts-all' }, icon('eye', { size: 16 }), h('span', { class: 'btn-label' }, 'Show all'));
+  partsAll.addEventListener('click', () => showAllParts());
+  const partsSection = h(
+    'section',
+    { class: 'tx-pv-section tx-pv-partsection', hidden: true },
+    h('div', { class: 'tx-pv-parthead' }, h('h3', { class: 'section-title' }, icon('human'), 'Parts'), partsAll),
+    h('p', { class: 'faint small' }, 'Hide a part to reach what it covers. Double-click to show only that part.'),
+    partsList,
+  );
+  const partsBtn = h('button', { type: 'button', class: 'tx-pv-partsbtn', hidden: true, 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, icon('human', { size: 16 }), h('span', null, 'Parts'));
+  tooltip(partsBtn, 'Show or hide body parts');
+  partsBtn.addEventListener('click', () => togglePartsPopover());
+  hero.appendChild(partsBtn);
   const controls = h('div', { class: 'tx-pv-controls' }, modeSeg, itemSeg);
-  const body = h('div', { class: 'tx-pv' }, head, hero, canvasSlot, note, statesEl, controls, texSection, fxToggle, tiledSection);
+  const body = h('div', { class: 'tx-pv' }, head, hero, canvasSlot, note, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
   const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, 'Loading the model…'));
   hero.appendChild(loadingModel);
   const el = h('div', { class: 'tx-pv-wrap' }, body, empty);
@@ -284,8 +305,114 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     }
     if (!lib.usageReady) return null;
     const u = lib.usageOf(path);
+    // A mob's own texture shows on the mob (a creeper's on the creeper, not its head block).
+    const mob = u.entities[0] && lib.entity(u.entities[0]);
+    if (mob && lib.ready(mob)) return { entry: mob, state: statesShowing(mob, lib.defaultState(mob), path) };
+    if (mob) {
+      lookUpEntity(path);
+      if (!u.blocks.length && !u.items.length) return null;
+    }
     const pick = (u.blocks[0] && lib.block(u.blocks[0])) || (u.items[0] && lib.item(u.items[0])) || null;
     return pick ? { entry: pick, state: statesShowing(pick, lib.defaultState(pick), path) } : null;
+  }
+
+  /** Loads the mob of a texture, then shows it if that texture is still open. */
+  function lookUpEntity(path: string) {
+    if (entityLookup === path) return;
+    entityLookup = path;
+    void models.entityFor(path).then((e) => {
+      if (entityLookup === path) entityLookup = '';
+      if (!e || !tex || tex.key !== path || pinned || (entry?.kind === 'entity' && entry.id === e.id)) return;
+      const lib = models.lib!;
+      setEntry(e, statesShowing(e, lib.defaultState(e), path));
+      void render();
+    });
+  }
+
+  const partsKey = () => (entry ? `${entry.kind}:${entry.id}` : '');
+  const hidden = (): Set<string> => {
+    let s = hiddenParts.get(partsKey());
+    if (!s) hiddenParts.set(partsKey(), (s = new Set()));
+    return s;
+  };
+
+  function togglePart(name: string) {
+    const s = hidden();
+    if (s.has(name)) s.delete(name);
+    else s.add(name);
+    const all = view?.parts ?? [];
+    // hiding every part shows them all again
+    if (all.length && all.every((p) => s.has(p.name))) s.clear();
+    afterParts();
+  }
+
+  function soloPart(name: string) {
+    const s = hidden();
+    s.clear();
+    for (const p of view?.parts ?? []) if (p.name !== name) s.add(p.name);
+    afterParts();
+  }
+
+  function showAllParts() {
+    hidden().clear();
+    afterParts();
+  }
+
+  function afterParts() {
+    paintParts();
+    void render({ keepView: true });
+  }
+
+  function partChips(): HTMLElement[] {
+    const s = hidden();
+    return (view?.parts ?? []).map((p) => {
+      const on = !s.has(p.name);
+      const b = h('button', { type: 'button', class: 'chip tx-pv-part', 'aria-pressed': String(on), dataset: { part: p.name } }, icon(on ? 'eye' : 'eye-off', { size: 16 }), h('span', null, p.label));
+      b.addEventListener('click', (e) => {
+        if (e.detail >= 2 || e.shiftKey) soloPart(p.name);
+        else togglePart(p.name);
+      });
+      return b;
+    });
+  }
+
+  function paintParts() {
+    const parts = view?.parts ?? [];
+    const show = !!entry && parts.length > 1;
+    partsSection.hidden = !show;
+    partsBtn.hidden = !show || !docked;
+    if (!show) {
+      partsPop?.close();
+      return;
+    }
+    partsList.replaceChildren(...partChips());
+    const n = hidden().size;
+    partsAll.hidden = n === 0;
+    partsBtn.classList.toggle('is-filtered', n > 0);
+    partsBtn.querySelector('span:not(.icon)')!.textContent = n ? `Parts · ${parts.length - n} of ${parts.length}` : 'Parts';
+    if (partsPop?.open) {
+      const list = partsPop.el.querySelector('.tx-pv-parts');
+      list?.replaceChildren(...partChips());
+      partsPop.el.querySelector<HTMLElement>('.tx-pv-parts-all')!.hidden = n === 0;
+    }
+  }
+
+  function togglePartsPopover() {
+    if (partsPop?.open) {
+      partsPop.close();
+      return;
+    }
+    const all = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-pv-parts-all', hidden: hidden().size === 0 }, icon('eye', { size: 16 }), h('span', { class: 'btn-label' }, 'Show all'));
+    all.addEventListener('click', () => showAllParts());
+    const content = h(
+      'div',
+      { class: 'tx-pv-partspop' },
+      h('div', { class: 'tx-pv-parthead' }, h('strong', null, 'Body parts'), all),
+      h('div', { class: 'tx-pv-parts', role: 'group', 'aria-label': 'Body parts shown in 3D' }, partChips()),
+      h('p', { class: 'faint small' }, 'Double-click a part to show only it.'),
+    );
+    partsBtn.setAttribute('aria-expanded', 'true');
+    partsPop = openPopover(partsBtn, content, { placement: 'bottom-start', label: 'Body parts', class: 'tx-pv-partspop-wrap', onClose: () => partsBtn.setAttribute('aria-expanded', 'false') });
   }
 
   /** The state closest to `cur` in which `path` is visible. */
@@ -299,7 +426,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   function paintHead() {
     if (!entry || !view) return;
     headName.textContent = entry.name;
-    headSub.textContent = `${entry.kind === 'block' ? 'Block' : 'Item'} · ${entry.id}`;
+    headSub.textContent = `${entry.kind === 'block' ? 'Block' : entry.kind === 'item' ? 'Item' : 'Mob'} · ${entry.id}`;
     head.title = entry.id;
     const cached = models.peekIcon(entry, fxOn());
     const draw = (img: HTMLCanvasElement | ImageData) => {
@@ -571,6 +698,20 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const my = ++token;
     const t = tex;
     const lib = models.lib;
+    if (entry && lib && !lib.ready(entry)) {
+      // a mob's model loads on first use
+      const e = entry;
+      loadingModel.hidden = false;
+      const ok = await models.prepare(e);
+      if (my !== token || entry !== e) return;
+      loadingModel.hidden = true;
+      if (ok) {
+        // its looks are known now: pick the one showing the open texture
+        if (!userState && t) state = statesShowing(e, { ...lib.defaultState(e), ...state }, t.key);
+        void render(opts);
+        return;
+      }
+    }
     if (entry && lib) {
       try {
         view = lib.resolve(entry, state);
@@ -594,7 +735,10 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       paintNote();
       paintStates();
       paintTextures();
+      paintParts();
     } else {
+      partsSection.hidden = true;
+      partsBtn.hidden = true;
       note.hidden = true;
       statesEl.hidden = true;
       texSection.hidden = true;
@@ -609,7 +753,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     if (!pv || my !== token) return;
     pv.setAutoRotate(!docked && (modelMode ? spinModel : spinTexture));
     if (modelMode) {
-      const key = `${entry!.kind}:${entry!.id}|${JSON.stringify(state)}|${fxOn()}|${itemFlat}|${fxOn() ? models.effectsKey : ''}`;
+      const key = `${entry!.kind}:${entry!.id}|${JSON.stringify(state)}|${fxOn()}|${itemFlat}|${fxOn() ? models.effectsKey : ''}|${[...hidden()].join(',')}`;
       // The open texture changed but the model on show didn't: its faces already show the pack's pixels.
       if (opts.sameScene && key === sceneKey && pv.mode === 'model') {
         syncNoModel(pv);
@@ -635,7 +779,9 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const slow = setTimeout(() => {
       if (my === token) loadingModel.hidden = false;
     }, 200);
-    const built = await models.scene(v, { fx: fxOn(), live: live() });
+    const off = v.parts ? hidden() : null;
+    const shown = off?.size ? { ...v, quads: v.quads.filter((q) => !off.has(v.parts![q.part]?.name ?? '')) } : v;
+    const built = await models.scene(shown, { fx: fxOn(), live: live() });
     clearTimeout(slow);
     loadingModel.hidden = true;
     if (my !== token) return;
@@ -654,8 +800,13 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       if (first) pv.showFlat(first.image, first.frames > 1 ? { frametime: first.frametime } : undefined);
       stageLabel.textContent = 'Item';
     } else {
-      pv.showModel(built.scene, { view: built.view, keepView: keepView && again });
-      stageLabel.textContent = v.approximate ? 'Approximate shape' : e.kind === 'item' ? 'Item' : v.shape === 'sprite' ? 'Item icon' : v.category === 'special' ? 'Drawn by the game' : 'In-game model';
+      // with parts hidden the mob keeps the place and size it has whole
+      pv.showModel(built.scene, { view: built.view, keepView: keepView && again, frame: off?.size ? v.quads : undefined });
+      stageLabel.textContent = v.approximate ? 'Approximate shape' : e.kind === 'item' ? 'Item' : v.shape === 'sprite' ? 'Item icon' : v.category === 'mob' ? 'Mob model' : v.category === 'special' ? 'Drawn by the game' : 'In-game model';
+      if (built.misfit?.length) {
+        note.hidden = false;
+        note.replaceChildren(icon('info'), h('span', null, `${built.misfit.length === 1 ? 'A texture doesn’t' : 'Some textures don’t'} have the shape this mob’s model maps, so ${built.misfit.length === 1 ? 'it is' : 'they are'} left off the model. Paint ${built.misfit.length === 1 ? 'it' : 'them'} in 2D.`));
+      }
     }
     if (hoverPath) preview?.highlightTexture(hoverPath);
   }
@@ -720,7 +871,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     if (!p || !preview || !view || !entry) return;
     const q = view.quads.find((x) => x.texture === p.path);
     const anim: AnimInfo | null = tex && tex.key === p.path ? tex.anim : null;
-    const img = models.textureFromPixels(p.path, p.full, anim, { fx: fxOn(), mask: !!q?.tintMask });
+    const img = models.textureFromPixels(p.path, p.full, anim, { fx: fxOn(), mask: !!q?.tintMask, whole: !!view.texSizes?.has(p.path) });
     preview.updateModelTexture(p.path, img);
   };
 
@@ -824,6 +975,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       }
       hero.classList.toggle('is-docked', on);
       views.hidden = !on;
+      if (!on) partsPop?.close();
+      partsBtn.hidden = !on || partsSection.hidden;
       paintHint.hidden = !on || !paintHandler;
       hoverTag.hidden = true;
       hoverPath = null;
@@ -857,9 +1010,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     },
     refreshPaintHover: () => preview?.refreshPaintHover(),
     textureLabel: (path) => view?.textures.find((t) => t.path === path)?.label ?? null,
+    partLabel: (part) => (part === undefined ? null : (view?.parts?.[part]?.label ?? null)),
     view3d: () => preview,
     destroy() {
       destroyed = true;
+      partsPop?.close();
       token++;
       offs.forEach((f) => f());
       if (timer) clearTimeout(timer);

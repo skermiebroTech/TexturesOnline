@@ -1,4 +1,4 @@
-// "Used by" chips under the texture header: the blocks and items whose models use the open texture.
+// "Used by" chips under the texture header: the mobs, blocks and items whose models use the open texture.
 // Clicking one shows that block in the model workspace.
 
 import { h } from '../../../ui/dom';
@@ -45,7 +45,7 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
   const chip = (e: ModelEntry) => {
     const c = h('canvas', { class: 'tx-usedby-icon', 'aria-hidden': 'true' });
     const b = h('button', { type: 'button', class: 'chip tx-usedby-chip', 'aria-pressed': String(!!current && current.kind === e.kind && current.id === e.id), dataset: { kind: e.kind, id: e.id } }, c, h('span', { class: 'truncate' }, e.name));
-    tooltip(b, `Show ${e.name} (${e.kind})`);
+    tooltip(b, `Show ${e.name} (${e.kind === 'entity' ? 'mob' : e.kind})`);
     b.addEventListener('click', () => opts.onPick(e));
     iconInto(c, e);
     return b;
@@ -59,7 +59,7 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
       return;
     }
     const u = lib.usageOf(path);
-    const list = [...u.blocks.map((id) => lib.block(id)), ...u.items.map((id) => lib.item(id))].filter((e): e is ModelEntry => !!e);
+    const list = [...u.entities.map((id) => lib.entity(id)), ...u.blocks.map((id) => lib.block(id)), ...u.items.map((id) => lib.item(id))].filter((e): e is ModelEntry => !!e);
     // Items with the same id as a listed block add nothing.
     const seen = new Set<string>();
     const entries = list.filter((e) => {
@@ -83,7 +83,7 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
         const listEl = h('div', { class: 'tx-usedby-menu', role: 'menu', 'aria-label': 'Also used by' });
         const buttons = rest.map((e) => {
           const c = h('canvas', { class: 'tx-usedby-icon', 'aria-hidden': 'true' });
-          const b = h('button', { type: 'button', class: 'tx-usedby-menuitem', role: 'menuitem', tabIndex: -1 }, c, h('span', { class: 'truncate' }, e.name), h('span', { class: 'tx-usedby-kind' }, e.kind === 'block' ? 'Block' : 'Item'));
+          const b = h('button', { type: 'button', class: 'tx-usedby-menuitem', role: 'menuitem', tabIndex: -1 }, c, h('span', { class: 'truncate' }, e.name), h('span', { class: 'tx-usedby-kind' }, e.kind === 'block' ? 'Block' : e.kind === 'item' ? 'Item' : 'Mob'));
           b.addEventListener('click', () => {
             menu?.close();
             opts.onPick(e);

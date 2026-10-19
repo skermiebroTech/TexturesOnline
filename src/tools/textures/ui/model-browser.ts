@@ -1,5 +1,5 @@
-// Left panel in Blocks / Items mode: a searchable, filterable, virtualized list of the version's blocks
-// or items with inventory-style icons. Picking one opens it in the model workspace.
+// Left panel in Blocks / Items / Mobs mode: a searchable, filterable, virtualized list of the version's
+// blocks, items or mobs with inventory-style icons. Picking one opens it in the model workspace.
 
 import { h, listen } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
@@ -9,7 +9,7 @@ import { paintCanvas } from './thumbs';
 import type { ModelService } from './models';
 import type { TexStore } from './store';
 
-export type LibraryKind = 'block' | 'item';
+export type LibraryKind = 'block' | 'item' | 'entity';
 
 export interface ModelBrowserApi {
   el: HTMLElement;
@@ -47,7 +47,9 @@ const CATS: Record<LibraryKind, { value: Cat; label: string; short: string; icon
     { value: 'blockitem', label: 'Block items', short: 'Blocks', icon: 'cube', hint: 'Items shown as their block' },
     { value: 'special', label: 'Drawn by the game', short: 'Special', icon: 'sparkles', hint: 'Shields, chests, banners...: drawn by the game’s own code' },
   ],
+  entity: [{ value: 'all', label: 'All mobs', short: 'All', icon: 'grid', hint: 'Every mob with a 3D model' }],
 };
+const NOUN: Record<LibraryKind, string> = { block: 'blocks', item: 'items', entity: 'mobs' };
 
 const MIN_TILE = 72;
 const GAP = 6;
@@ -119,9 +121,9 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   const all = (): ModelEntry[] => {
     const l = lib();
     if (!l) return [];
-    return kind === 'block' ? l.blocks() : l.items();
+    return kind === 'block' ? l.blocks() : kind === 'item' ? l.items() : l.entities();
   };
-  const noun = () => (kind === 'block' ? 'blocks' : 'items');
+  const noun = () => NOUN[kind];
 
   // ---- categories (computed in small slices so the list shows at once) ----
   const catOf = (e: ModelEntry): Cat | undefined => categories.get(`${e.kind}:${e.id}`);
@@ -164,7 +166,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     if (!l?.usageReady) return out;
     for (const p of store.editedPaths()) {
       const u = l.usageOf(p);
-      for (const id of kind === 'block' ? u.blocks : u.items) out.add(id);
+      for (const id of kind === 'block' ? u.blocks : kind === 'item' ? u.items : u.entities) out.add(id);
     }
     return out;
   };
@@ -273,7 +275,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     const edited = l ? editedEntries().size : 0;
     editedBtn.querySelector('.tx-chip-count')!.textContent = String(edited);
     editedBtn.setAttribute('aria-pressed', String(editedOnly));
-    tooltip(editedBtn, kind === 'block' ? 'Only blocks that use a texture you changed' : 'Only items that use a texture you changed');
+    tooltip(editedBtn, `Only ${noun()} that use a texture you changed`);
+    catPick.hidden = kind === 'entity';
     const total = all().length;
     count.textContent = items.length === total ? `${nf.format(total)} ${noun()}` : `${nf.format(items.length)} of ${nf.format(total)}`;
     clearBtn.hidden = !query;
@@ -678,10 +681,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
       if (k === kind) return;
       kind = k;
       cat = 'all';
-      input.placeholder = k === 'block' ? 'Search blocks' : 'Search items';
+      input.placeholder = `Search ${NOUN[k]}`;
       input.setAttribute('aria-label', input.placeholder);
-      grid.setAttribute('aria-label', k === 'block' ? 'Blocks' : 'Items');
-      el.setAttribute('aria-label', k === 'block' ? 'Block browser' : 'Item browser');
+      grid.setAttribute('aria-label', k === 'block' ? 'Blocks' : k === 'item' ? 'Items' : 'Mobs');
+      el.setAttribute('aria-label', k === 'block' ? 'Block browser' : k === 'item' ? 'Item browser' : 'Mob browser');
       refilter(true);
     },
     setSelected(k, id, doReveal = true) {

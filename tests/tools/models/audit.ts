@@ -2,15 +2,19 @@
  * Audit: resolves every block (and every state of it) of a Java version or Bedrock and reports the
  * ones that fall back to a flat texture sheet, have no geometry, reference missing textures in any
  * state, or are only approximated; plus how items are drawn.
- * Usage: TO_FIXTURES=<dir> npx tsx tests/tools/models/audit.ts [26.3|1.20.1|...|bedrock] [--states] [--items] [--no-java]
+ * With --mobs, every mob in each of its looks: parts, textures, UVs and texture sizes against the files.
+ * Usage: TO_FIXTURES=<dir> npx tsx tests/tools/models/audit.ts [26.3|1.20.1|...|bedrock] [--states] [--items] [--mobs] [--no-java]
  * Bedrock takes its built-in shapes from the 26.3 jar's block models (--no-java: without them).
  */
 import { loadModelLibrary, type ModelEntry, type ModelLibrary, type ModelView, type BlockState } from '../../../src/shared/models/index';
-import { bedrockAssets, javaJarAssets, javaModelJson } from './fixtures';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { bedrockAssets, bedrockSamplesDir, javaEntityTextureSizes, javaJarAssets, javaModelJson, pngSize } from './fixtures';
 
 const which = process.argv[2] ?? '26.3';
 const allStates = process.argv.includes('--states');
 const withItems = process.argv.includes('--items');
+const withMobs = process.argv.includes('--mobs');
 const bedrock = which === 'bedrock';
 const assets = bedrock ? bedrockAssets() : javaJarAssets(which);
 if (!assets) {
@@ -85,6 +89,51 @@ const noteGroups = new Map<string, string[]>();
 for (const [id, n] of notes) noteGroups.set(n, [...(noteGroups.get(n) ?? []), id]);
 console.log('\nnotes:');
 for (const [n, ids] of noteGroups) console.log(`  [${ids.length}] ${n}\n     ${ids.slice(0, 12).join(', ')}${ids.length > 12 ? ' ...' : ''}`);
+
+if (withMobs) {
+  // Every mob in each look: its parts, textures, UVs on the texture, and texture sizes against the
+  // files (Java: the jar's entity textures; Bedrock: the samples' PNGs).
+  const sizes = bedrock ? null : javaEntityTextureSizes(which);
+  const samples = bedrock ? bedrockSamplesDir() : null;
+  const sizeOf = (p: string): [number, number] | null => {
+    if (sizes) return sizes.get(p) ?? null;
+    if (samples && p.endsWith('.png') && existsSync(join(samples, p))) return pngSize(new Uint8Array(readFileSync(join(samples, p))));
+    return null;
+  };
+  const mobs = lib.entities();
+  const issues: string[] = [];
+  const rows: string[] = [];
+  let looks = 0;
+  for (const e of mobs) {
+    if (!(await lib.prepare(e))) {
+      issues.push(`${e.id}: did not load`);
+      continue;
+    }
+    const textures = new Set<string>();
+    let parts = 0;
+    let quads = 0;
+    const states = statesOf(e);
+    for (const st of states) {
+      looks++;
+      const v = lib.resolve(e, st);
+      if (!v.quads.length) issues.push(`${e.id} ${JSON.stringify(st)}: no faces`);
+      parts = Math.max(parts, v.parts?.length ?? 0);
+      quads = Math.max(quads, v.quads.length);
+      const off = v.quads.filter((q) => q.uvs.some((u) => u[0] < -1e-6 || u[1] < -1e-6 || u[0] > 16 + 1e-6 || u[1] > 16 + 1e-6)).length;
+      if (off) issues.push(`${e.id} ${JSON.stringify(st)}: ${off} faces map off the texture`);
+      for (const m of missingOf(v)) issues.push(`${e.id} ${JSON.stringify(st)}: missing ${m}`);
+      for (const [p, [w, h]] of v.texSizes ?? []) {
+        textures.add(p);
+        const s = sizeOf(p);
+        if (s && s[0] * h !== s[1] * w) issues.push(`${e.id}: ${p} is ${s.join('x')}, the model maps ${w}x${h}`);
+      }
+    }
+    rows.push(`${e.id.padEnd(22)} ${String(parts).padStart(3)} parts ${String(quads).padStart(4)} faces ${String(states.length).padStart(3)} looks  ${[...textures].map((t) => t.replace(/^.*textures\/entity\//, '')).join(', ')}`);
+  }
+  console.log(`\nmobs: ${mobs.length}, ${looks} looks checked`);
+  console.log(`  ${rows.join('\n  ')}`);
+  console.log(`\nmob issues (${issues.length}):${issues.length ? `\n  ${[...new Set(issues)].join('\n  ')}` : ''}`);
+}
 
 if (withItems) {
   const items: Record<string, string[]> = { sprite: [], model: [], special: [], empty: [], missingTex: [] };

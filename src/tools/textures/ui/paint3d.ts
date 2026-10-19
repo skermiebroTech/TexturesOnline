@@ -300,7 +300,7 @@ export function createPaint3d(deps: { store: TexStore; canvas: CanvasPanel; prev
       preview.setPaintCursor(cursor);
       canvas.showHover(path === openKey() ? { pixels, echo } : null);
       const color = path === openKey() ? (p.getPixel(t.x, t.y) as [number, number, number, number]) : undefined;
-      preview.setPaintHint({ label: preview.textureLabel(path) ?? 'Texture', name: nameOf(path), x: t.x, y: t.y, color, locked: locked ?? undefined });
+      preview.setPaintHint({ label: preview.partLabel(hit.quad.part) ?? preview.textureLabel(path) ?? 'Texture', name: nameOf(path), x: t.x, y: t.y, color, locked: locked ?? undefined });
     }
     return kind;
   }

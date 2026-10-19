@@ -2978,7 +2978,7 @@
 /* ========================================================================== Blocks / Items browser */
 .tx-libbar {
   flex: none;
-  padding: 12px 12px 0;
+  padding: 12px 8px 0;
 }
 .tx-libbar .segmented {
   display: flex;
@@ -3606,5 +3606,115 @@
     bottom: 8px;
     max-width: calc(100% - 16px);
     padding: 2px 10px 4px;
+  }
+}
+
+/* Mob parts: hide or solo body parts to reach what they cover */
+.tx-pv-section[hidden] {
+  display: none;
+}
+.tx-pv-parthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+}
+.tx-pv-parthead .btn[hidden] {
+  display: none;
+}
+.tx-pv-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tx-pv-part {
+  height: 30px;
+  padding: 0 10px 0 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.tx-pv-part[aria-pressed='false'] {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-3);
+}
+.tx-pv-part[aria-pressed='false'] .icon {
+  color: var(--text-3);
+}
+.tx-pv-part[aria-pressed='false'] span {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: color-mix(in srgb, var(--text-3) 60%, transparent);
+}
+.tx-pv-partsbtn {
+  position: absolute;
+  top: 56px;
+  left: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px 2px 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--bg-elev) 84%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-1);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.tx-pv-partsbtn[hidden] {
+  display: none;
+}
+.tx-pv-partsbtn .icon {
+  color: var(--tool-accent);
+}
+.tx-pv-partsbtn:hover,
+.tx-pv-partsbtn[aria-expanded='true'] {
+  background: var(--surface-3);
+}
+.tx-pv-partsbtn.is-filtered {
+  border-color: var(--tool-accent);
+  background: color-mix(in srgb, var(--tool-accent-soft) 80%, var(--bg-elev));
+}
+.tx-pv-partsbtn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+/* the loading note moves under the parts button */
+.tx-pv-hero.is-docked .tx-pv-partsbtn:not([hidden]) ~ .tx-pv-busy {
+  top: 102px;
+}
+.tx-pv-partspop {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(320px, calc(100vw - 32px));
+  padding: 12px 12px 10px;
+}
+.tx-pv-partspop .tx-pv-parts {
+  max-height: min(320px, 50vh);
+  overflow: auto;
+}
+.tx-pv-partspop p {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .tx-pv-partsbtn {
+    top: 52px;
+    left: 8px;
+    height: 32px;
+  }
+  .tx-pv-hero.is-docked .tx-pv-partsbtn:not([hidden]) ~ .tx-pv-busy {
+    top: 92px;
   }
 }

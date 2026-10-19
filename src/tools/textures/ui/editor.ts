@@ -32,7 +32,7 @@ import { plainText } from './mc-text';
 import { packIconImage } from './icon';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pack';
-type LibMode = 'blocks' | 'items' | 'textures';
+type LibMode = 'blocks' | 'items' | 'mobs' | 'textures';
 const LIB_KEY = 'to-tex-library-mode';
 const WS_KEY = 'to-tex-workspace';
 type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pack';
@@ -103,7 +103,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   let libMode: LibMode = 'blocks';
   try {
     const saved = localStorage.getItem(LIB_KEY);
-    if (saved === 'blocks' || saved === 'items' || saved === 'textures') libMode = saved;
+    if (saved === 'blocks' || saved === 'items' || saved === 'mobs' || saved === 'textures') libMode = saved;
   } catch {
     /* storage blocked */
   }
@@ -116,7 +116,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       options: [
         { value: 'blocks', label: 'Blocks' },
         { value: 'items', label: 'Items' },
-        { value: 'textures', label: 'All textures' },
+        { value: 'mobs', label: 'Mobs' },
+        { value: 'textures', label: 'Textures' },
       ],
       onChange: (v) => setLibMode(v, true),
     });
@@ -217,12 +218,17 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     modelBrowser.setSelected(e.kind, e.id, how === 'chip');
     const lib = models.lib;
     if (lib && how !== 'chip') {
-      const cur = canvas.current();
-      const view = lib.resolve(e, preview.current()?.state);
-      if (!cur || !view.textures.some((t) => t.path === cur.key)) {
-        const first = view.textures.find((t) => t.faces > 0 && !t.missing) ?? view.textures.find((t) => !t.missing);
-        if (first) void canvas.open(first.path, { focus: how === 'enter' });
-      }
+      const openMain = () => {
+        const cur = canvas.current();
+        const view = lib.resolve(e, preview.current()?.state);
+        if (!cur || !view.textures.some((t) => t.path === cur.key)) {
+          const first = view.textures.find((t) => t.faces > 0 && !t.missing) ?? view.textures.find((t) => !t.missing);
+          if (first) void canvas.open(first.path, { focus: how === 'enter' });
+        }
+      };
+      // a mob's model loads on first use
+      if (lib.ready(e)) openMain();
+      else void models.prepare(e).then((ok) => ok && preview.current()?.entry === e && openMain());
     }
     if (how === 'keyboard') return;
     if (isPhone()) showMobile('preview');
@@ -243,7 +249,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     browser.el.hidden = models3d;
     modelBrowser.el.hidden = !models3d;
     if (models3d) {
-      modelBrowser.setKind(v === 'blocks' ? 'block' : 'item');
+      modelBrowser.setKind(v === 'blocks' ? 'block' : v === 'items' ? 'item' : 'entity');
       modelBrowser.activate();
     }
     if (user) requestAnimationFrame(() => (models3d ? modelBrowser.focusSearch() : browser.focusSearch()));
@@ -578,6 +584,11 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       workspace: () => workspace,
       showBlock: (id: string) => {
         const e = models.lib?.block(id);
+        if (e) showEntry(e, 'pointer');
+        return !!e;
+      },
+      showMob: (id: string) => {
+        const e = models.lib?.entity(id);
         if (e) showEntry(e, 'pointer');
         return !!e;
       },

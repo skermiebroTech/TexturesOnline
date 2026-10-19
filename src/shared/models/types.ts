@@ -3,9 +3,9 @@
 import type { BakedQuad, Tint, Vec3 } from './geometry';
 
 export type BlockState = Record<string, string>;
-export type EntryKind = 'block' | 'item';
+export type EntryKind = 'block' | 'item' | 'entity';
 /** Rough grouping for the block browser */
-export type ModelCategory = 'cube' | 'plant' | 'shape' | 'special' | 'item';
+export type ModelCategory = 'cube' | 'plant' | 'shape' | 'special' | 'item' | 'mob';
 
 export interface ModelEntry {
   kind: EntryKind;
@@ -69,11 +69,17 @@ export interface ModelView {
   category: ModelCategory;
   /** Bedrock: the block's shape is drawn by the game and only approximated here */
   approximate?: boolean;
+  /** Mobs: body parts that can be shown or hidden, indexed by the quads' `part` */
+  parts?: { name: string; label: string }[];
+  /** Mobs: the texture size each texture's model maps (another shape doesn't fit the model) */
+  texSizes?: Map<string, [number, number]>;
 }
 
 export interface TextureUsage {
   blocks: string[];
   items: string[];
+  /** Mobs (entities) */
+  entities: string[];
 }
 
 /** One edition's backend; index.ts adds names, pairing and caching on top. */

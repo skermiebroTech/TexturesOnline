@@ -26,7 +26,7 @@ export interface BrowserOptions {
   onUpload(path: string): void;
   onDownload(path: string): void;
   onReset(path: string): void;
-  /** Shown above the search (the Blocks / Items / All textures switch) */
+  /** Shown above the search (the Blocks / Items / Mobs / Textures switch) */
   top?: HTMLElement;
 }
 
