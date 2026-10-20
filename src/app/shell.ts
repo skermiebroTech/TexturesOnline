@@ -145,10 +145,17 @@ function openDrawer(onNavigate: () => void): void {
 let currentState: RouteState | null = null;
 
 export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: HTMLElement } {
-  // A prerendered page keeps its content on screen until the router renders the real view.
-  const prerendered = Array.from(root.querySelector('main#main')?.childNodes ?? []);
-  const outlet = h('main', { id: 'main', class: 'page', tabIndex: -1 });
-  outlet.append(...prerendered);
+  // A prerendered page keeps its content on screen until the router renders the real view: its
+  // <main> becomes the outlet where it is (moving the content would make every image choose its
+  // file again before the page is laid out, and download a second copy).
+  const existing = root.querySelector<HTMLElement>('main#main');
+  const reuse = existing?.parentNode === root ? existing : null;
+  const outlet = reuse ?? h('main', { id: 'main', class: 'page', tabIndex: -1 });
+  if (reuse) {
+    reuse.removeAttribute('data-boot');
+    reuse.className = 'page';
+    reuse.tabIndex = -1;
+  } else if (existing) outlet.append(...Array.from(existing.childNodes));
 
   const tool = (document.documentElement.dataset.tool || null) as ToolId | null;
   shellLocale = currentLocale();
@@ -171,7 +178,13 @@ export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: H
     outlet.focus();
   });
 
-  root.replaceChildren(skip, topbar, outlet);
+  if (outlet.parentNode === root) {
+    // Everything around the outlet is replaced; the outlet itself stays in place.
+    while (outlet.previousSibling) outlet.previousSibling.remove();
+    while (outlet.nextSibling) outlet.nextSibling.remove();
+    root.insertBefore(skip, outlet);
+    root.insertBefore(topbar, outlet);
+  } else root.replaceChildren(skip, topbar, outlet);
 
   // Dialogs, menus and tooltips belong to the page that opened them.
   onNavigation(() => {

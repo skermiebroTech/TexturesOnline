@@ -21,8 +21,21 @@ export interface RouteContext {
   locale: Locale;
 }
 
+export interface ViewContext extends RouteContext {
+  /**
+   * `root` already holds this page's prerendered markup (only for views that export
+   * `hydratable`): the view wires it instead of building it again.
+   */
+  hydrate: boolean;
+}
+
 export type ViewModule = {
-  default: (root: HTMLElement, ctx: RouteContext) => void | (() => void) | Promise<void | (() => void)>;
+  default: (root: HTMLElement, ctx: ViewContext) => void | (() => void) | Promise<void | (() => void)>;
+  /**
+   * The view renders exactly the page's prerendered markup, so on the first visit it can take that
+   * markup over (ctx.hydrate) instead of rebuilding it.
+   */
+  hydratable?: boolean;
 };
 
 export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'kit';
@@ -401,14 +414,20 @@ async function render(force = false): Promise<void> {
   clearTimeout(loadingTimer);
   if (my !== token) return;
 
-  const root = document.createElement('div');
-  root.className = `view view-${tool ?? 'missing'}`;
-  outlet.replaceChildren(root);
+  // A prerendered page that this view renders as it is gets taken over instead of rebuilt (only
+  // when it was built for this very page: not after a redirect or on the 404 fallback).
+  const adopted = prerendered && match && mod.hydratable ? pages.adoptPrerenderedView(outlet, locale, path) : null;
+  const root = adopted ?? document.createElement('div');
+  if (!adopted) {
+    if (prerendered) pages.releasePrerendered(outlet);
+    root.className = `view view-${tool ?? 'missing'}`;
+    outlet.replaceChildren(root);
+  }
   document.title = match ? (pageMeta(path, locale)?.title ?? match.route.title) : ui(locale).notFound.pageTitle;
   restoring = restoreY > 0;
 
   try {
-    const result = await mod.default(root, { params: current.params, query, path, locale });
+    const result = await mod.default(root, { params: current.params, query, path, locale, hydrate: !!adopted });
     if (my !== token) {
       if (typeof result === 'function') result();
       return;

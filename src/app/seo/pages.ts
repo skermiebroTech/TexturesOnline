@@ -54,6 +54,8 @@ export interface PrerenderPage {
   styles: string[];
   /** Source modules the page boots into (JS preloaded, CSS fetched early without blocking) */
   preload: string[];
+  /** Source files of pictures the booted page shows first (fetched before the script asks for them) */
+  preloadImages?: string[];
   /** Main content including the footer */
   body(year: number): Child[];
   /** Content for llms-full.txt (no footer) */
@@ -83,6 +85,14 @@ const TOOL_ROUTE_MODULE: Record<IntroTool, string> = {
   merge: 'src/tools/merge/view.ts',
   totem: 'src/tools/totem/view.ts',
   shaders: 'src/tools/shaders/view.ts',
+};
+
+/**
+ * Start screens their view loads in a second step, and the picture each shows first (its largest
+ * element): both are fetched with the page so the start screen does not wait for them.
+ */
+const TOOL_START: Partial<Record<IntroTool, { module: string; image: string }>> = {
+  shaders: { module: 'src/tools/shaders/ui/start.ts', image: 'src/tools/shaders/ui/showcase/iris.webp' },
 };
 
 /** A page's screenshot with its caption in the page's language. */
@@ -155,8 +165,10 @@ function toolEntry(tool: IntroTool, locale: Locale): PrerenderPage | null {
   const url = absoluteUrl(meta.path);
   const crumbs = crumbsFor(locale, { label: meta.label });
   const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'skinpack' | 'converter' | 'merge' | 'totem'>);
+  const start = TOOL_START[tool];
   return {
-    ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts']),
+    ...base(meta, [TOOL_ROUTE_MODULE[tool], ...(start ? [start.module] : []), 'src/app/tool-intro.ts']),
+    ...(start ? { preloadImages: [start.image] } : {}),
     tool: tb,
     nav: tb,
     viewClass: `view view-${tb}`,

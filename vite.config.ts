@@ -69,10 +69,17 @@ function prerender(): Plugin {
         return { css: [...css], js: [...js] };
       };
 
+      const assetFile = (source: string): string => {
+        const asset = Object.values(bundle).find((f) => f.type === 'asset' && (f.originalFileNames ?? []).some((n) => n === source || n === `${root}/${source}`));
+        if (!asset) this.error(`No built file for ${source}`);
+        return asset.fileName;
+      };
+
       const files = buildSite({
         template,
         iconSvg: (name) => icons.get(name) ?? '',
         assetsFor,
+        assetFile,
         buildDate: new Date().toISOString().slice(0, 10),
       });
       for (const f of files) {

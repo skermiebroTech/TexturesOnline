@@ -3,14 +3,8 @@
 
 import type { Edition, FileMap, OptionValues, PackFormat, Progress, ShaderTarget } from '../../core/types';
 import type { IconName } from '../../ui/icons';
-import {
-  DEFAULT_JAVA_VERSION,
-  buildPackMcmetaForVersions,
-  buildResourceManifest,
-  bumpPackVersion,
-  getJavaPackFormat,
-  loadAssets,
-} from '../../editions/index';
+import { DEFAULT_JAVA_VERSION, loadAssets } from '../../editions/versions';
+import { buildPackMcmetaForVersions, getJavaPackFormat } from '../../editions/java/packmeta';
 import { uuidv4 } from '../../core/uuid';
 import { loadGenerator, type AnyGenerator, type BedrockGenerator, type IrisGenerator, type VanillaGenerator } from './ui/generator';
 import type { ShaderProjectData } from './ui/project';
@@ -313,6 +307,8 @@ async function buildBedrock(gen: BedrockGenerator, ctx: BuildContext): Promise<B
   }
 
   ctx.step({ id: 'pack', label: 'Add manifest and icon' });
+  // The manifest writer comes with the image codecs: loaded on export, not with the start screen.
+  const { buildResourceManifest, bumpPackVersion } = await import('../../editions/bedrock/manifest');
   const uuids = ctx.project.bedrockUuids ?? { header: uuidv4(), module: uuidv4() };
   const version = bumpPackVersion(ctx.project.packVersion);
   const opts = gen.bedrockManifestOptions?.(ctx.settings) ?? { capabilities: ['pbr'], minEngine: [1, 21, 120] as [number, number, number] };

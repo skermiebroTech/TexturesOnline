@@ -3,7 +3,7 @@
 import '../help/help.css';
 import '../../app/content/content.css';
 import './home.css';
-import type { RouteContext } from '../../core/router';
+import type { ViewContext } from '../../core/router';
 import { href, navigate } from '../../core/router';
 import type { Project } from '../../core/types';
 import { deleteProject, getProject, listProjects, saveProject } from '../../core/storage';
@@ -236,10 +236,13 @@ function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void 
   };
 }
 
-export default async function home(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+/** The page is the prerendered markup: on a first visit the router hands it over as it is. */
+export const hydratable = true;
+
+export default async function home(root: HTMLElement, ctx: ViewContext): Promise<() => void> {
   await loadContent(ctx.locale);
   root.classList.add('home');
-  root.append(...toDomAll(homePage(ctx.locale)), siteFooter());
+  if (!ctx.hydrate) root.append(...toDomAll(homePage(ctx.locale)), siteFooter());
 
   const block = heroBlock();
   root.querySelector('[data-hero-block]')?.replaceWith(block.el);
