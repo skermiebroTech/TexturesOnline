@@ -79,4 +79,28 @@ export const SHOTS = localShots({
     alt: '結合結果：3 つのパックを 1 つに結合。パックごとに使用・結合・未使用のファイルを示すバーと、競合の一覧。',
     caption: '各パックからどれだけ取り込まれたかと、すべての競合が表示されます。',
   },
+  modelEditShape: {
+    alt: 'アイテム一覧でダイヤモンドの剣を選んだテクスチャエディター。ピクセルエディターに16×16のスプライト、Previewタブに平らな剣と、その下の「Edit shape」ボタン。',
+    caption: 'Previewタブにアイテムを表示し、「Edit shape」でモデルエディターを開きます。',
+  },
+  modelSpriteStart: {
+    alt: 'キューブのない平らなスプライト、ダイヤモンドの剣を開いたモデルエディター。3Dビューと「Model」タブに、スタート地点「3D item from sprite」「Full cube」「Slab」「Cross (plant)」「Empty」。',
+    caption: '平らなアイテムはキューブがない状態から始まります。「3D item from sprite」を選びます。',
+  },
+  model3dSword: {
+    alt: '奥行き1ピクセルのキューブ19個でできた3Dのダイヤモンドの剣。一覧でキューブ5を選び、3Dビューに移動用の矢印、「Cube」タブに位置（9, 11, 7.5）と大きさ（5 × 1 × 1）。',
+    caption: 'スプライトが19個のキューブになります。1つ選んで動かしたり、大きさや面を変えたりできます。',
+  },
+  modelDisplay: {
+    alt: '「Third person」を選んだ「Display」タブ。プレイヤーモデルが3Dのダイヤモンドの剣を持ち、右手の回転（0, -90, 55）、位置（0, 4, 0.5）、大きさ（0.85）の欄。',
+    caption: '「Display」で、持つ、身につける、飾るときの見え方をプレビューしながら決めます。',
+  },
+  modelFlatInventory: {
+    alt: '「Flat in the inventory」をオンにした「Model」タブ。インベントリ、地面、額縁では平らなアイコンのままになります。上部の表示はitem/diamond_sword_3d.jsonに変わっています。',
+    caption: '「Flat in the inventory」（1.21.4以降）は、3Dの形を手に持つ用の2つ目のモデルとして保存します。',
+  },
+  modelBlock: {
+    alt: '階段の段の形にした石ブロックのモデル。ハーフブロックのような16×8×16のキューブと、その半分の上に置いた16×8×8のキューブ。「Cube」タブに位置と大きさ。',
+    caption: '段の形にした石：スタート地点「Slab」とキューブ1つ。',
+  },
 });

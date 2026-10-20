@@ -80,4 +80,28 @@ export const SHOTS = localShots({
     alt: 'O resultado: 3 packs combinados em um, com uma barra por pack mostrando arquivos usados, combinados e não usados, e a lista de conflitos.',
     caption: 'O resultado mostra quanto de cada pack entrou e cada conflito.',
   },
+  modelEditShape: {
+    alt: 'O editor de texturas com a espada de diamante escolhida na lista de itens: o sprite de 16×16 no editor de pixels e, na aba “Preview”, a espada plana com o botão “Edit shape” embaixo.',
+    caption: 'Mostre um item na aba “Preview” e toque em “Edit shape” para abrir o editor de modelos.',
+  },
+  modelSpriteStart: {
+    alt: 'O editor de modelos aberto na espada de diamante, um sprite plano sem cubos: os pontos de partida “3D item from sprite”, “Full cube”, “Slab”, “Cross (plant)” e “Empty”, na vista 3D e na aba “Model”.',
+    caption: 'Um item plano começa sem cubos: escolha “3D item from sprite”.',
+  },
+  model3dSword: {
+    alt: 'A espada de diamante como modelo 3D de 19 cubos com 1 pixel de espessura. O cubo 5 está escolhido na lista e aparece com setas de mover na vista 3D, com posição (9, 11, 7,5) e tamanho (5 × 1 × 1) na aba “Cube”.',
+    caption: 'O sprite vira 19 cubos. Escolha um para mover, redimensionar ou mudar as faces.',
+  },
+  modelDisplay: {
+    alt: 'A aba “Display” com “Third person”: a espada de diamante 3D na mão de um modelo de jogador e os campos de rotação (0, -90, 55), posição (0, 4, 0,5) e tamanho (0,85) da mão direita.',
+    caption: '“Display” define como o modelo é segurado, usado e mostrado, cada um com prévia.',
+  },
+  modelFlatInventory: {
+    alt: 'A aba “Model” com “Flat in the inventory” ativado, que mantém o ícone plano no inventário, no chão e nas molduras. No topo agora aparece item/diamond_sword_3d.json.',
+    caption: '“Flat in the inventory” (1.21.4+) salva a forma 3D como um segundo modelo para a mão.',
+  },
+  modelBlock: {
+    alt: 'O modelo do bloco de pedra transformado em degrau: um cubo de 16×8×16 como uma laje e um segundo cubo de 16×8×8 em cima de uma das metades, com posição e tamanho na aba “Cube”.',
+    caption: 'Pedra transformada em degrau: o ponto de partida “Slab” e mais um cubo.',
+  },
 });

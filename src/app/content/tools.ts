@@ -88,7 +88,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       ['A full pixel editor: pencil, eraser, fill, eyedropper, line, shapes, noise, selection, mirror painting and undo/redo, with tiled preview and zoom.'],
       ['Paint in 3D: switch the editor to 3D (or press D) and paint right on the block model. Each face paints the texture it shows, so a furnace’s front, sides and top, or the grass side overlay, are edited where you see them.'],
       ['Mobs in 3D: over 80 mobs, from creepers to villagers, show on their own models and paint like blocks. Hide a body part to reach what it covers, switch variants, ages or wool colours, and dress mobs in saddles and armour to paint those too.'],
-      ['Change shapes (Java): edit a block’s or item’s model cube by cube, with its textures, UVs and the way it sits in hand, or turn a flat item into a 3D one. The model files go into the pack for your version.'],
+      ['Change shapes (Java): edit a block’s or item’s model cube by cube, with its textures, UVs and the way it sits in hand, or turn a flat item into a 3D one. The model files go into the pack for your version. ', link('/guides/make-3d-items-texture-pack', 'How to make 3D items'), '.'],
       ['Upload your own PNGs (auto-resized to the texture, 16x up to 512x) and edit animated textures frame by frame.'],
       ['Change sounds: play any game sound, then replace it with your own file or a microphone recording, trimmed on its waveform. Sounds are saved as Ogg Vorbis, the format Minecraft plays.'],
       ['One-click whole-pack effects such as Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon and Smooth HD, stacked without changing your own edits.'],
@@ -195,7 +195,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       },
     ],
     extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
-    guides: ['make-a-texture-pack', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs'],
+    guides: ['make-a-texture-pack', 'make-3d-items-texture-pack', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs', 'minecraft-pack-format-versions'],
     cta: 'Start a texture pack',
   },
   converter: {

@@ -99,9 +99,9 @@ export const META_JA: MetaTranslation = {
     'make-a-skin': {
       title: 'マイクラ スキンの作り方（Java版・統合版）',
       h1: 'Minecraftのオリジナルスキンの作り方',
-      description: 'Minecraftのスキンをブラウザで無料作成。64×64のテンプレートを2Dや3Dで塗り、クラシックかスリムを選んで、Java版に登録するか統合版のスキンパックにします。',
+      description: 'Minecraftのスキンをブラウザで無料作成。64×64かHD 128×128のテンプレートを2Dや3Dで塗り、クラシックかスリムを選んで、Java版や統合版のスキンパックで使います。',
       label: 'スキンを作る',
-      blurb: '64×64のテンプレートを塗り、Java版や統合版のスキンパックで使う。',
+      blurb: '64×64かHD 128×128のテンプレートを塗り、Java版や統合版のスキンパックで使う。',
     },
     'make-shaders-without-mods': {
       title: 'MODなし・OptiFineなしで使えるマイクラのシェーダー',
@@ -144,6 +144,13 @@ export const META_JA: MetaTranslation = {
       description: '統合版のスキンパックを自作する方法。スキンを描くか読み込み、.mcpackで書き出し、PCやスマホでインポート。更新のしかたと手作業での作り方も解説。',
       label: '統合版スキンパックを作る',
       blurb: 'スキンを1つの.mcpackにまとめ、更衣室で着る。',
+    },
+    'make-3d-items-texture-pack': {
+      title: 'マイクラ テクスチャパックで3Dアイテムを作る方法（Java版）',
+      h1: 'Minecraftのテクスチャパックで3Dアイテムと独自モデルを作る方法',
+      description: '平らなアイテムを3Dモデルにし、ブロックの形を変えるJava版リソースパックの作り方。モデルのJSON、1.21.4以降のアイテム定義、持ったときの見え方、よくある問題を解説。',
+      label: '3Dアイテムを作る',
+      blurb: '平らなアイテムを3Dモデルにし、ブロックの形を変える。ファイルの中身も解説。',
     },
   },
 };

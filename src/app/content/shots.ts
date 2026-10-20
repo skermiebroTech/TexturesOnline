@@ -145,6 +145,48 @@ export const SHOTS = {
     'The merge result: 3 packs merged into one, with a bar per pack showing files used, merged and not used, and the list of conflicts.',
     'The result shows how much of each pack made it in, and every conflict.',
   ),
+  modelEditShape: shot(
+    'model-edit-shape',
+    1280,
+    800,
+    'The texture editor with the Diamond Sword picked in the Items list: its 16×16 sprite in the pixel editor and, in the Preview tab, the flat sword with an Edit shape button under it.',
+    'Show an item in the Preview tab and press Edit shape to open the model editor.',
+  ),
+  modelSpriteStart: shot(
+    'model-sprite-start',
+    1280,
+    800,
+    'The model editor opened on the Diamond Sword, a flat sprite with no cubes: start points 3D item from sprite, Full cube, Slab, Cross (plant) and Empty, in the 3D view and in the Model tab.',
+    'A flat item starts with no cubes: pick 3D item from sprite.',
+  ),
+  model3dSword: shot(
+    'model-3d-sword',
+    1280,
+    800,
+    'The diamond sword as a 3D model of 19 cubes, one pixel deep. Cube 5 is selected in the cube list and shown with move arrows in the 3D view, with its position (9, 11, 7.5) and size (5 × 1 × 1) in the Cube tab.',
+    'The sprite becomes 19 cubes. Pick one to move it, resize it or change its faces.',
+  ),
+  modelDisplay: shot(
+    'model-display',
+    1280,
+    800,
+    'The Display tab with Third person picked: the 3D diamond sword held by a player model, and the right-hand rotation (0, -90, 55), position (0, 4, 0.5) and size (0.85) fields.',
+    'Display sets how the model is held, worn and shown, each with a preview.',
+  ),
+  modelFlatInventory: shot(
+    'model-flat-inventory',
+    1280,
+    800,
+    'The Model tab with Flat in the inventory switched on, which keeps the flat icon in the inventory, on the ground and in item frames. The header now says item/diamond_sword_3d.json.',
+    'Flat in the inventory (1.21.4+) saves the 3D shape as a second model for the hand.',
+  ),
+  modelBlock: shot(
+    'model-block-shape',
+    1280,
+    800,
+    'The stone block’s model reshaped into a step: a 16×8×16 slab cube and a second cube, 16×8×8, placed on top of half of it, with the Cube tab showing its position and size.',
+    'Stone reshaped into a step: the Slab start point plus one more cube.',
+  ),
 } satisfies Record<string, Shot>;
 
 export type ShotKey = keyof typeof SHOTS;

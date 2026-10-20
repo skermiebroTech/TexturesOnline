@@ -173,6 +173,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-green',
   }),
   guide({
+    slug: 'make-3d-items-texture-pack',
+    blurb: 'Turn flat items into 3D models and change block shapes, file by file.',
+    title: 'How to Make 3D Items in a Minecraft Texture Pack (Java)',
+    h1: 'How to make 3D items and custom models in a Minecraft texture pack',
+    description:
+      'Turn flat Minecraft items into 3D models and change block shapes in a Java resource pack: model JSON, 1.21.4+ item definitions, hand poses and fixes.',
+    label: 'Make 3D items',
+    icon: 'shapes',
+    accent: 'accent-green',
+  }),
+  guide({
     slug: 'install-resource-packs',
     blurb: 'Java resource packs, Bedrock .mcpack files and shader packs, plus fixes.',
     title: 'How to Install a Minecraft Texture Pack (Java & Bedrock)',
@@ -207,11 +218,11 @@ export const GUIDES: GuideMeta[] = [
   }),
   guide({
     slug: 'make-a-skin',
-    blurb: 'Paint the 64×64 template and use it on Java or in a Bedrock skin pack.',
+    blurb: 'Paint the 64×64 or HD 128×128 template for Java or a Bedrock skin pack.',
     title: 'How to Make a Custom Minecraft Skin (Java & Bedrock)',
     h1: 'How to make a custom Minecraft skin',
     description:
-      'Make a Minecraft skin free online: paint the 64×64 template in 2D or 3D, pick classic or slim arms, then upload it on Java or import a Bedrock skin pack.',
+      'Make a Minecraft skin free online: paint the 64×64 or HD 128×128 template in 2D or 3D, pick classic or slim arms, use it on Java or in a Bedrock skin pack.',
     label: 'Make a skin',
     icon: 'human',
     accent: 'accent-blue',

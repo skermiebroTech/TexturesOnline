@@ -79,4 +79,28 @@ export const SHOTS = localShots({
     alt: 'Das Ergebnis: 3 Packs zu einem zusammengeführt, mit einem Balken pro Pack für verwendete, zusammengeführte und nicht verwendete Dateien und der Liste der Konflikte.',
     caption: 'Das Ergebnis zeigt, wie viel von jedem Pack übernommen wurde, und jeden Konflikt.',
   },
+  modelEditShape: {
+    alt: 'Der Textur-Editor mit dem Diamantschwert in der Item-Liste: sein 16×16-Sprite im Pixel-Editor und im Tab „Preview“ das flache Schwert mit der Schaltfläche „Edit shape“ darunter.',
+    caption: 'Zeig ein Item im Tab „Preview“ an und drücke „Edit shape“, um den Modell-Editor zu öffnen.',
+  },
+  modelSpriteStart: {
+    alt: 'Der Modell-Editor mit dem Diamantschwert, einem flachen Sprite ohne Würfel: die Startpunkte „3D item from sprite“, „Full cube“, „Slab“, „Cross (plant)“ und „Empty“ in der 3D-Ansicht und im Tab „Model“.',
+    caption: 'Ein flaches Item hat noch keine Würfel: Wähle „3D item from sprite“.',
+  },
+  model3dSword: {
+    alt: 'Das Diamantschwert als 3D-Modell aus 19 Würfeln mit 1 Pixel Tiefe. Würfel 5 ist in der Liste gewählt und in der 3D-Ansicht mit Verschiebepfeilen zu sehen, mit Position (9, 11, 7,5) und Größe (5 × 1 × 1) im Tab „Cube“.',
+    caption: 'Aus dem Sprite werden 19 Würfel. Wähle einen aus, um ihn zu verschieben, seine Größe oder seine Seiten zu ändern.',
+  },
+  modelDisplay: {
+    alt: 'Der Tab „Display“ mit „Third person“: das 3D-Diamantschwert in der Hand eines Spielermodells und die Felder für Drehung (0, -90, 55), Position (0, 4, 0,5) und Größe (0,85) der rechten Hand.',
+    caption: '„Display“ legt fest, wie das Modell gehalten, getragen und gezeigt wird, jeweils mit Vorschau.',
+  },
+  modelFlatInventory: {
+    alt: 'Der Tab „Model“ mit eingeschaltetem „Flat in the inventory“, das das flache Symbol im Inventar, auf dem Boden und im Rahmen behält. Oben steht jetzt item/diamond_sword_3d.json.',
+    caption: '„Flat in the inventory“ (ab 1.21.4) speichert die 3D-Form als zweites Modell für die Hand.',
+  },
+  modelBlock: {
+    alt: 'Das Modell des Steinblocks als Treppenstufe: ein Würfel von 16×8×16 wie eine Stufe und ein zweiter Würfel von 16×8×8 auf seiner einen Hälfte, im Tab „Cube“ mit Position und Größe.',
+    caption: 'Stein als Treppenstufe: der Startpunkt „Slab“ und ein weiterer Würfel.',
+  },
 });

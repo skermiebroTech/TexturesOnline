@@ -79,4 +79,28 @@ export const SHOTS = localShots({
     alt: 'El resultado: 3 packs combinados en uno, con una barra por pack que muestra los archivos usados, combinados y no usados, y la lista de conflictos.',
     caption: 'El resultado muestra cuánto de cada pack se incluyó y cada conflicto.',
   },
+  modelEditShape: {
+    alt: 'El editor de texturas con la espada de diamante elegida en la lista de ítems: su sprite de 16×16 en el editor de píxeles y, en la pestaña «Preview», la espada plana con el botón «Edit shape» debajo.',
+    caption: 'Muestra un ítem en la pestaña «Preview» y pulsa «Edit shape» para abrir el editor de modelos.',
+  },
+  modelSpriteStart: {
+    alt: 'El editor de modelos abierto con la espada de diamante, un sprite plano sin cubos: los puntos de partida «3D item from sprite», «Full cube», «Slab», «Cross (plant)» y «Empty», en la vista 3D y en la pestaña «Model».',
+    caption: 'Un ítem plano empieza sin cubos: elige «3D item from sprite».',
+  },
+  model3dSword: {
+    alt: 'La espada de diamante como modelo 3D de 19 cubos de 1 píxel de grosor. El cubo 5 está elegido en la lista y se ve con flechas para moverlo en la vista 3D, con su posición (9, 11, 7,5) y tamaño (5 × 1 × 1) en la pestaña «Cube».',
+    caption: 'El sprite se convierte en 19 cubos. Elige uno para moverlo, cambiar su tamaño o sus caras.',
+  },
+  modelDisplay: {
+    alt: 'La pestaña «Display» con «Third person»: la espada de diamante 3D en la mano de un modelo de jugador y los campos de giro (0, -90, 55), posición (0, 4, 0,5) y tamaño (0,85) de la mano derecha.',
+    caption: '«Display» define cómo se sostiene, se lleva y se muestra el modelo, cada uno con vista previa.',
+  },
+  modelFlatInventory: {
+    alt: 'La pestaña «Model» con «Flat in the inventory» activado, que mantiene el icono plano en el inventario, en el suelo y en los marcos. Arriba ahora pone item/diamond_sword_3d.json.',
+    caption: '«Flat in the inventory» (1.21.4+) guarda la forma 3D como un segundo modelo para la mano.',
+  },
+  modelBlock: {
+    alt: 'El modelo del bloque de piedra convertido en escalón: un cubo de 16×8×16 como una losa y un segundo cubo de 16×8×8 encima de una de sus mitades, con su posición y tamaño en la pestaña «Cube».',
+    caption: 'Piedra convertida en escalón: el punto de partida «Slab» y un cubo más.',
+  },
 });

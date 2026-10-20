@@ -71,6 +71,7 @@ const REQUIRED_ROUTES = [
   '/guides/convert-java-to-bedrock-texture-pack',
   '/guides/merge-texture-packs',
   '/guides/make-a-bedrock-skin-pack',
+  '/guides/make-3d-items-texture-pack',
 ];
 
 /** A public page that exists only in English, if there is one (every page is translated otherwise). */
@@ -308,6 +309,7 @@ const ALLOWED = [
   'Smooth HD',
   'Blocks · Items · Mobs · All',
   'Only Allow Trusted Skins',
+  'Use for every random variant',
   'Open with Minecraft',
   'Edited',
   'Open Source',
