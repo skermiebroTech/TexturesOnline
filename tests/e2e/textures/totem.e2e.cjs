@@ -58,8 +58,10 @@ async function encodePng(w, h, fn) {
 }
 
 async function makeSkins() {
-  const files = { modern: path.join(tmp, 'Red Shirt.png'), legacy: path.join(tmp, 'old_school.png') };
+  const files = { modern: path.join(tmp, 'Red Shirt.png'), legacy: path.join(tmp, 'old_school.png'), hd: path.join(tmp, 'HD Hero.png') };
   fs.writeFileSync(files.modern, await encodePng(64, 64, (x, y) => skinPixel(x, y, 64)));
+  // HD 128x128 (Bedrock) skin: the same skin with every pixel doubled.
+  fs.writeFileSync(files.hd, await encodePng(128, 128, (x, y) => skinPixel(x >> 1, y >> 1, 64)));
   fs.writeFileSync(files.legacy, await encodePng(64, 32, (x, y) => skinPixel(x, y, 32)));
   return files;
 }
@@ -341,6 +343,14 @@ async function noOverflow(page) {
     check('legacy 64x32 skin: converted, with a note', /old 64×32 skin/.test(notes) && (await page.textContent('.tt-chosen-name')).trim() === 'old school', notes.trim().slice(0, 120));
     pix = await previewPixels(page);
     check('legacy skin: hat band over the face, mirrored left leg', same(px(pix, 4, 1), [250, 210, 40, 255]) && same(px(pix, 10, 14), PANTS) && same(px(pix, 14, 9), SKIN));
+
+    await page.click('.tt-change');
+    await page.click('.tt-tab[data-source="upload"]');
+    await uploadSkin(page, skins.hd);
+    const hdNotes = await page.textContent('.tt-chosen');
+    check('HD 128x128 skin: accepted, with a note', /HD 128×128 skin/.test(hdNotes) && (await page.textContent('.tt-chosen-name')).trim() === 'HD Hero', hdNotes.trim().slice(0, 160));
+    pix = await previewPixels(page);
+    check('HD skin: the same totem as the 64x64 skin', same(px(pix, 4, 1), HAIR) && same(px(pix, 5, 5), EYE) && same(px(pix, 6, 10), SHIRT) && same(px(pix, 5, 14), PANTS) && px(pix, 0, 0)[3] === 0);
 
     await page.click('.tt-change');
     await page.click('.tt-tab[data-source="default"]');

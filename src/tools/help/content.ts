@@ -406,6 +406,36 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'hd-skins',
+    q: 'Can I make an HD 128×128 skin?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes, for Bedrock Edition. HD skins have twice the pixels of a normal skin (128×128 instead of 64×64), so faces, shading and patterns can be finer. When you start a skin in the skin maker, pick ',
+        strong('HD 128×128'),
+        ' under ',
+        strong('Size'),
+        ', or switch an existing skin with ',
+        strong('Size'),
+        ' › ',
+        strong('HD 128'),
+        ' in the editor: every pixel is doubled, so it looks the same until you add detail. Export ',
+        strong('Bedrock skin (.png)'),
+        ' to import it in the Dressing Room, or a ',
+        strong('Bedrock skin pack (.mcpack)'),
+        '. A skin pack can mix normal and HD skins.',
+      ),
+      el(
+        'p',
+        null,
+        'Java Edition only accepts 64×64 skins without mods, so the Java export makes a 64×64 copy (each 2×2 block becomes one pixel) and keeps your HD original. With an HD skin mod such as CustomSkinLoader, choose ',
+        strong('128×128 for mods'),
+        ' instead. Consoles cannot import skin files, and sizes above 128×128 are not supported. HD skins also work in the totem maker.',
+      ),
+    ],
+  },
+  {
     id: 'upload',
     q: 'Is anything uploaded?',
     a: [

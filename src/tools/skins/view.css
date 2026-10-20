@@ -74,7 +74,7 @@
 
 .sk-hero {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px 32px;
   flex-wrap: wrap;
@@ -93,6 +93,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-width: 100%;
   padding: 12px;
   border: 2px solid var(--border);
   border-radius: var(--r-md);
@@ -109,6 +110,39 @@
 .sk-model-pick .segmented-item {
   height: 40px;
   padding: 0 16px 2px;
+}
+.sk-model-pick .segmented {
+  width: 100%;
+}
+.sk-model-pick .segmented-item {
+  flex: 1 1 0;
+  justify-content: center;
+}
+.sk-model-pick .segmented + .sk-model-label {
+  margin-top: 4px;
+}
+/* What the picked size means, under the pickers; it wraps to their width instead of widening the card. */
+.sk-size-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 0;
+  min-width: 100%;
+  margin: 2px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.sk-size-note .icon {
+  flex: none;
+  color: var(--green);
+}
+.sk-size-note.is-hd .icon {
+  color: var(--purple);
+}
+.sk-size-note strong {
+  color: var(--text);
+  font-weight: inherit;
 }
 
 .sk-section {
@@ -355,6 +389,7 @@
   border-color: color-mix(in srgb, var(--tool-accent) 55%, var(--border));
 }
 .sk-recent-thumb {
+  position: relative;
   display: grid;
   place-items: center;
   flex: none;
@@ -1955,6 +1990,20 @@
   }
   .sk-dolls {
     display: flex;
+    gap: 20px;
+    padding: 8px 16px 10px;
+  }
+  /* Compact dolls and control rows leave the model room for its overlays (the Size row is extra). */
+  .sk-doll {
+    width: 32px;
+    height: 64px;
+  }
+  .sk-dolls figure {
+    gap: 4px;
+  }
+  .sk-3d-controls {
+    gap: 6px 16px;
+    padding: 10px 16px;
   }
   .sk-export-done {
     gap: 14px;
@@ -2110,4 +2159,52 @@
 }
 .sk-export-icon.is-extra {
   color: var(--gold);
+}
+
+/* ---- HD (128x128) skins ---- */
+.sk-hd-tag {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  padding: 0 4px 1px;
+  border-radius: var(--r-xs);
+  background: var(--purple);
+  color: var(--on-accent);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+.sk-hd-tag[hidden] {
+  display: none;
+}
+.sk-hd-badge {
+  flex: none;
+  height: 24px;
+  padding: 0 7px 2px;
+  border: 2px solid color-mix(in srgb, var(--purple) 45%, transparent);
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--purple) 16%, transparent);
+  color: var(--purple);
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: 18px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.sk-hd-badge:hover {
+  background: color-mix(in srgb, var(--purple) 26%, transparent);
+}
+.sk-hd-badge[hidden] {
+  display: none;
+}
+.sk-note.is-warn .icon {
+  color: var(--gold);
+}
+.sk-note strong {
+  color: var(--text);
+  font-weight: inherit;
+}
+.sk-size-seg .segmented-item[data-value='128'][aria-checked='true'] {
+  color: var(--purple);
 }

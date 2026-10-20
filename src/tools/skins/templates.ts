@@ -1,6 +1,9 @@
 // Skin UV layout: every body part × face × layer for the classic and slim 64x64 layouts and the
 // legacy 64x32 layout, plus hit-testing, masks, true body mirroring, arm conversion and the part
 // overlay drawn on top of the pixel editor. Pure apart from drawPartOverlay (takes a 2D context).
+//
+// HD skins (128x128, Bedrock) use the same layout scaled x2: every function that works in image
+// pixels takes a `scale` (1 for 64x64, 2 for 128x128), or reads it from the image width.
 
 import type { SkinModel } from '../../core/types';
 
@@ -29,6 +32,21 @@ export interface Box {
 }
 
 export const SKIN_SIZE = 64;
+/** Width and height of an HD skin (Bedrock only). */
+export const HD_SKIN_SIZE = 128;
+
+/** Image pixels per template texel: 1 for 64x64 (and 64x32) skins, 2 for HD 128x128 skins. */
+export type SkinScale = 1 | 2;
+
+/** The scale of a skin image from its width (128 wide = HD). */
+export function scaleOf(width: number): SkinScale {
+  return width === HD_SKIN_SIZE ? 2 : 1;
+}
+
+/** True for a 128x128 HD skin. */
+export function isHdSkin(img: { width: number; height: number }): boolean {
+  return img.width === HD_SKIN_SIZE && img.height === HD_SKIN_SIZE;
+}
 
 export const PARTS: readonly SkinPart[] = ['head', 'body', 'rightArm', 'leftArm', 'rightLeg', 'leftLeg'];
 export const FACES: readonly SkinFace[] = ['top', 'bottom', 'right', 'front', 'left', 'back'];
@@ -65,18 +83,19 @@ export const FACE_LABELS: Record<SkinFace, string> = {
 
 export const LAYER_LABELS: Record<SkinLayer, string> = { base: 'Base layer', outer: 'Outer layer' };
 
-/** Size of a part's box in pixels (w = across, h = tall, d = deep). */
-export function partBox(part: SkinPart, model: SkinLayout): Box {
+/** Size of a part's box in image pixels (w = across, h = tall, d = deep). */
+export function partBox(part: SkinPart, model: SkinLayout, scale: SkinScale = 1): Box {
+  const k = scale;
   switch (part) {
     case 'head':
-      return { w: 8, h: 8, d: 8 };
+      return { w: 8 * k, h: 8 * k, d: 8 * k };
     case 'body':
-      return { w: 8, h: 12, d: 4 };
+      return { w: 8 * k, h: 12 * k, d: 4 * k };
     case 'rightArm':
     case 'leftArm':
-      return { w: model === 'slim' ? 3 : 4, h: 12, d: 4 };
+      return { w: (model === 'slim' ? 3 : 4) * k, h: 12 * k, d: 4 * k };
     default:
-      return { w: 4, h: 12, d: 4 };
+      return { w: 4 * k, h: 12 * k, d: 4 * k };
   }
 }
 
@@ -91,13 +110,21 @@ const ORIGINS: Record<SkinPart, Record<SkinLayer, [number, number]>> = {
 };
 
 /** UV origin of a part's layer, or null when the layout doesn't have it (legacy left limbs/overlays). */
-export function partOrigin(part: SkinPart, layer: SkinLayer, layout: SkinLayout): [number, number] | null {
+export function partOrigin(part: SkinPart, layer: SkinLayer, layout: SkinLayout, scale: SkinScale = 1): [number, number] | null {
   if (layout === 'legacy') {
     if (part === 'leftArm' || part === 'leftLeg') return null;
     if (layer === 'outer' && part !== 'head') return null;
   }
-  return ORIGINS[part][layer];
+  const o = ORIGINS[part][layer];
+  return [o[0] * scale, o[1] * scale];
 }
+
+/** Image width and height of a layout at a scale. */
+function dims(layout: SkinLayout, scale: SkinScale): [number, number] {
+  return [64 * scale, (layout === 'legacy' ? 32 : 64) * scale];
+}
+
+const cacheKey = (layout: SkinLayout, scale: SkinScale) => `${layout}@${scale}`;
 
 /** The six faces of a box unwrapped at (u, v) — Minecraft's standard box UV layout. */
 export function boxFaces(u: number, v: number, b: Box): Record<SkinFace, { x: number; y: number; w: number; h: number }> {
@@ -112,63 +139,65 @@ export function boxFaces(u: number, v: number, b: Box): Record<SkinFace, { x: nu
   };
 }
 
-const rectCache = new Map<SkinLayout, FaceRect[]>();
+const rectCache = new Map<string, FaceRect[]>();
 
-/** Every face rectangle of a layout. */
-export function faceRects(layout: SkinLayout): readonly FaceRect[] {
-  let list = rectCache.get(layout);
+/** Every face rectangle of a layout, in image pixels at `scale`. */
+export function faceRects(layout: SkinLayout, scale: SkinScale = 1): readonly FaceRect[] {
+  const key = cacheKey(layout, scale);
+  let list = rectCache.get(key);
   if (list) return list;
   list = [];
   for (const layer of ['base', 'outer'] as SkinLayer[]) {
     for (const part of PARTS) {
-      const o = partOrigin(part, layer, layout);
+      const o = partOrigin(part, layer, layout, scale);
       if (!o) continue;
-      const faces = boxFaces(o[0], o[1], partBox(part, layout));
+      const faces = boxFaces(o[0], o[1], partBox(part, layout, scale));
       for (const face of FACES) list.push({ part, face, layer, ...faces[face] });
     }
   }
-  rectCache.set(layout, list);
+  rectCache.set(key, list);
   return list;
 }
 
-export function partRects(part: SkinPart, layer: SkinLayer, layout: SkinLayout): FaceRect[] {
-  return faceRects(layout).filter((r) => r.part === part && r.layer === layer);
+export function partRects(part: SkinPart, layer: SkinLayer, layout: SkinLayout, scale: SkinScale = 1): FaceRect[] {
+  return faceRects(layout, scale).filter((r) => r.part === part && r.layer === layer);
 }
 
-export function faceRect(part: SkinPart, face: SkinFace, layer: SkinLayer, layout: SkinLayout): FaceRect | null {
-  return faceRects(layout).find((r) => r.part === part && r.face === face && r.layer === layer) ?? null;
+export function faceRect(part: SkinPart, face: SkinFace, layer: SkinLayer, layout: SkinLayout, scale: SkinScale = 1): FaceRect | null {
+  return faceRects(layout, scale).find((r) => r.part === part && r.face === face && r.layer === layer) ?? null;
 }
 
 /** Bounding box of a part's unwrapped layer in UV space. */
-export function partBounds(part: SkinPart, layer: SkinLayer, layout: SkinLayout): { x: number; y: number; w: number; h: number } | null {
-  const o = partOrigin(part, layer, layout);
+export function partBounds(part: SkinPart, layer: SkinLayer, layout: SkinLayout, scale: SkinScale = 1): { x: number; y: number; w: number; h: number } | null {
+  const o = partOrigin(part, layer, layout, scale);
   if (!o) return null;
-  const b = partBox(part, layout);
+  const b = partBox(part, layout, scale);
   return { x: o[0], y: o[1], w: 2 * (b.w + b.d), h: b.d + b.h };
 }
 
-const hitCache = new Map<SkinLayout, Int16Array>();
+const hitCache = new Map<string, Int16Array>();
 
-function hitMap(layout: SkinLayout): Int16Array {
-  let m = hitCache.get(layout);
+function hitMap(layout: SkinLayout, scale: SkinScale): Int16Array {
+  const key = cacheKey(layout, scale);
+  let m = hitCache.get(key);
   if (m) return m;
-  const H = layout === 'legacy' ? 32 : 64;
-  m = new Int16Array(64 * H).fill(-1);
-  faceRects(layout).forEach((r, i) => {
-    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) m![y * 64 + x] = i;
+  const [W, H] = dims(layout, scale);
+  m = new Int16Array(W * H).fill(-1);
+  faceRects(layout, scale).forEach((r, i) => {
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) m![y * W + x] = i;
   });
-  hitCache.set(layout, m);
+  hitCache.set(key, m);
   return m;
 }
 
 /** The face under an image pixel, or null for unused template areas. */
-export function partAt(x: number, y: number, model: SkinLayout): FaceRect | null {
+export function partAt(x: number, y: number, model: SkinLayout, scale: SkinScale = 1): FaceRect | null {
   x = Math.floor(x);
   y = Math.floor(y);
-  const H = model === 'legacy' ? 32 : 64;
-  if (x < 0 || y < 0 || x >= 64 || y >= H) return null;
-  const i = hitMap(model)[y * 64 + x];
-  return i >= 0 ? faceRects(model)[i] : null;
+  const [W, H] = dims(model, scale);
+  if (x < 0 || y < 0 || x >= W || y >= H) return null;
+  const i = hitMap(model, scale)[y * W + x];
+  return i >= 0 ? faceRects(model, scale)[i] : null;
 }
 
 /** "Right Arm · Front · Outer layer" */
@@ -180,15 +209,15 @@ export function describeRect(r: FaceRect): string {
  * Paint mask (1 = editable) covering the given parts (all parts when null/empty) on the given
  * layer(s). Unused template areas are always locked.
  */
-export function maskForParts(parts: Iterable<SkinPart> | null, model: SkinLayout, layers: LayerSelection): Uint8Array {
-  const H = model === 'legacy' ? 32 : 64;
-  const mask = new Uint8Array(64 * H);
+export function maskForParts(parts: Iterable<SkinPart> | null, model: SkinLayout, layers: LayerSelection, scale: SkinScale = 1): Uint8Array {
+  const [W, H] = dims(model, scale);
+  const mask = new Uint8Array(W * H);
   const set = parts ? new Set(parts) : null;
   const all = !set || set.size === 0;
-  for (const r of faceRects(model)) {
+  for (const r of faceRects(model, scale)) {
     if (!all && !set!.has(r.part)) continue;
     if (layers !== 'both' && r.layer !== layers) continue;
-    for (let y = r.y; y < r.y + r.h; y++) mask.fill(1, y * 64 + r.x, y * 64 + r.x + r.w);
+    for (let y = r.y; y < r.y + r.h; y++) mask.fill(1, y * W + r.x, y * W + r.x + r.w);
   }
   return mask;
 }
@@ -199,50 +228,51 @@ export function maskForParts(parts: Iterable<SkinPart> | null, model: SkinLayout
 
 const MIRROR_FACE: Record<SkinFace, SkinFace> = { top: 'top', bottom: 'bottom', front: 'front', back: 'back', right: 'left', left: 'right' };
 
-const mirrorCache = new Map<SkinLayout, Int32Array>();
+const mirrorCache = new Map<string, Int32Array>();
 
-function mirrorTable(layout: SkinLayout): Int32Array {
-  let t = mirrorCache.get(layout);
+function mirrorTable(layout: SkinLayout, scale: SkinScale): Int32Array {
+  const key = cacheKey(layout, scale);
+  let t = mirrorCache.get(key);
   if (t) return t;
-  const H = layout === 'legacy' ? 32 : 64;
-  t = new Int32Array(64 * H).fill(-1);
-  for (const r of faceRects(layout)) {
-    const target = faceRect(PART_INFO[r.part].mirror, MIRROR_FACE[r.face], r.layer, layout);
+  const [W, H] = dims(layout, scale);
+  t = new Int32Array(W * H).fill(-1);
+  for (const r of faceRects(layout, scale)) {
+    const target = faceRect(PART_INFO[r.part].mirror, MIRROR_FACE[r.face], r.layer, layout, scale);
     if (!target || target.w !== r.w || target.h !== r.h) continue;
     for (let y = 0; y < r.h; y++) {
       for (let x = 0; x < r.w; x++) {
-        t[(r.y + y) * 64 + r.x + x] = (target.y + y) * 64 + target.x + (r.w - 1 - x);
+        t[(r.y + y) * W + r.x + x] = (target.y + y) * W + target.x + (r.w - 1 - x);
       }
     }
   }
-  mirrorCache.set(layout, t);
+  mirrorCache.set(key, t);
   return t;
 }
 
 /** The pixel on the other side of the body, or null (unused area / no counterpart). */
-export function mirrorPixel(x: number, y: number, model: SkinLayout): [number, number] | null {
-  const H = model === 'legacy' ? 32 : 64;
-  if (x < 0 || y < 0 || x >= 64 || y >= H) return null;
-  const i = mirrorTable(model)[y * 64 + x];
+export function mirrorPixel(x: number, y: number, model: SkinLayout, scale: SkinScale = 1): [number, number] | null {
+  const [W, H] = dims(model, scale);
+  if (x < 0 || y < 0 || x >= W || y >= H) return null;
+  const i = mirrorTable(model, scale)[y * W + x];
   if (i < 0) return null;
-  return [i % 64, Math.floor(i / 64)];
+  return [i % W, Math.floor(i / W)];
 }
 
 /** MirrorMap for PixelCanvas.setMirrorMap: painting one arm paints the other, and so on. */
-export function mirrorMapFor(model: SkinLayout): (x: number, y: number) => ReadonlyArray<readonly [number, number]> {
-  const table = mirrorTable(model);
-  const H = model === 'legacy' ? 32 : 64;
+export function mirrorMapFor(model: SkinLayout, scale: SkinScale = 1): (x: number, y: number) => ReadonlyArray<readonly [number, number]> {
+  const table = mirrorTable(model, scale);
+  const [W, H] = dims(model, scale);
   return (x, y) => {
-    if (x < 0 || y < 0 || x >= 64 || y >= H) return [];
-    const i = table[y * 64 + x];
-    if (i < 0 || i === y * 64 + x) return [];
-    return [[i % 64, Math.floor(i / 64)]];
+    if (x < 0 || y < 0 || x >= W || y >= H) return [];
+    const i = table[y * W + x];
+    if (i < 0 || i === y * W + x) return [];
+    return [[i % W, Math.floor(i / W)]];
   };
 }
 
 /** The face on the other side of the body (null when it is the same face, e.g. the head front). */
-export function mirrorFaceRect(r: FaceRect, model: SkinLayout): FaceRect | null {
-  const t = faceRect(PART_INFO[r.part].mirror, MIRROR_FACE[r.face], r.layer, model);
+export function mirrorFaceRect(r: FaceRect, model: SkinLayout, scale: SkinScale = 1): FaceRect | null {
+  const t = faceRect(PART_INFO[r.part].mirror, MIRROR_FACE[r.face], r.layer, model, scale);
   if (!t || (t.x === r.x && t.y === r.y)) return null;
   return t;
 }
@@ -253,14 +283,16 @@ export function mirrorFaceRect(r: FaceRect, model: SkinLayout): FaceRect | null 
  */
 export function copyToMirror(img: Pixels, part: SkinPart, model: SkinLayout): ImageData {
   const out = copyImage(img);
-  const table = mirrorTable(model);
-  for (const r of faceRects(model)) {
+  const scale = scaleOf(img.width);
+  const W = img.width;
+  const table = mirrorTable(model, scale);
+  for (const r of faceRects(model, scale)) {
     if (r.part !== part) continue;
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
-        const t = table[y * 64 + x];
+        const t = table[y * W + x];
         if (t < 0) continue;
-        const s = (y * 64 + x) * 4;
+        const s = (y * W + x) * 4;
         out.data.set(img.data.subarray(s, s + 4), t * 4);
       }
     }
@@ -271,7 +303,7 @@ export function copyToMirror(img: Pixels, part: SkinPart, model: SkinLayout): Im
 /** Fills (or clears, with rgba null) every face of the given part and layer. */
 export function fillPart(img: Pixels, part: SkinPart, layer: SkinLayer, model: SkinLayout, rgba: readonly [number, number, number, number] | null): ImageData {
   const out = copyImage(img);
-  for (const r of faceRects(model)) {
+  for (const r of faceRects(model, scaleOf(img.width))) {
     if (r.part !== part || r.layer !== layer) continue;
     for (let y = r.y; y < r.y + r.h; y++) {
       for (let x = r.x; x < r.x + r.w; x++) {
@@ -323,14 +355,15 @@ function alphaAt(img: Pixels, x: number, y: number): number {
  * unused (research/bedrock-packs.md §6.1). Fully transparent there = slim.
  */
 export function detectSlim(img: Pixels): boolean {
-  if (img.width !== 64 || img.height !== 64) return false;
+  if (!((img.width === 64 && img.height === 64) || isHdSkin(img))) return false;
+  const k = scaleOf(img.width);
   const regions: [number, number, number, number][] = [
     [54, 20, 2, 12], // right arm back, unused columns
     [46, 52, 2, 12], // left arm back
     [50, 16, 2, 4], // right arm bottom
     [42, 48, 2, 4], // left arm bottom
   ];
-  for (const [x0, y0, w, h] of regions) {
+  for (const [x0, y0, w, h] of regions.map((r) => r.map((v) => v * k))) {
     for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) if (alphaAt(img, x, y) !== 0) return false;
   }
   return true;
@@ -339,7 +372,7 @@ export function detectSlim(img: Pixels): boolean {
 /** Number of see-through pixels on the base layer (Java shows those as solid, usually black). */
 export function countBaseHoles(img: Pixels, model: SkinModel): number {
   let n = 0;
-  for (const r of faceRects(model)) {
+  for (const r of faceRects(model, scaleOf(img.width))) {
     if (r.layer !== 'base') continue;
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (alphaAt(img, x, y) < 255) n++;
   }
@@ -349,7 +382,7 @@ export function countBaseHoles(img: Pixels, model: SkinModel): number {
 /** Count of non-transparent pixels on the outer layer. */
 export function countOuterPixels(img: Pixels, model: SkinLayout): number {
   let n = 0;
-  for (const r of faceRects(model)) {
+  for (const r of faceRects(model, scaleOf(img.width))) {
     if (r.layer !== 'outer') continue;
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (alphaAt(img, x, y) > 0) n++;
   }
@@ -363,31 +396,38 @@ export function countOuterPixels(img: Pixels, model: SkinLayout): number {
  */
 export function convertArms(img: Pixels, from: SkinModel, to: SkinModel): ImageData {
   const out = copyImage(img);
-  if (from === to || img.width !== 64 || img.height !== 64) return out;
+  if (from === to || !((img.width === 64 && img.height === 64) || isHdSkin(img))) return out;
+  const k = scaleOf(img.width);
+  const W = img.width;
   const src = img.data;
   const dst = out.data;
-  const idx = (x: number, y: number) => (y * 64 + x) * 4;
+  const idx = (x: number, y: number) => (y * W + x) * 4;
   for (const part of ['rightArm', 'leftArm'] as SkinPart[]) {
     for (const layer of ['base', 'outer'] as SkinLayer[]) {
-      const o = partOrigin(part, layer, to)!;
-      const fromFaces = boxFaces(o[0], o[1], partBox(part, from));
-      const toFaces = boxFaces(o[0], o[1], partBox(part, to));
-      // Clear the whole 16x16 arm area first.
-      for (let y = o[1]; y < o[1] + 16; y++) for (let x = o[0]; x < o[0] + 16; x++) dst.fill(0, idx(x, y), idx(x, y) + 4);
+      const o = partOrigin(part, layer, to, k)!;
+      const fromFaces = boxFaces(o[0], o[1], partBox(part, from, k));
+      const toFaces = boxFaces(o[0], o[1], partBox(part, to, k));
+      // Clear the whole 16x16 arm area (32x32 in HD) first.
+      for (let y = o[1]; y < o[1] + 16 * k; y++) for (let x = o[0]; x < o[0] + 16 * k; x++) dst.fill(0, idx(x, y), idx(x, y) + 4);
       for (const face of FACES) {
         const f = fromFaces[face];
         const t = toFaces[face];
-        // Column next to the body: the right arm's inner edge is on its left side (+x), the left arm's on its right.
+        // Column next to the body: the right arm's inner edge is on its left side (+x), the left arm's
+        // on its right. Worked out in texel columns (k pixels wide each).
+        const fw = f.w / k;
         let inner: number;
         if (face === 'right' || face === 'left') inner = -1;
-        else if (face === 'back') inner = part === 'rightArm' ? 0 : f.w - 1;
-        else inner = part === 'rightArm' ? f.w - 1 : 0;
+        else if (face === 'back') inner = part === 'rightArm' ? 0 : fw - 1;
+        else inner = part === 'rightArm' ? fw - 1 : 0;
         for (let y = 0; y < t.h; y++) {
           for (let x = 0; x < t.w; x++) {
             let sx = x;
             if (inner >= 0 && f.w !== t.w) {
-              if (f.w > t.w) sx = inner === 0 ? x + 1 : x; // drop the inner column
-              else sx = inner === 0 ? Math.max(0, x - 1) : Math.min(f.w - 1, x); // repeat it
+              const tx = Math.floor(x / k);
+              let stx: number;
+              if (f.w > t.w) stx = inner === 0 ? tx + 1 : tx; // drop the inner column
+              else stx = inner === 0 ? Math.max(0, tx - 1) : Math.min(fw - 1, tx); // repeat it
+              sx = stx * k + (x % k);
             }
             const s = idx(f.x + sx, f.y + y);
             const d = idx(t.x + x, t.y + y);
@@ -414,6 +454,8 @@ export interface OverlayView {
 
 export interface OverlayOptions {
   model: SkinLayout;
+  /** Image pixels per template texel (2 for HD skins). Default 1 */
+  scale?: SkinScale;
   /** Face outlines (default true) */
   outlines?: boolean;
   /** Part name tags (default true) */
@@ -446,7 +488,9 @@ function rgba(hex: string, a: number): string {
 /** Draws face outlines, part tags and the hover highlight in screen space (CSS px). */
 export function drawPartOverlay(ctx: CanvasRenderingContext2D, view: OverlayView, opts: OverlayOptions): void {
   const layout = opts.model;
-  const s = view.scale;
+  const k = opts.scale ?? 1;
+  // Screen px per template texel (an HD image pixel is half a texel).
+  const s = view.scale * k;
   if (s < 2) return;
   const outlines = opts.outlines !== false;
   const labels = opts.labels !== false;
@@ -465,7 +509,7 @@ export function drawPartOverlay(ctx: CanvasRenderingContext2D, view: OverlayView
 
   if (outlines) {
     // Faces: thin outlines in the part colour; the inactive layer and unfocused parts stay faint.
-    for (const r of faceRects(layout)) {
+    for (const r of faceRects(layout, k)) {
       const on = active(r.layer) && (!focus || focus.has(r.part));
       const [x, y, w, h] = rectScreen(r.x, r.y, r.w, r.h);
       ctx.strokeStyle = rgba(PART_INFO[r.part].color, on ? 0.7 : 0.22);
@@ -475,9 +519,9 @@ export function drawPartOverlay(ctx: CanvasRenderingContext2D, view: OverlayView
     // Part outlines (thicker) around each unwrapped box.
     for (const layer of ['base', 'outer'] as SkinLayer[]) {
       for (const part of PARTS) {
-        const o = partOrigin(part, layer, layout);
+        const o = partOrigin(part, layer, layout, k);
         if (!o) continue;
-        const f = boxFaces(o[0], o[1], partBox(part, layout));
+        const f = boxFaces(o[0], o[1], partBox(part, layout, k));
         const on = active(layer) && (!focus || focus.has(part));
         ctx.strokeStyle = rgba(PART_INFO[part].color, on ? 0.95 : 0.3);
         ctx.lineWidth = on ? 2 : 1;
@@ -525,7 +569,7 @@ export function drawPartOverlay(ctx: CanvasRenderingContext2D, view: OverlayView
     const tagH = fontPx >= 16 ? 22 : 12;
     for (const layer of ['base', 'outer'] as SkinLayer[]) {
       for (const part of PARTS) {
-        const o = partOrigin(part, layer, layout);
+        const o = partOrigin(part, layer, layout, k);
         if (!o) continue;
         const b = partBox(part, layout);
         const info = PART_INFO[part];

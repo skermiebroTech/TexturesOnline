@@ -23,7 +23,11 @@ import { siteFooter } from '../../app/footer';
 import type { SkinProjectData } from '../skins/export';
 import { drawFigure } from '../skins/ui/figure';
 import { createStarterSkin } from '../skins/starters';
-import { fetchSkinByUsername, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from '../skins/ui/sources';
+import { fetchSkinByUsername, HD_KEPT_NOTE, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from '../skins/ui/sources';
+
+/** HD skins work too: the totem is read from them at 64x64. */
+const TOTEM_HD_NOTE = 'This is an HD 128×128 skin. The totem is 16×16, so it is made from the skin at 64×64.';
+const totemNotes = (notes: readonly string[]): string[] => notes.map((n) => (n === HD_KEPT_NOTE ? TOTEM_HD_NOTE : n));
 import { openTotemEditor } from './editor';
 import { hotbarPreview, popPreview } from './preview';
 import {
@@ -144,7 +148,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const dz = dropzone({
     accept: '.png,image/png',
     label: 'Drop a skin PNG here or click to browse',
-    hint: '64×64 skins, or old 64×32 ones',
+    hint: '64×64 or HD 128×128 skins, or old 64×32 ones',
     icon: 'upload',
     onFiles: ([file]) => void uploadSkin(file),
   });
@@ -157,7 +161,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       const loaded = await readSkinFile(file);
       if (!alive) return;
       const name = file.name.replace(/\.png$/i, '').replace(/[_-]+/g, ' ').trim() || 'Uploaded skin';
-      setSkin({ image: loaded.image, model: loaded.model, name, source: 'upload', notes: loaded.notes });
+      setSkin({ image: loaded.image, model: loaded.model, name, source: 'upload', notes: totemNotes(loaded.notes) });
     } catch (err) {
       dz.setError(err instanceof SkinSourceError ? err.message : 'That file could not be opened as a skin.');
     } finally {
@@ -275,7 +279,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
         let img: ImageData | null = null;
         void decodeImage(p.image, 'png')
           .then((d) => {
-            if (d.width !== 64 || d.height !== 64) return;
+            if (!((d.width === 64 && d.height === 64) || (d.width === 128 && d.height === 128))) return;
             img = d;
             thumb.appendChild(figureCanvas(d, p.model, 'tt-figure'));
           })

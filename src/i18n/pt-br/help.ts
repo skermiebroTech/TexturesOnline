@@ -339,6 +339,14 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'hd-skins',
+      q: 'Posso fazer uma skin HD de 128×128?',
+      a: [
+        p('Sim, para a Bedrock Edition. Skins HD têm o dobro de pixels de uma skin normal (128×128 em vez de 64×64), então rostos, sombras e estampas ficam mais finos. Ao começar uma skin no editor de skins, escolha ', strong('HD 128×128'), ' em ', strong('Size'), ', ou mude uma skin existente no editor com ', strong('Size'), ' › ', strong('HD 128'), ': cada pixel é duplicado, então ela fica igual até você adicionar detalhes. Exporte ', strong('Bedrock skin (.png)'), ' para importar no Vestiário, ou um ', strong('Bedrock skin pack (.mcpack)'), '. Um pacote de skins pode misturar skins normais e HD.'),
+        p('A Java Edition só aceita skins de 64×64 sem mods, então a exportação para Java cria uma cópia de 64×64 (cada bloco de 2×2 vira um pixel) e mantém seu original HD. Com um mod de skins HD como o CustomSkinLoader, escolha ', strong('128×128 for mods'), '. Consoles não importam arquivos de skin, e tamanhos acima de 128×128 não são suportados. Skins HD também funcionam no criador de totens.'),
+      ],
+    },
+    {
       id: 'upload',
       q: 'Alguma coisa é enviada?',
       a: [p('Não. Seus projetos, imagens e packs exportados nunca saem do seu dispositivo. O app só baixa coisas: arquivos do jogo da Mojang, a lista de versões e as skins que você procura pelo nome de usuário.')],

@@ -13,16 +13,18 @@ import type { IconName } from '../../../ui/icons';
 import { toast } from '../../../ui/toast';
 import type { SkinHit, SkinOverlay, SkinPaintCursor, SkinPaintHandler, SkinPreview, SkinView } from '../skin-preview';
 import { mirrorFootprint, strokeSteps, surfaceFootprint } from '../surface';
-import { FACE_LABELS, mirrorPixel, PART_INFO, partAt, type LayerSelection } from '../templates';
+import { FACE_LABELS, mirrorPixel, PART_INFO, partAt, type LayerSelection, type SkinScale } from '../templates';
 
 export interface Paint3dHost {
   pc: PixelCanvas;
   model(): SkinModel;
+  /** Image pixels per template texel: 1 for 64x64 skins, 2 for HD 128x128 skins */
+  scale(): SkinScale;
   layers(): LayerSelection;
   setLayers(v: LayerSelection): void;
   mirror(): boolean;
   setMirror(v: boolean): void;
-  /** The paint mask (1 = editable), 64 x 64 */
+  /** The paint mask (1 = editable), one entry per image pixel */
   mask(): Uint8Array;
   /** Why a pixel can't be painted, or null when it can */
   lockReason(x: number, y: number): string | null;
@@ -73,7 +75,10 @@ const VIEWS: { view: SkinView; key: string; label: string }[] = [
   { view: 'top', key: 'T', label: 'Top view' },
 ];
 
-const toPoints = (pixels: readonly number[]): [number, number][] => pixels.map((p) => [p % 64, Math.floor(p / 64)]);
+const toPoints = (pixels: readonly number[], W: number): [number, number][] => pixels.map((p) => [p % W, Math.floor(p / W)]);
+
+/** Largest brush, in image pixels: 8 for 64x64 skins, 16 for HD skins. */
+export const maxBrushFor = (scale: SkinScale): number => 8 * scale;
 
 function coarsePointer(): boolean {
   return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -170,7 +175,7 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
 
   const sizeValue = h('output', { class: 'sk-3d-size-value', 'aria-live': 'polite' }, '1 px');
   const smaller = iconButton('minus', 'Smaller brush ([)', () => pc.setBrushSize(pc.brushSize - 1), { size: 'sm' });
-  const bigger = iconButton('plus', 'Bigger brush (])', () => pc.setBrushSize(pc.brushSize + 1), { size: 'sm' });
+  const bigger = iconButton('plus', 'Bigger brush (])', () => pc.setBrushSize(Math.min(maxBrushFor(host.scale()), pc.brushSize + 1)), { size: 'sm' });
   const sizeRow = h('div', { class: 'sk-3d-size', role: 'group', 'aria-label': 'Brush size' }, smaller, sizeValue, bigger);
 
   const row = (label: string, control: HTMLElement) => h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, label), control);
@@ -197,21 +202,24 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
   // ---- painting ----
 
   const brush = (): { size: number; shape: BrushShape } => ({ size: pc.brushSize, shape: pc.brushShape });
+  /** Image width: 64, or 128 for HD skins (pixel indices are y * W + x). */
+  const width = (): number => 64 * host.scale();
 
   function stamp(fx: number, fy: number): void {
     const { size, shape } = brush();
-    const pixels = surfaceFootprint(fx, fy, size, shape, host.model());
-    if (pixels.length) pc.setPixels(toPoints(pixels));
+    const pixels = surfaceFootprint(fx, fy, size, shape, host.model(), host.scale());
+    if (pixels.length) pc.setPixels(toPoints(pixels, width()));
   }
 
   /** The same-colour area around a pixel within its face (respecting the paint mask). */
   function faceRegion(x: number, y: number, img: ImageData): number[] {
-    const r = partAt(x, y, host.model());
+    const r = partAt(x, y, host.model(), host.scale());
     if (!r) return [];
     const region = floodRegion(img, x, y, { tolerance: pc.fillTolerance, mask: host.mask(), bounds: r });
     if (!region) return [];
+    const W = img.width;
     const out: number[] = [];
-    for (let yy = r.y; yy < r.y + r.h; yy++) for (let xx = r.x; xx < r.x + r.w; xx++) if (region[yy * 64 + xx]) out.push(yy * 64 + xx);
+    for (let yy = r.y; yy < r.y + r.h; yy++) for (let xx = r.x; xx < r.x + r.w; xx++) if (region[yy * W + xx]) out.push(yy * W + xx);
     return out;
   }
 
@@ -221,7 +229,7 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
     const main = faceRegion(x, y, img);
     let echo: number[] = [];
     if (host.mirror()) {
-      const m = mirrorPixel(x, y, host.model());
+      const m = mirrorPixel(x, y, host.model(), host.scale());
       if (m && (m[0] !== x || m[1] !== y)) echo = faceRegion(m[0], m[1], img).filter((p) => !main.includes(p));
     }
     return { main, echo };
@@ -233,8 +241,8 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
     if (pc.getSelection()) pc.deselect();
     const color = pc.color;
     pc.beginStroke();
-    pc.setPixels(toPoints(main), color, { mirror: false });
-    if (echo.length) pc.setPixels(toPoints(echo), color, { mirror: false });
+    pc.setPixels(toPoints(main, width()), color, { mirror: false });
+    if (echo.length) pc.setPixels(toPoints(echo, width()), color, { mirror: false });
     pc.endStroke();
   }
 
@@ -328,9 +336,10 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
       return 'paint';
     }
     const model = host.model();
+    const scale = host.scale();
     const tool: Tool = mode === 'pick' ? 'picker' : pc.tool;
     const reason = tool === 'picker' ? null : host.lockReason(hit.x, hit.y);
-    const at = hit.y * 64 + hit.x;
+    const at = hit.y * width() + hit.x;
     let pixels: number[];
     let echo: number[] = [];
     let cursor: SkinPaintCursor = 'paint';
@@ -343,8 +352,8 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
       echo = regions.echo;
     } else {
       const { size, shape } = brush();
-      pixels = surfaceFootprint(hit.fx, hit.fy, size, shape, model);
-      if (host.mirror()) echo = mirrorFootprint(pixels, model).filter((p) => !pixels.includes(p));
+      pixels = surfaceFootprint(hit.fx, hit.fy, size, shape, model, scale);
+      if (host.mirror()) echo = mirrorFootprint(pixels, model, scale).filter((p) => !pixels.includes(p));
     }
     const overlay: SkinOverlay = reason
       ? { pixels: [at], fill: null, tone: 'locked' }
@@ -363,12 +372,14 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
     templateHover = p;
     if (!preview || hoverHit) return;
     const model = host.model();
-    if (!p || !partAt(p.x, p.y, model)) {
+    const scale = host.scale();
+    const W = width();
+    if (!p || !partAt(p.x, p.y, model, scale)) {
       preview.setOverlay(null);
       return;
     }
     const tool = pc.tool;
-    let pixels: number[] = [p.y * 64 + p.x];
+    let pixels: number[] = [p.y * W + p.x];
     if (tool !== 'picker' && tool !== 'fill' && tool !== 'select' && tool !== 'move') {
       // The 2D brush footprint, as the pencil lays it out on the template.
       const { size, shape } = brush();
@@ -377,10 +388,10 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
       for (const [dx, dy] of brushOffsets(size, shape)) {
         const x = ox + dx;
         const y = oy + dy;
-        if (x >= 0 && y >= 0 && x < 64 && y < 64 && partAt(x, y, model)) pixels.push(y * 64 + x);
+        if (x >= 0 && y >= 0 && x < W && y < W && partAt(x, y, model, scale)) pixels.push(y * W + x);
       }
     }
-    const echo = host.mirror() && tool !== 'picker' ? mirrorFootprint(pixels, model).filter((q) => !pixels.includes(q)) : [];
+    const echo = host.mirror() && tool !== 'picker' ? mirrorFootprint(pixels, model, scale).filter((q) => !pixels.includes(q)) : [];
     preview.setOverlay({ pixels, echo, fill: tool === 'fill' ? null : previewFill(tool, pc.color) });
   }
 
@@ -396,7 +407,7 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
     mirrorBtn.setActive(host.mirror());
     sizeValue.textContent = `${pc.brushSize} px`;
     smaller.disabled = pc.brushSize <= 1;
-    bigger.disabled = pc.brushSize >= 8;
+    bigger.disabled = pc.brushSize >= maxBrushFor(host.scale());
     if (!preview) return;
     if (on) {
       preview.setPaintLayers(host.layers());
@@ -444,12 +455,13 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
   };
 }
 
-/** Pixels (y * 64 + x) as an outline on the 2D template: dark halo, light line, in screen space. */
+/** Pixels (y * W + x; W = 64, or 128 for HD) as an outline on the 2D template: dark halo, light line, in screen space. */
 export function drawPixelOutline(
   ctx: CanvasRenderingContext2D,
   view: { scale: number; toScreen(x: number, y: number): [number, number] },
   pixels: readonly number[],
   alpha = 1,
+  W = 64,
 ): void {
   if (!pixels.length) return;
   const set = new Set(pixels);
@@ -457,18 +469,18 @@ export function drawPixelOutline(
   ctx.globalAlpha = alpha;
   ctx.beginPath();
   for (const p of set) {
-    const x = p % 64;
-    const y = Math.floor(p / 64);
+    const x = p % W;
+    const y = Math.floor(p / W);
     const edge = (x0: number, y0: number, x1: number, y1: number) => {
       const [ax, ay] = view.toScreen(x0, y0);
       const [bx, by] = view.toScreen(x1, y1);
       ctx.moveTo(Math.round(ax) + 0.5, Math.round(ay) + 0.5);
       ctx.lineTo(Math.round(bx) + 0.5, Math.round(by) + 0.5);
     };
-    if (!set.has(p - 64) || y === 0) edge(x, y, x + 1, y);
-    if (!set.has(p + 64) || y === 63) edge(x, y + 1, x + 1, y + 1);
+    if (!set.has(p - W) || y === 0) edge(x, y, x + 1, y);
+    if (!set.has(p + W) || y === W - 1) edge(x, y + 1, x + 1, y + 1);
     if (!set.has(p - 1) || x === 0) edge(x, y, x, y + 1);
-    if (!set.has(p + 1) || x === 63) edge(x + 1, y, x + 1, y + 1);
+    if (!set.has(p + 1) || x === W - 1) edge(x + 1, y, x + 1, y + 1);
   }
   ctx.lineCap = 'square';
   ctx.lineWidth = 3;

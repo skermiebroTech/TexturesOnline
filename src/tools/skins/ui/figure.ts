@@ -1,8 +1,12 @@
 // 2D renderings of a skin: a 3/4 "isometric" figure for thumbnails, flat front/back paper dolls and
 // a head avatar. Canvas is used for display only; pixels come straight from the ImageData.
+// 64x64 and HD 128x128 skins are both drawn (HD faces simply have twice the pixels).
 
 import type { SkinModel } from '../../../core/types';
-import { boxFaces, partBox, partOrigin, type SkinFace, type SkinLayer, type SkinPart } from '../templates';
+import { boxFaces, isHdSkin, partBox, partOrigin, scaleOf, type SkinFace, type SkinLayer, type SkinPart } from '../templates';
+
+/** 64x64 or 128x128: the sizes the figures can draw. */
+const drawable = (img: ImageData): boolean => (img.width === 64 && img.height === 64) || isHdSkin(img);
 
 type Vec3 = [number, number, number];
 
@@ -66,7 +70,8 @@ export function drawFigure(canvas: HTMLCanvasElement, img: ImageData, model: Ski
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
   const ctx = canvas.getContext('2d');
-  if (!ctx || img.width !== 64 || img.height !== 64) return;
+  if (!ctx || !drawable(img)) return;
+  const k = scaleOf(img.width);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;
@@ -137,9 +142,9 @@ export function drawFigure(canvas: HTMLCanvasElement, img: ImageData, model: Ski
   };
 
   const drawBox = (p: PartPlacement, layer: SkinLayer) => {
-    const o = partOrigin(p.part, layer, model);
+    const o = partOrigin(p.part, layer, model, k);
     if (!o) return;
-    const b = partBox(p.part, model);
+    const b = partBox(p.part, model, k);
     const f = boxFaces(o[0], o[1], b);
     const g = layer === 'outer' ? (p.part === 'head' ? 0.5 : 0.25) : 0;
     const x0 = p.x[0] - g;
@@ -187,7 +192,8 @@ export function drawPaperDoll(canvas: HTMLCanvasElement, img: ImageData, model: 
   canvas.width = 16 * s;
   canvas.height = 32 * s;
   const ctx = canvas.getContext('2d');
-  if (!ctx || img.width !== 64 || img.height !== 64) return;
+  if (!ctx || !drawable(img)) return;
+  const k = scaleOf(img.width);
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const src = flatSource(img);
@@ -212,11 +218,11 @@ export function drawPaperDoll(canvas: HTMLCanvasElement, img: ImageData, model: 
   const pos = side === 'front' ? front : back;
   for (const layer of (outer ? ['base', 'outer'] : ['base']) as SkinLayer[]) {
     for (const part of Object.keys(pos) as SkinPart[]) {
-      const o = partOrigin(part, layer, model);
+      const o = partOrigin(part, layer, model, k);
       if (!o) continue;
-      const r = boxFaces(o[0], o[1], partBox(part, model))[side];
+      const r = boxFaces(o[0], o[1], partBox(part, model, k))[side];
       const [x, y] = pos[part];
-      ctx.drawImage(src, r.x, r.y, r.w, r.h, x * s, y * s, r.w * s, r.h * s);
+      ctx.drawImage(src, r.x, r.y, r.w, r.h, x * s, y * s, (r.w / k) * s, (r.h / k) * s);
     }
   }
 }
@@ -228,9 +234,10 @@ export function drawHead(canvas: HTMLCanvasElement, img: ImageData, size: number
   canvas.width = px * 8;
   canvas.height = px * 8;
   const ctx = canvas.getContext('2d');
-  if (!ctx || img.width !== 64) return;
+  if (!ctx || !drawable(img)) return;
+  const k = scaleOf(img.width);
   ctx.imageSmoothingEnabled = false;
   const src = flatSource(img);
-  ctx.drawImage(src, 8, 8, 8, 8, 0, 0, px * 8, px * 8);
-  ctx.drawImage(src, 40, 8, 8, 8, 0, 0, px * 8, px * 8);
+  ctx.drawImage(src, 8 * k, 8 * k, 8 * k, 8 * k, 0, 0, px * 8, px * 8);
+  ctx.drawImage(src, 40 * k, 8 * k, 8 * k, 8 * k, 0, 0, px * 8, px * 8);
 }

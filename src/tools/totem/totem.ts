@@ -9,6 +9,7 @@
 
 import type { Edition, SkinModel, TexturePackProject } from '../../core/types';
 import { convertLegacySkin, createImageData, encodePng, resizeNearest } from '../../core/image';
+import { downscaleSkin } from '../skins/hd';
 import { sanitizeFilename } from '../../core/download';
 import { writeZip } from '../../core/zip';
 import { buildPackMcmetaForVersions } from '../../editions/java/packmeta';
@@ -97,10 +98,11 @@ export const LAYOUTS: Record<TotemStyle, readonly Placement[]> = {
 // ---------------------------------------------------------------------------------------------
 // Skin -> figure
 
-/** A 64x64 skin from a 64x64, legacy 64x32 or HD 128x128 image. */
+/** A 64x64 skin from a 64x64, legacy 64x32 or HD 128x128 (Bedrock) image. */
 export function normalizeTotemSkin(img: ImageData): ImageData {
   if (img.width === 64 && (img.height === 64 || img.height === 32)) return convertLegacySkin(img, { forceOpaqueBase: false });
-  if (img.width === 128 && img.height === 128) return resizeNearest(img, 64, 64);
+  // HD skins: every 2x2 block becomes one pixel (the same reduction as the skin editor's Java export).
+  if (img.width === 128 && img.height === 128) return downscaleSkin(img);
   throw new Error(`Skins are 64×64 pixels (or the old 64×32); this image is ${img.width}×${img.height}.`);
 }
 

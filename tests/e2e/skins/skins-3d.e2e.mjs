@@ -446,6 +446,88 @@ for (const theme of ['dark', 'light']) {
   }
 }
 
+// =============================================================================================
+// HD 128x128 skins: rays land on HD pixels (same UVs, twice the texels), 1 px brushes paint one HD
+// pixel, the mirror and layers work, the brush goes up to 16 px, and 2D shows the 3D strokes.
+for (const theme of ['dark', 'light']) {
+  const { page, context, errors } = await newPage({}, theme);
+  const pixelHd = (x, y) => api(page, (e, [x, y]) => {
+    const img = e.getImage();
+    const i = (y * img.width + x) * 4;
+    return Array.from(img.data.slice(i, i + 4));
+  }, [x, y]);
+  await page.goto(`${base}#/skins`);
+  await page.click('.sk-model-pick .segmented-item[data-value="128"]');
+  await openStarter(page, 'explorer');
+  check(`HD: starter opens at 128x128 (${theme})`, (await api(page, (e) => e.size())) === 128);
+  await page.click('.sk-3d-mode [data-value="paint"]');
+  await page.waitForTimeout(200);
+  await view(page, 'front');
+  await setColor(page, '#e61e28');
+  await tool(page, 'pencil');
+  await layer(page, 'base');
+  const face = await to3d(page, 20, 24);
+  check(`HD: head front HD pixel is on screen (${theme})`, !!face, String(face));
+  check(`HD: the ray hits the HD pixel (${theme})`, eq(await hit3d(page, face), { x: 20, y: 24, layer: 'base' }), JSON.stringify(await hit3d(page, face)));
+  await page.mouse.move(face[0], face[1]);
+  await page.waitForTimeout(150);
+  check(`HD: the status names the HD pixel (${theme})`, /Head · Front · Base layer · 20, 24/.test((await page.textContent('.sk-status')) || ''), await page.textContent('.sk-status'));
+  const before = await imageData(page);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(150);
+  const after = await imageData(page);
+  const changed = [];
+  for (let i = 0; i < after.length; i += 4) if (after.slice(i, i + 4).some((v, k) => v !== before[i + k])) changed.push(i / 4);
+  check(`HD: a 1px click paints exactly one HD pixel (${theme})`, changed.length === 1 && changed[0] === 24 * 128 + 20, JSON.stringify(changed));
+  await page.mouse.move(10, 10);
+  await page.waitForTimeout(150);
+  check(`HD: the 2D template shows the 3D stroke (${theme})`, eq(await canvas2dColor(page, 20, 24), RED), JSON.stringify(await canvas2dColor(page, 20, 24)));
+
+  // Outer layer: the hat, in HD.
+  await layer(page, 'outer');
+  check(`HD: outer layer ray hits the hat (${theme})`, eq(await hit3d(page, await to3d(page, 84, 24)), { x: 84, y: 24, layer: 'outer' }), JSON.stringify(await hit3d(page, await to3d(page, 84, 24))));
+  await setColor(page, '#1ec83c');
+  await click3d(page, 84, 24);
+  check(`HD: outer layer paints the hat pixel (${theme})`, eq(await pixelHd(84, 24), GREEN) && eq(await pixelHd(20, 24), RED));
+
+  // Mirror: right arm front HD pixel -> left arm front, column flipped inside the texel.
+  await layer(page, 'base');
+  await page.click('.sk-3d-mirror');
+  await setColor(page, '#e61e28');
+  await click3d(page, 90, 48);
+  check(`HD: mirror paints the right arm (${theme})`, eq(await pixelHd(90, 48), RED), JSON.stringify(await pixelHd(90, 48)));
+  check(`HD: mirror paints the left arm HD pixel (${theme})`, eq(await pixelHd(77, 112), RED), JSON.stringify(await pixelHd(77, 112)));
+  await page.click('.sk-3d-mirror');
+
+  // A 4px brush covers 4x4 HD pixels on the face.
+  for (let i = 0; i < 3; i++) await page.click('.sk-3d-size [aria-label^="Bigger"]');
+  await setColor(page, '#8c28c8');
+  await click3d(page, 24, 28);
+  const purple = await api(page, (e) => {
+    const img = e.getImage();
+    const out = [];
+    for (let y = 16; y < 32; y++) for (let x = 16; x < 32; x++) {
+      const i = (y * img.width + x) * 4;
+      if (img.data[i] === 140 && img.data[i + 1] === 40 && img.data[i + 2] === 200) out.push([x, y]);
+    }
+    return out;
+  });
+  const xs = purple.map((p) => p[0]);
+  const ys = purple.map((p) => p[1]);
+  const box = purple.length ? [Math.max(...xs) - Math.min(...xs) + 1, Math.max(...ys) - Math.min(...ys) + 1] : [];
+  check(`HD: a 4px brush paints a 4x4 HD block around the point (${theme})`, purple.length === 16 && eq(box, [4, 4]) && purple.some((p) => eq(p, [24, 28])), JSON.stringify(purple));
+  for (let i = 0; i < 16; i++) await page.click('.sk-3d-size [aria-label^="Bigger"]').catch(() => undefined);
+  check(`HD: the 3D brush stops at 16 px (${theme})`, /16 px/.test((await page.textContent('.sk-3d-size')) || '') && (await page.isDisabled('.sk-3d-size [aria-label^="Bigger"]')), await page.textContent('.sk-3d-size'));
+  for (let i = 0; i < 15; i++) await page.click('.sk-3d-size [aria-label^="Smaller"]').catch(() => undefined);
+  const hover = await to3d(page, 30, 30);
+  await page.mouse.move(hover[0], hover[1]);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(shots, `skins3d-hd-1440-${theme}.png`) });
+  check(`HD: no page errors (${theme})`, errors.length === 0, errors.join(' | '));
+  await context.close();
+}
+
 await browser.close();
 await server.close();
 const failed = results.filter((r) => !r.ok);
