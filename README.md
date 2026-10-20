@@ -76,6 +76,34 @@ HTTP range requests so only the textures are fetched from the client jar) or, fo
 official [bedrock-samples](https://github.com/Mojang/bedrock-samples) repository. Files are cached in
 IndexedDB on your device. Your projects are saved locally too — nothing is uploaded anywhere.
 
+## AI assistants (MCP)
+
+The website is the main way to make packs. For people who'd rather ask an AI assistant, the repository
+also has an [MCP](https://modelcontextprotocol.io) server in `mcp/`. It uses the same code as the site, so
+the packs it makes are the same, and you can open any of them on the site ("Open pack") to look at it and
+keep editing by hand. It runs on your computer and downloads game files the same way the site does.
+
+| Tool | What it does |
+| --- | --- |
+| `list_versions` | Java and Bedrock versions, with Java resource pack formats |
+| `list_textures` | Search a version's vanilla textures by words or category |
+| `get_texture` | Show a texture (enlarged, pixels kept sharp) |
+| `list_effects` | Whole-pack effects with their settings, and the presets (Dark Mode, Pastel, Retro 8-bit...) |
+| `create_texture_pack` | Build a `.zip` / `.mcpack`: presets, effects, new textures (PNG files or pixel art written as text), recoloured vanilla textures, icon, Java compatibility range |
+| `inspect_pack` | Open a pack and report its edition, version, textures and which Java releases accept it |
+| `convert_pack` | Java ↔ Bedrock, or to another Java version, with a report of what couldn't move over |
+
+After `npm install`, add it to an MCP client. For Claude Code, run this from the repository folder (the
+repository's `.mcp.json` also offers it automatically):
+
+```sh
+claude mcp add texture-pack-maker -- npx tsx mcp/server.ts
+```
+
+For other clients (Claude Desktop, Cursor...), use the command `npx` with the arguments
+`["tsx", "/path/to/TexturesOnline/mcp/server.ts"]`. Packs are saved to the folder the server was started in,
+or to `TEXTUREPACK_OUTPUT_DIR` when it is set (each call can also choose an `output_dir`).
+
 ## Development
 
 Requires Node.js 20.19+ (22 recommended).
@@ -120,6 +148,7 @@ src/ui/         design system components; src/styles/ tokens and global CSS
 src/shared/     pixel editor engine and the 3D/WebGL previews
 src/tools/      the pages: home, textures, skins, shaders (iris / vanilla / bedrock generators), help, guides
 src/app/        shell (top bar, footer), site constants, head tags, page content trees, SEO generation (seo/)
+mcp/            MCP server for AI assistants (Node), built on the same modules as the pages
 tests/          unit tests, end-to-end suites and test harnesses
 ```
 

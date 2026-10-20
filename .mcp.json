@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "texture-pack-maker": {
+      "command": "npx",
+      "args": ["tsx", "mcp/server.ts"]
+    }
+  }
+}
