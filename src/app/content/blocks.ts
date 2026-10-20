@@ -3,6 +3,7 @@
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../markup';
+import { responsiveImage } from '../responsive-image';
 
 export interface FaqItem {
   id: string;
@@ -52,12 +53,15 @@ export interface Shot {
   caption?: string;
 }
 
-/** A screenshot with a caption (lazy-loaded, sized to avoid layout shift). */
+/** Laid-out width of a figure: the page column, at most 860px wide on guides (less on tool pages). */
+const FIGURE_SIZES = '(max-width: 900px) calc(100vw - 32px), 860px';
+
+/** A screenshot with a caption (lazy-loaded, sized to avoid layout shift, AVIF where available). */
 export const figure = (shot: Shot): ElNode =>
   el(
     'figure',
     { class: 'guide-figure' },
-    el('img', { src: shot.src, alt: shot.alt, width: shot.width, height: shot.height, loading: 'lazy', decoding: 'async' }),
+    responsiveImage(shot, FIGURE_SIZES),
     shot.caption ? el('figcaption', null, shot.caption) : null,
   );
 export const strong = (...text: Child[]): ElNode => el('strong', null, ...text);
