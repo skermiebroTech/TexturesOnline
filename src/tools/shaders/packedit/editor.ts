@@ -18,20 +18,48 @@ import { createCodeView, type CodeView } from './code-view';
 import { exportFileName, licenseNote, openPackExportDialog, settingsFileName } from './export-dialog';
 import { formatted } from './fmt';
 import { optionLabel, valueLabel, type ProfileDef } from './iris-layout';
-import { optionValueString } from './iris-options';
+import { optionValueString, type IrisOption } from './iris-options';
 import type { ChosenValues } from './iris-rewrite';
 import { createOptionsView, type OptionsView } from './options-view';
 import { stripFormatting } from './properties';
 import { loadEdits, loadImportedFiles, saveEdits, saveImportedFiles, type ImportedPackProject } from './store';
 import { PackWorkspace, type IrisModel } from './workspace';
 import './packedit.css';
+import { pt } from './i18n/text';
+import { t } from '../i18n/text';
+import { it } from '../i18n/import';
+import { fmt } from '../../../i18n/editor-text';
 
 type Pane = 'options' | 'files' | 'pack';
 
-const KIND_INFO: Record<PackKind, { label: string; icon: IconName; short: string }> = {
-  iris: { label: 'Iris / OptiFine shader pack', icon: 'sparkles', short: 'Iris / OptiFine' },
-  'java-vanilla': { label: 'Java resource pack', icon: 'sun', short: 'Java resource pack' },
-  bedrock: { label: 'Bedrock pack', icon: 'cloud-sun', short: 'Bedrock pack' },
+const KIND_INFO: Record<PackKind, { icon: IconName; readonly short: string; readonly inSentence: string }> = {
+  iris: {
+    icon: 'sparkles',
+    get short() {
+      return t.targets.iris.shortName;
+    },
+    get inSentence() {
+      return pt.missing.kinds.iris;
+    },
+  },
+  'java-vanilla': {
+    icon: 'sun',
+    get short() {
+      return it.kinds.javaResourcePack;
+    },
+    get inSentence() {
+      return pt.missing.kinds.java;
+    },
+  },
+  bedrock: {
+    icon: 'cloud-sun',
+    get short() {
+      return t.kinds.bedrockPack;
+    },
+    get inSentence() {
+      return pt.missing.kinds.bedrock;
+    },
+  },
 };
 
 const PREFS_KEY = 'to-packedit-prefs';
@@ -62,7 +90,7 @@ function loadingView(root: HTMLElement, text: string): void {
 }
 
 export async function mountPackEditor(root: HTMLElement, project: ImportedPackProject): Promise<() => void> {
-  loadingView(root, `Opening “${project.name}”…`);
+  loadingView(root, fmt(pt.opening, { name: project.name }));
   let files: Record<string, Uint8Array> | null;
   let edits: Record<string, string>;
   try {
@@ -72,7 +100,7 @@ export async function mountPackEditor(root: HTMLElement, project: ImportedPackPr
       h(
         'div',
         { class: 'sh-message container' },
-        emptyState({ icon: 'warning', title: "Couldn't open the pack", text: friendlyError(err), action: button({ label: 'All shader projects', icon: 'arrow-left', variant: 'primary', onClick: () => navigate('/shaders') }) }),
+        emptyState({ icon: 'warning', title: pt.openFailed, text: friendlyError(err), action: button({ label: pt.allProjects, icon: 'arrow-left', variant: 'primary', onClick: () => navigate('/shaders') }) }),
       ),
     );
     return () => {};
@@ -88,8 +116,8 @@ function missingFilesView(root: HTMLElement, project: ImportedPackProject): () =
   let inner: (() => void) | null = null;
   const dz = dropzone({
     accept: PACK_ACCEPT,
-    label: `Open ${project.sourceName} again`,
-    hint: 'Your option changes are still saved and come back with it.',
+    label: fmt(pt.missing.reopen, { file: project.sourceName }),
+    hint: pt.missing.hint,
     icon: 'folder',
     onFiles: (list) => void reattach(list[0]),
   });
@@ -99,7 +127,7 @@ function missingFilesView(root: HTMLElement, project: ImportedPackProject): () =
     try {
       const found = (await findPacks(new Uint8Array(await file.arrayBuffer()), file.name)).filter((c) => c.kind === project.packFormat);
       if (!found.length) {
-        dz.setError(`No ${KIND_INFO[project.packFormat].label.toLowerCase()} was found in “${file.name}”.`);
+        dz.setError(fmt(pt.missing.notFound, { kind: KIND_INFO[project.packFormat].inSentence, name: file.name }));
         return;
       }
       const pick = found.find((c) => c.fileName === project.sourceName) ?? found[0];
@@ -108,7 +136,7 @@ function missingFilesView(root: HTMLElement, project: ImportedPackProject): () =
       project.byteSize = pick.byteSize;
       await saveProject(project);
       if (disposed) return;
-      toast('Pack files restored', { tone: 'success' });
+      toast(pt.missing.restored, { tone: 'success' });
       const edits = await loadEdits(project);
       inner = buildPackEditor(root, project, new PackWorkspace(project.packFormat, pick.files, edits));
     } catch (err) {
@@ -124,11 +152,11 @@ function missingFilesView(root: HTMLElement, project: ImportedPackProject): () =
         { class: 'pe-missing' },
         emptyState({
           icon: 'warning',
-          title: 'The pack files are missing',
-          text: `“${project.name}” is still in your projects, but its files were removed from this browser’s storage.`,
+          title: pt.missing.title,
+          text: fmt(pt.missing.text, { name: project.name }),
         }),
         dz,
-        h('div', { class: 'row wrap', style: { justifyContent: 'center' } }, button({ label: 'All shader projects', icon: 'arrow-left', variant: 'ghost', onClick: () => navigate('/shaders') })),
+        h('div', { class: 'row wrap', style: { justifyContent: 'center' } }, button({ label: pt.allProjects, icon: 'arrow-left', variant: 'ghost', onClick: () => navigate('/shaders') })),
       ),
     ),
   );
@@ -180,7 +208,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
     if (saveEl.dataset.state === s) return;
     saveEl.dataset.state = s;
     const [ic, text] =
-      s === 'saving' ? (['loader', 'Saving…'] as const) : s === 'dirty' ? (['clock', 'Unsaved changes'] as const) : s === 'error' ? (['warning', 'Not saved'] as const) : (['check', 'Saved'] as const);
+      s === 'saving' ? (['loader', pt.save.saving] as const) : s === 'dirty' ? (['clock', pt.save.dirty] as const) : s === 'error' ? (['warning', pt.save.error] as const) : (['check', pt.save.saved] as const);
     saveEl.replaceChildren(icon(ic), h('span', { class: 'sh-save-text' }, text));
   };
   paintSave('saved');
@@ -210,7 +238,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
         if (!destroyed) paintSave('error');
         if (!errorShown) {
           errorShown = true;
-          toast(friendlyError(err, "Your changes couldn't be saved"), { tone: 'error', duration: 8000, action: { label: 'Retry', onClick: () => void saveNow() } });
+          toast(friendlyError(err, pt.save.failed), { tone: 'error', duration: 8000, action: { label: pt.save.retry, onClick: () => void saveNow() } });
         }
       })
       .finally(() => {
@@ -245,27 +273,27 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
 
   // ------------------------------------------------------------------ header
   const title = h('h1', { class: 'sh-title truncate' }, project.name);
-  const renameBtn = iconButton('pencil', 'Rename', () => void rename(), { size: 'sm' });
-  const undoBtn = iconButton('undo', 'Undo (Ctrl+Z)', () => undo());
-  const redoBtn = iconButton('redo', 'Redo (Ctrl+Shift+Z)', () => redo());
-  const keysBtn = iconButton('keyboard', 'Keyboard shortcuts (?)', () => showShortcuts());
+  const renameBtn = iconButton('pencil', pt.rename, () => void rename(), { size: 'sm' });
+  const undoBtn = iconButton('undo', pt.undo, () => undo());
+  const redoBtn = iconButton('redo', pt.redo, () => redo());
+  const keysBtn = iconButton('keyboard', pt.shortcuts, () => showShortcuts());
   keysBtn.classList.add('sh-keys-btn');
-  const exportBtn = button({ label: 'Export', icon: 'download', variant: 'primary', class: 'sh-bar-export', onClick: () => doExport() });
-  tooltip(exportBtn, `Export ${exportFileName(project)} (Ctrl+E)`);
-  const back = h('a', { class: 'btn btn-ghost btn-sm sh-back', href: href('/shaders'), 'aria-label': 'All shader projects' }, icon('arrow-left'), h('span', { class: 'btn-label' }, 'Shaders'));
+  const exportBtn = button({ label: pt.export, icon: 'download', variant: 'primary', class: 'sh-bar-export', onClick: () => doExport() });
+  tooltip(exportBtn, fmt(pt.exportTip, { file: exportFileName(project) }));
+  const back = h('a', { class: 'btn btn-ghost btn-sm sh-back', href: href('/shaders'), 'aria-label': pt.allProjects }, icon('arrow-left'), h('span', { class: 'btn-label' }, pt.back));
   const paneTabs = tabs<Pane>({
     value: isIris ? 'options' : 'files',
     tabs: isIris
       ? [
-          { value: 'options', label: 'Options', icon: 'sliders' },
-          { value: 'files', label: 'Files', icon: 'files' },
+          { value: 'options', label: pt.tabs.options, icon: 'sliders' },
+          { value: 'files', label: pt.tabs.files, icon: 'files' },
         ]
       : [
-          { value: 'files', label: 'Files', icon: 'files' },
-          { value: 'pack', label: 'Pack', icon: 'package' },
+          { value: 'files', label: pt.tabs.files, icon: 'files' },
+          { value: 'pack', label: pt.tabs.pack, icon: 'package' },
         ],
     onChange: (v) => show(v),
-    label: 'Editor view',
+    label: pt.tabs.label,
   });
   paneTabs.classList.add('pe-tabs');
   const bar = h(
@@ -289,13 +317,13 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
   const editsList = h('div', { class: 'pe-changes' });
   const changesCount = h('span', { class: 'pe-count' });
   const editsCount = h('span', { class: 'pe-count' });
-  const resetAllBtn = iconButton('recycle', 'Reset every option to the pack default', () => resetAll(), { size: 'sm' });
-  const revertAllBtn = iconButton('undo', 'Revert every edited file', () => void revertAllFiles(), { size: 'sm' });
+  const resetAllBtn = iconButton('recycle', pt.resetAll, () => resetAll(), { size: 'sm' });
+  const revertAllBtn = iconButton('undo', pt.revertAll, () => void revertAllFiles(), { size: 'sm' });
 
   function sideContent(): HTMLElement {
-    const stats = [`${ws.paths.length} files`, formatBytes(project.byteSize)];
-    if (model) stats.unshift(`${model.set.options.size} options`);
-    const exportMain = button({ label: `Export ${exportFileName(project).endsWith('.mcpack') ? '.mcpack' : '.zip'}`, icon: 'download', variant: 'primary', class: 'pe-export-btn', onClick: () => doExport() });
+    const stats = [fmt(pt.files, { count: String(ws.paths.length) }), formatBytes(project.byteSize)];
+    if (model) stats.unshift(fmt(pt.options, { count: String(model.set.options.size) }));
+    const exportMain = button({ label: fmt(pt.exportExt, { ext: exportFileName(project).endsWith('.mcpack') ? '.mcpack' : '.zip' }), icon: 'download', variant: 'primary', class: 'pe-export-btn', onClick: () => doExport() });
     return h(
       'div',
       { class: 'pe-side-body' },
@@ -308,7 +336,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
           { class: 'pe-pack-info' },
           h('span', { class: 'pe-pack-name' }, project.name),
           h('span', { class: 'pe-pack-file truncate', title: project.sourceName }, project.sourceName),
-          h('span', { class: 'pe-pack-badges' }, badge(kind.short, project.packFormat === 'bedrock' ? 'blue' : project.packFormat === 'iris' ? 'purple' : 'gold'), badge('Imported', 'gray')),
+          h('span', { class: 'pe-pack-badges' }, badge(kind.short, project.packFormat === 'bedrock' ? 'blue' : project.packFormat === 'iris' ? 'purple' : 'gold'), badge(pt.imported, 'gray')),
           h('span', { class: 'faint small' }, stats.join(' · ')),
         ),
       ),
@@ -317,25 +345,28 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
         ? h(
             'section',
             { class: 'pe-side-section', 'aria-labelledby': 'pe-changes-title' },
-            h('div', { class: 'pe-side-head' }, h('h3', { class: 'section-title', id: 'pe-changes-title' }, icon('sliders'), 'Changed options'), changesCount, h('span', { class: 'grow' }), resetAllBtn),
+            h('div', { class: 'pe-side-head' }, h('h3', { class: 'section-title', id: 'pe-changes-title' }, icon('sliders'), pt.changedOptions), changesCount, h('span', { class: 'grow' }), resetAllBtn),
             changesList,
           )
         : null,
       h(
         'section',
         { class: 'pe-side-section', 'aria-labelledby': 'pe-edits-title' },
-        h('div', { class: 'pe-side-head' }, h('h3', { class: 'section-title', id: 'pe-edits-title' }, icon('file-text'), 'Edited files'), editsCount, h('span', { class: 'grow' }), revertAllBtn),
+        h('div', { class: 'pe-side-head' }, h('h3', { class: 'section-title', id: 'pe-edits-title' }, icon('file-text'), pt.editedFiles), editsCount, h('span', { class: 'grow' }), revertAllBtn),
         editsList,
       ),
       h(
         'section',
         { class: 'pe-side-section pe-side-export' },
         exportMain,
-        model ? h('p', { class: 'faint small' }, `Or download ${settingsFileName(project)} from the export window to keep the original pack untouched.`) : null,
+        model ? h('p', { class: 'faint small' }, fmt(pt.settingsHint, { file: settingsFileName(project) })) : null,
         licenseNote(),
       ),
     );
   }
+
+  /** A value as the pack's menu names it (on/off switches in the page's language) */
+  const shownValue = (o: IrisOption, v: string): string => (o.kind === 'bool' ? (v === 'true' ? pt.view.on : pt.view.off) : valueLabel(model!.lang, o, v));
 
   function paintChanges(): void {
     if (model) {
@@ -344,7 +375,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
       changesCount.hidden = names.length === 0;
       resetAllBtn.disabled = names.length === 0;
       if (!names.length) {
-        changesList.replaceChildren(h('p', { class: 'pe-side-empty faint small' }, 'Nothing changed yet. The pack uses its own defaults.'));
+        changesList.replaceChildren(h('p', { class: 'pe-side-empty faint small' }, pt.nothingChanged));
       } else {
         changesList.replaceChildren(
           ...names.map((n) => {
@@ -352,18 +383,18 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
             const label = stripFormatting(optionLabel(model!.lang, n));
             const reveal = h(
               'button',
-              { type: 'button', class: 'pe-change-main', title: `Show ${label}` },
+              { type: 'button', class: 'pe-change-main', title: fmt(pt.show, { name: label }) },
               h('span', { class: 'pe-change-name truncate' }, label),
               h(
                 'span',
                 { class: 'pe-change-values small' },
-                h('span', { class: 'pe-change-old' }, stripFormatting(valueLabel(model!.lang, o, o.defaultValue))),
+                h('span', { class: 'pe-change-old' }, stripFormatting(shownValue(o, o.defaultValue))),
                 icon('arrow-right'),
-                h('span', { class: 'pe-change-new' }, stripFormatting(valueLabel(model!.lang, o, values[n]))),
+                h('span', { class: 'pe-change-new' }, stripFormatting(shownValue(o, values[n]))),
               ),
             );
             reveal.addEventListener('click', () => revealOption(n));
-            const reset = iconButton('reload', `Reset ${label}`, () => resetOption(n), { size: 'sm' });
+            const reset = iconButton('reload', fmt(pt.reset, { name: label }), () => resetOption(n), { size: 'sm' });
             return h('div', { class: 'pe-change', dataset: { option: n } }, reveal, reset);
           }),
         );
@@ -383,14 +414,14 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
             });
             return h('div', { class: 'pe-change is-file' }, b);
           })
-        : [h('p', { class: 'pe-side-empty faint small' }, isIris ? 'No files edited. Advanced edits happen in the Files tab.' : 'No files edited yet.')]),
+        : [h('p', { class: 'pe-side-empty faint small' }, isIris ? pt.noEditsIris : pt.noEdits)]),
     );
   }
 
   // ------------------------------------------------------------------ options pane (Iris)
   let optionsView: OptionsView | null = null;
   const optionsHost = h('div', { class: 'pe-options-host' });
-  const search = h('input', { class: 'input', type: 'search', placeholder: 'Search options', 'aria-label': 'Search options', autocomplete: 'off', spellcheck: false });
+  const search = h('input', { class: 'input', type: 'search', placeholder: pt.searchOptions, 'aria-label': pt.searchOptions, autocomplete: 'off', spellcheck: false });
   search.addEventListener('input', () => optionsView?.search(search.value));
   search.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && search.value) {
@@ -399,13 +430,13 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
       optionsView?.search('');
     }
   });
-  const helpBtn = iconButton('circle-question', 'Show descriptions under each option', () => {
+  const helpBtn = iconButton('circle-question', pt.showHelp, () => {
     prefs.showHelp = !prefs.showHelp;
     savePrefs(prefs);
     helpBtn.setActive(prefs.showHelp);
     optionsView?.setShowHelp(prefs.showHelp);
   }, { active: prefs.showHelp, size: 'sm' });
-  const resetAllIcon = iconButton('recycle', 'Reset every option to the pack default', () => resetAll(), { size: 'sm' });
+  const resetAllIcon = iconButton('recycle', pt.resetAll, () => resetAll(), { size: 'sm' });
   const optionCount = h('span', { class: 'pe-count-plain faint small' });
 
   function buildOptionsView(): void {
@@ -423,7 +454,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
     optionsView.el.addEventListener('toggle', () => rememberOpen(), true);
     if (search.value) optionsView.search(search.value);
     optionsHost.replaceChildren(optionsView.el);
-    optionCount.textContent = `${model.set.options.size} options`;
+    optionCount.textContent = fmt(pt.options, { count: String(model.set.options.size) });
   }
   const rememberOpen = debounce(() => {
     if (!optionsView) return;
@@ -437,12 +468,12 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
         { class: 'pe-pane pe-options-layout', dataset: { pane: 'options' } },
         h(
           'section',
-          { class: 'panel pe-options-panel', 'aria-label': 'Shader options' },
-          h('div', { class: 'panel-header' }, icon('sliders'), h('h2', null, 'Options'), optionCount, h('span', { class: 'grow' }), helpBtn, resetAllIcon),
+          { class: 'panel pe-options-panel', 'aria-label': pt.shaderOptions },
+          h('div', { class: 'panel-header' }, icon('sliders'), h('h2', null, pt.optionsTitle), optionCount, h('span', { class: 'grow' }), helpBtn, resetAllIcon),
           h('div', { class: 'pe-options-tools' }, h('div', { class: 'input-with-icon' }, icon('search'), search)),
           h('div', { class: 'panel-body scroll pe-options-body' }, optionsHost),
         ),
-        h('aside', { class: 'panel pe-side', 'aria-label': 'Pack' }, h('div', { class: 'panel-header' }, icon('package'), h('h2', null, 'Pack')), h('div', { class: 'scroll pe-side-scroll' }, sideContent())),
+        h('aside', { class: 'panel pe-side', 'aria-label': pt.pack }, h('div', { class: 'panel-header' }, icon('package'), h('h2', null, pt.pack)), h('div', { class: 'scroll pe-side-scroll' }, sideContent())),
       )
     : null;
 
@@ -482,7 +513,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
   async function revertAllFiles(): Promise<void> {
     const edited = ws.editedPaths();
     if (!edited.length) return;
-    const ok = await confirmDialog('Revert every edited file?', `${edited.length} file${edited.length === 1 ? '' : 's'} go back to how they are in ${project.sourceName}.`, 'Revert all', true);
+    const ok = await confirmDialog(pt.revertTitle, fmt(pt.revertText, { count: edited.length, n: String(edited.length), file: project.sourceName }), pt.revertButton, true);
     if (!ok) return;
     const affects = edited.some((p) => PackWorkspace.affectsOptions(p));
     for (const p of edited) ws.revert(p);
@@ -494,23 +525,23 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
       modelDirty = true;
       if (current === 'options') refreshModel();
     }
-    toast('All files reverted', { tone: 'success' });
+    toast(pt.reverted, { tone: 'success' });
   }
 
   // ------------------------------------------------------------------ pack pane (non-Iris)
   const packPane = !isIris
-    ? h('div', { class: 'pe-pane pe-pack-page', dataset: { pane: 'pack' } }, h('div', { class: 'panel pe-side is-page' }, h('div', { class: 'panel-header' }, icon('package'), h('h2', null, 'Pack')), sideContent()))
+    ? h('div', { class: 'pe-pane pe-pack-page', dataset: { pane: 'pack' } }, h('div', { class: 'panel pe-side is-page' }, h('div', { class: 'panel-header' }, icon('package'), h('h2', null, pt.pack)), sideContent()))
     : null;
 
   const body = h('div', { class: 'pe-body' }, optionsPane, filesPane, packPane);
   for (const el of body.querySelectorAll<HTMLElement>(':scope > .pe-pane')) {
     el.setAttribute('role', 'tabpanel');
-    el.setAttribute('aria-label', el.dataset.pane === 'options' ? 'Options' : el.dataset.pane === 'files' ? 'Files' : 'Pack');
+    el.setAttribute('aria-label', el.dataset.pane === 'options' ? pt.tabs.options : el.dataset.pane === 'files' ? pt.tabs.files : pt.tabs.pack);
   }
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite' });
   const editor = h('div', { class: ['pe-editor', `is-${project.packFormat}`] }, bar, body, live);
   root.replaceChildren(editor);
-  const setTitle = () => (document.title = `${project.name.trim() || 'Shader pack'} · Shader Maker — Texture Pack Maker`);
+  const setTitle = () => (document.title = `${project.name.trim() || pt.shaderPack} · Shader Maker — Texture Pack Maker`);
   setTitle();
 
   // ------------------------------------------------------------------ panes
@@ -534,7 +565,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
     buildOptionsView();
     paintAll();
     const after = model.set.options.size;
-    if (after !== before) toast(`Options updated from your file edits (${after} options).`, { duration: 3000 });
+    if (after !== before) toast(fmt(pt.optionsUpdated, { count: String(after) }), { duration: 3000 });
   }
 
   // ------------------------------------------------------------------ value changes
@@ -576,7 +607,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
 
   function resetOption(name: string): void {
     if (values[name] === undefined) return;
-    record(`Reset ${labelOf(name)}`, null);
+    record(fmt(pt.reset, { name: labelOf(name) }), null);
     delete values[name];
     paintAll();
     markDirty();
@@ -585,8 +616,8 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
   function resetAll(): void {
     const n = changedNames().length;
     if (!n) return;
-    const before = replaceValues({}, 'Reset all options');
-    toast(`Reset ${n} option${n === 1 ? '' : 's'} to the pack defaults`, { action: { label: 'Undo', onClick: () => replaceValues(before, 'Undo reset') } });
+    const before = replaceValues({}, pt.resetAllStep);
+    toast(fmt(pt.resetDone, { count: n, n: String(n) }), { action: { label: pt.undoButton, onClick: () => replaceValues(before, pt.undoReset) } });
   }
 
   function applyProfile(p: ProfileDef): void {
@@ -598,9 +629,9 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
       if (v === o.defaultValue) delete next[k];
       else next[k] = v;
     }
-    const before = replaceValues(next, `Profile ${stripFormatting(p.label)}`);
-    live.textContent = `Profile ${stripFormatting(p.label)} applied`;
-    toast(`Applied the ${stripFormatting(p.label)} profile`, { tone: 'success', action: { label: 'Undo', onClick: () => replaceValues(before, 'Undo profile') } });
+    const before = replaceValues(next, fmt(pt.profileStep, { name: stripFormatting(p.label) }));
+    live.textContent = fmt(pt.profileApplied, { name: stripFormatting(p.label) });
+    toast(fmt(pt.profileToast, { name: stripFormatting(p.label) }), { tone: 'success', action: { label: pt.undoButton, onClick: () => replaceValues(before, pt.undoProfile) } });
   }
 
   function undo(): void {
@@ -610,7 +641,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
     values = e.values;
     paintAll();
     markDirty();
-    live.textContent = `Undid ${e.label}`;
+    live.textContent = fmt(pt.undid, { step: e.label });
   }
 
   function redo(): void {
@@ -620,7 +651,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
     values = e.values;
     paintAll();
     markDirty();
-    live.textContent = `Redid ${e.label}`;
+    live.textContent = fmt(pt.redid, { step: e.label });
   }
 
   function revealOption(name: string): void {
@@ -633,11 +664,11 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
   }
 
   async function rename(): Promise<void> {
-    const n = await promptDialog('Rename pack', 'Pack name', project.name, { confirmLabel: 'Rename', maxLength: 80 });
+    const n = await promptDialog(t.recent.renameTitle, t.recent.packName, project.name, { confirmLabel: t.recent.rename, maxLength: 80 });
     if (n === null || destroyed) return;
     project.name = n.replace(/[\x00-\x1f\x7f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || project.name;
     title.textContent = project.name;
-    tooltip(exportBtn, `Export ${exportFileName(project)} (Ctrl+E)`);
+    tooltip(exportBtn, fmt(pt.exportTip, { file: exportFileName(project) }));
     for (const el of editor.querySelectorAll('.pe-pack-name')) el.textContent = project.name;
     setTitle();
     void saveNow();
@@ -666,23 +697,23 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
   function showShortcuts(): void {
     openShortcutsSheet([
       {
-        title: 'Editing',
+        title: pt.keys.editing,
         items: [
           ...(isIris
             ? [
-                { keys: ['Mod', 'Z'], label: 'Undo an option change' },
-                { keys: ['Mod', 'Shift', 'Z'], label: 'Redo' },
-                { keys: ['/'], label: 'Search options' },
+                { keys: ['Mod', 'Z'], label: pt.keys.undo },
+                { keys: ['Mod', 'Shift', 'Z'], label: pt.keys.redo },
+                { keys: ['/'], label: pt.keys.search },
               ]
             : []),
-          { keys: ['Mod', 'F'], label: 'Find in the open file (Files tab)' },
-          { keys: ['Tab'], label: 'Indent in the file editor' },
-          { keys: ['Esc'], label: 'Leave the file editor' },
-          { keys: ['Mod', 'S'], label: 'Save now' },
-          { keys: ['Mod', 'E'], label: 'Export the pack' },
+          { keys: ['Mod', 'F'], label: pt.keys.find },
+          { keys: ['Tab'], label: pt.keys.indent },
+          { keys: ['Esc'], label: pt.keys.leave },
+          { keys: ['Mod', 'S'], label: pt.keys.saveNow },
+          { keys: ['Mod', 'E'], label: pt.keys.export },
         ],
       },
-      { title: 'Help', items: [{ keys: ['?'], label: 'Show this list' }] },
+      { title: pt.keys.help, items: [{ keys: ['?'], label: pt.keys.list }] },
     ]);
   }
 
@@ -696,7 +727,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
       if (k === 's') {
         e.preventDefault();
         scheduleSave.flush();
-        void saveNow().then(() => toast('Saved', { tone: 'success', duration: 1500 }));
+        void saveNow().then(() => toast(pt.saved, { tone: 'success', duration: 1500 }));
         return;
       }
       if (k === 'e') {

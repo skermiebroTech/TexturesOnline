@@ -12,12 +12,17 @@ import {
   declares, expandForAnalysis, fragmentOutputs, glslFloat, glslVec3, mentions, renameMain, uboNames, wrapFunction,
 } from './glsl';
 import type { FunctionSignature } from './glsl';
-import { NO_CORE_SHADERS_MESSAGE, detectFamily, importLine, majorFormat, missingSourcesMessage, wavingTarget } from './support';
+import { noCoreShadersMessage, detectFamily, importLine, majorFormat, missingSourcesMessage, wavingTarget } from './support';
+import { fmt } from '../../../i18n/editor-text';
+import { mt } from '../ui/i18n/messages';
 import type { Family } from './support';
 import {
   POST_NAMES, darknessBody, endOfFrameJson, fogEnvironmentFunction, gradeExpression, postBlurShader, postBrightShader,
   postFinalShader, postInclude, waveBody, waveFunction,
 } from './templates';
+
+/** Export warnings, in the page's language (English in Node) */
+const W = () => mt.vanilla.warnings;
 
 export interface VanillaShaderResult {
   files: FileMap;
@@ -83,7 +88,7 @@ class Patcher {
       if (original === undefined) continue;
       const renamed = renameMain(original);
       if (renamed === null) {
-        this.warn(`Skipped ${short(path)}: it does not have exactly one main() function.`);
+        this.warn(fmt(W().noMain, { file: short(path) }));
         continue;
       }
       const decls = [...new Set(plan.decls)];
@@ -198,13 +203,13 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
       point = `(gl_FragCoord.xy / ScreenSize - 0.5) * vec2(ScreenSize.x / ScreenSize.y, 1.0)`;
     }
     if (renameMain(code) === null) {
-      pt.warn(`Skipped ${short(fpath)}: it does not have exactly one main() function.`);
+      pt.warn(fmt(W().noMain, { file: short(fpath) }));
       continue;
     }
     if (varyings) {
       const bad = partners.find((p) => renameMain(src[`${CORE}${p.vsh}.vsh`] ?? '') === null);
       if (bad) {
-        pt.warn(`Skipped ${short(fpath)}: ${bad.vsh}.vsh does not have exactly one main() function.`);
+        pt.warn(fmt(W().noMainVertex, { file: short(fpath), vertex: bad.vsh }));
         continue;
       }
       for (const p of partners) vertexShaders.add(p.vsh);
@@ -234,7 +239,7 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
     );
   }
   if (patched === 0) {
-    pt.warn('Colors and vignette skipped: no world shader in this version matched the expected layout.');
+    pt.warn(W().noWorldShader);
     return;
   }
   pt.out[`${INCLUDE}${POST_INCLUDE_FILE}`] = postInclude(s, withGrade, withVignette);
@@ -245,7 +250,7 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
 function endOfFrameFiles(pt: Patcher, s: Settings, withGrade: boolean, withVignette: boolean, bloom: boolean): void {
   const src = pt.sources;
   if (src[`${CORE}screenquad.vsh`] === undefined || src[`${POST_SHADERS}blit.fsh`] === undefined) {
-    pt.warn('Colors, vignette and bloom skipped: this version is missing the full-screen shaders they build on.');
+    pt.warn(W().noPostShaders);
     return;
   }
   pt.out[`${POST_SHADERS}${POST_NAMES.final}.fsh`] = postFinalShader(s, withGrade, withVignette, bloom);
@@ -271,7 +276,7 @@ function patchFog(pt: Patcher, fam: Family, s: Settings): void {
   let code = pt.get(path);
   const change = hasFogChange(s);
   if (code === undefined || fam.fogApi === null) {
-    pt.warn('Fog settings skipped: this version has an unfamiliar fog shader.');
+    pt.warn(W().fogUnfamiliar);
     return;
   }
   const k = glslFloat(s.fogStart);
@@ -285,7 +290,7 @@ function patchFog(pt: Patcher, fam: Family, s: Settings): void {
   const wrap = (name: string, signature: FunctionSignature, build: (a: string[]) => string[]): boolean => {
     const r = wrapFunction(code as string, name, signature, build);
     if (typeof r === 'string') {
-      pt.warn(`Fog: ${r} in include/fog.glsl, so part of the fog settings is skipped.`);
+      pt.warn(fmt(W().fogPart, { problem: r }));
       return false;
     }
     code = r.code;
@@ -295,7 +300,7 @@ function patchFog(pt: Patcher, fam: Family, s: Settings): void {
   if (fam.fogApi === 'v1') {
     if (change.start || change.tint) wrap('linear_fog', FOG_SIGNATURES.linear_fog, (a) => [a[0], a[1], start(a[2], a[3]), a[3], color(a[4])]);
     if (change.start) wrap('linear_fog_fade', FOG_SIGNATURES.linear_fog_fade, (a) => [a[0], start(a[1], a[2]), a[2]]);
-    if (change.environment) pt.warn('Water & weather fog distance needs Java 1.21.6 or newer; it was left at vanilla.');
+    if (change.environment) pt.warn(W().fogEnvironment);
   } else {
     // Environmental fog is scaled by txo_fog_env(end), which leaves Blindness, Darkness, lava and
     // powder snow at their vanilla distances (see ENV_FOG_PROTECT_END).
@@ -389,32 +394,32 @@ function patchWaving(pt: Patcher, fam: Family, s: Settings): void {
   const src = pt.sources;
   const target = wavingTarget(src, fam);
   if ('reason' in target) {
-    pt.warn(`Waving plants skipped: ${target.reason}`);
+    pt.warn(fmt(W().wavingSkipped, { reason: target.reason }));
     return;
   }
   const { path, mode } = target;
   const code = src[path];
   if (code === undefined || renameMain(code) === null) {
-    pt.warn('Waving plants skipped: unexpected terrain vertex shader.');
+    pt.warn(W().wavingUnexpected);
     return;
   }
   const expanded = expandForAnalysis(code, src, path);
   const needs: [string, string][] = [['vec3', 'Position'], ['vec4', 'Color'], ['vec3', 'Normal']];
   for (const [type, name] of needs) {
     if (!new RegExp(`\\bin\\s+${type}\\s+${name}\\s*;`).test(expanded)) {
-      pt.warn(`Waving plants skipped: the terrain shader has no ${name} input.`);
+      pt.warn(fmt(W().wavingNoInput, { name }));
       return;
     }
   }
   if (!declares(expanded, 'mat4', 'ProjMat') || !declares(expanded, 'mat4', 'ModelViewMat')) {
-    pt.warn('Waving plants skipped: the terrain shader does not use the usual matrices.');
+    pt.warn(W().wavingMatrices);
     return;
   }
   const decls: string[] = [];
   if (mode === 'F4') {
     if (!declares(expanded, 'float', 'GameTime')) {
       if (uboNames(expanded).has('Globals') || src[`${INCLUDE}globals.glsl`] === undefined) {
-        pt.warn('Waving plants skipped: game time is not available to the terrain shader.');
+        pt.warn(W().wavingNoTime);
         return;
       }
       decls.push(importLine(fam, 'globals.glsl'));
@@ -429,7 +434,7 @@ function patchWaving(pt: Patcher, fam: Family, s: Settings): void {
       if (pair.vsh !== vsBase || !pair.json) continue;
       const text = pt.get(pair.json) as string;
       const updated = addProgramUniform(text, { name: 'GameTime', type: 'float', count: 1, values: [0] });
-      if (updated === null) pt.warn(`Waving plants: could not read ${short(pair.json)}; plants drawn with it will not move.`);
+      if (updated === null) pt.warn(fmt(W().wavingJson, { file: short(pair.json) }));
       else if (updated !== text) pt.out[pair.json] = updated;
     }
   }
@@ -445,12 +450,12 @@ function patchLightmap(pt: Patcher, s: Settings): void {
   const path = `${CORE}lightmap.fsh`;
   const code = pt.sources[path];
   if (code === undefined) {
-    pt.warn('Darker nights skipped: the light map became a shader in Java 1.21.2.');
+    pt.warn(W().nightsOld);
     return;
   }
   const outs = fragmentOutputs(code);
   if (outs.length !== 1 || renameMain(code) === null) {
-    pt.warn('Darker nights skipped: unexpected light map shader.');
+    pt.warn(W().nightsUnexpected);
     return;
   }
   pt.plan(path).post.push(...darknessBody(outs[0], s.nightDarkness));
@@ -473,7 +478,7 @@ export function generateVanillaShaderFiles(
     // No shader files at all for a 1.17+ pack format means the game files were not read, not that
     // the version is too old.
     const noFiles = !Object.keys(sources ?? {}).some((k) => k.startsWith(SHADERS_ROOT));
-    const message = noFiles && majorFormat(info?.packFormat) >= 7 ? missingSourcesMessage(info.versionId) : NO_CORE_SHADERS_MESSAGE;
+    const message = noFiles && majorFormat(info?.packFormat) >= 7 ? missingSourcesMessage(info.versionId) : noCoreShadersMessage();
     return { files: {}, warnings: [message], supported: false };
   }
   const s = readSettings(v);
@@ -484,9 +489,9 @@ export function generateVanillaShaderFiles(
   if (fam.endOfFrame) {
     if (grade || vignette || s.bloom) endOfFrameFiles(pt, s, grade, vignette, s.bloom);
   } else {
-    if (s.bloom) pt.warn('Bloom needs Java 26.3 or newer; it was left out for this version.');
+    if (s.bloom) pt.warn(W().bloomOld);
     if (fam.id === 'F6') {
-      if (grade || vignette) pt.warn('Colors and vignette skipped: this version uses the new shader compiler without the full-screen effect hook.');
+      if (grade || vignette) pt.warn(W().noHook);
     } else if (grade || vignette) {
       patchWorldFragments(pt, fam, s, grade, vignette);
     }
@@ -502,7 +507,7 @@ export function generateVanillaShaderFiles(
   for (const k of Object.keys(pt.out).sort()) files[k] = pt.out[k];
   const warnings = [...pt.warnings];
   if (Object.keys(files).length === 0 && warnings.length === 0) {
-    warnings.push('Every setting matches vanilla, so this pack does not change how the game looks.');
+    warnings.push(W().unchanged);
   }
   if (info.metadata !== false) {
     files[METADATA_FILE] = packMetadataJson({ target: 'java-vanilla', version: info.versionId, settings: normalizeOptions(v), preset: info.preset });

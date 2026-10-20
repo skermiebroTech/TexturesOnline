@@ -7,21 +7,23 @@ import { icon } from '../../../ui/icons';
 import { toast } from '../../../ui/toast';
 import { PACK_ACCEPT } from './accept';
 import '../packedit/packedit.css';
+import { t } from '../i18n/text';
+import { fmt } from '../../../i18n/editor-text';
 
 export function openPackFile(file: File): void {
   void import('./import-flow')
     .then((m) => m.openPackFile(file))
     .catch((err) => {
       console.error(err);
-      toast("The pack opener couldn't load. Check your connection and try again.", { tone: 'error' });
+      toast(t.openPack.loadFailed, { tone: 'error' });
     });
 }
 
 export function openPackSection(): HTMLElement {
   const dz = dropzone({
     accept: PACK_ACCEPT,
-    label: 'Drop a pack here or click to choose',
-    hint: '.zip or .mcpack · it stays on your device',
+    label: t.openPack.drop,
+    hint: t.openPack.dropHint,
     icon: 'folder',
     onFiles: (files) => {
       if (files[0]) openPackFile(files[0]);
@@ -29,9 +31,9 @@ export function openPackSection(): HTMLElement {
   });
   dz.classList.add('pe-open-drop');
   const kinds = [
-    { icon: 'sparkles' as const, text: 'Iris / OptiFine shader packs', sub: 'Change their options with sliders' },
-    { icon: 'sun' as const, text: 'Vanilla shader resource packs', sub: 'Edit the shader files' },
-    { icon: 'cloud-sun' as const, text: 'Bedrock packs (.mcpack)', sub: 'Edit the JSON settings' },
+    { icon: 'sparkles' as const, text: t.openPack.irisKind, sub: t.openPack.irisSub },
+    { icon: 'sun' as const, text: t.openPack.vanillaKind, sub: t.openPack.vanillaSub },
+    { icon: 'cloud-sun' as const, text: t.openPack.bedrockKind, sub: t.openPack.bedrockSub },
   ];
   return h(
     'section',
@@ -42,16 +44,16 @@ export function openPackSection(): HTMLElement {
       h(
         'div',
         { class: 'pe-open-text' },
-        h('span', { class: 'eyebrow' }, icon('folder'), 'Already have a pack?'),
-        h('h2', { id: 'pe-open-title' }, 'Open a shader pack'),
-        h('p', { class: 'muted' }, 'Edit a pack you downloaded or made here before. Packs exported from the Shader Maker open with all their settings.'),
+        h('span', { class: 'eyebrow' }, icon('folder'), t.openPack.eyebrow),
+        h('h2', { id: 'pe-open-title' }, t.openPack.title),
+        h('p', { class: 'muted' }, t.openPack.text),
         h(
           'ul',
           { class: 'pe-open-kinds' },
           kinds.map((k) => h('li', null, icon(k.icon), h('span', null, h('span', { class: 'pe-open-kind' }, k.text), h('span', { class: 'faint small' }, k.sub)))),
         ),
       ),
-      h('div', { class: 'pe-open-zone' }, dz, h('p', { class: 'pe-open-note faint small' }, icon('info'), h('span', null, 'Packs by other people have their own licenses. Edited copies are for your own use unless the license allows sharing.'))),
+      h('div', { class: 'pe-open-zone' }, dz, h('p', { class: 'pe-open-note faint small' }, icon('info'), h('span', null, t.openPack.license))),
     ),
   );
 }
@@ -61,7 +63,7 @@ export function enablePageDrop(target: HTMLElement): () => void {
   const overlay = h(
     'div',
     { class: 'pe-drop-overlay', hidden: true, 'aria-hidden': 'true' },
-    h('div', { class: 'pe-drop-box' }, icon('folder', { size: 48 }), h('strong', null, 'Drop to open this pack'), h('span', { class: 'muted' }, '.zip or .mcpack')),
+    h('div', { class: 'pe-drop-box' }, icon('folder', { size: 48 }), h('strong', null, t.openPack.dropToOpen), h('span', { class: 'muted' }, '.zip or .mcpack')),
   );
   document.body.appendChild(overlay);
   let depth = 0;
@@ -92,7 +94,7 @@ export function enablePageDrop(target: HTMLElement): () => void {
     const files = Array.from(e.dataTransfer?.files ?? []);
     const file = files.find((f) => fileMatchesAccept(f, PACK_ACCEPT));
     if (!file) {
-      if (files.length) toast(`“${files[0].name}” isn't a pack. Drop a .zip shader pack or a .mcpack file.`, { tone: 'warn' });
+      if (files.length) toast(fmt(t.openPack.notPack, { name: files[0].name }), { tone: 'warn' });
       return;
     }
     openPackFile(file);

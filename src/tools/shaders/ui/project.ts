@@ -3,6 +3,8 @@
 import type { Edition, OptionValues, ShaderProject, ShaderTarget } from '../../../core/types';
 import { cacheDeleteMany, cacheKeys } from '../../../core/storage';
 import { uuidv4 } from '../../../core/uuid';
+import { fmt } from '../../../i18n/editor-text';
+import { t } from '../i18n/text';
 
 export type PreviewTexturesKind = 'vanilla' | 'simple' | 'project' | 'imported';
 
@@ -94,7 +96,7 @@ export function newShaderProject(opts: {
   const p: ShaderProjectData = {
     id: uuidv4(),
     kind: 'shader',
-    name: cleanName(opts.name) || 'My shaders',
+    name: cleanName(opts.name) || t.myShaders,
     createdAt: now,
     updatedAt: now,
     target: opts.target,
@@ -110,7 +112,7 @@ export function newShaderProject(opts: {
 /** A copy with a fresh id (and fresh Bedrock uuids so both packs can be installed side by side). */
 export function duplicateShaderProject(p: ShaderProjectData): ShaderProjectData {
   const now = Date.now();
-  const copy: ShaderProjectData = { ...p, id: uuidv4(), name: `${p.name} (copy)`.slice(0, 80), createdAt: now, updatedAt: now, settings: { ...p.settings } };
+  const copy: ShaderProjectData = { ...p, id: uuidv4(), name: fmt(t.recent.copyName, { name: p.name }).slice(0, 80), createdAt: now, updatedAt: now, settings: { ...p.settings } };
   delete copy.packVersion;
   delete copy.exportCount;
   delete copy.lastExportAt;

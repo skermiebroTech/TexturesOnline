@@ -18,15 +18,25 @@ import { newImportedProject, saveImportedFiles, sweepOrphanedPackFiles } from '.
 import { baseName, findPacks, PACK_ACCEPT, PackImportError, type PackCandidate, type PackKind } from './detect';
 import { packTexts, projectFromCandidate } from './restore';
 import '../packedit/packedit.css';
+import { it } from '../i18n/import';
+import { t } from '../i18n/text';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt } from '../../../i18n/editor-text';
 
 /** Bigger archives are refused (a shader pack is a few MB; this is far above any real one). */
 const MAX_FILE_BYTES = 768 * 1024 * 1024;
 
-const KIND: Record<PackKind, { label: string; icon: IconName; tone: 'purple' | 'gold' | 'blue' }> = {
-  iris: { label: 'Iris / OptiFine', icon: 'sparkles', tone: 'purple' },
-  'java-vanilla': { label: 'Java resource pack', icon: 'sun', tone: 'gold' },
-  bedrock: { label: 'Bedrock', icon: 'cloud-sun', tone: 'blue' },
+const KIND: Record<PackKind, { label: () => string; icon: IconName; tone: 'purple' | 'gold' | 'blue' }> = {
+  iris: { label: () => t.targets.iris.shortName, icon: 'sparkles', tone: 'purple' },
+  'java-vanilla': { label: () => it.kinds.javaResourcePack, icon: 'sun', tone: 'gold' },
+  bedrock: { label: () => kit.edition.bedrock, icon: 'cloud-sun', tone: 'blue' },
 };
+
+/** Whether a name already ends with the "(edited)" suffix, in English or the page's language. */
+function hasEditedSuffix(name: string): boolean {
+  const suffix = fmt(it.edited, { name: '' }).trim();
+  return /\(edited\)$/i.test(name) || (!!suffix && name.toLowerCase().endsWith(suffix.toLowerCase()));
+}
 
 // ---------------------------------------------------------------------------------------------
 // Saving
@@ -48,7 +58,7 @@ async function openAsFiles(c: PackCandidate): Promise<string> {
   const texts = c.kind === 'iris' ? { name: c.name, description: '' } : packTexts({ ...c, metadata: null });
   // Iris shows the zip name in its pack list, so the edited copy gets its own name
   const base = c.kind === 'java-vanilla' ? baseName(c.fileName) : c.name;
-  const name = c.kind === 'bedrock' ? texts.name || c.name : /\(edited\)$/i.test(base) ? base : `${base} (edited)`;
+  const name = c.kind === 'bedrock' ? texts.name || c.name : hasEditedSuffix(base) ? base : fmt(it.edited, { name: base });
   const project = newImportedProject({
     kind: c.kind,
     name,
@@ -71,14 +81,14 @@ export function openPackFile(file: File): void {
   let cancelled = false;
   const body = h('div', { class: 'sh-export pe-import' });
   const modal = openModal({
-    title: 'Open a shader pack',
+    title: it.title,
     body,
     width: 620,
     class: 'sh-export-modal pe-import-modal',
     onClose: () => (cancelled = true),
   });
   const footer = (...nodes: Node[]) => h('div', { class: 'sh-export-footer' }, nodes);
-  const bar = progressBar({ label: 'Reading' });
+  const bar = progressBar({ label: it.reading });
 
   function renderBusy(label: string, fraction: number | null): void {
     if (!body.querySelector('.progress')) {
@@ -87,17 +97,17 @@ export function openPackFile(file: File): void {
           'div',
           { class: 'sh-export-head' },
           h('span', { class: 'sh-export-icon is-busy' }, icon('package')),
-          h('div', null, h('h3', { class: 'truncate' }, file.name), h('p', { class: 'muted' }, `${formatBytes(file.size)} · read on your device, nothing is uploaded`)),
+          h('div', null, h('h3', { class: 'truncate' }, file.name), h('p', { class: 'muted' }, fmt(it.readLocally, { size: formatBytes(file.size) }))),
         ),
         bar,
-        footer(button({ label: 'Cancel', variant: 'ghost', onClick: () => modal.close() })),
+        footer(button({ label: kit.cancel, variant: 'ghost', onClick: () => modal.close() })),
       );
     }
     bar.set({ label, fraction });
   }
 
   function renderError(message: string): void {
-    const input = h('input', { type: 'file', accept: PACK_ACCEPT, class: 'sr-only', 'aria-label': 'Choose another pack file' });
+    const input = h('input', { type: 'file', accept: PACK_ACCEPT, class: 'sr-only', 'aria-label': it.chooseAnother });
     input.addEventListener('change', () => {
       const f = input.files?.[0];
       if (!f) return;
@@ -109,10 +119,10 @@ export function openPackFile(file: File): void {
         'div',
         { class: 'sh-export-head is-error' },
         h('span', { class: 'sh-export-icon' }, icon('warning')),
-        h('div', null, h('h3', null, "This file can't be opened here"), h('p', { class: 'sh-export-msg' }, message)),
+        h('div', null, h('h3', null, it.cantOpen), h('p', { class: 'sh-export-msg' }, message)),
       ),
       input,
-      footer(button({ label: 'Close', variant: 'ghost', onClick: () => modal.close() }), button({ label: 'Choose another file', icon: 'folder', variant: 'primary', onClick: () => input.click() })),
+      footer(button({ label: kit.close, variant: 'ghost', onClick: () => modal.close() }), button({ label: it.chooseAnotherButton, icon: 'folder', variant: 'primary', onClick: () => input.click() })),
     );
   }
 
@@ -125,14 +135,14 @@ export function openPackFile(file: File): void {
         h(
           'div',
           null,
-          h('h3', null, 'This is a texture pack'),
-          h('p', { class: 'sh-export-msg' }, `“${c.name}” is a Java resource pack without shaders. The Texture Pack Maker is made for editing its textures.`),
+          h('h3', null, it.texturePack),
+          h('p', { class: 'sh-export-msg' }, fmt(it.texturePackText, { name: c.name })),
         ),
       ),
       footer(
-        button({ label: 'Edit files here', icon: 'file-text', variant: 'ghost', onClick: () => void finish(c, true) }),
+        button({ label: it.editFiles, icon: 'file-text', variant: 'ghost', onClick: () => void finish(c, true) }),
         button({
-          label: 'Texture Pack Maker',
+          label: it.textureMaker,
           iconEnd: 'arrow-right',
           variant: 'primary',
           onClick: () => {
@@ -155,14 +165,14 @@ export function openPackFile(file: File): void {
           'span',
           { class: 'pe-pick-text' },
           h('span', { class: 'pe-pick-name truncate' }, c.name),
-          h('span', { class: 'pe-pick-meta truncate' }, [c.location || 'Top of the archive', `${Object.keys(c.files).length} files`, formatBytes(c.byteSize)].join(' · ')),
+          h('span', { class: 'pe-pick-meta truncate' }, [c.location || it.topOfArchive, fmt(it.files, { count: String(Object.keys(c.files).length) }), formatBytes(c.byteSize)].join(' · ')),
           h(
             'span',
             { class: 'pe-pick-badges' },
-            badge(k.label, k.tone),
+            badge(k.label(), k.tone),
             c.note ? badge(c.note, 'gray') : null,
-            c.metadata ? badge('Made with Texture Pack Maker', 'green') : null,
-            c.kind === 'java-vanilla' && !c.hasShaders ? badge('No shaders', 'gray') : null,
+            c.metadata ? badge(it.madeHere, 'green') : null,
+            c.kind === 'java-vanilla' && !c.hasShaders ? badge(it.noShaders, 'gray') : null,
           ),
         ),
         icon('arrow-right', { class: 'pe-pick-go' }),
@@ -171,9 +181,9 @@ export function openPackFile(file: File): void {
       return b;
     });
     body.replaceChildren(
-      h('p', { class: 'muted' }, `“${file.name}” holds ${list.length} packs. Which one do you want to open?`),
+      h('p', { class: 'muted' }, fmt(it.holds, { name: file.name, count: list.length })),
       h('div', { class: 'pe-pick-list' }, rows),
-      footer(button({ label: 'Cancel', variant: 'ghost', onClick: () => modal.close() })),
+      footer(button({ label: kit.cancel, variant: 'ghost', onClick: () => modal.close() })),
     );
     rows[0]?.focus();
   }
@@ -187,7 +197,7 @@ export function openPackFile(file: File): void {
   }
 
   async function finish(c: PackCandidate, forceFiles: boolean): Promise<void> {
-    renderBusy('Saving to this browser', 0.9);
+    renderBusy(it.saving, 0.9);
     try {
       const asProject = Boolean(c.metadata) && !forceFiles;
       const id = asProject ? await openAsProject(c) : await openAsFiles(c);
@@ -195,52 +205,52 @@ export function openPackFile(file: File): void {
       modal.close();
       navigate(`/shaders/${id}`);
       if (asProject) {
-        toast(`Opened “${packTexts(c).name}” with all its settings`, {
+        toast(fmt(it.opened, { name: packTexts(c).name }), {
           tone: 'success',
           action: {
-            label: 'Edit files instead',
+            label: it.editInstead,
             onClick: () =>
               void openAsFiles(c)
                 .then((fid) => navigate(`/shaders/${fid}`))
-                .catch((err) => toast(friendlyError(err, "Couldn't open the files"), { tone: 'error' })),
+                .catch((err) => toast(friendlyError(err, it.openFilesFailed), { tone: 'error' })),
           },
         });
       } else {
         const n = Object.keys(c.files).length;
-        toast(`Opened “${c.name}” (${n} file${n === 1 ? '' : 's'})`, { tone: 'success' });
+        toast(fmt(it.openedFiles, { name: c.name, count: n, n: String(n) }), { tone: 'success' });
       }
       sweepOrphanedPackFiles();
     } catch (err) {
       if (cancelled) return;
       console.error(err);
-      renderError(friendlyError(err, "The pack couldn't be saved"));
+      renderError(friendlyError(err, it.saveFailed));
     }
   }
 
   async function run(): Promise<void> {
     if (!fileMatchesAccept(file, PACK_ACCEPT)) {
-      renderError(`“${file.name}” isn't a pack file. Open a .zip shader pack or resource pack, or a Bedrock .mcpack.`);
+      renderError(fmt(it.notPackFile, { name: file.name }));
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
-      renderError(`“${file.name}” is ${formatBytes(file.size)}, which is too big for a pack to open here.`);
+      renderError(fmt(it.tooBig, { name: file.name, size: formatBytes(file.size) }));
       return;
     }
-    renderBusy('Reading the file', 0.1);
+    renderBusy(it.readingFile, 0.1);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (cancelled) return;
-      renderBusy('Unpacking', 0.35);
+      renderBusy(it.unpacking, 0.35);
       const list = await findPacks(bytes, file.name, (label) => {
         if (!cancelled) renderBusy(label, 0.6);
       });
       if (cancelled) return;
-      renderBusy('Looking at the files', 0.8);
+      renderBusy(it.looking, 0.8);
       if (list.length > 1) renderPicker(list);
       else await choose(list[0]);
     } catch (err) {
       if (cancelled) return;
-      renderError(err instanceof PackImportError ? err.message : friendlyError(err, "The file couldn't be read"));
+      renderError(err instanceof PackImportError ? err.message : friendlyError(err, it.readFailed));
     }
   }
 

@@ -8,6 +8,8 @@ import { decodeText } from './text';
 import { IRIS_METADATA_PATH, METADATA_FILE, parsePackMetadata, type PackMetadata } from './metadata';
 import { parseProperties } from '../packedit/properties';
 import { readBedrockManifest } from '../packedit/json-tools';
+import { it } from '../i18n/import';
+import { fmt } from '../../../i18n/editor-text';
 
 export type PackKind = 'iris' | 'java-vanilla' | 'bedrock';
 
@@ -120,7 +122,15 @@ function describe(files: Record<string, Uint8Array>, kind: PackKind, fallbackNam
   const name = info?.name ? info.name.replace(/§./g, '').trim() : '';
   const type = info?.moduleType;
   const note =
-    type === 'resources' ? 'Resource pack' : type === 'data' || type === 'script' ? 'Behavior pack' : type === 'skin_pack' ? 'Skin pack' : type ? `${type} pack` : undefined;
+    type === 'resources'
+      ? it.kinds.resourcePack
+      : type === 'data' || type === 'script'
+        ? it.kinds.behaviorPack
+        : type === 'skin_pack'
+          ? it.kinds.skinPack
+          : type
+            ? fmt(it.kinds.otherPack, { type })
+            : undefined;
   const metadata = parsePackMetadata(files[METADATA_FILE]);
   return { name: name || fallbackName, hasShaders: true, note, metadata: metadata?.target === 'bedrock-vibrant' ? metadata : null };
 }
@@ -159,14 +169,14 @@ async function candidatesIn(
  */
 export async function findPacks(data: Uint8Array, fileName: string, onStep?: (label: string) => void): Promise<PackCandidate[]> {
   if (!isZip(data)) {
-    throw new PackImportError(`“${fileName}” isn't a .zip or .mcpack file. Shader packs are zip archives; pick the pack file itself, not a single file from it.`);
+    throw new PackImportError(fmt(it.errors.notZip, { name: fileName }));
   }
-  onStep?.('Unpacking');
+  onStep?.(it.unpacking);
   let files: Record<string, Uint8Array>;
   try {
     files = await readZip(data);
   } catch (err) {
-    throw new PackImportError(err instanceof Error ? err.message : "The archive couldn't be read.");
+    throw new PackImportError(err instanceof Error ? err.message : it.errors.unreadable);
   }
   let n = 0;
   const nextId = () => `c${++n}`;
@@ -183,7 +193,7 @@ export async function findPacks(data: Uint8Array, fileName: string, onStep?: (la
   for (const p of nested) {
     const bytes = files[p];
     if (!isZip(bytes) || unpacked > NESTED_BUDGET) continue;
-    onStep?.(`Opening ${p.split('/').pop()}`);
+    onStep?.(fmt(it.openingNested, { name: p.split('/').pop() ?? p }));
     let inner: Record<string, Uint8Array>;
     try {
       inner = await readZip(bytes);
@@ -197,14 +207,12 @@ export async function findPacks(data: Uint8Array, fileName: string, onStep?: (la
 
   if (!found.length) {
     const names = Object.keys(files);
-    if (!names.length) throw new PackImportError(`“${fileName}” is empty.`);
-    if (names.some((p) => /(^|\/)level\.dat$/.test(p))) throw new PackImportError(`“${fileName}” is a world, not a pack. Open a shader pack, resource pack or .mcpack instead.`);
+    if (!names.length) throw new PackImportError(fmt(it.errors.empty, { name: fileName }));
+    if (names.some((p) => /(^|\/)level\.dat$/.test(p))) throw new PackImportError(fmt(it.errors.world, { name: fileName }));
     if (names.some((p) => /\.class$/.test(p)) || names.some((p) => /(^|\/)fabric\.mod\.json$|(^|\/)META-INF\/mods\.toml$/.test(p))) {
-      throw new PackImportError(`“${fileName}” looks like a mod or a game file, not a pack. Shader packs have a “shaders” folder inside.`);
+      throw new PackImportError(fmt(it.errors.mod, { name: fileName }));
     }
-    throw new PackImportError(
-      `No pack was found in “${fileName}”. A shader pack has a “shaders” folder (Iris / OptiFine), a resource pack has a pack.mcmeta file, and a Bedrock pack has a manifest.json.`,
-    );
+    throw new PackImportError(fmt(it.errors.noPack, { name: fileName }));
   }
   return found;
 }

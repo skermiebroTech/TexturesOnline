@@ -8,10 +8,15 @@ import { button, progressBar } from '../../../ui/components';
 import { formatBytes, h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import { openModal } from '../../../ui/modal';
-import { BuildError, buildPackFiles, buildSteps, type BuildResult, type ShaderTargetInfo } from '../targets';
+import type { ShaderTargetInfo } from '../targets';
+import { BuildError, buildPackFiles, buildSteps, type BuildResult } from '../build';
 import { helpLink, installSteps } from './install';
 import { zipPack } from './pack-zip';
 import type { ShaderProjectData } from './project';
+import { et } from './i18n/editor';
+import { t } from '../i18n/text';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt, fmtNodes } from '../../../i18n/editor-text';
 
 export function openExportDialog(opts: {
   project: ShaderProjectData;
@@ -25,7 +30,7 @@ export function openExportDialog(opts: {
   let lastBlob: { blob: Blob; name: string } | null = null;
   const body = h('div', { class: 'sh-export' });
   const modal = openModal({
-    title: `Export “${project.name.trim() || 'My shaders'}”`,
+    title: fmt(et.exportDialog.title, { name: project.name.trim() || t.myShaders }),
     body,
     width: 600,
     class: 'sh-export-modal',
@@ -46,11 +51,11 @@ export function openExportDialog(opts: {
         return li;
       }),
     );
-    const bar = progressBar({ label: 'Starting…' });
-    bar.set({ label: 'Starting…', fraction: null });
-    const cancel = button({ label: 'Cancel', variant: 'ghost', onClick: () => modal.close() });
+    const bar = progressBar({ label: et.exportDialog.starting });
+    bar.set({ label: et.exportDialog.starting, fraction: null });
+    const cancel = button({ label: kit.cancel, variant: 'ghost', onClick: () => modal.close() });
     body.replaceChildren(
-      h('div', { class: 'sh-export-head' }, h('span', { class: 'sh-export-icon is-busy' }, icon('package')), h('div', null, h('h3', null, 'Building your pack'), h('p', { class: 'muted' }, 'This only takes a moment. Everything happens in your browser.'))),
+      h('div', { class: 'sh-export-head' }, h('span', { class: 'sh-export-icon is-busy' }, icon('package')), h('div', null, h('h3', null, et.exportDialog.building), h('p', { class: 'muted' }, et.exportDialog.buildingText))),
       list,
       bar,
       footer(cancel),
@@ -82,23 +87,23 @@ export function openExportDialog(opts: {
   }
 
   function renderError(err: unknown): void {
-    const msg = err instanceof BuildError ? err.message : friendlyError(err, "The pack couldn't be exported");
+    const msg = err instanceof BuildError ? err.message : friendlyError(err, et.exportDialog.failed);
     const kind = err instanceof BuildError ? err.kind : 'other';
-    const actions: Node[] = [button({ label: 'Close', variant: 'ghost', onClick: () => modal.close() })];
-    if (kind !== 'unsupported') actions.push(button({ label: 'Try again', icon: 'reload', variant: 'primary', onClick: () => void run() }));
+    const actions: Node[] = [button({ label: kit.close, variant: 'ghost', onClick: () => modal.close() })];
+    if (kind !== 'unsupported') actions.push(button({ label: kit.tryAgain, icon: 'reload', variant: 'primary', onClick: () => void run() }));
     const extra: Node[] = [];
     if (kind === 'assets' && target.id === 'java-vanilla') {
-      const input = h('input', { type: 'file', accept: '.jar', class: 'sr-only', 'aria-label': 'Choose a Minecraft .jar file' });
+      const input = h('input', { type: 'file', accept: '.jar', class: 'sr-only', 'aria-label': et.exportDialog.chooseJar });
       input.addEventListener('change', () => {
         const f = input.files?.[0];
         if (f) void run(f);
       });
-      const pick = button({ label: 'Use my own .jar', icon: 'folder', onClick: () => input.click() });
+      const pick = button({ label: et.exportDialog.ownJar, icon: 'folder', onClick: () => input.click() });
       extra.push(
         h(
           'div',
           { class: 'sh-export-jar' },
-          h('p', { class: 'muted small' }, 'Offline or blocked? Pick the game file from your computer: ', h('code', null, `.minecraft/versions/${project.version}/${project.version}.jar`)),
+          h('p', { class: 'muted small' }, fmtNodes(et.exportDialog.offline, { path: h('code', null, `.minecraft/versions/${project.version}/${project.version}.jar`) })),
           pick,
           input,
         ),
@@ -109,7 +114,7 @@ export function openExportDialog(opts: {
         'div',
         { class: 'sh-export-head is-error' },
         h('span', { class: 'sh-export-icon' }, icon(kind === 'unsupported' ? 'warning' : 'error')),
-        h('div', null, h('h3', null, kind === 'unsupported' ? "This version can't be used" : 'Export failed'), h('p', { class: 'sh-export-msg' }, msg)),
+        h('div', null, h('h3', null, kind === 'unsupported' ? et.exportDialog.cantUse : et.exportDialog.exportFailed), h('p', { class: 'sh-export-msg' }, msg)),
       ),
       ...extra,
       footer(...actions),
@@ -121,25 +126,25 @@ export function openExportDialog(opts: {
       ? h(
           'div',
           { class: 'sh-export-warnings' },
-          h('div', { class: 'sh-export-warnings-title' }, icon('warning'), h('span', null, 'Good to know')),
+          h('div', { class: 'sh-export-warnings-title' }, icon('warning'), h('span', null, et.exportDialog.goodToKnow)),
           h('ul', null, res.warnings.map((w) => h('li', null, w))),
         )
       : null;
-    const again = button({ label: 'Export again', icon: 'reload', variant: 'ghost', onClick: () => void run() });
+    const again = button({ label: et.exportDialog.again, icon: 'reload', variant: 'ghost', onClick: () => void run() });
     const download = button({
-      label: 'Download again',
+      label: et.exportDialog.downloadAgain,
       icon: 'download',
       onClick: () => {
         if (lastBlob) saveBlob(lastBlob.blob, lastBlob.name);
       },
     });
-    const done = button({ label: 'Done', variant: 'primary', onClick: () => modal.close() });
+    const done = button({ label: et.exportDialog.done, variant: 'primary', onClick: () => modal.close() });
     body.replaceChildren(
       h(
         'div',
         { class: 'sh-export-head is-success' },
         h('span', { class: 'sh-export-icon' }, icon('check')),
-        h('div', null, h('h3', null, 'Your pack is ready!'), h('p', { class: 'muted' }, 'It was downloaded to your Downloads folder.')),
+        h('div', null, h('h3', null, et.exportDialog.ready), h('p', { class: 'muted' }, et.exportDialog.downloaded)),
       ),
       h(
         'div',
@@ -149,7 +154,7 @@ export function openExportDialog(opts: {
         h('span', { class: 'faint small' }, formatBytes(blob.size)),
       ),
       ...(warn ? [warn] : []),
-      h('h4', { class: 'section-title' }, icon('book-open'), 'How to install'),
+      h('h4', { class: 'section-title' }, icon('book-open'), et.exportDialog.howToInstall),
       installSteps(target),
       helpLink(target),
       footer(again, download, done),
@@ -177,7 +182,7 @@ export function openExportDialog(opts: {
       });
       if (my.signal.aborted) return;
       ui.mark('zip');
-      ui.bar.set({ label: target.fileExt === '.mcpack' ? 'Packaging the .mcpack' : 'Zipping', fraction: null });
+      ui.bar.set({ label: target.fileExt === '.mcpack' ? et.exportDialog.packaging : et.exportDialog.zipping, fraction: null });
       const blob = await zipPack(res.files, target.fileExt === '.mcpack' ? 'application/octet-stream' : 'application/zip');
       if (my.signal.aborted) return;
       ui.done();

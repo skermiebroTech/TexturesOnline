@@ -66,7 +66,7 @@ const SKIN_STEPS: Child[] = [
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
-  ['Abra o ', link('/shaders', 'Shader Maker'), ' e escolha ', strong('Vanilla Java'), '.'],
+  ['Abra o ', link('/shaders', 'Shader Maker'), ' e escolha ', strong('Java vanilla'), '.'],
   `Escolha exatamente a versão do Minecraft que você joga (Java 1.17 ou mais novo; a ${LATEST} é o padrão).`,
   'Comece com um preset e ajuste brilho, contraste, cor, vinheta e neblina enquanto a prévia se atualiza.',
   ['Exporte o ', code('.zip'), ' e instale como qualquer pacote de recursos: ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), '.'],

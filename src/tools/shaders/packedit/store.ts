@@ -8,6 +8,8 @@ import type { OptionValues, ShaderTarget } from '../../../core/types';
 import { uuidv4 } from '../../../core/uuid';
 import type { PackKind } from '../import/detect';
 import type { ShaderProjectData } from '../ui/project';
+import { t } from '../i18n/text';
+import { fmt } from '../../../i18n/editor-text';
 
 export const FILE_KEY_PREFIX = 'packedit:v1:';
 
@@ -40,7 +42,7 @@ export function targetForKind(kind: PackKind): ShaderTarget {
 
 /** Short name of an imported pack's kind for cards and lists. */
 export function importedKindLabel(p: ImportedPackProject): string {
-  return p.packFormat === 'iris' ? 'Iris / OptiFine' : p.packFormat === 'java-vanilla' ? 'Java pack' : 'Bedrock pack';
+  return p.packFormat === 'iris' ? t.targets.iris.shortName : p.packFormat === 'java-vanilla' ? t.kinds.javaPack : t.kinds.bedrockPack;
 }
 
 export function isImportedPack(p: unknown): p is ImportedPackProject {
@@ -128,7 +130,7 @@ export async function duplicateImported(p: ImportedPackProject): Promise<Importe
   const copy: ImportedPackProject = {
     ...p,
     id,
-    name: `${p.name} (copy)`.slice(0, 80),
+    name: fmt(t.recent.copyName, { name: p.name }).slice(0, 80),
     createdAt: now,
     updatedAt: now,
     settings: { ...p.settings },

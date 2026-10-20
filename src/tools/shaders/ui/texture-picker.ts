@@ -28,6 +28,9 @@ import {
   vanillaLabel,
   type StoredPreviewPack,
 } from './texture-sources';
+import { et } from './i18n/editor';
+import { fmt, num } from '../../../i18n/editor-text';
+import { kit } from '../../../ui/i18n/kit';
 
 export interface TexturePickerOptions {
   edition: Edition;
@@ -79,7 +82,7 @@ function saveData(): boolean {
   }
 }
 
-const count = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const T = () => et.textures;
 
 export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
   let pref: PreviewTexturesPref = { ...opts.pref };
@@ -114,13 +117,13 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
     'button',
     { type: 'button', class: 'sh-stage-chip sh-tex-btn', 'aria-haspopup': 'menu', 'aria-expanded': 'false' },
     icon('image'),
-    h('span', { class: 'sh-tex-prefix', 'aria-hidden': 'true' }, 'Textures'),
+    h('span', { class: 'sh-tex-prefix', 'aria-hidden': 'true' }, T().prefix),
     labelEl,
     statusEl,
     icon('chevron-up', { class: 'sh-tex-caret' }),
   );
   btn.addEventListener('click', () => toggleMenu());
-  const retryBtn = h('button', { type: 'button', class: 'sh-stage-chip sh-tex-retry', hidden: true }, icon('reload'), h('span', null, 'Retry'));
+  const retryBtn = h('button', { type: 'button', class: 'sh-stage-chip sh-tex-retry', hidden: true }, icon('reload'), h('span', null, T().retry));
   retryBtn.addEventListener('click', () => retry());
   const el = h('div', { class: 'sh-tex' }, btn, retryBtn);
 
@@ -132,38 +135,42 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
   });
   el.append(fileInput);
 
-  const packHint = () => (opts.edition === 'java' ? '.zip resource pack' : '.mcpack or .zip resource pack');
+  const packHint = () => (opts.edition === 'java' ? T().javaPack : T().bedrockPack);
   const dropHint = h(
     'div',
     { class: 'sh-drop', hidden: true, 'aria-hidden': 'true' },
-    h('div', { class: 'sh-drop-box' }, icon('upload', { size: 48 }), h('strong', null, 'Drop a pack to preview it'), h('span', null, `${packHint()} · only the preview changes`)),
+    h('div', { class: 'sh-drop-box' }, icon('upload', { size: 48 }), h('strong', null, T().dropTitle), h('span', null, fmt(T().dropHint, { kind: packHint() }))),
   );
 
   const label = () => sourceLabel(pref, base.edition, base.version);
   const baseFailed = () => pref.kind !== 'simple' && (base.status === 'error' || base.status === 'deferred');
 
+  /** Download progress of the game textures ("45%"), while they load for the chosen textures */
+  function percent(): string | null {
+    if (importing || !applying || base.status !== 'loading' || pref.kind === 'simple') return null;
+    return base.fraction !== null && base.fraction > 0 ? num(Math.round(base.fraction * 100) / 100, { style: 'percent' }) : null;
+  }
+
   function statusText(): string {
-    if (importing) return 'Opening pack…';
-    if (applying && base.status === 'loading' && pref.kind !== 'simple') {
-      return base.fraction !== null && base.fraction > 0 ? `Downloading ${Math.round(base.fraction * 100)}%` : 'Loading…';
-    }
-    if (applying) return 'Loading…';
+    if (importing) return T().opening;
+    const pct = percent();
+    if (pct) return fmt(T().downloading, { percent: pct });
+    if (applying) return T().loading;
     return '';
   }
 
   /** Why the game textures aren't there, in one short sentence ("You're offline.", "Couldn't reach x.com."). */
   function reason(): string {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) return "You're offline.";
-    const first = /^.*?[.!?](\s|$)/.exec(base.error)?.[0].trim() ?? base.error.trim();
-    return first || 'The download failed.';
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return T().offline;
+    const first = /^.*?(?:[.!?](\s|$)|。)/.exec(base.error)?.[0].trim() ?? base.error.trim();
+    return first || T().downloadFailed;
   }
 
   function problem(): string {
     if (!baseFailed()) return '';
     const what = vanillaLabel(base.edition, base.version);
-    if (base.status === 'deferred') return `Data saver is on, so the ${what} textures weren't downloaded.`;
-    const shown = partial ? "blocks your pack doesn't change use the simple ones" : 'the preview uses the simple ones';
-    return `Couldn't load the ${what} textures, so ${shown}. ${reason()}`;
+    if (base.status === 'deferred') return fmt(T().deferred, { what });
+    return fmt(partial ? T().failedPartial : T().failed, { what, reason: reason() });
   }
 
   function paint(): void {
@@ -178,26 +185,26 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
     const st = statusText();
     if (busy) {
       statusEl.append(spinner(16));
-      const pct = /\d+%/.exec(st)?.[0];
+      const pct = percent();
       if (pct) statusEl.append(h('span', { class: 'sh-tex-pct' }, pct));
     } else if (warn) {
       statusEl.append(icon('warning-diamond', { class: 'sh-tex-warn' }));
     }
-    const extra = busy ? ` (${st.replace(/…$/, '')})` : warn ? ` (${base.status === 'deferred' ? 'not downloaded' : 'not loaded'})` : '';
-    btn.setAttribute('aria-label', `Preview textures: ${text}${extra}`);
+    const state = busy ? st.replace(/…$/, '') : warn ? (base.status === 'deferred' ? T().notDownloaded : T().notLoaded) : '';
+    btn.setAttribute('aria-label', state ? fmt(T().labelState, { source: text, state }) : fmt(T().label, { source: text }));
     // no tooltip over the open menu (focus comes back to the button with focus-visible)
     tooltip(
       btn,
       menu?.open
         ? ''
         : warn
-          ? `${problem()} Click Retry to try again.`
-          : `Preview textures: ${text}. Only this preview changes; your exported shaders are the same whatever you pick.`,
+          ? fmt(T().problemTip, { problem: problem() })
+          : fmt(T().tip, { source: text }),
     );
     retryBtn.hidden = !warn;
-    const retryLabel = base.status === 'deferred' ? `Download the ${vanillaLabel(base.edition, base.version)} textures` : `Try loading the ${vanillaLabel(base.edition, base.version)} textures again`;
+    const retryLabel = fmt(base.status === 'deferred' ? T().download : T().tryAgainFor, { what: vanillaLabel(base.edition, base.version) });
     retryBtn.setAttribute('aria-label', retryLabel);
-    retryBtn.querySelector('span:not(.icon)')!.textContent = base.status === 'deferred' ? 'Load' : 'Retry';
+    retryBtn.querySelector('span:not(.icon)')!.textContent = base.status === 'deferred' ? T().load : T().retry;
     tooltip(retryBtn, retryLabel);
     if (menu?.open) renderMenu();
   }
@@ -247,7 +254,7 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
   /** The chosen project / imported pack is gone: back to the game textures. */
   function lost(message: string, t: number): void {
     if (t !== token) return;
-    toast(`${message}, so the preview uses the Minecraft textures again.`, { tone: 'warn', duration: 7000 });
+    toast(fmt(T().lost, { message }), { tone: 'warn', duration: 7000 });
     const { imported } = pref;
     setPref({ kind: 'vanilla', ...(pref.kind === 'imported' || !imported ? {} : { imported }) });
     void applyChoice(false);
@@ -281,14 +288,14 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
       if (want.kind === 'project') {
         const p = await getProject(want.projectId ?? '').catch(() => undefined);
         if (t !== token) return;
-        if (!isTexturePackProject(p)) return lost(`“${want.name || 'Your texture pack'}” was deleted`, t);
+        if (!isTexturePackProject(p)) return lost(fmt(T().deleted, { name: want.name || T().yourPack }), t);
         projectStamp = p.updatedAt || 0;
         packName = p.name;
         if (p.name !== want.name) setPref({ ...pref, name: p.name });
         layer = (b) => overlayFromProject(b, p);
         layerKey = `project:${p.id}:${projectStamp}`;
         if (user && !Object.keys(p.overrides).length && !p.effects?.some((l) => l.enabled)) {
-          toast(`“${p.name}” has no edited textures or effects yet, so it looks like plain Minecraft.`, { tone: 'info' });
+          toast(fmt(T().noEdits, { name: p.name }), { tone: 'info' });
         }
       } else if (want.kind === 'imported' && want.imported) {
         const imp = want.imported;
@@ -297,7 +304,7 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
         if (!stored) {
           stored = await loadStoredPack(imp.key).catch(() => null);
           if (t !== token) return;
-          if (!stored) return lost(`The imported pack “${imp.name}” is no longer saved in this browser`, t);
+          if (!stored) return lost(fmt(T().importGone, { name: imp.name }), t);
           loadedPack = { key: imp.key, pack: stored };
         }
         const pack = stored;
@@ -319,10 +326,10 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
         btn.dataset.packSlots = String(report.fromPack);
       }
       if (user && layer && report?.applied && report.total && !report.fromPack) {
-        toast(`“${packName}” doesn't change any of the blocks in the preview, so it looks like plain Minecraft here.`, { tone: 'info', duration: 6000 });
+        toast(fmt(T().noBlocks, { name: packName }), { tone: 'info', duration: 6000 });
       }
       if (user && !vanilla && base.status === 'error') {
-        toast(problem(), { tone: 'warn', duration: 8000, action: { label: 'Retry', onClick: () => retry() } });
+        toast(problem(), { tone: 'warn', duration: 8000, action: { label: T().retry, onClick: () => retry() } });
       }
     } finally {
       if (t === token) {
@@ -350,7 +357,7 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
   async function importFile(file: File): Promise<void> {
     if (importing || destroyed) return;
     if (!fileMatchesAccept(file, PACK_ACCEPT)) {
-      toast(`“${file.name}” isn't a texture pack. Choose a ${opts.edition === 'java' ? '.zip' : '.mcpack or .zip'} file.`, { tone: 'error' });
+      toast(fmt(T().notTexturePack, { name: file.name, ext: opts.edition === 'java' ? '.zip' : '.mcpack or .zip' }), { tone: 'error' });
       return;
     }
     importing = true;
@@ -364,17 +371,15 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
       setPref({ kind: 'imported', name: pack.name, imported });
       const notes: string[] = [];
       if (pack.edition !== base.edition) {
-        notes.push(
-          `This is a ${editionLabel(pack.edition)} pack, but these shaders are for ${editionLabel(base.edition)} Edition. The preview shows its textures where the names match, but the pack won't load in ${editionLabel(base.edition)}.`,
-        );
+        notes.push(fmt(T().otherEdition, { pack: editionLabel(pack.edition), edition: editionLabel(base.edition) }));
       } else if (pack.legacyNames) {
-        notes.push(`This pack uses texture names from Minecraft 1.12 or older, which ${vanillaLabel(base.edition, base.version)} doesn't load. The preview shows them anyway.`);
+        notes.push(fmt(T().legacy, { what: vanillaLabel(base.edition, base.version) }));
       }
-      toast(`Previewing with “${pack.name}”`, { tone: 'success', duration: 3000 });
+      toast(fmt(T().previewing, { name: pack.name }), { tone: 'success', duration: 3000 });
       for (const n of notes) toast(n, { tone: 'warn', duration: 9000 });
       await applyChoice(true);
     } catch (err) {
-      if (!destroyed) toast(friendlyError(err, "Couldn't open that pack"), { tone: 'error', duration: 9000 });
+      if (!destroyed) toast(friendlyError(err, T().openFailed), { tone: 'error', duration: 9000 });
     } finally {
       importing = false;
       paint();
@@ -461,11 +466,13 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
   }
 
   function vanillaSub(): string {
-    const what = base.edition === 'java' ? `Java ${base.version}` : 'Bedrock';
-    if (pref.kind !== 'simple' && base.status === 'loading') return base.fraction ? `Downloading ${what} textures… ${Math.round(base.fraction * 100)}%` : `Loading ${what} textures…`;
-    if (base.status === 'error') return `Not loaded. ${reason()}`;
-    if (base.status === 'deferred') return 'Not downloaded (data saver is on)';
-    return base.edition === 'java' ? `Real Java ${base.version} textures` : 'Real Bedrock textures';
+    const what = base.edition === 'java' ? fmt(kit.edition.javaVersion, { version: base.version }) : kit.edition.bedrock;
+    if (pref.kind !== 'simple' && base.status === 'loading') {
+      return base.fraction ? fmt(T().menuDownloading, { what, percent: num(Math.round(base.fraction * 100) / 100, { style: 'percent' }) }) : fmt(T().menuLoading, { what });
+    }
+    if (base.status === 'error') return fmt(T().menuNotLoaded, { reason: reason() });
+    if (base.status === 'deferred') return T().menuDeferred;
+    return base.edition === 'java' ? fmt(T().realJava, { version: base.version }) : T().realBedrock;
   }
 
   function renderMenu(): void {
@@ -479,7 +486,7 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
         radio: true,
         checked: pref.kind === 'vanilla',
         icon: 'cube',
-        title: 'Minecraft (default)',
+        title: T().vanilla,
         sub: vanillaSub(),
         tone: base.status === 'error' ? 'warn' : undefined,
         onClick: () => choose({ kind: 'vanilla', ...(pref.imported ? { imported: pref.imported } : {}) }),
@@ -490,8 +497,8 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
         item({
           key: 'retry',
           icon: 'reload',
-          title: base.status === 'deferred' ? 'Download the game textures' : 'Try again',
-          sub: 'Needs an internet connection the first time',
+          title: base.status === 'deferred' ? T().downloadGame : T().tryAgain,
+          sub: T().needsInternet,
           onClick: () => {
             menu?.close();
             retry();
@@ -505,27 +512,31 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
         radio: true,
         checked: pref.kind === 'simple',
         icon: 'grid-2x2-2',
-        title: 'Simple',
-        sub: 'Built-in art, no download',
+        title: T().simple,
+        sub: T().simpleSub,
         onClick: () => choose({ kind: 'simple', ...(pref.imported ? { imported: pref.imported } : {}) }),
       }),
     );
-    rows.push(h('div', { class: 'sh-tex-heading', role: 'presentation' }, `My ${editionLabel(opts.edition)} texture packs`));
-    const packs = h('div', { class: 'sh-tex-packs', role: 'group', 'aria-label': 'My texture packs' });
+    rows.push(h('div', { class: 'sh-tex-heading', role: 'presentation' }, fmt(T().myPacks, { edition: editionLabel(opts.edition) })));
+    const packs = h('div', { class: 'sh-tex-packs', role: 'group', 'aria-label': T().myPacksLabel });
     if (projects === null) {
-      packs.append(h('div', { class: 'sh-tex-empty', role: 'presentation' }, spinner(16), h('span', null, 'Loading your packs…')));
+      packs.append(h('div', { class: 'sh-tex-empty', role: 'presentation' }, spinner(16), h('span', null, T().loadingPacks)));
     } else {
       for (const p of projects) {
         const edited = Object.keys(p.overrides ?? {}).length;
         const fx = (p.effects ?? []).filter((l) => l.enabled).length;
-        const bits = [p.edition === 'java' ? `Java ${p.version}` : 'Bedrock', edited ? count(edited, 'texture') : '', fx ? count(fx, 'effect') : ''].filter(Boolean);
+        const bits = [
+          p.edition === 'java' ? fmt(kit.edition.javaVersion, { version: p.version }) : kit.edition.bedrock,
+          edited ? fmt(T().texturesCount, { count: edited, n: String(edited) }) : '',
+          fx ? fmt(T().effectsCount, { count: fx, n: String(fx) }) : '',
+        ].filter(Boolean);
         packs.append(
           item({
             key: `project:${p.id}`,
             radio: true,
             checked: pref.kind === 'project' && pref.projectId === p.id,
             art: projectArt(p),
-            title: p.name || 'Untitled pack',
+            title: p.name || T().untitled,
             sub: bits.join(' · '),
             onClick: () => choose({ kind: 'project', projectId: p.id, name: p.name, ...(pref.imported ? { imported: pref.imported } : {}) }),
           }),
@@ -533,7 +544,7 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
       }
       const imp = pref.imported;
       if (imp) {
-        const other = imp.edition !== opts.edition ? ` · ${editionLabel(imp.edition)} pack` : '';
+        const other = imp.edition !== opts.edition ? fmt(T().otherEditionPack, { edition: editionLabel(imp.edition) }) : '';
         packs.append(
           item({
             key: 'imported',
@@ -541,13 +552,13 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
             checked: pref.kind === 'imported',
             icon: 'archive',
             title: imp.name,
-            sub: `Imported for the preview${other}`,
+            sub: fmt(T().importedSub, { other }),
             onClick: () => choose({ kind: 'imported', name: imp.name, imported: imp }),
           }),
         );
       }
       if (!projects.length && !imp) {
-        packs.append(h('p', { class: 'sh-tex-empty', role: 'presentation' }, `Packs you make in the Texture Pack Maker show up here.`));
+        packs.append(h('p', { class: 'sh-tex-empty', role: 'presentation' }, T().emptyPacks));
       }
     }
     rows.push(packs);
@@ -555,8 +566,8 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
       item({
         key: 'import',
         icon: 'upload',
-        title: 'Import a pack…',
-        sub: `Or drop a ${opts.edition === 'java' ? '.zip' : '.mcpack'} on the preview`,
+        title: T().import,
+        sub: fmt(T().importSub, { ext: opts.edition === 'java' ? '.zip' : '.mcpack' }),
         onClick: () => pickFile(),
       }),
     );
@@ -567,7 +578,7 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
           key: 'remove',
           icon: 'trash',
           tone: 'danger',
-          title: 'Remove the imported pack',
+          title: T().remove,
           sub: imp.name,
           onClick: () => {
             const wasShown = pref.kind === 'imported';
@@ -576,7 +587,7 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
             menu?.close();
             setPref(next);
             if (wasShown) void applyChoice(true);
-            toast(`Removed “${imp.name}” from the preview`);
+            toast(fmt(T().removed, { name: imp.name }));
           },
         }),
       );
@@ -610,10 +621,10 @@ export function createTexturePicker(opts: TexturePickerOptions): TexturePicker {
     projects = null;
     const content = h(
       'div',
-      { class: 'sh-tex-menu', role: 'menu', 'aria-label': 'Preview textures' },
-      h('div', { class: 'sh-tex-menu-head', role: 'presentation' }, icon('image'), h('span', null, 'Preview textures')),
+      { class: 'sh-tex-menu', role: 'menu', 'aria-label': T().menu },
+      h('div', { class: 'sh-tex-menu-head', role: 'presentation' }, icon('image'), h('span', null, T().menu)),
       h('div', { class: 'sh-tex-menu-list' }),
-      h('p', { class: 'sh-tex-note', role: 'presentation' }, icon('info'), h('span', null, 'Only this preview changes. Your exported shaders are the same, and work with any texture pack.')),
+      h('p', { class: 'sh-tex-note', role: 'presentation' }, icon('info'), h('span', null, T().note)),
     );
     content.addEventListener('keydown', onMenuKey);
     hideTooltip();

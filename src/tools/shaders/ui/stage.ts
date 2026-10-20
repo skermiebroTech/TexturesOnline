@@ -10,12 +10,26 @@ import { toast } from '../../../ui/toast';
 import { friendlyError } from '../../../core/net';
 import type { PreviewTexturesPref, ShaderPrefs } from './project';
 import { createTexturePicker } from './texture-picker';
+import { et } from './i18n/editor';
+import { fmt } from '../../../i18n/editor-text';
 
-export const TIME_PRESETS: { id: string; label: string; icon: IconName; tick: number; key: string }[] = [
-  { id: 'sunrise', label: 'Sunrise', icon: 'cloud-sun', tick: 400, key: '1' },
-  { id: 'noon', label: 'Noon', icon: 'sun', tick: 6000, key: '2' },
-  { id: 'sunset', label: 'Sunset', icon: 'cloud-moon', tick: 11700, key: '3' },
-  { id: 'night', label: 'Night', icon: 'moon', tick: 18000, key: '4' },
+type TimeId = keyof typeof et.stage.times;
+
+const time = (id: TimeId, icon: IconName, tick: number, key: string) => ({
+  id,
+  get label() {
+    return et.stage.times[id];
+  },
+  icon,
+  tick,
+  key,
+});
+
+export const TIME_PRESETS: { id: string; readonly label: string; icon: IconName; tick: number; key: string }[] = [
+  time('sunrise', 'cloud-sun', 400, '1'),
+  time('noon', 'sun', 6000, '2'),
+  time('sunset', 'cloud-moon', 11700, '3'),
+  time('night', 'moon', 18000, '4'),
 ];
 
 /** Minecraft ticks as a clock (tick 0 is 06:00). */
@@ -78,17 +92,17 @@ export function createStage(opts: {
   // ---- view
   const host = h('div', { class: 'sh-stage-host' });
   const compareBadge = h('div', { class: 'sh-compare-badge', hidden: true, role: 'status' }, icon('eye-off'), h('span', null, opts.compareLabel));
-  const hint = h('div', { class: 'sh-stage-chip sh-stage-hint' }, icon('info'), h('span', null, 'Live preview'));
-  tooltip(hint, 'An approximate in-browser preview. Drag to look around, scroll or pinch to zoom. The game will look a little different.');
+  const hint = h('div', { class: 'sh-stage-chip sh-stage-hint' }, icon('info'), h('span', null, et.stage.live));
+  tooltip(hint, et.stage.liveTip);
   hint.tabIndex = 0;
 
-  const rotateBtn = iconButton('reload', 'Auto-rotate (R)', () => toggleAutoRotate(), { active: prefs.autoRotate && !reduced });
-  const resetBtn = iconButton('target', 'Reset view (Home)', () => resetCamera());
-  const shotBtn = iconButton('camera', 'Save a screenshot (P)', () => void saveScreenshot());
+  const rotateBtn = iconButton('reload', et.stage.rotate, () => toggleAutoRotate(), { active: prefs.autoRotate && !reduced });
+  const resetBtn = iconButton('target', et.stage.resetView, () => resetCamera());
+  const shotBtn = iconButton('camera', et.stage.screenshot, () => void saveScreenshot());
   const viewTools = h('div', { class: 'sh-stage-tools' }, rotateBtn, resetBtn, shotBtn);
 
-  const compareBtn = h('button', { type: 'button', class: 'sh-compare-btn', 'aria-pressed': 'false' }, icon('eye'), h('span', null, 'Hold to compare'));
-  tooltip(compareBtn, `Hold to see “${opts.compareLabel}” (or hold C)`);
+  const compareBtn = h('button', { type: 'button', class: 'sh-compare-btn', 'aria-pressed': 'false' }, icon('eye'), h('span', null, et.stage.compare));
+  tooltip(compareBtn, fmt(et.stage.compareTip, { label: opts.compareLabel }));
   const endCompare = () => setCompare(false);
   compareBtn.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
@@ -144,21 +158,21 @@ export function createStage(opts: {
     min: '0',
     max: '23900',
     step: '100',
-    'aria-label': 'Time of day',
+    'aria-label': et.stage.timeOfDay,
   });
   const clock = h('output', { class: 'sh-clock', 'aria-hidden': 'true' });
   range.addEventListener('input', () => setTime(Number(range.value), false));
-  const playBtn = iconButton('play', 'Play the day cycle (D)', () => toggleDayAnimation(), { active: false });
+  const playBtn = iconButton('play', et.stage.play, () => toggleDayAnimation(), { active: false });
   playBtn.classList.add('sh-play');
   const timebar = h(
     'div',
     { class: 'sh-timebar' },
-    h('div', { class: 'sh-time-presets', role: 'group', 'aria-label': 'Time of day' }, timeButtons),
+    h('div', { class: 'sh-time-presets', role: 'group', 'aria-label': et.stage.timeOfDay }, timeButtons),
     h('div', { class: 'sh-time-slider' }, range, clock),
     playBtn,
   );
 
-  const el = h('section', { class: 'panel sh-stage', 'aria-label': 'Live preview' }, view, timebar);
+  const el = h('section', { class: 'panel sh-stage', 'aria-label': et.stage.live }, view, timebar);
 
   function paintTime(t: number): void {
     const v = String(Math.round(t / 100) * 100 % 24000);
@@ -212,8 +226,8 @@ export function createStage(opts: {
     opts.onPrefsChange();
     playBtn.setActive(on);
     playBtn.setIcon(on ? 'pause' : 'play');
-    playBtn.setAttribute('aria-label', on ? 'Pause the day cycle (D)' : 'Play the day cycle (D)');
-    tooltip(playBtn, on ? 'Pause the day cycle (D)' : 'Play the day cycle (D)');
+    playBtn.setAttribute('aria-label', on ? et.stage.pause : et.stage.play);
+    tooltip(playBtn, on ? et.stage.pause : et.stage.play);
     if (!preview) return;
     if (on) {
       preview.setTimeAnimation(true);
@@ -276,7 +290,7 @@ export function createStage(opts: {
       const blob = await preview.screenshot();
       opts.onScreenshot(blob, `${opts.screenshotName()} preview.png`);
     } catch (err) {
-      toast(friendlyError(err, "Couldn't take a screenshot"), { tone: 'error' });
+      toast(friendlyError(err, et.stage.screenshotFailed), { tone: 'error' });
     }
   }
 
@@ -289,7 +303,7 @@ export function createStage(opts: {
       if (preview || destroyed) return;
       const { createShaderPreview } = await import('../../../shared/preview/shader-preview');
       if (destroyed) return;
-      preview = createShaderPreview(host, { params: currentParams(), autoRotate: prefs.autoRotate && !reduced, assets: null });
+      preview = createShaderPreview(host, { params: currentParams(), autoRotate: prefs.autoRotate && !reduced, assets: null, text: et.stage.preview });
       if (prefs.animateDay) setDayAnimation(true);
       resolvePreview(preview);
     },

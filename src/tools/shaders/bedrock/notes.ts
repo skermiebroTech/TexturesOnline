@@ -1,6 +1,8 @@
 import type { OptionValues } from '../../../core/types';
 import { changesClassicFog, needsModernEngine } from './generate';
 import { readSettings } from './options';
+import { fmt, joinList } from '../../../i18n/editor-text';
+import { mt } from '../ui/i18n/messages';
 
 export interface BedrockNote {
   id: 'what' | 'devices' | 'graphics' | 'activate' | 'stacking' | 'limits' | 'fog';
@@ -60,11 +62,12 @@ export function bedrockManifestOptions(v: OptionValues): { capabilities: string[
 export function bedrockCompatibilityNotes(v: OptionValues): string[] {
   const s = readSettings(v);
   const notes: string[] = [];
+  const m = mt.bedrock;
   if (s.nightBrightness > 0 || s.biomeWaterColor > 0) {
-    const what = [s.nightBrightness > 0 ? 'Brighter nights' : '', s.biomeWaterColor > 0 ? 'Biome water colors' : ''].filter(Boolean).join(' and ');
-    notes.push(`${what} need${s.nightBrightness > 0 && s.biomeWaterColor > 0 ? '' : 's'} Minecraft 26.0 or newer, so the pack will not load on older versions.`);
+    const what = [s.nightBrightness > 0 ? m.brighterNights : '', s.biomeWaterColor > 0 ? m.biomeWater : ''].filter(Boolean);
+    notes.push(fmt(m.needs26, { what: joinList(what, 'and'), count: what.length }));
   }
-  if (s.coloredLights) notes.push('Colored block light shows on Minecraft 26.10 or newer; older versions ignore it.');
-  if (changesClassicFog(s)) notes.push('Your distance and underwater fog changes also apply outside Vibrant Visuals.');
+  if (s.coloredLights) notes.push(m.coloredLights);
+  if (changesClassicFog(s)) notes.push(m.classicFog);
   return notes;
 }

@@ -17,6 +17,9 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | `src/tools/merge/i18n/` | `merge` | `merge/view.ts` |
 | `src/tools/totem/i18n/` | `totem` | `totem/view.ts` |
 | `src/tools/skins/i18n/` | `skins` (start screen), `skins.parts`, `skins.editor`, `skins.export` | `skins/view.ts` |
+| `src/tools/shaders/i18n/` | `shaders` (start screen, targets, "New pack"), `shaders.import` | `shaders/view.ts` |
+| `src/tools/shaders/ui/i18n/` | `shaders.editor`, `shaders.options` (settings, presets and notes by key), `shaders.messages` (the generators' messages) | `shaders/view.ts` for an editor route, and every `loadGenerator()` |
+| `src/tools/shaders/packedit/i18n/` | `shaders.packedit` | `shaders/view.ts` for an editor route |
 
 In a folder:
 

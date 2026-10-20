@@ -10,6 +10,8 @@ import { toast } from '../../../ui/toast';
 import { extOf, isImagePath } from '../import/text';
 import { checkJson, minifyJson, prettyJson } from './json-tools';
 import type { PackWorkspace } from './workspace';
+import { pt } from './i18n/text';
+import { fmt } from '../../../i18n/editor-text';
 
 export interface CodeView {
   el: HTMLElement;
@@ -114,7 +116,7 @@ export function createCodeView(opts: {
   const treeBody = h('div', { class: 'pe-files', role: 'tree' }, dirEl(root, -1));
   const flat = h('div', { class: 'pe-files is-flat', hidden: true });
   const noMatch = h('p', { class: 'pe-empty muted small', hidden: true });
-  const filter = h('input', { class: 'input', type: 'search', placeholder: 'Filter files', 'aria-label': 'Filter files', autocomplete: 'off', spellcheck: false });
+  const filter = h('input', { class: 'input', type: 'search', placeholder: pt.code.filter, 'aria-label': pt.code.filter, autocomplete: 'off', spellcheck: false });
   filter.addEventListener('input', () => applyFilter());
   filter.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && filter.value) {
@@ -141,14 +143,14 @@ export function createCodeView(opts: {
       }),
     );
     noMatch.hidden = matches.length > 0;
-    noMatch.textContent = `No files match “${filter.value.trim()}”.`;
+    noMatch.textContent = fmt(pt.code.noMatch, { query: filter.value.trim() });
   }
 
   const editedOnly = h('span', { class: 'pe-tree-note small faint' });
   const treePanel = h(
     'section',
-    { class: 'panel pe-tree-panel', 'aria-label': 'Pack files' },
-    h('div', { class: 'panel-header' }, icon('files'), h('h2', null, 'Files'), h('span', { class: 'pe-count-plain faint small' }, `${ws.paths.length}`)),
+    { class: 'panel pe-tree-panel', 'aria-label': pt.code.packFiles },
+    h('div', { class: 'panel-header' }, icon('files'), h('h2', null, pt.code.files), h('span', { class: 'pe-count-plain faint small' }, `${ws.paths.length}`)),
     h('div', { class: 'pe-tree-tools' }, h('div', { class: 'input-with-icon' }, icon('search'), filter)),
     h('div', { class: 'pe-tree-scroll scroll' }, treeBody, flat, noMatch),
     h('div', { class: 'pe-tree-foot' }, editedOnly),
@@ -166,36 +168,36 @@ export function createCodeView(opts: {
     for (const b of flat.querySelectorAll<HTMLElement>('.pe-file')) paintRow(b, b.dataset.path!);
     for (const [dp, det] of dirEls) det.classList.toggle('has-edits', ws.editedPaths().some((e) => e.startsWith(dp)));
     const n = ws.editedPaths().length;
-    editedOnly.textContent = n ? `${n} file${n === 1 ? '' : 's'} edited` : 'No files edited';
+    editedOnly.textContent = n ? fmt(pt.code.edited, { count: n, n: String(n) }) : pt.code.noneEdited;
   }
 
   // ------------------------------------------------------------------ editor
   const pathEl = h('span', { class: 'pe-code-path truncate' });
   const metaEl = h('span', { class: 'pe-code-meta faint small' });
-  const editedBadge = h('span', { class: 'badge tone-gold', hidden: true }, 'Edited');
+  const editedBadge = h('span', { class: 'badge tone-gold', hidden: true }, pt.code.editedBadge);
   const jsonBadge = h('span', { class: 'badge', hidden: true });
 
-  const findInput = h('input', { class: 'input pe-find-input', type: 'search', placeholder: 'Find', 'aria-label': 'Find in file', autocomplete: 'off', spellcheck: false });
+  const findInput = h('input', { class: 'input pe-find-input', type: 'search', placeholder: pt.code.find, 'aria-label': pt.code.findLabel, autocomplete: 'off', spellcheck: false });
   const findCount = h('span', { class: 'pe-find-count faint small', 'aria-live': 'polite' });
-  const prevBtn = iconButton('chevron-up', 'Previous match (Shift+Enter)', () => step(-1), { size: 'sm' });
-  const nextBtn = iconButton('chevron-down', 'Next match (Enter)', () => step(1), { size: 'sm' });
-  const prettyBtn = button({ label: 'Pretty', icon: 'expand', size: 'sm', variant: 'ghost', onClick: () => reformat('pretty') });
-  const minifyBtn = button({ label: 'Minify', icon: 'collapse', size: 'sm', variant: 'ghost', onClick: () => reformat('minify') });
-  const revertBtn = button({ label: 'Revert file', icon: 'undo', size: 'sm', variant: 'ghost', onClick: () => revertCurrent() });
-  tooltip(prettyBtn, 'Format the JSON with indentation');
-  tooltip(minifyBtn, 'Put the JSON on one line');
-  tooltip(revertBtn, 'Undo every edit to this file');
+  const prevBtn = iconButton('chevron-up', pt.code.previous, () => step(-1), { size: 'sm' });
+  const nextBtn = iconButton('chevron-down', pt.code.next, () => step(1), { size: 'sm' });
+  const prettyBtn = button({ label: pt.code.pretty, icon: 'expand', size: 'sm', variant: 'ghost', onClick: () => reformat('pretty') });
+  const minifyBtn = button({ label: pt.code.minify, icon: 'collapse', size: 'sm', variant: 'ghost', onClick: () => reformat('minify') });
+  const revertBtn = button({ label: pt.code.revert, icon: 'undo', size: 'sm', variant: 'ghost', onClick: () => revertCurrent() });
+  tooltip(prettyBtn, pt.code.prettyTip);
+  tooltip(minifyBtn, pt.code.minifyTip);
+  tooltip(revertBtn, pt.code.revertTip);
 
   const gutter = h('pre', { class: 'pe-gutter', 'aria-hidden': 'true' });
   const hl = h('div', { class: 'pe-line-hl', 'aria-hidden': 'true', hidden: true });
-  const area = h('textarea', { class: 'pe-textarea', spellcheck: false, wrap: 'off', 'aria-label': 'File text', autocomplete: 'off' }) as HTMLTextAreaElement;
+  const area = h('textarea', { class: 'pe-textarea', spellcheck: false, wrap: 'off', 'aria-label': pt.code.text, autocomplete: 'off' }) as HTMLTextAreaElement;
   area.setAttribute('autocapitalize', 'off');
   area.setAttribute('autocorrect', 'off');
   const textWrap = h('div', { class: 'pe-code-text' }, gutter, h('div', { class: 'pe-area-wrap' }, hl, area));
   const imageBox = h('div', { class: 'pe-code-image', hidden: true });
   const binaryBox = h('div', { class: 'pe-code-binary', hidden: true });
   const status = h('div', { class: 'pe-code-status small' });
-  const placeholder = h('div', { class: 'pe-code-empty' }, icon('file-text', { size: 48 }), h('p', { class: 'muted' }, 'Pick a file on the left to view or edit it.'));
+  const placeholder = h('div', { class: 'pe-code-empty' }, icon('file-text', { size: 48 }), h('p', { class: 'muted' }, pt.code.pick));
 
   const tools = h(
     'div',
@@ -208,7 +210,7 @@ export function createCodeView(opts: {
   );
   const codePanel = h(
     'section',
-    { class: 'panel pe-code-panel', 'aria-label': 'File editor' },
+    { class: 'panel pe-code-panel', 'aria-label': pt.code.editor },
     h('div', { class: 'panel-header pe-code-head' }, icon('file-text'), h('div', { class: 'pe-code-title' }, pathEl, metaEl), editedBadge, jsonBadge),
     tools,
     h('div', { class: 'pe-code-body' }, placeholder, textWrap, imageBox, binaryBox),
@@ -237,7 +239,7 @@ export function createCodeView(opts: {
     const before = area.value.slice(0, pos);
     const line = (before.match(/\r\n|\r|\n/g)?.length ?? 0) + 1;
     const col = pos - Math.max(before.lastIndexOf('\n'), before.lastIndexOf('\r')) ;
-    const parts = [`Line ${line}, column ${col}`, `${lineCount} lines`, ws.encodingOf(current) === 'latin1' ? 'ISO-8859-1' : 'UTF-8'];
+    const parts = [fmt(pt.code.position, { line: String(line), column: String(col) }), fmt(pt.code.lines, { count: String(lineCount) }), ws.encodingOf(current) === 'latin1' ? 'ISO-8859-1' : 'UTF-8'];
     status.replaceChildren(h('span', null, parts.join(' · ')), jsonStatusEl);
   }
   const jsonStatusEl = h('span', { class: 'pe-json-status' });
@@ -258,9 +260,9 @@ export function createCodeView(opts: {
     const r = checkJson(area.value);
     jsonBadge.hidden = false;
     jsonBadge.className = `badge ${r.ok ? 'tone-green' : 'tone-red'}`;
-    jsonBadge.textContent = r.ok ? (r.lenient ? 'JSON with comments' : 'Valid JSON') : 'JSON error';
+    jsonBadge.textContent = r.ok ? (r.lenient ? pt.code.jsonComments : pt.code.jsonValid) : pt.code.jsonError;
     prettyBtn.disabled = minifyBtn.disabled = !r.ok || Boolean(r.lenient);
-    jsonStatusEl.textContent = r.ok ? '' : `${r.message}${r.line ? ` (line ${r.line}, column ${r.column})` : ''}`;
+    jsonStatusEl.textContent = r.ok ? '' : r.line ? fmt(pt.code.jsonAt, { message: `${r.message}`, line: String(r.line), column: String(r.column) }) : `${r.message}`;
     jsonStatusEl.classList.toggle('is-error', !r.ok);
   }
 
@@ -336,7 +338,7 @@ export function createCodeView(opts: {
   }
   function paintFind(): void {
     const q = findInput.value;
-    findCount.textContent = !q ? '' : matches.length ? `${matchIndex >= 0 ? matchIndex + 1 : 0} of ${matches.length}` : 'No matches';
+    findCount.textContent = !q ? '' : matches.length ? fmt(pt.code.matchOf, { index: String(matchIndex >= 0 ? matchIndex + 1 : 0), count: String(matches.length) }) : pt.code.noMatches;
     prevBtn.disabled = nextBtn.disabled = matches.length === 0;
     hl.hidden = matchIndex < 0 || !matches.length;
   }
@@ -417,17 +419,17 @@ export function createCodeView(opts: {
       editedBadge.hidden = true;
       jsonBadge.hidden = true;
       metaEl.textContent = size;
-      status.replaceChildren(h('span', null, `${size} · binary file`));
+      status.replaceChildren(h('span', null, fmt(pt.code.binary, { size })));
       if (isImagePath(p)) {
         imgUrl = URL.createObjectURL(new Blob([ws.original[p] as Uint8Array<ArrayBuffer>], { type: `image/${extOf(p) === 'jpg' ? 'jpeg' : extOf(p)}` }));
         const img = h('img', { src: imgUrl, alt: p, class: 'pe-image', decoding: 'async' });
         const dims = h('span', { class: 'faint small' });
         img.addEventListener('load', () => (dims.textContent = `${img.naturalWidth} × ${img.naturalHeight} px`));
-        img.addEventListener('error', () => img.replaceWith(h('p', { class: 'muted' }, "This image can't be shown.")));
+        img.addEventListener('error', () => img.replaceWith(h('p', { class: 'muted' }, pt.code.noImage)));
         imageBox.replaceChildren(h('div', { class: 'pe-image-frame checker' }, img), dims);
         imageBox.hidden = false;
       } else {
-        binaryBox.replaceChildren(icon('file', { size: 48 }), h('p', { class: 'muted' }, `Binary file (${size}). It is kept exactly as it is in the pack.`));
+        binaryBox.replaceChildren(icon('file', { size: 48 }), h('p', { class: 'muted' }, fmt(pt.code.binaryText, { size })));
         binaryBox.hidden = false;
       }
     }
@@ -453,9 +455,9 @@ export function createCodeView(opts: {
     paintJson();
     paintTree();
     opts.onRevert(p);
-    toast(`Reverted ${p.slice(p.lastIndexOf('/') + 1)}`, {
+    toast(fmt(pt.code.reverted, { file: p.slice(p.lastIndexOf('/') + 1) }), {
       action: {
-        label: 'Undo',
+        label: pt.code.undo,
         onClick: () => {
           ws.setText(p, edited);
           if (current === p) {
@@ -481,7 +483,7 @@ export function createCodeView(opts: {
       area.setRangeText(next, 0, area.value.length, 'start');
       area.dispatchEvent(new Event('input'));
     } catch {
-      toast('Fix the JSON error first.', { tone: 'warn' });
+      toast(pt.code.fixJson, { tone: 'warn' });
     }
   }
 

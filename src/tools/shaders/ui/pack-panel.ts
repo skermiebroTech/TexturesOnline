@@ -10,6 +10,10 @@ import type { ShaderTargetInfo } from '../targets';
 import type { AnyGenerator, NoteDef, VanillaSupportInfo } from './generator';
 import { helpLink, installSteps } from './install';
 import type { ShaderProjectData } from './project';
+import { et } from './i18n/editor';
+import { t } from '../i18n/text';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt, fmtNodes } from '../../../i18n/editor-text';
 
 export interface PackPanel {
   el: HTMLElement;
@@ -21,14 +25,14 @@ export interface PackPanel {
   setExportAvailable(ok: boolean, reason?: string): void;
 }
 
-const FEATURE_LABELS: { id: string; label: string; icon: IconName }[] = [
-  { id: 'grading', label: 'Colors & tone', icon: 'colors-swatch' },
-  { id: 'vignette', label: 'Vignette', icon: 'aspect-ratio' },
-  { id: 'bloom', label: 'Bloom glow', icon: 'sparkle' },
-  { id: 'fog', label: 'Distance fog', icon: 'cloud' },
-  { id: 'fogEnvironment', label: 'Water & weather fog', icon: 'waves' },
-  { id: 'nightDarkness', label: 'Darker nights', icon: 'moon' },
-  { id: 'waving', label: 'Waving plants', icon: 'leaf' },
+const FEATURE_LABELS: { id: keyof typeof et.pack.features; icon: IconName }[] = [
+  { id: 'grading', icon: 'colors-swatch' },
+  { id: 'vignette', icon: 'aspect-ratio' },
+  { id: 'bloom', icon: 'sparkle' },
+  { id: 'fog', icon: 'cloud' },
+  { id: 'fogEnvironment', icon: 'waves' },
+  { id: 'nightDarkness', icon: 'moon' },
+  { id: 'waving', icon: 'leaf' },
 ];
 
 /** Compares two Java release ids (e.g. '1.21.4' vs '26.3'); null when either isn't a plain release. */
@@ -75,14 +79,14 @@ export function packPanel(opts: {
   const { project, target, gen } = opts;
 
   // ---- pack info
-  const nameField = textInput({ label: 'Pack name', value: project.name, maxLength: 80, onInput: (v) => opts.onName(v) });
+  const nameField = textInput({ label: et.pack.name, value: project.name, maxLength: 80, onInput: (v) => opts.onName(v) });
   nameField.classList.add('sh-name-field');
   const descField = textInput({
-    label: 'Description',
+    label: et.pack.description,
     value: project.description,
     multiline: true,
     maxLength: 200,
-    placeholder: 'Shown under the pack name in Minecraft',
+    placeholder: et.pack.descriptionHint,
     onInput: (v) => opts.onDescription(v),
   });
   const targetLine = h(
@@ -94,8 +98,8 @@ export function packPanel(opts: {
   const badges = h(
     'div',
     { class: 'row wrap', style: { '--gap': '6px' } },
-    badge(target.edition === 'java' ? 'Java' : 'Bedrock', target.edition === 'java' ? 'green' : 'blue'),
-    target.needsMods ? badge('Needs Iris or OptiFine', 'gold') : badge('No mods needed', 'purple'),
+    badge(target.edition === 'java' ? kit.edition.java : kit.edition.bedrock, target.edition === 'java' ? 'green' : 'blue'),
+    target.needsMods ? badge(et.pack.needsMod, 'gold') : badge(et.pack.noMods, 'purple'),
   );
   const infoSection = h('section', { class: 'sh-pack-section' }, targetLine, badges, nameField, descField);
 
@@ -114,8 +118,8 @@ export function packPanel(opts: {
     const iris = irisOk === null ? null : irisOk >= 0 && (irisMax ?? 0) <= 0;
     const of = ofMin === null ? null : ofMin >= 0 && (ofMax ?? 0) <= 0;
     compatList.replaceChildren(
-      row(iris, 'Iris (recommended)', 'Java 1.16.5 to 26.3, with Fabric. Fast, works with Sodium.', 'sparkles'),
-      row(of, 'OptiFine', 'Java 1.8.9 to 26.2 (no 26.3 build yet).', 'gear'),
+      row(iris, et.pack.irisRow, et.pack.irisDetail, 'sparkles'),
+      row(of, 'OptiFine', et.pack.optifineDetail, 'gear'),
     );
     const tips: HTMLElement[] = [];
     const notes = gen.kind === 'iris' ? (gen.IRIS_NOTES ?? []) : [];
@@ -129,7 +133,15 @@ export function packPanel(opts: {
           icon('warning'),
           n
             ? h('span', null, n.text)
-            : h('span', null, 'Minecraft 26.2 and newer can run on Vulkan. Iris needs OpenGL: set ', h('strong', null, 'Graphics API'), ' to ', h('strong', null, 'Default'), ' or ', h('strong', null, 'Prefer OpenGL'), ' in Video Settings.'),
+            : h(
+                'span',
+                null,
+                fmtNodes(et.pack.vulkan, {
+                  api: h('strong', null, et.pack.graphicsApi),
+                  default: h('strong', null, et.pack.apiDefault),
+                  opengl: h('strong', null, et.pack.preferOpenGl),
+                }),
+              ),
         ),
       );
     }
@@ -141,7 +153,7 @@ export function packPanel(opts: {
           'p',
           { class: 'sh-note' },
           icon('info'),
-          h('span', null, 'Re-exported with the same file name? In game, press ', h('strong', null, 'Reset'), ' in Shader Pack Settings to use your new defaults.'),
+          h('span', null, fmtNodes(et.pack.reExported, { reset: h('strong', null, et.pack.resetButton) })),
         ),
       );
     }
@@ -157,7 +169,7 @@ export function packPanel(opts: {
     }
     if (!support.supported) {
       compatList.replaceChildren();
-      notesEl.replaceChildren(h('p', { class: 'sh-note is-warn' }, icon('warning'), h('span', null, support.notes[0] ?? 'This version is not supported.')));
+      notesEl.replaceChildren(h('p', { class: 'sh-note is-warn' }, icon('warning'), h('span', null, support.notes[0] ?? et.pack.notSupported)));
       return;
     }
     const features = support.features ?? {};
@@ -165,7 +177,7 @@ export function packPanel(opts: {
       ...FEATURE_LABELS.filter((f) => f.id in features).map((f) => {
         const ok = features[f.id] !== false;
         const why = support?.reasons[f.id] ?? '';
-        const r = row(ok, f.label, ok ? 'Works in this version' : why || 'Not available in this version', f.icon);
+        const r = row(ok, et.pack.features[f.id], ok ? et.pack.works : why || et.pack.notAvailable, f.icon);
         return r;
       }),
     );
@@ -178,7 +190,7 @@ export function packPanel(opts: {
     const m = gen.bedrockManifestOptions?.(settings);
     const eng = m?.minEngine ?? [1, 21, 120];
     const pretty = eng[0] === 1 && eng[1] >= 26 ? `${eng[1]}.${eng[2]}` : eng.join('.');
-    bedrockEngine.replaceChildren(icon('gamepad'), h('span', null, 'Needs Minecraft Bedrock ', h('strong', null, `${pretty} or newer`), ' with Vibrant Visuals.'));
+    bedrockEngine.replaceChildren(icon('gamepad'), h('span', null, fmtNodes(et.pack.bedrockEngine, { version: h('strong', null, fmt(et.pack.orNewer, { version: pretty })) })));
     const notes = gen.bedrockCompatibilityNotes?.(settings) ?? [];
     notesEl.replaceChildren(...notes.map((n) => h('p', { class: 'sh-note' }, icon('info'), h('span', null, n))));
   };
@@ -187,7 +199,7 @@ export function packPanel(opts: {
     const picker = versionPicker({
       edition: 'java',
       value: project.version,
-      label: gen.kind === 'iris' ? 'Minecraft version you play' : 'Minecraft version',
+      label: gen.kind === 'iris' ? et.pack.versionYouPlay : et.pack.version,
       onChange: (_e, v) => {
         version = v;
         opts.onVersion(v);
@@ -195,31 +207,31 @@ export function packPanel(opts: {
       },
     });
     targetSection.append(
-      h('h3', { class: 'section-title' }, icon(gen.kind === 'iris' ? 'gear' : 'box'), gen.kind === 'iris' ? 'Works with' : 'Game version'),
+      h('h3', { class: 'section-title' }, icon(gen.kind === 'iris' ? 'gear' : 'box'), gen.kind === 'iris' ? et.pack.worksWith : et.pack.gameVersion),
       picker,
     );
     if (gen.kind === 'java-vanilla') {
-      targetSection.append(h('p', { class: 'muted small' }, 'Vanilla shaders change with every Minecraft update, so this pack only works in the exact version you pick.'));
+      targetSection.append(h('p', { class: 'muted small' }, et.pack.vanillaNote));
     }
     targetSection.append(compatList, notesEl);
     if (gen.kind === 'iris') renderIrisCompat();
   } else {
     const noteList = accordion((gen.BEDROCK_VV_NOTES ?? []).filter((n) => n.id !== 'activate'));
-    targetSection.append(h('h3', { class: 'section-title' }, icon('cloud-sun'), 'Vibrant Visuals'), bedrockEngine, notesEl, noteList);
+    targetSection.append(h('h3', { class: 'section-title' }, icon('cloud-sun'), t.targets.bedrock.shortName), bedrockEngine, notesEl, noteList);
     renderBedrock(opts.settings);
   }
 
   // ---- export
-  const exportBtn = button({ label: `Export ${target.fileExt}`, icon: 'download', variant: 'primary', size: 'lg', class: 'sh-export-main', onClick: () => opts.onExport() });
-  tooltip(exportBtn, 'Build and download your pack (Ctrl+E)');
+  const exportBtn = button({ label: fmt(et.pack.exportExt, { ext: target.fileExt }), icon: 'download', variant: 'primary', size: 'lg', class: 'sh-export-main', onClick: () => opts.onExport() });
+  tooltip(exportBtn, et.pack.exportTip);
   const fileLine = h('p', { class: 'sh-file-line' });
   const destLine = h('p', { class: 'sh-file-dest' }, target.installPlace);
   const lastLine = h('p', { class: 'faint small sh-last-export' });
   const paintFile = () => {
-    const name = (project.name.trim() || 'My shaders') + target.fileExt;
+    const name = (project.name.trim() || t.myShaders) + target.fileExt;
     fileLine.replaceChildren(icon(target.fileExt === '.mcpack' ? 'package' : 'archive'), h('span', { class: 'truncate', title: name }, name));
     lastLine.hidden = !project.lastExportAt;
-    if (project.lastExportAt) lastLine.textContent = `Last exported ${timeAgo(project.lastExportAt)}`;
+    if (project.lastExportAt) lastLine.textContent = fmt(et.pack.lastExported, { when: timeAgo(project.lastExportAt) });
   };
   const exportSection = h(
     'section',
@@ -228,7 +240,7 @@ export function packPanel(opts: {
     fileLine,
     destLine,
     lastLine,
-    h('h3', { class: 'section-title' }, icon('book-open'), 'How to install'),
+    h('h3', { class: 'section-title' }, icon('book-open'), et.pack.howToInstall),
     installSteps(target, { compact: true }),
     helpLink(target),
   );
@@ -236,8 +248,8 @@ export function packPanel(opts: {
 
   const el = h(
     'section',
-    { class: 'panel sh-pack', 'aria-label': 'Pack settings and export' },
-    h('div', { class: 'panel-header' }, icon('package'), h('h2', null, 'Pack')),
+    { class: 'panel sh-pack', 'aria-label': et.pack.panel },
+    h('div', { class: 'panel-header' }, icon('package'), h('h2', null, et.pack.title)),
     h('div', { class: 'panel-body scroll sh-pack-body' }, infoSection, h('hr', { class: 'divider' }), targetSection, h('hr', { class: 'divider' }), exportSection),
   );
 
@@ -262,7 +274,7 @@ export function packPanel(opts: {
     },
     setExportAvailable(ok, reason) {
       exportBtn.disabled = !ok;
-      tooltip(exportBtn, ok ? 'Build and download your pack (Ctrl+E)' : (reason ?? 'Export is not available'));
+      tooltip(exportBtn, ok ? et.pack.exportTip : (reason ?? et.pack.exportUnavailable));
     },
   };
 }

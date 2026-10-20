@@ -33,6 +33,13 @@ import { presetGallery } from './presets';
 import { cleanName, isShaderProject, loadPrefs, normalizePreviewTextures, savePrefs, type ShaderProjectData } from './project';
 import { createStage, TIME_PRESETS } from './stage';
 import { previewVersionFor } from './texture-sources';
+import { et } from './i18n/editor';
+import { t } from '../i18n/text';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt, textLocale } from '../../../i18n/editor-text';
+
+/** A step name inside an English sentence is lowercased ("Undo reset lighting"); other languages keep it as written. */
+const inSentence = (s: string) => (textLocale() === 'en' ? s.toLowerCase() : s);
 
 /** Plain Minecraft without shaders, for the Iris compare button. */
 function plainMinecraftLook(): PreviewParams {
@@ -74,8 +81,8 @@ function messageView(root: HTMLElement, opts: { icon: 'search' | 'warning'; titl
         action: h(
           'div',
           { class: 'row wrap', style: { justifyContent: 'center' } },
-          button({ label: 'All shader projects', icon: 'arrow-left', variant: 'primary', onClick: () => navigate('/shaders') }),
-          button({ label: 'Help', icon: 'help', variant: 'ghost', onClick: () => navigate('/help') }),
+          button({ label: et.allProjects, icon: 'arrow-left', variant: 'primary', onClick: () => navigate('/shaders') }),
+          button({ label: et.help, icon: 'help', variant: 'ghost', onClick: () => navigate('/help') }),
         ),
       }),
     ),
@@ -84,18 +91,18 @@ function messageView(root: HTMLElement, opts: { icon: 'search' | 'warning'; titl
 }
 
 export async function mountEditor(root: HTMLElement, id: string): Promise<() => void> {
-  root.replaceChildren(h('div', { class: 'sh-loading' }, spinner(32), h('span', { class: 'muted' }, 'Opening your shader project…')));
+  root.replaceChildren(h('div', { class: 'sh-loading' }, spinner(32), h('span', { class: 'muted' }, et.opening)));
   let loaded: unknown;
   try {
     loaded = await getProject(id);
   } catch (err) {
-    return messageView(root, { icon: 'warning', title: "Couldn't open the project", text: friendlyError(err) });
+    return messageView(root, { icon: 'warning', title: et.openFailed, text: friendlyError(err) });
   }
   if (!isShaderProject(loaded)) {
     return messageView(root, {
       icon: 'search',
-      title: 'Shader project not found',
-      text: 'It may have been deleted. Projects are saved in this browser only, so projects made on another device or browser won’t show up here.',
+      title: et.notFound,
+      text: et.notFoundText,
     });
   }
   const project: ShaderProjectData = loaded;
@@ -104,7 +111,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   try {
     gen = await target.load();
   } catch (err) {
-    return messageView(root, { icon: 'warning', title: `The ${target.shortName} maker couldn't load`, text: friendlyError(err) });
+    return messageView(root, { icon: 'warning', title: fmt(et.makerFailed, { target: target.shortName }), text: friendlyError(err) });
   }
   if (!root.isConnected) return () => {};
   return buildEditor(root, project, target, gen);
@@ -125,7 +132,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     if (saveEl.dataset.state === s) return;
     saveEl.dataset.state = s;
     const [ic, text] =
-      s === 'saving' ? (['loader', 'Saving…'] as const) : s === 'dirty' ? (['clock', 'Unsaved changes'] as const) : s === 'error' ? (['warning', 'Not saved'] as const) : (['check', 'Saved'] as const);
+      s === 'saving' ? (['loader', et.save.saving] as const) : s === 'dirty' ? (['clock', et.save.dirty] as const) : s === 'error' ? (['warning', et.save.error] as const) : (['check', et.save.saved] as const);
     saveEl.replaceChildren(icon(ic), h('span', { class: 'sh-save-text' }, text));
   };
   paintSave('saved');
@@ -139,7 +146,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     }
     paintSave('saving');
     project.settings = { ...settings };
-    project.name = cleanName(project.name) || 'My shaders';
+    project.name = cleanName(project.name) || t.myShaders;
     saving = saveProject(project)
       .then(() => {
         errorToastShown = false;
@@ -149,7 +156,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
         if (!destroyed) paintSave('error');
         if (!errorToastShown) {
           errorToastShown = true;
-          toast(friendlyError(err, "Your changes couldn't be saved"), { tone: 'error', duration: 8000, action: { label: 'Retry', onClick: () => void saveNow() } });
+          toast(friendlyError(err, et.save.failed), { tone: 'error', duration: 8000, action: { label: et.save.retry, onClick: () => void saveNow() } });
         }
       })
       .finally(() => {
@@ -194,7 +201,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     screenshotName: () => project.name.trim() || 'Shaders',
     onScreenshot: (blob, name) => {
       saveBlob(blob, name);
-      toast('Screenshot saved to your downloads', { tone: 'success' });
+      toast(et.screenshotSaved, { tone: 'success' });
     },
   });
   disposers.push(() => stage.destroy());
@@ -209,14 +216,14 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     customNote.hidden = Boolean(match);
     const base = project.preset ? presetById(project.preset) : undefined;
     const n = changedKeys(gen, settings).size;
-    customNote.replaceChildren(icon('pencil'), h('span', null, base && base.id !== 'default' ? `Custom look, based on ${base.label}` : `Custom look · ${n} setting${n === 1 ? '' : 's'} changed`));
+    customNote.replaceChildren(icon('pencil'), h('span', null, base && base.id !== 'default' ? fmt(et.customFrom, { preset: base.label }) : fmt(et.customCount, { count: n })));
   };
 
   const optPanel = optionsPanel({
     gen,
     values: settings,
     onChange: (key, value) => change(key, value),
-    onResetGroup: (group, keys) => resetKeys(keys, `Reset ${group}`),
+    onResetGroup: (group, keys) => resetKeys(keys, fmt(kit.resetGroup, { group: gen.groupLabel(group) })),
     collapsed: prefs.collapsed[target.id] ?? [],
     onCollapsedChange: (list) => {
       prefs.collapsed[target.id] = list;
@@ -224,32 +231,32 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     },
     showHelp: prefs.showHelp,
   });
-  const helpBtn = iconButton('circle-question', 'Show help text under each setting', () => {
+  const helpBtn = iconButton('circle-question', et.showHelp, () => {
     prefs.showHelp = !prefs.showHelp;
     savePrefs(prefs);
     helpBtn.setActive(prefs.showHelp);
     optPanel.setShowHelp(prefs.showHelp);
   }, { active: prefs.showHelp, size: 'sm' });
-  const resetAllBtn = iconButton('recycle', 'Reset every setting', () => resetKeys(gen.OPTIONS.map((o) => o.key), 'Reset all settings'), { size: 'sm' });
+  const resetAllBtn = iconButton('recycle', et.resetEvery, () => resetKeys(gen.OPTIONS.map((o) => o.key), et.resetAll), { size: 'sm' });
 
   const left = h(
     'section',
-    { class: 'panel sh-settings', 'aria-label': 'Look settings' },
-    h('div', { class: 'panel-header' }, icon('sliders'), h('h2', null, 'Look')),
+    { class: 'panel sh-settings', 'aria-label': et.lookSettings },
+    h('div', { class: 'panel-header' }, icon('sliders'), h('h2', null, et.look)),
     h(
       'div',
       { class: 'panel-body scroll sh-settings-body' },
       h(
         'div',
         { class: 'sh-block' },
-        h('div', { class: 'sh-block-head' }, h('h3', { class: 'section-title' }, icon('sparkles'), 'Presets')),
+        h('div', { class: 'sh-block-head' }, h('h3', { class: 'section-title' }, icon('sparkles'), et.presets)),
         gallery.el,
         customNote,
       ),
       h(
         'div',
         { class: 'sh-block' },
-        h('div', { class: 'sh-block-head' }, h('h3', { class: 'section-title' }, icon('sliders'), 'Fine-tune'), h('span', { class: 'grow' }), helpBtn, resetAllBtn),
+        h('div', { class: 'sh-block-head' }, h('h3', { class: 'section-title' }, icon('sliders'), et.fineTune), h('span', { class: 'grow' }), helpBtn, resetAllBtn),
         optPanel.el,
       ),
     ),
@@ -264,7 +271,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     settings,
     onName: (v) => {
       project.name = v;
-      header.textContent = v.trim() || 'My shaders';
+      header.textContent = v.trim() || t.myShaders;
       pack.setName(v);
       setTitle();
       markDirty();
@@ -278,14 +285,14 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   });
 
   // ---------------------------------------------------------------- header bar
-  const undoBtn = iconButton('undo', 'Undo (Ctrl+Z)', () => undo());
-  const redoBtn = iconButton('redo', 'Redo (Ctrl+Shift+Z)', () => redo());
-  const keysBtn = iconButton('keyboard', 'Keyboard shortcuts (?)', () => showShortcuts());
+  const undoBtn = iconButton('undo', et.undo, () => undo());
+  const redoBtn = iconButton('redo', et.redo, () => redo());
+  const keysBtn = iconButton('keyboard', et.shortcuts, () => showShortcuts());
   keysBtn.classList.add('sh-keys-btn');
-  const renameBtn = iconButton('pencil', 'Rename', () => void rename(), { size: 'sm' });
-  const exportBtn = button({ label: 'Export', icon: 'download', variant: 'primary', class: 'sh-bar-export', onClick: () => doExport() });
-  tooltip(exportBtn, `Export ${target.fileExt} (Ctrl+E)`);
-  const back = h('a', { class: 'btn btn-ghost btn-sm sh-back', href: '#/shaders', 'aria-label': 'All shader projects' }, icon('arrow-left'), h('span', { class: 'btn-label' }, 'Shaders'));
+  const renameBtn = iconButton('pencil', et.rename, () => void rename(), { size: 'sm' });
+  const exportBtn = button({ label: et.export, icon: 'download', variant: 'primary', class: 'sh-bar-export', onClick: () => doExport() });
+  tooltip(exportBtn, fmt(et.exportTip, { ext: target.fileExt }));
+  const back = h('a', { class: 'btn btn-ghost btn-sm sh-back', href: '#/shaders', 'aria-label': et.allProjects }, icon('arrow-left'), h('span', { class: 'btn-label' }, et.back));
   const bar = h(
     'header',
     { class: 'sh-bar' },
@@ -300,13 +307,13 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     left,
     center: stage.el,
     right: pack.el,
-    labels: { left: 'Settings', center: 'Preview', right: 'Pack' },
+    labels: { left: et.panels.left, center: et.panels.center, right: et.panels.right },
     icons: { left: 'sliders', center: 'eye', right: 'package' },
     initial: 'center',
   });
   const editor = h('div', { class: ['sh-editor', `is-${target.id}`] }, bar, layout, live);
   root.replaceChildren(editor);
-  const setTitle = () => (document.title = `${project.name.trim() || 'My shaders'} · Shader Maker — Texture Pack Maker`);
+  const setTitle = () => (document.title = `${project.name.trim() || t.myShaders} · Shader Maker — Texture Pack Maker`);
   setTitle();
 
   // ---------------------------------------------------------------- state changes
@@ -315,8 +322,8 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     redoBtn.disabled = !history.canRedo();
     const u = history.peekUndoLabel();
     const r = history.peekRedoLabel();
-    tooltip(undoBtn, u ? `Undo ${u} (Ctrl+Z)` : 'Undo (Ctrl+Z)');
-    tooltip(redoBtn, r ? `Redo ${r} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)');
+    tooltip(undoBtn, u ? fmt(et.undoStep, { step: u }) : et.undo);
+    tooltip(redoBtn, r ? fmt(et.redoStep, { step: r }) : et.redo);
   };
 
   const thumbTimer = debounce(() => void captureThumb(), 4000);
@@ -354,18 +361,18 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   function applyPreset(pid: string): void {
     const p = presetById(pid);
     if (!p) return;
-    const label = `Preset: ${p.label}`;
+    const label = fmt(et.presetStep, { preset: p.label });
     const before = replaceAll(presetSettings(gen, pid), label);
     project.preset = pid;
     paintPresets();
     if (settingsEqual(gen, before, settings)) return;
-    toast(`Applied the “${p.label}” preset`, {
+    toast(fmt(et.applied, { preset: p.label }), {
       tone: 'success',
       action: {
-        label: 'Undo',
+        label: et.undoButton,
         onClick: () => {
           if (history.peekUndoLabel() === label && settingsEqual(gen, settings, presetSettings(gen, pid))) undo();
-          else replaceAll(before, `Undo ${p.label}`);
+          else replaceAll(before, fmt(et.undoOf, { step: p.label }));
         },
       },
     });
@@ -377,7 +384,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     for (const k of keys) next[k] = d[k];
     const before = replaceAll(next, label);
     if (settingsEqual(gen, before, settings)) return;
-    toast(`${label}`, { action: { label: 'Undo', onClick: () => replaceAll(before, `Undo ${label.toLowerCase()}`) } });
+    toast(`${label}`, { action: { label: et.undoButton, onClick: () => replaceAll(before, fmt(et.undoOf, { step: inSentence(label) })) } });
   }
 
   function undo(): void {
@@ -386,7 +393,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     settings = normalizeSettings(gen, e.values);
     optPanel.setValues(settings);
     afterChange();
-    live.textContent = `Undid ${e.label}`;
+    live.textContent = fmt(et.undid, { step: e.label });
   }
 
   function redo(): void {
@@ -395,11 +402,11 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     settings = normalizeSettings(gen, e.values);
     optPanel.setValues(settings);
     afterChange();
-    live.textContent = `Redid ${e.label}`;
+    live.textContent = fmt(et.redid, { step: e.label });
   }
 
   async function rename(): Promise<void> {
-    const n = await promptDialog('Rename pack', 'Pack name', project.name, { confirmLabel: 'Rename', maxLength: 80 });
+    const n = await promptDialog(t.recent.renameTitle, t.recent.packName, project.name, { confirmLabel: t.recent.rename, maxLength: 80 });
     if (n === null || destroyed) return;
     project.name = cleanName(n) || project.name;
     header.textContent = project.name;
@@ -419,10 +426,10 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
       optPanel.setAvailability(s);
       pack.setSupport(s);
       exportAllowed = s.supported;
-      const why = s.notes[0] ?? 'This Minecraft version is not supported.';
+      const why = s.notes[0] ?? et.notSupported;
       pack.setExportAvailable(s.supported, why);
       exportBtn.disabled = !s.supported;
-      tooltip(exportBtn, s.supported ? `Export ${target.fileExt} (Ctrl+E)` : why);
+      tooltip(exportBtn, s.supported ? fmt(et.exportTip, { ext: target.fileExt }) : why);
     };
     const sf = gen.supportedFor;
     apply(sf(v));
@@ -440,7 +447,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     stage.setTexturesSource(target.edition, previewVersionFor(target, v));
     refreshSupport();
     void saveNow();
-    if (gen.kind === 'java-vanilla') toast(`Now making shaders for Minecraft Java ${v}`, { tone: 'info', duration: 2500 });
+    if (gen.kind === 'java-vanilla') toast(fmt(et.nowMaking, { version: v }), { tone: 'info', duration: 2500 });
   }
 
   // ---------------------------------------------------------------- images
@@ -474,7 +481,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   function doExport(): void {
     scheduleSave.flush();
     if (!exportAllowed) {
-      toast('Pick Minecraft 1.17 or newer to export vanilla shaders.', { tone: 'warn' });
+      toast(et.pickNewer, { tone: 'warn' });
       return;
     }
     openExportDialog({
@@ -495,32 +502,32 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   function showShortcuts(): void {
     openShortcutsSheet([
       {
-        title: 'Editing',
+        title: et.keys.editing,
         items: [
-          { keys: ['Mod', 'Z'], label: 'Undo' },
-          { keys: ['Mod', 'Shift', 'Z'], label: 'Redo' },
-          { keys: ['Mod', 'Y'], label: 'Redo' },
-          { keys: ['/'], label: 'Search settings' },
-          { keys: ['Mod', 'S'], label: 'Save now' },
-          { keys: ['Mod', 'E'], label: 'Export the pack' },
+          { keys: ['Mod', 'Z'], label: et.keys.undo },
+          { keys: ['Mod', 'Shift', 'Z'], label: et.keys.redo },
+          { keys: ['Mod', 'Y'], label: et.keys.redo },
+          { keys: ['/'], label: et.keys.search },
+          { keys: ['Mod', 'S'], label: et.keys.saveNow },
+          { keys: ['Mod', 'E'], label: et.keys.export },
         ],
       },
       {
-        title: 'Preview',
+        title: et.keys.preview,
         items: [
-          { keys: ['C'], label: `Hold to compare (${target.compareLabel})` },
+          { keys: ['C'], label: fmt(et.keys.compare, { label: target.compareLabel }) },
           ...TIME_PRESETS.map((t) => ({ keys: [t.key], label: t.label })),
-          { keys: ['D'], label: 'Play or pause the day cycle' },
-          { keys: ['R'], label: 'Auto-rotate on or off' },
-          { keys: ['P'], label: 'Save a screenshot' },
-          { keys: ['T'], label: 'Preview textures' },
-          { keys: ['Arrows'], label: 'Rotate (preview focused)' },
-          { keys: ['+'], label: 'Zoom in (preview focused)' },
-          { keys: ['-'], label: 'Zoom out (preview focused)' },
-          { keys: ['Home'], label: 'Reset the view' },
+          { keys: ['D'], label: et.keys.day },
+          { keys: ['R'], label: et.keys.rotate },
+          { keys: ['P'], label: et.keys.screenshot },
+          { keys: ['T'], label: et.keys.textures },
+          { keys: [et.keys.arrows], label: et.keys.turn },
+          { keys: ['+'], label: et.keys.zoomIn },
+          { keys: ['-'], label: et.keys.zoomOut },
+          { keys: ['Home'], label: et.keys.resetView },
         ],
       },
-      { title: 'Help', items: [{ keys: ['?'], label: 'Show this list' }] },
+      { title: et.keys.help, items: [{ keys: ['?'], label: et.keys.list }] },
     ]);
   }
 
@@ -535,7 +542,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
       if (k === 's') {
         e.preventDefault();
         scheduleSave.flush();
-        void saveNow().then(() => toast('Saved', { tone: 'success', duration: 1500 }));
+        void saveNow().then(() => toast(et.saved, { tone: 'success', duration: 1500 }));
         return;
       }
       if (k === 'e') {

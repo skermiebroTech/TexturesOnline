@@ -8,6 +8,8 @@ import { findLangPath, parseLang, buildLayout, type IrisLayout, type LangTable }
 import { parseIrisOptions, SOURCE_EXT, type IrisOptionSet } from './iris-options';
 import { applyOptionValues, settingsFileText, type ChosenValues } from './iris-rewrite';
 import { bumpManifestVersion, type Semver } from './json-tools';
+import { pt } from './i18n/text';
+import { fmt } from '../../../i18n/editor-text';
 
 const IRIS_TEXT = /\.(vsh|fsh|gsh|csh|tcs|tes|glsl|inc|h|properties|lang)$/i;
 
@@ -143,7 +145,7 @@ export class PackWorkspace {
       rewritten = res.files;
       optionFiles = Object.keys(res.files).sort();
       skipped = res.skipped;
-      if (skipped.length) warnings.push(`${skipped.length} option${skipped.length === 1 ? '' : 's'} could not be written: ${skipped.slice(0, 6).join(', ')}`);
+      if (skipped.length) warnings.push(fmt(pt.warnings.skipped, { count: skipped.length, n: String(skipped.length), names: skipped.slice(0, 6).join(', ') }));
     }
     let version: Semver | undefined;
     for (const p of this.paths) {
@@ -153,7 +155,7 @@ export class PackWorkspace {
         if (bumped) {
           text = bumped.text;
           version = bumped.version;
-        } else warnings.push("manifest.json couldn't be read, so the pack version was not raised. Bedrock may keep the old copy installed.");
+        } else warnings.push(pt.warnings.manifest);
       }
       files[p] = text === undefined ? this.original[p] : encodeText(text, this.encodingOf(p));
     }

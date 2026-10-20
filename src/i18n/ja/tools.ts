@@ -635,7 +635,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     ],
     howTitle: 'シェーダーの作り方',
     steps: [
-      '作るものを選びます：Iris / OptiFine、Java版バニラ、統合版のバイブラントビジュアルズ。',
+      '作るものを選びます：Iris / OptiFine、Java版バニラ、統合版 Vibrant Visuals（バイブラントビジュアルズ）。',
       '出発点になるプリセットを選びます。',
       'プレビューを見ながら、スライダーで光、色、霧、水を調整します。',
       [code('.zip'), '（Java版）か', code('.mcpack'), '（統合版）で書き出します。'],
