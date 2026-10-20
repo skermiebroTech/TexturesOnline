@@ -221,8 +221,11 @@ test('translated content keeps every question, section and step of the English p
     assert.deepEqual(ids(c.home!.faq), ids(HOME_EN.faq), `${l} home FAQ`);
     assert.deepEqual(ids(c.help!.faq), ids(HELP_FAQ_EN), `${l} help FAQ (ids are used in /help?s= links)`);
     assert.deepEqual(ids(c.about!.faq), ids(ABOUT_EN.faq), `${l} about FAQ`);
+    assert.deepEqual(Object.keys(c.home!.tools).sort(), Object.keys(HOME_EN.tools).sort(), `${l} home tool cards`);
     for (const [k, s] of Object.entries(HELP_EN.sections)) {
       const t = c.help!.sections[k as keyof typeof HELP_EN.sections];
+      assert.ok(t, `${l} help section ${k}`);
+      if (!t || !s) continue;
       assert.equal(!!t.howto, !!s.howto, `${l} help ${k} HowTo`);
       if (s.howto) assert.equal(t.howto!.steps.length, s.howto.steps.length, `${l} help ${k} steps`);
     }

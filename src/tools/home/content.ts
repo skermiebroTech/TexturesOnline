@@ -38,7 +38,8 @@ type Six<T> = [T, T, T, T, T, T];
 
 /** Every text on the home page. */
 export interface HomeText {
-  tools: Record<ToolKey, ToolCardText>;
+  /** Tool cards (a card without a translation keeps its English text; a unit test flags it) */
+  tools: Partial<Record<ToolKey, ToolCardText>>;
   faq: FaqItem[];
   /** WebApplication featureList in the structured data (the tools' blurbs are added to it) */
   appFeatures: string[];
@@ -290,7 +291,7 @@ export function homeText(locale: Locale = 'en'): HomeText {
 /** The three tool cards in a language. */
 export function homeTools(locale: Locale = 'en'): ToolInfo[] {
   const t = homeText(locale);
-  return TOOL_LIST.map((tool) => ({ ...tool, ...t.tools[tool.key] }));
+  return TOOL_LIST.map((tool) => ({ ...tool, ...(t.tools[tool.key] ?? HOME_EN.tools[tool.key]) }));
 }
 
 /** English tool cards and questions. */

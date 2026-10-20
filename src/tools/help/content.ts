@@ -510,7 +510,8 @@ export type HelpSectionText = Pick<HelpSection, 'title' | 'short' | 'body' | 'ho
 
 /** Every text on the help page. */
 export interface HelpText {
-  sections: Record<HelpSectionId, HelpSectionText>;
+  /** By section id (a section without a translation keeps its English text; a unit test flags it) */
+  sections: Partial<Record<HelpSectionId, HelpSectionText>>;
   /** Same ids as the English FAQ (links such as /help?s=offline open them) */
   faq: FaqItem[];
   quick: Record<QuickId, string>;
@@ -567,7 +568,7 @@ export function helpText(locale: Locale = 'en'): HelpText {
 /** Sections with the texts of a language (structured data). */
 export function helpSections(locale: Locale = 'en'): HelpSection[] {
   const t = helpText(locale);
-  return SECTIONS.map((s) => ({ ...s, ...t.sections[s.id] }));
+  return SECTIONS.map((s) => ({ ...s, ...(t.sections[s.id] ?? HELP_EN.sections[s.id]) }));
 }
 
 const tocItem = (id: string, label: string, icon: IconName, accent: string, active: boolean) =>

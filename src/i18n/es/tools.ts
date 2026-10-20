@@ -9,7 +9,8 @@ import { SHOTS } from './shots';
 
 const p = (...c: Child[]) => el('p', null, ...c);
 
-export const TOOLS: Record<IntroTool, ToolIntroText> = {
+// Tools without an entry here have no page in this language (yet).
+export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
   textures: {
     eyebrow: 'Texture packs',
     heading: 'Editor de texture packs y creador de paquetes de recursos para Minecraft',
