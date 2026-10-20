@@ -127,7 +127,7 @@ export function aboutPage(): ElNode {
           el(
             'ul',
             { class: 'guide-list' },
-            el('li', null, link('/textures', 'Texture pack maker'), ': repaint any block, item or mob on its 3D model, upload your own images, restyle the whole pack in one click, or open an existing pack.'),
+            el('li', null, link('/textures', 'Texture pack maker'), ': repaint any block, item or mob on its 3D model, upload your own images, replace sounds, restyle the whole pack in one click, or open an existing pack.'),
             el('li', null, link('/texture-pack-converter', 'Texture pack converter'), ': Java to Bedrock, Bedrock to Java, between Java versions, or PNG textures to an .mcpack.'),
             el('li', null, link('/merge-texture-packs', 'Merge texture packs'), ': combine up to eight packs into one, in the order you choose.'),
             el('li', null, link('/totem-maker', 'Totem maker'), ': turn any skin into a custom Totem of Undying resource pack for Java or Bedrock.'),

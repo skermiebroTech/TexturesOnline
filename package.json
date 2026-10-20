@@ -19,7 +19,8 @@
     "idb-keyval": "^6.3.0",
     "pixelarticons": "^2.4.1",
     "skinview3d": "^3.4.2",
-    "three": "~0.156.1"
+    "three": "~0.156.1",
+    "wasm-media-encoders": "^0.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",

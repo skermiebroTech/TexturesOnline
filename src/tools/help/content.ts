@@ -375,6 +375,32 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'sounds',
+    q: 'Can I change sounds in my pack?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes. In the texture pack editor, press the music note at the end of the Blocks · Items · Mobs · All switch. Find a sound by name or category and press play to hear it. Open it, then ',
+        strong('Replace'),
+        ' a file with your own audio (MP3, WAV, OGG, M4A and more) or record one with your microphone. Drag the handles on the waveform to trim it, set the volume or press ',
+        strong('Normalise'),
+        ', and use Reset to go back to the game’s sound. Replaced sounds are saved as Ogg Vorbis and exported with your pack: Java packs put them in ',
+        code('assets/minecraft/sounds'),
+        ', Bedrock packs in ',
+        code('sounds/'),
+        ' with matching ',
+        code('sound_definitions.json'),
+        ' entries.',
+      ),
+      el(
+        'p',
+        null,
+        'Recording asks for microphone access only when you press Start; if it is blocked, allow the microphone for this site from the icon in the address bar. Recordings never leave your device. Keep most sounds mono so they come from where they happen in the world, and use stereo for music and menu sounds. Java’s own sounds play straight from Mojang’s servers, which do not let web pages read the audio, so you can listen to them but only trim the sounds you upload or record. Sound editing works for Java 1.7.10 and newer and for Bedrock.',
+      ),
+    ],
+  },
+  {
     id: 'upload',
     q: 'Is anything uploaded?',
     a: [

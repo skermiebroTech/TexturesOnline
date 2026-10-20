@@ -8,6 +8,7 @@ import { comparePackFormats, packFormatFromVersionJson } from '../../editions/ja
 import { DEFAULT_MIN_ENGINE, buildResourceManifest, bumpPackVersion } from '../../editions/bedrock/manifest';
 import { applyEffects, effectsApply, hasActiveEffects, type EffectContext } from './effects';
 import { categoryForPath, extOf, imageDims, newBedrockUuids, packFileName, parseBedrockVersion, parseJsonLoose } from './project';
+import { prepareSoundExport } from './sounds/pack';
 
 export interface ExportOptions {
   onProgress?: ProgressFn;
@@ -66,6 +67,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   const layers: EffectLayer[] = (project.effects ?? []).filter((l) => l.enabled);
   const effectsOn = hasActiveEffects(layers);
   const extra = await collectExtraFiles(project, warnings);
+  await prepareSoundExport(project, extra, warnings);
   const extraMcmeta = new Map<string, string>();
   for (const [path, bytes] of extra) if (path.endsWith('.mcmeta')) extraMcmeta.set(path, decodeText(bytes));
   const overrides = new Map<string, Blob>();
