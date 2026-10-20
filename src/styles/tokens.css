@@ -1,11 +1,14 @@
 /* Design tokens. Dark theme is the default; [data-theme="light"] on <html> switches palettes. */
 
+/* Texel comes in two parts per weight (tests/tools/ui/split-font.py): the Latin file every page
+   preloads, and the rest (Latin Extended, Greek, Cyrillic, symbols), fetched only when text uses it. */
 @font-face {
   font-family: 'Texel';
   src: url('/fonts/texel-regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2318;
 }
 @font-face {
   font-family: 'Texel';
@@ -13,6 +16,23 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122, U+2190-21FF, U+2212, U+2318;
+}
+@font-face {
+  font-family: 'Texel';
+  src: url('/fonts/texel-regular-ext.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02FF, U+0370-04FF, U+1E00-1EFF, U+2070-20AB, U+20AD-20CF, U+2100-2121, U+2123-218F, U+2200-2211, U+2213-2317, U+2319-23FF, U+25A0-27BF;
+}
+@font-face {
+  font-family: 'Texel';
+  src: url('/fonts/texel-bold-ext.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02FF, U+0370-04FF, U+1E00-1EFF, U+2070-20AB, U+20AD-20CF, U+2100-2121, U+2123-218F, U+2200-2211, U+2213-2317, U+2319-23FF, U+25A0-27BF;
 }
 
 :root {

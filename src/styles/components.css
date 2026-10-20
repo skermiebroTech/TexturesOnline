@@ -839,6 +839,11 @@ input[type='number']::-webkit-outer-spin-button {
 .badge.tone-gold { --tone: var(--gold); }
 .badge.tone-red { --tone: var(--red); }
 .badge.tone-gray { --tone: var(--text-2); }
+/* Light theme: the tinted background lowers the contrast, so the text is a shade darker (WCAG AA).
+   Badges drawn on a dark backdrop (over thumbnails) keep the tone. */
+:root[data-theme='light'] .badge:not(.pe-recent-badge *) {
+  color: color-mix(in srgb, var(--tone) 88%, #000);
+}
 
 .tooltip {
   position: fixed;

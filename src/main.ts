@@ -4,7 +4,7 @@ import './styles/components.css';
 import './styles/layout.css';
 import './app/app.css';
 
-import { onViewRendered, startRouter } from './core/router';
+import { onNavigation, onViewRendered, startRouter } from './core/router';
 import { createShell } from './app/shell';
 import { initHead } from './app/head';
 import { initTheme } from './ui/theme';
@@ -12,10 +12,27 @@ import { initToasts, toast } from './ui/toast';
 
 initTheme();
 
-const root = document.getElementById('app') ?? document.body.appendChild(Object.assign(document.createElement('div'), { id: 'app' }));
-const { outlet } = createShell(root);
-initToasts();
-initHead();
+function boot(): void {
+  const root = document.getElementById('app') ?? document.body.appendChild(Object.assign(document.createElement('div'), { id: 'app' }));
+  const { outlet } = createShell(root);
+  initToasts();
+  initHead();
+  startRouter(outlet);
+}
+
+/** Calls `fn` once the current content has been painted (right away in a tab that is not painting). */
+function afterFirstPaint(fn: () => void): void {
+  if (document.visibilityState !== 'visible') return fn();
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    fn();
+  };
+  // A timeout queued from an animation frame runs after that frame is painted.
+  requestAnimationFrame(() => setTimeout(run, 0));
+  setTimeout(run, 1000);
+}
 
 // The texture, skin and shader start screens get the same introduction as their prerendered pages.
 const INTRO_ROUTES: Record<string, 'textures' | 'converter' | 'merge' | 'totem' | 'skins' | 'skinpack' | 'shaders'> = {
@@ -27,15 +44,37 @@ const INTRO_ROUTES: Record<string, 'textures' | 'converter' | 'merge' | 'totem' 
   '/skin-pack-maker': 'skinpack',
   '/shaders': 'shaders',
 };
+// The introduction module is fetched as soon as such a route is visited (prerendered tool pages
+// preload it), so it is usually ready when the tool renders and goes in with the same frame:
+// adding it a moment later would push the footer down (a layout shift).
+type IntroModule = typeof import('./app/tool-intro');
+let introModule: IntroModule | null = null;
+let introLoading: Promise<IntroModule> | null = null;
+const loadIntro = (): Promise<IntroModule> =>
+  (introLoading ??= import('./app/tool-intro').then((m) => (introModule = m)).catch((err: unknown) => {
+    introLoading = null;
+    throw err;
+  }));
+const introTool = (pattern: string | null) => (pattern ? INTRO_ROUTES[pattern] : undefined);
+onNavigation((state) => {
+  if (introTool(state.pattern)) loadIntro().catch(() => undefined);
+});
 onViewRendered((state, view) => {
-  const tool = state.pattern ? INTRO_ROUTES[state.pattern] : undefined;
+  const tool = introTool(state.pattern);
   if (!tool) return;
-  import('./app/tool-intro')
-    .then((m) => m.mountToolIntro(view, tool, state.locale))
-    .catch((err) => console.warn('Tool introduction unavailable', err));
+  if (introModule) introModule.mountToolIntro(view, tool, state.locale);
+  else
+    loadIntro()
+      .then((m) => m.mountToolIntro(view, tool, state.locale))
+      .catch((err) => console.warn('Tool introduction unavailable', err));
 });
 
-startRouter(outlet);
+// A prerendered page that the app renders the same way ("keep" pages: home, help, guides) is shown
+// first and the app takes over right after, so the first paint never waits for the boot work.
+// Tool pages show their tool as soon as it is ready (their prerendered text is hidden until then).
+const prerendered = document.querySelector('main#main');
+if (prerendered?.hasChildNodes() && !prerendered.hasAttribute('data-boot')) afterFirstPaint(boot);
+else boot();
 
 // Last-resort error reporting: keep the app usable and tell the user something failed.
 let lastErrorAt = 0;

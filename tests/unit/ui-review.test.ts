@@ -185,7 +185,7 @@ test('text and accent tokens meet WCAG AA in both themes', () => {
 // Font files and licence
 
 test('the UI font ships as woff2 with its OFL licence and credits', () => {
-  for (const f of ['texel-regular.woff2', 'texel-bold.woff2']) {
+  for (const f of ['texel-regular.woff2', 'texel-bold.woff2', 'texel-regular-ext.woff2', 'texel-bold-ext.woff2']) {
     const buf = readFileSync(root + `public/fonts/${f}`);
     assert.equal(buf.subarray(0, 4).toString('latin1'), 'wOF2', `${f} is woff2`);
   }
@@ -194,5 +194,11 @@ test('the UI font ships as woff2 with its OFL licence and credits', () => {
   assert.match(ofl, /IdreesInc\/Monocraft/);
   assert.match(ofl, /SIL OPEN FONT LICENSE Version 1\.1/i);
   const tokensCss = read('src/styles/tokens.css');
-  assert.equal((tokensCss.match(/font-display: swap/g) ?? []).length, 2);
+  // two weights, each split into the preloaded Latin file and an on-demand extension (unicode-range)
+  const faces = tokensCss.match(/@font-face \{[^}]*\}/g) ?? [];
+  assert.equal(faces.length, 4);
+  for (const face of faces) {
+    assert.match(face, /font-display: swap/);
+    assert.match(face, /unicode-range: U\+/);
+  }
 });

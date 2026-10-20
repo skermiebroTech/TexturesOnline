@@ -15,10 +15,13 @@ Sources (pinned):
   curl -LO https://raw.githubusercontent.com/IdreesInc/Minecraft-Font/261ac77fbf28796ca09c22eb83ecdfe386c4b838/Minecraft.otf
   curl -LO https://raw.githubusercontent.com/IdreesInc/Minecraft-Font/261ac77fbf28796ca09c22eb83ecdfe386c4b838/Minecraft-Bold.otf
   curl -LO https://raw.githubusercontent.com/IdreesInc/Monocraft/v4.2.1/dist/Monocraft-ttf/Monocraft.ttf
-Build (writes <out>.ttf and <out>.woff2; ship only the .woff2):
+Build (writes <out>.ttf and <out>.woff2; the split below replaces the .woff2, ship only the .woff2 files):
   .venv/bin/python tests/tools/ui/build-font.py Minecraft.otf      Monocraft.ttf public/fonts/texel-regular 400
   .venv/bin/python tests/tools/ui/build-font.py Minecraft-Bold.otf Monocraft.ttf public/fonts/texel-bold    700
 Set SOURCE_DATE_EPOCH for byte-reproducible output.
+Then split each .ttf into the files the site ships (the Latin part every page loads + an on-demand extension):
+  python3 tests/tools/ui/split-font.py public/fonts/texel-regular.ttf public/fonts/texel-regular
+  python3 tests/tools/ui/split-font.py public/fonts/texel-bold.ttf    public/fonts/texel-bold
 """
 import sys
 from fontTools.ttLib import TTFont

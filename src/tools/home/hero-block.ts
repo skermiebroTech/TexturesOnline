@@ -1,6 +1,6 @@
 // Rotating CSS 3D grass block for the landing hero (drag to spin, pauses when hidden).
 
-import { h, prefersReducedMotion } from '../../ui/dom';
+import { h, prefersReducedMotion, whenIdle } from '../../ui/dom';
 import { heroBlockFaces } from './art';
 import { createHeroParticles } from './hero-particles';
 
@@ -44,13 +44,14 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
   const particles = reduce ? null : createHeroParticles();
 
   const stage = h('div', { class: 'hb-stage' }, cube);
+  const shadow = h('div', { class: 'hb-shadow' });
   const el = h(
     'div',
     { class: 'hero-block', role: 'img', 'aria-label': 'A pixel-art grass block slowly rotating' },
     h('div', { class: 'hb-glow' }),
     particles?.canvas ?? null,
     stage,
-    h('div', { class: 'hb-shadow' }),
+    shadow,
   );
 
   let yaw = -38;
@@ -70,7 +71,8 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
     const t = (now - t0) / 1000;
     const bob = reduce ? 0 : Math.sin(t * 1.6) * 8;
     cube.style.transform = `translateY(${bob.toFixed(2)}px) rotateX(${pitch.toFixed(2)}deg) rotateY(${yaw.toFixed(2)}deg)`;
-    el.style.setProperty('--bob', (bob / 8).toFixed(3));
+    // set on the shadow itself: a custom property on the hero would restyle all of it every frame
+    shadow.style.transform = `scale(${(1 - (bob / 8) * 0.08).toFixed(4)})`;
     // per-face lighting: rotate each normal like CSS does (rotateY first, then rotateX)
     const ry = (yaw * Math.PI) / 180;
     const rx = (pitch * Math.PI) / 180;
@@ -111,8 +113,10 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
     prevYaw = yaw;
     if (!reduce || dragging || velocity !== 0) raf = requestAnimationFrame(tick);
   };
+  // The turning starts once the page has loaded (the first frame is drawn right away).
+  let ready = false;
   const kick = () => {
-    if (!raf && visible) {
+    if (ready && !raf && visible) {
       lastT = performance.now();
       raf = requestAnimationFrame(tick);
     }
@@ -120,6 +124,7 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
 
   el.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
+    ready = true;
     dragging = true;
     velocity = 0;
     lastX = e.clientX;
@@ -163,11 +168,15 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
   document.addEventListener('visibilitychange', onVis);
 
   render(performance.now());
-  kick();
+  const cancelStart = whenIdle(() => {
+    ready = true;
+    kick();
+  });
 
   return {
     el,
     destroy() {
+      cancelStart();
       cancelAnimationFrame(raf);
       raf = 0;
       visible = false;

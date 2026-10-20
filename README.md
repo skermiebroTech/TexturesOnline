@@ -163,6 +163,8 @@ so the old project URL keeps working until the redirect is in place. To move to 
   (`tests/harness/seo/screenshots.cjs`) and the app icons in `public/icons/` and
   `public/apple-touch-icon.png` (`npx tsx scripts/gen-icons.ts`, drawn from the logo in `src/ui/logo.ts`).
   Re-run them after visible UI changes.
+  The guide screenshots in `public/screenshots/guides/` (`tests/harness/seo/guide-screenshots.cjs`) also have
+  AVIF copies the pages offer through `srcset`: run `python3 scripts/screenshot-variants.py` after changing one.
 - Facts on the guide pages (pack formats, version rules) come from the app's own data (`src/editions/`);
   the "Updated" date shown on guides is `CONTENT_UPDATED` in `src/app/site.ts`.
 

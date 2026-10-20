@@ -46,7 +46,8 @@ export function versionPicker(opts: {
     'button',
     { type: 'button', class: 'vp-trigger', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' },
     icon('box'),
-    h('span', { class: 'vp-current' }, nameEl, subEl),
+    // the space is not drawn (flex), but keeps the words apart in the text the label must contain
+    h('span', { class: 'vp-current' }, nameEl, ' ', subEl),
     icon('chevron-down'),
   );
 

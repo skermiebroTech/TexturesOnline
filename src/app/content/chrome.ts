@@ -35,7 +35,9 @@ export function wordmark(hidden = false): ElNode {
 }
 
 export function brandLink(opts: { label?: boolean; locale?: Locale } = {}): ElNode {
-  return el('a', { class: 'brand', to: '/', 'aria-label': opts.label ? ui(opts.locale ?? 'en').brandHome : null }, logo(32), wordmark(opts.label));
+  // The spoken name is in hidden text rather than an aria-label: a label that does not contain the
+  // visible wordmark ("TexturePackMaker") fails the label-in-name check.
+  return el('a', { class: 'brand', to: '/' }, logo(32), wordmark(opts.label), opts.label ? el('span', { class: 'sr-only' }, ui(opts.locale ?? 'en').brandHome) : null);
 }
 
 export function navLinks(cls: string, active: NavTool | null, locale: Locale = 'en'): ElNode[] {

@@ -101,6 +101,13 @@ export function resolvedAttrs(attrs: Attrs, link: (to: string, exact?: boolean) 
     } else if (k === 'src' && typeof v === 'string' && v.startsWith('/')) {
       // site files ('/screenshots/x.jpg') resolve against the site root like links do
       out.push(['src', link(v, true)]);
+    } else if (k === 'srcset' && typeof v === 'string') {
+      // 'url 640w, url 1280w': site files resolve like src does
+      const set = v.split(',').map((part) => {
+        const [url, ...desc] = part.trim().split(/\s+/);
+        return [url.startsWith('/') ? link(url, true) : url, ...desc].join(' ');
+      });
+      out.push(['srcset', set.join(', ')]);
     } else if (v === true) {
       out.push([k, '']);
     } else if (v !== false && v !== null && v !== undefined) {

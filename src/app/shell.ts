@@ -182,7 +182,9 @@ export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: H
 
   const onScroll = () => topbar.classList.toggle('scrolled', window.scrollY > 4);
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  // Not right away: reading the scroll position here would force a layout of the whole page in
+  // the middle of booting (the view is rendered next anyway).
+  requestAnimationFrame(onScroll);
 
   onRouteChange((state) => {
     currentState = state;

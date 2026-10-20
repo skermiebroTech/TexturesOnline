@@ -316,7 +316,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     resChips.replaceChildren(
       ...RESOLUTIONS.map((r) => {
         const on = project.resolution === r;
-        const b = h('button', { type: 'button', class: 'chip tx-res-chip', role: 'radio', 'aria-checked': String(on), 'aria-pressed': String(on) }, `${r}×`);
+        const b = h('button', { type: 'button', class: 'chip tx-res-chip', role: 'radio', 'aria-checked': String(on) }, `${r}×`);
         b.addEventListener('click', () => {
           project.resolution = r;
           store.touch('meta');

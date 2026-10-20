@@ -166,7 +166,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     resChips.replaceChildren(
       ...START_RES.map((r) => {
         const on = r === resolution;
-        const b = h('button', { type: 'button', class: 'chip tx-res-chip', role: 'radio', 'aria-checked': String(on), 'aria-pressed': String(on), tabIndex: on ? 0 : -1 }, `${r}×`);
+        const b = h('button', { type: 'button', class: 'chip tx-res-chip', role: 'radio', 'aria-checked': String(on), tabIndex: on ? 0 : -1 }, `${r}×`);
         b.addEventListener('click', () => {
           resolution = r;
           paintRes();

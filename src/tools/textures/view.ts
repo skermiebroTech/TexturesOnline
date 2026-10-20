@@ -2,7 +2,6 @@
 import './view.css';
 import { onRouteChange, type RouteContext } from '../../core/router';
 import { renderStartScreen } from './ui/start-screen';
-import { renderEditor } from './ui/editor';
 
 export default async function view(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
   const id = ctx.params.id;
@@ -23,6 +22,9 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const offRoute = onRouteChange((s) => {
     if (s.path !== ctx.path) leave();
   });
+  // The editor (pixel canvas, 3D preview, panels) loads only when a project opens, so the start
+  // screen does not wait for it.
+  const { renderEditor } = await import('./ui/editor');
   const cleanup = await renderEditor(root, decodeURIComponent(id), life.signal);
   return () => {
     leave();
