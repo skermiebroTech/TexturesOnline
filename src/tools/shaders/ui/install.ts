@@ -3,6 +3,7 @@
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import type { ShaderTargetInfo } from '../targets';
+import { t } from '../i18n/text';
 
 export function installSteps(target: ShaderTargetInfo, opts: { compact?: boolean } = {}): HTMLElement {
   return h(
@@ -25,6 +26,6 @@ export function installSteps(target: ShaderTargetInfo, opts: { compact?: boolean
   );
 }
 
-export function helpLink(target: ShaderTargetInfo, label = 'Full install guide'): HTMLAnchorElement {
+export function helpLink(target: ShaderTargetInfo, label = t.installGuide): HTMLAnchorElement {
   return h('a', { class: 'sh-help-link', href: `#/help?s=${target.helpSection}` }, icon('book-open'), h('span', null, label), icon('arrow-right'));
 }

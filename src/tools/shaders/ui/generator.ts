@@ -2,6 +2,10 @@
 // checked for the exports the view needs, and wrapped so a missing optional export never breaks the UI.
 
 import type { FileMap, OptionDef, OptionValue, OptionValues, PackFormat, PreviewParams, ShaderTarget } from '../../../core/types';
+import { fmt, textLocale } from '../../../i18n/editor-text';
+import { t } from '../i18n/text';
+import { loadShadersEditorText } from './i18n/load';
+import type { ShadersOptionsText } from './i18n/options';
 
 export interface ShaderPresetDef {
   id: string;
@@ -12,8 +16,11 @@ export interface ShaderPresetDef {
 }
 
 export interface BaseGenerator {
+  /** The settings as the editor shows them (names and descriptions in the page's language) */
   OPTIONS: OptionDef[];
   PRESETS: ShaderPresetDef[];
+  /** A group's name in the page's language (OptionDef.group is the generator's English name, used as the key) */
+  groupLabel(group: string): string;
   defaults(): OptionValues;
   toPreviewParams(v: OptionValues): PreviewParams;
   normalizeOptions?(v: Partial<OptionValues>): OptionValues;
@@ -86,11 +93,25 @@ const PATHS: Record<ShaderTarget, string> = {
   'bedrock-vibrant': '../bedrock/index.ts',
 };
 
-const NAMES: Record<ShaderTarget, string> = {
-  iris: 'Iris / OptiFine',
-  'java-vanilla': 'Vanilla Java',
-  'bedrock-vibrant': 'Vibrant Visuals',
+const NAMES: Record<ShaderTarget, () => string> = {
+  iris: () => t.targets.iris.shortName,
+  'java-vanilla': () => t.targets.vanilla.shortName,
+  'bedrock-vibrant': () => t.targets.bedrock.shortName,
 };
+
+/** Each target's part of the 'shaders.options' section. */
+const TEXT_KEY: Record<ShaderTarget, 'iris' | 'vanilla' | 'bedrock'> = {
+  iris: 'iris',
+  'java-vanilla': 'vanilla',
+  'bedrock-vibrant': 'bedrock',
+};
+
+interface TargetText {
+  groups: Record<string, string>;
+  options: Record<string, { label: string; description: string; choices?: Record<string, string> } | undefined>;
+  presets: Record<string, { label: string; description: string } | undefined>;
+  notes?: Record<string, { title: string; text: string } | undefined>;
+}
 
 const FALLBACK_PREFIXES = ['assets/minecraft/shaders/', 'assets/minecraft/post_effect/'];
 
@@ -107,8 +128,59 @@ function checkBase(target: ShaderTarget, mod: Mod, extra: string): void {
   if (!isFn(mod.toPreviewParams)) missing.push('toPreviewParams');
   if (!isFn(mod[extra])) missing.push(extra);
   if (missing.length) {
-    throw new GeneratorUnavailableError(`The ${NAMES[target]} maker isn't ready in this version of the site (missing ${missing.join(', ')}). Please try again later.`);
+    throw new GeneratorUnavailableError(fmt(t.maker.notReady, { target: NAMES[target](), missing: missing.join(', ') }));
   }
+}
+
+/** A setting whose words come from the text section (read when shown), else the generator's own English. */
+function localOption(o: OptionDef, text: () => TargetText, units: () => ShadersOptionsText['units']): OptionDef {
+  const tr = () => text().options[o.key];
+  const out: OptionDef = {
+    ...o,
+    get label() {
+      return tr()?.label ?? o.label;
+    },
+    get description() {
+      return tr()?.description ?? o.description;
+    },
+    get unit() {
+      return o.unit === 'blocks' || o.unit === 'levels' ? units()[o.unit] : o.unit;
+    },
+  };
+  if (o.options) {
+    out.options = o.options.map((c) => ({
+      value: c.value,
+      get label() {
+        return tr()?.choices?.[c.value] ?? c.label;
+      },
+    }));
+  }
+  return out;
+}
+
+function localPreset(p: ShaderPresetDef, text: () => TargetText): ShaderPresetDef {
+  const tr = () => text().presets[p.id];
+  return {
+    ...p,
+    get label() {
+      return tr()?.label ?? p.label;
+    },
+    get description() {
+      return tr()?.description ?? p.description;
+    },
+  };
+}
+
+function localNotes(notes: NoteDef[] | undefined, text: () => TargetText): NoteDef[] | undefined {
+  return notes?.map((n) => ({
+    id: n.id,
+    get title() {
+      return text().notes?.[n.id]?.title ?? n.title;
+    },
+    get text() {
+      return text().notes?.[n.id]?.text ?? n.text;
+    },
+  }));
 }
 
 function presetsOf(mod: Mod): ShaderPresetDef[] {
@@ -131,17 +203,23 @@ function notesOf(x: unknown): NoteDef[] | undefined {
   return x.filter((n): n is NoteDef => !!n && typeof n === 'object' && typeof (n as NoteDef).text === 'string' && typeof (n as NoteDef).title === 'string');
 }
 
-function wrap(target: ShaderTarget, mod: Mod): AnyGenerator {
+function wrap(target: ShaderTarget, mod: Mod, ot: ShadersOptionsText): AnyGenerator {
+  const text = () => ot[TEXT_KEY[target]] as unknown as TargetText;
+  const groupKeys = new Map(Object.entries((mod.GROUPS ?? {}) as Record<string, string>).map(([k, v]) => [v, k]));
   const base: BaseGenerator = {
-    OPTIONS: mod.OPTIONS as OptionDef[],
-    PRESETS: presetsOf(mod),
+    OPTIONS: Array.isArray(mod.OPTIONS) ? (mod.OPTIONS as OptionDef[]).map((o) => localOption(o, text, () => ot.units)) : (mod.OPTIONS as OptionDef[]),
+    PRESETS: presetsOf(mod).map((p) => localPreset(p, text)),
+    groupLabel: (group) => {
+      const k = groupKeys.get(group);
+      return (k && text().groups[k]) || group;
+    },
     defaults: mod.defaults as () => OptionValues,
     toPreviewParams: mod.toPreviewParams as (v: OptionValues) => PreviewParams,
     normalizeOptions: isFn(mod.normalizeOptions) ? (mod.normalizeOptions as (v: Partial<OptionValues>) => OptionValues) : undefined,
   };
   if (target === 'iris') {
     checkBase(target, mod, 'generateIrisPack');
-    return { ...base, kind: 'iris', generateIrisPack: mod.generateIrisPack as IrisGenerator['generateIrisPack'], IRIS_NOTES: notesOf(mod.IRIS_NOTES) };
+    return { ...base, kind: 'iris', generateIrisPack: mod.generateIrisPack as IrisGenerator['generateIrisPack'], IRIS_NOTES: localNotes(notesOf(mod.IRIS_NOTES), text) };
   }
   if (target === 'java-vanilla') {
     checkBase(target, mod, 'generateVanillaShaderFiles');
@@ -157,7 +235,7 @@ function wrap(target: ShaderTarget, mod: Mod): AnyGenerator {
     };
   }
   checkBase(target, mod, 'generateBedrockVisuals');
-  const notes = notesOf(mod.BEDROCK_VV_NOTES);
+  const notes = localNotes(notesOf(mod.BEDROCK_VV_NOTES), text);
   return {
     ...base,
     kind: 'bedrock-vibrant',
@@ -169,18 +247,26 @@ function wrap(target: ShaderTarget, mod: Mod): AnyGenerator {
   };
 }
 
-/** Loads (once) the generator for a target. Rejects with a friendly message when it can't be used. */
+/**
+ * Loads (once) the generator for a target, with the editor's text in the page's language (its
+ * settings and presets are shown in the language that is active when they are read). Rejects with
+ * a friendly message when it can't be used.
+ */
 export function loadGenerator<T extends ShaderTarget>(target: T): Promise<GeneratorFor<T>> {
   let p = cache.get(target);
   if (!p) {
     const loader = MODULES[PATHS[target]];
     p = loader
-      ? loader().then((m) => wrap(target, m as Mod))
-      : Promise.reject(new GeneratorUnavailableError(`The ${NAMES[target]} maker isn't part of this version of the site yet.`));
+      ? Promise.all([loader(), import('./i18n/options'), loadShadersEditorText(textLocale())]).then(([m, o]) => wrap(target, m as Mod, o.ot))
+      : Promise.reject(new GeneratorUnavailableError(fmt(t.maker.missing, { target: NAMES[target]() })));
     p.catch(() => cache.delete(target));
     cache.set(target, p);
   }
-  return p as Promise<GeneratorFor<T>>;
+  // a cached generator may have been loaded for another language (the language changes without a reload)
+  return p.then(async (g) => {
+    await loadShadersEditorText(textLocale());
+    return g;
+  }) as Promise<GeneratorFor<T>>;
 }
 
 export function isGeneratorAvailable(target: ShaderTarget): boolean {

@@ -636,7 +636,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     ],
     howTitle: 'Cómo crear aquí un shader',
     steps: [
-      'Elige un destino: Iris / OptiFine, Java vanilla o Visuales vibrantes de Bedrock.',
+      'Elige un destino: Iris / OptiFine, Java vanilla o Bedrock Vibrant Visuals (Visuales vibrantes).',
       'Escoge un preset como punto de partida.',
       'Ajusta la luz, el color, la niebla y el agua con los controles mientras se actualiza la vista previa.',
       ['Exporta un ', code('.zip'), ' (Java) o un ', code('.mcpack'), ' (Bedrock).'],

@@ -11,6 +11,9 @@ import { createOverlayAssets, textureRootOf, type OverlayAssets } from '../../..
 import { previewTextureIds } from '../../../shared/preview/preview-textures';
 import type { ShaderTargetInfo } from '../targets';
 import type { ImportedPreviewPack, PreviewTexturesPref } from './project';
+import { et } from './i18n/editor';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt } from '../../../i18n/editor-text';
 
 /** Larger files are refused before reading (the whole archive has to be unpacked in memory). */
 export const MAX_PACK_FILE_BYTES = 300 * 1024 * 1024;
@@ -28,23 +31,23 @@ export function previewVersionFor(target: Pick<ShaderTargetInfo, 'id' | 'edition
 }
 
 export function editionLabel(e: Edition): string {
-  return e === 'java' ? 'Java' : 'Bedrock';
+  return e === 'java' ? kit.edition.java : kit.edition.bedrock;
 }
 
 /** "Minecraft 26.3" / "Minecraft Bedrock" */
 export function vanillaLabel(edition: Edition, version: string): string {
-  return edition === 'java' ? `Minecraft ${version}` : 'Minecraft Bedrock';
+  return edition === 'java' ? fmt(et.textures.minecraftVersion, { version }) : et.textures.minecraftBedrock;
 }
 
 /** Short label for the stage button. */
 export function sourceLabel(pref: PreviewTexturesPref, edition: Edition, version: string): string {
   switch (pref.kind) {
     case 'simple':
-      return 'Simple';
+      return et.textures.simpleLabel;
     case 'project':
-      return `My pack: ${pref.name || 'Texture pack'}`;
+      return fmt(et.textures.myPack, { name: pref.name || et.textures.texturePack });
     case 'imported':
-      return `Imported: ${pref.imported?.name || pref.name || 'Texture pack'}`;
+      return fmt(et.textures.importedLabel, { name: pref.imported?.name || pref.name || et.textures.texturePack });
     default:
       return vanillaLabel(edition, version);
   }
@@ -101,7 +104,7 @@ export function isPreviewPackPath(path: string, edition: Edition): boolean {
 }
 
 function tooBigMessage(size: number): string {
-  return `This pack is ${formatBytes(size)}, which is too big to preview here (the limit is ${formatBytes(MAX_PACK_FILE_BYTES)}). Try a lower-resolution version of it.`;
+  return fmt(et.textures.tooBig, { size: formatBytes(size), limit: formatBytes(MAX_PACK_FILE_BYTES) });
 }
 
 /**
@@ -119,15 +122,13 @@ export async function readPreviewPack(file: File): Promise<StoredPreviewPack> {
     if (!isPreviewPackPath(path, project.edition)) continue;
     total += blob.size;
     if (total > MAX_STORED_BYTES) {
-      throw new Error(`The textures in this pack are too large to preview (over ${formatBytes(MAX_STORED_BYTES)} just for the blocks shown). Try a lower-resolution version of it.`);
+      throw new Error(fmt(et.textures.tooLarge, { limit: formatBytes(MAX_STORED_BYTES) }));
     }
     files[path] = new Uint8Array(await blob.arrayBuffer());
   }
   const images = Object.keys(files).filter((p) => !p.endsWith('.mcmeta'));
   if (!images.length) {
-    throw new Error(
-      `“${project.name}” doesn't change any of the blocks in the preview (grass, dirt, stone, sand, water, trees, flowers and torches), so the preview would look the same.`,
-    );
+    throw new Error(fmt(et.textures.unchanged, { name: project.name }));
   }
   return {
     format: STORE_FORMAT,

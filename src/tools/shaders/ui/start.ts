@@ -20,6 +20,9 @@ import { cleanName, cleanupPreviewPacks, duplicateShaderProject, isShaderProject
 import irisShowcase from './showcase/iris.webp';
 import vanillaShowcase from './showcase/java-vanilla.webp';
 import bedrockShowcase from './showcase/bedrock-vibrant.webp';
+import { t as tx } from '../i18n/text';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt, fmtNodes } from '../../../i18n/editor-text';
 
 /** Pictures rendered with the live preview (tests/harness/shaders-view/render-showcase.cjs). */
 const SHOWCASE: Record<ShaderTarget, string> = {
@@ -35,9 +38,9 @@ function artEl(svg: string, cls: string): HTMLElement {
 }
 
 function projectMeta(p: ShaderProjectData): string {
-  const when = `Edited ${timeAgo(p.updatedAt)}`;
-  if (isImportedPack(p)) return `${p.fileCount} files · ${when}`;
-  if (p.target === 'java-vanilla') return `Java ${p.version} · ${when}`;
+  const when = fmt(tx.recent.edited, { when: timeAgo(p.updatedAt) });
+  if (isImportedPack(p)) return fmt(tx.recent.files, { count: String(p.fileCount), when });
+  if (p.target === 'java-vanilla') return `${fmt(kit.edition.javaVersion, { version: p.version })} · ${when}`;
   return when;
 }
 
@@ -62,12 +65,12 @@ export function mountStart(root: HTMLElement): () => void {
       h(
         'div',
         { class: 'sh-card-badges' },
-        badge(t.edition === 'java' ? 'Java' : 'Bedrock', t.edition === 'java' ? 'green' : 'blue'),
-        t.needsMods ? badge('Needs a mod', 'gold') : badge('No mods', 'purple'),
+        badge(t.edition === 'java' ? kit.edition.java : kit.edition.bedrock, t.edition === 'java' ? 'green' : 'blue'),
+        t.needsMods ? badge(tx.card.needsMod, 'gold') : badge(tx.card.noMods, 'purple'),
       ),
     );
-    const start = button({ label: 'Start', iconEnd: 'arrow-right', variant: 'primary', class: 'sh-card-start', onClick: () => openNewProjectDialog(t.id) });
-    start.setAttribute('aria-label', `Start a ${t.name}`);
+    const start = button({ label: tx.card.start, iconEnd: 'arrow-right', variant: 'primary', class: 'sh-card-start', onClick: () => openNewProjectDialog(t.id) });
+    start.setAttribute('aria-label', fmt(tx.card.startLabel, { name: t.name }));
     const card = h(
       'article',
       { class: 'sh-card', dataset: { target: t.id }, 'aria-labelledby': `sh-card-${t.id}` },
@@ -77,12 +80,12 @@ export function mountStart(root: HTMLElement): () => void {
         { class: 'sh-card-body' },
         h('h2', { class: 'sh-card-title', id: `sh-card-${t.id}` }, h('span', { class: 'sh-card-icon' }, icon(t.icon)), h('span', null, t.name)),
         h('p', { class: 'sh-card-tagline' }, t.tagline),
-        h('h3', { class: 'sh-card-sub' }, 'What you get'),
+        h('h3', { class: 'sh-card-sub' }, tx.card.gets),
         h('ul', { class: 'sh-card-list is-gets' }, t.gets.map((g) => h('li', null, icon('check'), h('span', null, g)))),
-        h('h3', { class: 'sh-card-sub' }, 'Good to know'),
+        h('h3', { class: 'sh-card-sub' }, tx.card.limits),
         h('ul', { class: 'sh-card-list is-limits' }, t.limits.map((g) => h('li', null, icon('info'), h('span', null, g)))),
       ),
-      h('div', { class: 'sh-card-foot' }, start, h('a', { class: 'sh-card-help', href: `#/help?s=${t.helpSection}` }, icon('book-open'), h('span', null, 'Install guide'))),
+      h('div', { class: 'sh-card-foot' }, start, h('a', { class: 'sh-card-help', href: `#/help?s=${t.helpSection}` }, icon('book-open'), h('span', null, tx.card.installGuide))),
     );
     card.addEventListener('dblclick', (e) => {
       if ((e.target as HTMLElement).closest('a, button')) return;
@@ -94,13 +97,13 @@ export function mountStart(root: HTMLElement): () => void {
   const chooser = h(
     'div',
     { class: 'sh-chooser', role: 'note' },
-    h('span', { class: 'sh-chooser-title' }, icon('circle-question'), 'Not sure which one?'),
+    h('span', { class: 'sh-chooser-title' }, icon('circle-question'), tx.chooser.title),
     h(
       'ul',
       null,
-      h('li', null, h('span', { class: 'muted' }, 'Java with mods'), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'iris' } }, 'Iris / OptiFine')),
-      h('li', null, h('span', { class: 'muted' }, 'Java, no mods'), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'java-vanilla' } }, 'Vanilla Java')),
-      h('li', null, h('span', { class: 'muted' }, 'Bedrock'), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'bedrock-vibrant' } }, 'Vibrant Visuals')),
+      h('li', null, h('span', { class: 'muted' }, tx.chooser.javaMods), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'iris' } }, tx.targets.iris.shortName)),
+      h('li', null, h('span', { class: 'muted' }, tx.chooser.javaNoMods), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'java-vanilla' } }, tx.targets.vanilla.shortName)),
+      h('li', null, h('span', { class: 'muted' }, kit.edition.bedrock), icon('arrow-right'), h('a', { href: '#', dataset: { jump: 'bedrock-vibrant' } }, tx.targets.bedrock.shortName)),
     ),
   );
   chooser.addEventListener('click', (e) => {
@@ -121,7 +124,7 @@ export function mountStart(root: HTMLElement): () => void {
   const recent = h(
     'section',
     { class: 'container sh-recent', hidden: true, 'aria-labelledby': 'sh-recent-title' },
-    h('div', { class: 'sh-recent-head' }, h('span', { class: 'eyebrow' }, icon('clock'), 'Your shader projects'), h('h2', { id: 'sh-recent-title' }, 'Continue where you left off')),
+    h('div', { class: 'sh-recent-head' }, h('span', { class: 'eyebrow' }, icon('clock'), tx.recent.eyebrow), h('h2', { id: 'sh-recent-title' }, tx.recent.title)),
     recentGrid,
   );
 
@@ -137,13 +140,13 @@ export function mountStart(root: HTMLElement): () => void {
       thumb.appendChild(img);
     }
     thumb.appendChild(h('span', { class: 'sh-recent-target' }, icon(t.icon), h('span', null, isImportedPack(p) ? importedKindLabel(p) : t.shortName)));
-    if (isImportedPack(p)) thumb.appendChild(h('span', { class: 'pe-recent-badge' }, badge('Imported', 'gold')));
-    const menuBtn = iconButton('more-vertical', `More actions for ${p.name}`, () => {
+    if (isImportedPack(p)) thumb.appendChild(h('span', { class: 'pe-recent-badge' }, badge(tx.recent.imported, 'gold')));
+    const menuBtn = iconButton('more-vertical', fmt(tx.recent.more, { name: p.name }), () => {
       openMenu(menuBtn, [
-        { label: 'Open', icon: 'arrow-right', onClick: () => navigate(`/shaders/${p.id}`) },
-        { label: 'Rename', icon: 'pencil', onClick: () => void rename(p) },
-        { label: 'Duplicate', icon: 'copy', onClick: () => void duplicate(p) },
-        { label: 'Delete', icon: 'trash', danger: true, onClick: () => void remove(p) },
+        { label: tx.recent.open, icon: 'arrow-right', onClick: () => navigate(`/shaders/${p.id}`) },
+        { label: tx.recent.rename, icon: 'pencil', onClick: () => void rename(p) },
+        { label: tx.recent.duplicate, icon: 'copy', onClick: () => void duplicate(p) },
+        { label: tx.recent.delete, icon: 'trash', danger: true, onClick: () => void remove(p) },
       ]);
     }, { size: 'sm' });
     menuBtn.classList.add('sh-recent-menu');
@@ -185,14 +188,14 @@ export function mountStart(root: HTMLElement): () => void {
   }
 
   async function rename(p: ShaderProjectData): Promise<void> {
-    const n = await promptDialog('Rename pack', 'Pack name', p.name, { confirmLabel: 'Rename', maxLength: 80 });
+    const n = await promptDialog(tx.recent.renameTitle, tx.recent.packName, p.name, { confirmLabel: tx.recent.rename, maxLength: 80 });
     if (!n || n === p.name) return;
     p.name = cleanName(n) || p.name;
     try {
       await saveProject(p);
-      toast('Pack renamed', { tone: 'success' });
+      toast(tx.recent.renamed, { tone: 'success' });
     } catch (err) {
-      toast(friendlyError(err, "Couldn't rename the pack"), { tone: 'error' });
+      toast(friendlyError(err, tx.recent.renameFailed), { tone: 'error' });
     }
     void renderRecent();
   }
@@ -200,32 +203,32 @@ export function mountStart(root: HTMLElement): () => void {
   async function duplicate(p: ShaderProjectData): Promise<void> {
     try {
       await saveProject(isImportedPack(p) ? await duplicateImported(p) : duplicateShaderProject(p));
-      toast(`Made a copy of “${p.name}”`, { tone: 'success' });
+      toast(fmt(tx.recent.copied, { name: p.name }), { tone: 'success' });
     } catch (err) {
-      toast(friendlyError(err, "Couldn't copy the pack"), { tone: 'error' });
+      toast(friendlyError(err, tx.recent.copyFailed), { tone: 'error' });
     }
     void renderRecent();
   }
 
   async function remove(p: ShaderProjectData): Promise<void> {
-    const ok = await confirmDialog('Delete this pack?', `“${p.name}” will be removed from this browser. Packs you already exported are not affected.`, 'Delete', true);
+    const ok = await confirmDialog(tx.recent.deleteTitle, fmt(tx.recent.deleteText, { name: p.name }), tx.recent.delete, true);
     if (!ok) return;
     try {
       await deleteProject(p.id);
       // an imported pack's files go a little later, so Undo can still bring it back
       if (isImportedPack(p)) sweepOrphanedPackFiles();
       void renderRecent();
-      toast(`Deleted “${p.name}”`, {
+      toast(fmt(tx.recent.deleted, { name: p.name }), {
         action: {
-          label: 'Undo',
+          label: tx.recent.undo,
           onClick: () =>
             void saveProject(p)
               .then(() => renderRecent())
-              .catch(() => toast("Couldn't restore the pack.", { tone: 'error' })),
+              .catch(() => toast(tx.recent.restoreFailed, { tone: 'error' })),
         },
       });
     } catch {
-      toast("Couldn't delete the pack.", { tone: 'error' });
+      toast(tx.recent.deleteFailed, { tone: 'error' });
     }
   }
 
@@ -236,9 +239,9 @@ export function mountStart(root: HTMLElement): () => void {
     h(
       'header',
       { class: 'container sh-hero' },
-      h('span', { class: 'eyebrow' }, icon('sparkles'), 'Shader Maker'),
-      h('h1', { class: 'pixel-shadow' }, 'Give Minecraft a whole new ', h('span', { class: 'accent' }, 'look')),
-      h('p', { class: 'lead' }, 'Choose where you play, pick a preset, move a few sliders and watch the live preview. Then export a pack that’s ready to drop into the game.'),
+      h('span', { class: 'eyebrow' }, icon('sparkles'), tx.hero.eyebrow),
+      h('h1', { class: 'pixel-shadow' }, fmtNodes(tx.hero.title, { look: h('span', { class: 'accent' }, tx.hero.look) })),
+      h('p', { class: 'lead' }, tx.hero.lead),
     ),
     h('div', { class: 'container' }, chooser),
     h('div', { class: 'container sh-cards' }, cards),

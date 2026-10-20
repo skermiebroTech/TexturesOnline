@@ -14,11 +14,14 @@ import { targetInfo } from '../targets';
 import { presetSettings, type AnyGenerator } from './generator';
 import { presetGallery } from './presets';
 import { newShaderProject } from './project';
+import { t } from '../i18n/text';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt } from '../../../i18n/editor-text';
 
-const DEFAULT_NAMES: Record<ShaderTarget, string> = {
-  iris: 'My Shader Pack',
-  'java-vanilla': 'My Vanilla Shaders',
-  'bedrock-vibrant': 'My Vibrant Visuals',
+const DEFAULT_NAMES: Record<ShaderTarget, () => string> = {
+  iris: () => t.newPack.defaultIris,
+  'java-vanilla': () => t.newPack.defaultVanilla,
+  'bedrock-vibrant': () => t.newPack.defaultBedrock,
 };
 
 export function openNewProjectDialog(targetId: ShaderTarget, opts: { preset?: string } = {}): void {
@@ -26,17 +29,17 @@ export function openNewProjectDialog(targetId: ShaderTarget, opts: { preset?: st
   let gen: AnyGenerator | null = null;
   let preset = opts.preset ?? 'default';
   let version = target.defaultVersion;
-  let name = DEFAULT_NAMES[targetId];
+  let name = DEFAULT_NAMES[targetId]();
 
-  const nameField = textInput({ label: 'Pack name', value: name, maxLength: 80, onInput: (v) => (name = v) });
-  const presetsHost = h('div', { class: 'sh-new-presets' }, h('div', { class: 'sh-loading-inline' }, spinner(24), h('span', { class: 'muted' }, 'Loading presets…')));
+  const nameField = textInput({ label: t.newPack.name, value: name, maxLength: 80, onInput: (v) => (name = v) });
+  const presetsHost = h('div', { class: 'sh-new-presets' }, h('div', { class: 'sh-loading-inline' }, spinner(24), h('span', { class: 'muted' }, t.newPack.loadingPresets)));
   const versionHost =
     targetId === 'java-vanilla'
       ? h(
           'div',
           { class: 'sh-new-version' },
-          versionPicker({ edition: 'java', value: version, label: 'Minecraft version', onChange: (_e, v) => (version = v) }),
-          h('p', { class: 'field-desc' }, icon('info'), ' Vanilla shaders only work in the exact version they were made for. You can change it later.'),
+          versionPicker({ edition: 'java', value: version, label: t.newPack.version, onChange: (_e, v) => (version = v) }),
+          h('p', { class: 'field-desc' }, icon('info'), ` ${t.newPack.versionNote}`),
         )
       : null;
 
@@ -45,7 +48,7 @@ export function openNewProjectDialog(targetId: ShaderTarget, opts: { preset?: st
     { class: 'sh-new' },
     h('div', { class: 'sh-new-intro' }, h('span', { class: 'sh-new-icon' }, icon(target.icon)), h('p', { class: 'muted' }, target.tagline)),
     h('div', { class: 'sh-new-fields' }, nameField, versionHost),
-    h('div', { class: 'sh-new-head' }, h('h3', { class: 'section-title' }, icon('sparkles'), 'Start from a preset'), h('span', { class: 'faint small' }, 'You can change everything later')),
+    h('div', { class: 'sh-new-head' }, h('h3', { class: 'section-title' }, icon('sparkles'), t.newPack.presets), h('span', { class: 'faint small' }, t.newPack.later)),
     presetsHost,
   );
 
@@ -55,15 +58,15 @@ export function openNewProjectDialog(targetId: ShaderTarget, opts: { preset?: st
     const project = newShaderProject({
       target: targetId,
       version,
-      name: name.trim() || DEFAULT_NAMES[targetId],
-      description: p && p.id !== 'default' ? `${p.label} shaders made with Texture Pack Maker` : 'Custom shaders made with Texture Pack Maker',
+      name: name.trim() || DEFAULT_NAMES[targetId](),
+      description: p && p.id !== 'default' ? fmt(t.newPack.description, { preset: p.label }) : t.newPack.descriptionCustom,
       settings: presetSettings(gen, p?.id ?? 'default'),
       preset: p?.id,
     });
     try {
       await saveProject(project);
     } catch (err) {
-      toast(friendlyError(err, "Couldn't create the project"), { tone: 'error' });
+      toast(friendlyError(err, t.newPack.createFailed), { tone: 'error' });
       return false;
     }
     modal.close();
@@ -72,13 +75,13 @@ export function openNewProjectDialog(targetId: ShaderTarget, opts: { preset?: st
   };
 
   const modal = openModal({
-    title: `New ${target.shortName} pack`,
+    title: fmt(t.newPack.title, { target: target.shortName }),
     body,
     width: 760,
     class: 'sh-new-modal',
     actions: [
-      { label: 'Cancel', variant: 'ghost' },
-      { label: 'Create pack', variant: 'primary', onClick: () => create() },
+      { label: kit.cancel, variant: 'ghost' },
+      { label: t.newPack.create, variant: 'primary', onClick: () => create() },
     ],
     initialFocus: nameField.input as HTMLElement,
   });
@@ -98,7 +101,7 @@ export function openNewProjectDialog(targetId: ShaderTarget, opts: { preset?: st
         presets: g.PRESETS,
         active: preset,
         mode: 'choose',
-        label: 'Starting preset',
+        label: t.newPack.startingPreset,
         onPick: (pid) => {
           preset = pid;
           gallery.setActive(pid);

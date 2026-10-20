@@ -11,6 +11,8 @@ import type { IrisOption } from './iris-options';
 import { listWith } from './iris-rewrite';
 import { stripFormatting } from './properties';
 import type { IrisModel } from './workspace';
+import { pt } from './i18n/text';
+import { fmt } from '../../../i18n/editor-text';
 
 export interface OptionsViewOptions {
   model: IrisModel;
@@ -53,7 +55,7 @@ export function createOptionsView(opts: OptionsViewOptions): OptionsView {
 
   // ------------------------------------------------------------------ controls
   function resetButton(o: IrisOption): HTMLButtonElement {
-    const b = iconButton('reload', `Reset “${stripFormatting(optionLabel(lang, o.name))}” to the pack default`, () => opts.onReset(o.name), { size: 'sm', class: 'pe-opt-reset' });
+    const b = iconButton('reload', fmt(pt.view.resetOption, { name: stripFormatting(optionLabel(lang, o.name)) }), () => opts.onReset(o.name), { size: 'sm', class: 'pe-opt-reset' });
     return b;
   }
 
@@ -191,12 +193,12 @@ export function createOptionsView(opts: OptionsViewOptions): OptionsView {
 
   // ------------------------------------------------------------------ profiles
   const profileButtons = new Map<string, HTMLButtonElement>();
-  const customChip = h('span', { class: 'pe-profile-custom', hidden: true }, icon('pencil'), h('span', null, 'Custom'));
+  const customChip = h('span', { class: 'pe-profile-custom', hidden: true }, icon('pencil'), h('span', null, pt.view.custom));
   const profileRow = layout.profiles.length
     ? h(
         'div',
-        { class: 'pe-profiles', role: 'group', 'aria-label': 'Quality profile' },
-        h('span', { class: 'pe-profiles-label' }, icon('speed-fast'), h('span', null, 'Profile')),
+        { class: 'pe-profiles', role: 'group', 'aria-label': pt.view.profiles },
+        h('span', { class: 'pe-profiles-label' }, icon('speed-fast'), h('span', null, pt.view.profile)),
         h(
           'div',
           { class: 'pe-profile-list' },
@@ -258,10 +260,8 @@ export function createOptionsView(opts: OptionsViewOptions): OptionsView {
   if (layout.hidden.length) {
     const hiddenNode: ScreenNode = {
       id: '__hidden',
-      label: `Not in the game menu (${layout.hidden.length})`,
-      comment: layout.hasScreenLayout
-        ? "The pack doesn't show these in its in-game menu. Many are internal switches, so change them only if you know what they do."
-        : '',
+      label: fmt(pt.view.hidden, { count: String(layout.hidden.length) }),
+      comment: layout.hasScreenLayout ? pt.view.hiddenText : '',
       items: layout.hidden.map((name) => ({ type: 'option' as const, name })),
     };
     const el = screenEl(hiddenNode, []);
@@ -271,7 +271,7 @@ export function createOptionsView(opts: OptionsViewOptions): OptionsView {
   const empty = h('p', { class: 'pe-empty muted', hidden: true });
   if (!set.options.size) {
     empty.hidden = false;
-    empty.textContent = "This pack has no options a menu can change. You can still edit its files in the Files tab.";
+    empty.textContent = pt.view.noOptions;
   }
 
   const el = h('div', { class: ['pe-options', !opts.showHelp && 'hide-help'] }, profileRow, tree, empty);
@@ -286,7 +286,7 @@ export function createOptionsView(opts: OptionsViewOptions): OptionsView {
       }
       s.count.hidden = n === 0;
       s.count.textContent = String(n);
-      s.count.setAttribute('aria-label', `${n} changed`);
+      s.count.setAttribute('aria-label', fmt(pt.view.changed, { count: n }));
     }
   }
 
@@ -317,7 +317,7 @@ export function createOptionsView(opts: OptionsViewOptions): OptionsView {
     }
     if (set.options.size) {
       empty.hidden = !q || shown > 0;
-      empty.textContent = shown ? '' : `No options match “${query.trim()}”.`;
+      empty.textContent = shown ? '' : fmt(pt.view.noMatch, { query: query.trim() });
     }
     if (profileRow) profileRow.hidden = Boolean(q);
   }

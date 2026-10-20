@@ -65,7 +65,7 @@ const SKIN_STEPS: Child[] = [
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
-  [link('/shaders', 'Shader Maker'), 'を開き、', strong('Vanilla Java'), 'を選びます。'],
+  [link('/shaders', 'Shader Maker'), 'を開き、', strong('Java版バニラ'), 'を選びます。'],
   `遊んでいるMinecraftのバージョンを正確に選びます（Java版1.17以降。標準は${LATEST}）。`,
   'プリセットから始め、プレビューを見ながら明るさ、コントラスト、色、ビネット、霧を調整します。',
   [code('.zip'), 'を書き出し、ほかのリソースパックと同じように入れます：', uiPath(OPTIONS, PACKS, OPEN_FOLDER), '。'],
@@ -1062,7 +1062,7 @@ const javaVsBedrock: GuideText = {
 // ---------------------------------------------------------------- vibrant visuals
 
 const VV_STEPS: Child[] = [
-  [link('/shaders', 'Shader Maker'), 'でパックを作り（', strong('Bedrock Vibrant Visuals'), 'を選びます）、', code('.mcpack'), 'を書き出します。'],
+  [link('/shaders', 'Shader Maker'), 'でパックを作り（', strong('統合版 Vibrant Visuals'), 'を選びます）、', code('.mcpack'), 'を書き出します。'],
   'ファイルを開きます。Minecraftが自動でインポートします。',
   [uiPath('設定', 'グローバル リソース', 'マイ パック'), 'でパックを有効にします。バイブラントビジュアルズに対応していない従来のテクスチャパックは無効にします。'],
   [uiPath('設定', 'ビデオ'), 'を開き、', strong('グラフィックモード'), 'を', strong('バイブラントビジュアルズ'), 'にします。'],

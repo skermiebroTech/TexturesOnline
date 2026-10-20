@@ -14,17 +14,16 @@ import type { ChosenValues } from './iris-rewrite';
 import type { Semver } from './json-tools';
 import type { ImportedPackProject } from './store';
 import type { IrisModel, PackWorkspace } from './workspace';
+import { pt } from './i18n/text';
+import { kit } from '../../../ui/i18n/kit';
+import { fmt } from '../../../i18n/editor-text';
 
 export function licenseNote(): HTMLElement {
   return h(
     'p',
     { class: 'pe-license' },
     icon('info'),
-    h(
-      'span',
-      null,
-      'Shader packs made by other people have their own licenses. Keep edited copies for your own use unless the pack’s license allows sharing them.',
-    ),
+    h('span', null, pt.exportDialog.license),
   );
 }
 
@@ -53,7 +52,7 @@ export function openPackExportDialog(opts: {
   let lastBlob: Blob | null = null;
 
   const body = h('div', { class: 'sh-export pe-export' });
-  const modal = openModal({ title: `Export “${project.name}”`, body, width: 620, class: 'sh-export-modal' });
+  const modal = openModal({ title: fmt(pt.exportDialog.title, { name: project.name }), body, width: 620, class: 'sh-export-modal' });
   const footer = (...nodes: Node[]) => h('div', { class: 'sh-export-footer' }, nodes);
 
   function summaryRow(ic: Parameters<typeof icon>[0], text: string, sub?: string): HTMLElement {
@@ -66,29 +65,29 @@ export function openPackExportDialog(opts: {
       rows.push(
         summaryRow(
           'sliders',
-          changed.length ? `${changed.length} option${changed.length === 1 ? '' : 's'} become the pack’s new defaults` : 'No options changed',
-          changed.length ? 'Only the value on each option’s own line changes. Everything else stays byte for byte the same.' : undefined,
+          changed.length ? fmt(pt.exportDialog.optionsChanged, { count: changed.length, n: String(changed.length) }) : pt.exportDialog.noOptions,
+          changed.length ? pt.exportDialog.optionsSub : undefined,
         ),
       );
     }
-    rows.push(summaryRow('file-text', edited.length ? `${edited.length} edited file${edited.length === 1 ? '' : 's'}` : 'No files edited'));
-    if (project.packFormat === 'bedrock') rows.push(summaryRow('package', 'The pack version goes up by one', 'The pack keeps its uuids, so Minecraft replaces the copy you already have.'));
+    rows.push(summaryRow('file-text', edited.length ? fmt(pt.exportDialog.editedFiles, { count: edited.length, n: String(edited.length) }) : pt.exportDialog.noFiles));
+    if (project.packFormat === 'bedrock') rows.push(summaryRow('package', pt.exportDialog.version, pt.exportDialog.versionSub));
 
     const txtToggle =
       model && changed.length
         ? toggle({
-            label: 'Also download a settings file',
+            label: pt.exportDialog.alsoTxt,
             value: alsoTxt,
-            description: `${txtName}: put it next to ${project.sourceName} in your shaderpacks folder to use the same options with the original, untouched pack.`,
+            description: fmt(pt.exportDialog.txtHint, { txt: txtName, file: project.sourceName }),
             onChange: (v) => (alsoTxt = v),
           })
         : null;
 
-    const exportBtn = button({ label: `Export ${filename.endsWith('.mcpack') ? '.mcpack' : '.zip'}`, icon: 'download', variant: 'primary', onClick: () => void run() });
+    const exportBtn = button({ label: fmt(pt.exportExt, { ext: filename.endsWith('.mcpack') ? '.mcpack' : '.zip' }), icon: 'download', variant: 'primary', onClick: () => void run() });
     const txtOnly =
       model && changed.length
         ? button({
-            label: 'Settings file only',
+            label: pt.exportDialog.txtOnly,
             icon: 'file-text',
             variant: 'ghost',
             onClick: () => {
@@ -103,12 +102,12 @@ export function openPackExportDialog(opts: {
         { class: 'sh-export-file' },
         icon(filename.endsWith('.mcpack') ? 'package' : 'archive'),
         h('span', { class: 'sh-export-file-name truncate' }, filename),
-        h('span', { class: 'faint small' }, `${ws.paths.length} files`),
+        h('span', { class: 'faint small' }, fmt(pt.exportDialog.files, { count: String(ws.paths.length) })),
       ),
       h('ul', { class: 'pe-export-summary' }, rows),
       ...(txtToggle ? [h('div', { class: 'pe-export-toggle' }, txtToggle)] : []),
       licenseNote(),
-      footer(button({ label: 'Cancel', variant: 'ghost', onClick: () => modal.close() }), ...(txtOnly ? [txtOnly] : []), exportBtn),
+      footer(button({ label: kit.cancel, variant: 'ghost', onClick: () => modal.close() }), ...(txtOnly ? [txtOnly] : []), exportBtn),
     );
     exportBtn.focus({ preventScroll: true });
   }
@@ -122,26 +121,26 @@ export function openPackExportDialog(opts: {
         h(
           'div',
           null,
-          h('h3', null, 'Settings file downloaded'),
-          h('p', { class: 'muted' }, `Move ${txtName} into .minecraft/shaderpacks, next to ${project.sourceName}. The game reads it when you select the pack.`),
+          h('h3', null, pt.exportDialog.txtDone),
+          h('p', { class: 'muted' }, fmt(pt.exportDialog.txtMove, { txt: txtName, file: project.sourceName })),
         ),
       ),
-      h('p', { class: 'muted small' }, 'If the game is running, pick another shader pack and then this one again so it reloads the settings.'),
-      footer(button({ label: 'Done', variant: 'primary', onClick: () => modal.close() })),
+      h('p', { class: 'muted small' }, pt.exportDialog.txtReload),
+      footer(button({ label: pt.exportDialog.done, variant: 'primary', onClick: () => modal.close() })),
     );
   }
 
   async function run(): Promise<void> {
-    const bar = progressBar({ label: 'Preparing' });
-    bar.set({ label: 'Writing your changes', fraction: null });
+    const bar = progressBar({ label: pt.exportDialog.preparing });
+    bar.set({ label: pt.exportDialog.writing, fraction: null });
     body.replaceChildren(
-      h('div', { class: 'sh-export-head' }, h('span', { class: 'sh-export-icon is-busy' }, icon('package')), h('div', null, h('h3', null, 'Building your pack'), h('p', { class: 'muted' }, `${ws.paths.length} files. Everything happens in your browser.`))),
+      h('div', { class: 'sh-export-head' }, h('span', { class: 'sh-export-icon is-busy' }, icon('package')), h('div', null, h('h3', null, pt.exportDialog.building), h('p', { class: 'muted' }, fmt(pt.exportDialog.buildingText, { count: String(ws.paths.length) })))),
       bar,
     );
     try {
       await new Promise((r) => setTimeout(r, 30));
       const build = ws.buildExport({ iris: model ? { set: model.set, values: opts.values } : undefined, bedrockAtLeast: project.packVersion });
-      bar.set({ label: project.packFormat === 'bedrock' ? 'Packaging the .mcpack' : 'Zipping', fraction: null });
+      bar.set({ label: project.packFormat === 'bedrock' ? pt.exportDialog.packaging : pt.exportDialog.zipping, fraction: null });
       const blob = await zipPack(build.files, project.packFormat === 'bedrock' ? 'application/octet-stream' : 'application/zip');
       lastBlob = blob;
       saveBlob(blob, filename);
@@ -155,9 +154,9 @@ export function openPackExportDialog(opts: {
           'div',
           { class: 'sh-export-head is-error' },
           h('span', { class: 'sh-export-icon' }, icon('error')),
-          h('div', null, h('h3', null, 'Export failed'), h('p', { class: 'sh-export-msg' }, friendlyError(err, "The pack couldn't be exported"))),
+          h('div', null, h('h3', null, pt.exportDialog.failedTitle), h('p', { class: 'sh-export-msg' }, friendlyError(err, pt.exportDialog.failed))),
         ),
-        footer(button({ label: 'Close', variant: 'ghost', onClick: () => modal.close() }), button({ label: 'Try again', icon: 'reload', variant: 'primary', onClick: () => void run() })),
+        footer(button({ label: kit.close, variant: 'ghost', onClick: () => modal.close() }), button({ label: kit.tryAgain, icon: 'reload', variant: 'primary', onClick: () => void run() })),
       );
     }
   }
@@ -172,17 +171,17 @@ export function openPackExportDialog(opts: {
               h(
                 'ol',
                 { class: 'sh-steps is-compact' },
-                h('li', null, h('span', null, 'Open the .mcpack file. Minecraft imports it for you.')),
-                h('li', null, h('span', null, 'Turn it on in Settings > Global Resources (resource packs) or in the world’s settings (behavior packs).')),
+                h('li', null, h('span', null, pt.exportDialog.bedrockOpen)),
+                h('li', null, h('span', null, pt.exportDialog.bedrockOn)),
               ),
             ];
-    const done = button({ label: 'Done', variant: 'primary', onClick: () => modal.close() });
+    const done = button({ label: pt.exportDialog.done, variant: 'primary', onClick: () => modal.close() });
     body.replaceChildren(
       h(
         'div',
         { class: 'sh-export-head is-success' },
         h('span', { class: 'sh-export-icon' }, icon('check')),
-        h('div', null, h('h3', null, 'Your pack is ready!'), h('p', { class: 'muted' }, alsoTxt ? 'The pack and its settings file were downloaded.' : 'It was downloaded to your Downloads folder.')),
+        h('div', null, h('h3', null, pt.exportDialog.ready), h('p', { class: 'muted' }, alsoTxt ? pt.exportDialog.bothDownloaded : pt.exportDialog.downloaded)),
       ),
       h(
         'div',
@@ -192,12 +191,12 @@ export function openPackExportDialog(opts: {
         h('span', { class: 'faint small' }, `${version ? `v${version.join('.')} · ` : ''}${formatBytes(blob.size)}`),
       ),
       ...(warnings.length
-        ? [h('div', { class: 'sh-export-warnings' }, h('div', { class: 'sh-export-warnings-title' }, icon('warning'), h('span', null, 'Good to know')), h('ul', null, warnings.map((w) => h('li', null, w))))]
+        ? [h('div', { class: 'sh-export-warnings' }, h('div', { class: 'sh-export-warnings-title' }, icon('warning'), h('span', null, pt.exportDialog.goodToKnow)), h('ul', null, warnings.map((w) => h('li', null, w))))]
         : []),
-      h('h4', { class: 'section-title' }, icon('book-open'), 'How to install'),
+      h('h4', { class: 'section-title' }, icon('book-open'), pt.exportDialog.howToInstall),
       ...where,
       footer(
-        button({ label: 'Download again', icon: 'download', onClick: () => lastBlob && saveBlob(lastBlob, filename) }),
+        button({ label: pt.exportDialog.downloadAgain, icon: 'download', onClick: () => lastBlob && saveBlob(lastBlob, filename) }),
         done,
       ),
     );

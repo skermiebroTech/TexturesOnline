@@ -3,6 +3,8 @@
 
 import type { PackFormat } from '../../../core/types';
 import { CORE, INCLUDE, expandForAnalysis, mentions } from './glsl';
+import { fmt } from '../../../i18n/editor-text';
+import { mt } from '../ui/i18n/messages';
 
 /** Asset prefixes the view must read from the version's jar and pass as `sources`. */
 export const shaderSourcePrefixes: readonly string[] = ['assets/minecraft/shaders/', 'assets/minecraft/post_effect/'];
@@ -73,13 +75,10 @@ export function importLine(fam: Family, file: string): string {
 /** Terrain vertex shader that carries plant geometry, or null when waving cannot be done safely. */
 export function wavingTarget(sources: Record<string, string>, fam: Family): { path: string; mode: 'F1' | 'F2' | 'F4' } | { reason: string } {
   const pf = fam.packFormat;
-  if (fam.id === 'F3' || pf === 55) return { reason: 'Java 1.21.5 does not give the terrain shader a game time, so plants cannot move.' };
+  const r = mt.vanilla.reasons;
+  if (fam.id === 'F3' || pf === 55) return { reason: r.wavingNoTime };
   if (fam.id === 'F6' || pf >= 75) {
-    return {
-      reason: 'From Java 1.21.11 on, plants share one render layer with grass blocks and leaves' +
-        (pf >= 84 || fam.id === 'F6' ? ' and vertex order is no longer predictable' : '') +
-        ', so waving would bend whole blocks.',
-    };
+    return { reason: fmt(r.wavingMerged, { order: pf >= 84 || fam.id === 'F6' ? r.wavingOrder : '' }) };
   }
   if (fam.json && !fam.ubo) {
     const f1 = `${CORE}rendertype_cutout.vsh`;
@@ -87,20 +86,20 @@ export function wavingTarget(sources: Record<string, string>, fam: Family): { pa
     if (fam.id === 'F1' && sources[f1] !== undefined) return { path: f1, mode: 'F1' };
     if (sources[f2] !== undefined) return { path: f2, mode: 'F2' };
     if (sources[f1] !== undefined) return { path: f1, mode: 'F1' };
-    return { reason: 'This version has no recognisable terrain vertex shader.' };
+    return { reason: r.wavingNoShader };
   }
   if (fam.ubo) {
     const path = `${CORE}terrain.vsh`;
     const code = sources[path];
-    if (code === undefined) return { reason: 'This version has no terrain vertex shader.' };
+    if (code === undefined) return { reason: r.wavingNoTerrain };
     const expanded = expandForAnalysis(code, sources, path);
     // 1.21.11+ merged the cutout layers (chunk sections are drawn through ChunkSection).
     if (mentions(expanded, 'ChunkSection') || mentions(expanded, 'ChunkPosition')) {
-      return { reason: 'In this version plants share one render layer with grass blocks and leaves, so waving would bend whole blocks.' };
+      return { reason: r.wavingLayer };
     }
     return { path, mode: 'F4' };
   }
-  return { reason: 'This version has no recognisable terrain vertex shader.' };
+  return { reason: r.wavingNoShader };
 }
 
 // ---------------------------------------------------------------- UI-facing summary
@@ -134,22 +133,20 @@ const FEATURE_OPTIONS: Record<Feature, string[]> = {
 
 /** Shown when a 1.17+ version arrives without any shader files (the game files could not be read). */
 export function missingSourcesMessage(versionId: string): string {
-  const v = versionId?.trim() ? `Java ${versionId.trim()}` : 'this version';
-  return `The shader files of ${v} could not be read, so nothing was changed. Load the game files again (or pick the client .jar again) and export once more.`;
+  const v = versionId?.trim() ? `Java ${versionId.trim()}` : mt.vanilla.thisVersion;
+  return fmt(mt.vanilla.missingSources, { version: v });
 }
 
-export const NO_CORE_SHADERS_MESSAGE =
-  'Vanilla shaders need Java Edition 1.17 or newer. Older versions have no core shaders a resource pack can change. Pick 1.17+ or use the Iris / OptiFine target instead.';
+/** Why a version before 1.17 can't have vanilla shaders (in the language of the page). */
+export function noCoreShadersMessage(): string {
+  return mt.vanilla.noCoreShaders;
+}
 
-const FEATURE_REASONS: Record<Feature, string> = {
-  grading: '',
-  vignette: '',
-  bloom: 'Bloom needs Java 26.3 or newer (the first version with an always-on full-screen effect).',
-  waving: 'Waving plants work in Java 1.17 – 1.21.4 and 1.21.6 – 1.21.10.',
-  fog: '',
-  fogEnvironment: 'Separate water and weather fog exists from Java 1.21.6 on.',
-  nightDarkness: 'The light map became a shader in Java 1.21.2.',
-};
+/** Why a feature is missing in a version that has core shaders ('' when it never is). */
+function featureReason(f: Feature): string {
+  const r = mt.vanilla.reasons;
+  return f === 'bloom' ? r.bloom : f === 'waving' ? r.waving : f === 'fogEnvironment' ? r.fogEnvironment : f === 'nightDarkness' ? r.nightDarkness : '';
+}
 
 function familyForFormat(pf: number): FamilyId | 'legacy' {
   if (pf < 7) return 'legacy';
@@ -178,22 +175,22 @@ function summarize(pf: number, known: boolean): VanillaSupport {
   for (const [feature, keys] of Object.entries(FEATURE_OPTIONS) as [Feature, string[]][]) {
     for (const k of keys) options[k] = features[feature];
     if (!features[feature]) {
-      const why = supported ? FEATURE_REASONS[feature] : NO_CORE_SHADERS_MESSAGE;
+      const why = supported ? featureReason(feature) : noCoreShadersMessage();
       reasons[feature] = why;
       for (const k of keys) reasons[k] = why;
     }
   }
   const notes: string[] = [];
-  if (!supported) notes.push(NO_CORE_SHADERS_MESSAGE);
+  if (!supported) notes.push(noCoreShadersMessage());
   else {
-    notes.push('The pack only works in the exact version it was made for. Shaders change between versions, so make a new pack for each version.');
+    notes.push(mt.vanilla.notes.exact);
     if (family !== 'F6') {
-      notes.push('Colors are adjusted per object (world, sky, hand and entities) rather than on the finished image. Menus, the hotbar and items in the inventory keep their normal look.');
+      notes.push(mt.vanilla.notes.perObject);
     } else {
-      notes.push('Colors, vignette and bloom run on the finished image before menus and the hotbar are drawn, so the interface keeps its normal look.');
+      notes.push(mt.vanilla.notes.finished);
     }
   }
-  if (!known) notes.push('This version could not be identified exactly; availability is checked again when its game files load.');
+  if (!known) notes.push(mt.vanilla.notes.unknown);
   return { supported, known, packFormat: pf || null, family, features, options, reasons, notes };
 }
 
@@ -280,14 +277,14 @@ export function supportFromSources(sources: Record<string, string>, packFormat: 
     if (ok) delete base.reasons[feature];
     else base.reasons[feature] = reason;
   };
-  set('bloom', fam.endOfFrame, FEATURE_REASONS.bloom);
+  set('bloom', fam.endOfFrame, featureReason('bloom'));
   const wave = wavingTarget(sources, fam);
   set('waving', 'path' in wave, 'reason' in wave ? wave.reason : '');
-  set('fog', fam.fogApi !== null, 'This version has an unfamiliar fog shader, so fog cannot be changed.');
-  set('fogEnvironment', fam.fogApi === 'v2', FEATURE_REASONS.fogEnvironment);
-  set('nightDarkness', sources[`${CORE}lightmap.fsh`] !== undefined, FEATURE_REASONS.nightDarkness);
+  set('fog', fam.fogApi !== null, mt.vanilla.reasons.fog);
+  set('fogEnvironment', fam.fogApi === 'v2', featureReason('fogEnvironment'));
+  set('nightDarkness', sources[`${CORE}lightmap.fsh`] !== undefined, featureReason('nightDarkness'));
   if (fam.id === 'F6' && !fam.endOfFrame) {
-    const why = 'This snapshot uses the new shader compiler but has no full-screen effect hook yet, so colors cannot be changed safely.';
+    const why = mt.vanilla.reasons.snapshot;
     set('grading', false, why);
     set('vignette', false, why);
   }

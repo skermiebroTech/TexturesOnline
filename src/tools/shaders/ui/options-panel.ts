@@ -6,6 +6,8 @@ import { iconButton, optionControl, textInput, tooltip } from '../../../ui/compo
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import { valuesEqual, type BaseGenerator } from './generator';
+import { et } from './i18n/editor';
+import { fmt } from '../../../i18n/editor-text';
 
 export interface Availability {
   options: Record<string, boolean>;
@@ -50,7 +52,7 @@ export function optionsPanel(opts: {
 
   const search = textInput({
     value: '',
-    placeholder: 'Search settings',
+    placeholder: et.options.search,
     icon: 'search',
     type: 'search',
     onInput: (v) => {
@@ -92,13 +94,13 @@ export function optionsPanel(opts: {
       body.appendChild(c);
     }
     const count = h('span', { class: 'sh-group-count', hidden: true });
-    const reset = iconButton('reload', `Reset ${group} to default`, () => opts.onResetGroup(group, defs.map((d) => d.key)), { size: 'sm' });
+    const reset = iconButton('reload', fmt(et.options.resetGroup, { group: gen.groupLabel(group) }), () => opts.onResetGroup(group, defs.map((d) => d.key)), { size: 'sm' });
     reset.classList.add('sh-group-reset');
     reset.addEventListener('click', (e) => e.preventDefault());
     const details = h(
       'details',
       { class: 'options-group sh-group', open: !collapsed.has(group), dataset: { group } },
-      h('summary', null, h('span', { class: 'grow truncate' }, group), count, reset, icon('chevron-down', { class: 'chev' })),
+      h('summary', null, h('span', { class: 'grow truncate' }, gen.groupLabel(group)), count, reset, icon('chevron-down', { class: 'chev' })),
       body,
     ) as HTMLDetailsElement;
     details.addEventListener('toggle', () => {
@@ -129,14 +131,15 @@ export function optionsPanel(opts: {
     const n = (groups.get(group) ?? []).filter((d) => isChanged(d.key)).length;
     g.count.hidden = n === 0;
     g.count.textContent = String(n);
-    g.count.setAttribute('aria-label', `${n} changed`);
-    tooltip(g.count, `${n} setting${n === 1 ? '' : 's'} changed from the default`);
+    g.count.setAttribute('aria-label', fmt(et.options.changed, { count: n }));
+    tooltip(g.count, fmt(et.options.changedTip, { count: n }));
     g.reset.disabled = n === 0;
   }
 
   function matches(d: OptionDef, q: string): boolean {
     if (!q) return true;
-    return `${d.label} ${d.description ?? ''} ${d.group} ${d.key}`.toLowerCase().includes(q);
+    const group = gen.groupLabel(d.group);
+    return `${d.label} ${d.description ?? ''} ${group === d.group ? d.group : `${group} ${d.group}`} ${d.key}`.toLowerCase().includes(q);
   }
 
   function applyVisibility(): void {
@@ -158,7 +161,7 @@ export function optionsPanel(opts: {
       shown += any;
     }
     empty.hidden = shown > 0;
-    empty.textContent = shown ? '' : `No settings match “${query.trim()}”.`;
+    empty.textContent = shown ? '' : fmt(et.options.noMatch, { query: query.trim() });
   }
 
   function applyAvailability(): void {
@@ -173,7 +176,7 @@ export function optionsPanel(opts: {
       // a dependent control of an unavailable toggle doesn't repeat the same reason
       const parentOff = Boolean(d.dependsOn && availability && availability.options[d.dependsOn] === false);
       if (!ok && !parentOff) {
-        const reason = availability?.reasons[d.key] || 'Not available for this Minecraft version.';
+        const reason = availability?.reasons[d.key] || et.options.unavailable;
         if (!note) {
           note = h('div', { class: 'sh-unavailable' }, icon('lock'), h('span', { class: 'sh-unavailable-text' }));
           host.appendChild(note);

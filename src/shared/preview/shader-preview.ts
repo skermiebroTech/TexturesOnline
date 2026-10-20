@@ -52,7 +52,36 @@ export interface ShaderPreviewOptions {
   pixelRatio?: number;
   /** Seconds for a full day when time animation is on (default 48) */
   dayLength?: number;
+  /** Words the preview shows and reads out, in the page's language (default: English) */
+  text?: ShaderPreviewText;
 }
+
+/** What the preview says: its canvas label, and messages when it can't run or is paused. */
+export interface ShaderPreviewText {
+  label: string;
+  noWebGL: string;
+  noStart: string;
+  noRun: string;
+  paused: string;
+  closed: string;
+  noRunShort: string;
+  pausedRetry: string;
+  noCapture: string;
+  unavailable: string;
+}
+
+const ENGLISH_TEXT: ShaderPreviewText = {
+  label: 'Shader preview of a small voxel island. Drag or use the arrow keys to rotate, scroll, pinch or press plus and minus to zoom, double-click or press Home to reset.',
+  noWebGL: 'The 3D preview needs WebGL, which is turned off or not supported in this browser. Your settings still export normally.',
+  noStart: 'The 3D preview could not start on this device. Your settings still export normally.',
+  noRun: 'The 3D preview could not run on this device. Your settings still export normally.',
+  paused: 'Preview paused: the graphics device was reset. It will resume automatically.',
+  closed: 'The preview has been closed.',
+  noRunShort: 'The 3D preview could not run on this device.',
+  pausedRetry: 'The preview is paused. Try again in a moment.',
+  noCapture: 'Could not capture the preview image.',
+  unavailable: 'The 3D preview is not available in this browser.',
+};
 
 /** Neutral grading, mid-morning sun, light haze. Colours are sRGB 0..1 (like hex / 255). */
 export function defaultPreviewParams(): PreviewParams {
@@ -325,8 +354,11 @@ class ShaderPreviewImpl implements ShaderPreview {
   private pendingDt = 0;
   private lastChange = 0;
 
+  private readonly text: ShaderPreviewText;
+
   constructor(renderer: THREE.WebGLRenderer, stage: ReturnType<typeof createStage>, opts: ShaderPreviewOptions) {
     this.stage = stage;
+    this.text = opts.text ?? ENGLISH_TEXT;
     this.renderer = renderer;
     this.dayLength = Math.max(4, opts.dayLength ?? 48);
     this.fixedDpr = typeof opts.pixelRatio === 'number' && Number.isFinite(opts.pixelRatio) && opts.pixelRatio > 0 ? Math.min(opts.pixelRatio, 3) : null;
@@ -635,7 +667,7 @@ class ShaderPreviewImpl implements ShaderPreview {
   private fail(): void {
     if (this.failed) return;
     this.failed = true;
-    this.stage.message('The 3D preview could not run on this device. Your settings still export normally.');
+    this.stage.message(this.text.noRun);
   }
 
   // ---- context loss ----
@@ -643,7 +675,7 @@ class ShaderPreviewImpl implements ShaderPreview {
   private onContextLost = (e: Event): void => {
     e.preventDefault();
     this.contextLost = true;
-    this.stage.message('Preview paused: the graphics device was reset. It will resume automatically.');
+    this.stage.message(this.text.paused);
   };
 
   private onContextRestored = (): void => {
@@ -1001,15 +1033,15 @@ class ShaderPreviewImpl implements ShaderPreview {
   }
 
   screenshot(): Promise<Blob> {
-    if (this.destroyed) return Promise.reject(new Error('The preview has been closed.'));
-    if (this.failed) return Promise.reject(new Error('The 3D preview could not run on this device.'));
-    if (this.contextLost) return Promise.reject(new Error('The preview is paused. Try again in a moment.'));
+    if (this.destroyed) return Promise.reject(new Error(this.text.closed));
+    if (this.failed) return Promise.reject(new Error(this.text.noRunShort));
+    if (this.contextLost) return Promise.reject(new Error(this.text.pausedRetry));
     this.cur = structuredClone(this.target_);
     if (!this.timeAnimation) this.tod = this.todTarget;
     this.cur.timeOfDay = this.tod;
     this.render();
     return new Promise((resolve, reject) => {
-      this.stage.canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not capture the preview image.'))), 'image/png');
+      this.stage.canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error(this.text.noCapture))), 'image/png');
     });
   }
 
@@ -1043,7 +1075,10 @@ class ShaderPreviewImpl implements ShaderPreview {
 }
 
 class UnavailablePreview implements ShaderPreview {
-  constructor(private readonly stage: ReturnType<typeof createStage>) {}
+  constructor(
+    private readonly stage: ReturnType<typeof createStage>,
+    private readonly text: ShaderPreviewText,
+  ) {}
   setParams(): void {}
   async setAssets(): Promise<PreviewTexturesReport> {
     return { total: 0, fromAssets: 0, fromPack: 0, applied: false };
@@ -1055,7 +1090,7 @@ class UnavailablePreview implements ShaderPreview {
   }
   resetCamera(): void {}
   screenshot(): Promise<Blob> {
-    return Promise.reject(new Error('The 3D preview is not available in this browser.'));
+    return Promise.reject(new Error(this.text.unavailable));
   }
   destroy(): void {
     this.stage.root.remove();
@@ -1064,10 +1099,8 @@ class UnavailablePreview implements ShaderPreview {
 
 /** Creates the live preview inside `container` (fills it; give the container a size). */
 export function createShaderPreview(container: HTMLElement, opts: ShaderPreviewOptions = {}): ShaderPreview {
-  const stage = createStage(
-    container,
-    'Shader preview of a small voxel island. Drag or use the arrow keys to rotate, scroll, pinch or press plus and minus to zoom, double-click or press Home to reset.',
-  );
+  const text = opts.text ?? ENGLISH_TEXT;
+  const stage = createStage(container, text.label);
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({
@@ -1080,15 +1113,15 @@ export function createShaderPreview(container: HTMLElement, opts: ShaderPreviewO
       powerPreference: 'high-performance',
     });
   } catch {
-    stage.message('The 3D preview needs WebGL, which is turned off or not supported in this browser. Your settings still export normally.');
-    return new UnavailablePreview(stage);
+    stage.message(text.noWebGL);
+    return new UnavailablePreview(stage, text);
   }
   try {
     return new ShaderPreviewImpl(renderer, stage, opts);
   } catch (err) {
     console.error(err);
     renderer.dispose();
-    stage.message('The 3D preview could not start on this device. Your settings still export normally.');
-    return new UnavailablePreview(stage);
+    stage.message(text.noStart);
+    return new UnavailablePreview(stage, text);
   }
 }
