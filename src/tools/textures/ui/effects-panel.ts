@@ -13,6 +13,8 @@ import { DEFAULT_GRASS_TINT, compositeOverlay } from '../../../shared/preview/pr
 import { CATEGORY_INFO, firstSquare } from './meta';
 import { paintCanvas } from './thumbs';
 import type { TexStore } from './store';
+import { fmt } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export interface EffectsPanel {
   el: HTMLElement;
@@ -36,7 +38,6 @@ const SAMPLE_IDS: { ids: string[]; category: TextureCategory; overlay?: string[]
   { ids: ['block/oak_planks', 'blocks/planks_oak'], category: 'block' },
 ];
 
-const KIND_LABEL: Record<string, string> = { color: 'Colour', spatial: 'Detail', alpha: 'Shape', resize: 'Size' };
 const KIND_ICON: Record<string, IconName> = { color: 'palette', spatial: 'sliders', alpha: 'frame', resize: 'expand' };
 
 function effectIcon(def: EffectDef | undefined): IconName {
@@ -72,35 +73,35 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
     h(
       'p',
       null,
-      h('strong', null, 'Restyle every texture at once.'),
-      ' Your own pixels stay untouched, so you can tweak or remove effects any time.',
+      h('strong', null, te.effects.introStrong),
+      te.effects.introRest,
     ),
   );
 
   // ---- stack ----
   const stackCount = h('span', { class: 'tx-count-pill' }, '0');
-  const addBtn = button({ label: 'Add', icon: 'plus', size: 'sm', variant: 'secondary', title: 'Add an effect', onClick: () => openAdd() });
-  const layersList = h('ol', { class: 'tx-layers', 'aria-label': 'Effect stack (applied top to bottom)' });
-  const stackEmpty = h('div', { class: 'tx-stack-empty' }, icon('layers', { size: 24 }), h('span', null, 'No effects yet. Tap a style below for a one-click look, or add effects one by one.'));
-  const clearBtn = button({ label: 'Remove all', icon: 'trash', size: 'sm', variant: 'ghost', onClick: () => clearAll() });
-  const toggleAllBtn = button({ label: 'Turn all off', icon: 'eye-off', size: 'sm', variant: 'ghost', onClick: () => toggleAll() });
+  const addBtn = button({ label: te.effects.add, icon: 'plus', size: 'sm', variant: 'secondary', title: te.effects.addHint, onClick: () => openAdd() });
+  const layersList = h('ol', { class: 'tx-layers', 'aria-label': te.effects.stack });
+  const stackEmpty = h('div', { class: 'tx-stack-empty' }, icon('layers', { size: 24 }), h('span', null, te.effects.stackEmpty));
+  const clearBtn = button({ label: te.effects.removeAll, icon: 'trash', size: 'sm', variant: 'ghost', onClick: () => clearAll() });
+  const toggleAllBtn = button({ label: te.effects.turnAllOff, icon: 'eye-off', size: 'sm', variant: 'ghost', onClick: () => toggleAll() });
   const stackFoot = h('div', { class: 'tx-stack-foot' }, toggleAllBtn, clearBtn);
   const stack = h(
     'section',
     { class: 'tx-fx-section' },
-    h('div', { class: 'tx-fx-head' }, h('h3', { class: 'tx-h' }, 'Your effects'), stackCount, h('span', { class: 'grow' }), addBtn),
+    h('div', { class: 'tx-fx-head' }, h('h3', { class: 'tx-h' }, te.effects.yours), stackCount, h('span', { class: 'grow' }), addBtn),
     stackEmpty,
     layersList,
     stackFoot,
   );
 
   // ---- presets ----
-  const legend = h('div', { class: 'tx-preset-legend' }, h('span', { class: 'tx-legend-label' }, 'Original'), h('div', { class: 'tx-strip' }));
+  const legend = h('div', { class: 'tx-preset-legend' }, h('span', { class: 'tx-legend-label' }, te.effects.original), h('div', { class: 'tx-strip' }));
   const presetList = h('div', { class: 'tx-presets' });
   const presets = h(
     'section',
     { class: 'tx-fx-section' },
-    h('div', { class: 'tx-fx-head' }, h('h3', { class: 'tx-h' }, 'One-click styles')),
+    h('div', { class: 'tx-fx-head' }, h('h3', { class: 'tx-h' }, te.effects.styles)),
     legend,
     presetList,
   );
@@ -129,9 +130,9 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
     const before = project.effects.map((l) => ({ ...l, params: { ...l.params }, categories: l.categories ? [...l.categories] : undefined }));
     const added = p.layers.map((l) => ({ ...l, params: { ...l.params }, ...(l.categories ? { categories: [...l.categories] } : {}), id: newLayerId() }));
     setLayers(mode === 'replace' ? added : [...project.effects, ...added]);
-    toast(mode === 'replace' ? `Applied “${p.label}” to the whole pack` : `Added “${p.label}” on top`, {
+    toast(fmt(mode === 'replace' ? te.effects.applied : te.effects.addedOnTop, { name: p.label }), {
       tone: 'success',
-      action: { label: 'Undo', onClick: () => setLayers(before) },
+      action: { label: te.effects.undo, onClick: () => setLayers(before) },
     });
     el.closest('.scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -140,7 +141,7 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
     if (!project.effects.length) return;
     const before = project.effects;
     setLayers([]);
-    toast('Removed all effects', { action: { label: 'Undo', onClick: () => setLayers(before) } });
+    toast(te.effects.removedAll, { action: { label: te.effects.undo, onClick: () => setLayers(before) } });
   }
 
   function toggleAll() {
@@ -161,10 +162,10 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
       if (!groups.has(k)) groups.set(k, []);
       groups.get(k)!.push(e);
     }
-    const list = h('div', { class: 'tx-add-list', role: 'menu', 'aria-label': 'Add an effect' });
+    const list = h('div', { class: 'tx-add-list', role: 'menu', 'aria-label': te.effects.addHint });
     const buttons: HTMLButtonElement[] = [];
     for (const [k, defs] of groups) {
-      list.appendChild(h('div', { class: 'tx-add-group', role: 'presentation' }, KIND_LABEL[k] ?? k));
+      list.appendChild(h('div', { class: 'tx-add-group', role: 'presentation' }, te.effects.kinds[k as keyof typeof te.effects.kinds] ?? k));
       for (const d of defs) {
         const b = h(
           'button',
@@ -199,7 +200,7 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
   // ---------------------------------------------------------------- stack rendering
   const summary = (l: EffectLayer): string => {
     const def = getEffect(l.type);
-    if (!def) return 'Unknown effect';
+    if (!def) return te.effects.unknown;
     const p = resolveParams(def, l.params);
     const parts: string[] = [];
     for (const o of def.params.slice(0, 2)) {
@@ -208,7 +209,7 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
       else if (o.type === 'select') parts.push(o.options?.find((x) => x.value === v)?.label ?? String(v));
       else if (o.type === 'color') parts.push(String(v));
     }
-    const cats = l.categories?.length ? ` · ${l.categories.map((c) => CATEGORY_INFO[c].label).join(', ')}` : '';
+    const cats = l.categories?.length ? ` · ${l.categories.map((c) => CATEGORY_INFO[c].label).join(te.effects.listSep)}` : '';
     return parts.join(' · ') + cats;
   };
 
@@ -219,7 +220,7 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
     stackCount.textContent = String(layers.length);
     stackEmpty.hidden = layers.length > 0;
     stackFoot.hidden = layers.length === 0;
-    toggleAllBtn.querySelector('.btn-label')!.textContent = layers.some((l) => l.enabled) ? 'Turn all off' : 'Turn all on';
+    toggleAllBtn.querySelector('.btn-label')!.textContent = layers.some((l) => l.enabled) ? te.effects.turnAllOff : te.effects.turnAllOn;
     const rows = layers.map((l, i) => layerRow(l, i, layers.length));
     layersList.replaceChildren(...rows);
   }
@@ -235,14 +236,14 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
       setLayers(arr);
       requestAnimationFrame(() => (layersList.children[j]?.querySelector('.tx-l-menu') as HTMLElement | null)?.focus());
     };
-    const enable = h('button', { type: 'button', class: 'tx-l-enable', role: 'switch', 'aria-checked': String(l.enabled), 'aria-label': `${def?.label ?? l.type} on` }, icon(l.enabled ? 'eye' : 'eye-off'));
-    tooltip(enable, l.enabled ? 'Turn off' : 'Turn on');
+    const enable = h('button', { type: 'button', class: 'tx-l-enable', role: 'switch', 'aria-checked': String(l.enabled), 'aria-label': fmt(te.effects.layerOn, { name: def?.label ?? l.type }) }, icon(l.enabled ? 'eye' : 'eye-off'));
+    tooltip(enable, l.enabled ? te.effects.turnOff : te.effects.turnOn);
     enable.addEventListener('click', () => {
       l.enabled = !l.enabled;
       changed();
       requestAnimationFrame(() => (layersList.children[i]?.querySelector('.tx-l-enable') as HTMLElement | null)?.focus());
     });
-    const handle = h('span', { class: 'tx-l-handle', 'aria-hidden': 'true', title: 'Drag to reorder' }, h('span', { class: 'tx-grip' }));
+    const handle = h('span', { class: 'tx-l-handle', 'aria-hidden': 'true', title: te.effects.drag }, h('span', { class: 'tx-grip' }));
     const title = h(
       'button',
       { type: 'button', class: 'tx-l-title', 'aria-expanded': String(open) },
@@ -259,14 +260,14 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
     const remove = () => {
       const before = project.effects;
       setLayers(project.effects.filter((x) => x.id !== l.id));
-      toast(`Removed ${def?.label ?? 'effect'}`, { action: { label: 'Undo', onClick: () => setLayers(before) } });
+      toast(fmt(te.effects.removed, { name: def?.label ?? te.effects.effect }), { action: { label: te.effects.undo, onClick: () => setLayers(before) } });
     };
-    const menuBtn = iconButton('more-vertical', 'More actions', () =>
+    const menuBtn = iconButton('more-vertical', te.effects.more, () =>
       openMenu(menuBtn, [
-        { label: 'Move up', icon: 'arrow-up', disabled: i === 0, onClick: () => move(-1) },
-        { label: 'Move down', icon: 'arrow-down', disabled: i === n - 1, onClick: () => move(1) },
+        { label: te.effects.moveUp, icon: 'arrow-up', disabled: i === 0, onClick: () => move(-1) },
+        { label: te.effects.moveDown, icon: 'arrow-down', disabled: i === n - 1, onClick: () => move(1) },
         {
-          label: 'Duplicate',
+          label: te.effects.duplicate,
           icon: 'copy',
           onClick: () => {
             const arr = [...project.effects];
@@ -274,8 +275,8 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
             setLayers(arr);
           },
         },
-        { label: 'Remove', icon: 'trash', danger: true, onClick: remove },
-      ], { label: `${def?.label ?? 'Effect'} actions` }),
+        { label: te.effects.remove, icon: 'trash', danger: true, onClick: remove },
+      ], { label: def ? fmt(te.effects.actions, { name: def.label }) : te.effects.effectActions }),
     { size: 'sm', class: 'tx-l-menu' });
 
     const head = h('div', { class: 'tx-l-head' }, handle, enable, title, menuBtn);
@@ -290,7 +291,7 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
           changed(false);
         }),
       );
-      const catChips = h('div', { class: 'tx-l-cats', role: 'group', 'aria-label': 'Applies to' });
+      const catChips = h('div', { class: 'tx-l-cats', role: 'group', 'aria-label': te.effects.appliesTo });
       const renderCats = () => {
         const set = new Set(l.categories ?? []);
         const mk = (c: TextureCategory | 'all', label: string) => {
@@ -309,7 +310,7 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
           });
           return b;
         };
-        catChips.replaceChildren(mk('all', 'Everything'), ...TEXTURE_CATEGORY_ORDER.map((c) => mk(c, CATEGORY_INFO[c].label)));
+        catChips.replaceChildren(mk('all', te.effects.everything), ...TEXTURE_CATEGORY_ORDER.map((c) => mk(c, CATEGORY_INFO[c].label)));
       };
       renderCats();
       row.appendChild(
@@ -318,14 +319,14 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
           { class: 'tx-l-body' },
           def.description ? h('p', { class: 'faint small' }, def.description) : null,
           controls,
-          h('div', { class: 'tx-l-catwrap' }, h('span', { class: 'field-label' }, 'Applies to'), catChips),
+          h('div', { class: 'tx-l-catwrap' }, h('span', { class: 'field-label' }, te.effects.appliesTo), catChips),
           h(
             'div',
             { class: 'tx-l-foot' },
-            button({ label: 'Up', icon: 'arrow-up', size: 'sm', variant: 'ghost', disabled: i === 0, onClick: () => move(-1) }),
-            button({ label: 'Down', icon: 'arrow-down', size: 'sm', variant: 'ghost', disabled: i === n - 1, onClick: () => move(1) }),
+            button({ label: te.effects.up, icon: 'arrow-up', size: 'sm', variant: 'ghost', disabled: i === 0, onClick: () => move(-1) }),
+            button({ label: te.effects.down, icon: 'arrow-down', size: 'sm', variant: 'ghost', disabled: i === n - 1, onClick: () => move(1) }),
             h('span', { class: 'grow' }),
-            button({ label: 'Remove', icon: 'trash', size: 'sm', variant: 'ghost', class: 'tx-l-remove', onClick: remove }),
+            button({ label: te.effects.remove, icon: 'trash', size: 'sm', variant: 'ghost', class: 'tx-l-remove', onClick: remove }),
           ),
         ),
       );
@@ -380,14 +381,14 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
         const card = h(
           'button',
           { type: 'button', class: 'tx-preset', dataset: { preset: p.id }, style: p.swatch ? { '--sw-a': p.swatch[0], '--sw-b': p.swatch[1] } : undefined },
-          h('span', { class: 'tx-preset-top' }, h('span', { class: 'tx-preset-dot', 'aria-hidden': 'true' }), h('span', { class: 'tx-preset-name' }, p.label), h('span', { class: 'tx-preset-applied' }, icon('check', { size: 16 }), 'Applied')),
+          h('span', { class: 'tx-preset-top' }, h('span', { class: 'tx-preset-dot', 'aria-hidden': 'true' }), h('span', { class: 'tx-preset-name' }, p.label), h('span', { class: 'tx-preset-applied' }, icon('check', { size: 16 }), te.effects.appliedBadge)),
           h('span', { class: 'tx-preset-desc' }, p.description),
           strip,
         );
-        card.setAttribute('aria-label', `${p.label}: ${p.description}. Apply to the whole pack`);
+        card.setAttribute('aria-label', fmt(te.effects.presetLabel, { name: p.label, description: p.description }));
         card.addEventListener('click', () => applyPresetCard(p, 'replace'));
-        const add = h('button', { type: 'button', class: 'icon-btn sm tx-preset-add', 'aria-label': `Add ${p.label} on top of your effects` }, icon('plus'));
-        tooltip(add, 'Add on top of your current effects');
+        const add = h('button', { type: 'button', class: 'icon-btn sm tx-preset-add', 'aria-label': fmt(te.effects.addPreset, { name: p.label }) }, icon('plus'));
+        tooltip(add, te.effects.addPresetHint);
         add.addEventListener('click', (e) => {
           e.stopPropagation();
           applyPresetCard(p, 'append');

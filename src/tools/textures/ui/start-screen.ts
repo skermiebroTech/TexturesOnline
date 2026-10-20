@@ -24,12 +24,16 @@ import { applyEffects, getPreset } from '../effects';
 import { renderIsoCube } from '../iso-cube';
 import { firstSquare } from './meta';
 import { paintCanvas } from './thumbs';
+import { fmt, fmtNodes } from '../../../i18n/editor-text';
+import { kit } from '../../../ui/i18n/kit';
+import { t } from '../i18n/start';
 
 const START_RES = [16, 32, 64, 128];
 
-function versionLabel(p: TexturePackProject): string {
-  if (p.edition === 'java') return `Java ${p.version}`;
-  return `Bedrock ${p.version === 'latest' ? 'latest' : p.version === 'preview' ? 'preview' : bedrockDisplayVersion(p.version)}`;
+/** "Java 1.21.11", "Bedrock latest", "Bedrock 1.21.50" (also the editor's badge and export summary) */
+export function versionLabel(p: { edition: Edition; version: string }): string {
+  if (p.edition === 'java') return fmt(kit.edition.javaVersion, { version: p.version });
+  return p.version === 'latest' ? t.version.bedrockLatest : p.version === 'preview' ? t.version.bedrockPreview : fmt(t.version.bedrock, { version: bedrockDisplayVersion(p.version) });
 }
 
 function hashHue(s: string): number {
@@ -51,18 +55,18 @@ function isoBlock(top: ProceduralTextureName, side: ProceduralTextureName, prese
 }
 
 function heroArt(): HTMLElement {
-  const items: [ProceduralTextureName, ProceduralTextureName, string | null, string][] = [
-    ['grass_top', 'grass_side', null, 'Original'],
-    ['grass_top', 'grass_side', 'autumn', 'Autumn'],
-    ['grass_top', 'grass_side', 'winter-frost', 'Winter Frost'],
-    ['oak_planks', 'oak_planks', 'neon-outline', 'Neon Outline'],
-    ['cobblestone', 'cobblestone', 'cartoon', 'Cartoon'],
-    ['oak_log_top', 'oak_log', 'game-boy', 'Game Boy'],
+  const items: [ProceduralTextureName, ProceduralTextureName, string | null][] = [
+    ['grass_top', 'grass_side', null],
+    ['grass_top', 'grass_side', 'autumn'],
+    ['grass_top', 'grass_side', 'winter-frost'],
+    ['oak_planks', 'oak_planks', 'neon-outline'],
+    ['cobblestone', 'cobblestone', 'cartoon'],
+    ['oak_log_top', 'oak_log', 'game-boy'],
   ];
   return h(
     'div',
     { class: 'tx-hero-art', 'aria-hidden': 'true' },
-    items.map(([t, sd, preset, label], i) => h('figure', { class: 'tx-hero-cube', style: { '--i': i } }, isoBlock(t, sd, preset, 64), h('figcaption', null, label))),
+    items.map(([top, sd, preset], i) => h('figure', { class: 'tx-hero-cube', style: { '--i': i } }, isoBlock(top, sd, preset, 64), h('figcaption', null, preset ? getPreset(preset)?.label ?? preset : t.hero.original))),
   );
 }
 
@@ -124,24 +128,24 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   let alive = true;
 
   // ---------------------------------------------------------------- new pack form
-  const nameField = textInput({ label: 'Pack name', value: '', placeholder: 'My Awesome Pack', maxLength: 80, onInput: (v) => (name = v), onEnter: () => void create() });
+  const nameField = textInput({ label: t.create.name, value: '', placeholder: t.create.namePlaceholder, maxLength: 80, onInput: (v) => (name = v), onEnter: () => void create() });
   nameField.classList.add('tx-name-field');
   const editionHint = h('p', { class: 'field-desc' });
   const paintEditionHint = () => {
-    editionHint.textContent = edition === 'java' ? 'For Minecraft on Windows, Mac and Linux computers.' : 'For phones, tablets, consoles and Windows (the version with Marketplace).';
+    editionHint.textContent = edition === 'java' ? t.create.javaHint : t.create.bedrockHint;
   };
   const picker = versionPicker({
     edition,
     value: version,
-    label: 'Game version',
+    label: t.create.gameVersion,
     onChange: (_e, v) => (version = v),
   });
   const editionSeg = segmented<Edition>({
     value: edition,
-    label: 'Edition',
+    label: t.create.edition,
     options: [
-      { value: 'java', label: 'Java', icon: 'laptop' },
-      { value: 'bedrock', label: 'Bedrock', icon: 'gamepad' },
+      { value: 'java', label: kit.edition.java, icon: 'laptop' },
+      { value: 'bedrock', label: kit.edition.bedrock, icon: 'gamepad' },
     ],
     onChange: (e) => {
       edition = e;
@@ -160,7 +164,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   });
   paintEditionHint();
 
-  const resChips = h('div', { class: 'tx-res-chips', role: 'radiogroup', 'aria-label': 'Resolution' });
+  const resChips = h('div', { class: 'tx-res-chips', role: 'radiogroup', 'aria-label': t.create.resolution });
   const resText = h('p', { class: 'field-desc tx-res-text' });
   const paintRes = () => {
     resChips.replaceChildren(
@@ -188,19 +192,19 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   };
   paintRes();
 
-  const descField = textInput({ label: 'Description (optional)', value: '', placeholder: 'Made with Texture Pack Maker', multiline: true, maxLength: 200, onInput: (v) => (description = v) });
-  const createBtn = button({ label: 'Create pack', icon: 'arrow-right', variant: 'primary', size: 'lg', class: 'tx-create-btn', onClick: () => void create() });
+  const descField = textInput({ label: t.create.description, value: '', placeholder: t.create.descriptionPlaceholder, multiline: true, maxLength: 200, onInput: (v) => (description = v) });
+  const createBtn = button({ label: t.create.button, icon: 'arrow-right', variant: 'primary', size: 'lg', class: 'tx-create-btn', onClick: () => void create() });
 
   async function create() {
     if (createBtn.disabled) return;
     createBtn.disabled = true;
     try {
-      const p = newTextureProject({ name: name.trim() || 'My Texture Pack', edition, version: version || (edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest'), resolution, description });
+      const p = newTextureProject({ name: name.trim() || t.create.defaultName, edition, version: version || (edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest'), resolution, description: description.trim() || t.create.descriptionPlaceholder });
       await saveProject(p);
       navigate(`/textures/${p.id}`);
     } catch (err) {
       console.error(err);
-      toast(friendlyError(err, "Couldn't create the pack"), { tone: 'error' });
+      toast(friendlyError(err, t.create.failed), { tone: 'error' });
       createBtn.disabled = false;
     }
   }
@@ -209,25 +213,25 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const newCard = h(
     'section',
     { class: 'card tx-new', 'aria-labelledby': 'tx-new-title' },
-    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('plus')), h('div', null, h('h2', { id: 'tx-new-title' }, 'New texture pack'), h('p', { class: 'muted' }, 'Start from the vanilla textures and make them yours.'))),
+    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('plus')), h('div', null, h('h2', { id: 'tx-new-title' }, t.create.title), h('p', { class: 'muted' }, t.create.text))),
     h(
       'div',
       { class: 'tx-new-body' },
       nameField,
-      field('Edition', editionSeg, editionHint),
+      field(t.create.edition, editionSeg, editionHint),
       picker,
-      field('Resolution', resChips, resText),
+      field(t.create.resolution, resChips, resText),
       descField,
       createBtn,
     ),
   );
 
   // ---------------------------------------------------------------- open existing
-  const busy = h('div', { class: 'tx-open-busy', hidden: true }, spinner(32), h('span', null, 'Opening pack…'));
+  const busy = h('div', { class: 'tx-open-busy', hidden: true }, spinner(32), h('span', null, t.open.opening));
   const dz = dropzone({
     accept: '.zip,.mcpack,.mcaddon',
-    label: 'Drop a pack here or click to browse',
-    hint: '.zip for Java · .mcpack or .mcaddon for Bedrock',
+    label: t.open.drop,
+    hint: t.open.dropHint,
     icon: 'folder',
     onFiles: (files) => void openFile(files[0]),
   });
@@ -235,20 +239,20 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const openCard = h(
     'section',
     { class: 'card tx-open', 'aria-labelledby': 'tx-open-title' },
-    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('folder')), h('div', null, h('h2', { id: 'tx-open-title' }, 'Open a pack'), h('p', { class: 'muted' }, 'Keep editing a pack you made here or anywhere else.'))),
+    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('folder')), h('div', null, h('h2', { id: 'tx-open-title' }, t.open.title), h('p', { class: 'muted' }, t.open.text))),
     h('div', { class: 'tx-open-body' }, dz, busy),
     h(
       'a',
       { class: 'tx-convert-link', href: routeHref('/texture-pack-converter') },
       h('span', { class: 'tx-convert-icon' }, icon('repeat')),
-      h('span', { class: 'tx-convert-text' }, h('strong', null, 'Convert a pack'), h('span', { class: 'faint small' }, 'Java to Bedrock, Bedrock to Java, or another Java version')),
+      h('span', { class: 'tx-convert-text' }, h('strong', null, t.open.convert), h('span', { class: 'faint small' }, t.open.convertHint)),
       icon('arrow-right'),
     ),
     h(
       'a',
       { class: 'tx-convert-link tx-merge-link', href: routeHref('/merge-texture-packs') },
       h('span', { class: 'tx-convert-icon' }, icon('git-merge')),
-      h('span', { class: 'tx-convert-text' }, h('strong', null, 'Merge packs'), h('span', { class: 'faint small' }, 'Combine several packs into one, top pack first')),
+      h('span', { class: 'tx-convert-text' }, h('strong', null, t.open.merge), h('span', { class: 'faint small' }, t.open.mergeHint)),
       icon('arrow-right'),
     ),
   );
@@ -266,15 +270,15 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       if (!alive) return;
       if (warnings.length) {
         openModal({
-          title: 'Pack opened',
+          title: t.open.openedTitle,
           width: 520,
           body: h(
             'div',
             { class: 'stack' },
-            h('p', null, `“${plainText(project.name)}” is ready to edit (${versionLabel(project)}, ${Object.keys(project.overrides).length} textures). A few things to know:`),
+            h('p', null, fmt(t.open.openedText, { name: plainText(project.name), version: versionLabel(project), count: Object.keys(project.overrides).length })),
             h('ul', { class: 'tx-warn-list' }, warnings.map((w) => h('li', null, w))),
           ),
-          actions: [{ label: 'Open in editor', variant: 'primary', onClick: () => navigate(`/textures/${project.id}`) }],
+          actions: [{ label: t.open.openInEditor, variant: 'primary', onClick: () => navigate(`/textures/${project.id}`) }],
           onClose: () => {
             {
               const here = currentRoute()?.path ?? '';
@@ -283,7 +287,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
           },
         });
       } else {
-        toast(`Opened “${plainText(project.name)}”`, { tone: 'success' });
+        toast(fmt(t.open.opened, { name: plainText(project.name) }), { tone: 'success' });
         navigate(`/textures/${project.id}`);
       }
     } catch (err) {
@@ -299,10 +303,10 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     'ol',
     { class: 'tx-howto' },
     [
-      ['image', 'Pick', 'Browse every vanilla texture — blocks, items, mobs, GUI and more.'],
-      ['brush', 'Paint', 'Draw pixels, upload pictures or add one-click effects to everything.'],
-      ['download', 'Export', 'Get a ready-to-install pack for Java or Bedrock.'],
-    ].map(([ic, t, d], i) => h('li', null, h('span', { class: 'tx-howto-n' }, String(i + 1)), h('span', { class: 'tx-howto-icon' }, icon(ic as 'image')), h('span', { class: 'tx-howto-text' }, h('strong', null, t), h('span', { class: 'faint small' }, d)))),
+      ['image', t.howto.pick, t.howto.pickText],
+      ['brush', t.howto.paint, t.howto.paintText],
+      ['download', t.howto.export, t.howto.exportText],
+    ].map(([ic, title, d], i) => h('li', null, h('span', { class: 'tx-howto-n' }, String(i + 1)), h('span', { class: 'tx-howto-icon' }, icon(ic as 'image')), h('span', { class: 'tx-howto-text' }, h('strong', null, title), h('span', { class: 'faint small' }, d)))),
   );
 
   // ---------------------------------------------------------------- recent
@@ -311,7 +315,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const recent = h(
     'section',
     { class: 'container tx-recent', 'aria-labelledby': 'tx-recent-title' },
-    h('div', { class: 'tx-recent-head' }, h('h2', { id: 'tx-recent-title' }, 'Your texture packs'), recentCount, h('span', { class: 'grow' }), h('span', { class: 'faint small tx-recent-note' }, icon('lock', { size: 16 }), 'Saved in this browser only')),
+    h('div', { class: 'tx-recent-head' }, h('h2', { id: 'tx-recent-title' }, t.recent.title), recentCount, h('span', { class: 'grow' }), h('span', { class: 'faint small tx-recent-note' }, icon('lock', { size: 16 }), t.recent.savedHere)),
     recentGrid,
   );
 
@@ -344,7 +348,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     recentCount.hidden = !list.length;
     if (!list.length) {
       recentGrid.replaceChildren(
-        h('div', { class: 'tx-recent-empty' }, emptyState({ icon: 'folder-plus', title: 'No packs yet', text: 'Packs you create or open show up here, so you can pick up where you left off.' })),
+        h('div', { class: 'tx-recent-empty' }, emptyState({ icon: 'folder-plus', title: t.recent.emptyTitle, text: t.recent.emptyText })),
       );
       return;
     }
@@ -352,15 +356,15 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       ...list.map((p) => {
         const edited = Object.keys(p.overrides ?? {}).length;
         const fx = (p.effects ?? []).filter((l) => l.enabled).length;
-        const menuBtn = h('button', { type: 'button', class: 'icon-btn sm tx-rc-menu', 'aria-label': `More actions for ${plainText(p.name)}`, 'aria-haspopup': 'menu' }, icon('more-vertical'));
+        const menuBtn = h('button', { type: 'button', class: 'icon-btn sm tx-rc-menu', 'aria-label': fmt(t.recent.moreActions, { name: plainText(p.name) }), 'aria-haspopup': 'menu' }, icon('more-vertical'));
         menuBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
           openMenu(menuBtn, [
-            { label: 'Open', icon: 'pencil', onClick: () => navigate(`/textures/${p.id}`) },
-            { label: 'Rename', icon: 'pen-square', onClick: () => void rename(p) },
-            { label: 'Duplicate', icon: 'copy', onClick: () => void duplicate(p) },
-            { label: 'Delete', icon: 'trash', danger: true, onClick: () => void remove(p) },
+            { label: t.recent.open, icon: 'pencil', onClick: () => navigate(`/textures/${p.id}`) },
+            { label: t.recent.rename, icon: 'pen-square', onClick: () => void rename(p) },
+            { label: t.recent.duplicate, icon: 'copy', onClick: () => void duplicate(p) },
+            { label: t.recent.delete, icon: 'trash', danger: true, onClick: () => void remove(p) },
           ]);
         });
         return h(
@@ -373,10 +377,10 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
             h(
               'span',
               { class: 'tx-rc-info' },
-              h('span', { class: 'tx-rc-name truncate' }, plainText(p.name) || 'Untitled'),
+              h('span', { class: 'tx-rc-name truncate' }, plainText(p.name) || t.recent.untitled),
               h('span', { class: 'tx-rc-badges' }, badge(versionLabel(p), p.edition === 'java' ? 'green' : 'blue'), p.resolution > 16 ? badge(`${p.resolution}×`, 'gray') : null),
-              h('span', { class: 'tx-rc-meta faint small truncate' }, `${edited} edited${fx ? ` · ${fx} effect${fx === 1 ? '' : 's'}` : ''}`),
-              h('span', { class: 'tx-rc-time faint small' }, `Edited ${timeAgo(p.updatedAt || p.createdAt)}`),
+              h('span', { class: 'tx-rc-meta faint small truncate' }, `${fmt(t.recent.edited, { count: edited })}${fx ? ` · ${fmt(t.recent.effects, { count: fx })}` : ''}`),
+              h('span', { class: 'tx-rc-time faint small' }, fmt(t.recent.editedAgo, { time: timeAgo(p.updatedAt || p.createdAt) })),
             ),
           ),
           menuBtn,
@@ -386,14 +390,14 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   }
 
   async function rename(p: TexturePackProject) {
-    const n = await promptDialog('Rename pack', 'Pack name', p.name, { confirmLabel: 'Rename', maxLength: 80 });
+    const n = await promptDialog(t.recent.renameTitle, t.create.name, p.name, { confirmLabel: t.recent.rename, maxLength: 80 });
     if (!n || n === p.name) return;
     p.name = n;
     try {
       await saveProject(p);
-      toast('Pack renamed', { tone: 'success' });
+      toast(t.recent.renamed, { tone: 'success' });
     } catch (err) {
-      toast(friendlyError(err, "Couldn't rename the pack"), { tone: 'error' });
+      toast(friendlyError(err, t.recent.renameFailed), { tone: 'error' });
     }
     void renderRecent();
   }
@@ -403,7 +407,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     const copy: TexturePackProject = {
       ...p,
       id: uuidv4(),
-      name: `${p.name} (copy)`,
+      name: fmt(t.recent.copyName, { name: p.name }),
       createdAt: now,
       updatedAt: now,
       overrides: { ...p.overrides },
@@ -417,30 +421,30 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     }
     try {
       await saveProject(copy);
-      toast(`Made a copy of “${plainText(p.name)}”`, { tone: 'success' });
+      toast(fmt(t.recent.copied, { name: plainText(p.name) }), { tone: 'success' });
     } catch (err) {
-      toast(friendlyError(err, "Couldn't copy the pack"), { tone: 'error' });
+      toast(friendlyError(err, t.recent.copyFailed), { tone: 'error' });
     }
     void renderRecent();
   }
 
   async function remove(p: TexturePackProject) {
-    const ok = await confirmDialog('Delete this pack?', `“${plainText(p.name)}” will be removed from this browser.`, 'Delete', true);
+    const ok = await confirmDialog(t.recent.deleteTitle, fmt(t.recent.deleteText, { name: plainText(p.name) }), t.recent.delete, true);
     if (!ok) return;
     try {
       await deleteProject(p.id);
       void renderRecent();
-      toast(`Deleted “${plainText(p.name)}”`, {
+      toast(fmt(t.recent.deleted, { name: plainText(p.name) }), {
         action: {
-          label: 'Undo',
+          label: t.recent.undo,
           onClick: () =>
             void saveProject(p)
               .then(() => renderRecent())
-              .catch(() => toast("Couldn't restore the pack.", { tone: 'error' })),
+              .catch(() => toast(t.recent.restoreFailed, { tone: 'error' })),
         },
       });
     } catch {
-      toast("Couldn't delete the pack.", { tone: 'error' });
+      toast(t.recent.deleteFailed, { tone: 'error' });
     }
   }
 
@@ -454,20 +458,20 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       h(
         'div',
         { class: 'tx-hero-text' },
-        h('span', { class: 'eyebrow' }, icon('image'), 'Texture Pack Maker'),
-        h('h1', { class: 'pixel-shadow' }, 'Make Minecraft look ', h('span', { class: 'accent' }, 'your'), ' way'),
-        h('p', { class: 'lead' }, 'Repaint any block, item or mob, upload your own pictures, or restyle everything with one click. Works for Java and Bedrock.'),
+        h('span', { class: 'eyebrow' }, icon('image'), t.hero.eyebrow),
+        h('h1', { class: 'pixel-shadow' }, fmtNodes(t.hero.title, { your: h('span', { class: 'accent' }, t.hero.your) })),
+        h('p', { class: 'lead' }, t.hero.lead),
         h(
           'a',
           { class: 'tx-hero-convert', href: routeHref('/texture-pack-converter') },
           icon('repeat'),
-          h('span', null, 'Pack for the other edition? ', h('strong', null, 'Convert it')),
+          h('span', null, t.hero.otherEdition, h('strong', null, t.hero.convertIt)),
           icon('arrow-right'),
         ),
       ),
       heroArt(),
     ),
-    h('div', { class: 'container tx-start-grid' }, newCard, h('div', { class: 'tx-start-side' }, openCard, h('section', { class: 'card tx-howto-card' }, h('h3', { class: 'section-title' }, icon('info'), 'How it works'), steps))),
+    h('div', { class: 'container tx-start-grid' }, newCard, h('div', { class: 'tx-start-side' }, openCard, h('section', { class: 'card tx-howto-card' }, h('h3', { class: 'section-title' }, icon('info'), t.howto.title), steps))),
     recent,
     siteFooter(),
   );

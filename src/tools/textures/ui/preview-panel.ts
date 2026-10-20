@@ -19,6 +19,8 @@ import { ICON_KEY, type TexStore } from './store';
 import type { OpenTexture } from './canvas-panel';
 import type { LiveTexture, ModelService } from './models';
 import { paintCanvas } from './thumbs';
+import { fmt, textLocale } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export interface PreviewPanel {
   el: HTMLElement;
@@ -118,11 +120,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   const modeSeg = segmented<Mode>({
     value: mode,
     size: 'sm',
-    label: 'Preview shape',
+    label: te.preview.shape,
     options: [
-      { value: 'auto', label: 'Auto' },
-      { value: 'cube', label: 'Block' },
-      { value: 'flat', label: 'Flat' },
+      { value: 'auto', label: te.preview.auto },
+      { value: 'cube', label: te.preview.block },
+      { value: 'flat', label: te.preview.flat },
     ],
     onChange: (v) => {
       mode = v;
@@ -132,22 +134,22 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   const itemSeg = segmented<'3d' | 'flat'>({
     value: '3d',
     size: 'sm',
-    label: 'Item preview',
+    label: te.preview.itemPreview,
     options: [
       { value: '3d', label: '3D' },
-      { value: 'flat', label: 'Flat' },
+      { value: 'flat', label: te.preview.flat },
     ],
     onChange: (v) => {
       itemFlat = v === 'flat';
       void render();
     },
   });
-  const rotateBtn = iconButton('reload', 'Spin automatically', () => {
+  const rotateBtn = iconButton('reload', te.preview.spin, () => {
     if (entry) spinModel = !spinModel;
     else spinTexture = !spinTexture;
     syncSpin();
   }, { size: 'sm', active: spinTexture });
-  const resetBtn = iconButton('aspect-ratio', 'Reset the view', () => preview?.resetView(), { size: 'sm' });
+  const resetBtn = iconButton('aspect-ratio', te.preview.resetView, () => preview?.resetView(), { size: 'sm' });
   const syncSpin = () => {
     const on = !docked && (entry ? spinModel : spinTexture);
     rotateBtn.setActive(on);
@@ -155,31 +157,31 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   };
   const pinMap = (): Map<string, number> | null => (pin ? new Map(pin.path ? [[pin.path, pin.frame]] : []) : null);
   const fxToggle = toggle({
-    label: 'Show effects',
+    label: te.preview.showEffects,
     value: showFx,
-    description: 'See the pack’s effects on top of your pixels.',
+    description: te.preview.showEffectsHint,
     onChange: (v) => {
       showFx = v;
       models.resetBiome();
       void render();
     },
   });
-  const tileCanvas = h('canvas', { class: 'tx-pv-tiled pixelated', 'aria-label': 'Texture tiled 3 by 3', role: 'img' });
+  const tileCanvas = h('canvas', { class: 'tx-pv-tiled pixelated', 'aria-label': te.preview.tiledLabel, role: 'img' });
   const tiledBox = h('div', { class: 'tx-pv-tiledbox checker' }, tileCanvas);
   const tiledSection = h(
     'section',
     { class: 'tx-pv-section' },
-    h('h3', { class: 'section-title' }, icon('grid-2x2-2'), 'Tiled 3×3'),
-    h('p', { class: 'faint small' }, 'How it looks when placed next to itself. Seams jump out here.'),
+    h('h3', { class: 'section-title' }, icon('grid-2x2-2'), te.preview.tiled),
+    h('p', { class: 'faint small' }, te.preview.tiledHint),
     tiledBox,
   );
-  const empty = emptyState({ icon: 'cube', title: 'Nothing to preview', text: 'Pick a block or open a texture to see it in 3D.' });
+  const empty = emptyState({ icon: 'cube', title: te.preview.emptyTitle, text: te.preview.emptyText });
 
   // model header
   const headIcon = h('canvas', { class: 'tx-pv-headicon', 'aria-hidden': 'true' });
   const headName = h('h2', { class: 'tx-pv-name truncate' });
   const headSub = h('span', { class: 'tx-pv-sub truncate' });
-  const closeBtn = iconButton('close', 'Back to the texture on its own', () => {
+  const closeBtn = iconButton('close', te.preview.backToTexture, () => {
     pinned = true;
     setEntry(null);
     void render();
@@ -193,25 +195,21 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   );
   const note = h('p', { class: 'tx-inline-note tx-pv-note', hidden: true });
   const trimNote = h('div', { class: 'tx-inline-note tx-pv-note tx-pv-trimnote', hidden: true, role: 'note' });
-  const statesEl = h('div', { class: 'tx-pv-states', role: 'group', 'aria-label': 'Block state', hidden: true });
-  const texList = h('ul', { class: 'tx-pv-texlist', role: 'list', 'aria-label': 'Textures of this model' });
+  const statesEl = h('div', { class: 'tx-pv-states', role: 'group', 'aria-label': te.preview.blockState, hidden: true });
+  const texList = h('ul', { class: 'tx-pv-texlist', role: 'list', 'aria-label': te.preview.texturesOfModel });
   const texHint = h('p', { class: 'faint small tx-pv-texhint' });
   const texCount = h('span', { class: 'tx-pv-texcount' });
   const texSection = h(
     'section',
     { class: 'tx-pv-section tx-pv-texsection', hidden: true },
-    h('h3', { class: 'section-title' }, icon('layers'), 'Textures', texCount),
+    h('h3', { class: 'section-title' }, icon('layers'), te.preview.textures, texCount),
     texHint,
     texList,
   );
-  const views = h('div', { class: 'tx-pv-views', role: 'group', 'aria-label': 'Camera views', hidden: true });
-  for (const [v, key, label] of [
-    ['front', 'F', 'Front view'],
-    ['back', 'B', 'Back view'],
-    ['left', 'L', 'Left side view'],
-    ['right', 'R', 'Right side view'],
-    ['top', 'T', 'Top view'],
-  ] as [ModelCameraView, string, string][]) {
+  const views = h('div', { class: 'tx-pv-views', role: 'group', 'aria-label': te.preview.cameraViews, hidden: true });
+  for (const v of ['front', 'back', 'left', 'right', 'top'] as (ModelCameraView & keyof typeof te.preview.views)[]) {
+    const key = te.preview.viewKeys[v];
+    const label = te.preview.views[v];
     const b = h('button', { type: 'button', class: 'tx-pv-view-btn', dataset: { view: v }, 'aria-label': label }, key);
     tooltip(b, label);
     b.addEventListener('click', () => preview?.setCameraView(v));
@@ -220,21 +218,21 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   const paintHintDot = h('span', { class: 'tx-pv-hint-dot', 'aria-hidden': 'true' });
   const paintHintText = h('span', { class: 'tx-pv-hint-text' });
   const paintHint = h('div', { class: 'tx-pv-hint is-idle', hidden: true }, paintHintDot, paintHintText);
-  const noModel = h('div', { class: 'tx-pv-nomodel', hidden: true }, icon('info'), h('span', null, 'No 3D model to paint for this texture. Paint it in 2D, or pick a block that uses it.'));
+  const noModel = h('div', { class: 'tx-pv-nomodel', hidden: true }, icon('info'), h('span', null, te.preview.noModel));
   const hero = h('div', { class: 'tx-pv-hero checker-soft' }, stage, stageLabel, hoverTag, paintHint, noModel, views, h('div', { class: 'tx-pv-float' }, rotateBtn, resetBtn));
   const canvasSlot = h('div', { class: 'tx-pv-canvasslot', hidden: true });
-  const partsList = h('div', { class: 'tx-pv-parts', role: 'group', 'aria-label': 'Body parts shown in 3D' });
-  const partsAll = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-pv-parts-all' }, icon('eye', { size: 16 }), h('span', { class: 'btn-label' }, 'Show all'));
+  const partsList = h('div', { class: 'tx-pv-parts', role: 'group', 'aria-label': te.preview.bodyParts });
+  const partsAll = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-pv-parts-all' }, icon('eye', { size: 16 }), h('span', { class: 'btn-label' }, te.preview.showAll));
   partsAll.addEventListener('click', () => showAllParts());
   const partsSection = h(
     'section',
     { class: 'tx-pv-section tx-pv-partsection', hidden: true },
-    h('div', { class: 'tx-pv-parthead' }, h('h3', { class: 'section-title' }, icon('human'), 'Parts'), partsAll),
-    h('p', { class: 'faint small' }, 'Hide a part to reach what it covers. Double-click to show only that part.'),
+    h('div', { class: 'tx-pv-parthead' }, h('h3', { class: 'section-title' }, icon('human'), te.preview.parts), partsAll),
+    h('p', { class: 'faint small' }, te.preview.partsHint),
     partsList,
   );
-  const partsBtn = h('button', { type: 'button', class: 'tx-pv-partsbtn', hidden: true, 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, icon('human', { size: 16 }), h('span', null, 'Parts'));
-  tooltip(partsBtn, 'Show or hide body parts');
+  const partsBtn = h('button', { type: 'button', class: 'tx-pv-partsbtn', hidden: true, 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, icon('human', { size: 16 }), h('span', null, te.preview.parts));
+  tooltip(partsBtn, te.preview.partsButton);
   partsBtn.addEventListener('click', () => togglePartsPopover());
   hero.appendChild(partsBtn);
   const controls = h('div', { class: 'tx-pv-controls' }, modeSeg, itemSeg);
@@ -242,15 +240,15 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     'button',
     { type: 'button', class: 'btn btn-secondary btn-sm tx-pv-shapebtn', hidden: true },
     icon('shapes'),
-    h('span', { class: 'btn-label' }, 'Edit shape'),
-    h('span', { class: 'tx-pv-shapebadge', hidden: true }, 'Custom'),
+    h('span', { class: 'btn-label' }, te.preview.editShape),
+    h('span', { class: 'tx-pv-shapebadge', hidden: true }, te.preview.custom),
   );
-  tooltip(editShapeBtn, 'Change the cubes this model is made of');
+  tooltip(editShapeBtn, te.preview.editShapeHint);
   editShapeBtn.addEventListener('click', () => {
     if (entry && entry.kind !== 'entity') hooks.onEditModel?.(entry, { ...state });
   });
   const body = h('div', { class: 'tx-pv' }, head, hero, editShapeBtn, canvasSlot, note, trimNote, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
-  const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, 'Loading the model…'));
+  const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, te.preview.loadingModel));
   hero.appendChild(loadingModel);
   const el = h('div', { class: 'tx-pv-wrap' }, body, empty);
 
@@ -273,7 +271,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         })
         .catch((err) => {
           console.error(err);
-          stage.replaceChildren(h('p', { class: 'faint small tx-pv-nogl' }, '3D preview is not available in this browser.'));
+          stage.replaceChildren(h('p', { class: 'faint small tx-pv-nogl' }, te.preview.noWebgl));
           return null;
         });
     }
@@ -404,7 +402,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const n = hidden().size;
     partsAll.hidden = n === 0;
     partsBtn.classList.toggle('is-filtered', n > 0);
-    partsBtn.querySelector('span:not(.icon)')!.textContent = n ? `Parts · ${parts.length - n} of ${parts.length}` : 'Parts';
+    partsBtn.querySelector('span:not(.icon)')!.textContent = n ? fmt(te.preview.partsShown, { shown: parts.length - n, total: parts.length }) : te.preview.parts;
     if (partsPop?.open) {
       const list = partsPop.el.querySelector('.tx-pv-parts');
       list?.replaceChildren(...partChips());
@@ -417,17 +415,17 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       partsPop.close();
       return;
     }
-    const all = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-pv-parts-all', hidden: hidden().size === 0 }, icon('eye', { size: 16 }), h('span', { class: 'btn-label' }, 'Show all'));
+    const all = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-pv-parts-all', hidden: hidden().size === 0 }, icon('eye', { size: 16 }), h('span', { class: 'btn-label' }, te.preview.showAll));
     all.addEventListener('click', () => showAllParts());
     const content = h(
       'div',
       { class: 'tx-pv-partspop' },
-      h('div', { class: 'tx-pv-parthead' }, h('strong', null, 'Body parts'), all),
-      h('div', { class: 'tx-pv-parts', role: 'group', 'aria-label': 'Body parts shown in 3D' }, partChips()),
-      h('p', { class: 'faint small' }, 'Double-click a part to show only it.'),
+      h('div', { class: 'tx-pv-parthead' }, h('strong', null, te.preview.bodyPartsTitle), all),
+      h('div', { class: 'tx-pv-parts', role: 'group', 'aria-label': te.preview.bodyParts }, partChips()),
+      h('p', { class: 'faint small' }, te.preview.soloHint),
     );
     partsBtn.setAttribute('aria-expanded', 'true');
-    partsPop = openPopover(partsBtn, content, { placement: 'bottom-start', label: 'Body parts', class: 'tx-pv-partspop-wrap', onClose: () => partsBtn.setAttribute('aria-expanded', 'false') });
+    partsPop = openPopover(partsBtn, content, { placement: 'bottom-start', label: te.preview.bodyPartsTitle, class: 'tx-pv-partspop-wrap', onClose: () => partsBtn.setAttribute('aria-expanded', 'false') });
   }
 
   /** The state closest to `cur` in which `path` is visible. */
@@ -441,7 +439,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   function paintHead() {
     if (!entry || !view) return;
     headName.textContent = entry.name;
-    headSub.textContent = `${entry.kind === 'block' ? 'Block' : entry.kind === 'item' ? 'Item' : 'Mob'} · ${entry.id}`;
+    headSub.textContent = `${entry.kind === 'block' ? te.preview.kind.block : entry.kind === 'item' ? te.preview.kind.item : te.preview.kind.mob} · ${entry.id}`;
     head.title = entry.id;
     const cached = models.peekIcon(entry, fxOn());
     const draw = (img: HTMLCanvasElement | ImageData) => {
@@ -500,7 +498,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         : select<string>({ value, options: p.values.map((v) => ({ value: v.value, label: v.label })), onChange: (v) => set({ [p.name]: v }) });
       if (!short) control.querySelector('select')?.setAttribute('aria-label', p.label);
       // (the trim's material sits under the trim: "Material" is enough there)
-      const shown = p.name === 'trim_material' ? 'Material' : p.label;
+      const shown = p.name === 'trim_material' ? te.preview.material : p.label;
       return h('div', { class: 'tx-pv-state', dataset: { prop: p.name } }, h('span', { class: 'tx-pv-state-label' }, shown), control);
     };
     const nodes: HTMLElement[] = props.filter((p) => !p.gear).map(row);
@@ -508,7 +506,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const isTrim = (p: StateProperty) => p.name === 'trim' || p.name === 'trim_material';
     const gear = props.filter((p) => p.gear).sort((a, b) => Number(isTrim(a)) - Number(isTrim(b)));
     if (gear.length) {
-      nodes.push(h('div', { class: 'tx-pv-gearhead', role: 'presentation' }, icon('shirt', { size: 16 }), h('span', null, 'Wearing')));
+      nodes.push(h('div', { class: 'tx-pv-gearhead', role: 'presentation' }, icon('shirt', { size: 16 }), h('span', null, te.preview.wearing)));
       const armor = gear.filter((p) => p.group === 'armor');
       for (const p of gear) {
         if (p.group !== 'armor') nodes.push(row(p));
@@ -532,7 +530,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const current = !worn.length ? 'none' : mats.length === 1 ? mats[0] : 'mixed';
     const options: { value: string; label: string }[] = [];
     for (const p of slots) for (const v of p.values) if (!options.some((o) => o.value === v.value)) options.push({ value: v.value, label: v.label });
-    if (current === 'mixed') options.push({ value: 'mixed', label: 'Mixed' });
+    if (current === 'mixed') options.push({ value: 'mixed', label: te.preview.mixed });
     const fits = (p: StateProperty, m: string) => p.values.some((v) => v.value === m);
     const control = select<string>({
       value: current,
@@ -543,8 +541,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         set(Object.fromEntries(slots.map((p) => [p.name, fits(p, m) ? m : 'none'])));
       },
     });
-    control.querySelector('select')?.setAttribute('aria-label', 'Armour');
-    const out = [h('div', { class: 'tx-pv-state', dataset: { prop: 'armor' } }, h('span', { class: 'tx-pv-state-label' }, 'Armour'), control)];
+    control.querySelector('select')?.setAttribute('aria-label', te.preview.armour);
+    const out = [h('div', { class: 'tx-pv-state', dataset: { prop: 'armor' } }, h('span', { class: 'tx-pv-state-label' }, te.preview.armour), control)];
     if (current === 'none') return out;
     // a piece put on takes the set's material (the last one picked when they differ)
     const material = current !== 'mixed' ? current : armorMaterial && mats.includes(armorMaterial) ? armorMaterial : mats[0];
@@ -556,7 +554,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         { type: 'button', class: 'chip tx-pv-piece', 'aria-pressed': String(on), disabled: !can, dataset: { piece: p.name } },
         h('span', { class: 'truncate' }, p.label),
       );
-      tooltip(b, on ? `Take off the ${p.label.toLowerCase()}` : can ? `Put on a ${p.label.toLowerCase()}` : `No ${p.label.toLowerCase()} in this material`);
+      tooltip(b, fmt(on ? te.preview.takeOff : can ? te.preview.putOn : te.preview.noPiece, { piece: inSentence(p.label) }));
       b.addEventListener('click', () => set({ [p.name]: on ? 'none' : material }));
       return b;
     });
@@ -564,8 +562,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       h(
         'div',
         { class: 'tx-pv-state tx-pv-pieces-row', dataset: { prop: 'pieces' } },
-        h('span', { class: 'tx-pv-state-label' }, 'Pieces'),
-        h('div', { class: 'tx-pv-pieces', role: 'group', 'aria-label': 'Armour pieces worn' }, chips),
+        h('span', { class: 'tx-pv-state-label' }, te.preview.pieces),
+        h('div', { class: 'tx-pv-pieces', role: 'group', 'aria-label': te.preview.piecesWorn }, chips),
       ),
     );
     return out;
@@ -587,15 +585,15 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     texCount.textContent = String(list.length);
     texHint.textContent = docked
       ? view.shape === 'special'
-        ? 'Paint the texture sheet in 2D.'
-        : 'Paint on the model, or pick a texture here to open it.'
+        ? te.preview.hint.dockedSheet
+        : te.preview.hint.docked
       : view.shape === 'special'
-        ? 'Click the texture sheet to paint it.'
+        ? te.preview.hint.sheet
         : view.shape === 'sprite'
-          ? 'Click a layer to paint it.'
+          ? te.preview.hint.sprite
           : other
-            ? 'Click a face or a texture to paint it. Dimmed: other states.'
-            : 'Click a face or a texture to paint it.';
+            ? te.preview.hint.other
+            : te.preview.hint.faces;
     texList.replaceChildren(...list.map((t) => textureRow(t)));
     syncRows();
   }
@@ -614,14 +612,14 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       h(
         'span',
         { class: 'tx-pv-texbadges' },
-        t.missing ? badge('Missing', 'red') : null,
-        edited ? h('span', { class: 'tx-pv-texedit', title: 'Edited' }, icon('pencil', { size: 16 })) : null,
-        t.animated ? h('span', { class: 'tx-pv-texanim', title: 'Animated' }, icon('play', { size: 16 })) : null,
+        t.missing ? badge(te.preview.missing, 'red') : null,
+        edited ? h('span', { class: 'tx-pv-texedit', title: te.preview.edited }, icon('pencil', { size: 16 })) : null,
+        t.animated ? h('span', { class: 'tx-pv-texanim', title: te.preview.animated }, icon('play', { size: 16 })) : null,
       ),
     );
     const li = h('li', { class: ['tx-pv-texrow', other && 'is-other'], dataset: { path: t.path } }, btn);
-    btn.setAttribute('aria-label', `${t.label}: ${name}${other ? ' (another state)' : ''}${edited ? ', edited' : ''}`);
-    tooltip(btn, other ? `Shown when ${stateText(t.state)} — click to switch and paint it` : `Paint ${name}`);
+    btn.setAttribute('aria-label', `${t.label}: ${name}${other ? te.preview.otherState : ''}${edited ? te.preview.editedSuffix : ''}`);
+    tooltip(btn, other ? fmt(te.preview.shownWhen, { state: stateText(t.state) }) : fmt(te.preview.paint, { name }));
     btn.addEventListener('click', () => {
       if (other && t.state) {
         state = { ...t.state };
@@ -651,7 +649,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
 
   function stateText(s: BlockState | undefined): string {
     const lib = models.lib;
-    if (!s || !entry || !lib) return 'another state';
+    if (!s || !entry || !lib) return te.preview.anotherState;
     const props = lib.properties(entry);
     const parts: string[] = [];
     for (const p of props) {
@@ -659,7 +657,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       const v = p.values.find((x) => x.value === s[p.name]);
       parts.push(`${p.label}: ${v?.label ?? s[p.name]}`);
     }
-    return parts.join(', ') || 'another state';
+    return parts.join(', ') || te.preview.anotherState;
   }
 
   function syncRows() {
@@ -886,23 +884,23 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     shownKey = key;
     if (!built) {
       pv.showFlat(new ImageData(1, 1));
-      stageLabel.textContent = 'No texture';
+      stageLabel.textContent = te.preview.stage.noTexture;
       return;
     }
     if (built.flat) {
       pv.showFlat(built.flat);
-      stageLabel.textContent = 'Texture sheet';
+      stageLabel.textContent = te.preview.stage.sheet;
     } else if (v.shape === 'sprite' && itemFlat) {
       const first = built.scene.textures.get(v.sprite[0]?.path ?? '');
       if (first) pv.showFlat(first.image, first.frames > 1 ? { frametime: first.frametime } : undefined);
-      stageLabel.textContent = 'Item';
+      stageLabel.textContent = te.preview.stage.item;
     } else {
       // with parts hidden the mob keeps the place and size it has whole
       pv.showModel(built.scene, { view: built.view, keepView: keepView && again, frame: off?.size ? v.quads : undefined });
-      stageLabel.textContent = v.approximate ? 'Approximate shape' : e.kind === 'item' ? 'Item' : v.shape === 'sprite' ? 'Item icon' : v.category === 'mob' ? 'Mob model' : v.category === 'special' ? 'Drawn by the game' : 'In-game model';
+      stageLabel.textContent = v.approximate ? te.preview.stage.approximate : e.kind === 'item' ? te.preview.stage.item : v.shape === 'sprite' ? te.preview.stage.itemIcon : v.category === 'mob' ? te.preview.stage.mob : v.category === 'special' ? te.preview.stage.special : te.preview.stage.model;
       if (built.misfit?.length) {
         note.hidden = false;
-        note.replaceChildren(icon('info'), h('span', null, `${built.misfit.length === 1 ? 'A texture doesn’t' : 'Some textures don’t'} have the shape this mob’s model maps, so ${built.misfit.length === 1 ? 'it is' : 'they are'} left off the model. Paint ${built.misfit.length === 1 ? 'it' : 'them'} in 2D.`));
+        note.replaceChildren(icon('info'), h('span', null, fmt(te.preview.misfit, { count: built.misfit.length })));
       }
     }
     if (hoverPath) preview?.highlightTexture(hoverPath);
@@ -949,15 +947,13 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         h(
           'span',
           null,
-          isKey
-            ? 'Trim colour key: the grey shades trim patterns are drawn in, lightest first. The game gives each pattern pixel of one of these greys the colour at the same place in the trim material’s palette.'
-            : 'Trim colours: the colour each grey shade of every trim pattern becomes for this material, lightest first. Repaint a pixel to recolour that shade on every trim.',
+          isKey ? te.preview.trimKey : te.preview.trimColours,
         ),
       );
       trimNote.hidden = false;
       return;
     }
-    const text = h('span', null, 'The game colours this trim: each of these greys becomes the trim material’s colour shown under it. Paint with them to keep the trim’s colour; any other colour shows as painted on every material.');
+    const text = h('span', null, te.preview.trimPattern);
     const row = h('span', { class: 'tx-pv-trimkeys', style: 'display:flex;flex-wrap:wrap;gap:4px;margin-top:6px' });
     trimNote.replaceChildren(icon('palette'), h('span', { style: 'display:flex;flex-direction:column;min-width:0' }, text, row));
     trimNote.hidden = false;
@@ -973,7 +969,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
             h('span', { style: `flex:1;background:${hex(s.key)}` }),
             h('span', { style: `flex:1;background:${s.value ? hex(s.value) : 'transparent'}` }),
           );
-          const label = `${hex(s.key)} becomes ${s.value ? hex(s.value) : 'no colour'}`;
+          const label = fmt(te.preview.becomes, { key: hex(s.key), value: s.value ? hex(s.value) : te.preview.noColour });
           sw.setAttribute('role', 'img');
           sw.setAttribute('aria-label', label);
           tooltip(sw, label);
@@ -995,7 +991,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       const img = t.anim ? stripForPreview(withFx(t.full, t.key, true), t.anim) : withFx(t.full, t.key, false);
       const tintedImg = e ? tinted(img, e.id, t.key) : img;
       pv.showFlat(t.alphaData ? displayAlphaData(tintedImg, cat) : tintedImg, frametime && t.anim ? { frametime } : undefined);
-      stageLabel.textContent = t.key === ICON_KEY ? 'Pack icon' : e?.category === 'block' ? 'Cut-out block' : 'Sprite';
+      stageLabel.textContent = t.key === ICON_KEY ? te.preview.stage.packIcon : e?.category === 'block' ? te.preview.stage.cutout : te.preview.stage.sprite;
       return;
     }
     const plan = e ? planCube(e.id, (id) => pathOfId(id) !== null, project.edition) : null;
@@ -1004,7 +1000,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const mainShown = t.alphaData ? displayAlphaData(main, cat) : main;
     if (!plan || !e) {
       pv.showCube({ all: mainShown }, frametime ? { frametime } : undefined);
-      stageLabel.textContent = 'Block';
+      stageLabel.textContent = te.preview.stage.block;
       return;
     }
     void Promise.all([
@@ -1020,7 +1016,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         { up: up ?? mainShown, down: down ?? up ?? mainShown, north: front ?? sideImg, east: sideImg, west: sideImg, south: sideImg },
         frametime ? { frametime } : undefined,
       );
-      stageLabel.textContent = 'Block';
+      stageLabel.textContent = te.preview.stage.block;
     });
   }
 
@@ -1104,7 +1100,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       if (!c || !tex || tex.key !== path) return;
       const f = firstSquare(tex.anim ? getFrame(tex.full, tex.anim, 0) : tex.full);
       paintCanvas(c, /\.tga$/i.test(path) ? displayAlphaData(f, tex.entry?.category ?? 'block') : f);
-      li!.querySelector('.tx-pv-texbadges')?.replaceChildren(h('span', { class: 'tx-pv-texedit', title: 'Edited' }, icon('pencil', { size: 16 })));
+      li!.querySelector('.tx-pv-texbadges')?.replaceChildren(h('span', { class: 'tx-pv-texedit', title: te.preview.edited }, icon('pencil', { size: 16 })));
     }, 250);
   }
 
@@ -1174,7 +1170,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       paintHint.classList.toggle('is-locked', !!hint?.locked);
       if (!hint) {
         paintHintDot.style.background = '';
-        paintHintText.textContent = matchMedia('(pointer: coarse)').matches ? 'One finger paints · two fingers turn' : 'Drag to paint · right-drag to turn · scroll to zoom';
+        paintHintText.textContent = matchMedia('(pointer: coarse)').matches ? te.preview.touchHint : te.preview.mouseHint;
         return;
       }
       const c = hint.color;
@@ -1201,6 +1197,12 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       preview = null;
     },
   };
+}
+
+/** A noun inside a sentence: lower case where the language writes it so ("the helmet"), as it is in German and Japanese. */
+function inSentence(label: string): string {
+  const l = textLocale();
+  return l === 'de' || l === 'ja' ? label : label.toLowerCase();
 }
 
 function toImage(img: { width: number; height: number; data: Uint8ClampedArray }): ImageData {

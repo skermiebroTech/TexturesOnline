@@ -10,6 +10,7 @@ import { categoryForPath, getBaseImage, isEdited, removeOverride, setOverride } 
 import { hasActiveEffects } from '../effects';
 import { buildEntries, makeEntry, type TextureEntry } from './meta';
 import { customModelKey, resetCustomModel, writeCustomModel } from '../models/pack';
+import { te } from './i18n/editor';
 
 export type SaveState = 'saved' | 'saving' | 'dirty' | 'error';
 export const ICON_KEY = '@icon';
@@ -103,7 +104,7 @@ export class TexStore {
     if (path === ICON_KEY) {
       if (this.pendingIcon) return this.pendingIcon;
       if (this.project.icon) return decodeImage(this.project.icon, 'png');
-      throw new Error('This pack has no icon yet.');
+      throw new Error(te.noIcon);
     }
     const p = this.pending.get(path);
     if (p) return p;

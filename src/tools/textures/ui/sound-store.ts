@@ -13,6 +13,7 @@ import { SoundPlayer, decodeAudioFile, samplesFrom, type Samples } from '../soun
 import { decodeFsb5, isFsb5 } from '../sounds/fsb';
 import { clampParams, normaliseGain, renderSamples, soundRange, type RenderParams } from '../sounds/render';
 import { encodeOggVorbis } from '../sounds/encode';
+import { ts } from './i18n/sounds';
 
 export type SoundStatus = 'idle' | 'loading' | 'ready' | 'error' | 'unsupported';
 
@@ -172,12 +173,12 @@ export class SoundState {
     if (this.player.key === key) return this.player.stop();
     if (this.store.assets.edition === 'java') {
       const hash = this.vanilla?.hashes?.get(v.stem);
-      if (!hash) throw new Error('This sound isn’t in the game’s files.');
+      if (!hash) throw new Error(ts.errors.notInGame);
       return this.player.playUrl(key, javaSoundUrl(hash), Math.min(1, v.volume ?? 1));
     }
     this.player.stop();
     const s = await this.gameSamples(v);
-    if (!s) throw new Error('Mojang’s sample files don’t include this sound, so it can’t be played here.');
+    if (!s) throw new Error(ts.errors.noSample);
     this.player.playSamples(key, s, { gain: Math.min(1, v.volume ?? 1) });
   }
 
@@ -227,7 +228,7 @@ export class SoundState {
   async replace(variants: SoundVariant[], blob: Blob, name: string, recorded = false): Promise<void> {
     if (!variants.length) return;
     const s = await decodeAudioFile(blob);
-    if (s.duration > MAX_SECONDS) throw new Error('That sound is longer than 15 minutes. Trim it in an audio editor first.');
+    if (s.duration > MAX_SECONDS) throw new Error(ts.errors.tooLong);
     const keep = blob.size <= MAX_SOURCE_BYTES ? blob : undefined;
     if (keep) this.decoded.set(keep, Promise.resolve(s));
     await Promise.all(

@@ -42,7 +42,7 @@ export const GUIDES_INDEX: GuidesIndexText = {
 // ---------------------------------------------------------------- shared steps
 
 const MAKE_PACK_STEPS: Child[] = [
-  ['Abra o ', link('/textures', 'Texture Pack Maker'), ', dê um nome ao pack e escolha Java ou Bedrock, a versão que você joga e uma resolução, depois clique em ', strong('Create pack'), '.'],
+  ['Abra o ', link('/textures', 'Texture Pack Maker'), ', dê um nome ao pack e escolha Java ou Bedrock, a versão que você joga e uma resolução, depois clique em ', strong('Criar pack'), '.'],
   'Ache uma textura pela busca ou pelas categorias e repinte no editor de pixels, ou envie seu próprio PNG.',
   'Opcional: mude o estilo do pack inteiro com efeitos de um clique como Dark Mode, Pastel ou Retro 8-bit.',
   ['Abra a aba ', strong('Pack'), ' para definir a descrição e o ícone, depois exporte um ', code('.zip'), ' (Java) ou um ', code('.mcpack'), ' (Bedrock).'],
@@ -298,7 +298,7 @@ const makeATexturePack: GuideText = {
     {
       id: 'edit',
       q: 'Posso mudar um texture pack que já existe?',
-      a: [p('Sim. No Texture Pack Maker escolha ', strong('Open a pack'), ' e selecione um ', code('.zip'), ' ou ', code('.mcpack'), '. Você pode continuar editando e exportar de novo.'), figure(SHOTS.openPack)],
+      a: [p('Sim. No Texture Pack Maker escolha ', strong('Abrir um pack'), ' e selecione um ', code('.zip'), ' ou ', code('.mcpack'), '. Você pode continuar editando e exportar de novo.'), figure(SHOTS.openPack)],
     },
     {
       id: 'code',

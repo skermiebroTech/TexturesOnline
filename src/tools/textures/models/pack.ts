@@ -7,6 +7,8 @@ import type { CustomModel, TexturePackProject } from '../../../core/types';
 import { modelPath } from '../../../shared/models/java-models';
 import { modelFromJson } from './doc';
 import { modelRules, validateModel, type ModelIssue } from './rules';
+import { fmt } from '../../../i18n/editor-text';
+import { tr } from '../ui/i18n/model-rules';
 
 const jsonBlob = (text: string) => new Blob([text], { type: 'application/json' });
 
@@ -74,25 +76,25 @@ export async function customModelWarnings(
     const text = await read(path);
     const name = info.saved.replace(/^minecraft:/, '');
     if (text === null) {
-      out.push(`The model ${name} is missing from the pack.`);
+      out.push(fmt(tr.missingModel, { name }));
       continue;
     }
     let json: unknown;
     try {
       json = JSON.parse(text);
     } catch {
-      out.push(`The model ${name} isn't valid JSON, so the game can't read it.`);
+      out.push(fmt(tr.badJson, { name }));
       continue;
     }
     if (!rules.models) {
-      out.push(`Minecraft ${project.version} has no model files, so the model ${name} does nothing there.`);
+      out.push(fmt(tr.noModels, { version: project.version, name }));
       continue;
     }
     const issues: ModelIssue[] = validateModel(modelFromJson(json, info.saved), { rules, hasTexture, atlasDirs: atlas[info.kind] });
     const errors = issues.filter((i) => i.level === 'error');
     const first = errors[0] ?? issues[0];
     if (!first) continue;
-    out.push(`Model ${name}: ${first.message}${issues.length > 1 ? ` (${issues.length - 1} more ${issues.length === 2 ? 'problem' : 'problems'} — open it in the model editor to see them)` : ''}`);
+    out.push(`${fmt(tr.problem, { name, message: first.message })}${issues.length > 1 ? fmt(tr.moreProblems, { count: issues.length - 1 }) : ''}`);
   }
   return out;
 }

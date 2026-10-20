@@ -8,6 +8,9 @@ import type { ModelCategory, ModelEntry, ModelLibrary } from '../../../shared/mo
 import { paintCanvas } from './thumbs';
 import type { ModelService } from './models';
 import type { TexStore } from './store';
+import { fmt, num } from '../../../i18n/editor-text';
+import { te, type EditorText } from './i18n/editor';
+import { kit } from '../../../ui/i18n/kit';
 
 export type LibraryKind = 'block' | 'item' | 'entity';
 
@@ -32,24 +35,25 @@ export interface ModelBrowserOptions {
 
 type Cat = 'all' | ModelCategory | 'sprite' | 'blockitem';
 
-/** label: on the picker button; short: in the menu (two narrow columns) */
-const CATS: Record<LibraryKind, { value: Cat; label: string; short: string; icon: IconName; hint: string }[]> = {
+type CatText = keyof EditorText['models']['cats'];
+/** label: on the picker button; short: in the menu (two narrow columns); keys of the text in ./i18n/editor.ts */
+const CATS: Record<LibraryKind, { value: Cat; label: CatText; short: CatText; icon: IconName; hint: CatText }[]> = {
   block: [
-    { value: 'all', label: 'All blocks', short: 'All', icon: 'grid', hint: 'Every block' },
-    { value: 'cube', label: 'Full blocks', short: 'Cubes', icon: 'cube', hint: 'Whole-block cubes' },
-    { value: 'shape', label: 'Shaped blocks', short: 'Shaped', icon: 'shapes', hint: 'Stairs, slabs, doors, fences and other shapes' },
-    { value: 'plant', label: 'Plants', short: 'Plants', icon: 'leaf', hint: 'Flowers, crops and other crossed planes' },
-    { value: 'special', label: 'Drawn by the game', short: 'Special', icon: 'sparkles', hint: 'Chests, banners, heads, liquids: drawn by the game’s own code' },
+    { value: 'all', label: 'allBlocks', short: 'all', icon: 'grid', hint: 'everyBlock' },
+    { value: 'cube', label: 'fullBlocks', short: 'cubes', icon: 'cube', hint: 'cubesHint' },
+    { value: 'shape', label: 'shaped', short: 'shapedShort', icon: 'shapes', hint: 'shapedHint' },
+    { value: 'plant', label: 'plants', short: 'plants', icon: 'leaf', hint: 'plantsHint' },
+    { value: 'special', label: 'special', short: 'specialShort', icon: 'sparkles', hint: 'specialHint' },
   ],
   item: [
-    { value: 'all', label: 'All items', short: 'All', icon: 'grid', hint: 'Every item' },
-    { value: 'sprite', label: 'Flat items', short: 'Flat', icon: 'sword', hint: 'Items drawn from a flat sprite' },
-    { value: 'blockitem', label: 'Block items', short: 'Blocks', icon: 'cube', hint: 'Items shown as their block' },
-    { value: 'special', label: 'Drawn by the game', short: 'Special', icon: 'sparkles', hint: 'Shields, chests, banners...: drawn by the game’s own code' },
+    { value: 'all', label: 'allItems', short: 'all', icon: 'grid', hint: 'everyItem' },
+    { value: 'sprite', label: 'flatItems', short: 'flat', icon: 'sword', hint: 'flatHint' },
+    { value: 'blockitem', label: 'blockItems', short: 'blocks', icon: 'cube', hint: 'blockItemsHint' },
+    { value: 'special', label: 'special', short: 'specialShort', icon: 'sparkles', hint: 'specialItemsHint' },
   ],
-  entity: [{ value: 'all', label: 'All mobs', short: 'All', icon: 'grid', hint: 'Every mob with a 3D model' }],
+  entity: [{ value: 'all', label: 'allMobs', short: 'all', icon: 'grid', hint: 'everyMob' }],
 };
-const NOUN: Record<LibraryKind, string> = { block: 'blocks', item: 'items', entity: 'mobs' };
+const catText = (k: CatText): string => te.models.cats[k];
 
 const MIN_TILE = 72;
 const GAP = 6;
@@ -57,7 +61,7 @@ const PAD = 8;
 const LIST_ROW = 48;
 const OVERSCAN = 3;
 const VIEW_KEY = 'to-tex-model-view';
-const nf = new Intl.NumberFormat();
+const nf = { format: (n: number) => num(n) };
 
 export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   const { store, models } = opts;
@@ -83,8 +87,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   let catJob = 0;
 
   // ---- header ----
-  const input = h('input', { class: 'input tx-search-input', type: 'search', placeholder: 'Search blocks', autocomplete: 'off', spellcheck: false, 'aria-label': 'Search blocks', enterKeyHint: 'search' });
-  const clearBtn = h('button', { type: 'button', class: 'icon-btn sm tx-search-clear', 'aria-label': 'Clear search', hidden: true }, icon('close'));
+  const input = h('input', { class: 'input tx-search-input', type: 'search', placeholder: fmt(te.models.search, { kind: 'block' }), autocomplete: 'off', spellcheck: false, 'aria-label': fmt(te.models.search, { kind: 'block' }), enterKeyHint: 'search' });
+  const clearBtn = h('button', { type: 'button', class: 'icon-btn sm tx-search-clear', 'aria-label': te.browser.clearSearch, hidden: true }, icon('close'));
   const search = h('div', { class: 'tx-search' }, icon('search', { class: 'tx-search-icon' }), input, clearBtn, h('kbd', { class: 'kbd tx-search-kbd', 'aria-hidden': 'true' }, '/'));
 
   const catIcon = h('span', { class: 'tx-catpick-icon' });
@@ -93,14 +97,14 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   const catPick = h('button', { type: 'button', class: 'chip tx-catpick', 'aria-haspopup': 'menu', 'aria-expanded': 'false' }, catIcon, catLabel, catCount, icon('chevron-down', { class: 'tx-catpick-chev' }));
   let catMenu: PopoverHandle | null = null;
 
-  const editedBtn = h('button', { type: 'button', class: 'chip tx-edited-chip', 'aria-pressed': 'false' }, icon('pencil'), h('span', null, 'Edited'), h('span', { class: 'tx-chip-count' }, '0'));
-  tooltip(editedBtn, 'Only blocks that use a texture you changed');
-  const gridBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(view === 'grid'), 'aria-label': 'Show as a grid' }, icon('grid-2x2-2'));
-  const listBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(view === 'list'), 'aria-label': 'Show as a list with names' }, icon('bulletlist'));
-  tooltip(gridBtn, 'Grid');
-  tooltip(listBtn, 'List with names');
+  const editedBtn = h('button', { type: 'button', class: 'chip tx-edited-chip', 'aria-pressed': 'false' }, icon('pencil'), h('span', null, te.browser.edited), h('span', { class: 'tx-chip-count' }, '0'));
+  tooltip(editedBtn, fmt(te.models.editedHint, { kind: 'block' }));
+  const gridBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(view === 'grid'), 'aria-label': te.browser.showGrid }, icon('grid-2x2-2'));
+  const listBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(view === 'list'), 'aria-label': te.browser.showList }, icon('bulletlist'));
+  tooltip(gridBtn, te.browser.grid);
+  tooltip(listBtn, te.browser.list);
 
-  const grid = h('div', { class: ['tx-grid', 'tx-mb-grid', view === 'list' && 'is-list'], role: 'listbox', tabIndex: 0, 'aria-label': 'Blocks' });
+  const grid = h('div', { class: ['tx-grid', 'tx-mb-grid', view === 'list' && 'is-list'], role: 'listbox', tabIndex: 0, 'aria-label': fmt(te.models.list, { kind: 'block' }) });
   const sizer = h('div', { class: 'tx-grid-sizer' });
   const scroller = h('div', { class: 'tx-grid-scroll scroll' }, sizer, grid);
   const overlay = h('div', { class: 'tx-grid-empty', hidden: true });
@@ -109,7 +113,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
 
   const el = h(
     'section',
-    { class: 'panel tx-browser tx-mb', 'aria-label': 'Block browser' },
+    { class: 'panel tx-browser tx-mb', 'aria-label': fmt(te.models.browser, { kind: 'block' }) },
     opts.top,
     h('div', { class: 'tx-browser-head' }, search, catPick),
     h('div', { class: 'tx-browser-bar' }, editedBtn, h('span', { class: 'grow' }), h('span', { class: 'tx-seg' }, gridBtn, listBtn)),
@@ -123,7 +127,6 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     if (!l) return [];
     return kind === 'block' ? l.blocks() : kind === 'item' ? l.items() : l.entities();
   };
-  const noun = () => NOUN[kind];
 
   // ---- categories (computed in small slices so the list shows at once) ----
   const catOf = (e: ModelEntry): Cat | undefined => categories.get(`${e.kind}:${e.id}`);
@@ -207,25 +210,25 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     const def = CATS[kind].find((c) => c.value === cat) ?? CATS[kind][0];
     const m = counts();
     catIcon.replaceChildren(icon(def.icon));
-    catLabel.textContent = def.label;
+    catLabel.textContent = catText(def.label);
     catCount.textContent = cat === 'all' || catsReady ? nf.format(m.get(cat) ?? 0) : '…';
     catPick.classList.toggle('is-filtered', cat !== 'all');
-    catPick.setAttribute('aria-label', `Show: ${def.label}. Change`);
+    catPick.setAttribute('aria-label', fmt(te.models.showButton, { category: catText(def.label) }));
   }
 
   function openCatMenu() {
     const m = counts();
-    const list = h('div', { class: 'tx-catmenu', role: 'menu', 'aria-label': `Kinds of ${noun()}` });
+    const list = h('div', { class: 'tx-catmenu', role: 'menu', 'aria-label': fmt(te.models.kinds, { kind }) });
     const buttons: HTMLButtonElement[] = [];
     for (const c of CATS[kind]) {
       const b = h(
         'button',
         { type: 'button', class: 'tx-catmenu-item', role: 'menuitemradio', 'aria-checked': String(cat === c.value), tabIndex: -1, dataset: { cat: c.value } },
         icon(c.icon),
-        h('span', { class: 'tx-catmenu-label' }, c.short),
+        h('span', { class: 'tx-catmenu-label' }, catText(c.short)),
         h('span', { class: 'tx-chip-count' }, c.value === 'all' || catsReady ? nf.format(m.get(c.value) ?? 0) : '…'),
       );
-      b.title = c.hint;
+      b.title = catText(c.hint);
       b.addEventListener('click', () => {
         catMenu?.close();
         cat = c.value;
@@ -275,10 +278,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     const edited = l ? editedEntries().size : 0;
     editedBtn.querySelector('.tx-chip-count')!.textContent = String(edited);
     editedBtn.setAttribute('aria-pressed', String(editedOnly));
-    tooltip(editedBtn, `Only ${noun()} that use a texture you changed`);
+    tooltip(editedBtn, fmt(te.models.editedHint, { kind }));
     catPick.hidden = kind === 'entity';
     const total = all().length;
-    count.textContent = items.length === total ? `${nf.format(total)} ${noun()}` : `${nf.format(items.length)} of ${nf.format(total)}`;
+    count.textContent = items.length === total ? fmt(te.models.count, { kind, count: total }) : fmt(te.browser.countOf, { count: items.length, total });
     clearBtn.hidden = !query;
     if (!status.querySelector('strong')) status.replaceChildren(count);
   }
@@ -291,18 +294,18 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
         overlay.replaceChildren(
           emptyState({
             icon: 'warning-diamond',
-            title: "Couldn't load the block models",
+            title: te.models.loadFailed,
             text: models.error,
             action: h(
               'div',
               { class: 'row wrap', style: { justifyContent: 'center' } },
-              button({ label: 'Try again', icon: 'reload', size: 'sm', onClick: () => void models.load() }),
-              button({ label: 'All textures', size: 'sm', variant: 'ghost', onClick: () => opts.onShowTextures() }),
+              button({ label: kit.tryAgain, icon: 'reload', size: 'sm', onClick: () => void models.load() }),
+              button({ label: te.lib.allTextures, size: 'sm', variant: 'ghost', onClick: () => opts.onShowTextures() }),
             ),
           }),
         );
       } else if (!overlay.querySelector('.tx-mb-loading')) {
-        const bar = progressBar({ label: 'Loading block models…' });
+        const bar = progressBar({ label: te.models.loading });
         overlay.replaceChildren(h('div', { class: 'tx-mb-loading' }, spinner(32), bar));
         loadingBar = bar;
       }
@@ -313,9 +316,9 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
       overlay.replaceChildren(
         emptyState({
           icon: 'cube',
-          title: 'No block models in this version',
-          text: l.unavailable ?? 'This version has no model files.',
-          action: button({ label: 'Show all textures', size: 'sm', onClick: () => opts.onShowTextures() }),
+          title: te.models.noModels,
+          text: l.unavailable ?? te.models.noModelFiles,
+          action: button({ label: te.browser.showAll, size: 'sm', onClick: () => opts.onShowTextures() }),
         }),
       );
       return;
@@ -328,10 +331,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     overlay.replaceChildren(
       emptyState({
         icon: editedOnly ? 'pencil' : 'search',
-        title: editedOnly && !query ? `No edited ${noun()} yet` : `No ${noun()} found`,
-        text: query ? `Nothing matches "${query}". Try a shorter word, like "stone" or "door".` : editedOnly ? `Paint a texture and the ${noun()} using it show up here.` : 'This group is empty.',
+        title: fmt(editedOnly && !query ? te.models.noneEdited : te.models.noneFound, { kind }),
+        text: query ? fmt(te.models.noMatch, { query }) : editedOnly ? fmt(te.models.paintToList, { kind }) : te.models.emptyGroup,
         action: button({
-          label: 'Clear filters',
+          label: te.browser.clearFilters,
           size: 'sm',
           onClick: () => {
             query = '';
@@ -685,10 +688,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
       if (k === kind) return;
       kind = k;
       cat = 'all';
-      input.placeholder = `Search ${NOUN[k]}`;
+      input.placeholder = fmt(te.models.search, { kind: k });
       input.setAttribute('aria-label', input.placeholder);
-      grid.setAttribute('aria-label', k === 'block' ? 'Blocks' : k === 'item' ? 'Items' : 'Mobs');
-      el.setAttribute('aria-label', k === 'block' ? 'Block browser' : k === 'item' ? 'Item browser' : 'Mob browser');
+      grid.setAttribute('aria-label', fmt(te.models.list, { kind: k }));
+      el.setAttribute('aria-label', fmt(te.models.browser, { kind: k }));
       refilter(true);
     },
     setSelected(k, id, doReveal = true) {

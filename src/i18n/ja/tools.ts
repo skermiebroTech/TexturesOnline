@@ -33,7 +33,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       '自分のPNGを読み込み、テクスチャのサイズに自動で合わせる（16x〜512x）',
       'ゲームのサウンドを自分のファイルやマイク録音に置き換え、切り取って Ogg Vorbis で書き出し',
       'アニメーションテクスチャを1コマずつ編集',
-      'Dark Mode、Pastel、Neon Outline、Retro 8-bit、Autumn、Winter、Noir、Cartoon、Smooth HDなど、パック全体へのワンクリック効果',
+      'ダークモード、パステルドリーム、ネオン輪郭、レトロ8ビット、秋、冬の霜、ノワール、カートゥーン、なめらかHDなど、パック全体へのワンクリック効果',
       '既存の.zipや.mcpackのパックを開いて編集を続けられる',
       '3Dブロックプレビュー、パックアイコン、説明文、Java版の対応範囲',
       'Java版のバージョンに合ったpack.mcmeta入りの.zip、または統合版の.mcpackを書き出し',
@@ -46,7 +46,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['形を変える（Java）：ブロックやアイテムのモデルをキューブ単位で編集し、テクスチャ、UV、手に持ったときの見え方を設定したり、平らなアイテムを 3D にしたりできます。モデルファイルはバージョンに合わせてパックに入ります。', link('/guides/make-3d-items-texture-pack', '3D アイテムの作り方'), '。'],
       ['自分のPNGを読み込み（テクスチャに合わせて16x〜512xに自動調整）、アニメーションテクスチャを1コマずつ編集できます。'],
       ['サウンドを変更：ゲームのサウンドを再生し、自分のファイルやマイク録音に置き換えて波形で切り取れます。Minecraft が再生できる Ogg Vorbis で保存されます。'],
-      ['Dark Mode、Pastel、Neon Outline、Retro 8-bit、Autumn、Winter、Noir、Cartoon、Smooth HDなど、パック全体へのワンクリック効果。自分の編集を残したまま重ねがけできます。'],
+      ['ダークモード、パステルドリーム、ネオン輪郭、レトロ8ビット、秋、冬の霜、ノワール、カートゥーン、なめらかHDなど、パック全体へのワンクリック効果。自分の編集を残したまま重ねがけできます。'],
       ['既存の', code('.zip'), 'や', code('.mcpack'), 'を開いて編集を続けられます。'],
       ['3Dブロックプレビュー、パックアイコン、説明文、Java版の対応範囲の設定。'],
       ['Java版のバージョンに合った', code('pack.mcmeta'), 'のルールで', code('.zip'), 'を書き出すほか、統合版の', code('.mcpack'), 'も書き出せます。'],
@@ -95,7 +95,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'hd',
         q: 'HDのテクスチャパックは作れますか？',
-        a: [p('はい。パックを作るときに16×（バニラと同じ見た目）から512×までの解像度を選べます。読み込んだ画像は自動で合わせられ、ワンクリック効果のSmooth HDですべてのテクスチャをまとめて高解像度にできます。')],
+        a: [p('はい。パックを作るときに16×（バニラと同じ見た目）から512×までの解像度を選べます。読み込んだ画像は自動で合わせられ、効果の「なめらかHD拡大」ですべてのテクスチャをまとめて高解像度にできます。')],
       },
       {
         id: 'devices',
@@ -105,7 +105,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'existing',
         q: '手持ちのテクスチャパックを編集できますか？',
-        a: [p('はい。', strong('Open a pack'), 'を選び、Java版の', code('.zip'), 'か統合版の', code('.mcpack'), 'を選んでください。エディションとバージョンはパックから自動で判別されます。')],
+        a: [p('はい。', strong('パックを開く'), 'を選び、Java版の', code('.zip'), 'か統合版の', code('.mcpack'), 'を選んでください。エディションとバージョンはパックから自動で判別されます。')],
       },
       {
         id: 'purple',

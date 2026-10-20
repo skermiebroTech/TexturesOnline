@@ -8,7 +8,9 @@ import { badge, button, emptyState, iconButton, openMenu, slider, spinner, toggl
 import { toast } from '../../../ui/toast';
 import { saveBlob } from '../../../core/download';
 import { friendlyError, isAbortError } from '../../../core/net';
-import { SOUND_CATEGORY_LABELS, type SoundEvent, type SoundVariant } from '../sounds/catalog';
+import type { SoundEvent, SoundVariant } from '../sounds/catalog';
+import { fmt, num, textLocale } from '../../../i18n/editor-text';
+import { ts } from './i18n/sounds';
 import { clampParams, normaliseGain, peakOf, soundRange, type RenderParams } from '../sounds/render';
 import type { Samples } from '../sounds/audio';
 import { SOUND_CATEGORY_ICONS } from './sound-browser';
@@ -46,6 +48,15 @@ interface Card {
   destroy(): void;
 }
 
+/** A label inside a sentence ("Play sound 2"): lower case where the language writes it so. */
+function inSentence(label: string): string {
+  const l = textLocale();
+  return l === 'de' || l === 'ja' ? label : label.toLowerCase();
+}
+
+/** A number with fixed decimals in the page's language (2.50 / 2,50). */
+const decimal = (v: number, digits: number): string => (textLocale() === 'en' ? v.toFixed(digits) : num(v, { minimumFractionDigits: digits, maximumFractionDigits: digits }));
+
 export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
   const { sounds } = opts;
   let event: SoundEvent | null = null;
@@ -55,13 +66,13 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
 
   // ---- header ----
   const headIcon = h('span', { class: 'snd-head-icon', 'aria-hidden': 'true' }, icon('music'));
-  const headTitle = h('h2', { class: 'tx-head-title truncate' }, 'Sounds');
+  const headTitle = h('h2', { class: 'tx-head-title truncate' }, ts.panel.sounds);
   const headBadges = h('span', { class: 'tx-head-badges' });
   const headSub = h('span', { class: 'tx-head-sub truncate' });
-  const backBtn = iconButton('arrow-left', 'Back to the list', () => opts.onBrowse(), { size: 'sm', class: 'snd-back' });
-  const playBtn = button({ label: 'Play', icon: 'play', variant: 'secondary', size: 'sm', class: 'snd-play-event', title: 'Play one of its sounds, picked like the game does' });
-  const replaceBtn = button({ label: 'Replace', icon: 'upload', variant: 'ghost', size: 'sm', class: 'snd-replace-all' });
-  const moreBtn = iconButton('more-vertical', 'More actions', () => openMore(), { size: 'sm' });
+  const backBtn = iconButton('arrow-left', ts.panel.back, () => opts.onBrowse(), { size: 'sm', class: 'snd-back' });
+  const playBtn = button({ label: ts.panel.play, icon: 'play', variant: 'secondary', size: 'sm', class: 'snd-play-event', title: ts.panel.playHint });
+  const replaceBtn = button({ label: ts.panel.replace, icon: 'upload', variant: 'ghost', size: 'sm', class: 'snd-replace-all' });
+  const moreBtn = iconButton('more-vertical', ts.panel.more, () => openMore(), { size: 'sm' });
   const header = h(
     'header',
     { class: 'tx-texhead snd-head' },
@@ -79,13 +90,13 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
     { class: 'snd-empty' },
     emptyState({
       icon: 'music',
-      title: 'Pick a sound',
-      text: 'Choose a sound on the left to hear it, then replace it with your own file or a recording. Press Space in the list to play.',
-      action: button({ label: 'Browse sounds', icon: 'bulletlist', size: 'sm', class: 'snd-empty-browse', onClick: () => opts.onBrowse() }),
+      title: ts.panel.pickTitle,
+      text: ts.panel.pickText,
+      action: button({ label: ts.panel.browse, icon: 'bulletlist', size: 'sm', class: 'snd-empty-browse', onClick: () => opts.onBrowse() }),
     }),
   );
   const fileInput = h('input', { type: 'file', accept: ACCEPT, hidden: true, 'aria-hidden': 'true', tabIndex: -1 });
-  const el = h('section', { class: 'panel tx-center snd-panel is-empty', 'aria-label': 'Sound editor', hidden: true }, header, body, emptyEl, fileInput);
+  const el = h('section', { class: 'panel tx-center snd-panel is-empty', 'aria-label': ts.panel.label, hidden: true }, header, body, emptyEl, fileInput);
 
   // ---- picking audio ----
   let uploadFor: SoundVariant[] = [];
@@ -100,9 +111,9 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
   });
 
   async function record(targets: SoundVariant[]) {
-    const label = targets.length === 1 ? fileLabel(targets[0]) : `all ${targets.length} sounds`;
-    const blob = await openRecorder({ title: 'Record a sound', subtitle: `For ${event?.name ?? 'this sound'} (${label}).` });
-    if (blob) await replaceWith(targets, blob, 'Recording', true);
+    const label = targets.length === 1 ? fileLabel(targets[0]) : fmt(ts.panel.allSounds, { count: targets.length });
+    const blob = await openRecorder({ title: ts.panel.recordTitle, subtitle: fmt(ts.panel.recordFor, { name: event?.name ?? ts.panel.thisSound, what: label }) });
+    if (blob) await replaceWith(targets, blob, ts.panel.recording, true);
   }
 
   async function replaceWith(targets: SoundVariant[], blob: Blob, name: string, recorded: boolean) {
@@ -111,8 +122,8 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
     cards.forEach((c) => c.update());
     try {
       await sounds.replace(targets, blob, name, recorded);
-      const what = targets.length === 1 ? fileLabel(targets[0]) : `${targets.length} sounds`;
-      toast(`${recorded ? 'Recording' : name} is now ${what}`, { tone: 'success', duration: 2600 });
+      const what = targets.length === 1 ? fileLabel(targets[0]) : fmt(ts.panel.nSounds, { count: targets.length });
+      toast(fmt(ts.panel.isNow, { name: recorded ? ts.panel.recording : name, what }), { tone: 'success', duration: 2600 });
     } catch (err) {
       if (!isAbortError(err)) toast(friendlyError(err), { tone: 'error' });
     } finally {
@@ -124,27 +135,27 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
   function replaceMenu(anchor: HTMLElement, targets: SoundVariant[]) {
     const rec = recordingSupported();
     const items: MenuItem[] = [
-      { label: 'Upload a sound file…', icon: 'upload', onClick: () => upload(targets) },
-      { label: rec.ok ? 'Record with the microphone…' : 'Record (not available here)', icon: 'mic', disabled: !rec.ok, onClick: () => void record(targets) },
+      { label: ts.panel.upload, icon: 'upload', onClick: () => upload(targets) },
+      { label: rec.ok ? ts.panel.record : ts.panel.recordUnavailable, icon: 'mic', disabled: !rec.ok, onClick: () => void record(targets) },
     ];
-    openMenu(anchor, items, { placement: 'bottom-end', label: 'Replace with' });
+    openMenu(anchor, items, { placement: 'bottom-end', label: ts.panel.replaceWith });
   }
 
   replaceBtn.addEventListener('click', () => {
     if (!event) return;
     replaceMenu(replaceBtn, event.variants);
   });
-  tooltip(replaceBtn, 'Use one file or recording for every sound of this event');
+  tooltip(replaceBtn, ts.panel.replaceAllHint);
 
   function openMore() {
     if (!event) return;
     const e = event;
     const edited = e.variants.filter((v) => sounds.isVariantEdited(v));
     const items: MenuItem[] = [
-      { label: 'Copy sound name', icon: 'copy', onClick: () => void navigator.clipboard?.writeText(e.id).then(() => toast('Copied', { tone: 'success', duration: 1600 })) },
+      { label: ts.panel.copyName, icon: 'copy', onClick: () => void navigator.clipboard?.writeText(e.id).then(() => toast(ts.panel.copied, { tone: 'success', duration: 1600 })) },
     ];
-    if (edited.length) items.push({ label: edited.length === 1 ? 'Reset to the game’s sound' : `Reset all ${edited.length} to the game’s`, icon: 'reset', danger: true, onClick: () => sounds.reset(edited) });
-    openMenu(moreBtn, items, { placement: 'bottom-end', label: `${e.name} actions` });
+    if (edited.length) items.push({ label: edited.length === 1 ? ts.panel.resetOne : fmt(ts.panel.resetAll, { count: edited.length }), icon: 'reset', danger: true, onClick: () => sounds.reset(edited) });
+    openMenu(moreBtn, items, { placement: 'bottom-end', label: fmt(ts.panel.actions, { name: e.name }) });
   }
 
   playBtn.addEventListener('click', () => {
@@ -155,29 +166,29 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
   // ---- cards ----
   const fileLabel = (v: SoundVariant) => {
     const i = event ? event.variants.indexOf(v) : -1;
-    return event && event.variants.length > 1 && i >= 0 ? `sound ${i + 1}` : 'its sound';
+    return event && event.variants.length > 1 && i >= 0 ? fmt(ts.panel.soundN, { n: i + 1 }) : ts.panel.itsSound;
   };
 
   function makeCard(v: SoundVariant, index: number): Card {
     const card: Card = { v, el: h('article', { class: 'snd-var', dataset: { stem: v.stem } }), edited: false, source: undefined, wave: null, params: null, samples: null, update, destroy };
     const n = event!.variants.length;
-    const title = n > 1 ? `Sound ${index + 1}` : 'Sound';
+    const title = n > 1 ? fmt(ts.panel.soundTitle, { n: index + 1 }) : ts.panel.sound;
     const packKey = `pack:${v.stem}`;
     const gameKey = `game:${v.stem}`;
 
-    const playBtn = iconButton('play', `Play ${title.toLowerCase()}`, () => playCard(), { class: 'snd-var-play' });
-    const gameBtn = button({ label: 'Original', icon: 'play', variant: 'ghost', size: 'sm', class: 'snd-var-game', title: 'Play the game’s sound', onClick: () => playGame() });
-    const replBtn = button({ label: 'Replace', icon: 'upload', variant: 'ghost', size: 'sm', class: 'snd-var-replace', onClick: () => replaceMenu(replBtn, [v]) });
-    tooltip(replBtn, 'Upload a file or record one');
-    const resetBtn = iconButton('reset', 'Reset to the game’s sound', () => sounds.reset([v]), { size: 'sm', class: 'snd-var-reset' });
-    const dlBtn = iconButton('download', 'Download this sound (.ogg)', () => download(), { size: 'sm', class: 'snd-var-dl' });
+    const playBtn = iconButton('play', fmt(ts.panel.playFile, { title: inSentence(title) }), () => playCard(), { class: 'snd-var-play' });
+    const gameBtn = button({ label: ts.panel.original, icon: 'play', variant: 'ghost', size: 'sm', class: 'snd-var-game', title: ts.panel.playGame, onClick: () => playGame() });
+    const replBtn = button({ label: ts.panel.replace, icon: 'upload', variant: 'ghost', size: 'sm', class: 'snd-var-replace', onClick: () => replaceMenu(replBtn, [v]) });
+    tooltip(replBtn, ts.panel.replaceHint);
+    const resetBtn = iconButton('reset', ts.panel.resetOne, () => sounds.reset([v]), { size: 'sm', class: 'snd-var-reset' });
+    const dlBtn = iconButton('download', ts.panel.download, () => download(), { size: 'sm', class: 'snd-var-dl' });
     const status = h('span', { class: 'snd-var-status', role: 'status', 'aria-live': 'polite' });
     const tags = h('span', { class: 'snd-var-tags' });
-    if (v.weight !== undefined && v.weight !== 1) tags.append(h('span', { class: 'snd-tag', title: 'How often the game picks it' }, `weight ${v.weight}`));
-    if (v.volume !== undefined && v.volume !== 1) tags.append(h('span', { class: 'snd-tag', title: 'The game plays it at this volume' }, `vol ${Math.round(v.volume * 100)}%`));
-    if (v.pitch !== undefined && v.pitch !== 1) tags.append(h('span', { class: 'snd-tag', title: 'The game changes its pitch' }, `pitch ${v.pitch}`));
-    if (v.stream) tags.append(h('span', { class: 'snd-tag', title: 'Streamed: long music or records' }, 'stream'));
-    const editedBadge = badge('Replaced', 'green');
+    if (v.weight !== undefined && v.weight !== 1) tags.append(h('span', { class: 'snd-tag', title: ts.panel.weightHint }, fmt(ts.panel.weight, { value: String(v.weight) })));
+    if (v.volume !== undefined && v.volume !== 1) tags.append(h('span', { class: 'snd-tag', title: ts.panel.volumeHint }, fmt(ts.panel.volume, { value: String(Math.round(v.volume * 100)) })));
+    if (v.pitch !== undefined && v.pitch !== 1) tags.append(h('span', { class: 'snd-tag', title: ts.panel.pitchHint }, fmt(ts.panel.pitch, { value: String(v.pitch) })));
+    if (v.stream) tags.append(h('span', { class: 'snd-tag', title: ts.panel.streamHint }, ts.panel.stream));
+    const editedBadge = badge(ts.panel.replacedBadge, 'green');
     editedBadge.classList.add('snd-var-badge');
     const head = h(
       'div',
@@ -192,7 +203,7 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
       ? h(
           'div',
           { class: 'snd-var-users' },
-          h('span', { class: 'faint' }, 'Also heard in'),
+          h('span', { class: 'faint' }, ts.panel.alsoHeardIn),
           ...users.slice(0, 6).map((id) => {
             const other = sounds.catalog?.byId.get(id);
             const chip = h('button', { type: 'button', class: 'chip snd-user-chip' }, other?.name ?? id);
@@ -200,7 +211,7 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
             chip.addEventListener('click', () => other && opts.onPick(other));
             return chip;
           }),
-          users.length > 6 ? h('span', { class: 'faint' }, `+${users.length - 6} more`) : null,
+          users.length > 6 ? h('span', { class: 'faint' }, fmt(ts.panel.moreCount, { count: users.length - 6 })) : null,
         )
       : null;
     card.el.append(head, editor, usersEl ?? '');
@@ -245,13 +256,13 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
       card.wave = null;
       card.samples = null;
       card.params = null;
-      editor.replaceChildren(h('div', { class: 'snd-var-loading' }, spinner(20), h('span', { class: 'muted' }, 'Reading the sound…')));
+      editor.replaceChildren(h('div', { class: 'snd-var-loading' }, spinner(20), h('span', { class: 'muted' }, ts.panel.reading)));
       let s: Samples | null = null;
       try {
         s = await sounds.sourceOf(v);
       } catch (err) {
         if (my !== building) return;
-        editor.replaceChildren(h('p', { class: 'snd-var-note is-warn' }, icon('warning'), `This file can’t be edited here (${friendlyError(err)}). It still goes into the pack as it is.`));
+        editor.replaceChildren(h('p', { class: 'snd-var-note is-warn' }, icon('warning'), fmt(ts.panel.cantEdit, { error: friendlyError(err) })));
         return;
       }
       if (my !== building || !s) return;
@@ -277,7 +288,7 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
       card.wave = wave;
       wave.set(samples, params.start, params.end, params.gain);
       const vol = slider({
-        label: 'Volume',
+        label: ts.panel.volumeLabel,
         min: 0,
         max: 200,
         step: 1,
@@ -292,11 +303,11 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
       });
       vol.classList.add('snd-vol');
       const normBtn = button({
-        label: 'Normalise',
+        label: ts.panel.normalise,
         icon: 'volume-2',
         size: 'sm',
         variant: 'ghost',
-        title: 'Make it as loud as it can be without distortion',
+        title: ts.panel.normaliseHint,
         onClick: () => {
           const g = normaliseGain(samples.channels, samples.sampleRate, card.params!.start, card.params!.end);
           vol.setValue(Math.round(g * 100));
@@ -305,11 +316,11 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
         },
       });
       const trimBtn = button({
-        label: 'Trim silence',
+        label: ts.panel.trim,
         icon: 'scissors',
         size: 'sm',
         variant: 'ghost',
-        title: 'Cut the quiet parts at the start and the end',
+        title: ts.panel.trimHint,
         onClick: () => {
           const r = soundRange(samples.channels, samples.sampleRate);
           wave.setRange(r.start, r.end);
@@ -317,11 +328,11 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
         },
       });
       const fullBtn = button({
-        label: 'Whole sound',
+        label: ts.panel.whole,
         icon: 'arrows-horizontal',
         size: 'sm',
         variant: 'ghost',
-        title: 'Undo the trim: use the whole file',
+        title: ts.panel.wholeHint,
         onClick: () => {
           wave.setRange(0, samples.duration);
           commit({ start: 0, end: samples.duration });
@@ -330,22 +341,26 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
       const stereo =
         samples.channels.length > 1
           ? toggle({
-              label: 'Stereo',
+              label: ts.panel.stereo,
               value: params.stereo,
-              description: 'Stereo sounds don’t come from a direction in game. Keep it for music.',
+              description: ts.panel.stereoHint,
               onChange: (on) => commit({ stereo: on }),
             })
           : null;
       const info = h('p', { class: 'snd-var-info' });
-      const clip = h('p', { class: 'snd-var-note is-warn', hidden: true }, icon('warning'), 'Too loud: parts in red will distort. Lower the volume or press Normalise.');
+      const clip = h('p', { class: 'snd-var-note is-warn', hidden: true }, icon('warning'), ts.panel.tooLoud);
       function paintInfo() {
         const p = card.params!;
         const f = sounds.fileOf(v);
         const ed = sounds.editOf(v);
-        const ch = p.stereo && samples.channels.length > 1 ? 'stereo' : 'mono';
-        const parts = [h('span', null, `${(p.end - p.start).toFixed(2)} s`), h('span', null, ch), h('span', null, `${(samples.sampleRate / 1000).toFixed(1)} kHz`)];
+        const ch = p.stereo && samples.channels.length > 1 ? ts.panel.stereoInfo : ts.panel.mono;
+        const parts = [
+          h('span', null, fmt(ts.panel.seconds, { value: decimal(p.end - p.start, 2) })),
+          h('span', null, ch),
+          h('span', null, fmt(ts.panel.khz, { value: decimal(samples.sampleRate / 1000, 1) })),
+        ];
         if (f) parts.push(h('span', null, `${formatBytes(f.blob.size)} ${/\.ogg$/i.test(f.path) ? 'Ogg Vorbis' : f.path.slice(f.path.lastIndexOf('.') + 1).toUpperCase()}`));
-        if (ed?.sourceName) parts.push(h('span', { class: 'truncate', title: ed.sourceName }, `from ${ed.sourceName}`));
+        if (ed?.sourceName) parts.push(h('span', { class: 'truncate', title: ed.sourceName }, fmt(ts.panel.from, { name: ed.sourceName })));
         info.replaceChildren(...parts);
         clip.hidden = peakOf(samples.channels, samples.sampleRate, p.start, p.end) * p.gain <= 1.0001;
       }
@@ -383,10 +398,10 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
       dlBtn.hidden = !edited;
       gameBtn.hidden = !edited;
       gameBtn.disabled = !sounds.hasGameSound(v);
-      status.replaceChildren(...(busy ? [spinner(16), h('span', null, 'Saving…')] : []));
+      status.replaceChildren(...(busy ? [spinner(16), h('span', null, ts.panel.saving)] : []));
       const playing = sounds.player.key === packKey;
       playBtn.setIcon(playing ? 'stop' : 'play');
-      playBtn.setAttribute('aria-label', `${playing ? 'Stop' : 'Play'} ${title.toLowerCase()}`);
+      playBtn.setAttribute('aria-label', fmt(playing ? ts.panel.stopFile : ts.panel.playFile, { title: inSentence(title) }));
       playBtn.disabled = !edited && !sounds.hasGameSound(v);
       const gIcon = gameBtn.querySelector<HTMLElement>('.icon');
       if (gIcon) setIcon(gIcon, sounds.player.key === gameKey ? 'stop' : 'play');
@@ -418,7 +433,7 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
     cards = [];
     el.classList.toggle('is-empty', !event);
     if (!event) {
-      headTitle.textContent = 'Sounds';
+      headTitle.textContent = ts.panel.sounds;
       headSub.textContent = '';
       headBadges.replaceChildren();
       varsEl.replaceChildren();
@@ -429,19 +444,18 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
     headTitle.textContent = e.name;
     headTitle.title = e.name;
     const n = e.variants.length;
-    headSub.textContent = `${e.id} · ${n} ${n === 1 ? 'sound' : 'sounds'}`;
+    headSub.textContent = `${e.id} · ${fmt(ts.panel.count, { count: n })}`;
     paintBadges();
-    replaceBtn.querySelector('.btn-label')!.textContent = n > 1 ? 'Replace all' : 'Replace';
+    replaceBtn.querySelector('.btn-label')!.textContent = n > 1 ? ts.panel.replaceAll : ts.panel.replace;
     const java = sounds.store.assets.edition === 'java';
     intro.textContent =
-      (n > 1 ? 'The game plays one of these at random each time. ' : '') +
-      (java ? 'Replaced sounds are saved as Ogg Vorbis, the only kind Java plays.' : 'Replaced sounds are saved as Ogg Vorbis, with their entries in sound_definitions.json.');
+      (n > 1 ? ts.panel.random : '') + (java ? ts.panel.javaOgg : ts.panel.bedrockOgg);
     cards = e.variants.map((v, i) => makeCard(v, i));
     varsEl.replaceChildren(...cards.map((c) => c.el));
     if (e.refs?.length) {
       refsEl.hidden = false;
       refsEl.replaceChildren(
-        h('span', { class: 'faint' }, 'Also plays the sounds of'),
+        h('span', { class: 'faint' }, ts.panel.alsoPlays),
         ...e.refs.map((id) => {
           const other = sounds.catalog?.byId.get(id);
           const chip = h('button', { type: 'button', class: 'chip snd-user-chip' }, other?.name ?? id);
@@ -456,15 +470,15 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
 
   function paintBadges() {
     if (!event) return;
-    const b = [badge(SOUND_CATEGORY_LABELS[event.category], 'gray')];
-    if (sounds.isEdited(event)) b.unshift(badge('Replaced', 'green'));
+    const b = [badge(ts.categories[event.category], 'gray')];
+    if (sounds.isEdited(event)) b.unshift(badge(ts.panel.replacedBadge, 'green'));
     headBadges.replaceChildren(...b);
   }
 
   function paintPlay() {
     const playing = !!event && sounds.player.key === `event:${event.id}`;
     setIcon(playBtn.querySelector('.icon') as HTMLElement, playing ? 'stop' : 'play');
-    playBtn.querySelector('.btn-label')!.textContent = playing ? 'Stop' : 'Play';
+    playBtn.querySelector('.btn-label')!.textContent = playing ? ts.panel.stop : ts.panel.play;
   }
 
   // playhead on the waveform of the file playing

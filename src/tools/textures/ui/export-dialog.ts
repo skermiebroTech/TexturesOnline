@@ -7,7 +7,7 @@ import { openModal } from '../../../ui/modal';
 import { saveBlob } from '../../../core/download';
 import { friendlyError, isAbortError } from '../../../core/net';
 import { href } from '../../../core/router';
-import { bedrockDisplayVersion, getJavaPackFormat } from '../../../editions/index';
+import { getJavaPackFormat } from '../../../editions/index';
 import { formatPackFormat } from '../../../ui/format';
 import { getEffect } from '../effects';
 import { exportTexturePack, type ExportResult } from '../export';
@@ -18,6 +18,9 @@ import { paintCanvas } from './thumbs';
 import type { TexStore } from './store';
 import { packIconImage } from './icon';
 import { matchingPreset } from './effects-panel';
+import { fmt, fmtNodes } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
+import { versionLabel } from './start-screen';
 
 /**
  * export.ts yields with scheduler.yield(), and Chrome runs those continuations ahead of every other
@@ -56,7 +59,7 @@ export function openExportDialog(store: TexStore): void {
   const body = h('div', { class: 'tx-export' });
   const footer = h('div', { class: 'modal-footer tx-export-foot' });
   const modal = openModal({
-    title: 'Export your pack',
+    title: te.export.title,
     body,
     width: 560,
     class: 'tx-export-modal',
@@ -87,15 +90,15 @@ export function openExportDialog(store: TexStore): void {
 
   // ---------------------------------------------------------------- summary
   async function summary() {
-    title.textContent = 'Export your pack';
+    title.textContent = te.export.title;
     const edited = store.editedCount();
     const fx = project.effects.filter((l) => l.enabled && getEffect(l.type));
     const preset = matchingPreset(project.effects);
-    const target = h('span', null, java ? `Java ${project.version}` : `Bedrock ${project.version === 'latest' ? 'latest' : bedrockDisplayVersion(project.version)}`);
+    const target = h('span', null, versionLabel(project));
     if (java) {
       void getJavaPackFormat(project.version)
         .then((f) => {
-          if (f) target.textContent = `Java ${project.version} · pack format ${formatPackFormat(f)}`;
+          if (f) target.textContent = fmt(te.export.packFormat, { version: versionLabel(project), format: formatPackFormat(f) });
         })
         .catch(() => undefined);
     }
@@ -104,37 +107,37 @@ export function openExportDialog(store: TexStore): void {
     const sounds = editedSoundStems(project).size;
     const shapes = java ? Object.keys(project.customModels ?? {}).length : 0;
     const rows = [
-      row('pencil', 'Edited textures', String(edited)),
-      shapes ? row('shapes', 'Custom models', String(shapes)) : null,
-      sounds ? row('music', 'Replaced sounds', String(sounds)) : null,
-      row('sparkles', 'Effects', fx.length ? (preset ? `${preset.label} (${fx.length} effect${fx.length === 1 ? '' : 's'})` : fx.map((l) => getEffect(l.type)!.label).slice(0, 3).join(', ') + (fx.length > 3 ? ` +${fx.length - 3}` : '')) : 'None'),
-      row(java ? 'laptop' : 'gamepad', 'Made for', target),
-      project.compat && java ? row('arrows-horizontal', 'Also works in', `${project.compat.minVersion} – ${project.compat.maxVersion}`) : null,
-      row('grid', 'Resolution', `${project.resolution}×`),
+      row('pencil', te.export.editedTextures, String(edited)),
+      shapes ? row('shapes', te.export.customModels, String(shapes)) : null,
+      sounds ? row('music', te.export.replacedSounds, String(sounds)) : null,
+      row('sparkles', te.export.effects, fx.length ? (preset ? fmt(te.export.preset, { name: preset.label, count: fx.length }) : fx.map((l) => getEffect(l.type)!.label).slice(0, 3).join(te.effects.listSep) + (fx.length > 3 ? ` +${fx.length - 3}` : '')) : te.export.none),
+      row(java ? 'laptop' : 'gamepad', te.export.madeFor, target),
+      project.compat && java ? row('arrows-horizontal', te.export.alsoWorksIn, `${project.compat.minVersion} – ${project.compat.maxVersion}`) : null,
+      row('grid', te.export.resolution, `${project.resolution}×`),
     ];
     const notes: Node[] = [];
     if (!edited && !fx.length && !Object.keys(project.extraFiles).length) {
-      notes.push(h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), 'Nothing is changed yet, so the pack would look like vanilla. Paint a texture or add an effect first — or export anyway.'));
+      notes.push(h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), te.export.unchanged));
     }
     if (fx.length && !java) {
-      notes.push(h('p', { class: 'tx-inline-note' }, icon('info'), 'Effects re-colour every vanilla texture, so the first Bedrock export downloads them all. That can take a minute.'));
+      notes.push(h('p', { class: 'tx-inline-note' }, icon('info'), te.export.bedrockEffects));
     }
     body.replaceChildren(packHead(), h('div', { class: 'tx-exp-rows' }, rows), ...notes);
     footer.replaceChildren(
-      button({ label: 'Cancel', variant: 'secondary', onClick: () => modal.close() }),
-      button({ label: `Export ${java ? '.zip' : '.mcpack'}`, icon: 'download', variant: 'primary', onClick: () => void run() }),
+      button({ label: te.export.cancel, variant: 'secondary', onClick: () => modal.close() }),
+      button({ label: fmt(te.export.exportButton, { ext: java ? '.zip' : '.mcpack' }), icon: 'download', variant: 'primary', onClick: () => void run() }),
     );
     (footer.lastElementChild as HTMLElement).focus();
   }
 
   // ---------------------------------------------------------------- progress
   async function run() {
-    title.textContent = 'Building your pack…';
+    title.textContent = te.export.building;
     controller = new AbortController();
-    const bar = progressBar({ label: 'Preparing…' });
-    bar.set({ label: 'Preparing…', fraction: null });
-    body.replaceChildren(packHead(), h('div', { class: 'tx-exp-progress' }, bar, h('p', { class: 'faint small' }, 'Keep this tab open. Everything happens on your device.')));
-    const cancel = button({ label: 'Cancel', variant: 'secondary', onClick: () => controller?.abort() });
+    const bar = progressBar({ label: te.export.preparing });
+    bar.set({ label: te.export.preparing, fraction: null });
+    body.replaceChildren(packHead(), h('div', { class: 'tx-exp-progress' }, bar, h('p', { class: 'faint small' }, te.export.keepOpen)));
+    const cancel = button({ label: te.export.cancel, variant: 'secondary', onClick: () => controller?.abort() });
     footer.replaceChildren(cancel);
     cancel.focus();
     const signal = controller.signal;
@@ -163,23 +166,22 @@ export function openExportDialog(store: TexStore): void {
 
   // ---------------------------------------------------------------- done
   function success(r: ExportResult) {
-    title.textContent = 'Your pack is ready!';
+    title.textContent = te.export.ready;
+    const x = te.export;
+    const strong = (s: string) => h('strong', null, s);
+    const file = () => h('code', null, r.filename);
     const steps = java
       ? [
-          ['Open Minecraft Java Edition and go to ', h('strong', null, 'Options → Resource Packs'), '.'],
-          ['Click ', h('strong', null, 'Open Pack Folder'), ' and drop ', h('code', null, r.filename), ' into it. Don’t unzip it.'],
-          ['Back in the game, click the arrow on your pack to move it to ', h('strong', null, 'Selected'), ', then ', h('strong', null, 'Done'), '.'],
+          fmtNodes(x.javaStep1, { menu: strong(x.javaMenu) }),
+          fmtNodes(x.javaStep2, { button: strong(x.javaFolder), file: file() }),
+          fmtNodes(x.javaStep3, { selected: strong(x.javaSelected), done: strong(x.javaDone) }),
         ]
-      : [
-          ['Open ', h('code', null, r.filename), ' from your downloads. Minecraft starts and imports it.'],
-          ['Go to ', h('strong', null, 'Settings → Global Resources → My Packs'), '.'],
-          ['Select your pack and press ', h('strong', null, 'Activate'), '.'],
-        ];
+      : [fmtNodes(x.bedrockStep1, { file: file() }), fmtNodes(x.bedrockStep2, { menu: strong(x.bedrockMenu) }), fmtNodes(x.bedrockStep3, { activate: strong(x.bedrockActivate) })];
     const warnings = r.warnings.length
       ? h(
           'details',
           { class: 'tx-exp-warnings' },
-          h('summary', null, icon('warning-diamond', { size: 16 }), `${r.warnings.length} note${r.warnings.length === 1 ? '' : 's'} about this export`),
+          h('summary', null, icon('warning-diamond', { size: 16 }), fmt(te.export.notes, { count: r.warnings.length })),
           h('ul', null, r.warnings.map((w) => h('li', null, w))),
         )
       : null;
@@ -188,24 +190,24 @@ export function openExportDialog(store: TexStore): void {
         'div',
         { class: 'tx-exp-done' },
         h('div', { class: 'tx-exp-done-icon' }, icon('check', { size: 48 })),
-        h('div', { class: 'stack', style: { '--gap': '4px', minWidth: '0' } }, h('strong', { class: 'truncate' }, r.filename), h('span', { class: 'faint small' }, `${formatBytes(r.blob.size)} · ${r.fileCount} files · downloading now`)),
-        button({ icon: 'download', size: 'sm', variant: 'ghost', title: 'Download again', onClick: () => saveBlob(r.blob, r.filename) }),
+        h('div', { class: 'stack', style: { '--gap': '4px', minWidth: '0' } }, h('strong', { class: 'truncate' }, r.filename), h('span', { class: 'faint small' }, fmt(te.export.fileInfo, { size: formatBytes(r.blob.size), count: r.fileCount }))),
+        button({ icon: 'download', size: 'sm', variant: 'ghost', title: te.export.downloadAgain, onClick: () => saveBlob(r.blob, r.filename) }),
       ),
       ...(warnings ? [warnings] : []),
-      h('h3', { class: 'section-title' }, icon('book-open'), 'How to install'),
+      h('h3', { class: 'section-title' }, icon('book-open'), te.export.howToInstall),
       h('ol', { class: 'tx-steps' }, steps.map((s) => h('li', null, s))),
-      h('a', { class: 'tx-help-link', href: href(`/help?s=${java ? 'java-packs' : 'bedrock-packs'}`) }, icon('circle-question', { size: 16 }), 'More help with installing'),
+      h('a', { class: 'tx-help-link', href: href(`/help?s=${java ? 'java-packs' : 'bedrock-packs'}`) }, icon('circle-question', { size: 16 }), te.export.moreHelp),
     );
     body.querySelector('.tx-help-link')?.addEventListener('click', () => modal.close());
     footer.replaceChildren(
-      button({ label: 'Export again', icon: 'reload', variant: 'secondary', onClick: () => void summary() }),
-      button({ label: 'Done', variant: 'primary', onClick: () => modal.close() }),
+      button({ label: te.export.again, icon: 'reload', variant: 'secondary', onClick: () => void summary() }),
+      button({ label: te.export.done, variant: 'primary', onClick: () => modal.close() }),
     );
     (footer.lastElementChild as HTMLElement).focus();
   }
 
   function failure(err: unknown) {
-    title.textContent = 'The export didn’t finish';
+    title.textContent = te.export.failed;
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
     body.replaceChildren(
       h(
@@ -216,13 +218,13 @@ export function openExportDialog(store: TexStore): void {
           'div',
           { class: 'stack', style: { '--gap': '6px' } },
           h('p', null, friendlyError(err)),
-          h('p', { class: 'faint small' }, offline ? 'You seem to be offline. Reconnect and try again.' : 'Your work is saved. You can try again right away.'),
+          h('p', { class: 'faint small' }, offline ? te.export.offline : te.export.saved),
         ),
       ),
     );
     footer.replaceChildren(
-      button({ label: 'Close', variant: 'secondary', onClick: () => modal.close() }),
-      button({ label: 'Try again', icon: 'reload', variant: 'primary', onClick: () => void run() }),
+      button({ label: te.export.close, variant: 'secondary', onClick: () => modal.close() }),
+      button({ label: te.export.tryAgain, icon: 'reload', variant: 'primary', onClick: () => void run() }),
     );
   }
 

@@ -22,19 +22,15 @@ export const COLOR_CODES: Record<string, string> = {
   f: '#ffffff',
 };
 
-const COLOR_NAMES: Record<string, string> = {
-  '0': 'Black', '1': 'Dark blue', '2': 'Dark green', '3': 'Dark aqua', '4': 'Dark red', '5': 'Dark purple', '6': 'Gold', '7': 'Gray',
-  '8': 'Dark gray', '9': 'Blue', a: 'Green', b: 'Aqua', c: 'Red', d: 'Light purple', e: 'Yellow', f: 'White',
-};
-
-export const FORMAT_CODES: { code: string; label: string; color?: string; glyph?: string }[] = [
-  ...Object.keys(COLOR_CODES).map((code) => ({ code, label: COLOR_NAMES[code], color: COLOR_CODES[code] })),
-  { code: 'l', label: 'Bold', glyph: 'B' },
-  { code: 'o', label: 'Italic', glyph: 'I' },
-  { code: 'n', label: 'Underline', glyph: 'U' },
-  { code: 'm', label: 'Strikethrough', glyph: 'S' },
-  { code: 'k', label: 'Obfuscated', glyph: '?' },
-  { code: 'r', label: 'Reset', glyph: 'R' },
+/** The § codes offered in the Pack tab (their names are in ./i18n/editor.ts, pack.codes). */
+export const FORMAT_CODES: { code: string; color?: string; glyph?: string }[] = [
+  ...Object.keys(COLOR_CODES).map((code) => ({ code, color: COLOR_CODES[code] })),
+  { code: 'l', glyph: 'B' },
+  { code: 'o', glyph: 'I' },
+  { code: 'n', glyph: 'U' },
+  { code: 'm', glyph: 'S' },
+  { code: 'k', glyph: '?' },
+  { code: 'r', glyph: 'R' },
 ];
 
 interface Style {

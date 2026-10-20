@@ -14,6 +14,7 @@ import { toast } from '../../../ui/toast';
 import { TOOLS_3D, type CanvasPanel } from './canvas-panel';
 import type { PreviewPanel } from './preview-panel';
 import type { TexStore } from './store';
+import { te } from './i18n/editor';
 
 export interface Paint3dController {
   /** Painting on the model on / off (the 3D workspace) */
@@ -186,7 +187,7 @@ export function createPaint3d(deps: { store: TexStore; canvas: CanvasPanel; prev
         mode = { kind: 'locked' };
         if (!lockWarned) {
           lockWarned = true;
-          toast("This face shows a texture that isn't in this version of the game, so there is nothing to paint.", { duration: 4000 });
+          toast(te.paint3d.missingFace, { duration: 4000 });
         }
         return true;
       }
@@ -274,7 +275,7 @@ export function createPaint3d(deps: { store: TexStore; canvas: CanvasPanel; prev
     if (!g || !t) return 'paint';
     const at = t.y * g[0] + t.x;
     const tool: Tool = hoverPick || mode?.kind === 'pick' ? 'picker' : p.tool;
-    const locked = !editable(path) ? 'missing in this version' : mode?.kind === 'stroke' && mode.path !== path ? 'another texture: start a new stroke' : null;
+    const locked = !editable(path) ? te.paint3d.missing : mode?.kind === 'stroke' && mode.path !== path ? te.paint3d.otherTexture : null;
     let pixels: number[];
     let echo: number[] = [];
     let kind: PaintCursorKind = 'paint';
@@ -300,7 +301,7 @@ export function createPaint3d(deps: { store: TexStore; canvas: CanvasPanel; prev
       preview.setPaintCursor(cursor);
       canvas.showHover(path === openKey() ? { pixels, echo } : null);
       const color = path === openKey() ? (p.getPixel(t.x, t.y) as [number, number, number, number]) : undefined;
-      preview.setPaintHint({ label: preview.partLabel(hit.quad.part) ?? preview.textureLabel(path) ?? 'Texture', name: nameOf(path), x: t.x, y: t.y, color, locked: locked ?? undefined });
+      preview.setPaintHint({ label: preview.partLabel(hit.quad.part) ?? preview.textureLabel(path) ?? te.paint3d.texture, name: nameOf(path), x: t.x, y: t.y, color, locked: locked ?? undefined });
     }
     return kind;
   }

@@ -6,6 +6,8 @@
 import type { Edition, SoundEdit, TexturePackProject } from '../../../core/types';
 import { parseJsonLoose } from '../project';
 import { BEDROCK_DEFINITIONS, BEDROCK_SOUND_EXTS, soundStemOfPath, type SoundCatalog, type SoundEvent } from './catalog';
+import { fmt } from '../../../i18n/editor-text';
+import { tp } from '../i18n/pack';
 
 /** Format version written when the pack has no sound_definitions.json of its own. */
 export const BEDROCK_DEFINITIONS_FORMAT = '1.14.0';
@@ -146,9 +148,8 @@ export async function prepareSoundExport(project: TexturePackProject, files: Map
   }
   const bad = await unplayableJavaSounds(project);
   if (bad.length) {
-    const one = bad.length === 1;
     const names = bad.slice(0, 3).map((p) => p.slice(p.lastIndexOf('/') + 1)).join(', ');
-    warnings.push(`${one ? '1 sound file isn’t' : `${bad.length} sound files aren’t`} Ogg Vorbis, so Java won’t play ${one ? 'it' : 'them'}: ${names}${bad.length > 3 ? '…' : ''}. Replace ${one ? 'it' : 'them'} in Sounds.`);
+    warnings.push(fmt(tp.soundsNotOgg, { count: bad.length, files: `${names}${bad.length > 3 ? '…' : ''}` }));
   }
 }
 

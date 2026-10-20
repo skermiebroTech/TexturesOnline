@@ -6,6 +6,7 @@ import type { IconName } from '../../../ui/icons';
 import { cropImageData, createImageData } from '../../../core/pixels';
 import { parseLenientJson } from '../../../editions/bedrock/catalog';
 import { textureRoot } from '../project';
+import { t } from '../i18n/start';
 
 export interface TextureEntry extends TextureInfo {
   /** Not a vanilla texture of this version (imported or from another version) */
@@ -15,22 +16,38 @@ export interface TextureEntry extends TextureInfo {
   pretty: string;
 }
 
-export const CATEGORY_INFO: Record<TextureCategory, { label: string; icon: IconName; short: string }> = {
-  block: { label: 'Blocks', short: 'Block', icon: 'box' },
-  item: { label: 'Items', short: 'Item', icon: 'sword' },
-  entity: { label: 'Mobs', short: 'Mob', icon: 'human' },
-  armor: { label: 'Armor', short: 'Armor', icon: 'shirt' },
-  gui: { label: 'GUI', short: 'GUI', icon: 'layout' },
-  particle: { label: 'Particles', short: 'Particle', icon: 'sparkle' },
-  environment: { label: 'Sky', short: 'Sky', icon: 'cloud-sun' },
-  painting: { label: 'Paintings', short: 'Painting', icon: 'image' },
-  effect: { label: 'Effects', short: 'Effect icon', icon: 'potion' },
-  font: { label: 'Fonts', short: 'Font', icon: 'text-cursor' },
-  map: { label: 'Maps', short: 'Map', icon: 'map' },
-  colormap: { label: 'Colour maps', short: 'Colour map', icon: 'colors-swatch' },
-  misc: { label: 'Misc', short: 'Misc', icon: 'more-horizontal' },
-  other: { label: 'Other', short: 'Other', icon: 'files' },
+const CATEGORY_ICONS: Record<TextureCategory, IconName> = {
+  block: 'box',
+  item: 'sword',
+  entity: 'human',
+  armor: 'shirt',
+  gui: 'layout',
+  particle: 'sparkle',
+  environment: 'cloud-sun',
+  painting: 'image',
+  effect: 'potion',
+  font: 'text-cursor',
+  map: 'map',
+  colormap: 'colors-swatch',
+  misc: 'more-horizontal',
+  other: 'files',
 };
+
+/** Label (lists), short name (texture header) and icon of each texture category, in the page's language. */
+export const CATEGORY_INFO = Object.fromEntries(
+  (Object.keys(CATEGORY_ICONS) as TextureCategory[]).map((c) => [
+    c,
+    {
+      icon: CATEGORY_ICONS[c],
+      get label(): string {
+        return t.categories[c].label;
+      },
+      get short(): string {
+        return t.categories[c].short;
+      },
+    },
+  ]),
+) as Record<TextureCategory, { readonly label: string; readonly icon: IconName; readonly short: string }>;
 
 const SMALL_WORDS = new Set(['of', 'on', 'and', 'the', 'a', 'in']);
 

@@ -1,5 +1,6 @@
 import type { EffectLayer, OptionDef, OptionValue, TextureCategory, TexturePackProject } from '../../core/types';
 import { addEffectLayer } from './project';
+import { fx, type EffectsText } from './i18n/effects';
 
 /*
  * Whole-pack texture effects. Every effect is a pure function over straight (non-premultiplied)
@@ -328,19 +329,36 @@ function blurRgb(img: ImageData, radius: number, wrap: boolean, weightAll: boole
 // ---------------------------------------------------------------------------------------------
 // Option builders
 
-const range = (key: string, label: string, def: number, min: number, max: number, extra: Partial<OptionDef> = {}): OptionDef => ({
-  key, label, group: 'Effect', type: 'range', default: def, min, max, step: 1, ...extra,
-});
-const toggle = (key: string, label: string, def: boolean, extra: Partial<OptionDef> = {}): OptionDef => ({
-  key, label, group: 'Effect', type: 'toggle', default: def, ...extra,
-});
-const color = (key: string, label: string, def: string, extra: Partial<OptionDef> = {}): OptionDef => ({
-  key, label, group: 'Effect', type: 'color', default: def, ...extra,
-});
-const choice = (key: string, label: string, def: string, options: [string, string][], extra: Partial<OptionDef> = {}): OptionDef => ({
-  key, label, group: 'Effect', type: 'select', default: def, options: options.map(([value, l]) => ({ value, label: l })), ...extra,
-});
-const amountOpt = (def = 100) => range('amount', 'Amount', def, 0, 100, { unit: '%' });
+// Labels are keys of the text in ./i18n/effects.ts, read when shown (getters), so they follow the language.
+type ParamLabel = keyof EffectsText['params'];
+type ParamHint = keyof EffectsText['hints'];
+type Extra = Omit<Partial<OptionDef>, 'description'> & { description?: ParamHint };
+
+function option(base: Omit<OptionDef, 'label' | 'description'>, label: ParamLabel, extra: Extra): OptionDef {
+  const { description, ...rest } = extra;
+  const o = { ...base, ...rest } as OptionDef;
+  Object.defineProperty(o, 'label', { get: () => fx.params[label], enumerable: true, configurable: true });
+  if (description) Object.defineProperty(o, 'description', { get: () => fx.hints[description], enumerable: true, configurable: true });
+  return o;
+}
+const range = (key: string, label: ParamLabel, def: number, min: number, max: number, extra: Extra = {}): OptionDef =>
+  option({ key, group: 'Effect', type: 'range', default: def, min, max, step: 1 }, label, extra);
+const toggle = (key: string, label: ParamLabel, def: boolean, extra: Extra = {}): OptionDef => option({ key, group: 'Effect', type: 'toggle', default: def }, label, extra);
+const color = (key: string, label: ParamLabel, def: string, extra: Extra = {}): OptionDef => option({ key, group: 'Effect', type: 'color', default: def }, label, extra);
+/** Choices: [value, name] where a function name is translated text and a plain string a name kept as it is ('2x', 'PICO-8'). */
+const choice = (key: string, label: ParamLabel, def: string, options: [string, string | (() => string)][], extra: Extra = {}): OptionDef =>
+  option(
+    {
+      key,
+      group: 'Effect',
+      type: 'select',
+      default: def,
+      options: options.map(([value, l]) => (typeof l === 'function' ? { value, get label() { return l(); } } : { value, label: l })),
+    },
+    label,
+    extra,
+  );
+const amountOpt = (def = 100) => range('amount', 'amount', def, 0, 100, { unit: '%' });
 
 // ---------------------------------------------------------------------------------------------
 // Palettes
@@ -387,13 +405,17 @@ const HUE_CENTERS: Record<string, number> = { reds: 0, yellows: 60, greens: 120,
 
 const hueEffect: EffectDef = {
   type: 'hue',
-  label: 'Hue shift',
+  get label() {
+    return fx.effects.hue.label;
+  },
   icon: 'refresh',
   kind: 'color',
-  description: 'Rotate colours around the colour wheel — all of them or just one colour range.',
+  get description() {
+    return fx.effects.hue.description;
+  },
   params: [
-    range('degrees', 'Shift', 30, -180, 180, { unit: '°' }),
-    choice('range', 'Colours', 'all', [['all', 'All colours'], ['reds', 'Reds'], ['yellows', 'Yellows'], ['greens', 'Greens'], ['cyans', 'Cyans'], ['blues', 'Blues'], ['magentas', 'Magentas']]),
+    range('degrees', 'shift', 30, -180, 180, { unit: '°' }),
+    choice('range', 'colours', 'all', [['all', () => fx.options.allColours], ['reds', () => fx.options.reds], ['yellows', () => fx.options.yellows], ['greens', () => fx.options.greens], ['cyans', () => fx.options.cyans], ['blues', () => fx.options.blues], ['magentas', () => fx.options.magentas]]),
   ],
   apply(img, p, ctx) {
     const deg = num(p.degrees);
@@ -417,11 +439,15 @@ const hueEffect: EffectDef = {
 
 const saturationEffect: EffectDef = {
   type: 'saturation',
-  label: 'Saturation',
+  get label() {
+    return fx.effects.saturation.label;
+  },
   icon: 'brush',
   kind: 'color',
-  description: 'Make colours more vivid or more muted.',
-  params: [range('amount', 'Amount', 30, -100, 100, { unit: '%' })],
+  get description() {
+    return fx.effects.saturation.description;
+  },
+  params: [range('amount', 'amount', 30, -100, 100, { unit: '%' })],
   apply(img, p, ctx) {
     const f = 1 + num(p.amount) / 100;
     if (f === 1) return img;
@@ -436,11 +462,15 @@ const saturationEffect: EffectDef = {
 
 const brightnessEffect: EffectDef = {
   type: 'brightness',
-  label: 'Brightness',
+  get label() {
+    return fx.effects.brightness.label;
+  },
   icon: 'sun',
   kind: 'color',
-  description: 'Lighten or darken every texture.',
-  params: [range('amount', 'Amount', 15, -100, 100, { unit: '%' })],
+  get description() {
+    return fx.effects.brightness.description;
+  },
+  params: [range('amount', 'amount', 15, -100, 100, { unit: '%' })],
   apply(img, p, ctx) {
     const k = num(p.amount) / 100;
     if (!k) return img;
@@ -455,11 +485,15 @@ const brightnessEffect: EffectDef = {
 
 const contrastEffect: EffectDef = {
   type: 'contrast',
-  label: 'Contrast',
+  get label() {
+    return fx.effects.contrast.label;
+  },
   icon: 'sliders',
   kind: 'color',
-  description: 'Increase or reduce the difference between light and dark.',
-  params: [range('amount', 'Amount', 20, -100, 100, { unit: '%' })],
+  get description() {
+    return fx.effects.contrast.description;
+  },
+  params: [range('amount', 'amount', 20, -100, 100, { unit: '%' })],
   apply(img, p, ctx) {
     const a = num(p.amount) / 100;
     if (!a) return img;
@@ -470,11 +504,15 @@ const contrastEffect: EffectDef = {
 
 const temperatureEffect: EffectDef = {
   type: 'temperature',
-  label: 'Temperature',
+  get label() {
+    return fx.effects.temperature.label;
+  },
   icon: 'thermometer',
   kind: 'color',
-  description: 'Warm (orange) or cool (blue) colour balance.',
-  params: [range('amount', 'Warmth', 25, -100, 100, { unit: '%', description: 'Negative values cool the textures down' })],
+  get description() {
+    return fx.effects.temperature.description;
+  },
+  params: [range('amount', 'warmth', 25, -100, 100, { unit: '%', description: 'coolDown' })],
   apply(img, p, ctx) {
     const t = num(p.amount) / 100;
     if (!t) return img;
@@ -497,13 +535,17 @@ const temperatureEffect: EffectDef = {
 
 const tintEffect: EffectDef = {
   type: 'tint',
-  label: 'Tint / colorize',
+  get label() {
+    return fx.effects.tint.label;
+  },
   icon: 'spray-image',
   kind: 'color',
-  description: 'Wash textures with a colour, or recolour them completely.',
+  get description() {
+    return fx.effects.tint.description;
+  },
   params: [
-    color('color', 'Colour', '#ff9a3c'),
-    choice('mode', 'Mode', 'tint', [['tint', 'Soft tint'], ['colorize', 'Colorize'], ['multiply', 'Multiply']]),
+    color('color', 'colour', '#ff9a3c'),
+    choice('mode', 'mode', 'tint', [['tint', () => fx.options.softTint], ['colorize', () => fx.options.colorize], ['multiply', () => fx.options.multiply]]),
     amountOpt(35),
   ],
   apply(img, p, ctx) {
@@ -539,10 +581,14 @@ const tintEffect: EffectDef = {
 
 const grayscaleEffect: EffectDef = {
   type: 'grayscale',
-  label: 'Grayscale',
+  get label() {
+    return fx.effects.grayscale.label;
+  },
   icon: 'image',
   kind: 'color',
-  description: 'Remove colour.',
+  get description() {
+    return fx.effects.grayscale.description;
+  },
   params: [amountOpt(100)],
   apply(img, p, ctx) {
     return colorPass(img, ctx, num(p.amount, 100) / 100, (px) => {
@@ -553,10 +599,14 @@ const grayscaleEffect: EffectDef = {
 
 const sepiaEffect: EffectDef = {
   type: 'sepia',
-  label: 'Sepia',
+  get label() {
+    return fx.effects.sepia.label;
+  },
   icon: 'images',
   kind: 'color',
-  description: 'Old photograph brown tones.',
+  get description() {
+    return fx.effects.sepia.description;
+  },
   params: [amountOpt(80)],
   apply(img, p, ctx) {
     return colorPass(img, ctx, num(p.amount, 80) / 100, (px) => {
@@ -570,11 +620,15 @@ const sepiaEffect: EffectDef = {
 
 const invertEffect: EffectDef = {
   type: 'invert',
-  label: 'Invert',
+  get label() {
+    return fx.effects.invert.label;
+  },
   icon: 'invert',
   kind: 'color',
-  description: 'Negative colours, or flip only light and dark while keeping hues.',
-  params: [choice('mode', 'Mode', 'rgb', [['rgb', 'Negative (all channels)'], ['lightness', 'Lightness only (keep hues)']]), amountOpt(100)],
+  get description() {
+    return fx.effects.invert.description;
+  },
+  params: [choice('mode', 'mode', 'rgb', [['rgb', () => fx.options.negative], ['lightness', () => fx.options.lightnessOnly]]), amountOpt(100)],
   apply(img, p, ctx) {
     const amount = num(p.amount, 100) / 100;
     if (str(p.mode, 'rgb') === 'lightness') {
@@ -590,11 +644,15 @@ const invertEffect: EffectDef = {
 
 const posterizeEffect: EffectDef = {
   type: 'posterize',
-  label: 'Posterize',
+  get label() {
+    return fx.effects.posterize.label;
+  },
   icon: 'grid-2x2-2',
   kind: 'color',
-  description: 'Reduce the number of colour steps for a flat, graphic look.',
-  params: [range('levels', 'Levels', 5, 2, 16, { description: 'Colour steps per channel' })],
+  get description() {
+    return fx.effects.posterize.description;
+  },
+  params: [range('levels', 'levels', 5, 2, 16, { description: 'colourSteps' })],
   apply(img, p, ctx) {
     const n = Math.round(clamp(num(p.levels, 5), 2, 256));
     return lutPass(img, ctx, buildLut((c) => (Math.round((c / 255) * (n - 1)) / (n - 1)) * 255));
@@ -603,10 +661,14 @@ const posterizeEffect: EffectDef = {
 
 const pastelEffect: EffectDef = {
   type: 'pastel',
-  label: 'Pastel',
+  get label() {
+    return fx.effects.pastel.label;
+  },
   icon: 'cloud',
   kind: 'color',
-  description: 'Soft, light, candy-coloured tones.',
+  get description() {
+    return fx.effects.pastel.description;
+  },
   params: [amountOpt(60)],
   apply(img, p, ctx) {
     return colorPass(img, ctx, num(p.amount, 60) / 100, (px) => {
@@ -620,15 +682,19 @@ const pastelEffect: EffectDef = {
 
 const vignetteEffect: EffectDef = {
   type: 'vignette',
-  label: 'Edges & bevel',
+  get label() {
+    return fx.effects.vignette.label;
+  },
   icon: 'spotlight',
   kind: 'spatial',
   defaultCategories: ['block'],
-  description: 'Darken the edges of each texture, or give blocks a raised 3D bevel.',
+  get description() {
+    return fx.effects.vignette.description;
+  },
   params: [
-    choice('mode', 'Style', 'vignette', [['vignette', 'Soft vignette'], ['edges', 'Dark edges'], ['bevel', '3D bevel']]),
-    range('strength', 'Strength', 40, 0, 100, { unit: '%' }),
-    range('width', 'Edge width', 2, 1, 6, { unit: 'px', description: 'Used by the edge and bevel styles' }),
+    choice('mode', 'style', 'vignette', [['vignette', () => fx.options.softVignette], ['edges', () => fx.options.darkEdges], ['bevel', () => fx.options.bevel3d]]),
+    range('strength', 'strength', 40, 0, 100, { unit: '%' }),
+    range('width', 'edgeWidth', 2, 1, 6, { unit: 'px', description: 'edgeStyles' }),
   ],
   apply(img, p, ctx) {
     const strength = clamp(num(p.strength, 40), 0, 100) / 100;
@@ -741,17 +807,21 @@ function blurScalar(src: Float32Array, w: number, h: number, radius: number): Fl
 
 const outlineEffect: EffectDef = {
   type: 'outline',
-  label: 'Outline',
+  get label() {
+    return fx.effects.outline.label;
+  },
   icon: 'frame',
   kind: 'alpha',
   defaultCategories: ['block', 'item'],
-  description: 'Draw a line around items and shapes, or a border around every block.',
+  get description() {
+    return fx.effects.outline.description;
+  },
   params: [
-    choice('mode', 'Where', 'auto', [['auto', 'Automatic'], ['outside', 'Around shapes'], ['inside', 'Inside shape edges'], ['tile', 'Block border']]),
-    color('color', 'Colour', '#000000'),
-    range('opacity', 'Opacity', 100, 0, 100, { unit: '%' }),
-    range('thickness', 'Thickness', 1, 1, 4, { unit: 'px' }),
-    toggle('corners', 'Include corners', false, { description: 'Also outline diagonally touching pixels' }),
+    choice('mode', 'where', 'auto', [['auto', () => fx.options.automatic], ['outside', () => fx.options.aroundShapes], ['inside', () => fx.options.insideShapeEdges], ['tile', () => fx.options.blockBorder]]),
+    color('color', 'colour', '#000000'),
+    range('opacity', 'opacity', 100, 0, 100, { unit: '%' }),
+    range('thickness', 'thickness', 1, 1, 4, { unit: 'px' }),
+    toggle('corners', 'includeCorners', false, { description: 'corners' }),
   ],
   apply(img, p, ctx) {
     const opacity = clamp(num(p.opacity, 100), 0, 100) / 100;
@@ -830,11 +900,15 @@ const outlineEffect: EffectDef = {
 
 const noiseEffect: EffectDef = {
   type: 'noise',
-  label: 'Noise / grain',
+  get label() {
+    return fx.effects.noise.label;
+  },
   icon: 'shuffle',
   kind: 'spatial',
-  description: 'Add film grain or gritty texture. The same on every animation frame.',
-  params: [range('amount', 'Amount', 12, 0, 100, { unit: '%' }), toggle('mono', 'Monochrome grain', true)],
+  get description() {
+    return fx.effects.noise.description;
+  },
+  params: [range('amount', 'amount', 12, 0, 100, { unit: '%' }), toggle('mono', 'monochromeGrain', true)],
   apply(img, p, ctx) {
     const amount = clamp(num(p.amount, 12), 0, 100) / 100;
     if (!amount) return img;
@@ -869,10 +943,14 @@ const noiseEffect: EffectDef = {
 
 const sharpenEffect: EffectDef = {
   type: 'sharpen',
-  label: 'Sharpen',
+  get label() {
+    return fx.effects.sharpen.label;
+  },
   icon: 'zoom-in',
   kind: 'spatial',
-  description: 'Crisper details and stronger pixel contrast.',
+  get description() {
+    return fx.effects.sharpen.description;
+  },
   params: [amountOpt(40)],
   apply(img, p, ctx) {
     const k = (clamp(num(p.amount, 40), 0, 100) / 100) * 1.5;
@@ -897,11 +975,15 @@ const sharpenEffect: EffectDef = {
 
 const blurEffect: EffectDef = {
   type: 'blur',
-  label: 'Soft blur',
+  get label() {
+    return fx.effects.blur.label;
+  },
   icon: 'zoom-out',
   kind: 'spatial',
-  description: 'Soften textures. Block textures blur seamlessly across tile edges.',
-  params: [amountOpt(50), range('radius', 'Radius', 1, 1, 3, { unit: 'px' })],
+  get description() {
+    return fx.effects.blur.description;
+  },
+  params: [amountOpt(50), range('radius', 'radius', 1, 1, 3, { unit: 'px' })],
   apply(img, p, ctx) {
     const amount = clamp(num(p.amount, 50), 0, 100) / 100;
     if (!amount) return img;
@@ -926,11 +1008,15 @@ const blurEffect: EffectDef = {
 
 const pixelateEffect: EffectDef = {
   type: 'pixelate',
-  label: 'Pixelate',
+  get label() {
+    return fx.effects.pixelate.label;
+  },
   icon: 'grid-3x3',
   kind: 'spatial',
-  description: 'Lower the resolution into bigger pixels, keeping the size and transparency.',
-  params: [range('size', 'Pixel size', 2, 2, 8, { unit: 'px' })],
+  get description() {
+    return fx.effects.pixelate.description;
+  },
+  params: [range('size', 'pixelSize', 2, 2, 8, { unit: 'px' })],
   apply(img, p, ctx) {
     const size = Math.round(clamp(num(p.size, 2), 1, 64));
     if (size <= 1) return img;
@@ -1065,14 +1151,18 @@ export const MAX_UPSCALED_SIZE = 8192;
 
 const upscaleEffect: EffectDef = {
   type: 'upscale',
-  label: 'Smooth HD upscale',
+  get label() {
+    return fx.effects.upscale.label;
+  },
   icon: 'expand',
   kind: 'resize',
   defaultCategories: ['block', 'item', 'particle', 'entity', 'armor', 'painting'],
-  description: 'Double or quadruple the resolution with a pixel-art smoothing filter (Scale2x/Scale3x).',
+  get description() {
+    return fx.effects.upscale.description;
+  },
   params: [
-    choice('factor', 'Scale', '2', [['2', '2x'], ['3', '3x'], ['4', '4x']]),
-    choice('algorithm', 'Filter', 'scale2x', [['scale2x', 'Smooth edges (Scale2x/3x)'], ['nearest', 'Sharp pixels (nearest)']]),
+    choice('factor', 'scale', '2', [['2', '2x'], ['3', '3x'], ['4', '4x']]),
+    choice('algorithm', 'filter', 'scale2x', [['scale2x', () => fx.options.smoothEdges], ['nearest', () => fx.options.sharpPixels]]),
   ],
   apply(img, p, ctx) {
     let factor = Math.round(num(p.factor, 2));
@@ -1093,11 +1183,15 @@ const upscaleEffect: EffectDef = {
 
 const ditherEffect: EffectDef = {
   type: 'dither',
-  label: 'Dither',
+  get label() {
+    return fx.effects.dither.label;
+  },
   icon: 'grid-3x2',
   kind: 'spatial',
-  description: 'Retro ordered dithering with fewer colour steps.',
-  params: [range('levels', 'Levels', 4, 2, 8, { description: 'Colour steps per channel' }), range('strength', 'Pattern strength', 100, 0, 100, { unit: '%' })],
+  get description() {
+    return fx.effects.dither.description;
+  },
+  params: [range('levels', 'levels', 4, 2, 8, { description: 'colourSteps' }), range('strength', 'patternStrength', 100, 0, 100, { unit: '%' })],
   apply(img, p, ctx) {
     const n = Math.round(clamp(num(p.levels, 4), 2, 32));
     const strength = clamp(num(p.strength, 100), 0, 100) / 100;
@@ -1122,14 +1216,18 @@ const ditherEffect: EffectDef = {
 
 const glowEffect: EffectDef = {
   type: 'glow',
-  label: 'Glow',
+  get label() {
+    return fx.effects.glow.label;
+  },
   icon: 'lightbulb',
   kind: 'alpha',
-  description: 'Bright parts shine and bloom, with an optional halo around items.',
+  get description() {
+    return fx.effects.glow.description;
+  },
   params: [
-    range('strength', 'Strength', 50, 0, 100, { unit: '%' }),
-    range('threshold', 'Glow from brightness', 60, 0, 100, { unit: '%' }),
-    toggle('halo', 'Halo around shapes', true, { description: 'Adds soft light into transparent space next to bright pixels' }),
+    range('strength', 'strength', 50, 0, 100, { unit: '%' }),
+    range('threshold', 'glowFromBrightness', 60, 0, 100, { unit: '%' }),
+    toggle('halo', 'haloAroundShapes', true, { description: 'halo' }),
   ],
   apply(img, p, ctx) {
     const strength = clamp(num(p.strength, 50), 0, 100) / 100;
@@ -1189,11 +1287,15 @@ const glowEffect: EffectDef = {
 
 const flipEffect: EffectDef = {
   type: 'flip',
-  label: 'Flip',
+  get label() {
+    return fx.effects.flip.label;
+  },
   icon: 'flip-horizontal-2',
   kind: 'spatial',
-  description: 'Mirror textures horizontally and/or vertically (each animation frame separately).',
-  params: [toggle('horizontal', 'Flip horizontally', true), toggle('vertical', 'Flip vertically', false)],
+  get description() {
+    return fx.effects.flip.description;
+  },
+  params: [toggle('horizontal', 'flipHorizontally', true), toggle('vertical', 'flipVertically', false)],
   apply(img, p, ctx) {
     const fx = bool(p.horizontal);
     const fy = bool(p.vertical);
@@ -1221,11 +1323,15 @@ const flipEffect: EffectDef = {
 
 const gradientMapEffect: EffectDef = {
   type: 'gradientMap',
-  label: 'Gradient map',
+  get label() {
+    return fx.effects.gradientMap.label;
+  },
   icon: 'magic-edit',
   kind: 'color',
-  description: 'Replace dark, middle and light tones with three colours of your choice.',
-  params: [color('shadows', 'Shadows', '#1d1135'), color('midtones', 'Midtones', '#b8466a'), color('highlights', 'Highlights', '#ffe7a3'), amountOpt(100)],
+  get description() {
+    return fx.effects.gradientMap.description;
+  },
+  params: [color('shadows', 'shadows', '#1d1135'), color('midtones', 'midtones', '#b8466a'), color('highlights', 'highlights', '#ffe7a3'), amountOpt(100)],
   apply(img, p, ctx) {
     const a = parseHexColor(p.shadows, [29, 17, 53]);
     const b = parseHexColor(p.midtones, [184, 70, 106]);
@@ -1247,14 +1353,18 @@ const gradientMapEffect: EffectDef = {
 
 const paletteEffect: EffectDef = {
   type: 'palette',
-  label: 'Retro palette',
+  get label() {
+    return fx.effects.palette.label;
+  },
   icon: 'colors-swatch',
   kind: 'spatial',
-  description: 'Snap every colour to a classic console or pixel-art palette.',
+  get description() {
+    return fx.effects.palette.description;
+  },
   params: [
-    choice('palette', 'Palette', 'pico8', Object.entries(RETRO_PALETTES).map(([k, v]) => [k, v.label] as [string, string])),
-    choice('match', 'Match by', 'color', [['color', 'Closest colour'], ['brightness', 'Brightness (for 2–4 colour palettes)']]),
-    toggle('dither', 'Dither', false, { description: 'Ordered dithering between palette colours' }),
+    choice('palette', 'palette', 'pico8', Object.entries(RETRO_PALETTES).map(([k, v]) => [k, v.label] as [string, string])),
+    choice('match', 'matchBy', 'color', [['color', () => fx.options.closestColour], ['brightness', () => fx.options.brightnessFew]]),
+    toggle('dither', 'dither', false, { description: 'paletteDither' }),
     amountOpt(100),
   ],
   apply(img, p, ctx) {
@@ -1480,22 +1590,34 @@ const WORLD: TextureCategory[] = ['block', 'item', 'entity', 'particle', 'enviro
 export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: 'dark-mode',
-    label: 'Dark Mode',
-    description: 'Moody, darker world and menus with slightly cooler colours.',
+    get label() {
+      return fx.presets.darkMode.label;
+    },
+    get description() {
+      return fx.presets.darkMode.description;
+    },
     swatch: ['#161a24', '#46506a'],
     layers: [L('brightness', { amount: -32 }), L('contrast', { amount: 10 }), L('saturation', { amount: -12 }), L('temperature', { amount: -10 })],
   },
   {
     id: 'pastel-dream',
-    label: 'Pastel Dream',
-    description: 'Soft candy colours, light and airy.',
+    get label() {
+      return fx.presets.pastelDream.label;
+    },
+    get description() {
+      return fx.presets.pastelDream.description;
+    },
     swatch: ['#ffc8dd', '#bde0fe'],
     layers: [L('pastel', { amount: 70 }), L('hue', { degrees: 8, range: 'all' })],
   },
   {
     id: 'neon-outline',
-    label: 'Neon Outline',
-    description: 'Dark blocks with glowing cyan borders and outlined, shining items.',
+    get label() {
+      return fx.presets.neonOutline.label;
+    },
+    get description() {
+      return fx.presets.neonOutline.description;
+    },
     swatch: ['#0b0f1a', '#39f5ff'],
     layers: [
       L('brightness', { amount: -60 }, ['block', 'entity']),
@@ -1506,15 +1628,23 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   },
   {
     id: 'retro-8bit',
-    label: 'Retro 8-bit',
-    description: 'Punchy colours snapped to a classic console palette.',
+    get label() {
+      return fx.presets.retro8bit.label;
+    },
+    get description() {
+      return fx.presets.retro8bit.description;
+    },
     swatch: ['#124e89', '#e43b44'],
     layers: [L('contrast', { amount: 12 }), L('saturation', { amount: 25 }), L('palette', { palette: 'endesga32', match: 'color', dither: false, amount: 100 })],
   },
   {
     id: 'autumn',
-    label: 'Autumn',
-    description: 'Orange and red foliage with a warm golden light.',
+    get label() {
+      return fx.presets.autumn.label;
+    },
+    get description() {
+      return fx.presets.autumn.description;
+    },
     swatch: ['#b5541c', '#f2b33d'],
     layers: [
       L('hue', { degrees: -70, range: 'greens' }),
@@ -1525,8 +1655,12 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   },
   {
     id: 'winter-frost',
-    label: 'Winter Frost',
-    description: 'Icy teal leaves, pale colours and a cold blue light.',
+    get label() {
+      return fx.presets.winterFrost.label;
+    },
+    get description() {
+      return fx.presets.winterFrost.description;
+    },
     swatch: ['#dff3ff', '#7fb8d8'],
     layers: [
       L('hue', { degrees: 45, range: 'greens' }),
@@ -1537,29 +1671,45 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   },
   {
     id: 'noir',
-    label: 'Noir',
-    description: 'High-contrast black and white with film grain.',
+    get label() {
+      return fx.presets.noir.label;
+    },
+    get description() {
+      return fx.presets.noir.description;
+    },
     swatch: ['#0e0e0e', '#d9d9d9'],
     layers: [L('grayscale', { amount: 100 }), L('contrast', { amount: 30 }), L('vignette', { mode: 'edges', strength: 30, width: 2 }, ['block']), L('noise', { amount: 6, mono: true }, WORLD)],
   },
   {
     id: 'sepia-memories',
-    label: 'Sepia Memories',
-    description: 'Warm old-photo tones with soft edges.',
+    get label() {
+      return fx.presets.sepiaMemories.label;
+    },
+    get description() {
+      return fx.presets.sepiaMemories.description;
+    },
     swatch: ['#3b2a1a', '#e3c49a'],
     layers: [L('sepia', { amount: 85 }), L('contrast', { amount: -6 }), L('brightness', { amount: 6 }), L('vignette', { mode: 'vignette', strength: 35 }, ['block']), L('noise', { amount: 5, mono: true }, WORLD)],
   },
   {
     id: 'inverted',
-    label: 'Inverted',
-    description: 'Photo-negative colours everywhere.',
+    get label() {
+      return fx.presets.inverted.label;
+    },
+    get description() {
+      return fx.presets.inverted.description;
+    },
     swatch: ['#ff6b00', '#0094ff'],
     layers: [L('invert', { mode: 'rgb', amount: 100 })],
   },
   {
     id: 'cartoon',
-    label: 'Cartoon',
-    description: 'Bold flat colours with dark ink outlines.',
+    get label() {
+      return fx.presets.cartoon.label;
+    },
+    get description() {
+      return fx.presets.cartoon.description;
+    },
     swatch: ['#ffd23f', '#2b2d42'],
     layers: [
       L('saturation', { amount: 45 }),
@@ -1570,36 +1720,56 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   },
   {
     id: 'smooth-hd',
-    label: 'Smooth HD (2x)',
-    description: 'Doubles the resolution with smoothed pixel-art edges.',
+    get label() {
+      return fx.presets.smoothHd.label;
+    },
+    get description() {
+      return fx.presets.smoothHd.description;
+    },
     swatch: ['#5bd35b', '#2f7d32'],
     layers: [L('upscale', { factor: '2', algorithm: 'scale2x' }, ['block', 'item', 'particle', 'entity', 'armor', 'painting'])],
   },
   {
     id: 'vivid',
-    label: 'Vivid',
-    description: 'Richer colours, more contrast and crisper details.',
+    get label() {
+      return fx.presets.vivid.label;
+    },
+    get description() {
+      return fx.presets.vivid.description;
+    },
     swatch: ['#ff3d7f', '#3dd9ff'],
     layers: [L('saturation', { amount: 40 }), L('contrast', { amount: 12 }), L('sharpen', { amount: 25 }, ['block', 'item'])],
   },
   {
     id: 'golden-hour',
-    label: 'Golden Hour',
-    description: 'Sunset glow: warm, bright and a little dreamy.',
+    get label() {
+      return fx.presets.goldenHour.label;
+    },
+    get description() {
+      return fx.presets.goldenHour.description;
+    },
     swatch: ['#ff9f43', '#ffe29a'],
     layers: [L('temperature', { amount: 45 }), L('tint', { color: '#ffb347', mode: 'tint', amount: 25 }), L('brightness', { amount: 8 }), L('contrast', { amount: 8 })],
   },
   {
     id: 'game-boy',
-    label: 'Game Boy',
-    description: 'Four shades of green, like the original handheld.',
+    get label() {
+      return fx.presets.gameBoy.label;
+    },
+    get description() {
+      return fx.presets.gameBoy.description;
+    },
     swatch: ['#0f380f', '#9bbc0f'],
     layers: [L('contrast', { amount: 10 }), L('palette', { palette: 'gameboy', match: 'brightness', dither: false, amount: 100 })],
   },
   {
     id: '3d-blocks',
-    label: '3D Blocks',
-    description: 'A raised bevel on every block for a chunky, tactile look.',
+    get label() {
+      return fx.presets.blocks3d.label;
+    },
+    get description() {
+      return fx.presets.blocks3d.description;
+    },
     swatch: ['#8d8d8d', '#e0e0e0'],
     layers: [L('vignette', { mode: 'bevel', strength: 55, width: 1 }, ['block']), L('contrast', { amount: 6 }, ['block'])],
   },

@@ -4,6 +4,7 @@
 
 import { h } from '../../../../ui/dom';
 import type { UV4 } from '../../../../shared/models/geometry';
+import { tm } from '../i18n/model-editor';
 
 export interface UvEditor {
   el: HTMLElement;
@@ -23,7 +24,7 @@ export interface UvEditorOptions {
 type Part = 'move' | 'draw' | 0 | 1 | 2 | 3;
 
 export function createUvEditor(opts: UvEditorOptions): UvEditor {
-  const canvas = h('canvas', { class: 'me-uv-canvas', tabIndex: 0, role: 'img', 'aria-label': opts.label ?? 'Texture area of the face. Drag the outline to move it or a corner to resize it.' });
+  const canvas = h('canvas', { class: 'me-uv-canvas', tabIndex: 0, role: 'img', 'aria-label': opts.label ?? tm.uvCanvas });
   const el = h('div', { class: 'me-uv checker' }, canvas);
   let img: ImageData | null = null;
   let uv: UV4 | null = null;

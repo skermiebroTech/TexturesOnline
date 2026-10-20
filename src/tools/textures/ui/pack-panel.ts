@@ -7,7 +7,7 @@ import { icon } from '../../../ui/icons';
 import { button, card, textInput, toggle, tooltip } from '../../../ui/components';
 import { confirmDialog } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
-import { versionPicker, editionName } from '../../../ui/version-picker';
+import { versionPicker } from '../../../ui/version-picker';
 import { formatPackFormat } from '../../../ui/format';
 import { timeAgo } from '../../../ui/dom';
 import { decodeImage, fitToSize, encodePng, createImageData } from '../../../core/image';
@@ -24,6 +24,10 @@ import { packIconImage } from './icon';
 import { ICON_KEY, type TexStore } from './store';
 import type { OpenTexture } from './canvas-panel';
 import { resolutionSentence } from './resolution';
+import { fmt, joinList, num } from '../../../i18n/editor-text';
+import { kit } from '../../../ui/i18n/kit';
+import { t as ts } from '../i18n/start';
+import { te } from './i18n/editor';
 
 export { resolutionSentence };
 
@@ -53,34 +57,34 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   const pvDesc = h('div', { class: 'tx-mc-desc' });
   const mcPreview = h(
     'div',
-    { class: 'tx-mc-entry', role: 'img', 'aria-label': 'How the pack looks in the game menu' },
+    { class: 'tx-mc-entry', role: 'img', 'aria-label': te.pack.inGameLabel },
     h('div', { class: 'tx-mc-iconbox' }, pvIcon),
     h('div', { class: 'tx-mc-text' }, pvName, pvDesc),
   );
   const paintPreview = () => {
-    pvName.replaceChildren(formattedText(project.name || 'Untitled pack', '#ffffff'));
+    pvName.replaceChildren(formattedText(project.name || te.untitled, '#ffffff'));
     pvDesc.replaceChildren(formattedText(project.description || '', '#a8a8a8'));
   };
 
   // ---- name / description ----
   const nameField = textInput({
-    label: 'Pack name',
+    label: te.pack.name,
     value: project.name,
     maxLength: 80,
-    placeholder: 'My Texture Pack',
+    placeholder: te.pack.namePlaceholder,
     onInput: (v) => {
-      project.name = v.trim() || 'Untitled pack';
+      project.name = v.trim() || te.untitled;
       paintPreview();
       store.touch('meta');
     },
   });
   const descField = textInput({
-    label: 'Description',
+    label: te.pack.description,
     value: project.description,
     multiline: true,
     maxLength: 200,
-    placeholder: 'Made with Texture Pack Maker',
-    description: java ? 'Shown under the name in the Resource Packs menu. Two short lines fit best.' : 'Shown under the name in Global Resources.',
+    placeholder: te.pack.descriptionPlaceholder,
+    description: java ? te.pack.descriptionJava : te.pack.descriptionBedrock,
     onInput: (v) => {
       project.description = v;
       paintPreview();
@@ -98,29 +102,30 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   };
   const codeRow = h(
     'div',
-    { class: 'tx-codes', role: 'group', 'aria-label': 'Insert a formatting code' },
+    { class: 'tx-codes', role: 'group', 'aria-label': te.pack.insertCode },
     FORMAT_CODES.map((c) => {
+      const label = te.pack.codes[c.code as keyof typeof te.pack.codes];
       const b = h(
         'button',
-        { type: 'button', class: ['tx-code', c.color ? 'is-color' : 'is-style'], style: c.color ? { '--c': c.color } : undefined, 'aria-label': `${c.label} (§${c.code})` },
+        { type: 'button', class: ['tx-code', c.color ? 'is-color' : 'is-style'], style: c.color ? { '--c': c.color } : undefined, 'aria-label': `${label} (§${c.code})` },
         c.color ? null : h('span', { class: `tx-code-${c.code}` }, c.glyph ?? c.code.toUpperCase()),
       );
-      tooltip(b, `${c.label} — §${c.code}`);
+      tooltip(b, `${label} — §${c.code}`);
       b.addEventListener('click', () => insertCode(c.code));
       return b;
     }),
   );
-  const codesWrap = h('details', { class: 'tx-codes-wrap' }, h('summary', null, icon('palette', { size: 16 }), 'Colours & styles (§ codes)'), h('p', { class: 'faint small' }, 'Click a colour or style to add it at the cursor. §r goes back to normal.'), codeRow);
+  const codesWrap = h('details', { class: 'tx-codes-wrap' }, h('summary', null, icon('palette', { size: 16 }), te.pack.codesTitle), h('p', { class: 'faint small' }, te.pack.codesHint), codeRow);
 
   // ---- icon ----
   const iconCanvas = h('canvas', { class: 'tx-icon-pv pixelated', width: 64, height: 64 });
   const iconNote = h('span', { class: 'faint small' });
   const iconInput = h('input', { type: 'file', accept: 'image/*,.png,.tga', hidden: true });
-  const fromTexBtn = button({ label: 'From texture', icon: 'image', size: 'sm', onClick: () => void iconFromCurrent() });
-  const uploadIconBtn = button({ label: 'Upload', icon: 'upload', size: 'sm', onClick: () => iconInput.click() });
-  const paintIconBtn = button({ label: 'Paint', icon: 'brush', size: 'sm', onClick: () => opts.paintIcon() });
-  const resetIconBtn = button({ label: 'Automatic', icon: 'reset', size: 'sm', variant: 'ghost', onClick: () => store.setIconBlob(undefined) });
-  tooltip(fromTexBtn, 'Make an icon from the texture that is open in the editor');
+  const fromTexBtn = button({ label: te.pack.fromTexture, icon: 'image', size: 'sm', onClick: () => void iconFromCurrent() });
+  const uploadIconBtn = button({ label: te.pack.upload, icon: 'upload', size: 'sm', onClick: () => iconInput.click() });
+  const paintIconBtn = button({ label: te.pack.paint, icon: 'brush', size: 'sm', onClick: () => opts.paintIcon() });
+  const resetIconBtn = button({ label: te.pack.automatic, icon: 'reset', size: 'sm', variant: 'ghost', onClick: () => store.setIconBlob(undefined) });
+  tooltip(fromTexBtn, te.pack.fromTextureHint);
   const iconBlock = h(
     'div',
     { class: 'tx-icon-row' },
@@ -141,7 +146,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
       c.style.height = `${Math.round(img.height * s)}px`;
       c.classList.toggle('pixelated', s >= 1);
     }
-    iconNote.textContent = auto ? 'Automatic: a grass block drawn from your pack.' : `Your icon · ${img.width}×${img.height}`;
+    iconNote.textContent = auto ? te.pack.autoIcon : fmt(te.pack.yourIcon, { size: `${img.width}×${img.height}` });
     resetIconBtn.hidden = auto;
   };
 
@@ -155,16 +160,16 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
       const small = img.width <= size && img.height <= size && size % img.width === 0;
       const fitted = fitToSize(img, size, size, small ? 'nearest' : 'smooth', 'contain');
       store.setIconBlob(new Blob([encodePng(fitted)], { type: 'image/png' }));
-      toast('Pack icon updated', { tone: 'success' });
+      toast(te.pack.iconUpdated, { tone: 'success' });
     } catch {
-      toast("That file couldn't be read as an image.", { tone: 'error' });
+      toast(te.pack.notImage, { tone: 'error' });
     }
   });
 
   async function iconFromCurrent() {
     const t = opts.current();
     if (!t || t.key === ICON_KEY) {
-      toast('Open a texture in the editor first — then press this again.', { tone: 'info' });
+      toast(te.pack.openTextureFirst, { tone: 'info' });
       return;
     }
     const frame = t.anim ? getFrame(t.full, t.anim, 0) : firstSquare(t.full);
@@ -198,7 +203,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
       }
     }
     store.setIconBlob(new Blob([encodePng(out)], { type: 'image/png' }));
-    toast(`Icon made from ${t.name}`, { tone: 'success' });
+    toast(fmt(te.pack.iconMade, { name: t.name }), { tone: 'success' });
   }
 
   // ---- version ----
@@ -212,9 +217,11 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   async function changeVersion(v: string) {
     if (v === project.version) return;
     const ok = await confirmDialog(
-      'Switch game version?',
-      `The editor will load the textures of ${editionName(project.edition)} ${v === 'latest' ? 'latest' : v}. Everything you painted and all effects are kept.`,
-      'Switch version',
+      te.pack.switchTitle,
+      fmt(te.pack.switchText, {
+        version: project.edition === 'java' ? fmt(kit.edition.javaVersion, { version: v }) : v === 'latest' ? ts.version.bedrockLatest : fmt(ts.version.bedrock, { version: v }),
+      }),
+      te.pack.switchButton,
     );
     if (!ok) {
       picker.setValue(project.edition, project.version);
@@ -233,7 +240,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   const minPicker = versionPicker({
     edition: 'java',
     value: project.compat?.minVersion ?? '1.21',
-    label: 'Oldest version',
+    label: te.pack.oldest,
     onChange: (_e, v) => {
       project.compat = { minVersion: v, maxVersion: project.compat?.maxVersion ?? project.version };
       store.touch('meta');
@@ -243,7 +250,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   const maxPicker = versionPicker({
     edition: 'java',
     value: project.compat?.maxVersion ?? project.version,
-    label: 'Newest version',
+    label: te.pack.newest,
     onChange: (_e, v) => {
       project.compat = { minVersion: project.compat?.minVersion ?? project.version, maxVersion: v };
       store.touch('meta');
@@ -252,9 +259,9 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   });
   compatBody.append(h('div', { class: 'tx-compat-pickers' }, minPicker, maxPicker), compatResult);
   const compatToggle = toggle({
-    label: 'Also works in other versions',
+    label: te.pack.otherVersions,
     value: !!project.compat,
-    description: 'Declare a range of Minecraft versions so the game doesn’t call the pack “incompatible”.',
+    description: te.pack.otherVersionsHint,
     onChange: (v) => {
       if (v) {
         project.compat = { minVersion: minPicker.getValue().version || '1.21', maxVersion: maxPicker.getValue().version || project.version };
@@ -270,7 +277,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     const my = ++compatToken;
     if (!java) return;
     const warnings: string[] = [];
-    compatResult.replaceChildren(h('span', { class: 'faint small' }, 'Working out pack formats…'));
+    compatResult.replaceChildren(h('span', { class: 'faint small' }, te.pack.workingOut));
     try {
       const eff = await effectiveCompat(project.version, project.compat, warnings);
       const text = await buildPackMcmetaForVersions(project.description || ' ', project.version, eff);
@@ -288,27 +295,27 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
           .map(([k, v]) => [h('span', { class: 'tx-k' }, `"${k}": `), JSON.stringify(v), '\n']),
       );
       compatResult.replaceChildren(
-        h('div', { class: 'tx-formats' }, formats.map(([v, f]: readonly [string, PackFormat | null]) => h('span', { class: 'tx-format-chip' }, h('strong', null, v), ` pack ${f ? formatPackFormat(f) : '?'}`))),
-        h('div', { class: 'tx-mcmeta' }, h('span', { class: 'tx-mcmeta-title' }, 'pack.mcmeta will say'), fields),
-        ...[...warnings, ...(off.length ? [`Minecraft ${off.join(' and ')} will show this pack as made for another version (it can still be turned on). Very old and very new versions can't share one pack.`] : [])].map((w) =>
+        h('div', { class: 'tx-formats' }, formats.map(([v, f]: readonly [string, PackFormat | null]) => h('span', { class: 'tx-format-chip' }, h('strong', null, v), fmt(te.pack.packFormat, { format: f ? formatPackFormat(f) : '?' })))),
+        h('div', { class: 'tx-mcmeta' }, h('span', { class: 'tx-mcmeta-title' }, te.pack.mcmetaSays), fields),
+        ...[...warnings, ...(off.length ? [fmt(te.pack.incompatible, { versions: joinList(off, 'and') })] : [])].map((w) =>
           h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), w),
         ),
       );
     } catch (err) {
       if (my !== compatToken) return;
-      compatResult.replaceChildren(h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), err instanceof Error ? err.message : 'Pack formats could not be looked up right now.'));
+      compatResult.replaceChildren(h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), err instanceof Error ? err.message : te.pack.formatsFailed));
     }
   }
 
   const versionCard = card({
-    title: 'Game version',
+    title: te.pack.gameVersion,
     icon: 'box',
     body: java ? [picker, versionHint, compatToggle, compatBody] : [picker, versionHint],
   });
 
   // ---- resolution ----
   const resSentence = h('p', { class: 'field-desc' });
-  const resChips = h('div', { class: 'tx-res-chips', role: 'radiogroup', 'aria-label': 'Resolution' });
+  const resChips = h('div', { class: 'tx-res-chips', role: 'radiogroup', 'aria-label': te.pack.resolution });
   const paintRes = () => {
     resChips.replaceChildren(
       ...RESOLUTIONS.map((r) => {
@@ -322,7 +329,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
         return b;
       }),
     );
-    resSentence.textContent = `${resolutionSentence(project.resolution)} Textures you already edited keep their size.`;
+    resSentence.textContent = `${resolutionSentence(project.resolution)}${te.pack.keepSize}`;
   };
   paintRes();
 
@@ -334,15 +341,15 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     const paint = () => {
       const cur = project.packVersion ?? [1, 0, 0];
       const next = bumpPackVersion(project.packVersion);
-      ver.replaceChildren(project.packVersion ? `${cur.join('.')} · next export: ${next.join('.')}` : `First export will be ${next.join('.')}`);
+      ver.replaceChildren(project.packVersion ? fmt(te.pack.nextExport, { current: cur.join('.'), next: next.join('.') }) : fmt(te.pack.firstExport, { next: next.join('.') }));
       const u = project.bedrockUuids;
       ids.replaceChildren(
         ...(u
           ? [
-              ['Pack ID', u.header],
-              ['Module ID', u.module],
+              [te.pack.packId, u.header],
+              [te.pack.moduleId, u.module],
             ].map(([k, v]) => {
-              const copy = button({ icon: 'copy', size: 'sm', variant: 'ghost', title: `Copy ${k}`, onClick: () => void navigator.clipboard?.writeText(v).then(() => toast('Copied', { tone: 'success', duration: 1500 })) });
+              const copy = button({ icon: 'copy', size: 'sm', variant: 'ghost', title: fmt(te.pack.copyId, { name: k }), onClick: () => void navigator.clipboard?.writeText(v).then(() => toast(te.pack.copied, { tone: 'success', duration: 1500 })) });
               return h('div', { class: 'tx-kv' }, h('span', { class: 'tx-k' }, k), h('code', { class: 'tx-v tx-uuid' }, v), copy);
             })
           : []),
@@ -351,25 +358,25 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     paint();
     offs.push(store.events.on('meta', paint));
     const regen = button({
-      label: 'Make it a separate pack',
+      label: te.pack.separate,
       size: 'sm',
       variant: 'ghost',
       onClick: async () => {
-        const ok = await confirmDialog('Give this pack new IDs?', 'Minecraft will treat the next export as a different pack, installed next to the old one instead of updating it.', 'New IDs');
+        const ok = await confirmDialog(te.pack.newIdsTitle, te.pack.newIdsText, te.pack.newIdsButton);
         if (!ok) return;
         project.bedrockUuids = newBedrockUuids();
         project.packVersion = undefined;
         store.touch('meta');
-        toast('New pack IDs made', { tone: 'success' });
+        toast(te.pack.newIdsDone, { tone: 'success' });
       },
     });
     return card({
-      title: 'Bedrock pack',
+      title: te.pack.bedrockPack,
       icon: 'gamepad',
       body: [
-        h('div', { class: 'tx-kv' }, h('span', { class: 'tx-k' }, 'Version'), h('span', { class: 'tx-v' }, ver)),
+        h('div', { class: 'tx-kv' }, h('span', { class: 'tx-k' }, te.pack.version), h('span', { class: 'tx-v' }, ver)),
         ids,
-        h('p', { class: 'field-desc' }, 'These IDs stay the same on every export, so installing a newer export updates the pack in Minecraft instead of adding a copy.'),
+        h('p', { class: 'field-desc' }, te.pack.idsHint),
         regen,
       ],
     });
@@ -381,28 +388,28 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     const fx = project.effects.filter((l) => l.enabled).length;
     const extra = Object.keys(project.extraFiles).length;
     stats.replaceChildren(
-      h('div', { class: 'tx-stat' }, h('strong', null, String(store.editedCount())), h('span', null, 'edited textures')),
-      h('div', { class: 'tx-stat' }, h('strong', null, String(fx)), h('span', null, fx === 1 ? 'effect on' : 'effects on')),
-      ...(extra ? [h('div', { class: 'tx-stat' }, h('strong', null, String(extra)), h('span', null, 'extra files kept'))] : []),
-      h('div', { class: 'tx-stat' }, h('strong', null, timeAgo(project.createdAt)), h('span', null, 'created')),
+      h('div', { class: 'tx-stat' }, h('strong', null, num(store.editedCount())), h('span', null, fmt(te.pack.editedTextures, { count: store.editedCount() }))),
+      h('div', { class: 'tx-stat' }, h('strong', null, num(fx)), h('span', null, fmt(te.pack.effectsOn, { count: fx }))),
+      ...(extra ? [h('div', { class: 'tx-stat' }, h('strong', null, num(extra)), h('span', null, fmt(te.pack.extraFiles, { count: extra })))] : []),
+      h('div', { class: 'tx-stat' }, h('strong', null, timeAgo(project.createdAt)), h('span', null, te.pack.created)),
     );
   };
   const deleteBtn = button({
-    label: 'Delete this pack',
+    label: te.pack.deletePack,
     icon: 'trash',
     variant: 'danger',
     size: 'sm',
     onClick: async () => {
-      const ok = await confirmDialog('Delete this pack?', `“${plainText(project.name)}” and everything you painted in it will be removed from this browser. Export it first if you want to keep a copy.`, 'Delete pack', true);
+      const ok = await confirmDialog(te.pack.deleteTitle, fmt(te.pack.deleteText, { name: plainText(project.name) }), te.pack.deleteButton, true);
       if (!ok) return;
       try {
         await store.discard();
         await deleteProject(project.id);
-        toast(`Deleted “${plainText(project.name)}”`, { tone: 'info' });
+        toast(fmt(te.pack.deleted, { name: plainText(project.name) }), { tone: 'info' });
         navigate('/textures');
       } catch {
         store.revive();
-        toast("Couldn't delete the pack.", { tone: 'error' });
+        toast(te.pack.deleteFailed, { tone: 'error' });
       }
     },
   });
@@ -410,26 +417,24 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   const el = h(
     'div',
     { class: 'tx-pack stack' },
-    h('section', { class: 'tx-pack-hero' }, h('h3', { class: 'section-title' }, icon('eye'), 'In the game menu'), mcPreview),
-    card({ title: 'Name & description', icon: 'pen-square', body: [nameField, descField, codesWrap] }),
-    card({ title: 'Pack icon', icon: 'image', body: iconBlock }),
+    h('section', { class: 'tx-pack-hero' }, h('h3', { class: 'section-title' }, icon('eye'), te.pack.inGame), mcPreview),
+    card({ title: te.pack.nameDescription, icon: 'pen-square', body: [nameField, descField, codesWrap] }),
+    card({ title: te.pack.packIcon, icon: 'image', body: iconBlock }),
     versionCard,
-    card({ title: 'Resolution', icon: 'grid', body: [resChips, resSentence] }),
+    card({ title: te.pack.resolution, icon: 'grid', body: [resChips, resSentence] }),
     bedrockInfo,
-    card({ title: 'About this pack', icon: 'info', body: stats }),
+    card({ title: te.pack.about, icon: 'info', body: stats }),
     h(
       'section',
       { class: 'tx-danger' },
-      h('div', { class: 'stack', style: { '--gap': '4px' } }, h('h3', { class: 'tx-danger-title' }, 'Danger zone'), h('p', { class: 'faint small' }, 'Deleting removes the pack from this browser for good.')),
+      h('div', { class: 'stack', style: { '--gap': '4px' } }, h('h3', { class: 'tx-danger-title' }, te.pack.danger), h('p', { class: 'faint small' }, te.pack.dangerText)),
       deleteBtn,
     ),
   );
 
   const paintVersionHint = () => {
     versionHint.replaceChildren(
-      java
-        ? `Textures, names and the pack format come from this version.`
-        : `Textures come from Bedrock ${project.version === 'latest' ? 'latest release' : bedrockDisplayVersion(project.version)}.`,
+      java ? te.pack.versionJava : project.version === 'latest' ? te.pack.versionBedrockLatest : fmt(te.pack.versionBedrock, { version: bedrockDisplayVersion(project.version) }),
     );
   };
   paintVersionHint();

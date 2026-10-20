@@ -5,6 +5,7 @@
 import { Emitter } from '../../../core/events';
 import { SOUND_RATE } from './render';
 import type { DecodedAudio } from './fsb';
+import { ts } from '../ui/i18n/sounds';
 
 export interface Samples {
   sampleRate: number;
@@ -24,17 +25,17 @@ export function audioSupported(): boolean {
  * SOUND_RATE samples, keeping up to two channels.
  */
 export async function decodeAudioFile(data: Blob | ArrayBuffer | Uint8Array): Promise<Samples> {
-  if (!audioSupported()) throw new Error('This browser can’t play or edit sounds.');
+  if (!audioSupported()) throw new Error(ts.errors.noAudio);
   const buf = data instanceof Blob ? await data.arrayBuffer() : data instanceof Uint8Array ? data.slice().buffer : data.slice(0);
-  if (!buf.byteLength) throw new Error('The file is empty.');
+  if (!buf.byteLength) throw new Error(ts.errors.empty);
   const ctx = new OfflineAudioContext(1, 1, SOUND_RATE);
   let audio: AudioBuffer;
   try {
     audio = await ctx.decodeAudioData(buf);
   } catch {
-    throw new Error('That file couldn’t be read as audio. Try an MP3, WAV, OGG or M4A file.');
+    throw new Error(ts.errors.unreadable);
   }
-  if (!audio.length) throw new Error('That file has no sound in it.');
+  if (!audio.length) throw new Error(ts.errors.silent);
   const channels = [audio.getChannelData(0)];
   if (audio.numberOfChannels > 1) channels.push(audio.getChannelData(1));
   return { sampleRate: audio.sampleRate, channels, duration: audio.length / audio.sampleRate };
@@ -72,7 +73,7 @@ export class SoundPlayer {
   private length = 0;
 
   private context(): AudioContext {
-    if (!AudioCtx) throw new Error('This browser can’t play sounds.');
+    if (!AudioCtx) throw new Error(ts.errors.noPlayback);
     this.ctx ??= new AudioCtx();
     if (this.ctx.state === 'suspended') void this.ctx.resume();
     return this.ctx;
@@ -125,7 +126,7 @@ export class SoundPlayer {
     return new Promise<void>((resolve, reject) => {
       const fail = () => {
         if (this.el === el) this.finish();
-        reject(new Error(navigator.onLine === false ? 'You’re offline, so the game’s sounds can’t play right now.' : 'That sound couldn’t be loaded from Mojang.'));
+        reject(new Error(navigator.onLine === false ? ts.errors.offline : ts.errors.loadFailed));
       };
       el.onended = () => {
         if (this.el === el) this.finish();

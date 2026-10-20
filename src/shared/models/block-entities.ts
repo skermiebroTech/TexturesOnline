@@ -26,6 +26,7 @@ import {
   type Mat4,
 } from './entity-models';
 import type { BlockState } from './types';
+import { mt } from './i18n/text';
 
 // ---------------------------------------------------------------------------------------------
 // Shared helpers
@@ -483,7 +484,8 @@ export interface EntityBlock {
   note: string;
 }
 
-const NOTE = 'The game draws this block with its own model code. Shown with the same shapes and the texture sheet mapped the way the game maps it.';
+/** The note of blocks the game draws with its own code (read when a spec is made, in the page's language) */
+const note = (): string => mt.notes.blockEntity;
 
 function prop(name: string, values: string[]): EntityProperty {
   return { name, values };
@@ -534,7 +536,7 @@ function chestBlock(id: string, src: EntityTextureSource, hasTypeProperty: boole
     mode: 'replace',
     properties,
     defaults,
-    note: NOTE,
+    note: note(),
     quads(state) {
       const facing = horizontal(state.facing);
       const type = ender ? 'single' : (state.type ?? 'single');
@@ -573,7 +575,7 @@ function shulkerBlock(color: string | null, src: EntityTextureSource, withColor:
     mode: 'replace',
     properties,
     defaults: { facing: 'up', ...(withColor ? { color: color ?? 'white' } : {}) },
-    note: NOTE,
+    note: note(),
     quads(state) {
       const d = (DIRS as readonly string[]).includes(state.facing ?? '') ? (state.facing as Dir) : 'up';
       const c = withColor ? (state.color ?? color) : color;
@@ -593,7 +595,7 @@ function bannerBlock(color: DyeColor | null, wall: boolean, src: EntityTextureSo
     mode: 'replace',
     properties,
     defaults: { ...(wall ? { facing: 'north' } : { rotation: '8' }), ...(color ? {} : { color: 'white' }) },
-    note: `${NOTE} The flag takes the colour of its dye${src.edition === 'java' ? ' through the colour mask' : ''}.`,
+    note: note() + (src.edition === 'java' ? mt.notes.bannerJava : mt.notes.banner),
     quads(state) {
       const c: DyeColor = color ?? (isDye(state.color ?? '') ? (state.color as DyeColor) : 'white');
       const angle = wall ? yRotOf(horizontal(state.facing)) : Number(state.rotation ?? 0) * 22.5;
@@ -652,7 +654,7 @@ function skullBlock(fixed: SkullType | null, attach: 'floor' | 'wall' | 'any', s
     mode: 'replace',
     properties,
     defaults,
-    note: NOTE,
+    note: note(),
     quads(state) {
       const type = fixed ?? ((SKULL_TYPES as string[]).includes(state.type ?? '') ? (state.type as SkullType) : 'skeleton');
       const { model, tex, pose } = skullModel(type, src);
@@ -672,7 +674,7 @@ function potBlock(src: EntityTextureSource): EntityBlock {
     mode: 'replace',
     properties: [prop('facing', HORIZONTAL)],
     defaults: { facing: 'north' },
-    note: NOTE,
+    note: note(),
     quads(state) {
       const m = potTransform(horizontal(state.facing));
       return [...bake(POT_BASE, m, { path: base, role: 'pot_base' }), ...bake(POT_SIDES, m, { path: side, role: 'pot_side' }, { part: 1 })];
@@ -688,7 +690,7 @@ function conduitBlock(src: EntityTextureSource): EntityBlock {
     mode: 'replace',
     properties: [],
     defaults: {},
-    note: `${NOTE} Shown as an inactive conduit (the shell).`,
+    note: note() + mt.notes.conduit,
     quads: () => bake(CONDUIT_SHELL, mat4Translation(0.5, 0.5, 0.5), { path: tex, role: 'conduit_shell' }, { texSize }),
   };
 }
@@ -699,7 +701,7 @@ function bellBlock(src: EntityTextureSource): EntityBlock {
     mode: 'add',
     properties: [],
     defaults: {},
-    note: 'The frame is a block model; the game draws the bell itself with its own model code.',
+    note: mt.notes.bell,
     quads: () => bake(BELL_BODY, MAT4_IDENTITY, { path: tex, role: 'bell_body' }, { part: 90 }),
   };
 }
@@ -717,7 +719,7 @@ function enchantingTableBlock(src: EntityTextureSource): EntityBlock {
     mode: 'add',
     properties: [],
     defaults: {},
-    note: 'The table is a block model; the game draws the floating book with its own model code (shown open, as when a player is near).',
+    note: mt.notes.enchanting,
     quads: () =>
       bake(BOOK, mat4Chain(mat4Translation(0.5, 0.85, 0.5), mat4Rotation('y', -yRot), mat4Rotation('z', deg(80))), { path: tex, role: 'book' }, { pose: bookPose(open, 0.1, 0.9), part: 90 }),
   };
@@ -729,7 +731,7 @@ function lecternBlock(src: EntityTextureSource): EntityBlock {
     mode: 'add',
     properties: [prop('has_book', ['false', 'true'])],
     defaults: { has_book: 'true' },
-    note: 'The lectern is a block model; the game draws the book on it with its own model code.',
+    note: mt.notes.lectern,
     quads(state) {
       if (state.has_book === 'false') return [];
       const facing = horizontal(state.facing);
@@ -749,7 +751,7 @@ function golemStatueBlock(id: string, src: EntityTextureSource): EntityBlock {
     mode: 'replace',
     properties: [prop('copper_golem_pose', ['standing', 'sitting', 'running', 'star']), prop('facing', HORIZONTAL)],
     defaults: { copper_golem_pose: 'standing', facing: 'north' },
-    note: NOTE,
+    note: note(),
     quads(state) {
       const pose = (['standing', 'sitting', 'running', 'star'] as const).find((p) => p === state.copper_golem_pose) ?? 'standing';
       return bake(GOLEM_STATUE[pose], golemTransform(horizontal(state.facing)), { path: tex, role: 'statue' });
@@ -764,7 +766,7 @@ function portalBlock(gateway: boolean, src: EntityTextureSource): EntityBlock {
     mode: 'replace',
     properties: [],
     defaults: {},
-    note: `The game draws ${gateway ? 'the gateway' : 'the portal'} with a moving starfield effect made from this texture; shown here with the texture on its ${gateway ? 'faces' : 'top and bottom faces'}.`,
+    note: gateway ? mt.notes.gateway : mt.notes.portal,
     quads: () =>
       gateway
         ? boxQuads([0, 0, 0], [16, 16, 16], { up: face, down: face, north: face, south: face, east: face, west: face })
@@ -791,7 +793,7 @@ function signBlock(wood: string, wall: boolean, src: EntityTextureSource): Entit
     becameBlockModel: true,
     properties: [wall ? prop('facing', HORIZONTAL) : prop('rotation', ROTATIONS)],
     defaults: wall ? { facing: 'north' } : { rotation: '8' },
-    note: NOTE,
+    note: note(),
     quads(state) {
       const angle = wall ? yRotOf(horizontal(state.facing)) : Number(state.rotation ?? 0) * 22.5;
       return bake(wall ? SIGN_WALL : SIGN_STANDING, signTransform(angle, wall), { path: tex, role: 'sign' });
@@ -814,7 +816,7 @@ function hangingSignBlock(wood: string, wall: boolean | 'either', src: EntityTex
     becameBlockModel: true,
     properties,
     defaults,
-    note: NOTE,
+    note: note(),
     quads(state) {
       const onWall = wall === true || (wall === 'either' && state.hanging === 'false');
       const angle = onWall ? yRotOf(horizontal(state.facing)) : Number(state.rotation ?? 0) * 22.5;
@@ -837,7 +839,7 @@ function bedBlock(color: string | null, src: EntityTextureSource): EntityBlock {
     becameBlockModel: true,
     properties,
     defaults: { facing: 'north', ...(color ? {} : { color: 'red' }) },
-    note: `${NOTE} Both halves are shown together.`,
+    note: note() + mt.notes.bothHalves,
     quads(state) {
       const facing = horizontal(state.facing);
       const tex = { path: bedTexture(color ?? state.color ?? 'red', src), role: 'bed' };

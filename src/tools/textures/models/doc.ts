@@ -5,6 +5,8 @@
 
 import { DIRS, defaultFaceUv, type Dir, type UV4, type Vec3 } from '../../../shared/models/geometry';
 import { faceTexture, isIdentityTransform, parseDisplayTransform, parseElements, type DisplayTransform, type JavaElementRotation, type ResolvedModel } from '../../../shared/models/java-models';
+import { fmt } from '../../../i18n/editor-text';
+import { tr } from '../ui/i18n/model-rules';
 
 export type { DisplayTransform } from '../../../shared/models/java-models';
 
@@ -471,5 +473,5 @@ export function sizeOf(e: EditElement): Vec3 {
 
 /** A short name for a cube in lists: its own name, else "Cube 3". */
 export function elementLabel(m: EditModel, i: number): string {
-  return m.elements[i]?.name || `Cube ${i + 1}`;
+  return m.elements[i]?.name || fmt(tr.cube, { n: i + 1 });
 }

@@ -4,6 +4,8 @@
 import { h } from '../../../ui/dom';
 import { peakOf, waveformPeaks, MIN_LENGTH } from '../sounds/render';
 import type { Samples } from '../sounds/audio';
+import { fmt as fmtText, num, textLocale } from '../../../i18n/editor-text';
+import { ts } from './i18n/sounds';
 
 export interface WaveformApi {
   el: HTMLElement;
@@ -22,7 +24,8 @@ export interface WaveformOptions {
   label: string;
 }
 
-const fmt = (t: number) => `${t.toFixed(2)} s`;
+/** Seconds with two decimals in the page's language: "2.50 s" / "2,50 s" */
+const fmt = (t: number) => fmtText(ts.wave.seconds, { value: textLocale() === 'en' ? t.toFixed(2) : num(t, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) });
 
 export function createWaveform(opts: WaveformOptions): WaveformApi {
   const canvas = h('canvas', { class: 'snd-wave-canvas', 'aria-hidden': 'true' });
@@ -36,7 +39,7 @@ export function createWaveform(opts: WaveformOptions): WaveformApi {
         class: ['snd-wave-handle', `is-${which}`],
         role: 'slider',
         tabIndex: 0,
-        'aria-label': which === 'start' ? `${opts.label}: start` : `${opts.label}: end`,
+        'aria-label': fmtText(which === 'start' ? ts.wave.start : ts.wave.end, { label: opts.label }),
         'aria-orientation': 'horizontal',
         dataset: { which },
       },
@@ -45,7 +48,7 @@ export function createWaveform(opts: WaveformOptions): WaveformApi {
   const hStart = mkHandle('start');
   const hEnd = mkHandle('end');
   const stage = h('div', { class: 'snd-wave-stage' }, canvas, shadeL, shadeR, head, hStart, hEnd);
-  const tStart = h('span', null, '0.00 s');
+  const tStart = h('span', null, fmt(0));
   const tLen = h('strong', null, '');
   const tEnd = h('span', null, '');
   const el = h('div', { class: 'snd-wave' }, stage, h('div', { class: 'snd-wave-times', 'aria-hidden': 'true' }, tStart, tLen, tEnd));

@@ -10,6 +10,8 @@ import { dropzone } from '../../../ui/dropzone';
 import { openModal } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
 import { paintCanvas } from './thumbs';
+import { fmt } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export type UploadScope = 'full' | 'frame' | 'all-frames';
 
@@ -41,8 +43,8 @@ export function openUploadDialog(opts: UploadOptions): void {
 
   const dz = dropzone({
     accept: ACCEPT,
-    label: 'Drop an image here or click to choose',
-    hint: 'PNG, JPG, GIF, WebP or TGA — any size, it gets resized for you',
+    label: te.upload.drop,
+    hint: te.upload.dropHint,
     icon: 'image',
     onFiles: (files) => void load(files[0]),
   });
@@ -53,11 +55,11 @@ export function openUploadDialog(opts: UploadOptions): void {
   const outInfo = h('span', { class: 'faint small' });
   const modeSeg = segmented<'nearest' | 'smooth'>({
     value: mode,
-    label: 'Resize style',
+    label: te.upload.resizeStyle,
     size: 'sm',
     options: [
-      { value: 'nearest', label: 'Sharp pixels' },
-      { value: 'smooth', label: 'Smooth' },
+      { value: 'nearest', label: te.upload.sharp },
+      { value: 'smooth', label: te.upload.smooth },
     ],
     onChange: (v) => {
       mode = v;
@@ -66,12 +68,12 @@ export function openUploadDialog(opts: UploadOptions): void {
   });
   const fitSeg = segmented<'stretch' | 'contain' | 'cover'>({
     value: fit,
-    label: 'Fit',
+    label: te.upload.fit,
     size: 'sm',
     options: [
-      { value: 'stretch', label: 'Stretch' },
-      { value: 'cover', label: 'Fill' },
-      { value: 'contain', label: 'Fit' },
+      { value: 'stretch', label: te.upload.stretch },
+      { value: 'cover', label: te.upload.fill },
+      { value: 'contain', label: te.upload.fit },
     ],
     onChange: (v) => {
       fit = v;
@@ -82,12 +84,12 @@ export function openUploadDialog(opts: UploadOptions): void {
   const scopeSeg = a
     ? segmented<UploadScope>({
         value: scope,
-        label: 'What to replace',
+        label: te.upload.whatToReplace,
         size: 'sm',
         options: [
-          { value: 'full', label: 'Whole strip' },
-          { value: 'frame', label: `Frame ${a.index + 1} only` },
-          { value: 'all-frames', label: 'Every frame' },
+          { value: 'full', label: te.upload.wholeStrip },
+          { value: 'frame', label: fmt(te.upload.frameOnly, { n: a.index + 1 }) },
+          { value: 'all-frames', label: te.upload.everyFrame },
         ],
         onChange: (v) => {
           scope = v;
@@ -102,34 +104,34 @@ export function openUploadDialog(opts: UploadOptions): void {
     h(
       'div',
       { class: 'tx-up-compare' },
-      h('figure', { class: 'tx-up-fig' }, h('div', { class: 'tx-up-box checker' }, srcCanvas), h('figcaption', null, 'Your image', srcInfo)),
+      h('figure', { class: 'tx-up-fig' }, h('div', { class: 'tx-up-box checker' }, srcCanvas), h('figcaption', null, te.upload.yourImage, srcInfo)),
       h('span', { class: 'tx-up-arrow', 'aria-hidden': 'true' }, icon('arrow-right')),
-      h('figure', { class: 'tx-up-fig' }, h('div', { class: 'tx-up-box checker' }, outCanvas), h('figcaption', null, 'Becomes', outInfo)),
+      h('figure', { class: 'tx-up-fig' }, h('div', { class: 'tx-up-box checker' }, outCanvas), h('figcaption', null, te.upload.becomes, outInfo)),
     ),
-    h('div', { class: 'tx-up-opts' }, h('div', { class: 'tx-up-opt' }, h('span', { class: 'field-label' }, 'Resize'), modeSeg), h('div', { class: 'tx-up-opt' }, h('span', { class: 'field-label' }, 'Shape'), fitSeg), scopeSeg ? h('div', { class: 'tx-up-opt' }, h('span', { class: 'field-label' }, 'Animation'), scopeSeg) : null),
+    h('div', { class: 'tx-up-opts' }, h('div', { class: 'tx-up-opt' }, h('span', { class: 'field-label' }, te.upload.resize), modeSeg), h('div', { class: 'tx-up-opt' }, h('span', { class: 'field-label' }, te.upload.shape), fitSeg), scopeSeg ? h('div', { class: 'tx-up-opt' }, h('span', { class: 'field-label' }, te.upload.animation), scopeSeg) : null),
     opts.alphaData
-      ? h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), 'Bedrock uses this texture’s transparency as a colour mask. Your image’s transparency replaces it.')
+      ? h('p', { class: 'tx-inline-note warn' }, icon('warning-diamond'), te.upload.alphaWarning)
       : null,
   );
-  const again = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-up-again' }, icon('image'), h('span', { class: 'btn-label' }, 'Choose a different picture'));
+  const again = h('button', { type: 'button', class: 'btn btn-ghost btn-sm tx-up-again' }, icon('image'), h('span', { class: 'btn-label' }, te.upload.choose));
   again.addEventListener('click', () => (dz.querySelector('input[type=file]') as HTMLInputElement | null)?.click());
   editor.appendChild(again);
 
-  const reading = h('div', { class: 'tx-up-reading', hidden: true }, spinner(24), h('span', null, 'Reading your image…'));
+  const reading = h('div', { class: 'tx-up-reading', hidden: true }, spinner(24), h('span', null, te.upload.reading));
   const body = h('div', { class: 'tx-upload' }, dz, reading, editor);
   const modal = openModal({
-    title: `Upload image for ${opts.name}`,
+    title: fmt(te.upload.title, { name: opts.name }),
     body,
     width: 620,
     class: 'tx-upload-modal',
     actions: [
-      { label: 'Cancel', variant: 'secondary' },
+      { label: te.upload.cancel, variant: 'secondary' },
       {
-        label: 'Replace texture',
+        label: te.upload.replace,
         variant: 'primary',
         onClick: () => {
           if (!result) {
-            toast('Choose an image first.', { tone: 'warn' });
+            toast(te.upload.chooseFirst, { tone: 'warn' });
             return false;
           }
           opts.onApply(result, scope);
@@ -166,7 +168,7 @@ export function openUploadDialog(opts: UploadOptions): void {
     if (!file) return;
     const my = ++loadId;
     if (file.size > MAX_FILE_BYTES) {
-      dz.setError(`That file is too big (${formatBytes(file.size)}). Pick a picture under ${formatBytes(MAX_FILE_BYTES)}.`);
+      dz.setError(fmt(te.upload.tooBig, { size: formatBytes(file.size), max: formatBytes(MAX_FILE_BYTES) }));
       return;
     }
     let img: ImageData;
@@ -180,14 +182,14 @@ export function openUploadDialog(opts: UploadOptions): void {
       if (my !== loadId) return;
       reading.hidden = true;
       dz.hidden = false;
-      dz.setError("That file couldn't be read as a picture. Try a PNG or JPG.");
+      dz.setError(te.upload.unreadable);
       return;
     }
     if (my !== loadId || !modal.el.isConnected) return;
     reading.hidden = true;
     if (img.width * img.height > MAX_PIXELS) {
       dz.hidden = false;
-      dz.setError(`That picture is huge (${img.width}×${img.height}). Use one under ${Math.floor(Math.sqrt(MAX_PIXELS))}×${Math.floor(Math.sqrt(MAX_PIXELS))} pixels.`);
+      dz.setError(fmt(te.upload.huge, { size: `${img.width}×${img.height}`, max: `${Math.floor(Math.sqrt(MAX_PIXELS))}×${Math.floor(Math.sqrt(MAX_PIXELS))}` }));
       return;
     }
     src = img;

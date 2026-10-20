@@ -33,6 +33,8 @@ import {
 import { DYE_COLORS, SHIELD, TRIDENT, javaEntityBlock, javaEntityItem, legacyEntityItemBlock, type EntityBlock, type EntityTextureSource } from './block-entities';
 import { bakeEntityModel, mat4Scale } from './entity-models';
 import type { BlockState, EditionBackend, ModelCategory, RawView, SpriteLayer, TextureStates } from './types';
+import { fmt } from '../../i18n/editor-text';
+import { mt } from './i18n/text';
 
 const MC = 'assets/minecraft/';
 const HIDDEN_BLOCKS = new Set(['air', 'cave_air', 'void_air', 'moving_piston']);
@@ -40,7 +42,8 @@ const ITEM_TEMPLATES = /^(generated|handheld|handheld_rod|handheld_mace|template
 const PLANT_PARENTS = /(^|:)block\/(cross|tinted_cross|cross_emissive|flower_pot_cross|tinted_flower_pot_cross|crop|stem_growth\d|stem_fruit|template_seagrass|template_azalea|pointed_dripstone|template_hanging_roots|leaf_litter|flowerbed_\d|cave_vines.*|coral_fan|coral_wall_fan)$/;
 /** Blocks that are invisible in the world: shown as their item icon. */
 const INVISIBLE = /^(barrier|light|structure_void)$/;
-export const INVISIBLE_NOTE = 'Invisible in the world. Shown as its item icon, the texture you can paint.';
+/** Note of blocks invisible in the world (read when shown: it follows the page's language) */
+export const invisibleNote = (): string => mt.notes.invisible;
 
 export interface JavaSource {
   version: string;
@@ -325,7 +328,7 @@ export class JavaBackend implements EditionBackend {
 
   private invisibleView(id: string, state: BlockState): RawView {
     const p = this.invisibleTexture(id, state);
-    return { shape: 'sprite', quads: [], sprite: p ? [{ path: p, role: 'sprite', tint: null }] : [], category: 'special', note: INVISIBLE_NOTE };
+    return { shape: 'sprite', quads: [], sprite: p ? [{ path: p, role: 'sprite', tint: null }] : [], category: 'special', note: invisibleNote() };
   }
 
   private liquidView(id: string, models: ResolvedModel[]): RawView | null {
@@ -349,7 +352,7 @@ export class JavaBackend implements EditionBackend {
       quads,
       sprite: [],
       category: 'special',
-      note: `${id.includes('lava') ? 'Lava' : 'Water'} is drawn by the game from its still and flowing textures, shown here as a still source block.`,
+      note: id.includes('lava') ? mt.notes.lava : mt.notes.water,
     };
   }
 
@@ -375,8 +378,8 @@ export class JavaBackend implements EditionBackend {
       sprite: paths.map((p) => ({ path: p, role: 'entity', tint: null })),
       category: 'special',
       note: paths.length
-        ? `The game draws this block with its own code instead of a block model. Its texture sheet${paths.length > 1 ? 's are' : ' is'} shown flat.`
-        : 'The game draws this block with its own code and it has no texture of its own.',
+        ? fmt(mt.notes.ownCodeSheets, { count: paths.length })
+        : mt.notes.ownCode,
     };
   }
 
@@ -388,7 +391,7 @@ export class JavaBackend implements EditionBackend {
       quads: boxQuads([0, 0, 0], [16, 14, 16], { up: face, down: face, north: face, south: face, east: face, west: face }),
       sprite: [],
       category: 'special',
-      note: `${id === 'lava' ? 'Lava' : 'Water'} is drawn by the game, shown here as a still source block.`,
+      note: id === 'lava' ? mt.notes.lavaShort : mt.notes.waterShort,
     };
   }
 
@@ -494,7 +497,7 @@ export class JavaBackend implements EditionBackend {
 
   resolveItem(id: string, option: number): RawView {
     const o = this.options(id);
-    if (!o.length) return { shape: 'special', quads: [], sprite: [], category: 'item', note: 'This item has no model.' };
+    if (!o.length) return { shape: 'special', quads: [], sprite: [], category: 'item', note: mt.notes.noModel };
     const i = Math.max(0, Math.min(o.length - 1, option));
     if (typeof o[0] === 'string') {
       const model = this.models.resolve((o as string[])[i]);
@@ -504,7 +507,7 @@ export class JavaBackend implements EditionBackend {
     const views = opt.leaves.map(({ leaf, offset }) => {
       if (leaf.kind === 'model') return this.itemModelView(id, this.models.resolve(leaf.model), (t) => leaf.tints[t] ?? null, offset);
       if (leaf.kind === 'special') return this.specialItemView(id, leaf.type, leaf.texture, leaf.base, leaf.props);
-      return { shape: 'special', quads: [], sprite: [], category: 'item', note: 'Nothing is drawn for this state.' } as RawView;
+      return { shape: 'special', quads: [], sprite: [], category: 'item', note: mt.notes.nothing } as RawView;
     });
     if (views.length === 1) return views[0];
     const quads = views.flatMap((v) => v.quads);
@@ -528,7 +531,7 @@ export class JavaBackend implements EditionBackend {
     }
     if (model.builtin === 'entity') {
       const quads = this.legacyEntityItemQuads(id);
-      if (quads?.length) return { shape: 'model', quads, sprite: [], category: 'item', note: ITEM_ENTITY_NOTE };
+      if (quads?.length) return { shape: 'model', quads, sprite: [], category: 'item', note: mt.notes.itemEntity };
     }
     return this.specialItemView(id, '', undefined, model.id, {});
   }
@@ -550,7 +553,7 @@ export class JavaBackend implements EditionBackend {
   private specialItemView(id: string, type: string, texture: string | undefined, base: string | null, props: Record<string, unknown>): RawView {
     if (type) {
       const quads = javaEntityItem(type, props, id, this.entitySource);
-      if (quads) return { shape: 'model', quads, sprite: [], category: 'item', note: ITEM_ENTITY_NOTE };
+      if (quads) return { shape: 'model', quads, sprite: [], category: 'item', note: mt.notes.itemEntity };
     }
     const has = (rel: string) => {
       const p = `${MC}textures/${rel}.png`;
@@ -570,7 +573,7 @@ export class JavaBackend implements EditionBackend {
       quads: [],
       sprite: paths.map((p) => ({ path: p, role: 'entity', tint: null })),
       category: 'item',
-      note: 'The game draws this item with its own model code. Its texture sheet is shown flat.',
+      note: mt.notes.itemSheet,
     };
   }
 
@@ -608,7 +611,6 @@ export class JavaBackend implements EditionBackend {
   }
 }
 
-const ITEM_ENTITY_NOTE = 'The game draws this item with its own model code. Shown with the same shapes and texture sheet.';
 
 /** Texture paths, roles and faces of a model's elements (no geometry). */
 function modelFaceTextures(model: ResolvedModel): { path: string; role: string; dir: string }[] {

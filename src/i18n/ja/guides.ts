@@ -42,10 +42,10 @@ export const GUIDES_INDEX: GuidesIndexText = {
 // ---------------------------------------------------------------- shared steps
 
 const MAKE_PACK_STEPS: Child[] = [
-  [link('/textures', 'Texture Pack Maker'), 'を開き、パックに名前をつけて、Java版か統合版、遊んでいるバージョン、解像度を選び、', strong('Create pack'), 'をクリックします。'],
+  [link('/textures', 'Texture Pack Maker'), 'を開き、パックに名前をつけて、Java版か統合版、遊んでいるバージョン、解像度を選び、', strong('パックを作る'), 'をクリックします。'],
   '検索ボックスやカテゴリからテクスチャを探し、ピクセルエディターで描き直すか、自分のPNGを読み込みます。',
   'お好みで：Dark Mode、Pastel、Retro 8-bitなどのワンクリック効果で、パック全体の雰囲気を変えます。',
-  [strong('Pack'), 'タブで説明文とアイコンを設定し、', code('.zip'), '（Java版）か', code('.mcpack'), '（統合版）で書き出します。'],
+  [strong('パック'), 'タブで説明文とアイコンを設定し、', code('.zip'), '（Java版）か', code('.mcpack'), '（統合版）で書き出します。'],
   ['Minecraftにパックを入れて確認します。', link('/guides/install-resource-packs', '入れ方'), '。'],
 ];
 
@@ -298,7 +298,7 @@ const makeATexturePack: GuideText = {
     {
       id: 'edit',
       q: '既存のテクスチャパックを変更できますか？',
-      a: [p('はい。Texture Pack Makerで', strong('Open a pack'), 'を選び、', code('.zip'), 'か', code('.mcpack'), 'を選びます。編集を続けて書き出し直せます。'), figure(SHOTS.openPack)],
+      a: [p('はい。Texture Pack Makerで', strong('パックを開く'), 'を選び、', code('.zip'), 'か', code('.mcpack'), 'を選びます。編集を続けて書き出し直せます。'), figure(SHOTS.openPack)],
     },
     {
       id: 'code',
