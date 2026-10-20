@@ -52,7 +52,12 @@ export const PRIVACY_EN: PrivacyText = {
       id: 'no-tracking',
       title: 'No accounts, ads or tracking',
       body: [
-        ['There is no sign-up or login. The site has no ads, no analytics, no tracking cookies and no third-party trackers. No personal information is collected, sold or shared.'],
+        ['There is no sign-up or login. The site has no ads, no tracking cookies and no third-party trackers. No personal information is collected, sold or shared.'],
+        [
+          'To see which pages and tools are used, the website counts visits with ',
+          ext('https://www.cloudflare.com/web-analytics/', 'Cloudflare Web Analytics'),
+          '. It uses no cookies and does not follow you across sites or build a profile of you: it records the page, the site you came from, your country and the type of browser and device. What you make is never part of it.',
+        ],
       ],
     },
     {

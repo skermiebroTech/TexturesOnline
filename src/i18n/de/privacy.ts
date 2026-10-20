@@ -29,7 +29,12 @@ export const PRIVACY: PrivacyText = {
       id: 'no-tracking',
       title: 'Keine Konten, keine Werbung, kein Tracking',
       body: [
-        ['Es gibt keine Registrierung und keine Anmeldung. Die Seite hat keine Werbung, keine Analyse-Tools, keine Tracking-Cookies und keine Tracker von Dritten. Es werden keine personenbezogenen Daten erhoben, verkauft oder weitergegeben.'],
+        ['Es gibt keine Registrierung und keine Anmeldung. Die Seite hat keine Werbung, keine Tracking-Cookies und keine Tracker von Dritten. Es werden keine personenbezogenen Daten erhoben, verkauft oder weitergegeben.'],
+        [
+          'Um zu sehen, welche Seiten und Tools genutzt werden, zählt die Website Besuche mit ',
+          ext('https://www.cloudflare.com/web-analytics/', 'Cloudflare Web Analytics'),
+          '. Das kommt ohne Cookies aus, verfolgt dich nicht über andere Seiten hinweg und legt kein Profil von dir an: Erfasst werden die Seite, die Seite, von der du kommst, dein Land und die Art von Browser und Gerät. Was du erstellst, gehört nie dazu.',
+        ],
       ],
     },
     {

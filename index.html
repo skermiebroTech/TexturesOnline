@@ -34,5 +34,16 @@
   <body>
     <div id="app"><!--app-html--></div>
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      // Cookieless visit counts (Cloudflare Web Analytics), on the live site only, so local
+      // builds and tests are not counted. "spa" counts the app's own page changes too.
+      if (location.hostname === 'texturepackmaker.com') {
+        var cf = document.createElement('script');
+        cf.defer = true;
+        cf.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+        cf.setAttribute('data-cf-beacon', '{"token": "d9bd620f1c994df88f6191a8a9d8c212", "spa": true}');
+        document.body.appendChild(cf);
+      }
+    </script>
   </body>
 </html>

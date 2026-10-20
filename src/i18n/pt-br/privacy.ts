@@ -29,7 +29,12 @@ export const PRIVACY: PrivacyText = {
       id: 'no-tracking',
       title: 'Sem contas, anúncios ou rastreamento',
       body: [
-        ['Não há cadastro nem login. O site não tem anúncios, ferramentas de análise, cookies de rastreamento nem rastreadores de terceiros. Nenhum dado pessoal é coletado, vendido ou compartilhado.'],
+        ['Não há cadastro nem login. O site não tem anúncios, cookies de rastreamento nem rastreadores de terceiros. Nenhum dado pessoal é coletado, vendido ou compartilhado.'],
+        [
+          'Para saber quais páginas e ferramentas são usadas, o site conta as visitas com o ',
+          ext('https://www.cloudflare.com/web-analytics/', 'Cloudflare Web Analytics'),
+          '. Ele não usa cookies, não segue você por outros sites nem cria um perfil seu: registra a página, o site de onde você veio, seu país e o tipo de navegador e dispositivo. O que você cria nunca faz parte disso.',
+        ],
       ],
     },
     {

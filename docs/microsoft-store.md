@@ -139,6 +139,8 @@ Answer for an app that is **not** a game. Suggested answers:
 | Does the app collect or share personal information? | No |
 | Minecraft content? | Mention it only if asked about third-party content: the app downloads Mojang's official game textures from Mojang's servers so users can edit them. |
 
+If a reviewer asks about analytics or telemetry: the website only counts visits anonymously with Cloudflare Web Analytics (no cookies, no personal data, no tracking across sites), as the privacy page says.
+
 Expected result: **IARC 3+ / PEGI 3 / ESRB Everyone / USK 0**.
 
 ### Packages
