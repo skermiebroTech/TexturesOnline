@@ -252,7 +252,7 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'java-vs-bedrock-packs',
     blurb: 'Files, folders, formats, shaders and skins compared side by side.',
-    title: 'Java vs Bedrock Texture Packs: Differences & Compatibility',
+    title: 'Can You Use Java Texture Packs on Bedrock? How to Convert',
     h1: 'Java vs Bedrock texture packs: differences and how to convert',
     description:
       'Do Java texture packs work on Bedrock? No: Java uses .zip + pack.mcmeta, Bedrock .mcpack + manifest.json. Folders, file names, shaders and skins compared.',
