@@ -43,6 +43,22 @@ const PAGES = [
   { path: 'guides/texture-pack-not-working/', tool: 'help', ready: '.guide-page h1' },
 ];
 
+// Translated pages: language folder, html lang, the help link's label and a phrase of the page.
+const LANGS = [
+  { code: 'de', lang: 'de', help: 'Hilfe', name: 'Deutsch' },
+  { code: 'es', lang: 'es', help: 'Ayuda', name: 'Español' },
+  { code: 'pt-br', lang: 'pt-BR', help: 'Ajuda', name: 'Português (Brasil)' },
+  { code: 'ja', lang: 'ja', help: 'ヘルプ', name: '日本語' },
+];
+const LOCALIZED = LANGS.flatMap((l) => [
+  { lang: l, path: `${l.code}/`, tool: 'home', ready: '.home .hero-title' },
+  { lang: l, path: `${l.code}/textures/`, tool: 'textures', ready: '[data-tool-intro="textures"].is-below' },
+  { lang: l, path: `${l.code}/skin-pack-maker/`, tool: 'skins', ready: '[data-tool-intro="skinpack"].is-below' },
+  { lang: l, path: `${l.code}/help/`, tool: 'help', ready: '.help .help-section' },
+  { lang: l, path: `${l.code}/guides/`, tool: 'help', ready: '.guides-index .guide-card' },
+  { lang: l, path: `${l.code}/guides/make-a-texture-pack/`, tool: 'help', ready: '.guide-page h1' },
+]);
+
 let failed = 0;
 const ok = (msg) => console.log(`  ok - ${msg}`);
 const check = (cond, msg, detail = '') => {
@@ -93,6 +109,23 @@ try {
       check(visible, `no-JS ${p.path || '/'} content is visible`);
       if (SHOTS) await page.screenshot({ path: join(SHOTS, `nojs-${p.path.replace(/\//g, '_') || 'home'}.png`), fullPage: false });
     }
+    // Translated pages without JavaScript: their own language, content and language links
+    for (const p of LOCALIZED) {
+      const res = await page.goto(base + p.path, { waitUntil: 'load' });
+      const h1 = (await page.locator('main h1').first().innerText()).trim();
+      const text = (await page.locator('main').innerText()).length;
+      const lang = await page.getAttribute('html', 'lang');
+      const canonical = await page.getAttribute('link[rel="canonical"]', 'href');
+      const hreflangs = await page.$$eval('link[rel="alternate"][hreflang]', (ls) => ls.map((l) => l.hreflang));
+      const help = (await page.locator('.mainnav a[data-tool="help"]').innerText()).trim();
+      const visible = await page.locator('main h1').first().isVisible();
+      check(
+        res.status() === 200 && h1 && text > 800 && visible && lang === p.lang.lang && canonical?.endsWith(`/${p.path}`) && help === p.lang.help && hreflangs.includes('x-default') && hreflangs.includes(p.lang.lang),
+        `no-JS ${p.path}: "${h1}" (${text} chars, lang ${lang})`,
+        `status ${res.status()} canonical ${canonical} help ${help} hreflang ${hreflangs}`,
+      );
+      if (SHOTS) await page.screenshot({ path: join(SHOTS, `nojs-${p.path.replace(/\//g, '_')}.png`), fullPage: false });
+    }
     await ctx.close();
   }
 
@@ -111,6 +144,109 @@ try {
       }
     }
     check(errors.length === 0, 'no console errors while booting public pages', errors.join('\n'));
+    await ctx.close();
+  }
+
+  // ---- JavaScript on: translated pages boot in their language (the tool editors stay English)
+  {
+    const { ctx, page, errors } = await newPage(true);
+    for (const p of LOCALIZED) {
+      await page.goto(base + p.path, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector(p.ready, { timeout: 20000 });
+      const state = await page.evaluate(() => ({
+        tool: document.documentElement.dataset.tool,
+        lang: document.documentElement.lang,
+        help: document.querySelector('.mainnav a[data-tool="help"]')?.textContent?.trim(),
+        footerLang: document.querySelector('.site-footer .lang-switch a[aria-current="true"]')?.getAttribute('hreflang'),
+        robots: document.querySelector('meta[name="robots"]')?.getAttribute('content'),
+        intro: document.querySelector('[data-tool-intro].is-below h2')?.textContent ?? null,
+        h1: document.querySelector('main h1')?.textContent ?? null,
+      }));
+      // The intro under a tool must be the translated one: same heading as the prerendered page.
+      const res = await page.request.get(server.url + p.path);
+      const html = await res.text();
+      const prerenderedH1 = /<h1[^>]*>([\s\S]*?)<\/h1>/.exec(html)?.[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&') ?? '';
+      const heading = state.intro ?? state.h1;
+      check(
+        state.tool === p.tool && state.lang === p.lang.lang && state.help === p.lang.help && state.footerLang === p.lang.lang && state.robots?.startsWith('index') && heading === prerenderedH1,
+        `JS ${p.path} boots in ${p.lang.code} (${p.tool})`,
+        JSON.stringify({ ...state, prerenderedH1 }),
+      );
+      if (SHOTS) {
+        await page.waitForTimeout(400);
+        await page.screenshot({ path: join(SHOTS, `js-${p.path.replace(/\//g, '_')}.png`), fullPage: false });
+      }
+    }
+    check(errors.length === 0, 'no console errors while booting translated pages', errors.join('\n'));
+    await ctx.close();
+  }
+
+  // ---- In-app navigation keeps the language; the switcher changes it without a reload
+  {
+    const { ctx, page, errors } = await newPage(true);
+    await page.goto(`${base}de/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.home .tool-card');
+    await page.evaluate(() => (window.__stay = 1));
+    await page.click('.mainnav a[data-tool="skins"]');
+    await page.waitForSelector('[data-tool-intro="skins"].is-below');
+    const introDe = await page.locator('[data-tool-intro="skins"] h2').first().innerText();
+    check(page.url() === `${base}de/skins/` && (await page.evaluate(() => window.__stay)) === 1, 'German nav link -> /de/skins/ without a reload', page.url());
+    check(/Skin/.test(introDe) && (await page.evaluate(() => document.documentElement.lang)) === 'de', 'tool intro below the editor is German', introDe);
+    check((await page.getAttribute('link[rel="canonical"]', 'href'))?.endsWith('/de/skins/'), 'canonical follows to /de/skins/');
+    const alts = await page.$$eval('link[rel="alternate"][hreflang]', (ls) => ls.map((l) => `${l.hreflang}=${new URL(l.href).pathname}`).sort());
+    check(alts.includes('de=/de/skins/') && alts.includes('x-default=/skins/') && alts.includes('ja=/ja/skins/'), 'hreflang links follow in-app navigation', alts.join(' '));
+    await page.click('.site-footer .footer-col a[href$="guides/make-a-skin/"]');
+    await page.waitForSelector('.guide-page h1');
+    check(page.url() === `${base}de/guides/make-a-skin/` && (await page.evaluate(() => window.__stay)) === 1, 'German footer guide link stays German', page.url());
+    check((await page.title()).includes('Skin') && (await page.title()) !== 'How to Make a Custom Minecraft Skin (Java & Bedrock)', 'title is German', await page.title());
+    // language switcher: same page in Spanish, then English, without reloads
+    await page.click('.site-footer .lang-switch a[hreflang="es"]');
+    await page.waitForFunction(() => document.documentElement.lang === 'es' && document.querySelector('.guide-page h1'));
+    check(page.url() === `${base}es/guides/make-a-skin/` && (await page.evaluate(() => window.__stay)) === 1, 'switcher -> /es/ version of the same guide', page.url());
+    check((await page.locator('.mainnav a[data-tool="help"]').innerText()).trim() === 'Ayuda', 'top bar switched to Spanish');
+    await page.click('.site-footer .lang-switch a[hreflang="en"]');
+    await page.waitForFunction(() => document.documentElement.lang === 'en' && document.querySelector('.guide-page h1'));
+    check(page.url() === `${base}guides/make-a-skin/` && (await page.locator('.mainnav a[data-tool="help"]').innerText()).trim() === 'Help', 'switcher -> English guide, top bar English', page.url());
+    await page.goBack();
+    await page.waitForFunction(() => document.documentElement.lang === 'es');
+    check(page.url() === `${base}es/guides/make-a-skin/`, 'back returns to the Spanish guide', page.url());
+    // help section links keep the language folder
+    await page.goto(`${base}ja/help/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.help .help-section');
+    await page.click('.help-quick-card[data-section="iris"]');
+    await page.waitForTimeout(400);
+    check(page.url() === `${base}ja/help/?s=iris`, 'Japanese help section link keeps /ja/', page.url());
+    // the menu drawer offers the languages too (phone width)
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.click('.menu-btn');
+    await page.waitForSelector('.nav-drawer .drawer-langs a[hreflang="pt-BR"]');
+    await page.click('.nav-drawer .drawer-langs a[hreflang="pt-BR"]');
+    await page.waitForFunction(() => document.documentElement.lang === 'pt-BR' && document.querySelector('.help .help-section'));
+    check(page.url() === `${base}pt-br/help/`, 'drawer language link -> /pt-br/help/', page.url());
+    // Japanese text falls back to a Japanese font
+    await page.goto(`${base}ja/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.home .hero-title');
+    const font = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
+    check(/Texel/.test(font) && /Hiragino Sans|Noto Sans JP/.test(font), 'Japanese pages fall back to Japanese fonts', font);
+    check(errors.length === 0, 'no console errors while switching languages', errors.join('\n'));
+    await ctx.close();
+  }
+
+  // ---- Language folders in front of pages that have no translation, and app pages
+  {
+    const { ctx, page, errors } = await newPage(true);
+    await page.goto(`${base}de/guides/bedrock-vibrant-visuals-settings/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.guide-page h1', { timeout: 20000 });
+    check(page.url() === `${base}guides/bedrock-vibrant-visuals-settings/` && (await page.evaluate(() => document.documentElement.lang)) === 'en', 'an untranslated guide under /de/ opens the English page', page.url());
+    const res = await page.goto(`${base}es/no-existe/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.fallback-page .empty-state', { timeout: 20000 });
+    const nf = await page.locator('.fallback-page .empty-state').innerText();
+    check(res.status() === 404 && /página/i.test(nf) && (await page.evaluate(() => document.documentElement.lang)) === 'es', 'unknown path under /es/ shows the Spanish not-found page', nf);
+    await page.goto(`${base}ja/shaders/not-a-real-project`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.view-shaders .empty-state', { timeout: 20000 });
+    const robots = await page.getAttribute('meta[name="robots"]', 'content');
+    check(page.url() === `${base}ja/shaders/not-a-real-project` && robots?.startsWith('noindex') && (await page.locator('.mainnav a[data-tool="help"]').innerText()).trim() === 'ヘルプ', 'project link under /ja/ boots, noindex, Japanese chrome', page.url());
+    check(errors.length === 0, 'no console errors on language-folder fallbacks', errors.join('\n'));
     await ctx.close();
   }
 
@@ -189,6 +325,8 @@ try {
       const r = await page.request.get(server.url + f);
       check(r.status() === 200, `${f} is served`);
     }
+    const sitemap = await (await page.request.get(server.url + 'sitemap.xml')).text();
+    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('/ja/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
     await ctx.close();
   }
 } finally {

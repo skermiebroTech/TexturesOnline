@@ -116,12 +116,12 @@ export function tabbed(id: string, options: TabOption[], label = 'Platform'): El
   );
 }
 
-/** Folder table for Windows / macOS / Linux. */
-export const folderTable = (sub: string): ElNode =>
+/** Folder table for Windows / macOS / Linux (column headings translated by the caller). */
+export const folderTable = (sub: string, head: { system: string; folder: string } = { system: 'System', folder: 'Folder' }): ElNode =>
   el(
     'table',
     { class: 'paths-table' },
-    el('thead', null, el('tr', null, el('th', { scope: 'col' }, 'System'), el('th', { scope: 'col' }, 'Folder'))),
+    el('thead', null, el('tr', null, el('th', { scope: 'col' }, head.system), el('th', { scope: 'col' }, head.folder))),
     el(
       'tbody',
       null,
@@ -149,10 +149,10 @@ export function faqList(items: FaqItem[], opts: { idPrefix?: string; openFirst?:
 }
 
 /** Visible breadcrumb trail (matches the BreadcrumbList structured data). */
-export function breadcrumbs(items: Crumb[]): ElNode {
+export function breadcrumbs(items: Crumb[], label = 'Breadcrumb'): ElNode {
   return el(
     'nav',
-    { class: 'crumbs', 'aria-label': 'Breadcrumb', 'data-md': 'skip' },
+    { class: 'crumbs', 'aria-label': label, 'data-md': 'skip' },
     el(
       'ol',
       null,

@@ -10,7 +10,11 @@ export type ClassValue = string | false | null | undefined | ClassValue[];
 
 export interface Attrs {
   class?: ClassValue;
-  /** Internal route path ('/textures', '/help?s=faq'); becomes the href */
+  /**
+   * Internal route path ('/textures', '/help?s=faq'); becomes the href. Written in English: on a
+   * translated page it leads to the page in the same language when one exists. A link that names
+   * its language with `hreflang` (the language switcher) goes exactly where `to` says.
+   */
   to?: string;
   [name: string]: AttrValue | ClassValue;
 }
@@ -71,8 +75,8 @@ export interface HtmlContext {
   iconSvg(name: IconName): string;
   /** Full <svg> markup of the logo on a 32x32 view box */
   logoSvg(): string;
-  /** href for an internal route path */
-  link(to: string): string;
+  /** href for an internal route path; `exact` = already in the right language (or a file) */
+  link(to: string, exact?: boolean): string;
 }
 
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
@@ -86,17 +90,17 @@ export function escapeAttr(s: string): string {
 }
 
 /** Attributes as the DOM renderer will set them (same order, same values). */
-export function resolvedAttrs(attrs: Attrs, link: (to: string) => string): [string, string][] {
+export function resolvedAttrs(attrs: Attrs, link: (to: string, exact?: boolean) => string): [string, string][] {
   const out: [string, string][] = [];
   for (const [k, v] of Object.entries(attrs)) {
     if (k === 'class') {
       const cls = classString(v as ClassValue);
       if (cls) out.push(['class', cls]);
     } else if (k === 'to') {
-      if (typeof v === 'string') out.push(['href', link(v)]);
+      if (typeof v === 'string') out.push(['href', link(v, typeof attrs.hreflang === 'string')]);
     } else if (k === 'src' && typeof v === 'string' && v.startsWith('/')) {
       // site files ('/screenshots/x.jpg') resolve against the site root like links do
-      out.push(['src', link(v)]);
+      out.push(['src', link(v, true)]);
     } else if (v === true) {
       out.push([k, '']);
     } else if (v !== false && v !== null && v !== undefined) {
@@ -174,7 +178,7 @@ function rawText(children: Child[]): string {
 
 export interface MarkdownContext {
   /** Absolute URL for an internal route path */
-  link(to: string): string;
+  link(to: string, exact?: boolean): string;
 }
 
 function mdInline(children: Child[], ctx: MarkdownContext): string {
@@ -206,7 +210,7 @@ function mdInline(children: Child[], ctx: MarkdownContext): string {
         break;
       case 'a': {
         const to = c.attrs.to;
-        const href = typeof to === 'string' ? ctx.link(to) : typeof c.attrs.href === 'string' ? c.attrs.href : '';
+        const href = typeof to === 'string' ? ctx.link(to, typeof c.attrs.hreflang === 'string') : typeof c.attrs.href === 'string' ? c.attrs.href : '';
         out += href ? `[${inner.trim()}](${href})` : inner;
         break;
       }
@@ -345,7 +349,7 @@ function mdBlocks(children: Child[], ctx: MarkdownContext, depth: number, out: s
           // A card link: its heading becomes a linked heading, the rest a paragraph.
           flushInline();
           const to = c.attrs.to;
-          const href = typeof to === 'string' ? ctx.link(to) : typeof c.attrs.href === 'string' ? c.attrs.href : '';
+          const href = typeof to === 'string' ? ctx.link(to, typeof c.attrs.hreflang === 'string') : typeof c.attrs.href === 'string' ? c.attrs.href : '';
           const heading = findHeading(c);
           const title = heading ? mdInline(heading.children, ctx).trim() : '';
           const level = heading ? Number(heading.tag.slice(1)) : 3;

@@ -5,10 +5,11 @@
 
 import type { IconName } from '../../ui/icons';
 import { logoSvgMarkup } from '../../ui/logo';
-import { el, escapeAttr, escapeHtml, flatten, renderHtml, renderMarkdown, renderText, type Child, type HtmlContext } from '../markup';
+import { el, escapeAttr, escapeHtml, flatten, ic, renderHtml, renderMarkdown, renderText, type Child, type HtmlContext } from '../markup';
 import { skipLink, topbar } from '../content/chrome';
 import { BING_SITE_VERIFICATION, GOOGLE_SITE_VERIFICATION, REPO_URL, SITE_NAME, SITE_SUMMARY, SITE_URL, absoluteUrl } from '../site';
-import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, PUBLIC_PAGES, TOOL_META, type PageMeta } from './meta';
+import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, TOOL_META, allPublicPages, localizedPath, translatedPages, type PageMeta } from './meta';
+import { LOCALE_INFO, TRANSLATED_LOCALES, type Locale } from '../../i18n/locales';
 import { TOOL_INTROS } from '../content/tools';
 import { DIFFERENCES } from '../../tools/about/content';
 import { prerenderPages, type PrerenderPage } from './pages';
@@ -88,6 +89,7 @@ export function iconNamesUsed(): Set<IconName> {
   for (const p of prerenderPages()) walk(p.body(2000));
   walk(topbar(null));
   walk(skipLink());
+  walk(ic('globe'));
   return names;
 }
 
@@ -99,6 +101,12 @@ function metaTag(attr: 'name' | 'property', key: string, value: string): string 
   return `<meta ${attr}="${key}" content="${escapeAttr(value)}" />`;
 }
 
+/** hreflang links of a page: every language it exists in, plus x-default (English). */
+export function alternateLinks(page: PrerenderPage): { hreflang: string; href: string }[] {
+  const en = page.alternates.find((a) => a.locale === 'en');
+  return [...page.alternates.map((a) => ({ hreflang: LOCALE_INFO[a.locale].lang, href: a.url })), ...(en ? [{ hreflang: 'x-default', href: en.url }] : [])];
+}
+
 /** Head tags for a public page. */
 export function headTags(page: PrerenderPage): string {
   const m = page.meta;
@@ -108,12 +116,14 @@ export function headTags(page: PrerenderPage): string {
     `<title>${escapeHtml(m.title)}</title>`,
     metaTag('name', 'description', m.description),
     `<link rel="canonical" href="${url}" />`,
+    ...alternateLinks(page).map((a) => `<link rel="alternate" hreflang="${a.hreflang}" href="${a.href}" />`),
     metaTag('name', 'robots', ROBOTS_PUBLIC),
     GOOGLE_SITE_VERIFICATION ? metaTag('name', 'google-site-verification', GOOGLE_SITE_VERIFICATION) : '',
     BING_SITE_VERIFICATION ? metaTag('name', 'msvalidate.01', BING_SITE_VERIFICATION) : '',
     metaTag('property', 'og:type', page.og.type),
     metaTag('property', 'og:site_name', SITE_NAME),
-    metaTag('property', 'og:locale', 'en_US'),
+    metaTag('property', 'og:locale', LOCALE_INFO[page.locale].ogLocale),
+    ...page.alternates.filter((a) => a.locale !== page.locale).map((a) => metaTag('property', 'og:locale:alternate', LOCALE_INFO[a.locale].ogLocale)),
     metaTag('property', 'og:url', url),
     metaTag('property', 'og:title', m.title),
     metaTag('property', 'og:description', m.description),
@@ -134,9 +144,10 @@ export function headTags(page: PrerenderPage): string {
   return tags.filter(Boolean).join('\n    ');
 }
 
-function htmlContext(input: SiteBuildInput, prefix: string): HtmlContext {
+/** Rendering context of a page: links lead to pages in its language wherever they exist. */
+function htmlContext(input: SiteBuildInput, prefix: string, locale: Locale = 'en'): HtmlContext {
   const logo = logoSvgMarkup();
-  return { iconSvg: (n) => input.iconSvg(n), logoSvg: () => logo, link: (to) => relativeHref(to, prefix) };
+  return { iconSvg: (n) => input.iconSvg(n), logoSvg: () => logo, link: (to, exact) => relativeHref(exact ? to : localizedPath(to, locale), prefix) };
 }
 
 /** Rewrites the template's "./" asset URLs for a page at another depth. */
@@ -144,12 +155,14 @@ function withPrefix(html: string, prefix: string): string {
   return prefix === './' ? html : html.replace(/(\s(?:href|src)=")\.\//g, `$1${prefix}`);
 }
 
-function setRootAttrs(html: string, tool: string, route: string): string {
-  return html.replace(/<html([^>]*)>/, (_m, a: string) => `<html${a} data-tool="${tool}">`).replace(/<body([^>]*)>/, (_m, a: string) => `<body${a} data-route="${route}">`);
+function setRootAttrs(html: string, tool: string, route: string, locale: Locale = 'en'): string {
+  return html
+    .replace(/<html([^>]*)>/, (_m, a: string) => `<html${a.replace(/\slang="[^"]*"/, ` lang="${LOCALE_INFO[locale].lang}"`)} data-tool="${tool}">`)
+    .replace(/<body([^>]*)>/, (_m, a: string) => `<body${a} data-route="${route}">`);
 }
 
-function shellHtml(ctx: HtmlContext, nav: PrerenderPage['nav'] | null, main: string, boot: 'keep' | 'replace'): string {
-  return renderHtml([skipLink(), topbar(nav)], ctx) + `<main id="main" class="page" tabindex="-1"${boot === 'replace' ? ' data-boot="replace"' : ''}>${main}</main>`;
+function shellHtml(ctx: HtmlContext, nav: PrerenderPage['nav'] | null, main: string, boot: 'keep' | 'replace', locale: Locale = 'en'): string {
+  return renderHtml([skipLink(locale), topbar(nav, locale)], ctx) + `<main id="main" class="page" tabindex="-1"${boot === 'replace' ? ' data-boot="replace"' : ''}>${main}</main>`;
 }
 
 function pageAssets(input: SiteBuildInput, page: PrerenderPage, prefix: string): string {
@@ -168,13 +181,13 @@ function pageAssets(input: SiteBuildInput, page: PrerenderPage, prefix: string):
 
 export function renderPage(input: SiteBuildInput, page: PrerenderPage, year: number): string {
   const prefix = rootPrefix(page.meta.path);
-  const ctx = htmlContext(input, prefix);
+  const ctx = htmlContext(input, prefix, page.locale);
   const view = renderHtml(el('div', { class: page.viewClass }, page.body(year)), ctx);
   let html = withPrefix(input.template, prefix);
   html = html.replace('<!--app-head-->', headTags(page));
   html = html.replace('</head>', `  ${pageAssets(input, page, prefix)}\n  </head>`);
-  html = html.replace('<!--app-html-->', shellHtml(ctx, page.nav, view, page.boot));
-  return setRootAttrs(html, page.tool, page.tool);
+  html = html.replace('<!--app-html-->', shellHtml(ctx, page.nav, view, page.boot, page.locale));
+  return setRootAttrs(html, page.tool, page.tool, page.locale);
 }
 
 /**
@@ -194,7 +207,7 @@ export function render404(input: SiteBuildInput): string {
   const tagsJson = JSON.stringify(assetTags.join('')).replace(/</g, '\\u003c');
   // On *.github.io the first path segment is the repository (project site) unless it is one of
   // the app's own sections (user site). Everywhere else the configured base applies.
-  const sections = [...new Set([...PUBLIC_PAGES.map((p) => p.path.split('/')[1]).filter(Boolean), 'kit', 'assets'])];
+  const sections = [...new Set([...allPublicPages().map((p) => p.path.split('/')[1]).filter(Boolean), ...TRANSLATED_LOCALES, 'kit', 'assets'])];
   const loader = `<script>
       (function () {
         var b = ${JSON.stringify(base)};
@@ -233,9 +246,13 @@ export function render404(input: SiteBuildInput): string {
   return setRootAttrs(html, '', 'missing');
 }
 
+/** Every page with its language versions as xhtml:link alternates (the same set on each of them). */
 export function sitemapXml(buildDate: string): string {
-  const urls = prerenderPages().map((p) => `  <url>\n    <loc>${absoluteUrl(p.meta.path)}</loc>\n    <lastmod>${buildDate}</lastmod>\n  </url>`);
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
+  const urls = prerenderPages().map((p) => {
+    const alts = p.alternates.length > 1 ? alternateLinks(p).map((a) => `\n    <xhtml:link rel="alternate" hreflang="${a.hreflang}" href="${a.href}"/>`).join('') : '';
+    return `  <url>\n    <loc>${absoluteUrl(p.meta.path)}</loc>${alts}\n    <lastmod>${buildDate}</lastmod>\n  </url>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`;
 }
 
 export function robotsTxt(): string {
@@ -286,6 +303,16 @@ export function llmsTxt(): string {
     `- ${mdLink(ABOUT_META, 'About')}: ${ABOUT_META.description}`,
     `- ${mdLink(GUIDES_META, 'All guides')}: ${GUIDES_META.description}`,
     '',
+    '## Other languages',
+    '',
+    'The main pages and guides are also written in these languages (the editors themselves are in English):',
+    '',
+    ...TRANSLATED_LOCALES.map((l) => {
+      const pages = translatedPages(l);
+      const home = pages.find((m) => (m.route ?? m.path) === '/');
+      return home ? `- ${LOCALE_INFO[l].englishName}: [${LOCALE_INFO[l].name}](${absoluteUrl(home.path)}), ${pages.length} pages including ${pages.filter((m) => m.kind === 'guide').length} guides` : '';
+    }).filter(Boolean),
+    '',
     '## Optional',
     '',
     `- [Full text of every public page](${absoluteUrl('llms-full.txt')}): the pages above as one Markdown file`,
@@ -297,7 +324,10 @@ export function llmsTxt(): string {
 
 export function llmsFullTxt(buildDate: string): string {
   const ctx = { link: (to: string) => absoluteUrl(to) };
-  const parts = prerenderPages().map((p) => {
+  // English only: the translations say the same thing.
+  const parts = prerenderPages()
+    .filter((p) => p.locale === 'en')
+    .map((p) => {
     const body = renderMarkdown(p.content(), ctx);
     return `<!-- ${absoluteUrl(p.meta.path)} -->\n\n${body}\n\nSource: ${absoluteUrl(p.meta.path)}`;
   });

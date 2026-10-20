@@ -97,3 +97,13 @@ export const SHOTS = {
     'Making a Vibrant Visuals pack for Bedrock, with a live preview.',
   ),
 } satisfies Record<string, Shot>;
+
+export type ShotKey = keyof typeof SHOTS;
+
+/** A translation's alt text and caption for every screenshot. */
+export type ShotTexts = Record<ShotKey, { alt: string; caption: string }>;
+
+/** The screenshots with a translation's alt texts and captions. */
+export function localShots(texts: ShotTexts): Record<ShotKey, Shot> {
+  return Object.fromEntries((Object.keys(SHOTS) as ShotKey[]).map((k) => [k, { ...SHOTS[k], ...texts[k] }])) as Record<ShotKey, Shot>;
+}

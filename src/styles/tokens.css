@@ -114,6 +114,12 @@
   --selection: rgba(79, 179, 255, 0.35);
 }
 
+/* Texel has Latin (with every accent the translations use), Greek and Cyrillic but no Japanese:
+   kana and kanji fall back to a Japanese system font. Latin words keep the pixel font. */
+:root:lang(ja) {
+  --font: 'Texel', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'BIZ UDPGothic', 'Yu Gothic UI', 'Yu Gothic', Meiryo, 'Noto Sans JP', 'Noto Sans CJK JP', 'IPAPGothic', 'IPAGothic', sans-serif;
+}
+
 /* Smaller secondary text on high-density screens, at sizes that still land on whole device
    pixels: 3 device px per font pixel at 2x and 4x, 5 at 3x (12px there would be 4.5 and blur). */
 @media (min-resolution: 2dppx) {

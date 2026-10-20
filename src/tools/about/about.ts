@@ -7,9 +7,11 @@ import { siteFooter } from '../../app/footer';
 import { toDom } from '../../app/markup-dom';
 import { wireContent } from '../../app/content/wire';
 import { aboutPage } from './content';
+import { loadContent } from '../../i18n/content';
 
-export default function about(root: HTMLElement, _ctx: RouteContext): () => void {
+export default async function about(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+  await loadContent(ctx.locale);
   root.classList.add('guides');
-  root.append(toDom(aboutPage()), siteFooter());
+  root.append(toDom(aboutPage(ctx.locale)), siteFooter());
   return wireContent(root);
 }

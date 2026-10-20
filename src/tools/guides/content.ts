@@ -2,15 +2,22 @@
 // to DOM by guides.ts, and turned into HowTo / FAQPage / TechArticle data and llms-full.txt.
 // Facts come from the app's own data (pack formats, version rules) and the project's research
 // notes on Java and Bedrock packs, Vibrant Visuals and shader packs.
+// The English text is GUIDE_CONTENT; a translation gives a guide the same GuideText
+// (src/i18n/<lang>/guides.ts) and its title and description in src/i18n/<lang>/meta.ts.
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../../app/markup';
 import { breadcrumbs, callout, code, ext, faqList, figure, folderTable, link, steps, strong, tabbed, uiPath, type FaqItem, type Shot } from '../../app/content/blocks';
 import { SHOTS } from '../../app/content/shots';
 import { guideCards } from '../../app/content/guide-cards';
-import { GUIDES, GUIDES_META, type GuideMeta } from '../../app/seo/meta';
+import { GUIDES, GUIDES_META, guideMeta, guidesIn, pageMeta, type GuideMeta } from '../../app/seo/meta';
 import { CONTENT_UPDATED, SITE_NAME } from '../../app/site';
-import { KNOWN_RELEASES, KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../editions/java/packformats';
+import { F, LATEST, MIN_ENGINE, NEXT_SNAPSHOT, formatGroups, formatParts, maxFormat, mcmetaFor, mcmetaLegacy, mcmetaRange, minFormat } from '../../app/content/facts';
+import type { Locale } from '../../i18n/locales';
+import { ui } from '../../i18n/ui';
+import { contentOf, hasContent } from '../../i18n/content';
+
+export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
 export interface GuideSection {
   id: string;
@@ -34,6 +41,27 @@ export interface Guide {
   cta?: { label: string; to: string; icon: IconName };
 }
 
+/** The translatable part of a guide (its title and description are in the meta translations). */
+export interface GuideText {
+  intro: Child[];
+  image?: Shot;
+  quick?: Guide['quick'];
+  sections: GuideSection[];
+  howto?: Guide['howto'];
+  faq?: FaqItem[];
+  /** Text of the call-to-action button */
+  ctaLabel?: string;
+}
+
+/** Texts of the /guides/ index. */
+export interface GuidesIndexText {
+  eyebrow: string;
+  title: string;
+  lead: string;
+  /** Closing line with a link to the help page */
+  more: Child[];
+}
+
 const meta = (slug: string): GuideMeta => {
   const g = GUIDES.find((x) => x.slug === slug);
   if (!g) throw new Error(`Unknown guide ${slug}`);
@@ -55,25 +83,6 @@ const table = (head: string[], rows: Child[][], cls = 'guide-table'): ElNode =>
     ),
   );
 
-const F = (id: string): string => formatPackFormat(KNOWN_RELEASE_FORMATS[id]);
-const LATEST = '26.3';
-/** Default Bedrock min_engine_version of exported packs (editions/bedrock/manifest.ts, checked by a unit test). */
-export const BEDROCK_MIN_ENGINE: [number, number, number] = [1, 21, 0];
-const MIN_ENGINE = `[${BEDROCK_MIN_ENGINE.join(', ')}]`;
-
-// ---------------------------------------------------------------- pack format table (app data)
-
-/** Releases grouped by resource pack format, oldest first: [format, [first, ..., last]] */
-export function formatGroups(): { format: string; versions: string[] }[] {
-  const groups: { format: string; versions: string[] }[] = [];
-  for (const id of KNOWN_RELEASES) {
-    const f = formatPackFormat(KNOWN_RELEASE_FORMATS[id]);
-    const last = groups[groups.length - 1];
-    if (last && last.format === f) last.versions.push(id);
-    else groups.push({ format: f, versions: [id] });
-  }
-  return groups;
-}
 
 // ---------------------------------------------------------------- guides
 
@@ -281,7 +290,7 @@ export const GUIDE_CONTENT: Guide[] = [
             LATEST,
             ' looks like this:',
           ),
-          pre(`{\n  "pack": {\n    "description": "My pack for Minecraft 26.3",\n    "min_format": [97, 1],\n    "max_format": 97\n  }\n}`),
+          pre(mcmetaFor(LATEST, `My pack for Minecraft ${LATEST}`)),
           p(
             'Since 1.21.9 packs name a range with ',
             code('min_format'),
@@ -750,7 +759,7 @@ export const GUIDE_CONTENT: Guide[] = [
       title: `Quick answer: Minecraft ${LATEST}`,
       items: [
         ['Resource pack format: ', strong(F(LATEST)), '.'],
-        ['In ', code('pack.mcmeta'), ' write ', code('"min_format": [97, 1]'), ' and ', code('"max_format": 97'), ' (the format is split into a major and a minor number since 1.21.9).'],
+        ['In ', code('pack.mcmeta'), ' write ', code(`"min_format": ${minFormat(LATEST)}`), ' and ', code(`"max_format": ${maxFormat(LATEST)}`), ' (the format is split into a major and a minor number since 1.21.9).'],
         ['A pack for older versions too also needs ', code('pack_format'), ' and ', code('supported_formats'), '. The table below lists every version.'],
       ],
     },
@@ -770,7 +779,7 @@ export const GUIDE_CONTENT: Guide[] = [
           p(
             'Since the 1.21.9 cycle a format can also have a minor number: ',
             F(LATEST),
-            ' means major 97, minor 1. Mojang raises the minor number for additions that do not break older packs. At the time of writing, the first 26.4 snapshot uses 98.0.',
+            ` means major ${formatParts(LATEST).major}, minor ${formatParts(LATEST).minor}. Mojang raises the minor number for additions that do not break older packs. At the time of writing, the first ${NEXT_SNAPSHOT.version} snapshot uses ${NEXT_SNAPSHOT.format}.`,
           ),
         ],
       },
@@ -794,13 +803,13 @@ export const GUIDE_CONTENT: Guide[] = [
         title: 'Examples',
         body: [
           el('h3', { class: 'guide-sub' }, `Only Java ${LATEST}`),
-          pre(`{\n  "pack": {\n    "description": "My pack for Minecraft 26.3",\n    "min_format": [97, 1],\n    "max_format": 97\n  }\n}`),
-          p('A bare number in ', code('max_format'), ' means “any minor version”, so 97 covers 97.0 and 97.1. Writing ', code('[97, 0]'), ' there would make the pack too old for 26.3.'),
+          pre(mcmetaFor(LATEST, `My pack for Minecraft ${LATEST}`)),
+          p('A bare number in ', code('max_format'), ` means “any minor version”, so ${maxFormat(LATEST)} covers ${maxFormat(LATEST)}.0 and ${F(LATEST)}. Writing `, code(`[${maxFormat(LATEST)}, 0]`), ` there would make the pack too old for ${LATEST}.`),
           el('h3', { class: 'guide-sub' }, `From 1.20.1 to ${LATEST}`),
-          pre(`{\n  "pack": {\n    "description": "My pack for Minecraft 1.20.1 - 26.3",\n    "pack_format": 15,\n    "supported_formats": [15, 97],\n    "min_format": 15,\n    "max_format": 97\n  }\n}`),
+          pre(mcmetaRange('1.20.1', LATEST, `My pack for Minecraft 1.20.1 - ${LATEST}`)),
           p('1.20.1 reads ', code('pack_format'), ', 1.20.2 – 1.21.8 read ', code('supported_formats'), ' and 1.21.9 and newer read ', code('min_format'), ' and ', code('max_format'), '.'),
           el('h3', { class: 'guide-sub' }, 'Only 1.20.1 (and 1.20)'),
-          pre(`{\n  "pack": {\n    "pack_format": 15,\n    "description": "My pack for Minecraft 1.20.1"\n  }\n}`),
+          pre(mcmetaLegacy('1.20.1', 'My pack for Minecraft 1.20.1')),
           callout('tip', 'Let the tool do it', 'In the Texture Pack Maker, pick your version and, if you like, a compatibility range in the Pack tab. The export gets exactly the fields each version needs.'),
         ],
       },
@@ -828,7 +837,7 @@ export const GUIDE_CONTENT: Guide[] = [
       {
         id: 'latest',
         q: `What is the resource pack format for Minecraft ${LATEST}?`,
-        a: [p(`${F(LATEST)}. Write "min_format": [97, 1] and "max_format": 97 in pack.mcmeta for a ${LATEST}-only pack.`)],
+        a: [p(`${F(LATEST)}. Write "min_format": ${minFormat(LATEST)} and "max_format": ${maxFormat(LATEST)} in pack.mcmeta for a ${LATEST}-only pack.`)],
       },
       {
         id: '1211',
@@ -1216,31 +1225,40 @@ export const GUIDE_CONTENT: Guide[] = [
   },
 ];
 
-export function guideBySlug(slug: string): Guide | undefined {
-  return GUIDE_CONTENT.find((g) => g.meta.slug === slug);
+/** A guide in a language: undefined when it does not exist or is not translated into that language. */
+export function guideBySlug(slug: string, locale: Locale = 'en'): Guide | undefined {
+  const en = GUIDE_CONTENT.find((g) => g.meta.slug === slug);
+  if (!en || locale === 'en') return en;
+  const meta = guideMeta(slug, locale);
+  const text = hasContent(locale) ? contentOf(locale).guides[slug] : undefined;
+  if (!meta || !text) return undefined;
+  const { ctaLabel, ...rest } = text;
+  return { meta, related: en.related, cta: en.cta && { ...en.cta, label: ctaLabel ?? en.cta.label }, ...rest };
 }
 
-function dateText(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  return `${d} ${months[m - 1]} ${y}`;
+/** Every guide available in a language. */
+export function guidesContentIn(locale: Locale): Guide[] {
+  return GUIDES.map((g) => guideBySlug(g.slug, locale)).filter((g): g is Guide => !!g);
 }
 
 /** A whole guide page (without the footer). */
 export function guidePage(g: Guide): ElNode {
   const m = g.meta;
+  const locale = m.locale ?? 'en';
+  const u = ui(locale);
+  const index = pageMeta(GUIDES_META.path, locale) ?? GUIDES_META;
   const hasToc = g.sections.length > 2;
   return el(
     'article',
     { class: ['guide-page', 'container', m.accent], 'aria-labelledby': 'guide-title' },
-    breadcrumbs([{ label: 'Home', to: '/' }, { label: 'Guides', to: '/guides' }, { label: m.label }]),
+    breadcrumbs([{ label: u.home, to: '/' }, { label: index.label, to: '/guides' }, { label: m.label }], u.breadcrumb),
     el(
       'header',
       { class: 'guide-hero' },
-      el('span', { class: 'eyebrow' }, ic(m.icon as IconName), 'Guide'),
+      el('span', { class: 'eyebrow' }, ic(m.icon as IconName), u.guide),
       el('h1', { id: 'guide-title', class: 'pixel-shadow' }, m.h1),
       el('div', { class: 'guide-intro-text lead' }, g.intro),
-      el('p', { class: 'guide-meta faint small' }, ic('clock', { size: 24 }), el('span', null, 'Updated ', el('time', { datetime: CONTENT_UPDATED }, dateText(CONTENT_UPDATED)))),
+      el('p', { class: 'guide-meta faint small' }, ic('clock', { size: 24 }), el('span', null, `${u.updated} `, el('time', { datetime: CONTENT_UPDATED }, u.date(CONTENT_UPDATED)))),
     ),
     g.quick
       ? el(
@@ -1256,10 +1274,10 @@ export function guidePage(g: Guide): ElNode {
       hasToc
         ? el(
             'nav',
-            { class: 'guide-toc', 'aria-label': 'On this page', 'data-md': 'skip' },
-            el('div', { class: 'section-title' }, 'On this page'),
+            { class: 'guide-toc', 'aria-label': u.onThisPage, 'data-md': 'skip' },
+            el('div', { class: 'section-title' }, u.onThisPage),
             g.sections.map((s) => el('a', { class: 'toc-link', href: `#${s.id}` }, el('span', null, s.title))),
-            g.faq?.length ? el('a', { class: 'toc-link', href: '#questions' }, el('span', null, 'Questions')) : null,
+            g.faq?.length ? el('a', { class: 'toc-link', href: '#questions' }, el('span', null, u.questions)) : null,
           )
         : null,
       el(
@@ -1270,7 +1288,7 @@ export function guidePage(g: Guide): ElNode {
           ? el(
               'section',
               { class: 'guide-section', id: 'questions', 'aria-labelledby': 'questions-title' },
-              el('h2', { id: 'questions-title' }, 'Questions'),
+              el('h2', { id: 'questions-title' }, u.questions),
               el('div', { class: 'guide-faq accent-gold' }, faqList(g.faq, { idPrefix: `${m.slug}-faq` })),
             )
           : null,
@@ -1283,30 +1301,31 @@ export function guidePage(g: Guide): ElNode {
           : null,
       ),
     ),
-    el('section', { class: 'guide-related', 'aria-labelledby': 'related-title' }, el('h2', { id: 'related-title' }, 'Related guides'), guideCards(g.related, 'h3', 3)),
+    el('section', { class: 'guide-related', 'aria-labelledby': 'related-title' }, el('h2', { id: 'related-title' }, u.relatedGuides), guideCards(g.related, 'h3', 3, locale)),
   );
 }
 
+export const GUIDES_INDEX_EN: GuidesIndexText = {
+  eyebrow: 'Guides',
+  title: 'Minecraft pack, skin and shader guides',
+  lead: 'Clear, fact-checked answers for Minecraft creators: how to make and install texture packs, skins and shaders on Java and Bedrock, and which pack format each Java version needs.',
+  more: ['Looking for step-by-step install instructions for every platform? See the ', link('/help', 'install guide & FAQ'), '.'],
+};
+
 /** The /guides/ index page (without the footer). */
-export function guidesIndexPage(): ElNode {
+export function guidesIndexPage(locale: Locale = 'en'): ElNode {
+  const t = locale === 'en' ? GUIDES_INDEX_EN : (contentOf(locale).guidesIndex ?? GUIDES_INDEX_EN);
+  const u = ui(locale);
+  const meta = pageMeta(GUIDES_META.path, locale) ?? GUIDES_META;
+  const partial = guidesIn(locale).length < GUIDES.length;
   return el(
     'div',
     { class: 'guides-index container' },
-    breadcrumbs([{ label: 'Home', to: '/' }, { label: GUIDES_META.label }]),
-    el(
-      'header',
-      { class: 'guide-hero' },
-      el('span', { class: 'eyebrow' }, ic('book-open'), 'Guides'),
-      el('h1', { class: 'pixel-shadow' }, 'Minecraft pack, skin and shader guides'),
-      el('p', { class: 'lead' }, 'Clear, fact-checked answers for Minecraft creators: how to make and install texture packs, skins and shaders on Java and Bedrock, and which pack format each Java version needs.'),
-    ),
-    guideCards(undefined, 'h2', 2),
-    el(
-      'p',
-      { class: 'guides-more muted' },
-      'Looking for step-by-step install instructions for every platform? See the ',
-      link('/help', 'install guide & FAQ'),
-      '.',
-    ),
+    breadcrumbs([{ label: u.home, to: '/' }, { label: meta.label }], u.breadcrumb),
+    el('header', { class: 'guide-hero' }, el('span', { class: 'eyebrow' }, ic('book-open'), t.eyebrow), el('h1', { class: 'pixel-shadow' }, t.title), el('p', { class: 'lead' }, t.lead)),
+    guideCards(undefined, 'h2', 2, locale),
+    el('p', { class: 'guides-more muted' }, t.more),
+    // Guides not translated yet are listed on the English index.
+    partial ? el('p', { class: 'guides-more muted' }, el('a', { to: GUIDES_META.path, hreflang: 'en' }, u.englishOnly)) : null,
   );
 }

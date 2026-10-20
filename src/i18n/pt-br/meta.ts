@@ -1,0 +1,111 @@
+// Brazilian Portuguese page titles, descriptions and short names (see MetaTranslation in
+// src/app/seo/meta.ts).
+
+import type { MetaTranslation } from '../../app/seo/meta';
+import { F, LATEST } from '../../app/content/facts';
+
+export const META_PT_BR: MetaTranslation = {
+  pages: {
+    '/': {
+      title: 'Criar texture pack de Minecraft grátis – Java e Bedrock',
+      description: `Crie seu texture pack de Minecraft em minutos: pinte blocos em modelos 3D, aplique estilos com um clique e exporte .zip ou .mcpack. Grátis, Java ${LATEST}.`,
+      label: 'Início',
+    },
+    '/textures': {
+      title: 'Editor de texture pack e criador de pacote de recursos',
+      description: 'Edite qualquer textura do Minecraft: pinte blocos, itens e mobs em modelos 3D, envie PNGs ou mude o estilo do jogo com um clique. Exporte .zip ou .mcpack.',
+      label: 'Texture packs',
+    },
+    '/texture-pack-converter': {
+      title: 'Conversor de texture pack de Minecraft: Java para Bedrock',
+      description: 'Converta um texture pack de Minecraft de Java para Bedrock, de Bedrock para Java ou entre versões do Java, ou transforme PNGs em .mcpack. Grátis e online.',
+      label: 'Conversor de texture pack',
+    },
+    '/merge-texture-packs': {
+      title: 'Juntar texture packs de Minecraft online – Java e Bedrock',
+      description: 'Junte vários texture packs de Minecraft em um único .zip ou .mcpack. Coloque em ordem e o pack de cima vence, como no jogo. Grátis, no seu navegador.',
+      label: 'Juntar texture packs',
+    },
+    '/skins': {
+      title: 'Editor de skin de Minecraft e criador de pacote de skins',
+      description: 'Pinte uma skin de Minecraft em 2D ou 3D, com braços clássicos ou finos, e exporte um PNG para Java ou um pacote de skins do Bedrock (.mcpack). Grátis.',
+      label: 'Skins',
+    },
+    '/skin-pack-maker': {
+      title: 'Criar pacote de skins de Minecraft grátis (.mcpack Bedrock)',
+      description: 'Crie seu pacote de skins de Minecraft online: pinte ou envie skins, misture braços clássicos e finos e baixe um .mcpack do Bedrock pronto para o jogo.',
+      label: 'Criador de pacote de skins',
+    },
+    '/shaders': {
+      title: 'Criar shaders de Minecraft: Iris, OptiFine e sem mods',
+      description: 'Crie shader packs para Iris ou OptiFine, shaders vanilla sem mods para Java ou pacotes de Visuais Vibrantes para Bedrock, com presets e prévia 3D ao vivo.',
+      label: 'Shaders',
+    },
+    '/help': {
+      title: 'Como instalar texture packs, skins e shaders no Minecraft',
+      description: 'Instale texture packs, skins e shaders no Minecraft Java e Bedrock no PC, Mac, celular e console, ache a pasta resourcepacks e resolva erros comuns.',
+      label: 'Ajuda',
+    },
+    '/about': {
+      title: 'Sobre o Texture Pack Maker: ferramentas grátis e abertas',
+      description: 'Quem faz o Texture Pack Maker, o que o torna diferente (toda versão do Java desde 1.6.1, Bedrock, conversor, código aberto) e como protege seu trabalho.',
+      label: 'Sobre',
+    },
+    '/guides': {
+      title: 'Guias de Minecraft: texture packs, skins e shaders',
+      description: `Guias passo a passo para criar e instalar texture packs, skins e shaders de Minecraft, além do pack format de cada versão do Java de 1.6.1 a ${LATEST}.`,
+      label: 'Guias',
+    },
+  },
+  guides: {
+    'make-a-texture-pack': {
+      title: 'Como fazer um texture pack de Minecraft (Java e Bedrock)',
+      h1: 'Como fazer um texture pack de Minecraft',
+      description: 'Crie seu texture pack de Minecraft grátis: escolha a versão, pinte texturas, exporte um .zip com pack.mcmeta (Java) ou um .mcpack (Bedrock) e instale.',
+      label: 'Fazer um texture pack',
+      blurb: 'Escolha a versão, pinte texturas e exporte um pack que o Minecraft carrega.',
+    },
+    'install-resource-packs': {
+      title: 'Como instalar texture pack no Minecraft (Java e Bedrock)',
+      h1: 'Como instalar texture packs, shaders e arquivos .mcpack no Minecraft',
+      description: 'Instale um pacote de recursos no Java, importe um .mcpack do Bedrock no PC ou celular, use shaders com Iris ou OptiFine e resolva packs que não aparecem.',
+      label: 'Instalar packs e shaders',
+      blurb: 'Pacotes de recursos do Java, arquivos .mcpack do Bedrock e shader packs, com soluções.',
+    },
+    'texture-pack-not-working': {
+      title: 'Texture pack do Minecraft não funciona? Veja as soluções',
+      h1: 'Texture pack do Minecraft não funciona? Como resolver',
+      description: 'Pack não aparece na lista, “versão mais antiga”, blocos roxos e pretos, grama cinza, .mcpack que não importa: o que significa cada problema e a solução.',
+      label: 'Pack não funciona? Soluções',
+      blurb: 'Packs que não aparecem, avisos de versão, blocos roxos e pretos e mais.',
+    },
+    'minecraft-pack-format-versions': {
+      title: `Pack format do Minecraft ${LATEST} (${F(LATEST)}) e todas as versões`,
+      h1: `Pack format do Minecraft para cada versão do Java (${LATEST} usa ${F(LATEST)})`,
+      description: `Cada versão do Minecraft Java de 1.6.1 a ${LATEST} com o formato do pacote de recursos (${LATEST} usa ${F(LATEST)}) e como o pack.mcmeta mudou ao longo dos anos.`,
+      label: 'Pack format de cada versão',
+      blurb: `O pack format de cada versão do Java, de 1.6.1 a ${LATEST}.`,
+    },
+    'make-a-skin': {
+      title: 'Como fazer uma skin de Minecraft (Java e Bedrock)',
+      h1: 'Como fazer sua própria skin de Minecraft',
+      description: 'Faça uma skin de Minecraft grátis: pinte o modelo 64×64 em 2D ou 3D, escolha braços clássicos ou finos e use no Java ou em um pacote de skins do Bedrock.',
+      label: 'Fazer uma skin',
+      blurb: 'Pinte o modelo 64×64 e use no Java ou em um pacote de skins do Bedrock.',
+    },
+    'make-shaders-without-mods': {
+      title: 'Shaders de Minecraft sem mods nem OptiFine (Java e Bedrock)',
+      h1: 'Dá para ter shaders no Minecraft sem mods?',
+      description: 'Sim: no Java 1.17+ um pacote de recursos troca os shaders do jogo (sem OptiFine ou Iris) e o Bedrock tem Visuais Vibrantes. O que dá para fazer e como.',
+      label: 'Shaders sem mods',
+      blurb: 'O que os shaders vanilla do Java e os Visuais Vibrantes do Bedrock conseguem fazer.',
+    },
+    'java-vs-bedrock-packs': {
+      title: 'Texture packs Java vs Bedrock: diferenças e compatibilidade',
+      h1: 'Texture packs do Java vs Bedrock: diferenças e como converter',
+      description: 'Texture packs do Java funcionam no Bedrock? Não: o Java usa .zip + pack.mcmeta e o Bedrock .mcpack + manifest.json. Pastas, nomes, shaders e skins.',
+      label: 'Packs do Java vs Bedrock',
+      blurb: 'Arquivos, pastas, formatos, shaders e skins comparados lado a lado.',
+    },
+  },
+};

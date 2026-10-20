@@ -8,11 +8,13 @@ import { siteFooter } from '../../app/footer';
 import { toDom } from '../../app/markup-dom';
 import { wireContent } from '../../app/content/wire';
 import { guideBySlug, guidePage, guidesIndexPage } from './content';
+import { loadContent } from '../../i18n/content';
 
-export default function guides(root: HTMLElement, ctx: RouteContext): () => void {
+export default async function guides(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+  await loadContent(ctx.locale);
   root.classList.add('guides');
   const slug = ctx.path.split('/')[2];
-  const guide = slug ? guideBySlug(slug) : undefined;
-  root.append(toDom(guide ? guidePage(guide) : guidesIndexPage()), siteFooter());
+  const guide = slug ? guideBySlug(slug, ctx.locale) : undefined;
+  root.append(toDom(guide ? guidePage(guide) : guidesIndexPage(ctx.locale)), siteFooter());
   return wireContent(root);
 }
