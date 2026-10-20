@@ -58,6 +58,7 @@ const REQUIRED_ROUTES = [
   '/shaders',
   '/help',
   '/about',
+  '/all',
   '/guides',
   '/guides/make-a-texture-pack',
   '/guides/install-resource-packs',

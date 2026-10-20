@@ -11,6 +11,7 @@ import { F, LATEST } from '../../app/content/facts';
 import { differences } from '../about/content';
 import type { Locale } from '../../i18n/locales';
 import { contentOf } from '../../i18n/content';
+import { ui } from '../../i18n/ui';
 
 export type ToolKey = 'textures' | 'skins' | 'shaders';
 
@@ -439,7 +440,7 @@ export function homePage(locale: Locale = 'en'): ElNode[] {
     { class: 'section home-guides container', 'aria-labelledby': 'guides-title' },
     sectionHead('book-open', t.guides.eyebrow, 'guides-title', t.guides.title, t.guides.lead),
     guideCards(['make-a-texture-pack', 'install-resource-packs', 'texture-pack-not-working', 'make-a-skin', 'make-shaders-without-mods', 'java-vs-bedrock-packs'], 'h3', 3, locale),
-    el('p', { class: 'home-guides-more' }, link('/guides', t.guides.all, ic('arrow-right'))),
+    el('p', { class: 'home-guides-more' }, link('/guides', t.guides.all, ic('arrow-right')), link('/all', ui(locale).footer.everything, ic('arrow-right'))),
   );
 
   const faq = el(

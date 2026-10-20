@@ -1,0 +1,75 @@
+/* "Everything" page: jump links, then one card grid per section (cards are the guide cards). */
+
+.all-page {
+  padding-bottom: 48px;
+}
+.all-page .guide-hero {
+  max-width: 760px;
+}
+
+.all-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.all-jump-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 12px 6px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease);
+}
+.all-jump-link .icon {
+  color: var(--tool-accent);
+}
+.all-jump-link:hover {
+  border-color: color-mix(in srgb, var(--tool-accent) 55%, var(--border));
+  background: var(--surface-2);
+  text-decoration: none;
+}
+
+.all-section {
+  margin-top: 40px;
+  scroll-margin-top: calc(var(--topbar-h, 64px) + 16px);
+}
+.all-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.all-section-head h2 {
+  margin: 0;
+}
+.all-section-head p {
+  margin: 4px 0 0;
+}
+.all-section-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+}
+
+@media (max-width: 640px) {
+  .all-section {
+    margin-top: 32px;
+  }
+  .all-page .guide-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

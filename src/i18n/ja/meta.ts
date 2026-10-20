@@ -61,6 +61,11 @@ export const META_JA: MetaTranslation = {
       description: 'Texture Pack Makerにはアカウントも広告もトラッキングもありません。パック、スキン、シェーダーは端末に残り、作ったものは一切アップロードされません。',
       label: 'プライバシー',
     },
+    '/all': {
+      title: 'マイクラのパック・スキン・シェーダー作成ツール一覧',
+      description: 'Texture Pack Makerの無料ツール、機能、ガイドをまとめて紹介。テクスチャパック、3Dモデル、サウンド、スキン、スキンパック、シェーダーまで。',
+      label: 'すべての機能',
+    },
     '/guides': {
       title: 'マイクラ テクスチャパック・スキン・シェーダーのガイド',
       description: `Minecraftのテクスチャパック、スキン、シェーダーの作り方と入れ方を手順つきで解説。1.6.1から${LATEST}までの全Java版のパックフォーマットも掲載。`,

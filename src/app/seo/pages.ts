@@ -8,7 +8,7 @@ import { footer, type NavTool } from '../content/chrome';
 import type { Crumb } from '../content/blocks';
 import { TOOL_INTROS, toolIntro, toolIntroIn, type IntroTool } from '../content/tools';
 import { absoluteUrl, SITE_NAME } from '../site';
-import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, PRIVACY_META, TOOL_META, guidesIn, metaLocale, metaRoute, pageLocales, pageMeta, type PageMeta } from './meta';
+import { ABOUT_META, ALL_META, GUIDES, GUIDES_META, HELP_META, HOME_META, PRIVACY_META, TOOL_META, guidesIn, metaLocale, metaRoute, pageLocales, pageMeta, type PageMeta } from './meta';
 import {
   APP_ID,
   DEFAULT_SCREENSHOT,
@@ -30,6 +30,7 @@ import { helpPage, helpSections, helpText } from '../../tools/help/content';
 import { guideBySlug, guidePage, guidesIndexPage } from '../../tools/guides/content';
 import { aboutPage, aboutText } from '../../tools/about/content';
 import { privacyPage } from '../../tools/privacy/content';
+import { allPage } from '../../tools/all/content';
 import { CONTENT_MODULES, contentOf, hasContent } from '../../i18n/content';
 import { TRANSLATED_LOCALES, type Locale } from '../../i18n/locales';
 import { ui } from '../../i18n/ui';
@@ -245,6 +246,24 @@ function aboutEntry(locale: Locale): PrerenderPage | null {
   };
 }
 
+function allEntry(locale: Locale): PrerenderPage | null {
+  const meta = pageMeta(ALL_META.path, locale);
+  if (!meta || !hasText(locale, (c) => c.all)) return null;
+  return {
+    ...base(meta, ['src/tools/all/all.ts']),
+    tool: 'help',
+    nav: 'help',
+    viewClass: 'view view-help guides',
+    boot: 'keep',
+    styles: ['src/tools/all/all.ts'],
+    body: (year) => [allPage(locale), footerFor(meta)(year)],
+    content: () => [allPage(locale)],
+    preconnect: false,
+    og: { type: 'website', image: shotIn(locale, 'home') },
+    jsonld: () => graph([organization(), website(), webPage(meta, { type: 'CollectionPage', breadcrumb: true }), breadcrumbList(meta, crumbsFor(locale, { label: meta.label }), urlIn(locale))]),
+  };
+}
+
 function privacyEntry(locale: Locale): PrerenderPage | null {
   const meta = pageMeta(PRIVACY_META.path, locale);
   if (!meta) return null;
@@ -337,7 +356,7 @@ function hasText(locale: Locale, pick: (c: ReturnType<typeof contentOf>) => unkn
 /** Every page of one language, in sitemap order (pages it has no translation for are left out). */
 export function pagesIn(locale: Locale): PrerenderPage[] {
   const tools: IntroTool[] = ['textures', 'converter', 'merge', 'totem', 'skins', 'skinpack', 'shaders'];
-  return [homeEntry(locale), ...tools.map((t) => toolEntry(t, locale)), helpEntry(locale), aboutEntry(locale), guidesIndexEntry(locale), ...GUIDES.map((g) => guideEntry(g.slug, locale)), privacyEntry(locale)].filter(
+  return [homeEntry(locale), ...tools.map((t) => toolEntry(t, locale)), helpEntry(locale), aboutEntry(locale), allEntry(locale), guidesIndexEntry(locale), ...GUIDES.map((g) => guideEntry(g.slug, locale)), privacyEntry(locale)].filter(
     (p): p is PrerenderPage => !!p,
   );
 }

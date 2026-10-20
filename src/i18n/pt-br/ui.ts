@@ -31,6 +31,7 @@ export const UI_PT_BR: UiText = {
     totem: 'Criador de totens',
     shaders: 'Criador de shaders',
     allGuides: 'Todos os guias',
+    everything: 'Tudo no site',
     installGuide: 'Guia de instalação',
     faq: 'Perguntas frequentes',
     about: 'Sobre',

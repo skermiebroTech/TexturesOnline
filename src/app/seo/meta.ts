@@ -9,7 +9,7 @@ import { META_ES } from '../../i18n/es/meta';
 import { META_PT_BR } from '../../i18n/pt-br/meta';
 import { META_JA } from '../../i18n/ja/meta';
 
-export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'privacy' | 'guides' | 'guide';
+export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'privacy' | 'all' | 'guides' | 'guide';
 export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
 
 export interface PageMeta {
@@ -146,6 +146,16 @@ export const PRIVACY_META: PageMeta = {
   description:
     'Texture Pack Maker has no accounts, ads or tracking. Your packs, skins and shaders stay on your device and nothing you make is uploaded.',
   label: 'Privacy',
+};
+
+export const ALL_META: PageMeta = {
+  path: '/all',
+  kind: 'all',
+  tool: 'help',
+  title: 'All Minecraft Pack, Skin & Shader Tools — Texture Pack Maker',
+  description:
+    'Every free tool, feature and guide on Texture Pack Maker in one place: texture packs, 3D models, sounds, skins, skin packs, shaders and more.',
+  label: 'Everything',
 };
 
 export const GUIDES_META: PageMeta = {
@@ -296,7 +306,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, GUIDES_META, ...GUIDES, PRIVACY_META];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, ALL_META, GUIDES_META, ...GUIDES, PRIVACY_META];
 
 // ---------------------------------------------------------------- translations
 

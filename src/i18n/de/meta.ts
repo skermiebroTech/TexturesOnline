@@ -60,6 +60,11 @@ export const META_DE: MetaTranslation = {
       description: 'Texture Pack Maker hat keine Konten, keine Werbung und kein Tracking. Packs, Skins und Shader bleiben auf deinem Gerät, nichts wird hochgeladen.',
       label: 'Datenschutz',
     },
+    '/all': {
+      title: 'Alle Minecraft-Tools für Packs, Skins und Shader',
+      description: 'Alle kostenlosen Tools, Funktionen und Anleitungen von Texture Pack Maker an einem Ort: Texture Packs, 3D-Modelle, Sounds, Skins, Skinpakete und Shader.',
+      label: 'Alles auf einen Blick',
+    },
     '/guides': {
       title: 'Anleitungen zu Minecraft Texture Packs, Skins & Shadern',
       description: `Schritt-für-Schritt-Anleitungen zum Erstellen und Installieren von Minecraft Texture Packs, Skins und Shadern, plus jedes Pack-Format von 1.6.1 bis ${LATEST}.`,

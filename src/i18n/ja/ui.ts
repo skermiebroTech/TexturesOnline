@@ -29,6 +29,7 @@ export const UI_JA: UiText = {
     totem: 'トーテム作成',
     shaders: 'シェーダー作成',
     allGuides: 'すべてのガイド',
+    everything: 'すべての機能',
     installGuide: '導入ガイド',
     faq: 'よくある質問',
     about: 'このサイトについて',

@@ -155,6 +155,7 @@ export function footer(year: number, locale: Locale = 'en', route = '/'): ElNode
           'div',
           { class: 'footer-col' },
           el('div', { class: 'section-title' }, f.learn),
+          el('a', { to: '/all' }, f.everything),
           el('a', { to: '/help' }, f.installGuide),
           el('a', { to: '/help?s=faq' }, f.faq),
           el('a', { to: '/about' }, f.about),

@@ -21,6 +21,7 @@ import type { HelpText } from '../tools/help/content';
 import type { AboutText } from '../tools/about/content';
 import type { GuideText, GuidesIndexText } from '../tools/guides/content';
 import type { PrivacyText } from '../tools/privacy/content';
+import type { AllText } from '../tools/all/content';
 
 export interface LocaleContent {
   home?: HomeText;
@@ -31,6 +32,7 @@ export interface LocaleContent {
   /** By guide slug */
   guides: Partial<Record<string, GuideText>>;
   privacy?: PrivacyText;
+  all?: AllText;
 }
 
 const store = new Map<TranslatedLocale, LocaleContent>();

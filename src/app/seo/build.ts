@@ -8,7 +8,7 @@ import { logoSvgMarkup } from '../../ui/logo';
 import { el, escapeAttr, escapeHtml, flatten, ic, renderHtml, renderMarkdown, renderText, type Child, type HtmlContext } from '../markup';
 import { skipLink, topbar } from '../content/chrome';
 import { BING_SITE_VERIFICATION, GOOGLE_SITE_VERIFICATION, REPO_URL, SITE_NAME, SITE_SUMMARY, SITE_URL, absoluteUrl } from '../site';
-import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, TOOL_META, allPublicPages, localizedPath, translatedPages, type PageMeta } from './meta';
+import { ABOUT_META, ALL_META, GUIDES, GUIDES_META, HELP_META, TOOL_META, allPublicPages, localizedPath, translatedPages, type PageMeta } from './meta';
 import { LOCALE_INFO, TRANSLATED_LOCALES, splitLocale, type Locale } from '../../i18n/locales';
 import { PRERENDERED_ATTR, PRERENDERED_YEAR_ATTR, prerenderedKey } from '../hydrate-attrs';
 import { TOOL_INTROS } from '../content/tools';
@@ -319,11 +319,12 @@ export function llmsTxt(): string {
     '',
     `- ${mdLink(HELP_META, 'Install guide & FAQ')}: ${HELP_META.description}`,
     `- ${mdLink(ABOUT_META, 'About')}: ${ABOUT_META.description}`,
+    `- ${mdLink(ALL_META, 'Everything on the site')}: ${ALL_META.description}`,
     `- ${mdLink(GUIDES_META, 'All guides')}: ${GUIDES_META.description}`,
     '',
     '## Other languages',
     '',
-    'The main pages and guides are also written in these languages (the editors themselves are in English):',
+    'Every page, guide and editor is also available in these languages:',
     '',
     ...TRANSLATED_LOCALES.map((l) => {
       const pages = translatedPages(l);

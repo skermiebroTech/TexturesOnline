@@ -7,7 +7,7 @@
 // Pure helpers (parseLocation, matchRoute, resolveRoute, toHref, stripBase) have no DOM dependency.
 
 import { appBasePath } from './base';
-import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, PRIVACY_META, TOOL_META, localizedPath, pageMeta } from '../app/seo/meta';
+import { ABOUT_META, ALL_META, GUIDES, GUIDES_META, HELP_META, HOME_META, PRIVACY_META, TOOL_META, localizedPath, pageMeta } from '../app/seo/meta';
 import { SITE_NAME } from '../app/site';
 import { DEFAULT_LOCALE, splitLocale, type Locale } from '../i18n/locales';
 import { ui } from '../i18n/ui';
@@ -82,6 +82,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/shaders/:id', load: shaders, title: `Shader maker — ${APP}`, tool: 'shaders' },
   { pattern: '/help', load: () => import('../tools/help/help'), title: HELP_META.title, tool: 'help' },
   { pattern: '/about', load: () => import('../tools/about/about'), title: ABOUT_META.title, tool: 'help' },
+  { pattern: '/all', load: () => import('../tools/all/all'), title: ALL_META.title, tool: 'help' },
   { pattern: '/guides', load: guides, title: GUIDES_META.title, tool: 'help' },
   ...GUIDES.map((g): RouteDef => ({ pattern: g.path, load: guides, title: g.title, tool: 'help' })),
   { pattern: '/privacy', load: () => import('../tools/privacy/privacy'), title: PRIVACY_META.title, tool: 'help' },

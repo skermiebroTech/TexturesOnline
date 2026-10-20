@@ -37,6 +37,8 @@ export interface UiText {
     totem: string;
     shaders: string;
     allGuides: string;
+    /** Link to the page listing every tool, feature and guide */
+    everything: string;
     installGuide: string;
     faq: string;
     about: string;
@@ -100,6 +102,7 @@ export const UI_EN: UiText = {
     totem: 'Totem maker',
     shaders: 'Shader maker',
     allGuides: 'All guides',
+    everything: 'Everything on the site',
     installGuide: 'Install guide',
     faq: 'FAQ',
     about: 'About',

@@ -61,6 +61,11 @@ export const META_PT_BR: MetaTranslation = {
       description: 'O Texture Pack Maker não tem contas, anúncios nem rastreamento. Seus packs, skins e shaders ficam no seu dispositivo e nada do que você cria é enviado.',
       label: 'Privacidade',
     },
+    '/all': {
+      title: 'Todas as ferramentas de Minecraft: packs, skins e shaders',
+      description: 'Todas as ferramentas, recursos e guias grátis do Texture Pack Maker em um só lugar: texture packs, modelos 3D, sons, skins e shaders.',
+      label: 'Tudo no site',
+    },
     '/guides': {
       title: 'Guias de Minecraft: texture packs, skins e shaders',
       description: `Guias passo a passo para criar e instalar texture packs, skins e shaders de Minecraft, além do pack format de cada versão do Java de 1.6.1 a ${LATEST}.`,
