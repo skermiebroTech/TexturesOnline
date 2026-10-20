@@ -1,6 +1,6 @@
 // Where skins come from: uploaded PNGs, Java usernames and the default skins in the game files.
 
-import { convertLegacySkin, decodeImage, resizeNearest } from '../../../core/image';
+import { convertLegacySkin, decodeImage } from '../../../core/image';
 import type { AssetIndex, SkinModel } from '../../../core/types';
 import { detectSlim } from '../templates';
 
@@ -28,7 +28,13 @@ function sniff(bytes: Uint8Array): 'png' | 'jpeg' | 'gif' | 'webp' | 'bmp' | 'un
   return 'unknown';
 }
 
-/** Validates and normalises a decoded skin image to 64x64. */
+/** Note shown when an HD skin is opened. */
+export const HD_KEPT_NOTE = 'This is an HD 128×128 skin, so it stays HD. Bedrock shows every pixel; Java exports are reduced to 64×64.';
+
+/**
+ * Validates and normalises a decoded skin image: 64x64 and HD 128x128 skins are kept as they are,
+ * old 64x32 skins are converted to 64x64.
+ */
 export function normalizeSkinImage(img: ImageData): LoadedSkin {
   const { width: w, height: h } = img;
   const notes: string[] = [];
@@ -37,14 +43,13 @@ export function normalizeSkinImage(img: ImageData): LoadedSkin {
     image = convertLegacySkin(img, { forceOpaqueBase: false });
     notes.push('This is an old 64×32 skin, so it was converted to the modern 64×64 layout. The left arm and leg start as mirror copies of the right ones.');
   } else if (w === 128 && h === 128) {
-    image = resizeNearest(img, 64, 64);
-    notes.push('This HD 128×128 skin was reduced to 64×64, the size Java Edition uses. Fine details may be simplified.');
+    notes.push(HD_KEPT_NOTE);
   } else if (!(w === 64 && h === 64)) {
     const hint =
-      w === h && w > 0 && w % 64 === 0
-        ? ` It looks like a ${w / 64}× enlarged skin; use the original 64×64 file instead.`
+      w === h && w > 128 && w % 64 === 0
+        ? ` It looks like a ${w / 64}× enlarged skin; use the original 64×64 (or HD 128×128) file instead.`
         : ' Make sure you picked the skin file itself, not a screenshot or a render of it.';
-    throw new SkinSourceError(`This image is ${w}×${h} pixels. Minecraft skins are exactly 64×64 pixels (or the old 64×32 size).${hint}`);
+    throw new SkinSourceError(`This image is ${w}×${h} pixels. Minecraft skins are exactly 64×64 pixels, 128×128 for HD Bedrock skins, or the old 64×32 size.${hint}`);
   }
   let visible = false;
   for (let i = 3; i < image.data.length && !visible; i += 4) visible = image.data[i] > 0;
@@ -52,9 +57,9 @@ export function normalizeSkinImage(img: ImageData): LoadedSkin {
   return { image, model: detectSlim(image) ? 'slim' : 'classic', notes };
 }
 
-/** Reads a user-picked PNG into a 64x64 skin. */
+/** Reads a user-picked PNG into a 64x64 (or HD 128x128) skin. */
 export async function readSkinFile(file: Blob & { name?: string }): Promise<LoadedSkin> {
-  if (file.size > 2 * 1024 * 1024) throw new SkinSourceError('That file is too big to be a skin. Skins are small 64×64 PNG images (usually under 10 KB).');
+  if (file.size > 2 * 1024 * 1024) throw new SkinSourceError('That file is too big to be a skin. Skins are small 64×64 (or HD 128×128) PNG images, usually well under 50 KB.');
   const bytes = new Uint8Array(await file.arrayBuffer());
   const kind = sniff(bytes);
   if (kind === 'jpeg') throw new SkinSourceError('This is a JPEG photo. Skins must be PNG files, because they need see-through pixels. Save your skin as .png and try again.');

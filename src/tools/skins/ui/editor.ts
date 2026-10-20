@@ -1,5 +1,5 @@
-// Skin editor: tool rail + 64x64 pixel canvas with part guides, colours and parts on the left, live
-// 3D preview on the right. Autosaves to IndexedDB.
+// Skin editor: tool rail + 64x64 (or HD 128x128) pixel canvas with part guides, colours and parts on
+// the left, live 3D preview on the right. Autosaves to IndexedDB.
 
 import { debounce } from '../../../core/events';
 import { decodeImage, encodePng } from '../../../core/image';
@@ -18,7 +18,8 @@ import type { PopoverHandle } from '../../../ui/popover';
 import { toast } from '../../../ui/toast';
 import type { SkinAnimation, SkinPreview } from '../skin-preview';
 import { exportSkin, openExportMenu } from './export-modal';
-import type { SkinProjectData } from '../export';
+import { hdLossPercent, type SkinProjectData } from '../export';
+import { resizeSkin, type SkinSize } from '../hd';
 import {
   convertArms,
   copyToMirror,
@@ -32,16 +33,18 @@ import {
   partAt,
   PARTS,
   PART_INFO,
+  scaleOf,
   withMirrorParts,
   type FaceRect,
   type LayerSelection,
   type SkinPart,
+  type SkinScale,
 } from '../templates';
-import { drawHead, drawPaperDoll } from './figure';
+import { drawFigure, drawHead, drawPaperDoll } from './figure';
 import { SKIN_PALETTES } from './palettes';
 import { normalizeSkinImage } from './sources';
 import { setOuterSeeThrough, setPartVisible } from './preview-extras';
-import { createPaint3d, drawPixelOutline } from './paint3d';
+import { createPaint3d, drawPixelOutline, maxBrushFor } from './paint3d';
 
 // ---------------------------------------------------------------------------------------------
 // Preferences (per browser)
@@ -148,6 +151,7 @@ const TIPS = [
   'Shading tip: use Lighten and Darken to add depth.',
   'Press ? to see every keyboard shortcut.',
   'Press D to paint straight onto the 3D model.',
+  'Bedrock skin? Switch Size to HD 128×128 for twice the detail.',
 ];
 
 function isLight(): boolean {
@@ -268,6 +272,8 @@ function clearBackup(id: string): void {
 
 export interface SkinEditorTestApi {
   getImage(): ImageData;
+  /** Skin width and height: 64, or 128 for HD */
+  size(): number;
   imageToClient(x: number, y: number): [number, number];
   model(): SkinModel;
   flush(): Promise<void>;
@@ -294,7 +300,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   if (backup && backup.t > (project.updatedAt || 0)) {
     try {
       const img = await decodeImage(base64ToBytes(backup.png), 'png');
-      if (img.width === 64 && img.height === 64) {
+      if ((img.width === 64 && img.height === 64) || (img.width === 128 && img.height === 128)) {
         initial = img;
         project.model = backup.model;
         if (backup.name.trim()) project.name = backup.name.trim().slice(0, 60);
@@ -313,7 +319,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   if (!initial) {
     try {
       const decoded = await decodeImage(project.image, 'png');
-      initial = decoded.width === 64 && decoded.height === 64 ? decoded : normalizeSkinImage(decoded).image;
+      initial = (decoded.width === 64 && decoded.height === 64) || (decoded.width === 128 && decoded.height === 128) ? decoded : normalizeSkinImage(decoded).image;
     } catch {
       return notFound(root, "This skin can't be opened", 'The saved image is damaged. Try making a new skin.');
     }
@@ -325,6 +331,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     savePrefs(prefs);
   };
   let model: SkinModel = project.model === 'slim' ? 'slim' : 'classic';
+  /** Image pixels per template texel: 1 for 64x64, 2 for HD 128x128 (follows the canvas, undo included) */
+  let scale: SkinScale = scaleOf(initial.width);
+  /** Width (= height) of the skin image */
+  const W = () => 64 * scale;
   const locked = new Set<SkinPart>();
   const hidden = new Set<SkinPart>();
   let highlight: SkinPart | null = null;
@@ -352,6 +362,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const saveIcon = h('span', { class: 'sk-save-icon' }, icon('check'));
   const saveText = h('span', { class: 'sk-save-text' }, 'Saved');
   const saveState = h('button', { type: 'button', class: 'sk-save', dataset: { state: 'saved' }, 'aria-live': 'polite' }, saveIcon, saveText);
+  const hdBadge = h('button', { type: 'button', class: 'sk-hd-badge', hidden: scale !== 2, 'aria-label': 'HD 128×128 skin for Bedrock. Change the size' }, 'HD');
+  tooltip(hdBadge, 'HD 128×128 skin (Bedrock). Java exports are reduced to 64×64.');
+  hdBadge.addEventListener('click', () => {
+    if (layout.current() !== 'right' && window.matchMedia('(max-width: 720px)').matches) layout.show('right');
+    sizeSeg.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+  });
   const undoBtn = iconButton('undo', 'Undo (Ctrl+Z)', () => pc.undo(), { disabled: true });
   const redoBtn = iconButton('redo', 'Redo (Ctrl+Shift+Z)', () => pc.redo(), { disabled: true });
   const keysBtn = iconButton('keyboard', 'Keyboard shortcuts (?)', () => showShortcuts());
@@ -367,14 +383,14 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         .catch(() => undefined)
         .then(() => navigate(`/totem-maker?skin=${encodeURIComponent(id)}`)),
   };
-  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [totemExtra])));
+  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [totemExtra], { hd: scale === 2 })));
   const backBtn = iconButton('arrow-left', 'All skins', () => navigate('/skins'));
 
   const bar = h(
     'div',
     { class: 'sk-bar' },
     backBtn,
-    h('div', { class: 'sk-bar-title' }, headCanvas, nameInput, saveState),
+    h('div', { class: 'sk-bar-title' }, headCanvas, nameInput, hdBadge, saveState),
     h('div', { class: 'sk-bar-actions' }, undoBtn, redoBtn, h('span', { class: 'toolbar-sep' }), keysBtn, exportBtn),
   );
 
@@ -519,7 +535,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     paletteChips.appendChild(b);
   }
 
-  const brushSlider = slider({ label: 'Brush size', min: 1, max: 8, step: 1, value: 1, unit: 'px', onInput: (v) => pc.setBrushSize(v) });
+  // Up to 8 px on 64x64 skins and 16 px on HD skins (the same reach on the model).
+  const makeBrushSlider = (value = 1) => slider({ label: 'Brush size', min: 1, max: maxBrushFor(scale), step: 1, value, unit: 'px', onInput: (v) => pc.setBrushSize(v) });
+  let brushSlider = makeBrushSlider();
   const brushShape = segmented<'square' | 'round'>({
     value: 'square',
     size: 'sm',
@@ -669,10 +687,23 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const figure = h('div', { class: 'sk-body-toggle', role: 'group', 'aria-label': 'Show or hide body parts in 3D' }, figureGrid, figureAll);
   stageWrap.appendChild(figure);
 
+  const sizeSeg = segmented<'64' | '128'>({
+    value: scale === 2 ? '128' : '64',
+    size: 'sm',
+    label: 'Skin size',
+    options: [
+      { value: '64', label: '64×64' },
+      { value: '128', label: 'HD 128' },
+    ],
+    onChange: (v) => void switchSize(v === '128' ? 128 : 64),
+  });
+  sizeSeg.classList.add('sk-size-seg');
+  tooltip(sizeSeg, 'HD 128×128 skins have twice the detail and work on Bedrock only');
   const viewControls = h(
     'div',
     { class: 'sk-3d-controls' },
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Arms'), modelSeg),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Size'), sizeSeg),
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Show'), h('div', { class: 'sk-chips' }, layerChip('Base', 'base3d'), layerChip('Outer', 'outer3d'))),
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Backdrop'), h('div', { class: 'sk-backdrops' }, backdropBtns)),
   );
@@ -732,7 +763,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     image: initial,
     showGrid: prefs.grid,
     label: 'Skin template. Paint with the current tool.',
-    mirrorMap: mirrorMapFor(model),
+    mirrorMap: mirrorMapFor(model, scale),
     decodeImage: (b) => decodeImage(b),
   });
   canvasHost.appendChild(tip);
@@ -755,7 +786,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     const w = canvasHost.clientWidth;
     const hh = canvasHost.clientHeight;
     if (w && w < 560) {
-      const snug = Math.floor(Math.min((w - 12) / 64, (hh - 12) / 64));
+      // HD skins have twice the pixels: allow whole device pixels (e.g. 2.5× on a 2× screen) so they
+      // still fill the width instead of dropping a whole zoom step.
+      const step = scale === 2 ? Math.min(3, window.devicePixelRatio || 1) : 1;
+      const snug = Math.floor(Math.min((w - 12) / W(), (hh - 12) / W()) * step) / step;
       if (snug > pc.getZoom()) pc.setZoom(snug);
     }
   };
@@ -776,27 +810,28 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     const focus = highlight ? new Set([highlight]) : locked.size ? (prefs.mirror ? withMirrorParts(locked) : locked) : null;
     drawPartOverlay(ctx, view, {
       model,
+      scale,
       outlines: prefs.guides,
       labels: prefs.guides,
       layers: prefs.layers,
       hover: prefs.guides || highlight ? hoverRect : null,
-      hoverMirror: prefs.mirror && hoverRect ? mirrorFaceRect(hoverRect, model) : null,
+      hoverMirror: prefs.mirror && hoverRect ? mirrorFaceRect(hoverRect, model, scale) : null,
       focus,
       pointer: hoverPixel,
       theme: isLight() ? 'light' : 'dark',
     });
     if (hover3d) {
-      drawPixelOutline(ctx, view, hover3d.echo, 0.6);
-      drawPixelOutline(ctx, view, hover3d.pixels);
+      drawPixelOutline(ctx, view, hover3d.echo, 0.6, W());
+      drawPixelOutline(ctx, view, hover3d.pixels, 1, W());
     }
   };
   pc.setOverlay(overlay);
   buildPicker();
 
-  let mask: Uint8Array = new Uint8Array(64 * 64);
+  let mask: Uint8Array = new Uint8Array(W() * W());
   const updateMask = () => {
     const parts = locked.size ? (prefs.mirror ? withMirrorParts(locked) : locked) : null;
-    mask = maskForParts(parts, model, prefs.layers);
+    mask = maskForParts(parts, model, prefs.layers, scale);
     pc.setMask(mask);
     if (hoverPixel) updateHoverUi();
   };
@@ -806,6 +841,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const paint3d = createPaint3d({
     pc,
     model: () => model,
+    scale: () => scale,
     layers: () => prefs.layers,
     setLayers: (v) => setLayers(v),
     mirror: () => prefs.mirror,
@@ -817,7 +853,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       hover3d = hit ? { pixels, echo } : null;
       if (hit) {
         hoverPixel = { x: hit.x, y: hit.y };
-        hoverRect = partAt(hit.x, hit.y, model);
+        hoverRect = partAt(hit.x, hit.y, model, scale);
       } else if (!pointer) {
         hoverPixel = null;
         hoverRect = null;
@@ -1042,8 +1078,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   /** Why the hovered pixel can't be painted, or null when it can. */
   const lockReason = (r: FaceRect): string | null => (hoverPixel ? lockReasonAt(hoverPixel.x, hoverPixel.y, r) : null);
   /** Why a pixel can't be painted (locked part or layer), or null when it can. */
-  const lockReasonAt = (x: number, y: number, r: FaceRect | null = partAt(x, y, model)): string | null => {
-    if (mask[y * 64 + x]) return null;
+  const lockReasonAt = (x: number, y: number, r: FaceRect | null = partAt(x, y, model, scale)): string | null => {
+    if (mask[y * W() + x]) return null;
     if (!r) return 'Unused area (not shown in game)';
     if (prefs.layers !== 'both' && r.layer !== prefs.layers) {
       return `Locked: painting the ${prefs.layers} layer only (press 3 for both)`;
@@ -1088,7 +1124,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   disposers.push(
     pc.on('hover', (p) => {
       hoverPixel = p;
-      hoverRect = p ? partAt(p.x, p.y, model) : null;
+      hoverRect = p ? partAt(p.x, p.y, model, scale) : null;
       updateHoverUi();
       pc.redraw();
       paint3d.showTemplateHover(p);
@@ -1109,8 +1145,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
   disposers.push(() => cancelAnimationFrame(liveRaf));
   const drawDolls = (img: ImageData) => {
-    // 3 CSS px per skin pixel (48x96), in whole device pixels.
-    const s = Math.max(3, Math.round(3 * Math.min(3, window.devicePixelRatio || 1)));
+    // 3 CSS px per skin texel (48x96), in whole device pixels (an even number for HD, so every HD
+    // pixel gets whole device pixels too).
+    let s = Math.max(3, Math.round(3 * Math.min(3, window.devicePixelRatio || 1)));
+    if (scale === 2) s = Math.max(4, 2 * Math.round(s / 2));
     drawPaperDoll(dollFront, img, model, 'front', s);
     drawPaperDoll(dollBack, img, model, 'back', s);
     drawHead(headCanvas, img, 32);
@@ -1237,11 +1275,14 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   let holesTipShown = false;
   const onImageChanged = (img: ImageData) => {
     latest = img;
+    // Making a skin HD (or 64x64), and undoing that, changes the canvas size.
+    syncSize();
     preview?.setSkin(img);
     drawDolls(img);
     markDirty();
     const nextHoles = countBaseHoles(img, model);
-    if (nextHoles > holes && !holesTipShown && pc.tool === 'eraser') {
+    // Bedrock (the only place HD skins show) allows see-through base pixels, so no tip for HD.
+    if (nextHoles > holes && !holesTipShown && pc.tool === 'eraser' && scale === 1) {
       holesTipShown = true;
       toast('Heads-up: holes in the base layer show up solid in game. Only the outer layer can be see-through.', { tone: 'info', duration: 7000 });
     }
@@ -1538,12 +1579,83 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
 
   function afterModelChange() {
     modelSeg.setValue(model);
-    pc.setMirrorMap(mirrorMapFor(model));
+    pc.setMirrorMap(mirrorMapFor(model, scale));
     preview?.setModel(model);
     updateMask();
-    hoverRect = hoverPixel ? partAt(hoverPixel.x, hoverPixel.y, model) : null;
+    hoverRect = hoverPixel ? partAt(hoverPixel.x, hoverPixel.y, model, scale) : null;
     pc.redraw();
     paint3d.sync();
+  }
+
+  /** Follows the canvas size (HD or not): layout tables, mask, brush range and controls. */
+  function syncSize(): void {
+    const next = scaleOf(pc.width);
+    if (next === scale) return;
+    scale = next;
+    pc.setMirrorMap(mirrorMapFor(model, scale));
+    hoverPixel = null;
+    hoverRect = null;
+    hover3d = null;
+    updateMask();
+    sizeSeg.setValue(scale === 2 ? '128' : '64');
+    hdBadge.hidden = scale !== 2;
+    if (pc.brushSize > maxBrushFor(scale)) pc.setBrushSize(maxBrushFor(scale));
+    const fresh = makeBrushSlider(pc.brushSize);
+    brushSlider.replaceWith(fresh);
+    brushSlider = fresh;
+    paint3d.sync();
+    pc.redraw();
+    requestAnimationFrame(() => fitView());
+  }
+
+  /** A figure of a skin for the size dialogs. */
+  function sizeFigure(img: ImageData, label: string): HTMLElement {
+    const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
+    requestAnimationFrame(() => drawFigure(c, img, model));
+    return h('figure', { class: 'sk-export-figure' }, h('div', { class: 'sk-export-stage' }, c), h('figcaption', null, label));
+  }
+
+  /** Makes the skin HD (every pixel doubled) or reduces it to 64x64, as one undoable step. */
+  async function switchSize(to: SkinSize) {
+    const current: SkinSize = scale === 2 ? 128 : 64;
+    if (to === current) return;
+    const img = pc.getImage();
+    const reduced = to === 64 ? resizeSkin(img, 64) : null;
+    const lost = to === 64 ? hdLossPercent(img) : 0;
+    const body =
+      to === 128
+        ? h(
+            'div',
+            { class: 'stack' },
+            h('p', null, 'Every pixel becomes a 2×2 block, so your skin looks exactly the same, with room for finer detail: eyes, shading, patterns, text.'),
+            h('p', { class: 'sk-note' }, icon('smartphone'), h('span', null, h('strong', null, 'HD skins are for Bedrock Edition. '), 'Java Edition only shows 64×64 skins without mods, so Java exports are reduced back to 64×64.')),
+            h('p', { class: 'muted small' }, 'You can undo this afterwards.'),
+          )
+        : h(
+            'div',
+            { class: 'stack sk-export' },
+            h('div', { class: 'sk-export-compare' }, sizeFigure(img, 'HD 128×128'), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), sizeFigure(reduced!, '64×64')),
+            lost
+              ? h('p', { class: 'sk-note is-warn' }, icon('warning'), h('span', null, `About ${lost}% of the painted areas have finer HD detail. Each 2×2 block becomes one pixel, so that detail is simplified.`))
+              : h('p', { class: 'sk-note' }, icon('check'), h('span', null, 'Nothing is lost: this skin has no finer HD detail yet.')),
+            h('p', { class: 'muted small' }, 'Only for Java? You do not need to reduce it: the Java export makes a 64×64 copy and keeps this HD skin. You can undo this afterwards.'),
+          );
+    const answer = await choose<'go' | 'cancel'>(to === 128 ? 'Make this skin HD?' : 'Reduce to 64×64?', body, [
+      { value: 'cancel', label: 'Cancel', variant: 'ghost' },
+      { value: 'go', label: to === 128 ? 'Make HD' : 'Reduce to 64×64', variant: 'primary' },
+    ]);
+    if (answer !== 'go' || destroyed) {
+      sizeSeg.setValue(current === 128 ? '128' : '64');
+      return;
+    }
+    pc.deselect();
+    pc.applyFilter((src) => resizeSkin(src, to));
+    const after = pc.getImage().data;
+    toast(to === 128 ? 'Your skin is now HD 128×128' : 'Reduced to 64×64', {
+      tone: 'success',
+      duration: 5000,
+      action: { label: 'Undo', onClick: () => undoIfUnchanged(after) },
+    });
   }
 
   async function screenshot() {
@@ -1703,6 +1815,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   // Test and debugging hook (read-only helpers).
   const api: SkinEditorTestApi = {
     getImage: () => pc.getImage(),
+    size: () => pc.width,
     imageToClient: (x, y) => {
       const v = pc.getView();
       const r = pc.element.getBoundingClientRect();

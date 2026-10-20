@@ -16,6 +16,8 @@ import {
   exportBedrockPng,
   exportJavaLegacy,
   exportJavaPng,
+  hdLossPercent,
+  javaImage,
   legacyLosses,
   legacySource,
   orderPackSkinIds,
@@ -27,6 +29,7 @@ import {
   type PackSkinSource,
   type SkinProjectData,
 } from '../export';
+import { isHdSkin } from '../templates';
 import { drawFigure } from './figure';
 
 interface FormatInfo {
@@ -44,6 +47,14 @@ export const EXPORT_FORMATS: readonly FormatInfo[] = [
   { kind: 'java-legacy', title: 'Old Java skin (64×32)', sub: 'Java 1.7.10 and older', icon: 'clock', edition: 'Java' },
 ];
 
+/** Menu lines for an HD skin: what each format does with the extra detail. */
+const HD_SUBS: Record<ExportKind, string> = {
+  java: 'Reduced to 64×64: Java has no HD skins',
+  'bedrock-pack': 'Keeps HD 128×128, opens in Minecraft',
+  'bedrock-png': 'HD 128×128 for the Dressing Room import',
+  'java-legacy': 'Java 1.7.10 and older, reduced to 64×32',
+};
+
 /** Extra entry below the formats that does something other than exporting (e.g. make a totem). */
 export interface ExportExtra {
   title: string;
@@ -52,8 +63,8 @@ export interface ExportExtra {
   onPick: () => void;
 }
 
-/** Popover listing the export formats, plus optional extra actions after a divider. */
-export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) => void, extras: ExportExtra[] = []): PopoverHandle {
+/** Popover listing the export formats, plus optional extra actions after a divider. `hd`: the skin is 128x128. */
+export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) => void, extras: ExportExtra[] = [], opts: { hd?: boolean } = {}): PopoverHandle {
   const item = (cls: string, ic: IconName, title: string, sub: string, kind?: string) =>
     h(
       'button',
@@ -61,7 +72,7 @@ export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) =
       h('span', { class: ['sk-export-icon', cls] }, icon(ic)),
       h('span', { class: 'sk-export-text' }, h('span', { class: 'sk-export-title' }, title), h('span', { class: 'sk-export-sub' }, sub)),
     );
-  const formatItems = EXPORT_FORMATS.map((f) => item(f.edition === 'Java' ? 'is-java' : 'is-bedrock', f.icon, f.title, f.sub, f.kind));
+  const formatItems = EXPORT_FORMATS.map((f) => item(f.edition === 'Java' ? 'is-java' : 'is-bedrock', f.icon, f.title, opts.hd ? HD_SUBS[f.kind] : f.sub, f.kind));
   const extraItems = extras.map((x) => item('is-extra', x.icon, x.title, x.sub));
   const items = [...formatItems, ...extraItems];
   const list = h(
@@ -152,10 +163,10 @@ function instructions(kind: ExportKind, model: SkinModel, filename: string, pack
   }
 }
 
-async function runExport(kind: ExportKind, project: SkinProjectData, img: ImageData, packSkins: readonly PackSkinSource[] = []): Promise<ExportResult> {
+async function runExport(kind: ExportKind, project: SkinProjectData, img: ImageData, packSkins: readonly PackSkinSource[] = [], keepHd = false): Promise<ExportResult> {
   switch (kind) {
     case 'java':
-      return exportJavaPng(img, project.name, project.model);
+      return exportJavaPng(img, project.name, project.model, { keepHd });
     case 'java-legacy':
       return exportJavaLegacy(img, project.name, project.model);
     case 'bedrock-png':
@@ -177,8 +188,11 @@ function armsLabel(m: SkinModel): string {
 
 function packRow(opts: { name: string; model: SkinModel; image: ImageData | Blob; checked: boolean; current?: boolean; id?: string }): HTMLLabelElement {
   const thumb = h('span', { class: 'sk-pack-thumb' });
+  const meta = h('span', { class: 'sk-pack-meta' }, armsLabel(opts.model));
   const draw = (img: ImageData) => {
-    if (img.width !== 64 || img.height !== 64) return;
+    // 64x64 and HD 128x128 skins mix freely in one pack (each is its own texture).
+    if (isHdSkin(img)) meta.textContent = `${armsLabel(opts.model)} · HD 128×128`;
+    else if (img.width !== 64 || img.height !== 64) return;
     const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
     thumb.appendChild(c);
     requestAnimationFrame(() => drawFigure(c, img, opts.model));
@@ -194,7 +208,7 @@ function packRow(opts: { name: string; model: SkinModel; image: ImageData | Blob
     { class: ['sk-pack-skin', opts.current ? 'is-current' : null] },
     check,
     thumb,
-    h('span', { class: 'sk-pack-info' }, h('span', { class: 'sk-pack-name truncate' }, opts.name || 'Untitled'), h('span', { class: 'sk-pack-meta' }, armsLabel(opts.model))),
+    h('span', { class: 'sk-pack-info' }, h('span', { class: 'sk-pack-name truncate' }, opts.name || 'Untitled'), meta),
     opts.current ? badge('This skin', 'blue') : null,
   );
 }
@@ -262,7 +276,7 @@ async function choosePackSkins(project: SkinProjectData, img: ImageData): Promis
       packRow({ name: project.name, model: project.model, image: img, checked: true, current: true }),
       rows,
     ),
-    h('p', { class: 'sk-note' }, icon('info'), 'Each skin keeps its own name and arm model. Exporting again updates the installed pack.'),
+    h('p', { class: 'sk-note' }, icon('info'), 'Each skin keeps its own name, arm model and size (64×64 and HD 128×128 skins can share a pack). Exporting again updates the installed pack.'),
   );
 
   let result: PackSkinSource[] | null = null;
@@ -330,6 +344,14 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
     return;
   }
 
+  // HD skins on Java: a 64x64 copy (what the game shows), or the HD file for HD skin mods.
+  let keepHd = false;
+  if (kind === 'java' && isHdSkin(img)) {
+    const choice = await chooseJavaSize(img, project.model);
+    if (!choice || !isOpen()) return;
+    keepHd = choice === 'hd';
+  }
+
   let packSkins: PackSkinSource[] = [];
   if (kind === 'bedrock-pack') {
     const chosen = await choosePackSkins(project, img);
@@ -339,7 +361,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
 
   let res: ExportResult;
   try {
-    res = await runExport(kind, project, img, packSkins);
+    res = await runExport(kind, project, img, packSkins, keepHd);
   } catch (err) {
     toast(err instanceof Error ? err.message : 'Export failed.', { tone: 'error' });
     return;
@@ -353,7 +375,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
   const again = button({ label: 'Download again', icon: 'download', variant: 'secondary', size: 'sm' });
   again.addEventListener('click', () =>
     void withBusy(again, async () => {
-      const r = kind === 'bedrock-pack' ? res : await runExport(kind, project, img);
+      const r = kind === 'bedrock-pack' ? res : await runExport(kind, project, img, [], keepHd);
       saveBlob(r.blob, r.filename);
     }),
   );
@@ -364,7 +386,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
     h(
       'div',
       { class: 'sk-export-done' },
-      figure(img, project.model, project.name),
+      figure(kind === 'java' && !keepHd ? javaImage(img) : img, project.model, project.name),
       h(
         'div',
         { class: 'sk-export-file' },
@@ -380,6 +402,33 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
   );
   const m = openModal({ title: skinCount > 1 ? `Your ${info.edition} skin pack is ready` : `Your ${info.edition} skin is ready`, body, width: 620, actions: [{ label: 'Done', variant: 'primary' }] });
   help.addEventListener('click', () => m.close());
+}
+
+/** Asks how to export an HD skin for Java: reduced to 64x64 (default) or the HD file for mods. */
+function chooseJavaSize(img: ImageData, model: SkinModel): Promise<'64' | 'hd' | null> {
+  return new Promise((resolve) => {
+    let answer: '64' | 'hd' | null = null;
+    const lost = hdLossPercent(img);
+    const body = h(
+      'div',
+      { class: 'sk-export' },
+      h('div', { class: 'sk-export-compare' }, figure(img, model, 'Your HD skin'), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), figure(javaImage(img), model, 'Java 64×64')),
+      h('p', { class: 'sk-note is-warn sk-java-hd-note' }, icon('warning'), h('span', null, h('strong', null, 'Java Edition only shows 64×64 skins without mods. '), 'The Launcher and minecraft.net refuse bigger files, so your skin is reduced: each 2×2 block becomes one pixel.')),
+      lost ? h('p', { class: 'muted small' }, `About ${lost}% of the painted areas have finer HD detail that gets simplified. Your HD skin stays as it is for Bedrock.`) : h('p', { class: 'muted small' }, 'This skin has no finer HD detail yet, so nothing is lost.'),
+      h('p', { class: 'muted small' }, 'Using an HD skin mod (such as CustomSkinLoader)? Download the 128×128 file instead.'),
+    );
+    openModal({
+      title: 'Export an HD skin for Java',
+      body,
+      width: 620,
+      onClose: () => resolve(answer),
+      actions: [
+        { label: 'Cancel', variant: 'ghost' },
+        { label: '128×128 for mods', variant: 'secondary', onClick: () => void (answer = 'hd') },
+        { label: 'Download 64×64', variant: 'primary', onClick: () => void (answer = '64') },
+      ],
+    });
+  });
 }
 
 function exportJavaLegacyImage(img: ImageData): ImageData {

@@ -16,11 +16,42 @@ import { toast } from '../../../ui/toast';
 import type { PopoverHandle } from '../../../ui/popover';
 import { assetLoadingPanel } from '../../../ui/version-picker';
 import type { SkinProjectData } from '../export';
+import { upscaleSkin, type SkinSize } from '../hd';
 import { createStarterSkin, STARTERS } from '../starters';
+import { isHdSkin } from '../templates';
 import { drawFigure } from './figure';
 import { fetchSkinByUsername, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from './sources';
 
 const MODEL_KEY = 'to-skins-new-model';
+const SIZE_KEY = 'to-skins-new-size';
+
+function loadSizePref(): SkinSize {
+  try {
+    return localStorage.getItem(SIZE_KEY) === '128' ? 128 : 64;
+  } catch {
+    return 64;
+  }
+}
+
+function saveSizePref(s: SkinSize): void {
+  try {
+    localStorage.setItem(SIZE_KEY, String(s));
+  } catch {
+    /* private mode */
+  }
+}
+
+/** Shown when a 64x64 skin is doubled because HD was picked for new skins. */
+const DOUBLED_NOTE = 'Doubled to an HD 128×128 skin, as picked under Size. It looks the same until you paint finer detail.';
+
+/**
+ * A new skin at the size picked for new skins: 64x64 skins are doubled for HD. HD skins always stay
+ * HD (their detail is never thrown away here; the editor's Size control can reduce them).
+ */
+export function atNewSize(image: ImageData, size: SkinSize): { image: ImageData; doubled: boolean } {
+  if (size === 128 && !isHdSkin(image) && image.width === 64 && image.height === 64) return { image: upscaleSkin(image), doubled: true };
+  return { image, doubled: false };
+}
 
 function loadModelPref(): SkinModel {
   try {
@@ -78,7 +109,7 @@ function figureCanvas(img: ImageData, model: SkinModel, cls = 'sk-figure'): HTML
 let assetsLoad: { promise: Promise<AssetIndex>; signal: AbortSignal | null } | null = null;
 
 /** Modal that loads the Java game files and lets the user pick a default skin. */
-function openDefaultSkinsModal(preferred: SkinModel): void {
+function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
   const ctrl = new AbortController();
   const body = h('div', { class: 'sk-defaults' });
   const modal = openModal({
@@ -127,7 +158,7 @@ function openDefaultSkinsModal(preferred: SkinModel): void {
       try {
         const loaded = await readDefaultSkin(assets, s);
         modal.close();
-        await createSkinProject({ image: loaded.image, model: s.model, name: s.name, source: 'game' });
+        await createSkinProject({ image: atNewSize(loaded.image, size).image, model: s.model, name: s.name, source: 'game' });
       } catch (err) {
         setButtonBusy(b, false);
         toast(err instanceof Error ? err.message : 'Could not open that skin.', { tone: 'error' });
@@ -190,9 +221,18 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
   list.replaceChildren(
     ...projects.map((p) => {
       const thumb = h('span', { class: 'sk-recent-thumb' });
+      const armsText = p.model === 'slim' ? 'Slim' : 'Classic';
+      const when = timeAgo(p.updatedAt || p.createdAt);
+      const meta = h('span', { class: 'sk-recent-meta truncate' }, `${armsText} · ${when}`);
+      const hdTag = h('span', { class: 'sk-hd-tag', hidden: true, 'aria-hidden': 'true' }, 'HD');
+      thumb.appendChild(hdTag);
       void decodeImage(p.image, 'png')
         .then((img) => {
-          if (img.width === 64 && img.height === 64) thumb.appendChild(figureCanvas(img, p.model, 'sk-figure sk-figure-sm'));
+          if ((img.width === 64 && img.height === 64) || isHdSkin(img)) thumb.appendChild(figureCanvas(img, p.model, 'sk-figure sk-figure-sm'));
+          if (isHdSkin(img)) {
+            hdTag.hidden = false;
+            meta.textContent = `${armsText} · HD · ${when}`;
+          }
         })
         .catch(() => thumb.appendChild(icon('human')));
       const menuBtn = h('button', { type: 'button', class: 'icon-btn sm sk-recent-menu', 'aria-label': `More actions for ${p.name}`, 'aria-haspopup': 'menu' }, icon('more-vertical'));
@@ -253,7 +293,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
             'span',
             { class: 'sk-recent-info' },
             h('span', { class: 'sk-recent-name truncate' }, p.name || 'Untitled'),
-            h('span', { class: 'sk-recent-meta truncate' }, `${p.model === 'slim' ? 'Slim' : 'Classic'} · ${timeAgo(p.updatedAt || p.createdAt)}`),
+            meta,
           ),
         ),
         menuBtn,
@@ -264,6 +304,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
 
 export function mountStart(root: HTMLElement): () => void {
   let model = loadModelPref();
+  let size = loadSizePref();
   const urls: string[] = [];
   const ctrl = new AbortController();
 
@@ -272,7 +313,7 @@ export function mountStart(root: HTMLElement): () => void {
   const renderStarters = () => {
     starterGrid.replaceChildren(
       ...STARTERS.map((s) => {
-        const img = createStarterSkin(s.id, model);
+        const img = atNewSize(createStarterSkin(s.id, model), size).image;
         const card = h(
           'button',
           { type: 'button', class: ['sk-starter', `sk-starter-${s.id}`], dataset: { starter: s.id } },
@@ -288,7 +329,7 @@ export function mountStart(root: HTMLElement): () => void {
           if (card.classList.contains('busy')) return;
           card.classList.add('busy');
           try {
-            await createSkinProject({ image: createStarterSkin(s.id, model), model, name: s.id === 'blank' || s.id === 'template' ? 'My skin' : s.name, source: s.id });
+            await createSkinProject({ image: atNewSize(createStarterSkin(s.id, model), size).image, model, name: s.id === 'blank' || s.id === 'template' ? 'My skin' : s.name, source: s.id });
           } catch (err) {
             card.classList.remove('busy');
             toast(err instanceof Error ? err.message : 'Could not create the skin.', { tone: 'error' });
@@ -300,6 +341,21 @@ export function mountStart(root: HTMLElement): () => void {
   };
   renderStarters();
 
+  const sizeNote = h('p', { class: 'sk-size-note', 'aria-live': 'polite' });
+  const paintSizeNote = () => {
+    sizeNote.classList.toggle('is-hd', size === 128);
+    sizeNote.replaceChildren(
+      icon(size === 128 ? 'smartphone' : 'check'),
+      h(
+        'span',
+        null,
+        size === 128
+          ? [h('strong', null, 'HD skin, Bedrock only: '), 'twice the detail. Java exports are reduced to 64×64.']
+          : [h('strong', null, 'Standard size: '), 'works in Java and Bedrock.'],
+      ),
+    );
+  };
+  paintSizeNote();
   const modelPick = h(
     'div',
     { class: 'sk-model-pick' },
@@ -317,13 +373,29 @@ export function mountStart(root: HTMLElement): () => void {
         renderStarters();
       },
     }),
+    h('span', { class: 'sk-model-label' }, 'Size'),
+    segmented<'64' | '128'>({
+      value: size === 128 ? '128' : '64',
+      label: 'Size for new skins',
+      options: [
+        { value: '64', label: '64×64' },
+        { value: '128', label: 'HD 128×128' },
+      ],
+      onChange: (v) => {
+        size = v === '128' ? 128 : 64;
+        saveSizePref(size);
+        paintSizeNote();
+        renderStarters();
+      },
+    }),
+    sizeNote,
   );
 
   // ---- Bring a skin ----
   const upload = dropzone({
     accept: '.png,image/png',
     label: 'Drop a skin PNG here or click to browse',
-    hint: '64×64 skins, or old 64×32 ones (converted for you).',
+    hint: '64×64 or HD 128×128 skins, or old 64×32 ones (converted for you).',
     icon: 'upload',
     onFiles: async ([file]) => {
       upload.setError(null);
@@ -331,8 +403,9 @@ export function mountStart(root: HTMLElement): () => void {
       try {
         const loaded = await readSkinFile(file);
         const name = file.name.replace(/\.png$/i, '').replace(/[_-]+/g, ' ').trim() || 'Uploaded skin';
-        for (const n of loaded.notes) toast(n, { tone: 'info', duration: 7000 });
-        await createSkinProject({ image: loaded.image, model: loaded.model, name, source: 'upload' });
+        const sized = atNewSize(loaded.image, size);
+        for (const n of [...loaded.notes, ...(sized.doubled ? [DOUBLED_NOTE] : [])]) toast(n, { tone: 'info', duration: 7000 });
+        await createSkinProject({ image: sized.image, model: loaded.model, name, source: 'upload' });
       } catch (err) {
         upload.setError(err instanceof SkinSourceError ? err.message : 'That file could not be opened as a skin.');
       } finally {
@@ -365,7 +438,7 @@ export function mountStart(root: HTMLElement): () => void {
     try {
       const loaded = await fetchSkinByUsername(userInput.value, ctrl.signal);
       for (const n of loaded.notes) toast(n, { tone: 'info', duration: 7000 });
-      await createSkinProject({ image: loaded.image, model: loaded.model, name: `${loaded.username}'s skin`, source: 'username' });
+      await createSkinProject({ image: atNewSize(loaded.image, size).image, model: loaded.model, name: `${loaded.username}'s skin`, source: 'username' });
     } catch (err) {
       if (ctrl.signal.aborted) return;
       userError.hidden = false;
@@ -390,7 +463,7 @@ export function mountStart(root: HTMLElement): () => void {
       ...content,
     );
 
-  const gameBtn = button({ label: 'Choose a default skin', icon: 'users', variant: 'secondary', onClick: () => openDefaultSkinsModal(model) });
+  const gameBtn = button({ label: 'Choose a default skin', icon: 'users', variant: 'secondary', onClick: () => openDefaultSkinsModal(model, size) });
   const examples = h(
     'div',
     { class: 'sk-examples' },

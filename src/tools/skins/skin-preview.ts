@@ -9,7 +9,7 @@ import type { SkinModel } from '../../core/types';
 import { createStage, prefersReducedMotion, watchDevicePixelRatio } from '../../shared/preview/viewport';
 import { isTypingTarget } from '../../ui/dom';
 import { BOX_FACE_ORDER, texelPlace } from './surface';
-import { faceRect, PARTS, type LayerSelection, type SkinFace, type SkinLayer, type SkinPart } from './templates';
+import { faceRect, PARTS, scaleOf, type LayerSelection, type SkinFace, type SkinLayer, type SkinPart } from './templates';
 
 export type SkinAnimation = 'idle' | 'walk' | 'run' | 'fly' | 'none';
 export type SkinPartId = 'head' | 'body' | 'rightArm' | 'leftArm' | 'rightLeg' | 'leftLeg' | 'cape';
@@ -28,7 +28,7 @@ export const SKIN_PARTS: readonly { id: SkinPartId; label: string }[] = [
   { id: 'cape', label: 'Cape' },
 ];
 
-/** The skin pixel under a point of the 3D view. */
+/** The skin pixel under a point of the 3D view (image pixels of the current skin: 0-63, or 0-127 for HD). */
 export interface SkinHit {
   x: number;
   y: number;
@@ -64,7 +64,7 @@ export interface SkinPaintHandler {
 
 /** Pixels outlined on the model (a brush footprint, a hovered template pixel...). */
 export interface SkinOverlay {
-  /** Pixel indices (y * 64 + x) */
+  /** Pixel indices (y * width + x, width = 64 or 128 for HD skins) */
   pixels: readonly number[];
   /** Drawn fainter, e.g. the mirror copies */
   echo?: readonly number[];
@@ -334,6 +334,11 @@ class SkinPreviewImpl implements SkinPreview {
     window.addEventListener('keyup', this.onHeldKey);
     window.addEventListener('blur', this.onWindowBlur);
     this.updatePaused();
+  }
+
+  /** Width (= height) of the skin texture: 64, or 128 for HD skins. */
+  private get texSize(): number {
+    return (this.hasSkin && this.viewer.skinCanvas.width) || 64;
   }
 
   private get visible(): boolean {
@@ -706,17 +711,20 @@ class SkinPreviewImpl implements SkinPreview {
     }
     this.viewer.scene.updateMatrixWorld();
     this.raycaster.setFromCamera(ndc, this.viewer.camera);
+    // HD skins use the same UVs on a 128x128 texture: uv * size gives the HD pixel.
+    const size = this.texSize;
+    const scale = scaleOf(size);
     for (const it of this.raycaster.intersectObjects(targets, false)) {
       const info = this.meshInfo.get(it.object);
       if (!info) return null;
       if (layers === 'outer' && info.layer === 'base') return null;
       if (it.faceIndex == null || !it.uv) continue;
       const face = BOX_FACE_ORDER[Math.floor(it.faceIndex / 2)];
-      const r = face && faceRect(info.part, face, info.layer, this.model);
+      const r = face && faceRect(info.part, face, info.layer, this.model, scale);
       if (!r) continue;
       // Texture v runs up (the texture is flipped on upload); clamp edge hits into this face.
-      const fx = Math.min(Math.max(it.uv.x * 64, r.x), r.x + r.w - 1e-3);
-      const fy = Math.min(Math.max((1 - it.uv.y) * 64, r.y), r.y + r.h - 1e-3);
+      const fx = Math.min(Math.max(it.uv.x * size, r.x), r.x + r.w - 1e-3);
+      const fy = Math.min(Math.max((1 - it.uv.y) * size, r.y), r.y + r.h - 1e-3);
       const x = Math.floor(fx);
       const y = Math.floor(fy);
       // Painting both layers: see through empty outer-layer pixels to whatever is behind them.
@@ -728,7 +736,7 @@ class SkinPreviewImpl implements SkinPreview {
 
   pixelToClient(x: number, y: number): [number, number] | null {
     if (this.destroyed) return null;
-    const place = texelPlace(x, y, this.model);
+    const place = texelPlace(x, y, this.model, scaleOf(this.texSize));
     if (!place) return null;
     const bp = this.viewer.playerObject.skin[place.rect.part];
     const mesh = (place.rect.layer === 'base' ? bp.innerLayer : bp.outerLayer) as THREE.Mesh;
@@ -1164,7 +1172,7 @@ class SkinPreviewImpl implements SkinPreview {
   setOverlay(o: SkinOverlay | null): void {
     if (this.destroyed) return;
     const empty = !o || (!o.pixels.length && !o.echo?.length);
-    const key = empty ? '' : `${o.tone ?? ''}|${o.fill ?? ''}|${o.pixels.join(',')}|${(o.echo ?? []).join(',')}`;
+    const key = empty ? '' : `${this.texSize}|${o.tone ?? ''}|${o.fill ?? ''}|${o.pixels.join(',')}|${(o.echo ?? []).join(',')}`;
     if (key === this.overlayKey) return;
     this.overlayKey = key;
     if (empty) {
@@ -1186,23 +1194,25 @@ class SkinPreviewImpl implements SkinPreview {
 
   /** Fills pixels and outlines the edge of the set (dark halo, light line), all inside the pixels. */
   private drawOutlined(ctx: CanvasRenderingContext2D, pixels: readonly number[], fill: string | null, line: string, alpha: number): void {
-    const S = OVERLAY_SCALE;
+    // The overlay texture is 64 * OVERLAY_SCALE wide whatever the skin size: HD pixels get half as many.
+    const W = this.texSize;
+    const S = (64 * OVERLAY_SCALE) / W;
     const set = new Set(pixels);
     ctx.globalAlpha = alpha;
     if (fill) {
       ctx.fillStyle = fill;
-      for (const p of set) ctx.fillRect((p % 64) * S, Math.floor(p / 64) * S, S, S);
+      for (const p of set) ctx.fillRect((p % W) * S, Math.floor(p / W) * S, S, S);
     }
     const edges = (inset: number, width: number) => {
       for (const p of set) {
-        const x = p % 64;
-        const y = Math.floor(p / 64);
+        const x = p % W;
+        const y = Math.floor(p / W);
         const X = x * S;
         const Y = y * S;
-        if (y === 0 || !set.has(p - 64)) ctx.fillRect(X, Y + inset, S, width);
-        if (y === 63 || !set.has(p + 64)) ctx.fillRect(X, Y + S - inset - width, S, width);
+        if (y === 0 || !set.has(p - W)) ctx.fillRect(X, Y + inset, S, width);
+        if (y === W - 1 || !set.has(p + W)) ctx.fillRect(X, Y + S - inset - width, S, width);
         if (x === 0 || !set.has(p - 1)) ctx.fillRect(X + inset, Y, width, S);
-        if (x === 63 || !set.has(p + 1)) ctx.fillRect(X + S - inset - width, Y, width, S);
+        if (x === W - 1 || !set.has(p + 1)) ctx.fillRect(X + S - inset - width, Y, width, S);
       }
     };
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';

@@ -492,6 +492,195 @@ if (jarPath && existsSync(jarPath)) {
   await context.close();
 }
 
+// =============================================================================================
+// 6. HD 128x128 skins: create, paint, export Bedrock PNG / pack (kept HD) and Java (reduced),
+//    Make HD / Reduce, uploads, the start page and phone widths.
+{
+  const { page, context, errors } = await newPage();
+  const pixelHd = (x, y) => api(page, (e, [x, y]) => {
+    const img = e.getImage();
+    const i = (y * img.width + x) * 4;
+    return Array.from(img.data.slice(i, i + 4));
+  }, [x, y]);
+  const size = () => api(page, (e) => e.size());
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  /** Screenshots at 1280 and 390 px, dark and light. */
+  const hdShots = async (name) => {
+    const vp = page.viewportSize();
+    for (const theme of ['dark', 'light']) {
+      await page.evaluate((t) => (document.documentElement.dataset.theme = t), theme);
+      for (const width of [1280, 390]) {
+        await page.setViewportSize({ width, height: width === 390 ? 844 : 860 });
+        await page.waitForTimeout(450);
+        await page.screenshot({ path: path.join(shots, `hd-${name}-${width}-${theme}.png`) });
+      }
+    }
+    await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+    await page.setViewportSize(vp);
+    await page.waitForTimeout(300);
+  };
+
+  await page.goto(`${base}#/skins`);
+  await page.waitForSelector('.sk-model-pick .segmented-item[data-value="128"]');
+  await page.click('.sk-model-pick .segmented-item[data-value="128"]');
+  const note = await page.textContent('.sk-size-note');
+  check('HD size explains Bedrock only', /HD skin, Bedrock only/.test(note || '') && /Java/.test(note || ''), note);
+  await hdShots('start');
+  await page.click('.sk-starter-template');
+  await waitEditor(page);
+  check('HD template opens a 128x128 skin', (await size()) === 128, String(await size()));
+  check('HD badge in the top bar', await page.isVisible('.sk-hd-badge'));
+  check('HD template is the template doubled', eq(await pixelHd(18, 24), await pixelHd(19, 25)) && (await pixelHd(18, 24))[3] === 255);
+  check('size control shows HD', (await page.getAttribute('.sk-size-seg [data-value="128"]', 'aria-checked')) === 'true');
+
+  // Paint one HD pixel with mirror on: the true body mirror works per HD pixel.
+  await page.fill('.sk-block-color .cp-hex', '#e61e28');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('b');
+  await page.click('.sk-toggle-btn');
+  await paintAt(page, 88, 44); // right arm, front, first HD column
+  await page.waitForTimeout(200);
+  check('HD paints a single 128-grid pixel', eq(await pixelHd(88, 44), RED) && !eq(await pixelHd(89, 44), RED), JSON.stringify([await pixelHd(88, 44), await pixelHd(89, 44)]));
+  check('HD mirror paints the left arm pixel', eq(await pixelHd(79, 108), RED), JSON.stringify(await pixelHd(79, 108)));
+  await page.click('.sk-toggle-btn');
+  const [hx, hy] = await api(page, (e) => e.imageToClient(20, 20));
+  await page.mouse.move(hx, hy);
+  await page.waitForTimeout(150);
+  check('HD hover names the face', /Head · Front · Base layer/.test((await page.textContent('.sk-tip')) || ''), await page.textContent('.sk-tip'));
+  check('HD brush goes up to 16 px', (await page.getAttribute('.sk-block-brush input[type=range]', 'max')) === '16');
+  await hdShots('editor');
+
+  // Bedrock PNG keeps HD.
+  const bpng = await download(page, 'bedrock-png');
+  const bimg = decodePng(bpng.bytes);
+  check('Bedrock PNG export is 128x128', bimg.width === 128 && bimg.height === 128 && eq(px(bimg, 88, 44), RED), `${bimg.width}x${bimg.height}`);
+  check('Bedrock ready modal says HD', /128×128 HD/.test((await page.textContent('.sk-export-meta')) || ''), await page.textContent('.sk-export-meta'));
+  await closeModal(page);
+
+  // Java: asks first, explains, downloads 64x64.
+  await page.click('.sk-export-btn');
+  await page.waitForSelector('.sk-export-item[data-kind="java"]');
+  check('export menu says Java is reduced', /Reduced to 64×64/.test((await page.textContent('.sk-export-item[data-kind="java"]')) || ''));
+  await page.click('.sk-export-item[data-kind="java"]');
+  await page.waitForSelector('.sk-java-hd-note');
+  check('Java HD export explains the 64x64 limit', /Java Edition only shows 64×64 skins without mods/.test((await page.textContent('.modal')) || ''));
+  await hdShots('java-export');
+  const [jdl] = await Promise.all([page.waitForEvent('download'), page.click('.modal-footer .btn-primary')]);
+  const jimg = decodePng(readFileSync(await jdl.path()));
+  check('Java export of an HD skin is 64x64', jimg.width === 64 && jimg.height === 64 && jdl.suggestedFilename().endsWith('.png'), `${jimg.width}x${jimg.height}`);
+  await page.waitForSelector('.sk-export-notes');
+  check('Java ready modal keeps the note', /only shows 64×64 skins without mods/.test((await page.textContent('.sk-export-notes')) || ''));
+  await closeModal(page);
+  // The HD file for mods, on request.
+  await page.click('.sk-export-btn');
+  await page.click('.sk-export-item[data-kind="java"]');
+  await page.waitForSelector('.sk-java-hd-note');
+  const [hdl] = await Promise.all([page.waitForEvent('download'), page.click('.modal-footer .btn-secondary')]);
+  const himg = decodePng(readFileSync(await hdl.path()));
+  check('Java HD-mod export is 128x128', himg.width === 128 && /-hd\.png$/.test(hdl.suggestedFilename()), `${himg.width} ${hdl.suggestedFilename()}`);
+  await closeModal(page);
+  // Old 64x32 from the reduced skin.
+  await page.click('.sk-export-btn');
+  await page.click('.sk-export-item[data-kind="java-legacy"]');
+  await page.waitForSelector('.modal-footer .btn-primary');
+  const [ldl] = await Promise.all([page.waitForEvent('download'), page.click('.modal-footer .btn-primary')]);
+  const limg = decodePng(readFileSync(await ldl.path()));
+  check('legacy export of an HD skin is 64x32', limg.width === 64 && limg.height === 32);
+  await closeModal(page);
+
+  // Pack with only this HD skin.
+  await page.fill('.sk-name', 'HD Hero');
+  await api(page, (e) => e.flush());
+  const pack = await download(page, 'bedrock-pack');
+  const pfiles = unzipSync(new Uint8Array(pack.bytes));
+  const pskins = JSON.parse(strFromU8(pfiles['skins.json']));
+  const ppng = decodePng(pfiles[pskins.skins[0].texture]);
+  check('HD skin pack keeps 128x128', ppng.width === 128 && pskins.skins[0].geometry === 'geometry.humanoid.custom', `${ppng.width}`);
+  await closeModal(page);
+
+  // Reload keeps HD.
+  await page.reload();
+  await waitEditor(page);
+  check('reload keeps the HD skin', (await size()) === 128 && eq(await pixelHd(88, 44), RED));
+
+  // Reduce to 64x64 (warns about detail), undo, make HD again.
+  await page.click('.sk-size-seg [data-value="64"]');
+  await page.waitForSelector('.modal .sk-export-compare');
+  const reduceText = (await page.textContent('.modal')) || '';
+  check('reduce warns about lost detail', /finer HD detail/.test(reduceText) && /Java export makes a 64×64 copy/.test(reduceText), reduceText.slice(0, 200));
+  await hdShots('reduce');
+  await page.click('.modal-footer .btn-primary');
+  await page.waitForTimeout(300);
+  check('reduce makes a 64x64 skin', (await size()) === 64 && !(await page.isVisible('.sk-hd-badge')));
+  check('reduce keeps the layout (head pixel)', (await pixelHd(9, 12))[3] === 255);
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(300);
+  check('undo brings HD back', (await size()) === 128 && eq(await pixelHd(88, 44), RED) && (await page.getAttribute('.sk-size-seg [data-value="128"]', 'aria-checked')) === 'true');
+  check('mask follows the size (painting still works after undo)', await (async () => {
+    await paintAt(page, 18, 18);
+    await page.waitForTimeout(150);
+    return eq(await pixelHd(18, 18), RED);
+  })());
+
+  // A 64x64 skin in the same pack: sizes mix.
+  await page.goto(`${base}#/skins`);
+  await page.click('.sk-model-pick .segmented-item[data-value="64"]');
+  await page.waitForSelector('.sk-recent .sk-hd-tag:not([hidden])');
+  check('recent list tags HD skins', /HD/.test((await page.textContent('.sk-recent-grid')) || ''));
+  await page.click('.sk-starter-robot');
+  await waitEditor(page);
+  check('64x64 starter after switching back', (await size()) === 64);
+  await page.click('.sk-export-btn');
+  await page.click('.sk-export-item[data-kind="bedrock-pack"]');
+  await page.waitForSelector('.sk-pack-skin:not(.is-current)');
+  await page.waitForTimeout(300);
+  check('pack modal marks the HD skin', /HD 128×128/.test((await page.textContent('.sk-pack-skin:not(.is-current)')) || ''), await page.textContent('.sk-pack-skin:not(.is-current)'));
+  await page.check('.sk-pack-skin:not(.is-current) input');
+  const [mdl] = await Promise.all([page.waitForEvent('download'), page.click('.modal-footer .btn-primary')]);
+  const mfiles = unzipSync(new Uint8Array(readFileSync(await mdl.path())));
+  const mskins = JSON.parse(strFromU8(mfiles['skins.json']));
+  const msizes = mskins.skins.map((s) => decodePng(mfiles[s.texture]).width);
+  check('mixed pack has a 64x64 and a 128x128 skin', eq(msizes, [64, 128]), JSON.stringify(msizes));
+  await page.waitForSelector('.sk-export-meta');
+  check('mixed pack modal counts the HD skin', /2 skins · 1 HD/.test((await page.textContent('.sk-export-meta')) || ''), await page.textContent('.sk-export-meta'));
+  await closeModal(page);
+
+  // Make HD from 64x64.
+  await page.click('.sk-size-seg [data-value="128"]');
+  await page.waitForSelector('.modal-footer .btn-primary');
+  check('Make HD explains Bedrock only', /HD skins are for Bedrock Edition/.test((await page.textContent('.modal')) || ''));
+  const before = await pixelHd(9, 12);
+  await page.click('.modal-footer .btn-primary');
+  await page.waitForTimeout(300);
+  check('Make HD doubles the skin', (await size()) === 128 && eq(await pixelHd(18, 24), before) && eq(await pixelHd(19, 25), before));
+
+  // Uploads: HD stays HD; a 64x64 upload is doubled while HD is picked.
+  await page.goto(`${base}#/skins`);
+  const hdPng = makePng(128, 128, (x, y) => (x < 64 && y < 32 ? [20, 140, 60, 255] : y >= 16 && y < 64 ? [90, 60, 200, 255] : [0, 0, 0, 0]));
+  await page.waitForSelector('.sk-import .dropzone');
+  await page.setInputFiles('.sk-import .dropzone input[type=file]', { name: 'hd_skin.png', mimeType: 'image/png', buffer: hdPng });
+  await waitEditor(page);
+  check('HD upload stays 128x128', (await size()) === 128 && eq(await pixelHd(1, 1), [20, 140, 60, 255]));
+  check('HD upload says it stays HD', /stays HD/.test((await page.textContent('.toast-region')) || ''));
+  await page.goto(`${base}#/skins`);
+  await page.click('.sk-model-pick .segmented-item[data-value="128"]');
+  const sdPng = makePng(64, 64, (x, y) => (y < 16 ? [200, 100, 20, 255] : [0, 0, 0, 0]));
+  await page.waitForSelector('.sk-import .dropzone');
+  await page.setInputFiles('.sk-import .dropzone input[type=file]', { name: 'small.png', mimeType: 'image/png', buffer: sdPng });
+  await waitEditor(page);
+  check('64x64 upload is doubled when HD is picked', (await size()) === 128 && eq(await pixelHd(17, 17), [200, 100, 20, 255]));
+
+  // Phone width: no horizontal scroll on the start page and the HD editor.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(400);
+  check('HD editor fits a phone (no horizontal scroll)', (await overflow()) <= 0, String(await overflow()));
+  await page.goto(`${base}#/skins`);
+  await page.waitForSelector('.sk-size-note');
+  check('start page fits a phone (no horizontal scroll)', (await overflow()) <= 0, String(await overflow()));
+  check('no page errors (HD)', errors.length === 0, errors.join(' | '));
+  await context.close();
+}
+
 await browser.close();
 await server.close();
 const failed = results.filter((r) => !r.ok);
