@@ -15,6 +15,8 @@ import {
   type BedrockIndexFile,
 } from './catalog';
 import { SAMPLES_CDN, SAMPLES_RAW, appDataUrl, bedrockGameVersion, normalizeVersion, resolveBedrockVersion } from './versions';
+import { fileText } from '../../shared/i18n/files';
+import { fmt } from '../../i18n/editor-text';
 
 /*
  * Bedrock vanilla assets from Mojang/bedrock-samples, fetched lazily per file by the user's
@@ -132,7 +134,7 @@ class BedrockAssets implements AssetIndex {
   }
 
   async readFile(path: string): Promise<Uint8Array> {
-    if (!this.fileSet.has(path) && this.catalog.source !== 'atlas') throw new Error(`${path} isn't part of this Bedrock version.`);
+    if (!this.fileSet.has(path) && this.catalog.source !== 'atlas') throw new Error(fmt(fileText.bedrock.notInVersion, { path }));
     let p = this.mem.get(path);
     if (!p) {
       p = this.load(path);
@@ -179,7 +181,7 @@ class BedrockAssets implements AssetIndex {
         if (!(err instanceof NetError && err.kind === 'not-found')) throw err;
       }
     }
-    throw new NetError('not-found', path, `${path} doesn't exist in this Bedrock version.`, 404);
+    throw new NetError('not-found', path, fmt(fileText.bedrock.missing, { path }), 404);
   }
 }
 
@@ -282,7 +284,7 @@ async function loadCatalog(ref: string, gameVersion: string | undefined, signal?
     return catalogFromIndex(atlas, 'atlas');
   }
   if (storedOk) return catalogFromIndex(storedOk.index, storedOk.source);
-  throw new Error("Couldn't load the list of Bedrock textures. Check your internet connection and try again.");
+  throw new Error(fileText.bedrock.listFailed);
 }
 
 const instances = new SharedLoader<BedrockAssets>();
@@ -325,12 +327,12 @@ async function resolveTagRef(ref: string, signal?: AbortSignal): Promise<string>
 }
 
 async function load(versionId: string, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<BedrockAssets> {
-  opts.onProgress?.({ label: 'Loading the Bedrock texture list', fraction: null });
+  opts.onProgress?.({ label: fileText.bedrock.loadingList, fraction: null });
   const v = await resolveBedrockVersion(versionId);
   const ref = await resolveTagRef(v.ref, opts.signal);
   const gameVersion = await bedrockGameVersion(versionId).catch(() => undefined);
   const catalog = await loadCatalog(ref, gameVersion, opts.signal);
-  opts.onProgress?.({ label: 'Loading the Bedrock texture list', fraction: 1 });
+  opts.onProgress?.({ label: fileText.bedrock.loadingList, fraction: 1 });
   return new BedrockAssets(versionId, ref, catalog);
 }
 

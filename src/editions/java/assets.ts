@@ -6,6 +6,8 @@ import { cacheDeleteMany, cacheGet, cacheGetMany, cacheKeys, cacheSet, cacheSetM
 import { buildJavaTextureList, javaGroupOf, JAVA_TEXTURE_ROOT, refineAnimated } from './textures';
 import { getClientJarInfo, type ClientJarInfo } from './versions';
 import { KNOWN_RELEASES, KNOWN_RELEASE_FORMATS } from './packformats';
+import { fileText } from '../../shared/i18n/files';
+import { fmt } from '../../i18n/editor-text';
 
 /*
  * Java vanilla assets straight from Mojang's client jar.
@@ -145,12 +147,12 @@ class JavaAssets implements AssetIndex {
   async readFile(path: string): Promise<Uint8Array> {
     const hit = this.files.get(path);
     if (hit) return hit.slice();
-    if (!this.nameSet.has(path)) throw new Error(`${path} isn't part of Minecraft ${this.version}.`);
+    if (!this.nameSet.has(path)) throw new Error(fmt(fileText.java.notInVersion, { path, version: this.version }));
     const group = javaGroupOf(path);
-    if (!group) throw new Error(`${path} isn't available.`);
+    if (!group) throw new Error(fmt(fileText.java.notAvailable, { path }));
     await this.ensureGroup(group);
     const bytes = this.files.get(path);
-    if (!bytes) throw new Error(`${path} couldn't be loaded.`);
+    if (!bytes) throw new Error(fmt(fileText.java.notLoaded, { path }));
     return bytes.slice();
   }
 
@@ -188,7 +190,7 @@ class JavaAssets implements AssetIndex {
     let files: Map<string, Uint8Array>;
     try {
       files = await zip.readMany(names.map((n) => this.entries.get(n)!), {
-        label: `Downloading Minecraft ${this.version} ${group.replace(/_/g, ' ')}`,
+        label: fmt(fileText.java.downloadingGroup, { version: this.version, group: group.replace(/_/g, ' ') }),
         onProgress: opts.onProgress,
         signal: opts.signal,
       });
@@ -203,8 +205,8 @@ class JavaAssets implements AssetIndex {
 
   /** Range reads failed: download the whole jar once and keep every group. */
   private async loadEverything(src: HttpRangeSource, opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<void> {
-    const bytes = await fetchWithProgress(src.url, { label: `Downloading Minecraft ${this.version}`, expectedSize: src.size, onProgress: opts.onProgress, signal: opts.signal });
-    if (bytes.length !== src.size) throw new Error(`The Minecraft ${this.version} download was incomplete. Try again.`);
+    const bytes = await fetchWithProgress(src.url, { label: fmt(fileText.java.downloading, { version: this.version }), expectedSize: src.size, onProgress: opts.onProgress, signal: opts.signal });
+    if (bytes.length !== src.size) throw new Error(fmt(fileText.java.incomplete, { version: this.version }));
     const zip = new RangeZip(new MemorySource(bytes), entriesFromMeta(this.meta), this.meta.dataEnd);
     const all = await zip.readMany(this.meta.names, { signal: opts.signal });
     const byGroup: Record<string, Map<string, Uint8Array>> = {};
@@ -224,7 +226,7 @@ class JavaAssets implements AssetIndex {
         size = info.size;
       }
     }
-    if (!url) throw new Error(`These Minecraft ${this.version} files aren't downloaded yet. Connect to the internet or pick the game's .jar file again.`);
+    if (!url) throw new Error(fmt(fileText.java.notDownloaded, { version: this.version }));
     this.zip = new RangeZip(new HttpRangeSource(url, size, `Downloading Minecraft ${this.version}`), entriesFromMeta(this.meta), this.meta.dataEnd);
     return this.zip;
   }
@@ -267,7 +269,7 @@ interface SourceInfo {
 }
 
 const wrongJar = (versionId: string, what: string) =>
-  new Error(`That jar is ${what}, but Minecraft ${versionId} is selected. Pick the ${versionId} jar (versions/${versionId}/${versionId}.jar in your .minecraft folder) or switch versions.`);
+  new Error(fmt(fileText.java.wrongJar, { what, version: versionId, path: `versions/${versionId}/${versionId}.jar` }));
 
 /** Rejects a user-picked jar that belongs to another version, so it isn't cached under the wrong one. */
 function checkUserJar(versionId: string, entries: ZipEntry[], versionJson: Uint8Array | undefined): void {
@@ -278,37 +280,37 @@ function checkUserJar(versionId: string, entries: ZipEntry[], versionJson: Uint8
     } catch {
       return; // unreadable version.json: accept
     }
-    if (vj.id && vj.id !== versionId && vj.name !== versionId) throw wrongJar(versionId, `Minecraft ${vj.id}`);
+    if (vj.id && vj.id !== versionId && vj.name !== versionId) throw wrongJar(versionId, fmt(fileText.java.wrongJarVersion, { version: vj.id }));
     return;
   }
   // No version.json (1.13.2 and older): only known releases can be checked.
   const i = KNOWN_RELEASES.indexOf(versionId);
   if (i < 0) return;
-  if (i >= KNOWN_RELEASES.indexOf('1.14')) throw wrongJar(versionId, 'from an older Minecraft version (it has no version.json)');
+  if (i >= KNOWN_RELEASES.indexOf('1.14')) throw wrongJar(versionId, fileText.java.wrongJarOlder);
   const has = (dir: string) => entries.some((e) => e.name.startsWith(`${JAVA_TEXTURE_ROOT}${dir}/`));
   const flattened = KNOWN_RELEASE_FORMATS[versionId].major >= 4;
-  if (flattened && !has('block') && has('blocks')) throw wrongJar(versionId, 'from Minecraft 1.12.2 or older');
-  if (!flattened && !has('blocks') && has('block')) throw wrongJar(versionId, 'from Minecraft 1.13 or newer');
+  if (flattened && !has('block') && has('blocks')) throw wrongJar(versionId, fileText.java.wrongJarPre113);
+  if (!flattened && !has('blocks') && has('block')) throw wrongJar(versionId, fileText.java.wrongJarPost113);
 }
 
 async function fromSource(versionId: string, source: ByteSource, info: SourceInfo, onProgress: ProgressFn | undefined, signal?: AbortSignal): Promise<JavaAssets> {
   const report = (label: string, fraction: number | null, extra?: { loaded?: number; total?: number }) => onProgress?.({ label, fraction, ...extra });
-  report(`Reading the Minecraft ${versionId} file list`, null);
+  report(fmt(fileText.java.readingList, { version: versionId }), null);
   const zip = await RangeZip.open(source, {
     signal,
-    label: `Reading the Minecraft ${versionId} file list`,
+    label: fmt(fileText.java.readingList, { version: versionId }),
     onProgress,
   });
   const listed = zip.entries.filter((e) => javaGroupOf(e.name) !== null);
   if (!listed.some((e) => e.name.startsWith(JAVA_TEXTURE_ROOT))) {
-    throw new Error(info.fromFile ? "That file doesn't look like a Minecraft Java client jar (no textures inside)." : `The Minecraft ${versionId} download has no textures.`);
+    throw new Error(info.fromFile ? fileText.java.notClientJar : fmt(fileText.java.noTextures, { version: versionId }));
   }
   // Local files and fully downloaded jars are cheap to read completely; remote jars only need textures now.
   const eager = source.kind !== 'http' || !!source.full;
   const wanted = eager ? listed : listed.filter((e) => javaGroupOf(e.name) === 'core');
   const files = await zip.readMany(wanted, {
     signal,
-    label: `Downloading Minecraft ${versionId} textures`,
+    label: fmt(fileText.java.downloadingTextures, { version: versionId }),
     onProgress,
   });
   throwIfAborted(signal);
@@ -345,7 +347,7 @@ async function fromSource(versionId: string, source: ByteSource, info: SourceInf
   if (everything) for (const e of listed) byGroup[javaGroupOf(e.name)!] ??= new Map();
   const assets = new JavaAssets(versionId, meta, everything ? null : zip);
   for (const [g, m] of Object.entries(byGroup)) assets.addGroup(g, m);
-  report('Saving for offline use', null);
+  report(fileText.java.savingOffline, null);
   try {
     await persistGroups(versionId, meta, byGroup);
   } catch (err) {
@@ -365,7 +367,7 @@ async function load(versionId: string, opts: { onProgress?: ProgressFn; jarFile?
     const jar = await getClientJarInfo(versionId).catch(() => undefined);
     return fromSource(versionId, new BlobSource(jarFile), { jar: jar && jar.size === jarFile.size ? jar : undefined, fromFile: true }, onProgress, signal);
   }
-  onProgress?.({ label: `Finding Minecraft ${versionId}`, fraction: null });
+  onProgress?.({ label: fmt(fileText.java.finding, { version: versionId }), fraction: null });
   const jar = await getClientJarInfo(versionId);
   try {
     return await fromSource(versionId, new HttpRangeSource(jar.url, jar.size, `Downloading Minecraft ${versionId}`), { jar }, onProgress, signal);
@@ -374,12 +376,12 @@ async function load(versionId: string, opts: { onProgress?: ProgressFn; jarFile?
     console.warn('Range download failed, downloading the whole jar instead:', err);
   }
   const bytes = await fetchWithProgress(jar.url, {
-    label: `Downloading Minecraft ${versionId}`,
+    label: fmt(fileText.java.downloading, { version: versionId }),
     expectedSize: jar.size,
     onProgress,
     signal,
   });
-  if (bytes.length !== jar.size) throw new Error(`The Minecraft ${versionId} download was incomplete. Try again.`);
+  if (bytes.length !== jar.size) throw new Error(fmt(fileText.java.incomplete, { version: versionId }));
   return fromSource(versionId, new MemorySource(bytes), { jar }, onProgress, signal);
 }
 

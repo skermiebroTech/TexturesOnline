@@ -1,5 +1,7 @@
 import type { Edition, GameVersion, PackFormat, TexturePackProject } from '../../core/types';
 import { isPng } from '../../core/pixels';
+import { packText } from '../../shared/i18n/packs';
+import { fmt } from '../../i18n/editor-text';
 import { isZip, readZip } from '../../core/zip';
 import { isUuid } from '../../core/uuid';
 import { readPackMcmetaRange } from '../../editions/java/packmeta';
@@ -38,6 +40,9 @@ interface Candidate {
   source: string;
 }
 
+/** `code` of the error thrown for an archive without a resource pack in it. */
+export const NO_PACK = 'no-pack';
+
 const MAX_FILE_SIZE = 1024 * 1024 * 1024;
 const LIVE_VERSIONS_TIMEOUT = 6000;
 
@@ -51,18 +56,18 @@ export async function importPack(file: File): Promise<ImportResult> {
   const warnings: string[] = [];
   const fileName = file.name || 'pack.zip';
   if (/\.(png|jpe?g|gif|webp|tga|bmp)$/i.test(fileName)) {
-    throw new Error('That is a single image. To use it, open a texture in the editor and upload it there. To open a whole pack, choose its .zip or .mcpack file.');
+    throw new Error(packText.open.singleImage);
   }
   if (/\.jar$/i.test(fileName)) {
-    throw new Error("That is a game or mod .jar file, not a resource pack. Choose a pack's .zip or .mcpack file instead.");
+    throw new Error(packText.open.jar);
   }
-  if (file.size > MAX_FILE_SIZE) throw new Error('This file is larger than 1 GB, which is too big to open in the browser.');
+  if (file.size > MAX_FILE_SIZE) throw new Error(packText.open.tooLarge);
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!bytes.length) throw new Error('This file is empty.');
-  if (!isZip(bytes)) throw new Error("This file isn't a .zip, .mcpack or .mcaddon archive, so it can't be opened as a pack.");
+  if (!bytes.length) throw new Error(packText.open.empty);
+  if (!isZip(bytes)) throw new Error(packText.open.notArchive);
 
   const files = await readZip(bytes);
-  if (!Object.keys(files).length) throw new Error('This archive is empty.');
+  if (!Object.keys(files).length) throw new Error(packText.open.emptyArchive);
 
   const found: Candidate[] = [];
   const otherTypes = new Set<string>();
@@ -74,7 +79,7 @@ export async function importPack(file: File): Promise<ImportResult> {
       try {
         scan(await readZip(data), path.split('/').pop()!, 1, found, otherTypes);
       } catch {
-        warnings.push(`"${path}" inside the archive couldn't be read and was skipped.`);
+        warnings.push(fmt(packText.open.innerUnreadable, { path }));
       }
     }
   }
@@ -82,14 +87,15 @@ export async function importPack(file: File): Promise<ImportResult> {
   let cand = pickCandidate(found, fileName);
   if (!cand) cand = guessWithoutMetadata(files);
   if (!cand) {
-    if (otherTypes.has('skin_pack')) throw new Error('This is a Bedrock skin pack. Open it in the Skins tool instead.');
-    if (otherTypes.has('data') || otherTypes.has('script')) throw new Error('This is a behavior pack (it changes how the game plays, not how it looks), so it has no textures to edit.');
-    if (otherTypes.has('world_template')) throw new Error("This is a world template, not a resource pack.");
-    throw new Error("This archive doesn't contain a Minecraft resource pack (there is no pack.mcmeta or manifest.json).");
+    if (otherTypes.has('skin_pack')) throw new Error(packText.open.skinPack);
+    if (otherTypes.has('data') || otherTypes.has('script')) throw new Error(packText.open.behaviorPack);
+    if (otherTypes.has('world_template')) throw new Error(packText.open.worldTemplate);
+    // The converter tells this case apart by its code (the message is translated).
+    throw Object.assign(new Error(packText.open.noPack), { code: NO_PACK });
   }
   const sameEdition = found.filter((c) => c.edition === cand!.edition && c !== cand);
   if (sameEdition.length) {
-    warnings.push(`This file contains ${sameEdition.length + 1} resource packs. Opened the one in "${cand.root || cand.source}"; open the others separately.`);
+    warnings.push(fmt(packText.open.severalPacks, { count: sameEdition.length + 1, folder: cand.root || cand.source }));
   }
 
   const rel: Files = {};
@@ -99,13 +105,13 @@ export async function importPack(file: File): Promise<ImportResult> {
     else outside++;
   }
   if (outside && !sameEdition.length && cand.root) {
-    warnings.push(`${count(outside, 'file')} outside the pack's "${cand.root.replace(/\/$/, '')}" folder ${outside === 1 ? 'was' : 'were'} left out.`);
+    warnings.push(fmt(packText.open.outside, { count: outside, folder: cand.root.replace(/\/$/, '') }));
   }
 
   const baseName = nameFromFile(fileName);
   const project = cand.edition === 'java' ? await importJava(rel, baseName, warnings) : importBedrock(rel, cand.manifest, baseName, warnings);
   if (!Object.keys(project.overrides).length) {
-    warnings.push('This pack has no textures of its own yet. You can start editing any vanilla texture.');
+    warnings.push(packText.open.noTextures);
   }
   return { project, warnings };
 }
@@ -166,15 +172,15 @@ async function importJava(rel: Files, baseName: string, warnings: string[]): Pro
   let range: { min: PackFormat; max: PackFormat } | null = null;
   const mcmeta = rel['pack.mcmeta'];
   if (!mcmeta) {
-    warnings.push('The pack has no pack.mcmeta file. A correct one will be created when you export.');
+    warnings.push(packText.open.noMcmeta);
   } else {
     const json = parseJsonLoose(decodeText(mcmeta)) as { pack?: { description?: unknown } } | null;
     if (!json || typeof json !== 'object') {
-      warnings.push("The pack's pack.mcmeta file is damaged. A correct one will be created when you export.");
+      warnings.push(packText.open.badMcmeta);
     } else {
       const d = flattenText(json.pack?.description);
       description = d.text;
-      if (d.formatted) warnings.push('The pack description used colours or formatting codes; it was converted to plain text.');
+      if (d.formatted) warnings.push(packText.open.formattedDescription);
       range = readPackMcmetaRange(JSON.stringify(json));
     }
   }
@@ -190,7 +196,7 @@ async function importJava(rel: Files, baseName: string, warnings: string[]): Pro
   for (const [path, data] of Object.entries(rel)) {
     if (path === 'pack.png') {
       if (isPng(data)) icon = toBlob(data, 'image/png');
-      else warnings.push("The pack icon (pack.png) isn't a valid PNG, so a new icon will be generated.");
+      else warnings.push(packText.open.badPackPng);
       continue;
     }
     if (path.startsWith(JAVA_TEXTURE_ROOT) && path.endsWith('.png')) {
@@ -205,11 +211,11 @@ async function importJava(rel: Files, baseName: string, warnings: string[]): Pro
     if (/^[^/]+\/assets\//.test(path)) overlays = true;
     extraFiles[path] = toBlob(data, mimeFor(path));
   }
-  if (badImages) warnings.push(`${count(badImages, 'texture')} ${badImages === 1 ? "isn't a real PNG image" : "aren't real PNG images"} and will be kept as-is but can't be edited.`);
-  if (modTextures) warnings.push(`${count(modTextures, 'texture')} for mods (other namespaces) will be kept but can't be edited here.`);
+  if (badImages) warnings.push(fmt(packText.open.badImages, { count: badImages }));
+  if (modTextures) warnings.push(fmt(packText.open.modTextures, { count: modTextures }));
   if (optifine) warnings.push('OptiFine features (connected textures, custom item textures, …) are kept but not shown in the preview.');
   if (overlays && rel['pack.mcmeta'] && /"overlays"/.test(decodeText(rel['pack.mcmeta']))) {
-    warnings.push('Overlay folders (version-specific extras) are kept as they are; only the main textures are editable.');
+    warnings.push(packText.open.overlays);
   }
 
   const project = newTextureProject({ name: baseName, edition: 'java', version, resolution: guessResolution(overrides, 'java', rel) });
@@ -231,7 +237,7 @@ export async function guessJavaVersion(
   warnings: string[] = [],
 ): Promise<{ version: string; compat?: { minVersion: string; maxVersion: string } }> {
   if (!range) {
-    warnings.push(`The pack doesn't say which Minecraft version it's for, so it was set to ${DEFAULT_JAVA_VERSION}. You can change this in the Pack settings.`);
+    warnings.push(fmt(packText.open.noVersion, { version: DEFAULT_JAVA_VERSION }));
     return { version: DEFAULT_JAVA_VERSION };
   }
   const fmtOf = (id: string) => KNOWN_RELEASE_FORMATS[id];
@@ -253,12 +259,12 @@ export async function guessJavaVersion(
   const declared = describeRange(range);
   if (!version) {
     if (comparePackFormats(range.min, newestKnown) > 0) {
-      warnings.push(`This pack is for a newer Minecraft version than this app knows (pack format ${declared}). It was set to ${DEFAULT_JAVA_VERSION}; check the version in the Pack settings.`);
+      warnings.push(fmt(packText.open.newerFormat, { format: declared, version: DEFAULT_JAVA_VERSION }));
       return { version: DEFAULT_JAVA_VERSION };
     }
     const below = newestFirst.find((id) => comparePackFormats(fmtOf(id), range.max) <= 0);
     version = below ?? KNOWN_RELEASES[0];
-    warnings.push(`This pack was made for a development snapshot (pack format ${declared}). It was set to the closest release, Minecraft ${version}.`);
+    warnings.push(fmt(packText.open.snapshotFormat, { format: declared, version }));
     return { version };
   }
 
@@ -267,7 +273,7 @@ export async function guessJavaVersion(
     let min = range.min;
     if (range.max.major > 64 && min.major < 15) {
       min = { major: 15, minor: 0 };
-      warnings.push('The pack claimed support for very old versions together with new ones, which new versions reject. Its range now starts at Minecraft 1.20.');
+      warnings.push(packText.open.oldRange);
     }
     const minVersion = KNOWN_RELEASES.find((id) => comparePackFormats(fmtOf(id), min) >= 0 && comparePackFormats(fmtOf(id), versionFormat!) <= 0);
     if (minVersion && minVersion !== version && fmtOf(minVersion).major !== versionFormat!.major) {
@@ -325,18 +331,18 @@ function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefi
   if (isUuid(header.uuid) && resModule && isUuid(resModule.uuid) && String(header.uuid).toLowerCase() !== String(resModule.uuid).toLowerCase()) {
     uuids = { header: String(header.uuid).toLowerCase(), module: String(resModule.uuid).toLowerCase() };
   } else if (manifest) {
-    warnings.push("The pack's IDs in manifest.json are missing or invalid, so it got new ones. It will install as a separate pack.");
+    warnings.push(packText.open.badIds);
   } else {
-    warnings.push('The pack has no manifest.json. A new one will be created when you export.');
+    warnings.push(packText.open.noManifest);
   }
   const packVersion = parseBedrockVersion(header.version) ?? undefined;
 
   const capabilities = Array.isArray(manifest?.capabilities) ? (manifest!.capabilities as unknown[]).map(String) : [];
   if (capabilities.includes('pbr')) {
-    warnings.push('This pack has Vibrant Visuals (PBR) data. It is kept, but exported packs switch Vibrant Visuals off so your texture edits show up.');
+    warnings.push(packText.open.vibrantVisuals);
   }
   if (Array.isArray(manifest?.subpacks) && (manifest!.subpacks as unknown[]).length) {
-    warnings.push('This pack has sub-packs (in-game options). Their folders are kept as they are; only the main textures are editable.');
+    warnings.push(packText.open.subpacks);
   }
 
   const overrides: Record<string, Blob> = {};
@@ -348,7 +354,7 @@ function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefi
   for (const [path, data] of Object.entries(rel)) {
     if (path === 'pack_icon.png') {
       if (isPng(data)) icon = toBlob(data, 'image/png');
-      else warnings.push("The pack icon (pack_icon.png) isn't a valid PNG, so a new icon will be generated.");
+      else warnings.push(packText.open.badPackIcon);
       continue;
     }
     const ext = extOf(path);
@@ -362,7 +368,7 @@ function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefi
     }
     extraFiles[path] = toBlob(data, mimeFor(path));
   }
-  if (badImages) warnings.push(`${count(badImages, 'texture')} couldn't be recognised as images and will be kept as-is but can't be edited.`);
+  if (badImages) warnings.push(fmt(packText.open.unrecognisedImages, { count: badImages }));
 
   const project = newTextureProject({ name, edition: 'bedrock', version: BEDROCK_LATEST_ID, resolution: guessResolution(overrides, 'bedrock', rel) });
   if (manifest) project.description = description;
@@ -440,7 +446,7 @@ function nameFromFile(fileName: string): string {
     .replace(/^[!\s]+/, '')
     .replace(/\s+/g, ' ')
     .trim();
-  return name || 'Imported pack';
+  return name || packText.open.importedName;
 }
 
 function mimeFor(path: string): string {
@@ -479,6 +485,3 @@ function decodeText(bytes: Uint8Array): string {
   return t.charCodeAt(0) === 0xfeff ? t.slice(1) : t;
 }
 
-function count(n: number, word: string): string {
-  return `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`;
-}

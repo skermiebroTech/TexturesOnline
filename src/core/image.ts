@@ -1,6 +1,8 @@
 import { decode as decodePngRaw, encode as encodePngRaw, type DecodedPng } from 'fast-png';
 import { decodeTga, encodeTga as encodeTgaRaw, isTga } from './tga';
 import { createImageData, isPng } from './pixels';
+import { fileText } from '../shared/i18n/files';
+import { fmt } from '../i18n/editor-text';
 
 /*
  * Pixels are straight RGBA end to end. PNG and TGA are decoded/encoded in JS so colour under
@@ -102,10 +104,10 @@ export function decodePngBytes(bytes: Uint8Array): ImageData {
   try {
     png = decodePngRaw(bytes);
   } catch (err) {
-    throw new Error(`This PNG file couldn't be read${err instanceof Error && err.message ? ` (${err.message})` : ''}.`);
+    throw new Error(fmt(fileText.image.pngUnreadable, { reason: err instanceof Error && err.message ? ` (${err.message})` : '' }));
   }
-  if (png.depth < 8 && !png.palette && png.channels !== 1) throw new Error('This PNG uses an unsupported bit depth.');
-  if (png.depth < 8 && pngIsInterlaced(bytes)) throw new Error('Interlaced PNGs with fewer than 8 bits per sample are not supported. Re-save the image as a normal PNG.');
+  if (png.depth < 8 && !png.palette && png.channels !== 1) throw new Error(fileText.image.bitDepth);
+  if (png.depth < 8 && pngIsInterlaced(bytes)) throw new Error(fileText.image.interlaced);
   return createImageData(png.width, png.height, pngToRgba(png));
 }
 
@@ -137,12 +139,12 @@ function sniff(bytes: Uint8Array): 'png' | 'jpeg' | 'gif' | 'webp' | 'bmp' | nul
 
 /** Browser decode for formats without alpha-as-data concerns (JPEG, GIF, WebP, BMP uploads). */
 async function decodeWithBrowser(bytes: Uint8Array, mime: string): Promise<ImageData> {
-  if (typeof createImageBitmap !== 'function') throw new Error('This image format is not supported here. Use a PNG file.');
+  if (typeof createImageBitmap !== 'function') throw new Error(fileText.image.formatUnsupported);
   let bmp: ImageBitmap;
   try {
     bmp = await createImageBitmap(new Blob([bytes as Uint8Array<ArrayBuffer>], { type: mime }), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
   } catch {
-    throw new Error("This image couldn't be read. Try saving it as a PNG.");
+    throw new Error(fileText.image.unreadable);
   }
   const w = bmp.width;
   const h = bmp.height;
@@ -154,7 +156,7 @@ async function decodeWithBrowser(bytes: Uint8Array, mime: string): Promise<Image
     c.height = h;
     ctx = c.getContext('2d', { willReadFrequently: true });
   }
-  if (!ctx) throw new Error("This image couldn't be read. Try saving it as a PNG.");
+  if (!ctx) throw new Error(fileText.image.unreadable);
   ctx.drawImage(bmp, 0, 0);
   bmp.close();
   const id = ctx.getImageData(0, 0, w, h);
@@ -163,7 +165,7 @@ async function decodeWithBrowser(bytes: Uint8Array, mime: string): Promise<Image
 
 export async function decodeImage(data: Uint8Array | Blob | ArrayBuffer, ext?: 'png' | 'tga' | string): Promise<ImageData> {
   const bytes = data instanceof Uint8Array ? data : data instanceof ArrayBuffer ? new Uint8Array(data) : new Uint8Array(await data.arrayBuffer());
-  if (!bytes.length) throw new Error('The image file is empty.');
+  if (!bytes.length) throw new Error(fileText.image.empty);
   const kind = sniff(bytes);
   if (kind === 'png') return decodePngBytes(bytes);
   const e = (ext ?? '').toLowerCase().replace(/^\./, '');
@@ -172,7 +174,7 @@ export async function decodeImage(data: Uint8Array | Blob | ArrayBuffer, ext?: '
     return createImageData(t.width, t.height, t.data);
   }
   if (kind) return decodeWithBrowser(bytes, `image/${kind}`);
-  throw new Error("This file isn't a supported image. Use a PNG file.");
+  throw new Error(fileText.image.notImage);
 }
 
 /** Sync decode for PNG/TGA bytes (throws for other formats). */
@@ -182,7 +184,7 @@ export function decodeImageSync(bytes: Uint8Array, ext?: string): ImageData {
     const t = decodeTga(bytes);
     return createImageData(t.width, t.height, t.data);
   }
-  throw new Error("This file isn't a PNG or TGA image.");
+  throw new Error(fileText.image.notPngOrTga);
 }
 
 // ---- Data URLs ----

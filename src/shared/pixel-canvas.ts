@@ -3,6 +3,7 @@
 // pixels are pushed with putImageData onto an internal canvas and never read back.
 
 import './pixel-canvas.css';
+import { canvasText, type CanvasText } from './i18n/canvas';
 import {
   type BrushShape,
   type ChannelMode,
@@ -129,36 +130,49 @@ export interface PixelCanvasEvents {
   selection: Rect | null;
 }
 
-export const PIXEL_SHORTCUTS: ReadonlyArray<{ keys: string; action: string }> = [
-  { keys: 'B', action: 'Pencil' },
-  { keys: 'E', action: 'Eraser' },
-  { keys: 'G', action: 'Fill bucket' },
-  { keys: 'I', action: 'Color picker' },
-  { keys: 'Alt (hold)', action: 'Temporary color picker' },
-  { keys: 'L', action: 'Line (hold Shift to snap angles)' },
-  { keys: 'U', action: 'Rectangle (press again for filled)' },
-  { keys: 'O', action: 'Ellipse (hold Shift for a circle)' },
-  { keys: 'M', action: 'Select' },
-  { keys: 'V', action: 'Move' },
-  { keys: 'X', action: 'Swap primary and secondary colors' },
-  { keys: '[ ]', action: 'Smaller / bigger brush' },
-  { keys: 'Shift + click', action: 'Straight line from the last point' },
-  { keys: 'Right click', action: 'Paint with the secondary color' },
-  { keys: 'Ctrl/Cmd + Z', action: 'Undo' },
-  { keys: 'Ctrl/Cmd + Shift + Z, Ctrl + Y', action: 'Redo' },
-  { keys: 'Ctrl/Cmd + A, Ctrl/Cmd + D', action: 'Select all, deselect' },
-  { keys: 'Ctrl/Cmd + C / X / V', action: 'Copy, cut, paste' },
-  { keys: 'Delete', action: 'Clear the selection' },
-  { keys: 'Enter, Esc', action: 'Drop the moved selection, deselect' },
-  { keys: 'Arrow keys', action: 'Nudge the selection (Shift: 8 px)' },
-  { keys: 'H, Shift + H', action: 'Flip horizontally, vertically' },
-  { keys: 'R', action: 'Rotate 90°' },
-  { keys: '#', action: 'Toggle pixel grid' },
-  { keys: '0', action: 'Zoom to fit' },
-  { keys: '+ / -', action: 'Zoom in / out' },
-  { keys: 'Space + drag, middle drag', action: 'Pan' },
-  { keys: 'Mouse wheel, pinch', action: 'Zoom' },
-  { keys: 'Two-finger tap', action: 'Undo (touch screens)' },
+/** Key name, or a translated description of a gesture */
+type ShortcutKeys = string | (() => string);
+const shortcut = (keys: ShortcutKeys, action: keyof CanvasText['shortcuts']) => ({
+  id: action,
+  get keys() {
+    return typeof keys === 'string' ? keys : keys();
+  },
+  get action() {
+    return canvasText.shortcuts[action];
+  },
+});
+
+/** Keys and actions are read in the current language each time (getters); `id` never changes. */
+export const PIXEL_SHORTCUTS: ReadonlyArray<{ readonly id: keyof CanvasText['shortcuts']; readonly keys: string; readonly action: string }> = [
+  shortcut('B', 'pencil'),
+  shortcut('E', 'eraser'),
+  shortcut('G', 'fill'),
+  shortcut('I', 'picker'),
+  shortcut(() => canvasText.keys.altHold, 'tempPicker'),
+  shortcut('L', 'line'),
+  shortcut('U', 'rect'),
+  shortcut('O', 'ellipse'),
+  shortcut('M', 'select'),
+  shortcut('V', 'move'),
+  shortcut('X', 'swap'),
+  shortcut('[ ]', 'brush'),
+  shortcut(() => canvasText.keys.shiftClick, 'straight'),
+  shortcut(() => canvasText.keys.rightClick, 'secondary'),
+  shortcut('Ctrl/Cmd + Z', 'undo'),
+  shortcut('Ctrl/Cmd + Shift + Z, Ctrl + Y', 'redo'),
+  shortcut('Ctrl/Cmd + A, Ctrl/Cmd + D', 'selectAll'),
+  shortcut('Ctrl/Cmd + C / X / V', 'clipboard'),
+  shortcut('Delete', 'clear'),
+  shortcut('Enter, Esc', 'drop'),
+  shortcut(() => canvasText.keys.arrows, 'nudge'),
+  shortcut('H, Shift + H', 'flip'),
+  shortcut('R', 'rotate'),
+  shortcut('#', 'grid'),
+  shortcut('0', 'fit'),
+  shortcut('+ / -', 'zoomInOut'),
+  shortcut(() => canvasText.keys.pan, 'panAction'),
+  shortcut(() => canvasText.keys.wheel, 'zoom'),
+  shortcut(() => canvasText.keys.twoFingerTap, 'touchUndo'),
 ];
 
 // Zoom levels in device pixels per image pixel. Integers keep every image pixel the same size on screen.
@@ -337,8 +351,8 @@ export class PixelCanvas {
     this.element.className = 'pc-root';
     this.element.tabIndex = 0;
     this.element.setAttribute('role', 'application');
-    this.element.setAttribute('aria-roledescription', 'pixel editor');
-    this.element.setAttribute('aria-label', opts.label ?? 'Pixel editor');
+    this.element.setAttribute('aria-roledescription', canvasText.roleDescription);
+    this.element.setAttribute('aria-label', opts.label ?? canvasText.label);
 
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'pc-canvas';
@@ -361,7 +375,7 @@ export class PixelCanvas {
     const help = document.createElement('div');
     help.className = 'pc-sr';
     help.id = `pc-help-${uid}`;
-    help.textContent = 'Arrow keys move the keyboard cursor, Enter uses the current tool there. Tool shortcuts: B pencil, E eraser, G fill, I picker, L line, U rectangle, O ellipse, M select, V move. Ctrl+Z undo.';
+    help.textContent = canvasText.help;
     this.element.setAttribute('aria-describedby', help.id);
     this.live = document.createElement('div');
     this.live.className = 'pc-sr';
@@ -2298,7 +2312,7 @@ export class PixelCanvas {
         })
         .catch((err) => {
           console.warn('The pasted image could not be read', err);
-          this.announce('The pasted image could not be read');
+          this.announce(canvasText.pasteFailed);
         });
       return;
     }
@@ -2319,7 +2333,7 @@ export class PixelCanvas {
     this.setHover(this.hoverF);
     this.ensureVisible(next[0], next[1]);
     const c = pickColor(this.img, next[0], next[1], 'rgba');
-    this.announce(`${next[0]}, ${next[1]}: ${c[3] === 0 ? 'transparent' : rgbaToHex(c)}`);
+    this.announce(`${next[0]}, ${next[1]}: ${c[3] === 0 ? canvasText.transparent : rgbaToHex(c)}`);
     this.requestRender();
   }
 

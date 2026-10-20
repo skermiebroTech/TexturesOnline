@@ -4,6 +4,8 @@ import { convertLegacySkin } from '../../../core/pixels';
 import { decodeImage } from '../../../core/image-lazy';
 import type { AssetIndex, SkinModel } from '../../../core/types';
 import { detectSlim } from '../templates';
+import { skinText } from '../../../shared/i18n/skins';
+import { fmt } from '../../../i18n/editor-text';
 
 export interface LoadedSkin {
   image: ImageData;
@@ -30,7 +32,13 @@ function sniff(bytes: Uint8Array): 'png' | 'jpeg' | 'gif' | 'webp' | 'bmp' | 'un
 }
 
 /** Note shown when an HD skin is opened. */
-export const HD_KEPT_NOTE = 'This is an HD 128×128 skin, so it stays HD. Bedrock shows every pixel; Java exports are reduced to 64×64.';
+/** The HD note as it read when this module loaded (English in the unit tests); the app uses isHdKeptNote(). */
+export const HD_KEPT_NOTE: string = skinText.hdKept;
+
+/** Whether a note is the one given for HD skins (in the interface's language). */
+export function isHdKeptNote(note: string): boolean {
+  return note === skinText.hdKept;
+}
 
 /**
  * Validates and normalises a decoded skin image: 64x64 and HD 128x128 skins are kept as they are,
@@ -42,34 +50,34 @@ export function normalizeSkinImage(img: ImageData): LoadedSkin {
   let image = img;
   if (w === 64 && h === 32) {
     image = convertLegacySkin(img, { forceOpaqueBase: false });
-    notes.push('This is an old 64×32 skin, so it was converted to the modern 64×64 layout. The left arm and leg start as mirror copies of the right ones.');
+    notes.push(skinText.legacy);
   } else if (w === 128 && h === 128) {
-    notes.push(HD_KEPT_NOTE);
+    notes.push(skinText.hdKept);
   } else if (!(w === 64 && h === 64)) {
     const hint =
       w === h && w > 128 && w % 64 === 0
-        ? ` It looks like a ${w / 64}× enlarged skin; use the original 64×64 (or HD 128×128) file instead.`
-        : ' Make sure you picked the skin file itself, not a screenshot or a render of it.';
-    throw new SkinSourceError(`This image is ${w}×${h} pixels. Minecraft skins are exactly 64×64 pixels, 128×128 for HD Bedrock skins, or the old 64×32 size.${hint}`);
+        ? fmt(skinText.enlargedHint, { factor: String(w / 64) })
+        : skinText.screenshotHint;
+    throw new SkinSourceError(fmt(skinText.wrongSize, { width: String(w), height: String(h), hint }));
   }
   let visible = false;
   for (let i = 3; i < image.data.length && !visible; i += 4) visible = image.data[i] > 0;
-  if (!visible) notes.push('This skin is completely see-through, so there is nothing to see yet. Paint away!');
+  if (!visible) notes.push(skinText.invisible);
   return { image, model: detectSlim(image) ? 'slim' : 'classic', notes };
 }
 
 /** Reads a user-picked PNG into a 64x64 (or HD 128x128) skin. */
 export async function readSkinFile(file: Blob & { name?: string }): Promise<LoadedSkin> {
-  if (file.size > 2 * 1024 * 1024) throw new SkinSourceError('That file is too big to be a skin. Skins are small 64×64 (or HD 128×128) PNG images, usually well under 50 KB.');
+  if (file.size > 2 * 1024 * 1024) throw new SkinSourceError(skinText.tooBig);
   const bytes = new Uint8Array(await file.arrayBuffer());
   const kind = sniff(bytes);
-  if (kind === 'jpeg') throw new SkinSourceError('This is a JPEG photo. Skins must be PNG files, because they need see-through pixels. Save your skin as .png and try again.');
-  if (kind !== 'png') throw new SkinSourceError(`"${file.name ?? 'This file'}" is not a PNG image. Skins are 64×64 .png files.`);
+  if (kind === 'jpeg') throw new SkinSourceError(skinText.jpeg);
+  if (kind !== 'png') throw new SkinSourceError(fmt(skinText.notPng, { name: file.name ?? skinText.thisFile }));
   let img: ImageData;
   try {
     img = await decodeImage(bytes, 'png');
   } catch {
-    throw new SkinSourceError('This PNG file seems to be damaged and could not be opened.');
+    throw new SkinSourceError(skinText.damaged);
   }
   return normalizeSkinImage(img);
 }
@@ -81,9 +89,9 @@ const UUID = /^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[
 
 export function validateUsername(input: string): string | null {
   const s = input.trim();
-  if (!s) return 'Type a Minecraft Java username.';
+  if (!s) return skinText.typeName;
   if (UUID.test(s)) return null;
-  if (!USERNAME.test(s)) return 'Java usernames are 3 to 16 letters, numbers or underscores (no spaces).';
+  if (!USERNAME.test(s)) return skinText.badName;
   return null;
 }
 
@@ -155,7 +163,7 @@ export async function fetchSkinByUsername(input: string, signal?: AbortSignal): 
       body = null;
     }
     if (body && body.success === false && /invalid_username|not_found|player\.not/i.test(body.code ?? '')) {
-      throw new SkinSourceError(`No Java Edition player is called "${name}". Check the spelling. (Bedrock gamertags can't be looked up.)`);
+      throw new SkinSourceError(fmt(skinText.noPlayer, { name }));
     }
     if (!res.ok || !body?.data?.player) throw new Error(`playerdb HTTP ${res.status}`);
     const player = body.data.player;
@@ -178,16 +186,16 @@ export async function fetchSkinByUsername(input: string, signal?: AbortSignal): 
       img = null;
     }
   } else if (!lookupFailed) {
-    notes.push(`${username} uses one of the default skins.`);
+    notes.push(fmt(skinText.defaultSkin, { name: username }));
   }
   if (!img) {
     try {
       img = await imageFromUrl(`https://mc-heads.net/skin/${encodeURIComponent(username)}`, signal);
-      if (lookupFailed) notes.push('The player lookup service did not answer, so the skin came from mc-heads.net. The arm model was guessed from the pixels.');
+      if (lookupFailed) notes.push(skinText.fallback);
     } catch (err) {
       if (signal?.aborted) throw err;
-      if (err instanceof BadAnswerError) throw new SkinSourceError("The skin servers answered, but didn't send a usable skin. Try again in a minute.");
-      throw new SkinSourceError("Couldn't reach the skin servers. Check your internet connection and try again.");
+      if (err instanceof BadAnswerError) throw new SkinSourceError(skinText.badAnswer);
+      throw new SkinSourceError(skinText.unreachable);
     }
   }
   const loaded = normalizeSkinImage(img);

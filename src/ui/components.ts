@@ -7,6 +7,8 @@ import { tooltip } from './tooltip';
 import { openPopover } from './popover';
 import { colorPicker } from './color-picker';
 import { parseHex, toHex } from './color';
+import { kit } from './i18n/kit';
+import { fmt as format } from '../i18n/editor-text';
 
 export { tooltip, hideTooltip } from './tooltip';
 export { openPopover, openMenu, type MenuItem, type PopoverHandle } from './popover';
@@ -149,7 +151,7 @@ export function slider(opts: {
     min: String(opts.min),
     max: String(opts.max),
     step: String(step),
-    'aria-label': `${opts.label} value`,
+    'aria-label': format(kit.sliderValue, { label: opts.label }),
     inputMode: decimals > 0 ? 'decimal' : 'numeric',
   });
   const unit = opts.unit ? h('span', { class: 'faint small' }, opts.unit) : null;
@@ -247,7 +249,7 @@ export function select<T extends string>(opts: {
   description?: string;
 }): HTMLElement & { setValue(v: T): void; setOptions(o: { value: T; label: string }[]): void } {
   const id = uid('select');
-  const sel = h('select', { class: 'select-input', id, 'aria-label': opts.label ? undefined : 'Choose an option' });
+  const sel = h('select', { class: 'select-input', id, 'aria-label': opts.label ? undefined : kit.chooseOption });
   const fill = (options: { value: T; label: string }[]) => {
     sel.replaceChildren(...options.map((o) => h('option', { value: o.value }, o.label)));
   };
@@ -356,7 +358,7 @@ export function textInput(opts: {
     ? h('textarea', { class: 'textarea', id, placeholder: opts.placeholder ?? '', rows: 3 })
     : h('input', { class: 'input', id, type: opts.type ?? 'text', placeholder: opts.placeholder ?? '', autocomplete: 'off', spellcheck: false });
   if (opts.maxLength) input.maxLength = opts.maxLength;
-  if (!opts.label) input.setAttribute('aria-label', opts.placeholder ?? 'Text');
+  if (!opts.label) input.setAttribute('aria-label', opts.placeholder ?? kit.text);
   input.value = opts.value;
   input.addEventListener('input', () => opts.onInput(input.value));
   if (opts.onEnter && input instanceof HTMLInputElement) {
@@ -387,7 +389,7 @@ export function colorSwatch(opts: { value: string; label?: string; onChange: (he
   const paint = () => {
     chip.style.background = value;
     text.textContent = value;
-    btn.setAttribute('aria-label', `${opts.label ?? 'Colour'}: ${value}`);
+    btn.setAttribute('aria-label', format(kit.colourValue, { label: opts.label ?? kit.colour, value }));
   };
   let pop: ReturnType<typeof openPopover> | null = null;
   btn.addEventListener('click', () => {
@@ -406,7 +408,7 @@ export function colorSwatch(opts: { value: string; label?: string; onChange: (he
       },
     });
     btn.setAttribute('aria-expanded', 'true');
-    pop = openPopover(btn, picker, { label: opts.label ?? 'Colour', focus: true, onClose: () => btn.setAttribute('aria-expanded', 'false') });
+    pop = openPopover(btn, picker, { label: opts.label ?? kit.colour, focus: true, onClose: () => btn.setAttribute('aria-expanded', 'false') });
   });
   const el = h(
     'div',
@@ -523,7 +525,7 @@ export function optionsForm(opts: {
       controls.set(d.key, c);
       body.appendChild(c);
     }
-    const reset = iconButton('reload', `Reset ${group}`, () => {
+    const reset = iconButton('reload', format(kit.resetGroup, { group }), () => {
       for (const d of defs) {
         if (values[d.key] !== d.default) {
           controls.get(d.key)?.setValue(d.default);
@@ -668,7 +670,7 @@ export function progressBar(opts: { label?: string } = {}): HTMLElement & { set(
 }
 
 export function spinner(size = 24): HTMLElement {
-  const el = h('span', { class: 'spinner', role: 'status', 'aria-label': 'Loading' });
+  const el = h('span', { class: 'spinner', role: 'status', 'aria-label': kit.loading });
   // whole-pixel cells keep the 3x3 ring crisp at any size
   const cell = Math.max(3, Math.round(size * 0.3));
   const step = Math.max(cell + 1, Math.round(size * 0.35));
@@ -714,7 +716,7 @@ export function editorLayout(opts: {
   initial?: EditorPanel;
   onPanelChange?: (p: EditorPanel) => void;
 }): HTMLElement & { show(panel: EditorPanel): void; current(): EditorPanel } {
-  const labels = { left: 'Browse', center: 'Canvas', right: 'Preview', ...opts.labels };
+  const labels = { left: kit.panel.left, center: kit.panel.center, right: kit.panel.right, ...opts.labels };
   const icons: Record<EditorPanel, IconName> = { left: 'bulletlist', center: 'pencil', right: 'eye', ...opts.icons };
   const panels = (['left', 'center', 'right'] as EditorPanel[]).filter((p) => p === 'center' || opts[p]);
   const wrap = (p: EditorPanel, node: HTMLElement) => h('div', { class: `editor-${p}`, dataset: { panel: p } }, node);
@@ -722,9 +724,9 @@ export function editorLayout(opts: {
   const sideOptions = panels.filter((p) => p !== 'center').map((p) => ({ value: p, label: labels[p], icon: icons[p] }));
   const sideTabs =
     sideOptions.length > 1
-      ? segmented<EditorPanel>({ value: sideOptions[0].value, options: sideOptions, size: 'sm', onChange: (v) => setSide(v), label: 'Side panel' })
+      ? segmented<EditorPanel>({ value: sideOptions[0].value, options: sideOptions, size: 'sm', onChange: (v) => setSide(v), label: kit.sidePanel })
       : null;
-  const bar = h('nav', { class: 'editor-tabbar', 'aria-label': 'Editor panels' });
+  const bar = h('nav', { class: 'editor-tabbar', 'aria-label': kit.editorPanels });
   const barButtons = new Map<EditorPanel, HTMLButtonElement>();
   for (const p of panels) {
     const b = h('button', { type: 'button', class: 'editor-tab', dataset: { panel: p } }, icon(icons[p]), h('span', null, labels[p]));

@@ -1,4 +1,6 @@
 import type { Progress, ProgressFn } from './types';
+import { errorText } from '../shared/i18n/errors';
+import { fmt } from '../i18n/editor-text';
 
 export type NetErrorKind =
   | 'offline'
@@ -65,7 +67,7 @@ export function isAbortError(err: unknown): boolean {
 }
 
 export function abortError(): Error {
-  const e = new Error('The operation was cancelled.');
+  const e = new Error(errorText.cancelled);
   e.name = 'AbortError';
   return e;
 }
@@ -122,24 +124,24 @@ function linkedSignal(signal: AbortSignal | undefined, timeoutMs: number): { sig
 function httpError(url: string, status: number, statusText: string): NetError {
   const host = hostOf(url);
   if (status === 404 || status === 410)
-    return new NetError('not-found', url, `The file wasn't found on ${host} (HTTP ${status}).`, status);
+    return new NetError('not-found', url, fmt(errorText.notFound, { host, status: String(status) }), status);
   if (status === 429)
-    return new NetError('rate-limited', url, `${host} is limiting requests right now. Wait a minute and try again.`, status);
+    return new NetError('rate-limited', url, fmt(errorText.rateLimited, { host }), status);
   if (status === 401 || status === 403)
-    return new NetError('forbidden', url, `${host} refused the request (HTTP ${status}).`, status);
-  return new NetError('http', url, `${host} returned an error (HTTP ${status}${statusText ? ' ' + statusText : ''}). Try again in a moment.`, status);
+    return new NetError('forbidden', url, fmt(errorText.forbidden, { host, status: String(status) }), status);
+  return new NetError('http', url, fmt(errorText.httpError, { host, status: `${status}${statusText ? ' ' + statusText : ''}` }), status);
 }
 
 function wrapFetchError(url: string, err: unknown, timedOut: boolean, signal?: AbortSignal): unknown {
   if (err instanceof NetError) return err;
-  if (timedOut) return new NetError('timeout', url, `The request to ${hostOf(url)} timed out. Check your connection and try again.`, undefined, err);
+  if (timedOut) return new NetError('timeout', url, fmt(errorText.timeout, { host: hostOf(url) }), undefined, err);
   if (signal?.aborted || isAbortError(err)) return abortError();
   if (isOffline())
-    return new NetError('offline', url, 'You appear to be offline. Check your internet connection and try again.', undefined, err);
+    return new NetError('offline', url, errorText.offline, undefined, err);
   return new NetError(
     'network',
     url,
-    `Couldn't reach ${hostOf(url)}. The server may be down, or a firewall or browser extension may be blocking it.`,
+    fmt(errorText.unreachable, { host: hostOf(url) }),
     undefined,
     err,
   );
@@ -316,7 +318,7 @@ export async function fetchJson<T = unknown>(url: string, opts: FetchOptions = {
   try {
     return JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text) as T;
   } catch (err) {
-    throw new NetError('bad-data', url, `${hostOf(url)} sent data that couldn't be read. Try again later.`, undefined, err);
+    throw new NetError('bad-data', url, fmt(errorText.badData, { host: hostOf(url) }), undefined, err);
   }
 }
 
@@ -360,13 +362,13 @@ export function createLimiter(concurrency: number): <T>(task: () => Promise<T>) 
 /** A user-facing message for any error thrown by the data layer. */
 export function friendlyError(err: unknown, context?: string): string {
   let msg: string;
-  if (isAbortError(err)) msg = 'Cancelled.';
+  if (isAbortError(err)) msg = errorText.cancelledShort;
   else if (err instanceof NetError) msg = err.message;
   else if (err instanceof Error && (err.name === 'QuotaExceededError' || /quota/i.test(err.message)))
-    msg = 'Your browser is out of storage space for this site. Free some space (e.g. clear cached game files) and try again.';
+    msg = errorText.quota;
   else if (err instanceof Error && err.message) msg = err.message;
-  else msg = 'Something went wrong.';
-  return context ? `${context}: ${msg}` : msg;
+  else msg = errorText.generic;
+  return context ? fmt(errorText.withContext, { context, message: msg }) : msg;
 }
 
 /** Fans one task's progress out to every caller waiting on it (late joiners get the latest state). */

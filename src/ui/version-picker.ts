@@ -6,7 +6,10 @@ import { h, uid } from './dom';
 import { icon } from './icons';
 import { badge, button, progressBar, segmented, spinner, toggle } from './components';
 import { openPopover, type PopoverHandle } from './popover';
-import { editionName, formatPackFormat, groupVersions, listVersionName, shortDate, shortVersionName } from './format';
+import { editionName, formatPackFormat, groupVersions, listVersionName, shortDate, shortVersionName, versionName } from './format';
+import { kit } from './i18n/kit';
+import { pickers } from '../shared/i18n/pickers';
+import { fmt, fmtNodes } from '../i18n/editor-text';
 
 export { editionName, formatPackFormat } from './format';
 
@@ -54,10 +57,10 @@ export function versionPicker(opts: {
   const editionSeg = opts.allowEditionChange
     ? segmented<Edition>({
         value: edition,
-        label: 'Edition',
+        label: pickers.version.edition,
         options: [
-          { value: 'java', label: 'Java', icon: 'laptop' },
-          { value: 'bedrock', label: 'Bedrock', icon: 'gamepad' },
+          { value: 'java', label: kit.edition.java, icon: 'laptop' },
+          { value: 'bedrock', label: kit.edition.bedrock, icon: 'gamepad' },
         ],
         onChange: (e) => void switchEdition(e),
       })
@@ -72,14 +75,14 @@ export function versionPicker(opts: {
   ) as unknown as HTMLElement & { setValue(edition: Edition, versionId: string): void; getValue(): { edition: Edition; version: string } };
 
   const paintTrigger = () => {
-    const name = known ? shortVersionName(listVersionName(known)) : shortVersionName(value ? (value === 'latest' ? 'Latest' : value) : 'Choose a version');
+    const name = known ? shortVersionName(listVersionName(known)) : shortVersionName(value ? (value === 'latest' ? pickers.version.latest : value) : pickers.version.choose);
     nameEl.textContent = `${editionName(edition)} ${name}`;
     const sub: string[] = [];
-    if (edition === 'java' && known?.packFormat) sub.push(`pack ${formatPackFormat(known.packFormat)}`);
-    if (known?.type === 'snapshot') sub.push('snapshot');
-    if (known?.type === 'preview') sub.push('preview');
+    if (edition === 'java' && known?.packFormat) sub.push(fmt(pickers.version.packFormat, { format: formatPackFormat(known.packFormat) }));
+    if (known?.type === 'snapshot') sub.push(pickers.version.snapshot);
+    if (known?.type === 'preview') sub.push(pickers.version.preview);
     subEl.textContent = sub.join(' · ');
-    trigger.setAttribute('aria-label', `${opts.label ? `${opts.label}: ` : ''}Minecraft ${editionName(edition)} ${name}${sub.length ? `, ${sub.join(', ')}` : ''}. Change version`);
+    trigger.setAttribute('aria-label', `${opts.label ? `${opts.label}: ` : ''}${fmt(pickers.version.buttonLabel, { edition: editionName(edition), version: name, details: sub.length ? `, ${sub.join(', ')}` : '' })}`);
   };
 
   const refreshKnown = async () => {
@@ -126,24 +129,24 @@ export function versionPicker(opts: {
     const search = h('input', {
       class: 'input',
       type: 'search',
-      placeholder: edition === 'java' ? 'Search versions, e.g. 1.20' : 'Search versions',
+      placeholder: edition === 'java' ? pickers.version.searchJava : pickers.version.search,
       role: 'combobox',
       'aria-controls': listId,
       'aria-expanded': 'true',
       'aria-autocomplete': 'list',
-      'aria-label': 'Search versions',
+      'aria-label': pickers.version.search,
       autocomplete: 'off',
       spellcheck: false,
     });
     const extrasToggle = toggle({
-      label: edition === 'java' ? 'Show snapshots' : 'Show previews',
+      label: edition === 'java' ? pickers.version.showSnapshots : pickers.version.showPreviews,
       value: extras,
       onChange: (v) => {
         extras = v;
         void fill();
       },
     });
-    const list = h('div', { class: 'vp-list', role: 'listbox', id: listId, 'aria-label': 'Versions' });
+    const list = h('div', { class: 'vp-list', role: 'listbox', id: listId, 'aria-label': pickers.version.versions });
     const content = h(
       'div',
       { class: 'vp-pop' },
@@ -178,12 +181,12 @@ export function versionPicker(opts: {
 
     const render = () => {
       const q = search.value.trim().toLowerCase();
-      const shown = q ? versions.filter((v) => `${v.id} ${v.name}`.toLowerCase().includes(q)) : versions;
+      const shown = q ? versions.filter((v) => `${v.id} ${v.name} ${versionName(v.name)}`.toLowerCase().includes(q)) : versions;
       list.replaceChildren();
       items = [];
       active = -1;
       if (!shown.length) {
-        list.appendChild(h('div', { class: 'vp-empty' }, q ? `No versions match "${search.value.trim()}"` : 'No versions available'));
+        list.appendChild(h('div', { class: 'vp-empty' }, q ? fmt(pickers.version.noMatch, { query: search.value.trim() }) : pickers.version.none));
         return;
       }
       const latestRelease = versions.find((v) => v.type === 'release');
@@ -194,17 +197,17 @@ export function versionPicker(opts: {
         for (const v of groupItems) {
           const selected = v.id === value;
           const meta: (HTMLElement | string)[] = [];
-          if (v.edition === 'java' && v.id === DEFAULT_JAVA_VERSION) meta.push(badge('Default', 'green'));
-          else if (v === latestRelease && v.edition === 'java') meta.push(badge('Latest', 'blue'));
+          if (v.edition === 'java' && v.id === DEFAULT_JAVA_VERSION) meta.push(badge(pickers.version.badgeDefault, 'green'));
+          else if (v === latestRelease && v.edition === 'java') meta.push(badge(pickers.version.badgeLatest, 'blue'));
           // Snapshot ids ("26.3-rc-2", "24w14a") and Bedrock preview names already say what they are
           // and sit under their own headings; a badge would squeeze the name out of the narrow list.
-          if (v.type === 'snapshot') meta.push(h('span', { class: 'sr-only' }, ', snapshot'));
-          const metaText = v.edition === 'java' ? (v.packFormat ? `pack ${formatPackFormat(v.packFormat)}` : '') : shortDate(v.releaseTime);
+          if (v.type === 'snapshot') meta.push(h('span', { class: 'sr-only' }, pickers.version.snapshotSuffix));
+          const metaText = v.edition === 'java' ? (v.packFormat ? fmt(pickers.version.packFormat, { format: formatPackFormat(v.packFormat) }) : '') : shortDate(v.releaseTime);
           const item = h(
             'div',
             { class: ['vp-item', v.type !== 'release' && 'snapshot'], role: 'option', id: uid('vp-opt'), 'aria-selected': String(selected) },
             h('span', { class: 'vp-check' }, selected ? icon('check') : null),
-            h('span', { class: 'vp-item-name', title: listVersionName(v) !== v.name ? v.name : undefined }, listVersionName(v)),
+            h('span', { class: 'vp-item-name', title: listVersionName(v) !== versionName(v.name) ? versionName(v.name) : undefined }, listVersionName(v)),
             meta,
             metaText ? h('span', { class: 'vp-item-meta' }, metaText) : null,
           );
@@ -223,18 +226,18 @@ export function versionPicker(opts: {
     };
 
     const fill = async () => {
-      list.replaceChildren(h('div', { class: 'vp-status' }, spinner(20), 'Loading versions…'));
+      list.replaceChildren(h('div', { class: 'vp-status' }, spinner(20), pickers.version.loading));
       try {
         versions = await loadList(edition, extras);
         render();
       } catch (err) {
         console.error(err);
-        const retry = button({ label: 'Try again', icon: 'reload', size: 'sm', onClick: () => void fill() });
+        const retry = button({ label: kit.tryAgain, icon: 'reload', size: 'sm', onClick: () => void fill() });
         list.replaceChildren(
           h(
             'div',
             { class: 'vp-status', style: { flexDirection: 'column', alignItems: 'flex-start' } },
-            h('span', null, navigator.onLine ? "Couldn't load the version list." : "You're offline, so the version list can't be loaded."),
+            h('span', null, navigator.onLine ? pickers.version.loadFailed : pickers.version.offline),
             retry,
           ),
         );
@@ -268,7 +271,7 @@ export function versionPicker(opts: {
       matchWidth: true,
       focus: search,
       role: 'dialog',
-      label: 'Choose a game version',
+      label: pickers.version.dialog,
       onClose: () => trigger.setAttribute('aria-expanded', 'false'),
     });
     void fill();
@@ -318,10 +321,11 @@ export function assetLoadingPanel(
   const edition = opts.edition;
   const javaLike = edition !== 'bedrock';
   const iconBox = h('div', { class: 'asset-panel-icon' }, icon('download', { size: 24 }));
-  const title = h('h3', null, edition === 'bedrock' ? 'Getting Bedrock textures' : `Getting Minecraft${opts.version ? ` ${opts.version}` : ''} textures`);
-  const subtitle = h('p', { class: 'muted' }, 'One-time download — next time it opens instantly.');
-  const progress = progressBar({ label: 'Starting…' });
-  progress.set({ label: 'Starting…', fraction: null });
+  const P = pickers.assets;
+  const title = h('h3', null, edition === 'bedrock' ? P.titleBedrock : opts.version ? fmt(P.titleJavaVersion, { version: opts.version }) : P.titleJava);
+  const subtitle = h('p', { class: 'muted' }, P.oneTime);
+  const progress = progressBar({ label: P.starting });
+  progress.set({ label: P.starting, fraction: null });
   const note = h(
     'div',
     { class: 'asset-panel-note' },
@@ -330,10 +334,10 @@ export function assetLoadingPanel(
       'span',
       null,
       edition === 'java'
-        ? "Your browser downloads the official game files straight from Mojang's servers and keeps only the textures, models and shaders on this device. Nothing is uploaded."
+        ? P.noteJava
         : edition === 'bedrock'
-          ? "Textures come straight from Mojang's official bedrock-samples repository on GitHub and are cached on this device as you browse. Nothing is uploaded."
-          : 'Your browser downloads the official game files straight from Mojang and keeps them on this device. Nothing is uploaded.',
+          ? P.noteBedrock
+          : P.note,
     ),
   );
   const errorText = h('p', { class: 'asset-panel-error', role: 'alert', hidden: true });
@@ -363,7 +367,7 @@ export function assetLoadingPanel(
       if (f) onPick(f);
     });
     const b = button({
-      label: 'Use my own .jar',
+      label: P.useJar,
       icon: 'folder',
       variant: primary ? 'primary' : 'secondary',
       onClick: () => input.click(),
@@ -373,16 +377,12 @@ export function assetLoadingPanel(
 
   const jarHelp = () => {
     help.hidden = false;
-    help.replaceChildren(
-      'Your Minecraft folder has it: ',
-      h('code', null, `.minecraft/versions/${opts.version ?? '<version>'}/${opts.version ?? '<version>'}.jar`),
-      '. Play that version once in the Minecraft Launcher so the file exists.',
-    );
+    help.replaceChildren(...fmtNodes(P.jarHelp, { path: h('code', null, `.minecraft/versions/${opts.version ?? '<version>'}/${opts.version ?? '<version>'}.jar`) }));
   };
 
   const renderLoadingActions = () => {
     actions.replaceChildren();
-    if (opts.onCancel) actions.appendChild(button({ label: 'Cancel', variant: 'ghost', onClick: opts.onCancel }));
+    if (opts.onCancel) actions.appendChild(button({ label: kit.cancel, variant: 'ghost', onClick: opts.onCancel }));
     if (opts.onPickJar && javaLike) {
       actions.append(...jarPicker(opts.onPickJar));
       jarHelp();
@@ -398,18 +398,18 @@ export function assetLoadingPanel(
     if (p === null) {
       el.classList.add('is-done');
       iconBox.replaceChildren(icon('check'));
-      progress.set({ label: 'Ready', fraction: 1 });
-      subtitle.textContent = 'All set.';
-      status.textContent = 'Game files ready.';
+      progress.set({ label: P.ready, fraction: 1 });
+      subtitle.textContent = P.allSet;
+      status.textContent = P.filesReady;
       actions.hidden = true;
       help.hidden = true;
       return;
     }
-    if (!status.textContent || status.textContent === 'Game files ready.') status.textContent = 'Downloading game files…';
+    if (!status.textContent || status.textContent === P.filesReady) status.textContent = P.downloading;
     if (el.classList.contains('is-done') || iconBox.querySelector('[data-icon="square-alert"]')) {
       el.classList.remove('is-done');
       iconBox.replaceChildren(icon('download'));
-      subtitle.textContent = 'One-time download — next time it opens instantly.';
+      subtitle.textContent = P.oneTime;
       renderLoadingActions();
     }
     progress.set(p);
@@ -419,12 +419,12 @@ export function assetLoadingPanel(
     el.classList.remove('is-done');
     el.classList.add('is-error');
     iconBox.replaceChildren(icon('square-alert'));
-    subtitle.textContent = "Couldn't get the game files.";
+    subtitle.textContent = P.failed;
     progress.hidden = true;
     errorText.hidden = false;
     errorText.textContent = msg;
     actions.replaceChildren();
-    if (retry) actions.appendChild(button({ label: 'Try again', icon: 'reload', variant: 'primary', onClick: retry }));
+    if (retry) actions.appendChild(button({ label: kit.tryAgain, icon: 'reload', variant: 'primary', onClick: retry }));
     const pick = pickJar ?? opts.onPickJar;
     status.textContent = '';
     if (pick && javaLike) {

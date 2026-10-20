@@ -1,5 +1,7 @@
 import type { PackFormat } from '../../core/types';
 import { bundledPackFormat, comparePackFormats, legacyRpFormatForRelease, legacyRpFormatForSnapshot, packFormatFromVersionJson, FIRST_VERSION_JSON_TIME } from './packformats';
+import { errorText } from '../../shared/i18n/errors';
+import { fmt } from '../../i18n/editor-text';
 
 /*
  * pack.mcmeta rules (Java):
@@ -302,10 +304,10 @@ export function getJavaPackFormat(versionId: string): Promise<PackFormat | null>
 /** pack.mcmeta for a target version, optionally declaring compatibility with a version range. */
 export async function buildPackMcmetaForVersions(description: string, targetVersion: string, compat?: { minVersion: string; maxVersion: string }): Promise<string> {
   const target = await getJavaPackFormat(targetVersion);
-  if (!target) throw new Error(`Couldn't find the pack format for Minecraft ${targetVersion}. Check your connection and try again.`);
+  if (!target) throw new Error(fmt(errorText.noPackFormat, { version: targetVersion }));
   if (!compat) return buildPackMcmeta({ description, target });
   const [min, max] = await Promise.all([getJavaPackFormat(compat.minVersion), getJavaPackFormat(compat.maxVersion)]);
-  if (!min) throw new Error(`Couldn't find the pack format for Minecraft ${compat.minVersion}.`);
-  if (!max) throw new Error(`Couldn't find the pack format for Minecraft ${compat.maxVersion}.`);
+  if (!min) throw new Error(fmt(errorText.noPackFormatShort, { version: compat.minVersion }));
+  if (!max) throw new Error(fmt(errorText.noPackFormatShort, { version: compat.maxVersion }));
   return buildPackMcmeta({ description, target, range: { min, max } });
 }

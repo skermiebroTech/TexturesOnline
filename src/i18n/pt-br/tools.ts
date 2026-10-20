@@ -337,7 +337,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     steps: [
       'Escolha uma skin: envie um PNG, digite um nome de usuário do Java, escolha uma das suas skins salvas ou um personagem padrão.',
       'Escolha um estilo (Classic, Big head ou Full body) e se quer manter a camada externa, o contorno dourado ou as asas douradas.',
-      ['Confira as prévias. Use ', strong('Edit pixels'), ' para mudar o que quiser à mão.'],
+      ['Confira as prévias. Use ', strong('Editar pixels'), ' para mudar o que quiser à mão.'],
       ['Escolha Java e a versão que você joga, ou Bedrock, e baixe o ', code('.zip'), ' ou o ', code('.mcpack'), '.'],
       'Instale como qualquer pacote de recursos e coloque no topo da sua lista de packs.',
     ],

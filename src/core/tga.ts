@@ -5,6 +5,9 @@
  * descriptor 0x08, TGA 2.0 footer; RLE (type 10) optional.
  */
 
+import { fileText } from '../shared/i18n/files';
+import { fmt } from '../i18n/editor-text';
+
 export interface RgbaImage {
   width: number;
   height: number;
@@ -33,7 +36,7 @@ export function isTga(bytes: Uint8Array): boolean {
 }
 
 export function decodeTga(bytes: Uint8Array): RgbaImage {
-  if (bytes.length < 18) throw new Error('This TGA file is truncated.');
+  if (bytes.length < 18) throw new Error(fileText.image.tgaTruncated);
   const idLength = bytes[0];
   const cmapType = bytes[1];
   const type = bytes[2];
@@ -50,9 +53,9 @@ export function decodeTga(bytes: Uint8Array): RgbaImage {
 
   const rle = type >= 9;
   const base = rle ? type - 8 : type;
-  if (base !== 1 && base !== 2 && base !== 3) throw new Error(`Unsupported TGA image type ${type}.`);
-  if (!width || !height) throw new Error('This TGA file has no pixels.');
-  if (width * height > 16384 * 16384) throw new Error('This TGA image is too large.');
+  if (base !== 1 && base !== 2 && base !== 3) throw new Error(fmt(fileText.image.tgaType, { type: String(type) }));
+  if (!width || !height) throw new Error(fileText.image.tgaNoPixels);
+  if (width * height > 16384 * 16384) throw new Error(fileText.image.tgaTooLarge);
 
   let pos = 18 + idLength;
   let palette: Uint8Array | null = null;
@@ -64,11 +67,11 @@ export function decodeTga(bytes: Uint8Array): RgbaImage {
     }
     pos += cmapLength * entryBytes;
   }
-  if (base === 1 && !palette) throw new Error('This colour-mapped TGA has no palette.');
+  if (base === 1 && !palette) throw new Error(fileText.image.tgaNoPalette);
 
   const pixelBytes = Math.ceil(bpp / 8);
-  if (base === 1 && bpp !== 8 && bpp !== 16) throw new Error(`Unsupported TGA colour-map index size ${bpp}.`);
-  if (base === 3 && bpp !== 8 && bpp !== 16) throw new Error(`Unsupported TGA greyscale depth ${bpp}.`);
+  if (base === 1 && bpp !== 8 && bpp !== 16) throw new Error(fmt(fileText.image.tgaIndexSize, { bits: String(bpp) }));
+  if (base === 3 && bpp !== 8 && bpp !== 16) throw new Error(fmt(fileText.image.tgaGreyDepth, { bits: String(bpp) }));
 
   const count = width * height;
   // Pixels in file order (first pixel = first stored pixel), as RGBA.
@@ -95,16 +98,16 @@ export function decodeTga(bytes: Uint8Array): RgbaImage {
   };
 
   if (!rle) {
-    if (pos + count * pixelBytes > bytes.length) throw new Error('This TGA file is truncated.');
+    if (pos + count * pixelBytes > bytes.length) throw new Error(fileText.image.tgaTruncated);
     for (let i = 0; i < count; i++) decodePixel(pos + i * pixelBytes, linear, i * 4);
   } else {
     let i = 0;
     while (i < count) {
-      if (pos >= bytes.length) throw new Error('This TGA file is truncated.');
+      if (pos >= bytes.length) throw new Error(fileText.image.tgaTruncated);
       const header = bytes[pos++];
       const n = (header & 0x7f) + 1;
       if (header & 0x80) {
-        if (pos + pixelBytes > bytes.length) throw new Error('This TGA file is truncated.');
+        if (pos + pixelBytes > bytes.length) throw new Error(fileText.image.tgaTruncated);
         decodePixel(pos, tmp, 0);
         pos += pixelBytes;
         const end = Math.min(count, i + n);
@@ -117,7 +120,7 @@ export function decodeTga(bytes: Uint8Array): RgbaImage {
         }
       } else {
         const end = Math.min(count, i + n);
-        if (pos + (end - i) * pixelBytes > bytes.length) throw new Error('This TGA file is truncated.');
+        if (pos + (end - i) * pixelBytes > bytes.length) throw new Error(fileText.image.tgaTruncated);
         for (; i < end; i++, pos += pixelBytes) decodePixel(pos, linear, i * 4);
       }
     }
@@ -164,7 +167,7 @@ function readColor(bytes: Uint8Array, at: number, depth: number, alphaBits: numb
     out[o] = out[o + 1] = out[o + 2] = bytes[at];
     out[o + 3] = 255;
   } else {
-    throw new Error(`Unsupported TGA pixel depth ${depth}.`);
+    throw new Error(fmt(fileText.image.tgaDepth, { bits: String(depth) }));
   }
 }
 
