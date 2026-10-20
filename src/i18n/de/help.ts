@@ -325,6 +325,16 @@ export const HELP: HelpText = {
           strong('Used by'),
           ' listet jeden Mob, der sie trägt. Ältere Versionen nutzen die Rüstungs- und Satteltexturen, die sie damals hatten.',
         ),
+        p(
+          strong('Rüstungsbesätze: '),
+          'Trägt ein menschenähnlicher Mob Rüstung, wählst du unter Wearing ein ',
+          strong('Trim'),
+          '-Muster und ein ',
+          strong('Material'),
+          ' (Java ab 1.20 und Bedrock). Das Spiel färbt das graue Muster mit der Palette des Materials und nimmt eine dunklere Palette, wenn Besatz und Rüstung aus demselben Material sind, etwa ein Eisenbesatz auf Eisenrüstung. Bemale den Besatz am Modell oder öffne sein Muster: Die acht Grautöne nehmen die Farbe des Besatzes an, jede andere Farbe bleibt so, wie du sie malst. Bearbeite die Palette eines Materials, um es auf jedem Besatz umzufärben, und blende ',
+          strong('Trim'),
+          ' unter Parts aus, um an die Rüstung darunter zu kommen.',
+        ),
       ],
     },
     {

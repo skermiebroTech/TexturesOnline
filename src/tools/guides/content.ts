@@ -16,6 +16,7 @@ import { F, LATEST, MIN_ENGINE, NEXT_SNAPSHOT, formatGroups, formatParts, maxFor
 import type { Locale } from '../../i18n/locales';
 import { ui } from '../../i18n/ui';
 import { contentOf, hasContent } from '../../i18n/content';
+import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from './skin-pack-files';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -108,6 +109,15 @@ const SKIN_STEPS: Child[] = [
   'Add depth with the outer layer: hats, hair, jackets, sleeves and trouser legs sit slightly above the body.',
   ['Export a ', code('.png'), ' for Java (add a legacy 64×32 copy for 1.7.10 and older) or a skin pack ', code('.mcpack'), ' for Bedrock.'],
   'Upload it: in the Minecraft Launcher (Java) or by opening the .mcpack and choosing it in the Dressing Room (Bedrock).',
+];
+
+const SKIN_PACK_STEPS: Child[] = [
+  ['Open the ', link('/skin-pack-maker', 'Skin Pack Maker'), ' and start a skin: a blank or colour-coded template, a PNG you already have, a Java player’s skin by username, or one of the default skins. Pick classic (4-pixel) or slim (3-pixel) arms.'],
+  'Paint it on the 64×64 template or right on the 3D model. Every skin is saved on your device as its own project, and its name is the name players see in the game.',
+  'Make the other skins for the pack the same way.',
+  ['Open one of them, choose ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', name the pack, tick the other skins to include and press ', strong('Download pack'), '.'],
+  ['Open the ', code('.mcpack'), ' on Windows, Android, iPhone or iPad. Minecraft imports it.'],
+  ['In Minecraft go to ', uiPath('Dressing Room', 'Classic Skins'), ', find your pack, pick a skin and press ', strong('Equip'), '.'],
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
@@ -942,6 +952,7 @@ export const GUIDE_CONTENT: Guide[] = [
           ]),
           figure(SHOTS.skinPack),
           callout('warn', 'Things to know', 'Consoles cannot import skin files. Players who turn on Only Allow Trusted Skins see custom skins as default ones. Custom models are not allowed in imported skin packs, only classic and slim.'),
+          p('Installing, updating and the files inside, step by step: ', link('/guides/make-a-bedrock-skin-pack', 'How to make a Minecraft Bedrock skin pack'), '.'),
         ],
       },
     ],
@@ -960,8 +971,242 @@ export const GUIDE_CONTENT: Guide[] = [
         a: [p('Export it again from the same project and open the new .mcpack. The pack keeps its IDs and gets a higher version number, so Minecraft replaces the old one instead of adding a copy.')],
       },
     ],
-    related: ['install-resource-packs', 'java-vs-bedrock-packs', 'make-a-texture-pack'],
+    related: ['make-a-bedrock-skin-pack', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: { label: 'Open the Skin Maker', to: '/skins', icon: 'human' },
+  },
+
+  // ------------------------------------------------------------ bedrock skin pack
+  {
+    meta: meta('make-a-bedrock-skin-pack'),
+    image: SHOTS.skinPack,
+    intro: [
+      p(
+        strong('Yes, you can make your own skin pack for Minecraft Bedrock, for free.'),
+        ' A skin pack is an ',
+        code('.mcpack'),
+        ' file that holds one or more skins and two small description files, ',
+        code('manifest.json'),
+        ' and ',
+        code('skins.json'),
+        '. Paint or upload your skins in the ',
+        link('/skin-pack-maker', 'Skin Pack Maker'),
+        ', download the pack, open it on Windows, Android, iPhone or iPad, and wear your skins from the Dressing Room. Selling a pack on the Minecraft Marketplace is a different thing: only Mojang’s approved Marketplace partners can publish there.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['Paint or upload each skin in the ', link('/skin-pack-maker', 'Skin Pack Maker'), ', with classic or slim arms.'],
+        ['Choose ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', name the pack and tick the other skins.'],
+        ['Open the ', code('.mcpack'), ' and equip a skin under ', uiPath('Dressing Room', 'Classic Skins'), '.'],
+      ],
+    },
+    howto: { name: 'How to make a Minecraft Bedrock skin pack', steps: SKIN_PACK_STEPS },
+    sections: [
+      {
+        id: 'what',
+        title: 'What is inside a skin pack?',
+        body: [
+          p('A skin pack is a zip file renamed to ', code('.mcpack'), '. These files sit at the top of it:'),
+          table(
+            ['File', 'What it does'],
+            [
+              [code('manifest.json'), ['The pack’s name, two unique IDs (UUIDs) and a version number. Its module type ', code('skin_pack'), ' tells Minecraft that this is a skin pack, not a texture pack.']],
+              [code('skins.json'), ['The list of skins: for each one its name key, its PNG, the model (', code('geometry.humanoid.custom'), ' for classic arms, ', code('geometry.humanoid.customSlim'), ' for slim arms) and ', code('"type": "free"'), '.']],
+              ['Skin images', ['One 64×64 PNG per skin, next to ', code('manifest.json'), '.']],
+              [code('texts/en_US.lang'), ['The names shown in the Dressing Room, for the pack and for each skin. ', code('texts/languages.json'), ' lists the language files.']],
+            ],
+          ),
+          p(
+            code('"type": "free"'),
+            ' means anyone who has the pack can wear the skin. Marketplace packs mark most skins as ',
+            code('"paid"'),
+            ', which only unlock once the pack is bought, so a pack you make yourself always uses free.',
+          ),
+        ],
+      },
+      {
+        id: 'steps',
+        title: 'Make one with the Skin Pack Maker',
+        body: [
+          steps(SKIN_PACK_STEPS),
+          figure(SHOTS.skinPack),
+          p(
+            'The maker writes ',
+            code('manifest.json'),
+            ', ',
+            code('skins.json'),
+            ' and the language file for you, with new IDs for every pack. Classic and slim skins can share a pack, each skin keeps its own name, and the pack name you type is the heading players see above the skins.',
+          ),
+          figure(SHOTS.skin3d),
+        ],
+      },
+      {
+        id: 'install',
+        title: 'Install it on Windows, Android and iOS',
+        body: [
+          tabbed('install-skin-pack', [
+            {
+              value: 'windows',
+              label: 'Windows',
+              icon: 'monitor',
+              content: [
+                steps([
+                  ['Double-click the ', code('.mcpack'), '. Minecraft opens and shows ', el('em', null, 'Import started…'), ' then ', el('em', null, 'Successfully imported'), '.'],
+                  ['Open ', uiPath('Dressing Room', 'Classic Skins'), ', pick a skin from your pack and press ', strong('Equip'), '.'],
+                ]),
+              ],
+            },
+            {
+              value: 'mobile',
+              label: 'Android & iOS',
+              icon: 'smartphone',
+              content: [
+                steps([
+                  ['Download the ', code('.mcpack'), ' on the phone or tablet.'],
+                  [strong('Android: '), 'open it from Downloads or Files and choose Minecraft. ', strong('iPhone / iPad: '), 'tap it in the Files app, then ', uiPath('Share', 'Minecraft'), '.'],
+                  ['Open ', uiPath('Dressing Room', 'Classic Skins'), ' and equip a skin from your pack.'],
+                ]),
+              ],
+            },
+            {
+              value: 'console',
+              label: 'Consoles',
+              icon: 'gamepad',
+              content: [p('Xbox, PlayStation and Switch cannot import skin packs or skin files. On consoles, custom looks come from the Character Creator or from Marketplace skin packs.')],
+            },
+          ]),
+          callout(
+            'tip',
+            'Just one skin?',
+            'You do not need a pack for a single skin: in Classic Skins, open your owned skins, choose Import and pick a 64×64 PNG. A pack is handier for several skins, keeps their names, and installs the same way on every device.',
+          ),
+        ],
+      },
+      {
+        id: 'update',
+        title: 'Update or remove a skin pack',
+        body: [
+          p(
+            'To change a pack you already imported, edit the skins, export the pack again from the same project and open the new file. The maker keeps the pack’s two IDs and raises its version (1.0.0, then 1.0.1 and so on), so Minecraft replaces the installed pack instead of listing it twice.',
+          ),
+          p(
+            'Made the pack by hand? Keep both UUIDs and raise the version in ',
+            code('manifest.json'),
+            ', in the header and the module. New UUIDs give you a second pack, and the same version again is not imported because that pack is already installed.',
+          ),
+          p('To delete a pack, go to ', uiPath('Settings', 'Storage'), ', select it and delete it.'),
+        ],
+      },
+      {
+        id: 'arms',
+        title: 'Classic or slim arms',
+        body: [
+          p(
+            'Every skin in a pack has its own model, so one pack can mix both. ',
+            strong('Classic'),
+            ' (Steve) arms are 4 pixels wide and use ',
+            code('geometry.humanoid.custom'),
+            '; ',
+            strong('slim'),
+            ' (Alex) arms are 3 pixels wide and use ',
+            code('geometry.humanoid.customSlim'),
+            '. The model has to match the way the skin was painted, or the arms look cut off or get a see-through stripe.',
+          ),
+          p('Imported packs can only use these two models. Custom shapes, such as an oversized head, are not allowed in a skin pack you import yourself.'),
+        ],
+      },
+      {
+        id: 'by-hand',
+        title: 'Make a skin pack by hand',
+        body: [
+          p('You can also write the files yourself in any text editor. A pack with two skins looks like this:'),
+          pre(SKIN_PACK_TREE),
+          p(
+            code('manifest.json'),
+            ' needs two different UUIDs. Make your own with any UUID generator instead of copying the ones below, and keep them for later updates:',
+          ),
+          pre(SKIN_PACK_MANIFEST.trimEnd()),
+          p(
+            code('skins.json'),
+            ' lists the skins. ',
+            code('serialize_name'),
+            ' and ',
+            code('localization_name'),
+            ' are the pack’s ID: one word with no spaces that no other pack uses. The Skin Pack Maker adds the start of the pack’s UUID to make sure.',
+          ),
+          pre(SKIN_PACK_SKINS_JSON.trimEnd()),
+          p(code('texts/en_US.lang'), ' holds the names shown in the game, and ', code('texts/languages.json'), ' contains ', code('["en_US"]'), ':'),
+          pre(SKIN_PACK_LANG.trimEnd()),
+          steps([
+            ['Put the files in a folder as shown, with the PNGs next to ', code('manifest.json'), '.'],
+            'Select the files inside the folder, not the folder itself, and add them to a zip.',
+            ['Rename the zip from ', code('.zip'), ' to ', code('.mcpack'), ' and open it.'],
+          ]),
+          p(
+            'If the import fails, the usual cause is a folder around the files inside the zip, a typo in the JSON, or two equal UUIDs. The ',
+            link('/skin-pack-maker', 'Skin Pack Maker'),
+            ' writes exactly these files, so you can also export a pack, rename it to ',
+            code('.zip'),
+            ' and look inside.',
+          ),
+        ],
+      },
+      {
+        id: 'marketplace',
+        title: 'Marketplace packs and personal packs',
+        body: [
+          p(
+            'Want to make a skin pack for the Minecraft Marketplace? Only Marketplace partners can publish there: studios and creators that Mojang has accepted into its partner programme, who submit each pack for review. There is no way to upload a pack to the Marketplace from the game or from a website.',
+          ),
+          ul([
+            [strong('Personal skin pack: '), 'free, made by anyone, imported from an ', code('.mcpack'), ' on Windows, Android, iPhone and iPad. You can share the file with friends.'],
+            [strong('Marketplace skin pack: '), 'made by an approved partner, bought with Minecoins or free, available on every device including consoles.'],
+          ]),
+          p('Only put skins in a pack that you made yourself or are allowed to share.'),
+        ],
+      },
+      {
+        id: 'trusted',
+        title: 'Why friends may see a default skin',
+        body: [
+          p(
+            'Bedrock has a setting called ',
+            strong('Only Allow Trusted Skins'),
+            '. Players who turn it on see every custom skin, including the ones from imported packs, as a default skin such as Steve or Alex. It is a setting on their side, so you cannot change it for them. Everyone else sees your skin as you made it.',
+          ),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'free',
+        q: 'Can you make Minecraft skin packs for Bedrock for free?',
+        a: [p('Yes. Personal skin packs are free to make and to use on Windows, Android, iPhone and iPad. The Skin Pack Maker needs no account, and your skins stay on your device.')],
+      },
+      {
+        id: 'java',
+        q: 'Do skin packs work on Java Edition?',
+        a: [p('No. Skin packs are a Bedrock feature. On Java you wear one skin at a time, uploaded as a PNG in the Minecraft Launcher. ', link('/guides/make-a-skin', 'How to make a skin'), '.')],
+      },
+      {
+        id: 'console',
+        q: 'Can I use a custom skin pack on Xbox, PlayStation or Switch?',
+        a: [p('No. Consoles cannot import skin packs or skin files. Windows, Android, iPhone and iPad can.')],
+      },
+      {
+        id: 'marketplace',
+        q: 'Can I sell my skin pack on the Marketplace?',
+        a: [p('Only as an approved Minecraft Marketplace partner. A personal pack can be shared as an .mcpack file, but not sold in the game.')],
+      },
+      {
+        id: 'failed',
+        q: 'Why does the import fail?',
+        a: [p('Usually the zip has a folder around the files, the JSON has a typo, the two UUIDs are equal, or a pack with the same IDs and version is already installed. Packs exported from the Skin Pack Maker avoid all four.')],
+      },
+    ],
+    related: ['make-a-skin', 'install-resource-packs', 'java-vs-bedrock-packs'],
+    cta: { label: 'Open the Skin Pack Maker', to: '/skin-pack-maker', icon: 'package' },
   },
 
   // ------------------------------------------------------------ shaders without mods

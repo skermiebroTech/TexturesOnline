@@ -11,6 +11,7 @@ import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META, local
 import { SITE_NAME } from '../app/site';
 import { DEFAULT_LOCALE, splitLocale, type Locale } from '../i18n/locales';
 import { ui } from '../i18n/ui';
+import { loadContent } from '../i18n/content';
 
 export interface RouteContext {
   params: Record<string, string>;
@@ -398,6 +399,9 @@ async function render(force = false): Promise<void> {
     document.title = ui(locale).loadError.pageTitle;
     return;
   }
+  // A translated page's text arrives in its own chunk: wait for it before swapping, so the page on
+  // screen (often the prerendered one) never goes blank while the view waits for its words.
+  await loadContent(locale).catch(() => undefined);
   clearTimeout(loadingTimer);
   if (my !== token) return;
 

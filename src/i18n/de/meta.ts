@@ -25,6 +25,11 @@ export const META_DE: MetaTranslation = {
       description: 'Mehrere Minecraft Texture Packs zu einer .zip oder einem .mcpack kombinieren. Reihenfolge festlegen, das oberste Pack gewinnt – wie im Spiel. Kostenlos.',
       label: 'Texture Packs zusammenführen',
     },
+    '/totem-maker': {
+      title: 'Eigenes Minecraft Totem erstellen – Java & Bedrock',
+      description: 'Mach aus jedem Minecraft-Skin ein Totem der Unsterblichkeit: PNG hochladen oder Namen eingeben, Stil wählen, als Java-.zip oder Bedrock-.mcpack laden.',
+      label: 'Totem-Ersteller',
+    },
     '/skins': {
       title: 'Minecraft Skin Editor & eigenes Skinpaket erstellen',
       description: 'Male deinen eigenen Minecraft-Skin in 2D oder 3D, mit breiten oder schmalen Armen. Export als PNG für Java oder als Bedrock-Skinpaket (.mcpack). Kostenlos.',
@@ -105,6 +110,34 @@ export const META_DE: MetaTranslation = {
       description: 'Laufen Java Texture Packs auf Bedrock? Nein: Java nutzt .zip + pack.mcmeta, Bedrock .mcpack + manifest.json. Ordner, Namen, Shader und Skins im Vergleich.',
       label: 'Java- vs. Bedrock-Packs',
       blurb: 'Dateien, Ordner, Formate, Shader und Skins im direkten Vergleich.',
+    },
+    'bedrock-vibrant-visuals-settings': {
+      title: 'Minecraft Bedrock: Vibrant-Visuals-Einstellungen erklärt',
+      h1: 'Vibrant-Visuals-Einstellungen in Bedrock erklärt',
+      description: 'Was ein Vibrant-Visuals-Paket in Bedrock ändern kann (Sonne, Himmel, Nebel, Wasser, Schatten, Farben), welche Geräte es können und wie du es einschaltest.',
+      label: 'Vibrant-Visuals-Einstellungen',
+      blurb: 'Sonne, Himmel, Nebel, Wasser und Farben, plus unterstützte Geräte.',
+    },
+    'convert-java-to-bedrock-texture-pack': {
+      title: 'Java Texture Pack in Bedrock umwandeln (und zurück)',
+      h1: 'Java Texture Pack in Bedrock umwandeln – so geht’s',
+      description: 'Java-Texture-Pack kostenlos in ein Bedrock-.mcpack umwandeln (oder Bedrock zu Java): was sich umwandeln lässt, was nicht und wie du es installierst.',
+      label: 'Java zu Bedrock umwandeln',
+      blurb: 'Ein Java-Pack mit wenigen Klicks zum Bedrock-.mcpack machen, oder zurück.',
+    },
+    'merge-texture-packs': {
+      title: 'Minecraft Texture Packs zusammenführen: Anleitung',
+      h1: 'So führst du Minecraft Texture Packs zusammen',
+      description: 'Mehrere Texture Packs zu einem kombinieren, für Server, Realm oder zum Teilen: welches Pack gewinnt, was zusammengeführt wird, online oder von Hand.',
+      label: 'Texture Packs zusammenführen',
+      blurb: 'Mehrere Packs zu einem kombinieren, in der Reihenfolge, die du wählst.',
+    },
+    'make-a-bedrock-skin-pack': {
+      title: 'Minecraft Bedrock Skinpaket erstellen (gratis, .mcpack)',
+      h1: 'Minecraft-Bedrock-Skinpaket erstellen – so geht’s',
+      description: 'Eigenes Skinpaket für Minecraft Bedrock: Skins malen oder hochladen, als .mcpack exportieren, am PC oder Handy importieren, updaten oder selbst bauen.',
+      label: 'Bedrock-Skinpaket erstellen',
+      blurb: 'Deine Skins in einem .mcpack bündeln und im Ankleidezimmer tragen.',
     },
   },
 };

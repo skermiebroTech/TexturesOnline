@@ -4,7 +4,7 @@
 //   SEO_BASE=/TexturesOnline/   mount path (default "/TexturesOnline/", a GitHub project site)
 //   SEO_SCREENS=<dir>           also save screenshots of every page with JavaScript off and on
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,6 +42,7 @@ const PAGES = [
   { path: 'guides/minecraft-pack-format-versions/', tool: 'help', ready: '.formats-table' },
   { path: 'guides/install-resource-packs/', tool: 'help', ready: '.guide-page .guide-tabs' },
   { path: 'guides/texture-pack-not-working/', tool: 'help', ready: '.guide-page h1' },
+  { path: 'guides/make-a-bedrock-skin-pack/', tool: 'help', ready: '.guide-page .guide-tabs' },
 ];
 
 // Translated pages: language folder, html lang, the help link's label and a phrase of the page.
@@ -58,6 +59,8 @@ const LOCALIZED = LANGS.flatMap((l) => [
   { lang: l, path: `${l.code}/help/`, tool: 'help', ready: '.help .help-section' },
   { lang: l, path: `${l.code}/guides/`, tool: 'help', ready: '.guides-index .guide-card' },
   { lang: l, path: `${l.code}/guides/make-a-texture-pack/`, tool: 'help', ready: '.guide-page h1' },
+  { lang: l, path: `${l.code}/totem-maker/`, tool: 'totem', ready: '[data-tool-intro="totem"].is-below' },
+  { lang: l, path: `${l.code}/guides/make-a-bedrock-skin-pack/`, tool: 'help', ready: '.guide-page .guide-tabs' },
 ]);
 
 let failed = 0;
@@ -236,9 +239,17 @@ try {
   // ---- Language folders in front of pages that have no translation, and app pages
   {
     const { ctx, page, errors } = await newPage(true);
-    await page.goto(`${base}de/guides/bedrock-vibrant-visuals-settings/`, { waitUntil: 'domcontentloaded' });
+    // A guide without a German version (when there is one) opens in English; a translated one in German.
+    const slugs = readdirSync(join(dist, 'guides'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+    const untranslated = slugs.find((s) => !existsSync(join(dist, 'de', 'guides', s, 'index.html')));
+    if (untranslated) {
+      await page.goto(`${base}de/guides/${untranslated}/`, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('.guide-page h1', { timeout: 20000 });
+      check(page.url() === `${base}guides/${untranslated}/` && (await page.evaluate(() => document.documentElement.lang)) === 'en', 'an untranslated guide under /de/ opens the English page', page.url());
+    }
+    await page.goto(`${base}de/guides/make-a-bedrock-skin-pack/`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.guide-page h1', { timeout: 20000 });
-    check(page.url() === `${base}guides/bedrock-vibrant-visuals-settings/` && (await page.evaluate(() => document.documentElement.lang)) === 'en', 'an untranslated guide under /de/ opens the English page', page.url());
+    check(page.url() === `${base}de/guides/make-a-bedrock-skin-pack/` && (await page.evaluate(() => document.documentElement.lang)) === 'de', 'a translated guide under /de/ stays German', page.url());
     const res = await page.goto(`${base}es/no-existe/`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.fallback-page .empty-state', { timeout: 20000 });
     const nf = await page.locator('.fallback-page .empty-state').innerText();

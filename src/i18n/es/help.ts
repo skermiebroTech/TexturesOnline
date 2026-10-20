@@ -317,6 +317,16 @@ export const HELP: HelpText = {
           strong('Used by'),
           ' enumera cada criatura que la lleva. Las versiones antiguas usan las texturas de armadura y silla que tenían entonces.',
         ),
+        p(
+          strong('Adornos de armadura: '),
+          'con armadura humanoide puesta, elige un patrón en ',
+          strong('Trim'),
+          ' y un ',
+          strong('Material'),
+          ' en Wearing (Java 1.20 y posteriores, y Bedrock). El juego colorea el patrón gris con la paleta del material, y usa una paleta más oscura cuando el adorno coincide con la armadura, como un adorno de hierro en una armadura de hierro. Pinta el adorno sobre el modelo o abre su patrón: los ocho grises toman el color del adorno y cualquier otro color se queda tal como lo pintes. Edita la paleta de un material para cambiar su color en todos los adornos, y oculta ',
+          strong('Trim'),
+          ' en Parts para llegar a la armadura de debajo.',
+        ),
       ],
     },
     {

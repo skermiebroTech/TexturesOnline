@@ -69,7 +69,7 @@ export const ABOUT: AboutText = {
   differentTitle: 'Qué hace distinto a Texture Pack Maker',
   toolsTitle: 'Las herramientas',
   tools: [
-    [link('/textures', 'Creador de texture packs'), ': pinta de nuevo cualquier bloque, ítem o criatura sobre su modelo 3D, sube tus propias imágenes, cambia el estilo de todo el pack con un clic o abre un pack existente.'],
+    [link('/textures', 'Creador de texture packs'), ': pinta de nuevo cualquier bloque, ítem o criatura sobre su modelo 3D, sube tus propias imágenes, cambia los sonidos, cambia el estilo de todo el pack con un clic o abre un pack existente.'],
     [link('/texture-pack-converter', 'Convertidor de texture packs'), ': de Java a Bedrock, de Bedrock a Java, entre versiones de Java o de texturas PNG a un .mcpack.'],
     [link('/merge-texture-packs', 'Combinar texture packs'), ': junta hasta ocho packs en uno, en el orden que elijas.'],
     [link('/totem-maker', 'Creador de tótems'), ': convierte cualquier skin en un tótem de la inmortalidad personalizado, como paquete de recursos para Java o Bedrock.'],

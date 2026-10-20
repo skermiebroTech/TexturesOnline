@@ -318,6 +318,16 @@ export const HELP: HelpText = {
           strong('Used by'),
           ' lista cada mob que a usa. Versões antigas usam as texturas de armadura e sela que tinham na época.',
         ),
+        p(
+          strong('Acabamentos de armadura: '),
+          'com armadura humanoide equipada, escolha um padrão em ',
+          strong('Trim'),
+          ' e um ',
+          strong('Material'),
+          ' em Wearing (Java 1.20 e mais novos, e Bedrock). O jogo pinta o padrão cinza com a paleta do material, e usa uma paleta mais escura quando o acabamento é do mesmo material da armadura, como um acabamento de ferro em armadura de ferro. Pinte o acabamento no modelo ou abra o padrão dele: os oito tons de cinza pegam a cor do acabamento e qualquer outra cor fica do jeito que você pintar. Edite a paleta de um material para mudar a cor dele em todos os acabamentos, e esconda ',
+          strong('Trim'),
+          ' em Parts para chegar à armadura por baixo.',
+        ),
       ],
     },
     {
