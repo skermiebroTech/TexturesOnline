@@ -79,6 +79,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     if (path && blob) overrides.set(path, blob);
   }
   const index = new Map(assets.textures.map((t) => [t.path, t]));
+  if (edition === 'java' && project.customModels) warnings.push(...(await modelWarnings(project, assets, extra, overrides)));
 
   // --- pack info first: it can fail (offline version lookup) and should do so before the long part ---
   const files: Record<string, Uint8Array | string> = {};
@@ -722,6 +723,27 @@ function proceduralTexture(face: 'top' | 'side'): ImageData {
 
 // ---------------------------------------------------------------------------------------------
 // Helpers
+
+/** Checks the models made in the model editor against the pack's version (never fails the export). */
+async function modelWarnings(project: TexturePackProject, assets: AssetIndex, extra: Map<string, Uint8Array>, overrides: Map<string, Blob>): Promise<string[]> {
+  try {
+    const atlas = async (name: string): Promise<unknown> => {
+      const path = `assets/minecraft/atlases/${name}.json`;
+      const own = extra.get(path);
+      const text = own ? decodeText(own) : assets.hasFile(path) ? await assets.readText(path).catch(() => '') : '';
+      return text ? parseJsonLoose(text) : null;
+    };
+    const [blocks, items] = [await atlas('blocks'), await atlas('items')];
+    const hasTexture = (path: string) => assets.hasFile(path) || overrides.has(path) || extra.has(path);
+    // loaded only for packs with models made in the model editor
+    const [{ customModelWarnings }, { atlasDirsFrom }] = await Promise.all([import('./models/pack'), import('./models/rules')]);
+    // block models draw from the block atlas; item models from both
+    const dirs = { block: atlasDirsFrom([blocks]), item: atlasDirsFrom([blocks, items]) };
+    return await customModelWarnings(project, async (path) => (extra.has(path) ? decodeText(extra.get(path)!) : null), hasTexture, dirs);
+  } catch {
+    return [];
+  }
+}
 
 async function collectExtraFiles(project: TexturePackProject, warnings: string[]): Promise<Map<string, Uint8Array>> {
   const out = new Map<string, Uint8Array>();

@@ -28,6 +28,15 @@ repository keeps its original name, `TexturesOnline`).
   wear what the game puts on them: saddles, horse, wolf and nautilus armour, llama carpets, the happy
   ghast's harness and humanoid armour (leather dyeable, with armour trims in every pattern and material,
   coloured from the pack's trim palettes), each its own part on its own texture.
+- Change the shape of blocks and items (Java 1.8+): a model editor opens the model the game uses (resolved
+  through its parents) and edits its cubes with fields or move / resize handles in 3D, on a 16-pixel grid
+  or finer: rotation with each version's angle rules, face textures (the pack's own and new ones), UVs on
+  the texture, cull faces, tints, and display transforms with a preview in the inventory, in hand, on the
+  ground, in an item frame and on a head. Start from the game's model, an empty model, a full cube, a slab,
+  a cross, or a 3D item made from the flat sprite. Saved as `assets/minecraft/models/...` in the pack, plus an
+  item definition (1.21.4+, e.g. a 3D model in hand with the flat icon in the inventory) or a blockstate only
+  when the game needs one; models in opened packs load into the editor. Bedrock shows a note instead (shapes
+  need an add-on) and models can be downloaded as Bedrock geometry.
 - Sounds: browse the game's sound events by category, play them, and replace any sound with your own file
   (MP3, WAV, OGG, M4A...) or a microphone recording, trimmed on its waveform and levelled. Replacements are
   saved as Ogg Vorbis (Java: `assets/minecraft/sounds/`; Bedrock: `sounds/` plus `sound_definitions.json`
@@ -90,6 +99,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/textures/paint3d.e2e.cjs   # painting textures on the 3D model
 NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs      # mob models: painting, body parts, saddles, armour and trims, Bedrock
 NODE_PATH=$(npm root -g) node tests/e2e/textures/sounds.e2e.cjs    # sounds: list, play, upload / record, trim, export as Ogg Vorbis
+NODE_PATH=$(npm root -g) node tests/e2e/textures/models.e2e.cjs    # model editor: block and 3D item models, display, export, phone layout
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

@@ -8,7 +8,7 @@ import { h, isTypingTarget } from '../../../ui/dom';
 import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { badge, button, emptyState, iconButton, segmented, spinner, tabs, tooltip } from '../../../ui/components';
 import { assetLoadingPanel } from '../../../ui/version-picker';
-import { openShortcutsSheet } from '../../../ui/modal';
+import { openModal, openShortcutsSheet } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
 import { getProject } from '../../../core/storage';
 import { friendlyError, isAbortError } from '../../../core/net';
@@ -31,7 +31,10 @@ import { openExportDialog } from './export-dialog';
 import { plainText } from './mc-text';
 import { packIconImage } from './icon';
 import type { SoundsMode } from './sounds-mode';
+import type { ModelEditor } from './model-editor/editor';
+import type { BlockState } from '../../../shared/models/index';
 import './sounds-base.css';
+import './model-host.css';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'sounds';
@@ -137,6 +140,9 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   };
   let side: Side = 'preview';
   let mobile: Mobile = 'editor';
+  /** The model editor while it is open (it takes the place of the panels) */
+  let modelEditor: ModelEditor | null = null;
+  let modelOpening = false;
   const isPhone = () => matchMedia(PHONE).matches;
   const isTablet = () => matchMedia(TABLET).matches && !isPhone();
 
@@ -188,6 +194,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       if (e) modelBrowser.setSelected(e.kind, e.id, false);
       usedBy.setCurrent(e);
     },
+    onEditModel: (e, st) => void openModelEditor(e, st),
   });
 
   const paint3d = createPaint3d({ store, canvas, preview });
@@ -385,14 +392,82 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   saveEl.addEventListener('click', () => void store.flush());
   paintSave(store.saveState);
 
-  const undoBtn = iconButton('undo', 'Undo — Ctrl+Z', () => canvas.undo(), { disabled: true });
-  const redoBtn = iconButton('redo', 'Redo — Ctrl+Shift+Z', () => canvas.redo(), { disabled: true });
+  const undoBtn = iconButton('undo', 'Undo — Ctrl+Z', () => (modelEditor ? modelEditor.undo() : canvas.undo()), { disabled: true });
+  const redoBtn = iconButton('redo', 'Redo — Ctrl+Shift+Z', () => (modelEditor ? modelEditor.redo() : canvas.redo()), { disabled: true });
   const helpBtn = iconButton('keyboard', 'Keyboard shortcuts — ?', () => showShortcuts());
   const exportBtn = button({ label: 'Export', icon: 'download', variant: 'primary', class: 'tx-export-btn', onClick: () => openExportDialog(store) });
   function paintHistory() {
-    undoBtn.disabled = !canvas.canUndo();
-    redoBtn.disabled = !canvas.canRedo();
+    undoBtn.disabled = modelEditor ? !modelEditor.canUndo() : !canvas.canUndo();
+    redoBtn.disabled = modelEditor ? !modelEditor.canRedo() : !canvas.canRedo();
   }
+
+  // ---------------------------------------------------------------- model editor (loaded on first use)
+  const modelHost = h('div', { class: 'tx-modelhost', hidden: true });
+  async function openModelEditor(e: ModelEntry, st: BlockState) {
+    if (modelEditor || modelOpening) return;
+    if (proj.edition === 'bedrock') {
+      bedrockShapeNote();
+      return;
+    }
+    modelOpening = true;
+    modelHost.hidden = false;
+    modelHost.replaceChildren(h('div', { class: 'tx-boot' }, spinner(28), h('span', { class: 'muted' }, 'Opening the model editor…')));
+    shell.dataset.mode = 'model';
+    try {
+      const { createModelEditor } = await import('./model-editor/editor');
+      if (life.aborted) return;
+      const me = await createModelEditor({
+        store,
+        models,
+        thumbs,
+        entry: e,
+        state: st,
+        onClose: () => closeModelEditor(),
+        paintTexture: (path) => {
+          closeModelEditor();
+          void canvas.open(path);
+          if (isPhone()) showMobile('editor');
+        },
+        onHistory: () => paintHistory(),
+      });
+      if (life.aborted) {
+        me.destroy();
+        return;
+      }
+      modelEditor = me;
+      modelHost.replaceChildren(me.el);
+      paintHistory();
+    } catch (err) {
+      console.error(err);
+      closeModelEditor();
+      toast(err instanceof Error && err.message ? err.message : 'The model editor couldn’t be opened. Check your connection and try again.', { tone: 'error' });
+    } finally {
+      modelOpening = false;
+    }
+  }
+  function closeModelEditor() {
+    modelEditor?.destroy();
+    modelEditor = null;
+    modelHost.replaceChildren();
+    modelHost.hidden = true;
+    delete shell.dataset.mode;
+    paintHistory();
+    notifyVisibility();
+  }
+  function bedrockShapeNote() {
+    openModal({
+      title: 'Shapes on Bedrock',
+      width: 520,
+      body: h(
+        'div',
+        { class: 'stack' },
+        h('p', null, 'Bedrock resource packs can’t change the shape of blocks or items. Custom shapes need an add-on: a behaviour pack that adds new blocks or items, with geometry files for their shapes.'),
+        h('p', { class: 'muted' }, 'Painting textures works as usual. To start an add-on’s shape, make it in a Java pack here, then use “Download as Bedrock geometry” in the model editor.'),
+      ),
+      actions: [{ label: 'OK', variant: 'primary' }],
+    });
+  }
+  cleanups.push(() => modelEditor?.destroy());
 
   const bar = h(
     'header',
@@ -463,7 +538,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     h('div', { class: 'tx-col-tabs' }, sideTabs),
     h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pack),
   );
-  shell.replaceChildren(bar, main, tabbar);
+  shell.replaceChildren(bar, main, modelHost, tabbar);
   sizeName();
   void document.fonts?.ready.then(() => sizeName());
 
@@ -608,6 +683,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       });
       return;
     }
+    if (modelEditor || modelOpening) return;
     if (isTypingTarget(e.target) || mod || e.altKey) return;
     if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
       e.preventDefault();
@@ -674,6 +750,12 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       showBlock: (id: string) => {
         const e = models.lib?.block(id);
         if (e) showEntry(e, 'pointer');
+        return !!e;
+      },
+      modelEditor: () => modelEditor,
+      editModel: (kind: 'block' | 'item', id: string, st: BlockState = {}) => {
+        const e = kind === 'block' ? models.lib?.block(id) : models.lib?.item(id);
+        if (e) void openModelEditor(e, st);
         return !!e;
       },
       showMob: (id: string) => {

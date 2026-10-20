@@ -70,6 +70,8 @@ export interface PreviewHooks {
   openTexture(path: string, how: 'face' | 'list'): void;
   /** The block / item on show changed (null = none) */
   onEntry?(entry: ModelEntry | null): void;
+  /** Open the model editor for a block / item (shows the "Edit shape" button) */
+  onEditModel?(entry: ModelEntry, state: BlockState): void;
 }
 
 type Mode = 'auto' | 'cube' | 'flat';
@@ -236,7 +238,18 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   partsBtn.addEventListener('click', () => togglePartsPopover());
   hero.appendChild(partsBtn);
   const controls = h('div', { class: 'tx-pv-controls' }, modeSeg, itemSeg);
-  const body = h('div', { class: 'tx-pv' }, head, hero, canvasSlot, note, trimNote, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
+  const editShapeBtn = h(
+    'button',
+    { type: 'button', class: 'btn btn-secondary btn-sm tx-pv-shapebtn', hidden: true },
+    icon('shapes'),
+    h('span', { class: 'btn-label' }, 'Edit shape'),
+    h('span', { class: 'tx-pv-shapebadge', hidden: true }, 'Custom'),
+  );
+  tooltip(editShapeBtn, 'Change the cubes this model is made of');
+  editShapeBtn.addEventListener('click', () => {
+    if (entry && entry.kind !== 'entity') hooks.onEditModel?.(entry, { ...state });
+  });
+  const body = h('div', { class: 'tx-pv' }, head, hero, editShapeBtn, canvasSlot, note, trimNote, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
   const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, 'Loading the model…'));
   hero.appendChild(loadingModel);
   const el = h('div', { class: 'tx-pv-wrap' }, body, empty);
@@ -449,6 +462,15 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         if (img && entry === e) draw(img);
       });
     }
+  }
+
+  /** "Edit shape" for blocks and items with a model the game reads from files (not mobs, not chests). */
+  function paintShapeButton() {
+    const can = !!hooks.onEditModel && !!entry && !!view && entry.kind !== 'entity' && (entry.kind === 'item' || view.category !== 'special');
+    editShapeBtn.hidden = !can;
+    if (!can || !entry) return;
+    const custom = Object.values(project.customModels ?? {}).some((m) => m.id === entry!.id && (m.kind === entry!.kind || (entry!.kind === 'item' && m.kind === 'block')));
+    editShapeBtn.querySelector<HTMLElement>('.tx-pv-shapebadge')!.hidden = !custom;
   }
 
   function paintNote() {
@@ -801,6 +823,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     rotateBtn.setActive(!docked && (modelMode ? spinModel : spinTexture));
     if (modelMode) {
       paintHead();
+      paintShapeButton();
       paintNote();
       paintTrimNote();
       paintStates();
@@ -809,6 +832,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     } else {
       partsSection.hidden = true;
       partsBtn.hidden = true;
+      editShapeBtn.hidden = true;
       note.hidden = true;
       trimNote.hidden = true;
       trimNoteKey = '';
@@ -1057,6 +1081,10 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     models.events.on('ready', () => {
       follow();
       soon(0, {});
+    }),
+    // a model changed in the model editor: show its new shape
+    models.events.on('models', (changed) => {
+      if (entry && changed.some((c) => c.id === entry!.id)) soon(0);
     }),
     models.events.on('usage', () => {
       // Now the block using the open texture is known.

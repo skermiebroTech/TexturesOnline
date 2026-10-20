@@ -9,7 +9,7 @@ import { BedrockBackend, parseLang } from './bedrock-blocks';
 import { JavaBackend, javaModelFiles } from './java-blocks';
 import { BedrockEntities, JavaEntities, type EntityBackend } from './entities';
 import { loadJavaModelMirror } from './java-mirror';
-import type { JsonGet } from './java-models';
+import type { JavaModelSet, JsonGet } from './java-models';
 import { labelTextures, pretty, propertyLabel, valueLabel, type LabelInput } from './labels';
 import type { BakedQuad, Dir } from './geometry';
 import type { BlockState, EditionBackend, ModelCategory, ModelEntry, ModelTexture, ModelView, RawView, StateProperty, TextureStates, TextureUsage } from './types';
@@ -94,6 +94,31 @@ export class ModelLibrary {
       this.itemIndex.set(id, e);
     }
     this.itemEntries.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /**
+   * Java: the pack's own model, blockstate and item files to use before the game's (null: none). The
+   * views and textures of blocks and items are worked out again; call rebuildUsage() for the reverse index.
+   */
+  setPackFiles(get: JsonGet | null): void {
+    if (!(this.backend instanceof JavaBackend)) return;
+    this.backend.setOverlay(get);
+    this.textureCache.clear();
+    this.categories.clear();
+  }
+
+  /** Java model files: `json` reads the pack's file first, `vanilla` only the game's (null for Bedrock). */
+  javaFiles(): { json: JsonGet; vanilla: JsonGet; models: JavaModelSet } | null {
+    const b = this.backend;
+    if (!(b instanceof JavaBackend)) return null;
+    return { json: b.json, vanilla: (p) => b.vanillaJson(p), models: b.models };
+  }
+
+  /** Builds the reverse index again in slices (after the pack's model files changed), keeping the old one meanwhile. */
+  async rebuildUsage(): Promise<Map<string, TextureUsage>> {
+    const job = this.usageJob(true);
+    while (!job.next().done) await new Promise((r) => setTimeout(r, 0));
+    return this.usageCache!;
   }
 
   get available(): boolean {
@@ -400,7 +425,7 @@ export class ModelLibrary {
     return !!this.usageCache;
   }
 
-  private *usageJob(): Generator<void, void, void> {
+  private *usageJob(replace = false): Generator<void, void, void> {
     const map = new Map<string, TextureUsage>();
     /** texture -> mobs it opens on first (worn textures: the armour stand for armour...) */
     const homes = new Map<string, Set<string>>();
@@ -448,7 +473,7 @@ export class ModelLibrary {
       const homeRank = (id: string) => (home?.has(id) ? 0 : 1);
       u.entities.sort((a, b) => homeRank(a) - homeRank(b) || byName('entity')(a, b));
     }
-    if (!this.usageCache) this.usageCache = map;
+    if (!this.usageCache || replace) this.usageCache = map;
   }
 
   usageOf(path: string): TextureUsage {

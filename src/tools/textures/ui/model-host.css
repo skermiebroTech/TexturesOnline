@@ -1,0 +1,40 @@
+/* The model editor's place in the texture editor and its button in the preview (the editor's own
+   styles load with it). Loaded with the texture editor, not the start screen. */
+.tx-editor[data-mode='model'] .tx-main,
+.tx-editor[data-mode='model'] .tx-tabbar {
+  display: none;
+}
+.tx-modelhost {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px;
+}
+.tx-modelhost[hidden] {
+  display: none;
+}
+.tx-pv-shapebtn {
+  align-self: stretch;
+  justify-content: center;
+}
+.tx-pv-shapebtn[hidden] {
+  display: none;
+}
+.tx-pv-shapebadge {
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: var(--r-xs);
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tx-pv-shapebadge[hidden] {
+  display: none;
+}
+@media (max-width: 760px) {
+  .tx-modelhost {
+    padding: 8px;
+  }
+}

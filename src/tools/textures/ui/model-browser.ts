@@ -670,6 +670,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
       if (selected) api.setSelected(selected.kind, selected.id, true);
     }),
     models.events.on('failed', () => renderOverlay()),
+    models.events.on('models', (changed) => {
+      const ids = new Set(changed.map((c) => c.id));
+      for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) void loadIcon(t);
+    }),
     models.events.on('usage', () => (editedOnly ? refilter(false) : paintMeta())),
     listen(window, 'resize', () => layout()),
   );

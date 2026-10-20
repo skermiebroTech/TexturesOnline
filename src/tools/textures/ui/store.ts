@@ -1,7 +1,7 @@
 // Editor state for one texture pack project: the texture list, pending edits, debounced autosave to
 // IndexedDB and the events the panels listen to.
 
-import type { AssetIndex, TexturePackProject } from '../../../core/types';
+import type { AssetIndex, CustomModel, TexturePackProject } from '../../../core/types';
 import { Emitter } from '../../../core/events';
 import { saveProject } from '../../../core/storage';
 import { decodeImage, encodePng } from '../../../core/image';
@@ -9,6 +9,7 @@ import { friendlyError } from '../../../core/net';
 import { categoryForPath, getBaseImage, isEdited, removeOverride, setOverride } from '../project';
 import { hasActiveEffects } from '../effects';
 import { buildEntries, makeEntry, type TextureEntry } from './meta';
+import { customModelKey, resetCustomModel, writeCustomModel } from '../models/pack';
 
 export type SaveState = 'saved' | 'saving' | 'dirty' | 'error';
 export const ICON_KEY = '@icon';
@@ -23,6 +24,8 @@ export interface EditorEvents extends Record<string, unknown> {
   meta: void;
   save: SaveState;
   entries: void;
+  /** Model, blockstate or item definition files changed (the model editor): paths written or removed */
+  models: { paths: string[]; entries: { kind: 'block' | 'item'; id: string }[] };
 }
 
 const SAVE_DELAY = 700;
@@ -153,6 +156,26 @@ export class TexStore {
     this.project.icon = blob;
     this.touch();
     this.events.emit('meta');
+  }
+
+  // ---- custom models (files in extraFiles) ----
+
+  /** Saves a model's files (model, item definition, blockstate) into the pack. */
+  saveModel(info: Omit<CustomModel, 'files' | 'originals' | 'updatedAt'>, files: Record<string, string>): void {
+    const before = this.project.customModels?.[customModelKey(info.model)]?.files ?? [];
+    const saved = writeCustomModel(this.project, info, files);
+    const paths = [...new Set([...before, ...saved.files])];
+    this.touch();
+    this.events.emit('models', { paths, entries: [{ kind: info.kind, id: info.id }] });
+  }
+
+  /** Puts back the pack's own (or the game's) model. */
+  resetModel(model: string): boolean {
+    const info = Object.values(this.project.customModels ?? {}).find((m) => m.model === model);
+    if (!info || !resetCustomModel(this.project, model)) return false;
+    this.touch();
+    this.events.emit('models', { paths: [...info.files], entries: [{ kind: info.kind, id: info.id }] });
+    return true;
   }
 
   /** Project settings changed. */

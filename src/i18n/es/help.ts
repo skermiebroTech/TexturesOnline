@@ -330,6 +330,28 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'models',
+      q: '¿Puedo cambiar la forma de bloques e ítems, como una espada 3D?',
+      a: [
+        p(
+          'Sí, en packs de Java (Minecraft 1.8 o posterior). Muestra un bloque o ítem en la vista previa y pulsa ',
+          strong('Edit shape'),
+          '. El editor de modelos abre el modelo que usa el juego, calculado a partir de sus modelos padre. Añade, copia y borra cubos, escribe su posición y tamaño o arrastra las flechas y los tiradores en 3D, ajustados a la cuadrícula de 16 × 16 o más fina, y gira un cubo sobre un eje (en pasos de 22,5° antes de Minecraft 1.21.6). En ',
+          strong('Faces'),
+          ' da a cada cara una textura de tu pack, o una nueva que pintarás después, y arrastra la parte de la textura que muestra; elige también su giro, cuándo se oculta y si se tiñe. ',
+          strong('Display'),
+          ' define cómo se ve el modelo en el inventario, en primera y tercera persona, en el suelo, en un marco y en la cabeza, cada uno con vista previa. Cualquier cambio se puede deshacer.',
+        ),
+        p(
+          'Para empezar, toma el modelo del juego, uno vacío, un cubo completo, una losa, una cruz como las flores o, en los ítems, ',
+          strong('3D item from sprite'),
+          ', que convierte la imagen plana en cubos de 1 píxel de grosor unidos en el menor número posible. Desde la 1.21.4, ',
+          strong('Flat in the inventory'),
+          ' mantiene el icono plano en el inventario y muestra el modelo 3D en la mano. El pack recibe el archivo del modelo y solo añade una definición de ítem o un estado de bloque cuando el juego los necesita; al exportar se revisan los modelos para tu versión, y los archivos de modelo de los packs que abres se conservan y se pueden editar. Los paquetes de recursos de Bedrock no pueden cambiar formas (hace falta un complemento), pero puedes descargar un modelo como geometría de Bedrock para empezar uno.',
+        ),
+      ],
+    },
+    {
       id: 'sounds',
       q: '¿Puedo cambiar los sonidos de mi pack?',
       a: [
