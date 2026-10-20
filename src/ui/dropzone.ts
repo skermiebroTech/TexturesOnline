@@ -1,6 +1,6 @@
 // File drop target with click/keyboard browsing and accept filtering.
 
-import { h, uid } from './dom';
+import { h } from './dom';
 import { icon, type IconName } from './icons';
 import { describeAccept, fileMatchesAccept } from './format';
 
@@ -15,7 +15,6 @@ export function dropzone(opts: {
   compact?: boolean;
   icon?: IconName;
 }): HTMLElement & { setError(msg: string | null): void } {
-  const hintId = uid('dz-hint');
   const input = h('input', { type: 'file', accept: opts.accept, multiple: Boolean(opts.multiple), hidden: true, tabIndex: -1 });
   const errorEl = h('div', { class: 'dropzone-error', role: 'alert', hidden: true });
   const el = h(
@@ -24,15 +23,14 @@ export function dropzone(opts: {
       class: ['dropzone', opts.compact && 'compact'],
       role: 'button',
       tabIndex: 0,
-      'aria-label': opts.label,
-      'aria-describedby': opts.hint ? hintId : undefined,
+      // named by its visible label and hint (an aria-label without the hint would not match them)
     },
     h('div', { class: 'dropzone-icon' }, icon(opts.icon ?? 'upload')),
     h(
       'div',
       { class: 'dropzone-text' },
       h('div', { class: 'dropzone-label' }, opts.label),
-      opts.hint ? h('div', { class: 'dropzone-hint', id: hintId }, opts.hint) : null,
+      opts.hint ? h('div', { class: 'dropzone-hint' }, opts.hint) : null,
     ),
     errorEl,
     input,

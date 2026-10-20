@@ -93,6 +93,16 @@ a:hover {
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
+/* Links inside running text are underlined, so they can be told apart without relying on colour. */
+:where(p, .guide-list > li, .guide-step-body) a:not([class]) {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+:where(p, .guide-list > li, .guide-step-body) a:not([class]):hover {
+  text-decoration-color: currentColor;
+}
 
 strong,
 b {
@@ -363,6 +373,7 @@ a.chip:hover {
   text-decoration: none;
 }
 .chip[aria-pressed='true'],
+.chip[aria-checked='true'],
 .chip.active {
   border-color: var(--tool-accent);
   background: var(--tool-accent-soft);

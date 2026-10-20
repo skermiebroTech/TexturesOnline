@@ -31,7 +31,9 @@ export function wordmark(hidden = false): ElNode {
 }
 
 export function brandLink(opts: { label?: boolean } = {}): ElNode {
-  return el('a', { class: 'brand', to: '/', 'aria-label': opts.label ? `${SITE_NAME} home` : null }, logo(32), wordmark(opts.label));
+  // The spoken name is in hidden text rather than an aria-label: a label that does not contain the
+  // visible wordmark ("TexturePackMaker") fails the label-in-name check.
+  return el('a', { class: 'brand', to: '/' }, logo(32), wordmark(opts.label), opts.label ? el('span', { class: 'sr-only' }, `${SITE_NAME} home`) : null);
 }
 
 export function navLinks(cls: string, active: NavTool | null): ElNode[] {
