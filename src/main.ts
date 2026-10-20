@@ -9,6 +9,7 @@ import { createShell } from './app/shell';
 import { initHead } from './app/head';
 import { initTheme } from './ui/theme';
 import { initToasts, toast } from './ui/toast';
+import { initPwa } from './pwa';
 
 initTheme();
 
@@ -18,6 +19,9 @@ function boot(): void {
   initToasts();
   initHead();
   startRouter(outlet);
+  // Offline support, updates, "Install app" and files opened with the installed app. This module
+  // is the app's entry script, so its URL tells the service worker which build is running.
+  initPwa(import.meta.url);
 }
 
 /** Calls `fn` once the current content has been painted (right away in a tab that is not painting). */

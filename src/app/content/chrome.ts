@@ -8,6 +8,7 @@ import { guideMeta, localizedPath, pageMeta, publicPageMeta } from '../seo/meta'
 import { REPO_URL, SITE_NAME } from '../site';
 import { LOCALES, LOCALE_INFO, prefixPath, type Locale } from '../../i18n/locales';
 import { ui, type UiText } from '../../i18n/ui';
+import { appText } from '../../pwa/text';
 
 /** 'merge' and 'totem' have no menu item of their own (the menu is full); their pages highlight none. */
 export type NavTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
@@ -157,6 +158,7 @@ export function footer(year: number, locale: Locale = 'en', route = '/'): ElNode
           el('a', { to: '/help' }, f.installGuide),
           el('a', { to: '/help?s=faq' }, f.faq),
           el('a', { to: '/about' }, f.about),
+          el('a', { to: '/privacy' }, appText(locale).privacy),
           el('a', { href: REPO_URL, target: '_blank', rel: 'noopener noreferrer' }, 'GitHub ', ic('external-link', { class: 'ext' })),
         ),
       ),

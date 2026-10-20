@@ -1,0 +1,70 @@
+/* Installable app: install entries, and the top bar as the title bar of an installed desktop app. */
+
+/* "Install app" in the footer: looks like the footer's links */
+.footer-install {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.footer-install:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+.footer-install .icon {
+  --icon-size: 24px;
+  color: var(--text-3);
+}
+.footer-install[hidden],
+.drawer-install[hidden] {
+  display: none;
+}
+
+/* "Install app" in the phone menu: like the menu's links */
+.drawer-install {
+  width: 100%;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pwa-install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+/*
+ * Window Controls Overlay (installed app on Windows, macOS, Linux and ChromeOS): the top bar takes
+ * the place of the title bar. It can drag the window, and its content keeps clear of the window
+ * buttons, whichever side they are on.
+ */
+@media (display-mode: window-controls-overlay) {
+  .topbar {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .topbar-inner {
+    padding-left: max(20px, calc(env(titlebar-area-x, 0px) + 12px));
+    padding-right: max(16px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 8px));
+  }
+  .topbar a,
+  .topbar button,
+  .topbar input,
+  .topbar select,
+  .topbar [role='button'],
+  .topbar [tabindex] {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}

@@ -504,8 +504,11 @@ async function shaderShot(browser, base, fx, jar, target, preset, name, file, { 
   await ctx.close();
 }
 
+// The helpers are shared with tests/harness/seo/store-screenshots.cjs.
+module.exports = { fixtures, routeMojang, startDevServer, waitIdle, hideToastsOnLoad, txWaitEditor, txStrokes, skOpenStarter, skApi, skRename, skColor, skStroke, waitPreview };
+
 // ------------------------------------------------------------------------------------- main
-(async () => {
+if (require.main === module) (async () => {
   const { fx, jar } = fixtures();
   fs.mkdirSync(outDir, { recursive: true });
   const server = baseArg ? null : await startDevServer();

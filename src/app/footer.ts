@@ -1,11 +1,16 @@
 // Site footer shared by the home, help, guide and tool start pages (markup in content/chrome.ts,
-// identical to the prerendered footer), in the current page's language.
+// identical to the prerendered footer), in the current page's language. The running app adds an
+// "Install app" link to the last column (shown only where installing is possible).
 
 import { currentLocale, currentRoute } from '../core/router';
 import { footer } from './content/chrome';
 import { toDom } from './markup-dom';
+import { footerInstallLink } from '../pwa/install';
 
 export function siteFooter(): HTMLElement {
   const route = currentRoute();
-  return toDom(footer(new Date().getFullYear(), route?.locale ?? currentLocale(), route?.path ?? '/'));
+  const locale = route?.locale ?? currentLocale();
+  const el = toDom(footer(new Date().getFullYear(), locale, route?.path ?? '/'));
+  el.querySelector('.footer-col:last-child')?.append(footerInstallLink(locale));
+  return el;
 }

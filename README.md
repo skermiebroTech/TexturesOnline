@@ -94,6 +94,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/seo/pages.e2e.mjs   # public pages, routing, 404 fallback, old #/ links
+NODE_PATH=$(npm root -g) node tests/e2e/seo/pwa.e2e.mjs     # installable app: manifest, offline start, updates, share target
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/import.e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/preview-textures.e2e.cjs
 ```
@@ -163,8 +164,13 @@ so the old project URL keeps working until the redirect is in place. To move to 
   (`tests/harness/seo/screenshots.cjs`) and the app icons in `public/icons/` and
   `public/apple-touch-icon.png` (`npx tsx scripts/gen-icons.ts`, drawn from the logo in `src/ui/logo.ts`).
   Re-run them after visible UI changes.
+  The install-dialog screenshots in `public/screenshots/app/` and the Store screenshots in `docs/store/`
+  come from `tests/harness/seo/store-screenshots.cjs`.
   The guide screenshots in `public/screenshots/guides/` (`tests/harness/seo/guide-screenshots.cjs`) also have
   AVIF copies the pages offer through `srcset`: run `python3 scripts/screenshot-variants.py` after changing one.
+- **Installable app:** `public/site.webmanifest`, the service worker `src/pwa/sw.ts` (built to `/sw.js`
+  with this build's precache list) and the install, update and file-opening code in `src/pwa/`. Publishing
+  on the Microsoft Store (and later Google Play): `docs/microsoft-store.md`.
 - Facts on the guide pages (pack formats, version rules) come from the app's own data (`src/editions/`);
   the "Updated" date shown on guides is `CONTENT_UPDATED` in `src/app/site.ts`.
 
