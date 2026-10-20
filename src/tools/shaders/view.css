@@ -131,7 +131,7 @@
 .sh-card-render {
   object-fit: cover;
   opacity: 0;
-  transition: opacity 500ms var(--ease);
+  transition: opacity var(--dur-2) var(--ease);
 }
 .sh-card-render.is-in {
   opacity: 1;

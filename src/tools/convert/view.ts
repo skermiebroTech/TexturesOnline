@@ -14,18 +14,24 @@ import { versionPicker } from '../../ui/version-picker';
 import { saveProject } from '../../core/storage';
 import { saveBlob } from '../../core/download';
 import { friendlyError, isAbortError } from '../../core/net';
-import { imageDataToCanvas, cropImageData } from '../../core/image';
-import { DEFAULT_JAVA_VERSION, loadAssets } from '../../editions/index';
+import { imageDataToCanvas, cropImageData } from '../../core/pixels';
+import { DEFAULT_JAVA_VERSION, loadAssets } from '../../editions/versions';
 import { siteFooter } from '../../app/footer';
 import { proceduralTexture, toImageData, type ProceduralTextureName } from '../../shared/preview/procedural-textures';
-import { importPack } from '../textures/import';
-import { exportTexturePack, renderIsoCube } from '../textures/export';
+import { renderIsoCube } from '../textures/iso-cube';
 import { BEDROCK_TEXTURE_ROOT, JAVA_TEXTURE_ROOT, packFileName } from '../textures/project';
 import { plainText } from '../textures/ui/mc-text';
-import { convertPack, isSameTarget, targetLabel, vanillaNameSet, type ConvertReport, type ConvertTarget, type SkipReason } from './convert';
+import type { ConvertReport, ConvertTarget, SkipReason } from './convert';
+import { isSameTarget, targetLabel } from './target';
 import { buildPairIndex } from './paths';
 import { loadConvertMaps } from './data';
-import { importLoosePngs } from './loose';
+
+// The pack reader, the converter and the exporter (zip, image codecs) load when a pack is opened,
+// converted or downloaded.
+const packReader = () => import('../textures/import');
+const looseReader = () => import('./loose');
+const converter = () => import('./convert');
+const exporter = () => import('../textures/export');
 
 interface Source {
   project: TexturePackProject;
@@ -142,13 +148,14 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
 
   async function readSource(file: File): Promise<Source> {
     const loose = async (): Promise<Source> => {
-      const maps = await loadConvertMaps();
+      const [maps, { vanillaNameSet }, { importLoosePngs }] = await Promise.all([loadConvertMaps(), converter(), looseReader()]);
       const known = vanillaNameSet(maps, maps.javaBedrock ? buildPairIndex(maps.javaBedrock) : null);
       const r = await importLoosePngs(file, known, maps.javaBedrock?.java ?? DEFAULT_JAVA_VERSION);
       return { project: r.project, warnings: r.warnings, fileName: file.name, loose: true };
     };
     if (/\.png$/i.test(file.name)) return loose();
     try {
+      const { importPack } = await packReader();
       const r = await importPack(file);
       return { project: r.project, warnings: r.warnings, fileName: file.name, loose: false };
     } catch (err) {
@@ -357,6 +364,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       bar.set({ label: 'Starting download…', fraction: null });
       const assets = await loadAssets(target.edition, target.version, { signal, onProgress: (p) => bar.set(p) });
       setStep(2);
+      const { convertPack } = await converter();
       const { project, report } = await convertPack(src.project, target, assets, maps, { signal, onProgress: (p) => bar.set(p), allowSameVersion: src.loose });
       setStep(3);
       bar.set({ label: 'Saving…', fraction: null });
@@ -419,6 +427,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       dlBox.hidden = false;
       dlBar.set({ label: 'Building your pack…', fraction: null });
       try {
+        const { exportTexturePack } = await exporter();
         const r = await withFairYield(() => exportTexturePack(project, assets, { onProgress: (p) => dlBar.set(p) }));
         await saveProject(project).catch(() => undefined);
         if (!alive) return;

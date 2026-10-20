@@ -2,7 +2,7 @@
 // optional effect preview, byte-bounded LRU caches for decoded and processed images.
 
 import { createLimiter } from '../../../core/net';
-import { resizeSmooth } from '../../../core/image';
+import { resizeSmooth } from '../../../core/pixels';
 import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, firstSquare, isBedrockStrip, type TextureEntry } from './meta';
 import type { TexStore } from './store';

@@ -2,16 +2,20 @@
 
 import '../help/help.css';
 import '../../app/content/content.css';
-import type { RouteContext } from '../../core/router';
-import { siteFooter } from '../../app/footer';
+import type { ViewContext } from '../../core/router';
+import { siteFooter, wireFooter } from '../../app/footer';
 import { toDom } from '../../app/markup-dom';
 import { wireContent } from '../../app/content/wire';
 import { aboutPage } from './content';
 import { loadContent } from '../../i18n/content';
 
-export default async function about(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+/** The page is the prerendered markup: on a first visit the router hands it over as it is. */
+export const hydratable = true;
+
+export default async function about(root: HTMLElement, ctx: ViewContext): Promise<() => void> {
   await loadContent(ctx.locale);
   root.classList.add('guides');
-  root.append(toDom(aboutPage(ctx.locale)), siteFooter());
+  if (!ctx.hydrate) root.append(toDom(aboutPage(ctx.locale)), siteFooter());
+  else wireFooter(root, ctx.locale);
   return wireContent(root);
 }

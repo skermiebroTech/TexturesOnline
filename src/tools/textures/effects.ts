@@ -1,4 +1,5 @@
-import type { EffectLayer, OptionDef, OptionValue, TextureCategory } from '../../core/types';
+import type { EffectLayer, OptionDef, OptionValue, TextureCategory, TexturePackProject } from '../../core/types';
+import { addEffectLayer } from './project';
 
 /*
  * Whole-pack texture effects. Every effect is a pure function over straight (non-premultiplied)
@@ -1606,4 +1607,12 @@ export const EFFECT_PRESETS: EffectPreset[] = [
 
 export function getPreset(id: string): EffectPreset | undefined {
   return EFFECT_PRESETS.find((p) => p.id === id);
+}
+
+/** Applies a one-click preset: replaces the effect stack (default) or appends to it. */
+export function applyPreset(project: TexturePackProject, preset: EffectPreset | string, mode: 'replace' | 'append' = 'replace'): EffectLayer[] {
+  const p = typeof preset === 'string' ? EFFECT_PRESETS.find((x) => x.id === preset) : preset;
+  if (!p) throw new Error(`Unknown preset "${String(preset)}".`);
+  if (mode === 'replace') project.effects = [];
+  return p.layers.map((l) => addEffectLayer(project, l));
 }

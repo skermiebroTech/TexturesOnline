@@ -9,7 +9,8 @@ import { el, escapeAttr, escapeHtml, flatten, ic, renderHtml, renderMarkdown, re
 import { skipLink, topbar } from '../content/chrome';
 import { BING_SITE_VERIFICATION, GOOGLE_SITE_VERIFICATION, REPO_URL, SITE_NAME, SITE_SUMMARY, SITE_URL, absoluteUrl } from '../site';
 import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, TOOL_META, allPublicPages, localizedPath, translatedPages, type PageMeta } from './meta';
-import { LOCALE_INFO, TRANSLATED_LOCALES, type Locale } from '../../i18n/locales';
+import { LOCALE_INFO, TRANSLATED_LOCALES, splitLocale, type Locale } from '../../i18n/locales';
+import { PRERENDERED_ATTR, PRERENDERED_YEAR_ATTR, prerenderedKey } from '../hydrate-attrs';
 import { TOOL_INTROS } from '../content/tools';
 import { DIFFERENCES } from '../../tools/about/content';
 import { prerenderPages, type PrerenderPage } from './pages';
@@ -22,6 +23,8 @@ export interface SiteBuildInput {
   iconSvg(name: IconName): string;
   /** Built files (relative to the site root) for source modules: CSS to link, JS to preload */
   assetsFor(modules: string[]): { css: string[]; js: string[] };
+  /** Built file (relative to the site root) of an imported asset such as an image; without it pages preload no images */
+  assetFile?(source: string): string;
   /** YYYY-MM-DD */
   buildDate: string;
 }
@@ -172,17 +175,29 @@ function pageAssets(input: SiteBuildInput, page: PrerenderPage, prefix: string):
   const css = styles.css.filter((f) => !already.has(f));
   const lateCss = boot.css.filter((f) => !already.has(f) && !css.includes(f));
   const js = [...new Set([...styles.js, ...boot.js])].filter((f) => !already.has(f));
+  const images = input.assetFile ? (page.preloadImages ?? []).map((src) => input.assetFile!(src)) : [];
   return [
     ...css.map((f) => `<link rel="stylesheet" crossorigin href="${prefix}${f}">`),
     ...lateCss.map((f) => `<link rel="preload" as="style" crossorigin href="${prefix}${f}">`),
     ...js.map((f) => `<link rel="modulepreload" crossorigin href="${prefix}${f}">`),
+    ...images.map((f) => `<link rel="preload" as="image" href="${prefix}${f}">`),
   ].join('\n    ');
+}
+
+/**
+ * Marks the view of a page the app takes over as it is ('keep'): the language and route path it was
+ * built for, and the footer's year. The router only reuses the markup when both still match.
+ */
+export function hydrationAttrs(page: PrerenderPage, year: number): Record<string, string> {
+  if (page.boot !== 'keep') return {};
+  const { locale, path } = splitLocale(page.meta.path);
+  return { [PRERENDERED_ATTR]: prerenderedKey(locale, path), [PRERENDERED_YEAR_ATTR]: String(year) };
 }
 
 export function renderPage(input: SiteBuildInput, page: PrerenderPage, year: number): string {
   const prefix = rootPrefix(page.meta.path);
   const ctx = htmlContext(input, prefix, page.locale);
-  const view = renderHtml(el('div', { class: page.viewClass }, page.body(year)), ctx);
+  const view = renderHtml(el('div', { class: page.viewClass, ...hydrationAttrs(page, year) }, page.body(year)), ctx);
   let html = withPrefix(input.template, prefix);
   html = html.replace('<!--app-head-->', headTags(page));
   html = html.replace('</head>', `  ${pageAssets(input, page, prefix)}\n  </head>`);

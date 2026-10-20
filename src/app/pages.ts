@@ -4,7 +4,37 @@ import { currentLocale, navigate, type RouteContext } from '../core/router';
 import { h } from '../ui/dom';
 import { button, emptyState, spinner } from '../ui/components';
 import { siteFooter } from './footer';
+import { PRERENDERED_ATTR, PRERENDERED_YEAR_ATTR, prerenderedKey } from './hydrate-attrs';
 import { ui } from '../i18n/ui';
+import type { Locale } from '../i18n/locales';
+
+/**
+ * The prerendered view in the outlet when it was built for exactly this page, made identical to a
+ * freshly rendered one (build marks removed, the footer's year brought up to date); null otherwise.
+ */
+export function adoptPrerenderedView(outlet: HTMLElement, locale: Locale, path: string): HTMLElement | null {
+  const view = outlet.firstChild;
+  if (outlet.childNodes.length !== 1 || !(view instanceof HTMLDivElement) || !view.classList.contains('view')) return null;
+  if (view.getAttribute(PRERENDERED_ATTR) !== prerenderedKey(locale, path)) return null;
+  const year = view.getAttribute(PRERENDERED_YEAR_ATTR);
+  view.removeAttribute(PRERENDERED_ATTR);
+  view.removeAttribute(PRERENDERED_YEAR_ATTR);
+  if (year !== String(new Date().getFullYear())) view.querySelector(':scope > .site-footer')?.replaceWith(siteFooter());
+  return view;
+}
+
+/**
+ * Empties the images of prerendered content the app is about to replace. Taken off the page, an
+ * image whose file is chosen by its laid-out width (sizes="auto") would choose again without a
+ * width and download its largest copy, which nothing shows.
+ */
+export function releasePrerendered(outlet: HTMLElement): void {
+  outlet.querySelectorAll('img').forEach((img) => {
+    img.removeAttribute('srcset');
+    img.removeAttribute('src');
+  });
+  outlet.querySelectorAll('source').forEach((s) => s.removeAttribute('srcset'));
+}
 
 export function loadingView(): HTMLElement {
   return h('div', { class: 'route-loading', role: 'status' }, spinner(32), h('span', { class: 'muted' }, ui(currentLocale()).loading));

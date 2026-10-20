@@ -7,7 +7,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { unzipSync } from 'fflate';
 import { loadAssets } from '../../../src/editions/index';
-import { newTextureProject, applyPreset, setOverride } from '../../../src/tools/textures/project';
+import { newTextureProject, setOverride } from '../../../src/tools/textures/project';
+import { applyPreset } from '../../../src/tools/textures/effects';
 import { exportTexturePack } from '../../../src/tools/textures/export';
 import { importPack } from '../../../src/tools/textures/import';
 import { decodeImage } from '../../../src/core/image';

@@ -2,11 +2,11 @@
 // import, default skins from the game files, and the recent skin projects.
 
 import { navigate, href as routeHref } from '../../../core/router';
-import { decodeImage, encodePng } from '../../../core/image';
+import { decodeImage, loadImageCodecs } from '../../../core/image-lazy';
 import { deleteProject, listProjects, saveProject } from '../../../core/storage';
 import type { AssetIndex, Progress, SkinModel } from '../../../core/types';
 import { uuidv4 } from '../../../core/uuid';
-import { DEFAULT_JAVA_VERSION, loadAssets } from '../../../editions/index';
+import { DEFAULT_JAVA_VERSION, loadAssets } from '../../../editions/versions';
 import { badge, button, openMenu, segmented, setButtonBusy } from '../../../ui/components';
 import { h, timeAgo } from '../../../ui/dom';
 import { dropzone } from '../../../ui/dropzone';
@@ -83,6 +83,7 @@ export async function createSkinProject(opts: { image: ImageData; model: SkinMod
 }
 
 async function saveNewProject(opts: { image: ImageData; model: SkinModel; name: string; source: string }): Promise<void> {
+  const { encodePng } = await loadImageCodecs();
   const now = Date.now();
   const project: SkinProjectData = {
     id: uuidv4(),

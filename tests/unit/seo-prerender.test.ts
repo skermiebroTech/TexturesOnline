@@ -245,6 +245,31 @@ test('tool pages hide the prerendered text while booting and preconnect to game-
   assert.match(home, /<link rel="dns-prefetch" href="https:\/\/piston-meta\.mojang\.com"/);
 });
 
+test('pages the app takes over as they are name the page and year they were built for', () => {
+  for (const p of pages) {
+    const html = byName.get(pageFileName(p.meta.path))!;
+    const view = one(html, /<main id="main"[^>]*>(<div class="view[^"]*"[^>]*>)/);
+    if (p.boot === 'keep') {
+      const [, rest = '/'] = /^\/(?:de|es|pt-br|ja)(?=\/|$)(.*)$/.exec(p.meta.path) ?? [null, p.meta.path];
+      assert.ok(view.includes(` data-prerendered="${p.locale}:${rest || '/'}" data-year="2026"`), `${p.meta.path}: ${view}`);
+    } else assert.ok(!view.includes('data-prerendered'), p.meta.path);
+  }
+});
+
+test('the shader page fetches its first picture with the page', () => {
+  const withAssets = buildSite({
+    template: TEMPLATE,
+    iconSvg: () => '',
+    assetsFor: (mods) => ({ css: [], js: mods.map((m) => `assets/${m.split('/').pop()!.replace('.ts', '')}.js`) }),
+    assetFile: (src) => `assets/${src.split('/').pop()!.replace('.webp', '-abc.webp')}`,
+    buildDate: BUILD_DATE,
+  });
+  const html = withAssets.find((f) => f.fileName === pageFileName('/shaders'))!.source;
+  assert.match(html, /<link rel="preload" as="image" href="\.\.\/assets\/iris-abc\.webp">/);
+  const textures = withAssets.find((f) => f.fileName === pageFileName('/textures'))!.source;
+  assert.ok(!textures.includes('as="image"'));
+});
+
 test('404.html boots the app from the site root and is not indexed', () => {
   const html = byName.get('404.html')!;
   assert.match(html, /<meta name="robots" content="noindex"/);

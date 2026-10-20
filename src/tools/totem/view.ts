@@ -17,8 +17,9 @@ import { versionPicker } from '../../ui/version-picker';
 import { getProject, listProjects, saveProject } from '../../core/storage';
 import { saveBlob } from '../../core/download';
 import { friendlyError, isAbortError } from '../../core/net';
-import { decodeImage, encodePng, imageDataToCanvas } from '../../core/image';
-import { BEDROCK_LATEST_ID, DEFAULT_JAVA_VERSION, loadAssets } from '../../editions/index';
+import { imageDataToCanvas } from '../../core/pixels';
+import { decodeImage, loadImageCodecs } from '../../core/image-lazy';
+import { BEDROCK_LATEST_ID, DEFAULT_JAVA_VERSION, loadAssets } from '../../editions/versions';
 import { siteFooter } from '../../app/footer';
 import type { SkinProjectData } from '../skins/export';
 import { drawFigure } from '../skins/ui/figure';
@@ -28,25 +29,26 @@ import { fetchSkinByUsername, HD_KEPT_NOTE, listDefaultSkins, readDefaultSkin, r
 /** HD skins work too: the totem is read from them at 64x64. */
 const TOTEM_HD_NOTE = 'This is an HD 128×128 skin. The totem is 16×16, so it is made from the skin at 64×64.';
 const totemNotes = (notes: readonly string[]): string[] => notes.map((n) => (n === HD_KEPT_NOTE ? TOTEM_HD_NOTE : n));
-import { openTotemEditor } from './editor';
 import { hotbarPreview, popPreview } from './preview';
 import {
   DEFAULT_OPTIONS,
   DEFAULT_PACK_NAME,
   FIRST_TOTEM_VERSION,
   STYLES,
-  buildTotemPack,
   defaultPackName,
   javaHasTotem,
   makeTotem,
   totemDescription,
-  totemProject,
   totemShape,
   totemTexturePath,
   type TotemOptions,
   type TotemShape,
   type TotemStyle,
 } from './totem';
+
+// The pixel editor and the pack builder (zip writer, PNG encoder) load when they are used.
+const pixelEditor = () => import('./editor');
+const packBuilder = () => import('./pack');
 
 type Source = 'upload' | 'username' | 'saved' | 'default';
 
@@ -584,8 +586,8 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const pop = popPreview();
   const hotbar = hotbarPreview();
   const editedBadge = h('span', { class: 'tt-edited', hidden: true }, badge('Edited by hand', 'gold'));
-  const editBtn = button({ label: 'Edit pixels', icon: 'pencil', variant: 'secondary', class: 'tt-edit-btn', onClick: () => openEditor() });
-  const pngBtn = button({ label: 'Download PNG', icon: 'image', variant: 'secondary', class: 'tt-png-btn', onClick: () => downloadPng() });
+  const editBtn = button({ label: 'Edit pixels', icon: 'pencil', variant: 'secondary', class: 'tt-edit-btn', onClick: () => void openEditor() });
+  const pngBtn = button({ label: 'Download PNG', icon: 'image', variant: 'secondary', class: 'tt-png-btn', onClick: () => void downloadPng() });
   const discardBtn = button({
     label: 'Undo hand edits',
     icon: 'undo',
@@ -644,12 +646,15 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     paintExport();
   }
 
-  function openEditor() {
+  async function openEditor() {
     const img = current();
     if (!img || !generated) return;
+    const base = generated;
+    const { openTotemEditor } = await pixelEditor();
+    if (!alive) return;
     openTotemEditor({
       image: img,
-      generated,
+      generated: base,
       onSave: (out) => {
         edited = out;
         paintPreview();
@@ -659,10 +664,12 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     });
   }
 
-  function downloadPng() {
+  async function downloadPng() {
     const img = current();
     if (!img) return;
-    saveBlob(new Blob([encodePng(img)], { type: 'image/png' }), edition === 'bedrock' ? 'totem.png' : 'totem_of_undying.png');
+    const name = edition === 'bedrock' ? 'totem.png' : 'totem_of_undying.png';
+    const { encodePng } = await loadImageCodecs();
+    saveBlob(new Blob([encodePng(img)], { type: 'image/png' }), name);
   }
 
   // ---------------------------------------------------------------- step 3: the pack
@@ -773,6 +780,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     if (!img || dlBtn.disabled) return;
     setButtonBusy(dlBtn, true);
     try {
+      const { buildTotemPack } = await packBuilder();
       const r = await buildTotemPack(img, {
         name: packName,
         description: totemDescription(skin?.name),
@@ -815,6 +823,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     if (!img || openBtn.disabled) return;
     setButtonBusy(openBtn, true);
     try {
+      const { totemProject } = await packBuilder();
       const project = totemProject(img, {
         name: packName,
         description: totemDescription(skin?.name),

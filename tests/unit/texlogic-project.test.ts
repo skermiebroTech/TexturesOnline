@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  applyPreset,
   categoryForPath,
   getBaseImage,
   imageDims,
@@ -13,6 +12,7 @@ import {
   scaleForResolution,
   setOverride,
 } from '../../src/tools/textures/project';
+import { applyPreset } from '../../src/tools/textures/effects';
 import { createImageData, decodeImage, encodePng, isPng } from '../../src/core/image';
 import { isUuid } from '../../src/core/uuid';
 import type { AssetIndex } from '../../src/core/types';

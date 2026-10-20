@@ -1,7 +1,7 @@
 // Edition + game version chooser, and the vanilla asset download panel.
 
 import type { Edition, GameVersion, Progress } from '../core/types';
-import { DEFAULT_JAVA_VERSION, getDefaultVersion, listVersions } from '../editions/index';
+import { DEFAULT_JAVA_VERSION, getDefaultVersion, listVersions } from '../editions/versions';
 import { h, uid } from './dom';
 import { icon } from './icons';
 import { badge, button, progressBar, segmented, spinner, toggle } from './components';

@@ -23,6 +23,9 @@ import { paintCanvas } from './thumbs';
 import { packIconImage } from './icon';
 import { ICON_KEY, type TexStore } from './store';
 import type { OpenTexture } from './canvas-panel';
+import { resolutionSentence } from './resolution';
+
+export { resolutionSentence };
 
 export interface PackPanel {
   el: HTMLElement;
@@ -36,12 +39,6 @@ export interface PackPanelOptions {
   paintIcon(): void;
   /** The game version changed: the editor must load that version's textures */
   reload(): void;
-}
-
-export function resolutionSentence(r: number): string {
-  if (r <= 16) return '16× is the classic Minecraft look: every block face is 16×16 pixels, just like the original game.';
-  const detail = r === 32 ? 'twice' : r === 64 ? '4 times' : r === 128 ? '8 times' : r === 256 ? '16 times' : '32 times';
-  return `${r}× gives each block face ${r}×${r} pixels — ${detail} the detail. Textures are scaled up when you start editing them, so you can add finer details.`;
 }
 
 export function createPackPanel(opts: PackPanelOptions): PackPanel {

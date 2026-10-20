@@ -3,19 +3,23 @@
 
 import './help.css';
 import '../../app/content/content.css';
-import type { RouteContext } from '../../core/router';
+import type { ViewContext } from '../../core/router';
 import { isRestoringScroll, replacePath } from '../../core/router';
 import { prefersReducedMotion } from '../../ui/dom';
-import { siteFooter } from '../../app/footer';
+import { siteFooter, wireFooter } from '../../app/footer';
 import { toDomAll } from '../../app/markup-dom';
 import { wireContent } from '../../app/content/wire';
 import { FAQ, HELP_SECTION_IDS, helpPage } from './content';
 import { loadContent } from '../../i18n/content';
 
-export default async function help(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+/** The page is the prerendered markup: on a first visit the router hands it over as it is. */
+export const hydratable = true;
+
+export default async function help(root: HTMLElement, ctx: ViewContext): Promise<() => void> {
   await loadContent(ctx.locale);
   root.classList.add('help');
-  root.append(...toDomAll(helpPage(ctx.locale)), siteFooter());
+  if (!ctx.hydrate) root.append(...toDomAll(helpPage(ctx.locale)), siteFooter());
+  else wireFooter(root, ctx.locale);
   const unwire = wireContent(root);
 
   const tocLinks = new Map<string, HTMLAnchorElement>();

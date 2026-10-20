@@ -8,20 +8,20 @@ import { dropzone } from '../../../ui/dropzone';
 import { openModal, confirmDialog, promptDialog } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
 import { versionPicker } from '../../../ui/version-picker';
-import { DEFAULT_JAVA_VERSION, bedrockDisplayVersion, getDefaultVersion } from '../../../editions/index';
+import { DEFAULT_JAVA_VERSION, bedrockDisplayVersion, getDefaultVersion } from '../../../editions/versions';
 import { deleteProject, listProjects, saveProject } from '../../../core/storage';
 import { currentRoute, navigate, href as routeHref, type RouteContext } from '../../../core/router';
 import { friendlyError } from '../../../core/net';
 import { uuidv4 } from '../../../core/uuid';
 import { siteFooter } from '../../../app/footer';
-import { importPack } from '../import';
 import { newBedrockUuids, newTextureProject } from '../project';
-import { resolutionSentence } from './pack-panel';
+import { resolutionSentence } from './resolution';
 import { plainText } from './mc-text';
-import { decodeImage, resizeNearest } from '../../../core/image';
+import { resizeNearest } from '../../../core/pixels';
+import { decodeImage } from '../../../core/image-lazy';
 import { proceduralTexture, toImageData, type ProceduralTextureName } from '../../../shared/preview/procedural-textures';
 import { applyEffects, getPreset } from '../effects';
-import { renderIsoCube } from '../export';
+import { renderIsoCube } from '../iso-cube';
 import { firstSquare } from './meta';
 import { paintCanvas } from './thumbs';
 
@@ -259,6 +259,8 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     busy.hidden = false;
     dz.classList.add('is-busy');
     try {
+      // The pack reader (zip, image codecs) loads with the first file.
+      const { importPack } = await import('../import');
       const { project, warnings } = await importPack(file);
       await saveProject(project);
       if (!alive) return;

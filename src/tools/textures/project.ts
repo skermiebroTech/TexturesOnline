@@ -1,9 +1,9 @@
 import type { AssetIndex, Edition, EffectLayer, TextureCategory, TexturePackProject } from '../../core/types';
-import { createImageData, decodeImage, encodeImage, isPng } from '../../core/image';
+import { createImageData, isPng } from '../../core/pixels';
+import { decodeImage, loadImageCodecs } from '../../core/image-lazy';
 import { uuidv4 } from '../../core/uuid';
 import { javaTextureCategory } from '../../editions/java/textures';
 import { bedrockTextureCategory, parseLenientJson } from '../../editions/bedrock/catalog';
-import { EFFECT_PRESETS, type EffectPreset } from './effects';
 
 /** Resolutions offered for texture packs (pixels per block face). */
 export const RESOLUTIONS = [16, 32, 64, 128, 256, 512] as const;
@@ -85,6 +85,7 @@ export async function getBaseImage(project: TexturePackProject, assets: AssetInd
 export async function setOverride(project: TexturePackProject, path: string, img: ImageData): Promise<void> {
   if (!img || img.width < 1 || img.height < 1) throw new Error('The image is empty.');
   const ext = extOf(path) === 'tga' ? 'tga' : 'png';
+  const { encodeImage } = await loadImageCodecs();
   project.overrides[path] = await encodeImage(img, ext);
 }
 
@@ -124,7 +125,7 @@ export function scaleForResolution(img: ImageData, resolution: number, isAnimate
   return out;
 }
 
-// ---- Effect layers ----
+// ---- Effect layers (one-click presets: applyPreset in effects.ts) ----
 
 export function newLayerId(): string {
   return uuidv4().slice(0, 8);
@@ -134,14 +135,6 @@ export function addEffectLayer(project: TexturePackProject, layer: Omit<EffectLa
   const full: EffectLayer = { ...layer, params: { ...layer.params }, ...(layer.categories ? { categories: [...layer.categories] } : {}), id: newLayerId() };
   project.effects.push(full);
   return full;
-}
-
-/** Applies a one-click preset: replaces the effect stack (default) or appends to it. */
-export function applyPreset(project: TexturePackProject, preset: EffectPreset | string, mode: 'replace' | 'append' = 'replace'): EffectLayer[] {
-  const p = typeof preset === 'string' ? EFFECT_PRESETS.find((x) => x.id === preset) : preset;
-  if (!p) throw new Error(`Unknown preset "${String(preset)}".`);
-  if (mode === 'replace') project.effects = [];
-  return p.layers.map((l) => addEffectLayer(project, l));
 }
 
 // ---- Paths & categories ----

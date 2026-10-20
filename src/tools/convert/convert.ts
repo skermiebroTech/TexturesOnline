@@ -8,7 +8,8 @@ import { abortError, isAbortError } from '../../core/net';
 import { stringifyPretty } from '../../editions/java/packmeta';
 import { BEDROCK_TEXTURE_ROOT, JAVA_TEXTURE_ROOT, extOf, imageDims, newTextureProject, parseJsonLoose } from '../textures/project';
 import { flipbookEntries, flipbookToJava, javaFrameSize, javaToFlipbook, parseJavaAnimation, terrainTiles, type FlipbookEntry, type JavaAnimation } from './anim';
-import { buildPairIndex, compareJavaVersions, pairKey, renameChain, rewriteModelTextures, type JavaBedrockMap, type JavaRenames, type PairIndex, type RenameChain } from './paths';
+import { buildPairIndex, pairKey, renameChain, rewriteModelTextures, type JavaBedrockMap, type JavaRenames, type PairIndex, type RenameChain } from './paths';
+import { isSameTarget, targetLabel } from './target';
 
 export interface ConvertTarget {
   edition: Edition;
@@ -80,16 +81,7 @@ const CONCURRENCY = 8;
 const FLIPBOOK = 'textures/flipbook_textures.json';
 const TERRAIN = 'textures/terrain_texture.json';
 
-/** "Bedrock" / "Java 26.3" for names and messages. */
-export function targetLabel(t: { edition: Edition; version: string }): string {
-  return t.edition === 'bedrock' ? 'Bedrock' : `Java ${t.version}`;
-}
-
-/** Whether converting `source` to `target` does anything. */
-export function isSameTarget(source: { edition: Edition; version: string }, target: ConvertTarget): boolean {
-  if (source.edition !== target.edition) return false;
-  return source.edition === 'bedrock' || compareJavaVersions(source.version, target.version) === 0;
-}
+export { isSameTarget, targetLabel };
 
 /** The converted pack's name: "My Pack (Bedrock)", with an older "(…)" suffix replaced. */
 export function convertedName(name: string, target: ConvertTarget): string {
