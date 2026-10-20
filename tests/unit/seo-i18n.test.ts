@@ -66,7 +66,15 @@ const REQUIRED_ROUTES = [
   '/guides/make-a-skin',
   '/guides/make-shaders-without-mods',
   '/guides/minecraft-pack-format-versions',
+  '/totem-maker',
+  '/guides/bedrock-vibrant-visuals-settings',
+  '/guides/convert-java-to-bedrock-texture-pack',
+  '/guides/merge-texture-packs',
+  '/guides/make-a-bedrock-skin-pack',
 ];
+
+/** A public page that exists only in English, if there is one (every page is translated otherwise). */
+const englishOnly = PUBLIC_PAGES.find((m) => pageLocales(m.path).length === 1);
 
 test('every language has the promised pages, each with its meta and its content', () => {
   for (const l of TRANSLATED_LOCALES) {
@@ -140,11 +148,13 @@ test('hreflang links are complete and reciprocal, with x-default pointing to Eng
     for (const [, href] of alts) assert.deepEqual(alternatesIn(byName.get(fileOf(href))!), alts, `${href} points back to ${p.meta.path}`);
   }
   // A page only in English still names itself and x-default.
-  const vv = alternatesIn(byName.get('guides/bedrock-vibrant-visuals-settings/index.html')!);
-  assert.deepEqual(
-    vv.map(([h]) => h),
-    ['en', 'x-default'],
-  );
+  if (englishOnly) {
+    const alts = alternatesIn(byName.get(fileOf(absoluteUrl(englishOnly.path)))!);
+    assert.deepEqual(
+      alts.map(([h]) => h),
+      ['en', 'x-default'],
+    );
+  }
 });
 
 test('the sitemap lists every language version with matching xhtml:link alternates', () => {
@@ -355,7 +365,8 @@ test('interface texts exist for every language and differ from English', () => {
 test('localized paths: language folders only where the page exists, app pages follow the language', () => {
   assert.equal(localizedPath('/help?s=faq', 'de'), '/de/help?s=faq');
   assert.equal(localizedPath('/', 'ja'), '/ja');
-  assert.equal(localizedPath('/guides/bedrock-vibrant-visuals-settings', 'es'), '/guides/bedrock-vibrant-visuals-settings', 'untranslated guide stays English');
+  if (englishOnly) assert.equal(localizedPath(englishOnly.path, 'es'), englishOnly.path, 'untranslated page stays English');
+  assert.equal(localizedPath('/guides/make-a-bedrock-skin-pack', 'es'), '/es/guides/make-a-bedrock-skin-pack');
   assert.equal(localizedPath('/textures/abc', 'pt-br'), '/pt-br/textures/abc', 'a project follows the language');
   assert.equal(localizedPath('/fonts/OFL.txt', 'de'), '/fonts/OFL.txt', 'files are not localized');
   assert.equal(localizedPath('/de/help', 'es'), '/de/help', 'an explicit language is kept');
@@ -367,7 +378,8 @@ test('localized paths: language folders only where the page exists, app pages fo
   assert.equal(prefixPath('/', 'es'), '/es');
   assert.equal(prefixPath('/?x=1', 'es'), '/es/?x=1');
   assert.equal(publicPageMeta('/de/help/')?.title, META_TRANSLATIONS.de.pages['/help']!.title);
-  assert.equal(publicPageMeta('/de/guides/bedrock-vibrant-visuals-settings'), undefined, 'no German version, not public');
+  if (englishOnly) assert.equal(publicPageMeta(prefixPath(englishOnly.path, 'de')), undefined, 'no German version, not public');
+  assert.equal(publicPageMeta('/de/guides/not-a-guide'), undefined, 'unknown guide, not public');
   assert.equal(publicPageMeta('/ja/textures/abc'), undefined);
 });
 

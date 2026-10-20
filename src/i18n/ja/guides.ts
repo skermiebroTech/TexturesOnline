@@ -7,6 +7,7 @@ import { F, LATEST, MIN_ENGINE, NEXT_SNAPSHOT, formatGroups, formatParts, maxFor
 import type { GuideText, GuidesIndexText } from '../../tools/guides/content';
 import { SHOTS } from './shots';
 import { UI_JA } from './ui';
+import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from '../../tools/guides/skin-pack-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -839,6 +840,7 @@ const makeASkin: GuideText = {
         ]),
         figure(SHOTS.skinPack),
         callout('warn', '知っておきたいこと', 'ゲーム機ではスキンファイルをインポートできません。「信頼できるスキンのみ許可」をオンにしているプレイヤーには、カスタムスキンがデフォルトのスキンに見えます。インポートするスキンパックでは独自のモデルは使えず、クラシックとスリムだけです。'),
+        p('入れ方、更新のしかた、パックの中身を順に解説：', link('/guides/make-a-bedrock-skin-pack', 'Minecraft統合版のスキンパックの作り方'), '。'),
       ],
     },
   ],
@@ -902,7 +904,7 @@ const shadersWithoutMods: GuideText = {
           '公式の方法は',
           strong('バイブラントビジュアルズ'),
           '（Vibrant Visuals）です。統合版の新しいレンダラーで、1.21.90（2025年6月）から正式版に入っています。リソースパックで、太陽と月の光、空の色、霧、水、影、カラーグレーディングを、時間帯やバイオームごとに変えられます。',
-          link('/guides/bedrock-vibrant-visuals-settings', 'バイブラントビジュアルズの設定解説（英語）'),
+          link('/guides/bedrock-vibrant-visuals-settings', 'バイブラントビジュアルズの設定解説'),
           '。',
         ),
       ],
@@ -1057,6 +1059,450 @@ const javaVsBedrock: GuideText = {
   ctaLabel: 'Texture Pack Makerを開く',
 };
 
+// ---------------------------------------------------------------- vibrant visuals
+
+const VV_STEPS: Child[] = [
+  [link('/shaders', 'Shader Maker'), 'でパックを作り（', strong('Bedrock Vibrant Visuals'), 'を選びます）、', code('.mcpack'), 'を書き出します。'],
+  'ファイルを開きます。Minecraftが自動でインポートします。',
+  [uiPath('設定', 'グローバル リソース', 'マイ パック'), 'でパックを有効にします。バイブラントビジュアルズに対応していない従来のテクスチャパックは無効にします。'],
+  [uiPath('設定', 'ビデオ'), 'を開き、', strong('グラフィックモード'), 'を', strong('バイブラントビジュアルズ'), 'にします。'],
+];
+
+const vibrantVisuals: GuideText = {
+  image: SHOTS.vibrantVisuals,
+  intro: [
+    p(
+      strong('バイブラントビジュアルズ'),
+      '（Vibrant Visuals）は、Minecraft統合版の新しいグラフィックモードです。向きのある太陽光、やわらかい影、ボリュームのある霧、反射する水、物理ベースの質感（PBR）が使えます。1.21.90（2025年6月）で実験的機能を卒業し、対応端末では標準のグラフィックモードになっています。リソースパックで設定を調整できますが、新しいシェーダーコードは追加できません。',
+    ),
+  ],
+  howto: { name: 'Minecraft統合版でバイブラントビジュアルズ用パックを使う方法', steps: VV_STEPS },
+  sections: [
+    {
+      id: 'settings',
+      title: 'バイブラントビジュアルズのパックで変えられること',
+      body: [
+        table(
+          ['パックのフォルダー', '調整できる内容'],
+          [
+            [code('lighting/'), '太陽と月の明るさ・色・通り道の傾き、環境光（洞窟の中）、空からの光、光るブロックの色の鮮やかさ。'],
+            [code('atmospherics/'), '頭上と地平線の空の色と、空気中での光の散らばり方（空の濃さ、夕焼けの光）。'],
+            [code('color_grading/'), 'トーンマッピングの方式、コントラスト、彩度、ゲイン、ガンマ、色温度。映画のような色味を決めます。'],
+            [code('water/'), '水の色、波、コースティクス（水中にできる光の模様）。'],
+            [code('shadows/'), 'ブロック状の影か、やわらかい影か。'],
+            [code('fogs/'), 'ボリュームフォグの濃さと色、従来の距離による霧。'],
+            [code('local_lighting/'), '松明やランタンなど、ブロックが出す光の色。'],
+          ],
+        ),
+        p('設定は時間帯で変えられ、Minecraft自体の値もバイオームごとに違います。いいパックは、全体用のファイルを1つ置き換えるのではなく、バイオームごとに調整しています。'),
+        p(strong('パックでは変えられないもの：'), 'ブルーム、露出、スクリーンスペース反射、雲のライティング、トーンマッピングのカーブそのもの、描画距離、アンチエイリアス。これらはリソースパックではなく、ゲームのレンダラー側にあります。'),
+      ],
+    },
+    {
+      id: 'devices',
+      title: '対応している端末',
+      body: [
+        ul(['DirectX 12対応のWindows PC。', 'Xbox SeriesとPlayStation 5。Xbox OneとPS4では初期設定でオフです。', 'A12チップ以降のiPhoneとiPad。', '多くの最近のAndroid端末。']),
+        p('初代Nintendo Switch、Chromebook、Fireタブレットでは使えません。サーバー側でオフにされることもあり、画面分割プレイでは代わりに従来のグラフィックになります。'),
+      ],
+    },
+    {
+      id: 'enable',
+      title: 'パックを使ってオンにする',
+      body: [
+        steps(VV_STEPS),
+        callout('warn', 'バイブラントビジュアルズが選べない？', '有効なリソースパックがすべて対応しているときだけ選べます。従来のテクスチャパックはこれをオフにするので、無効にしてください（またはバイブラントビジュアルズ向けに作られたパックを使います）。対応端末であることも必要です。'),
+        figure(SHOTS.vibrantVisuals),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'what', q: 'Minecraftのバイブラントビジュアルズとは？', a: [p('統合版に組み込まれた新しいグラフィックモードで、1.21.90で正式に登場しました。アドオンなしで、向きのある光、影、ボリュームフォグ、水の反射、PBRの質感が加わります。')] },
+    { id: 'textures', q: 'バイブラントビジュアルズには専用のテクスチャパックが必要？', a: [p('いいえ、デフォルトのテクスチャで動きます。ただし、バイブラントビジュアルズ対応を宣言していない従来のテクスチャパックが有効な間は、このモードがオフになります。')] },
+    { id: 'classic-fog', q: '霧の変更はバイブラントビジュアルズ以外でも効きますか？', a: [p('従来の距離による霧は、どのグラフィックモードでも変えられます。ボリュームフォグとライティングの設定は、バイブラントビジュアルズのときだけ効きます。')] },
+  ],
+  ctaLabel: 'バイブラントビジュアルズのパックを作る',
+};
+
+// ---------------------------------------------------------------- convert java to bedrock
+
+const CONVERT_STEPS: Child[] = [
+  [link('/texture-pack-converter', 'テクスチャパック変換ツール'), 'を開き、パックを選びます。Java版の', code('.zip'), '、統合版の', code('.mcpack'), '、またはPNGのテクスチャです。'],
+  ['変換先を選びます：', strong('Bedrock Edition'), '（統合版）、または', strong('Java Edition'), 'とバージョン。'],
+  [strong('Convert'), 'をクリックします。ブラウザが変換先のテクスチャ一覧を読み込み、変換できるテクスチャをすべて変換します。'],
+  'レポートを確認します。いくつ変換できたか、どれがなぜスキップされたかがわかります。',
+  '変換したパックをダウンロードするか、エディターで開いてスキップされたテクスチャを先に描き直します。',
+];
+
+const convertJavaToBedrock: GuideText = {
+  image: SHOTS.convertResult,
+  intro: [
+    p(
+      'Java版のテクスチャパックは統合版では動きません。',
+      code('.zip'),
+      'を',
+      code('.mcpack'),
+      'に名前変更してもだめです。2つのエディションでは、フォルダー、ファイル名、説明ファイルが違うからです。変換するには、テクスチャを1つずつ統合版のフォルダーに移し、統合版のファイル名に変え、',
+      code('manifest.json'),
+      'を付ける必要があります。無料の',
+      link('/texture-pack-converter', 'テクスチャパック変換ツール'),
+      'なら、ブラウザで数秒で終わり、逆方向の変換もできます。',
+    ),
+  ],
+  quick: {
+    title: 'かんたんに言うと',
+    items: [
+      [link('/texture-pack-converter', 'テクスチャパック変換ツール'), 'を開き、Java版の', code('.zip'), 'を選びます。'],
+      [strong('Bedrock Edition'), 'を選び、', strong('Convert to Bedrock'), 'をクリックします。'],
+      [code('.mcpack'), 'をダウンロードして開けば、Minecraftに取り込まれます。'],
+    ],
+  },
+  howto: { name: 'Java版のテクスチャパックを統合版に変換する方法', steps: CONVERT_STEPS },
+  sections: [
+    { id: 'steps', title: '手順', body: [steps(CONVERT_STEPS), figure(SHOTS.convertPack), figure(SHOTS.convertResult)] },
+    {
+      id: 'what',
+      title: '変換できるもの・できないもの',
+      body: [
+        p('変換ツールは、Java版のどのテクスチャが統合版のどのテクスチャと同じ役割かを知っています。両方のエディションのゲームファイルから調べたものです。ほとんどのテクスチャは両方で同じ絵なので、そのままコピーできます。'),
+        table(
+          ['変換できる', '変換できない'],
+          [
+            ['ほとんどのブロックとアイテムのテクスチャ（およそ5つに4つ）', '片方のエディションにしかないテクスチャ'],
+            ['多くのモブや環境のテクスチャ（太陽、月、雲）', '配置が違うテクスチャ：チェスト、多くのモブのスキン、旗、メニュー、パーティクル'],
+            ['アニメーションするテクスチャ：.png.mcmetaはフリップブックの項目になります', 'モデル、サウンド、フォント、スプラッシュテキスト、シェーダー'],
+            ['パックのアイコン、名前、説明', 'OptiFineの追加機能（連結テクスチャ、カスタムアイテムテクスチャなど）'],
+          ],
+        ),
+        p('スキップされたものは理由と一緒にレポートに載るので、何を描き直せばいいかがはっきりわかります。変換したパックを', link('/textures', 'Texture Pack Maker'), 'で開けば、ダウンロードする前にそれらのテクスチャを3Dモデルの上で直せます。'),
+        callout('tip', '1つのパックを両方のエディションで', 'Java版のパックを元データとして残し、変更するたびに変換し直しましょう。新しいバージョンを統合版にインポートする前に、設定 › ストレージで古いほうを削除すると、2つに増えません。'),
+      ],
+    },
+    {
+      id: 'bedrock-to-java',
+      title: '統合版のパックをJava版に変換する',
+      body: [
+        p(
+          '統合版の',
+          code('.mcpack'),
+          '（または',
+          code('.mcaddon'),
+          '）を選び、',
+          strong('Java Edition'),
+          'と遊んでいるバージョンを選びます。テクスチャはJava版のフォルダーと名前に移り、',
+          code('.tga'),
+          '画像はPNGに、フリップブックのアニメーションは',
+          code('.png.mcmeta'),
+          'ファイルになり、パックにはそのバージョン用の正しい',
+          code('pack.mcmeta'),
+          'が付きます。',
+        ),
+      ],
+    },
+    {
+      id: 'old-java',
+      title: '古いJava版のパックを新しいバージョンに更新する',
+      body: [
+        p(
+          '同じ変換ツールで、Java版のパックをバージョン間で更新できます。多くのテクスチャは年々名前が変わってきました。とくに1.13では',
+          code('textures/blocks'),
+          'が',
+          code('textures/block'),
+          'になり、何百ものファイルが新しい名前になりました。古いパックを選び、',
+          strong('Java'),
+          'と自分のバージョンを選ぶと、名前が変わったテクスチャはすべて新しい名前に移ります。パック内のモデルに書かれたテクスチャ名も更新されます。',
+        ),
+        p(`逆方向にも使えます。たとえば${LATEST}用のパックを1.8.9用にできます。`),
+      ],
+    },
+    {
+      id: 'install',
+      title: '変換したパックを入れる',
+      body: [
+        ul([
+          ['統合版：', code('.mcpack'), 'を開き（Windowsはダブルクリック、スマホは「Minecraftで開く」）、', uiPath('設定', 'グローバル リソース'), 'で有効にします。'],
+          ['Java版：', code('.zip'), 'を', code('resourcepacks'), 'フォルダーに入れ、「選択中」に移します。'],
+        ]),
+        p('くわしくは', link('/guides/install-resource-packs', 'テクスチャパックの入れ方'), 'へ。おかしいところがあれば', link('/guides/texture-pack-not-working', 'テクスチャパックが反映されないとき'), 'を見てください。'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'free', q: '変換ツールは無料ですか？', a: [p('はい。アカウントも制限もありません。パックはブラウザの中で変換され、アップロードされることはありません。')] },
+    { id: 'look', q: '統合版でも同じ見た目になりますか？', a: [p('変換したテクスチャは同じ見た目です。スキップされたテクスチャは統合版のものになり、統合版のライティングやバイブラントビジュアルズで色が少し違って見えることがあります。')] },
+    { id: 'shaders', q: 'Java版のシェーダーパックを統合版に変換できますか？', a: [p('できません。統合版は独自のシェーダーコードを読み込みません。代わりに', link('/guides/bedrock-vibrant-visuals-settings', 'バイブラントビジュアルズ'), 'のパックを使いましょう。', link('/shaders', 'Shader Maker'), 'で作れます。')] },
+    { id: 'png', q: 'PNGファイルを.mcpackにできますか？', a: [p('はい。ゲームのテクスチャと同じ名前（たとえば', code('stone.png'), '）のPNG、またはPNGをまとめたzipを選び、統合版に変換します。')] },
+    { id: 'console', q: '変換したパックをゲーム機で使えますか？', a: [p('ゲーム機ではファイルをインポートできません。PCやスマホでパックをワールドに追加してそのワールドに参加するか、パックの入ったRealmやサーバーを使ってください。')] },
+  ],
+  ctaLabel: 'テクスチャパック変換ツールを開く',
+};
+
+// ---------------------------------------------------------------- merge packs
+
+const MERGE_STEPS: Child[] = [
+  [link('/merge-texture-packs', 'テクスチャパックを結合'), 'を開き、Java版の', code('.zip'), 'か統合版の', code('.mcpack'), 'のパックを2〜8個追加します。'],
+  'ドラッグか矢印ボタンで順番を決めます。2つのパックが同じファイルを変えているところでは、上のパックが優先されます。',
+  '結合したパックの名前とアイコンを決めます。Java版なら、遊んでいるバージョンも選びます。',
+  [strong('Merge'), 'をクリックし、競合の一覧を確認します。'],
+  '結合したパックをダウンロードするか、エディターで開いて作業を続けます。',
+];
+
+const mergePacks: GuideText = {
+  image: SHOTS.mergeResult,
+  intro: [
+    p(
+      'Minecraftはもともとテクスチャパックを重ねて使えます。いくつか有効にすると、同じテクスチャを変えているところでは一覧で上にあるパックが優先されます。結合は、その順番を組み込んだまま、複数のパックから1つのパックを作ることです。パックを1つしか受け付けないサーバーやRealm、お気に入りの組み合わせを配りたいとき、パック一覧をすっきりさせたいときに便利です。無料の',
+      link('/merge-texture-packs', 'テクスチャパックを結合'),
+      'ツールなら、ブラウザでできます。',
+    ),
+  ],
+  quick: {
+    title: 'かんたんに言うと',
+    items: [
+      [link('/merge-texture-packs', 'テクスチャパックを結合'), 'を開き、同じエディションのパックを2〜8個追加します。'],
+      'ドラッグして並べます。競合はすべて上のパックが優先されます。',
+      'Mergeをクリックし、競合の一覧を確認してパックをダウンロードします。',
+    ],
+  },
+  howto: { name: 'Minecraftのテクスチャパックを結合する方法', steps: MERGE_STEPS },
+  sections: [
+    { id: 'steps', title: '手順', body: [steps(MERGE_STEPS), figure(SHOTS.mergeSettings), figure(SHOTS.mergeResult)] },
+    {
+      id: 'wins',
+      title: 'どのパックが優先される？',
+      body: [
+        p('Minecraftと同じルールです。ファイルごとに、一覧でいちばん上にあるパックが優先されます。テクスチャとそのアニメーションファイルはいつもセットなので、下のパックのアニメーションが上のパックの絵にくっつくことはありません。'),
+        p('役に立つ内容が消えないよう、置き換えるのではなく中身を合わせるファイルもあります：'),
+        ul([
+          [strong('Java版：'), '言語ファイル（キーごと）、', code('sounds.json'), '（サウンドごと）、テクスチャアトラス、フォント。'],
+          [strong('統合版：'), code('terrain_texture.json'), '、', code('item_texture.json'), '、', code('flipbook_textures.json'), '、', code('blocks.json'), '、サウンド定義、言語ファイル。'],
+        ]),
+        p('結果には「block/stone.pngはパックAのものを使用、パックBを上書き」のように競合がすべて表示され、各パックから何ファイル入ったかもわかります。'),
+      ],
+    },
+    {
+      id: 'versions',
+      title: 'バージョンの違うパック',
+      body: [
+        p(
+          '別々のバージョン向けに作られたJava版のパックも結合できます。遊んでいるバージョンを選ぶと、古いパックは先にそのバージョンのテクスチャ名に変えられます（',
+          link('/texture-pack-converter', '変換ツール'),
+          `と同じ名前変更です）。なので1.12のパックと${LATEST}のパックも組み合わせられます。Java版と統合版のパックは直接結合できないので、先にどちらかを変換してください。`,
+        ),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: '手作業でパックを結合する',
+      body: [
+        steps([
+          'それぞれのパックを別々のフォルダーに展開します。',
+          '新しいフォルダーを作り、優先度のいちばん低いパックを最初にコピーし、その上に優先度の高いパックを順にコピーします。聞かれたらファイルを置き換えます。',
+          ['合わせるべきファイル（', code('sounds.json'), '、言語ファイル、アトラス）は手で合わせます。そうしないと最後にコピーしたものだけが残ります。'],
+          [code('pack.mcmeta'), 'を1つだけ残すか（Java版）、新しいIDで', code('manifest.json'), 'を書き直し（統合版）、中身をzipにまとめます。'],
+        ]),
+        p('ツールなら、合わせるファイルや正しいパックフォーマットも含めて全部やってくれます。手作業が向いているのは、特殊なパックのときだけです。'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'how-many', q: 'いくつのパックを結合できますか？', a: [p('一度に2〜8個です。もっと結合したいときは、結果を次のパックと一緒にもう一度結合します。')] },
+    { id: 'shaders', q: 'シェーダーパックも結合できますか？', a: [p('できません。IrisやOptiFineのシェーダーパックは一度に1つしか動きません。バニラのシェーダー用リソースパックは普通のリソースパックと同じように結合できますが、同じシェーダーファイルを変える2つのパックの効果が足し合わされることはありません。')] },
+    { id: 'server', q: '結合したパックをサーバーリソースパックに使えますか？', a: [p('はい。結合した', code('.zip'), 'をサーバー用パックの置き場所にアップロードし、ほかのパックと同じように', code('server.properties'), 'で指定します。')] },
+    { id: 'upload', q: 'パックはアップロードされますか？', a: [p('いいえ。パックはブラウザの中で結合され、端末に残ります。')] },
+  ],
+  ctaLabel: 'テクスチャパックを結合を開く',
+};
+
+// ---------------------------------------------------------------- bedrock skin pack
+
+const SKIN_PACK_STEPS: Child[] = [
+  [link('/skin-pack-maker', 'スキンパック作成ツール'), 'を開き、スキンを始めます。白紙か色分けのテンプレート、手元のPNG、ユーザー名から取ったJava版プレイヤーのスキン、デフォルトスキンから選べます。腕はクラシック（4ピクセル）かスリム（3ピクセル）を選びます。'],
+  '64×64のテンプレートか3Dモデルの上で直接塗ります。スキンはそれぞれ別のプロジェクトとして端末に保存され、その名前がゲーム内で表示されるスキン名になります。',
+  'パックに入れるほかのスキンも同じように作ります。',
+  ['そのうちの1つを開き、', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), 'を選んでパックに名前をつけ、入れるほかのスキンにチェックして', strong('Download pack'), 'を押します。'],
+  ['Windows、Android、iPhone、iPadで', code('.mcpack'), 'を開きます。Minecraftに取り込まれます。'],
+  ['Minecraftで', uiPath('更衣室', 'クラシック スキン'), 'を開き、自分のパックからスキンを選んで', strong('装備'), 'を押します。'],
+];
+
+const bedrockSkinPack: GuideText = {
+  image: SHOTS.skinPack,
+  intro: [
+    p(
+      strong('はい、Minecraft統合版のスキンパックは無料で自作できます。'),
+      'スキンパックは、1つ以上のスキンと、',
+      code('manifest.json'),
+      'と',
+      code('skins.json'),
+      'という2つの小さな説明ファイルが入った',
+      code('.mcpack'),
+      'ファイルです。',
+      link('/skin-pack-maker', 'スキンパック作成ツール'),
+      'でスキンを描くか読み込み、パックをダウンロードしてWindows、Android、iPhone、iPadで開けば、更衣室から自分のスキンを着られます。Minecraftマーケットプレイスでパックを販売するのは別の話で、Mojangに認められたマーケットプレイスのパートナーしか公開できません。',
+    ),
+  ],
+  quick: {
+    title: 'かんたんに言うと',
+    items: [
+      [link('/skin-pack-maker', 'スキンパック作成ツール'), 'で、スキンを1つずつ描くか読み込みます（クラシックかスリム）。'],
+      [strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), 'を選び、パックに名前をつけてほかのスキンにチェックします。'],
+      [code('.mcpack'), 'を開き、', uiPath('更衣室', 'クラシック スキン'), 'でスキンを装備します。'],
+    ],
+  },
+  howto: { name: 'Minecraft統合版のスキンパックを作る方法', steps: SKIN_PACK_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'スキンパックの中身',
+      body: [
+        p('スキンパックは、拡張子を', code('.mcpack'), 'に変えたzipファイルです。いちばん上の階層に次のファイルが入っています：'),
+        table(
+          ['ファイル', '役割'],
+          [
+            [code('manifest.json'), ['パックの名前、2つの固有ID（UUID）、バージョン番号。モジュールタイプの', code('skin_pack'), 'で、テクスチャパックではなくスキンパックだとMinecraftに伝えます。']],
+            [code('skins.json'), ['スキンの一覧。スキンごとに名前のキー、PNG、モデル（クラシックの腕は', code('geometry.humanoid.custom'), '、スリムの腕は', code('geometry.humanoid.customSlim'), '）、', code('"type": "free"'), 'を書きます。']],
+            ['スキン画像', ['スキン1つにつき64×64のPNGを1枚、', code('manifest.json'), 'と同じ場所に置きます。']],
+            [code('texts/en_US.lang'), ['更衣室に表示されるパックとスキンの名前。', code('texts/languages.json'), 'には言語ファイルの一覧を書きます。']],
+          ],
+        ),
+        p(code('"type": "free"'), 'は、パックを持っている人なら誰でもそのスキンを着られるという意味です。マーケットプレイスのパックはほとんどのスキンが', code('"paid"'), 'で、パックを買わないと使えません。自作のパックはいつも「free」です。'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'スキンパック作成ツールで作る',
+      body: [
+        steps(SKIN_PACK_STEPS),
+        figure(SHOTS.skinPack),
+        p(
+          'ツールが',
+          code('manifest.json'),
+          '、',
+          code('skins.json'),
+          '、言語ファイルを、パックごとに新しいIDで自動作成します。クラシックとスリムのスキンを1つのパックに入れられ、スキンはそれぞれの名前のまま。入力したパック名は、スキンの上に見出しとして表示されます。',
+        ),
+        figure(SHOTS.skin3d),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Windows・Android・iOSで入れる',
+      body: [
+        tabbed(
+          'install-skin-pack',
+          [
+            {
+              value: 'windows',
+              label: 'Windows',
+              icon: 'monitor',
+              content: [
+                steps([
+                  [code('.mcpack'), 'をダブルクリックします。Minecraftが開き、', el('em', null, 'インポート開始...'), 'のあとにインポート完了と表示されます。'],
+                  [uiPath('更衣室', 'クラシック スキン'), 'を開き、自分のパックのスキンを選んで', strong('装備'), 'を押します。'],
+                ]),
+              ],
+            },
+            {
+              value: 'mobile',
+              label: 'Android・iOS',
+              icon: 'smartphone',
+              content: [
+                steps([
+                  ['スマホやタブレットに', code('.mcpack'), 'をダウンロードします。'],
+                  [strong('Android：'), 'ダウンロードかファイルアプリから開き、Minecraftを選びます。', strong('iPhone / iPad：'), 'ファイルアプリでファイルをタップし、', uiPath('共有', 'Minecraft'), 'を選びます。'],
+                  [uiPath('更衣室', 'クラシック スキン'), 'を開き、自分のパックのスキンを装備します。'],
+                ]),
+              ],
+            },
+            {
+              value: 'console',
+              label: 'ゲーム機',
+              icon: 'gamepad',
+              content: [p('Xbox、PlayStation、Switchでは、スキンパックもスキンファイルもインポートできません。ゲーム機で見た目を変えるには、キャラクタークリエイターかマーケットプレイスのスキンパックを使います。')],
+            },
+          ],
+          UI_JA.platform,
+        ),
+        callout('tip', 'スキンが1つだけなら', 'スキン1つならパックは要りません。クラシック スキンで自分のスキンを開き、インポートを選んで64×64のPNGを指定します。スキンがいくつもあるならパックが便利で、名前もそのまま残り、どの端末でも同じ手順で入れられます。'),
+      ],
+    },
+    {
+      id: 'update',
+      title: 'スキンパックを更新・削除する',
+      body: [
+        p('インポート済みのパックを変えたいときは、スキンを編集し、同じプロジェクトからパックを書き出し直して新しいファイルを開きます。ツールはパックの2つのIDをそのままにバージョンを上げる（1.0.0、次は1.0.1……）ので、Minecraftは2つ並べずに導入済みのパックを置き換えます。'),
+        p('手作業で作ったパックなら、2つのUUIDはそのままにして、', code('manifest.json'), 'のヘッダーとモジュールの両方でバージョンを上げます。UUIDを新しくすると別のパックになり、同じバージョンのままだと導入済みとみなされてインポートされません。'),
+        p('パックを削除するには、', uiPath('設定', 'ストレージ'), 'でパックを選んで削除します。'),
+      ],
+    },
+    {
+      id: 'arms',
+      title: 'クラシックとスリムの腕',
+      body: [
+        p(
+          'パックの各スキンはそれぞれのモデルを持つので、1つのパックに両方を混ぜられます。',
+          strong('クラシック'),
+          '（スティーブ）の腕は幅4ピクセルで',
+          code('geometry.humanoid.custom'),
+          '、',
+          strong('スリム'),
+          '（アレックス）の腕は幅3ピクセルで',
+          code('geometry.humanoid.customSlim'),
+          'を使います。スキンを描いたときの腕に合ったモデルにしないと、腕が欠けて見えたり、透明なすき間ができたりします。',
+        ),
+        p('インポートするパックで使えるのはこの2つのモデルだけです。大きな頭のような独自の形は、自分でインポートするスキンパックでは使えません。'),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'スキンパックを手作業で作る',
+      body: [
+        p('ファイルはテキストエディターで自分で書くこともできます。スキン2つのパックはこうなります：'),
+        pre(SKIN_PACK_TREE),
+        p(code('manifest.json'), 'には、違うUUIDが2つ必要です。下の例をコピーせず、UUIDジェネレーターで自分用のものを作り、あとの更新のためにとっておきましょう：'),
+        pre(SKIN_PACK_MANIFEST.trimEnd()),
+        p(code('skins.json'), 'にはスキンを並べます。', code('serialize_name'), 'と', code('localization_name'), 'はパックのIDで、ほかのパックと重ならない、スペースなしの1語にします。スキンパック作成ツールは、念のためパックのUUIDの先頭を付け足しています。'),
+        pre(SKIN_PACK_SKINS_JSON.trimEnd()),
+        p(code('texts/en_US.lang'), 'にはゲーム内に表示される名前を書き、', code('texts/languages.json'), 'には', code('["en_US"]'), 'と書きます：'),
+        pre(SKIN_PACK_LANG.trimEnd()),
+        steps([
+          ['図のようにファイルを1つのフォルダーに置きます。PNGは', code('manifest.json'), 'と同じ場所です。'],
+          'フォルダーそのものではなく、フォルダーの中のファイルを選んでzipにまとめます。',
+          ['zipの拡張子を', code('.zip'), 'から', code('.mcpack'), 'に変えて開きます。'],
+        ]),
+        p('インポートに失敗するときは、たいていzipの中でファイルがフォルダーに入っている、JSONに打ち間違いがある、2つのUUIDが同じ、のどれかです。', link('/skin-pack-maker', 'スキンパック作成ツール'), 'はまさにこのファイルを書き出すので、パックを書き出して拡張子を', code('.zip'), 'に変え、中を見てみるのも手です。'),
+      ],
+    },
+    {
+      id: 'marketplace',
+      title: 'マーケットプレイスのパックと自作のパック',
+      body: [
+        p('マーケットプレイス向けのスキンパックを作りたい？マーケットプレイスで公開できるのは、Mojangのパートナープログラムに参加を認められたスタジオやクリエイターだけで、パックは1つずつ審査に出されます。ゲームやWebサイトから、マーケットプレイスにパックをアップロードする方法はありません。'),
+        ul([
+          [strong('自作のスキンパック：'), '無料で誰でも作れ、Windows、Android、iPhone、iPadで', code('.mcpack'), 'からインポートします。ファイルは友達と共有できます。'],
+          [strong('マーケットプレイスのスキンパック：'), '認められたパートナーが作るもので、マインコインで買うか無料。ゲーム機を含むすべての端末で使えます。'],
+        ]),
+        p('パックに入れるのは、自分で作ったスキンか、共有してよいと許可されたスキンだけにしましょう。'),
+      ],
+    },
+    {
+      id: 'trusted',
+      title: '友達にデフォルトのスキンで見えるのはなぜ？',
+      body: [
+        p('統合版には', strong('信頼できるスキンのみ許可'), 'という設定があります。これをオンにしたプレイヤーには、インポートしたパックのものも含め、カスタムスキンがすべてスティーブやアレックスなどのデフォルトのスキンに見えます。相手側の設定なので、こちらから変えることはできません。それ以外のプレイヤーには、作ったとおりのスキンで見えます。'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'free', q: '統合版のスキンパックは無料で作れますか？', a: [p('はい。自作のスキンパックは、Windows、Android、iPhone、iPadで無料で作って使えます。スキンパック作成ツールはアカウント不要で、スキンは端末に残ります。')] },
+    { id: 'java', q: 'スキンパックはJava版で使えますか？', a: [p('使えません。スキンパックは統合版の機能です。Java版では一度に1つのスキンを、Minecraft LauncherでPNGとして登録して使います。', link('/guides/make-a-skin', 'スキンの作り方'), '。')] },
+    { id: 'console', q: '自作のスキンパックをXbox、PlayStation、Switchで使えますか？', a: [p('使えません。ゲーム機はスキンパックもスキンファイルもインポートできません。Windows、Android、iPhone、iPadならできます。')] },
+    { id: 'marketplace', q: '自作のスキンパックをマーケットプレイスで売れますか？', a: [p('Minecraftマーケットプレイスの認定パートナーでなければ売れません。自作のパックは.mcpackファイルとして共有できますが、ゲーム内で販売はできません。')] },
+    { id: 'failed', q: 'インポートに失敗するのはなぜ？', a: [p('たいていは、zipの中でファイルがフォルダーに入っている、JSONに打ち間違いがある、2つのUUIDが同じ、同じIDとバージョンのパックがすでに入っている、のどれかです。スキンパック作成ツールで書き出したパックなら、この4つは起きません。')] },
+  ],
+  ctaLabel: 'スキンパック作成ツールを開く',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -1065,4 +1511,8 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-skin': makeASkin,
   'make-shaders-without-mods': shadersWithoutMods,
   'java-vs-bedrock-packs': javaVsBedrock,
+  'bedrock-vibrant-visuals-settings': vibrantVisuals,
+  'convert-java-to-bedrock-texture-pack': convertJavaToBedrock,
+  'merge-texture-packs': mergePacks,
+  'make-a-bedrock-skin-pack': bedrockSkinPack,
 };

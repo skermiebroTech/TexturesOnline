@@ -26,6 +26,11 @@ export const META_JA: MetaTranslation = {
       description: '複数のMinecraftテクスチャパックを1つの.zip/.mcpackにまとめます。ゲームと同じく、並べた順で上のパックが優先。ブラウザで無料で使えます。',
       label: 'テクスチャパックを結合',
     },
+    '/totem-maker': {
+      title: 'マイクラ 不死のトーテム作成｜Java版・統合版',
+      description: '好きなスキンからオリジナルの不死のトーテムを作成。PNGを読み込むかユーザー名を入力し、スタイルを選んでJava版の.zipか統合版の.mcpackをダウンロード。無料。',
+      label: 'トーテム作成',
+    },
     '/skins': {
       title: 'マイクラ スキンエディター＆スキンパック作成',
       description: 'Minecraftのスキンを2Dや3Dで描いて作成。クラシック/スリムの腕に対応し、Java版用PNGや統合版のスキンパック（.mcpack）で書き出せます。無料。',
@@ -106,6 +111,34 @@ export const META_JA: MetaTranslation = {
       description: 'Java版のテクスチャパックは統合版で使える？使えません。Java版は.zip＋pack.mcmeta、統合版は.mcpack＋manifest.json。フォルダー、ファイル名、シェーダー、スキンを比較。',
       label: 'Java版と統合版のパック',
       blurb: 'ファイル、フォルダー、形式、シェーダー、スキンを並べて比較。',
+    },
+    'bedrock-vibrant-visuals-settings': {
+      title: '統合版バイブラントビジュアルズの設定解説',
+      h1: '統合版のバイブラントビジュアルズの設定を解説',
+      description: 'バイブラントビジュアルズのパックで変えられること（太陽、空、霧、水、影、色調）、対応端末、オンにする方法をMinecraft統合版向けに解説。',
+      label: 'バイブラントビジュアルズの設定',
+      blurb: '太陽、空、霧、水、色の設定と、対応している端末。',
+    },
+    'convert-java-to-bedrock-texture-pack': {
+      title: 'Java版のテクスチャパックを統合版に変換する方法',
+      h1: 'Java版のテクスチャパックを統合版に変換する方法',
+      description: 'Java版のテクスチャパックを統合版の.mcpackに無料で変換（統合版からJava版も）。変換できるもの・できないものと、変換後の入れ方。',
+      label: 'Java版から統合版へ変換',
+      blurb: 'Java版のパックを数クリックで統合版の.mcpackに。逆もできます。',
+    },
+    'merge-texture-packs': {
+      title: 'マイクラ テクスチャパックの結合方法（Java版・統合版）',
+      h1: 'Minecraftのテクスチャパックを結合する方法',
+      description: 'サーバーやRealm、配布のために複数のテクスチャパックを1つにまとめる方法。どのパックが優先されるか、何が合わさるか、オンラインと手作業の手順。',
+      label: 'テクスチャパックを結合',
+      blurb: '複数のパックを、好きな順番で1つにまとめる。',
+    },
+    'make-a-bedrock-skin-pack': {
+      title: 'マイクラ統合版 スキンパックの作り方（無料）',
+      h1: 'Minecraft統合版のスキンパックの作り方',
+      description: '統合版のスキンパックを自作する方法。スキンを描くか読み込み、.mcpackで書き出し、PCやスマホでインポート。更新のしかたと手作業での作り方も解説。',
+      label: '統合版スキンパックを作る',
+      blurb: 'スキンを1つの.mcpackにまとめ、更衣室で着る。',
     },
   },
 };
