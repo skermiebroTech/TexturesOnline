@@ -98,9 +98,9 @@ export const META_DE: MetaTranslation = {
     'make-a-skin': {
       title: 'Eigenen Minecraft Skin erstellen (Java & Bedrock)',
       h1: 'Eigenen Minecraft Skin erstellen',
-      description: 'Minecraft-Skin gratis online erstellen: 64×64-Vorlage in 2D oder 3D bemalen, breite oder schmale Arme wählen, in Java hochladen oder als Bedrock-Skinpaket.',
+      description: 'Minecraft-Skin gratis online erstellen: 64×64- oder HD-128×128-Vorlage in 2D oder 3D bemalen, breite oder schmale Arme wählen, für Java oder Bedrock.',
       label: 'Skin erstellen',
-      blurb: 'Die 64×64-Vorlage bemalen und in Java oder als Bedrock-Skinpaket nutzen.',
+      blurb: 'Die Vorlage mit 64×64 oder HD 128×128 bemalen, für Java oder ein Bedrock-Skinpaket.',
     },
     'make-shaders-without-mods': {
       title: 'Minecraft Shader ohne Mods oder OptiFine (Java & Bedrock)',
@@ -143,6 +143,13 @@ export const META_DE: MetaTranslation = {
       description: 'Eigenes Skinpaket für Minecraft Bedrock: Skins malen oder hochladen, als .mcpack exportieren, am PC oder Handy importieren, updaten oder selbst bauen.',
       label: 'Bedrock-Skinpaket erstellen',
       blurb: 'Deine Skins in einem .mcpack bündeln und im Ankleidezimmer tragen.',
+    },
+    'make-3d-items-texture-pack': {
+      title: '3D-Items im Minecraft Texture Pack erstellen (Java)',
+      h1: '3D-Items und eigene Modelle im Minecraft Texture Pack erstellen',
+      description: 'Flache Minecraft-Items zu 3D-Modellen machen und Blockformen im Java-Ressourcenpaket ändern: Modell-JSON, Item-Definitionen ab 1.21.4, Haltung, Lösungen.',
+      label: '3D-Items erstellen',
+      blurb: 'Flache Items zu 3D-Modellen machen und Blockformen ändern, Datei für Datei.',
     },
   },
 };

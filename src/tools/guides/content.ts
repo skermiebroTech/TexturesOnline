@@ -17,6 +17,7 @@ import type { Locale } from '../../i18n/locales';
 import { ui } from '../../i18n/ui';
 import { contentOf, hasContent } from '../../i18n/content';
 import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from './skin-pack-files';
+import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from './model-files';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -150,6 +151,16 @@ const VV_STEPS: Child[] = [
   ['Open ', uiPath('Settings', 'Video'), ' and set ', strong('Graphics Mode'), ' to ', strong('Vibrant Visuals'), '.'],
 ];
 
+const MODEL_STEPS: Child[] = [
+  ['Open the ', link('/textures', 'Texture Pack Maker'), ' and create a ', strong('Java'), ' pack for the version you play: 1.8 or newer, or 1.21.4 or newer to keep the item flat in the inventory.'],
+  ['Switch the list to ', strong('Items'), ' and open the item, for example the diamond sword. In the ', strong('Preview'), ' tab, press ', strong('Edit shape'), '.'],
+  ['Pick ', strong('3D item from sprite'), '. Every pixel of the flat picture becomes part of a cube one pixel deep.'],
+  ['Change the shape: click a cube in the 3D view or the list, then move it, resize it, copy it or add new ones. Under ', strong('Faces'), ', give a face another texture or another part of one.'],
+  ['Open ', strong('Display'), ' and check the model in the inventory, in first and third person, on the ground, in an item frame and on the head. Change the rotation, position or size where it looks wrong.'],
+  ['Optional, on 1.21.4 and newer: in the ', strong('Model'), ' tab, turn on ', strong('Flat in the inventory'), ' to keep the flat icon there and show the 3D model in hand.'],
+  ['Press ', strong('Done'), ', export the pack as a ', code('.zip'), ', put it in your ', code('resourcepacks'), ' folder and test it in game.'],
+];
+
 export const GUIDE_CONTENT: Guide[] = [
   // ------------------------------------------------------------ make a texture pack
   {
@@ -206,6 +217,13 @@ export const GUIDE_CONTENT: Guide[] = [
             'Prefer to see the block as you paint? Switch the editor to ',
             strong('3D'),
             ' (or press D) and paint straight onto the model: each face paints the texture it shows. Drag the background or use two fingers to turn the block. Mob textures work the same way: choose Mobs in the texture list and hide body parts to reach the sides underneath.',
+          ),
+          p(
+            'On Java you can change shapes too: press ',
+            strong('Edit shape'),
+            ' in the Preview tab to turn a flat item into a 3D one or reshape a block. ',
+            link('/guides/make-3d-items-texture-pack', 'How to make 3D items'),
+            '.',
           ),
           ul([
             'Start with blocks you see all the time: grass, dirt, stone, logs and planks.',
@@ -887,7 +905,7 @@ export const GUIDE_CONTENT: Guide[] = [
     image: SHOTS.skin2d,
     intro: [
       p(
-        'A Minecraft skin is a 64×64 pixel PNG image that wraps around the player model. You can design one in your browser: paint on the template, check it on a 3D model, then upload it in the Minecraft Launcher (Java) or import it as a skin pack (Bedrock).',
+        'A Minecraft skin is a 64×64 pixel PNG image that wraps around the player model; Bedrock also takes HD skins of 128×128 pixels. You can design one in your browser: paint on the template, check it on a 3D model, then upload it in the Minecraft Launcher (Java) or import it as a skin pack (Bedrock).',
       ),
     ],
     quick: {
@@ -907,6 +925,31 @@ export const GUIDE_CONTENT: Guide[] = [
             [strong('Classic'), ' (Steve) arms are 4 pixels wide and ', strong('slim'), ' (Alex) arms are 3 pixels wide. Upload the skin with the same model you painted.'],
             'Unused parts of the template should stay fully transparent.',
           ]),
+        ],
+      },
+      {
+        id: 'hd-skins',
+        title: 'HD 128×128 skins',
+        body: [
+          p(
+            'An HD skin is the same template at twice the resolution: 128×128 pixels instead of 64×64, so every face, sleeve and shoe has four times as many pixels for shading, eyes and fine patterns. Where it works:',
+          ),
+          ul([
+            [strong('Bedrock Edition'), ' (Windows, Android, iPhone and iPad): import the PNG in the Dressing Room, or put it in a skin pack. A pack can mix 64×64 and HD skins.'],
+            [strong('Java Edition'), ': the Minecraft Launcher and minecraft.net only accept 64×64 skins. An HD skin needs a mod that loads HD skins, such as CustomSkinLoader.'],
+          ]),
+          el('h3', { class: 'guide-sub' }, 'Make one in the Skin Maker'),
+          steps([
+            ['On the start screen, set ', strong('Size'), ' to ', strong('HD 128×128'), ', then pick a starting point. Templates and starting skins are doubled to 128×128, and a 128×128 PNG you upload stays HD.'],
+            ['Already painting a 64×64 skin? Switch ', strong('Size'), ' to ', strong('HD 128'), ' in the editor and confirm with ', strong('Make HD'), '. Every pixel becomes a 2×2 block, so the skin looks the same until you paint finer detail. ', strong('Size'), ' › ', strong('64×64'), ' and ', strong('Reduce to 64×64'), ' go back.'],
+            ['Export ', strong('Bedrock skin (.png)'), ' to import it in the Dressing Room, or a ', strong('Bedrock skin pack (.mcpack)'), '. Both keep 128×128.'],
+            ['For Java, ', strong('Java skin (.png)'), ' downloads a 64×64 copy, with each 2×2 block turned into one pixel; your HD skin stays as it is. Using an HD skin mod? Choose ', strong('128×128 for mods'), ' instead.'],
+          ]),
+          callout(
+            'warn',
+            'Limits',
+            'Consoles cannot import skin files of any size. Skins larger than 128×128 are not supported. Players who turn on Only Allow Trusted Skins see every custom skin, HD or not, as a default skin.',
+          ),
         ],
       },
       {
@@ -957,7 +1000,22 @@ export const GUIDE_CONTENT: Guide[] = [
       },
     ],
     faq: [
-      { id: 'size', q: 'What size should a Minecraft skin be?', a: [p('64×64 pixels, saved as PNG. Use 64×32 only for Java 1.7.10 and older.')] },
+      { id: 'size', q: 'What size should a Minecraft skin be?', a: [p('64×64 pixels, saved as PNG. Use 64×32 only for Java 1.7.10 and older. Bedrock also takes HD skins of 128×128 pixels.')] },
+      {
+        id: 'hd',
+        q: 'Can I make a 128×128 Minecraft skin?',
+        a: [
+          p(
+            'Yes, for Bedrock Edition. In the Skin Maker, set ',
+            strong('Size'),
+            ' to ',
+            strong('HD 128×128'),
+            ' before you start, or switch an existing skin to ',
+            strong('HD 128'),
+            ', then export a Bedrock PNG or skin pack. Java Edition only shows 64×64 skins without mods, so the Java export makes a 64×64 copy; HD skin mods such as CustomSkinLoader can use the 128×128 file.',
+          ),
+        ],
+      },
       { id: 'username', q: 'Can I start from someone’s skin?', a: [p('Yes. The Skin Maker can load any Java player’s current skin by username, so you can remix it. Please respect other people’s work.')] },
       { id: 'phone', q: 'Can I make a skin on my phone?', a: [p('Yes. The editor works with touch, including pinch-to-zoom.')] },
       {
@@ -1659,6 +1717,297 @@ export const GUIDE_CONTENT: Guide[] = [
     ],
     related: ['install-resource-packs', 'texture-pack-not-working', 'convert-java-to-bedrock-texture-pack'],
     cta: { label: 'Open Merge Texture Packs', to: '/merge-texture-packs', icon: 'git-merge' },
+  },
+
+  // ------------------------------------------------------------ 3D items and models
+  {
+    meta: meta('make-3d-items-texture-pack'),
+    image: SHOTS.model3dSword,
+    intro: [
+      p(
+        'The shape of a block or item in Minecraft Java Edition comes from its ',
+        strong('model'),
+        ': a small JSON file of cubes inside the resource pack. Put a new model in your texture pack and the shape changes, with no mods and no OptiFine: a flat sword becomes a 3D one, a block becomes a slab or a step. The ',
+        link('/textures', 'Texture Pack Maker'),
+        ' has a model editor that does this in your browser. It turns an item’s flat sprite into 3D cubes in one click, lets you change every cube, and writes the files your game version needs. Bedrock works differently, as explained below.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['In the Texture Pack Maker, show the item in the ', strong('Preview'), ' tab and press ', strong('Edit shape'), '.'],
+        ['Pick ', strong('3D item from sprite'), ', then fine-tune the cubes and how the item is held.'],
+        ['Export the pack. It holds the model in ', code('models/item/'), ' and, on 1.21.4 and newer, an item definition in ', code('items/'), ' when one is needed.'],
+      ],
+    },
+    howto: { name: 'How to make a 3D item in a Minecraft texture pack', steps: MODEL_STEPS },
+    sections: [
+      {
+        id: 'what',
+        title: 'What a Minecraft model is',
+        body: [
+          p('Java Edition 1.8 and newer draws most blocks and items from model files in the resource pack:'),
+          ul([
+            [code('assets/minecraft/models/block/'), ' holds block models, such as ', code('oak_slab.json'), '. A ', strong('blockstate'), ' file in ', code('blockstates/'), ' says which model a block uses in each state: a slab at the bottom or the top, a log on its side.'],
+            [code('assets/minecraft/models/item/'), ' holds item models. Most items use a flat model (', code('item/generated'), '): the game turns the 16×16 sprite into a thin shape by itself. Since 1.21.4, an ', strong('item model definition'), ' in ', code('assets/minecraft/items/'), ' says which model an item shows.'],
+          ]),
+          p('A model file has four main parts:'),
+          ul([
+            [code('textures'), ': names for the textures the model uses, such as ', code('"oak_planks": "minecraft:block/oak_planks"'), '. ', code('particle'), ' is the texture of the breaking particles.'],
+            [code('elements'), ': the cubes. Each one runs ', code('from'), ' one corner ', code('to'), ' the opposite one, measured in pixels of a 16 × 16 × 16 block, and may reach from -16 to 32 on each axis. A cube can be turned with ', code('rotation'), '.'],
+            [code('faces'), ': for each side of a cube (', code('down'), ', ', code('up'), ', ', code('north'), ', ', code('south'), ', ', code('west'), ', ', code('east'), '), the texture it shows, the part of the texture (', code('uv'), '), and ', code('cullface'), ', which skips the face when a full block covers that side.'],
+            [code('display'), ': how the model is turned, moved and scaled in the inventory (', code('gui'), '), in the hands, on the ground, in an item frame (', code('fixed'), ') and on the head.'],
+          ]),
+          p('This is a one-cube model shaped like a slab, laid out the way the model editor writes it. A file made in the editor lists the display of every slot, not only the inventory:'),
+          pre(MODEL_BLOCK_EXAMPLE.trimEnd()),
+          p(
+            'Hand-made models often use ',
+            code('"parent"'),
+            ' to borrow the textures, cubes or display of another model. The model editor writes self-contained files instead: everything it read from the parent models is copied in, so your file does not depend on another one.',
+          ),
+          callout('tip', 'Coordinates are pixels', 'One block is 16 units on each axis, so 8 is half a block. The model editor snaps to this grid, or to ½ or ¼ of a pixel, and shows sizes as “16 = one block”.'),
+        ],
+      },
+      {
+        id: 'steps',
+        title: 'Make a 3D item step by step',
+        body: [steps(MODEL_STEPS), figure(SHOTS.modelEditShape), figure(SHOTS.modelSpriteStart), figure(SHOTS.model3dSword)],
+      },
+      {
+        id: 'sprite',
+        title: 'How “3D item from sprite” works',
+        body: [
+          p(
+            'A flat item is a single picture, its sprite, usually 16×16 pixels. The start point takes every pixel that is not transparent and builds cubes one pixel deep from them, centred the way the game centres its own flat items (from 7.5 to 8.5 on the z axis). Pixels in a row are joined into one long cube, and equal rows below each other into a rectangle, so the diamond sword becomes 19 cubes instead of one cube per pixel. Faces that a neighbouring pixel hides completely are left out.',
+          ),
+          p('Each face shows the matching pixels of the sprite. Three pixels in a row, in columns 5 to 7 of row 3, become this cube:'),
+          pre(MODEL_SPRITE_CUBE.trimEnd()),
+          p(
+            'The front (',
+            code('south'),
+            ') shows the pixels as they are and the back (',
+            code('north'),
+            ') shows them mirrored, as you see a picture from behind. The cubes keep using the item’s own texture (',
+            code('#layer0'),
+            '), so repainting the sprite recolours the 3D item. Pixels you add or erase only change the shape when you pick ',
+            strong('3D item from sprite'),
+            ' again. Items with several layers, such as potions or leather armour, get cubes for every layer, and the game still colours them.',
+          ),
+          p('Then make it your own:'),
+          ul([
+            'Make the blade thicker: select its cubes and change their Z position and size, for example from 7.5 and 1 to 7 and 2.',
+            ['Add a cube for a guard or a gem with the ', strong('+'), ' button (or N), and give its faces another texture under ', uiPath('Faces', 'Change'), '.'],
+            ['Turn a cube under ', strong('Rotation'), '. Before Minecraft 1.21.6 a cube turns on one axis only, by -45°, -22.5°, 0°, 22.5° or 45°; the editor offers what your version accepts.'],
+            'Undo any change with Ctrl+Z.',
+          ]),
+        ],
+      },
+      {
+        id: 'display',
+        title: 'Set how it is held: Display',
+        body: [
+          p(
+            'The ',
+            strong('Display'),
+            ' tab previews the model in six places. Each has a rotation in degrees, a position in pixels (up to ±80) and a size (1 is normal, 4 at most).',
+          ),
+          table(
+            ['In the editor', 'Where it is shown', 'Name in the file'],
+            [
+              ['Inventory', 'Inventory and hotbar', code('gui')],
+              ['First person', 'In your own hand', [code('firstperson_righthand'), ' (the left hand is a mirror image)']],
+              ['Third person', 'In the hand of a player you look at, or in F5 view', code('thirdperson_righthand')],
+              ['Ground', 'Dropped on the ground', code('ground')],
+              ['Item frame', 'In an item frame', code('fixed')],
+              ['Head', 'Worn on the head', code('head')],
+            ],
+          ),
+          p(
+            strong('3D item from sprite'),
+            ' keeps the item’s own display settings, so a 3D sword is held like the flat one. ',
+            strong('Game’s default'),
+            ' puts a slot back to the game’s values, and ',
+            strong('No change'),
+            ' removes the setting. Java 1.21.9 added an ',
+            code('on_shelf'),
+            ' slot for shelves; the editor keeps the value from the game’s model.',
+          ),
+          figure(SHOTS.modelDisplay),
+        ],
+      },
+      {
+        id: 'flat',
+        title: 'Keep the flat icon in the inventory (1.21.4+)',
+        body: [
+          p(
+            'Many 3D packs keep the familiar flat icon in the inventory and show the 3D model only in hand. Since Java 1.21.4, an item model definition can choose a model by where the item is shown. Turn on ',
+            strong('Flat in the inventory'),
+            ' in the ',
+            strong('Model'),
+            ' tab and the editor:',
+          ),
+          ul([
+            ['saves your shape as a second model, ', code('models/item/diamond_sword_3d.json'), ', and leaves the flat ', code('diamond_sword.json'), ' as it is;'],
+            ['writes ', code('items/diamond_sword.json'), ', which shows the flat model in the inventory (', code('gui'), '), on the ground and in item frames (', code('fixed'), '), and the 3D one everywhere else:'],
+          ]),
+          pre(MODEL_FLAT_DEFINITION.trimEnd()),
+          p('Versions before 1.21.4 have no item definitions, so an item shows the same model everywhere and the switch is not offered.'),
+          figure(SHOTS.modelFlatInventory),
+        ],
+      },
+      {
+        id: 'blocks',
+        title: 'Change the shape of a block',
+        body: [
+          p(
+            'Blocks work the same way. Show a block in the Preview tab and press ',
+            strong('Edit shape'),
+            '. The editor opens the model the block uses in the state you are looking at, and the menu at the top lists its other models, such as the top and double versions of a slab. Keep the game’s model or start from ',
+            strong('Full cube'),
+            ', ',
+            strong('Slab'),
+            ', ',
+            strong('Cross (plant)'),
+            ' or ',
+            strong('Empty'),
+            ', then add, move and resize cubes. Turning stone into a step takes the Slab start point and one more cube:',
+          ),
+          figure(SHOTS.modelBlock),
+          ul([
+            [strong('Shared models: '), 'some blocks use the same model file. When another block uses the model you edit, the editor tells you which; it changes too.'],
+            [strong('Items stay separate: '), 'an item that shows a block model, such as a slab in your hand, gets its own item model when you edit the item, so the block keeps its shape.'],
+            [strong('Only the look changes: '), 'the hitbox, collision and light come from the game’s code. A stone block shaped like a step still stops you like a full block, and the blocks next to it still hide the faces that touch it, which can leave see-through gaps.'],
+            [strong('Blocks drawn by code: '), 'chests, beds, signs, banners and other blocks the game draws itself have no block model, so Edit shape is not offered for them. Items drawn by code, such as the shield, can be given a model, which replaces that look.'],
+          ]),
+          p(
+            'Stone and some other blocks pick between two models at random: stone and a mirrored copy, each also turned around. ',
+            strong('Use for every random variant'),
+            ' in the Model tab puts your shape on all of them by writing the block’s blockstate file. The ',
+            code('"y": 180'),
+            ' entry keeps the random turn, and ',
+            code('weight'),
+            ' sets how often each entry is picked:',
+          ),
+          pre(MODEL_STONE_BLOCKSTATE.trimEnd()),
+        ],
+      },
+      {
+        id: 'files',
+        title: 'Which files go in the pack',
+        body: [
+          table(
+            ['What you change', 'Files in the pack'],
+            [
+              ['A 3D item', code(MODEL_FILES.sword.latest[0])],
+              ['A 3D item, flat in the inventory (1.21.4+)', [code(MODEL_FILES.swordFlat.latest[0]), ' and ', code(MODEL_FILES.swordFlat.latest[1])]],
+              ['A block’s shape', code(MODEL_FILES.slab.latest[0])],
+              ['A block’s shape on every random variant', [code(MODEL_FILES.stoneEvery.latest[0]), ' and ', code(MODEL_FILES.stoneEvery.latest[1])]],
+            ],
+          ),
+          p(
+            'Every path is inside ',
+            code('assets/minecraft/'),
+            '. Every Java version from 1.8 gets the same files; only flat in the inventory needs 1.21.4 or newer. The editor adds an item definition or a blockstate only when the game needs one, and model files already in a pack you open are kept and can be edited. When you export, every model is checked against your game version, and you get a warning for anything that would not load.',
+          ),
+          el('h3', { class: 'guide-sub' }, 'What changed between versions'),
+          table(
+            ['Version', 'What changed for models'],
+            [
+              ['1.8', 'Block and item models became JSON files that resource packs can replace. Cubes turn on one axis by -45°, -22.5°, 0°, 22.5° or 45°.'],
+              ['1.13', ['Texture folders renamed from ', code('blocks'), ' and ', code('items'), ' to ', code('block'), ' and ', code('item'), ', so texture names in models changed too.']],
+              ['1.15.2', [code('gui_light'), ' sets whether the inventory icon is lit from the side (blocks) or the front (items).']],
+              ['1.19.3', ['Model textures must sit in a folder the game’s texture atlases read, such as ', code('textures/block/'), ' or ', code('textures/item/'), '.']],
+              ['1.21.4', ['Item model definitions in ', code('items/'), ' choose an item’s model, also by where it is shown.']],
+              ['1.21.6', 'Cubes can turn by any angle from -45° to 45°.'],
+              ['1.21.9', ['New display slot ', code('on_shelf'), '.']],
+              ['1.21.11', 'Cubes can turn on several axes at once, by any angle.'],
+            ],
+          ),
+          p('The model editor follows these rules for the version your pack is made for.'),
+        ],
+      },
+      {
+        id: 'install',
+        title: 'Install and test it',
+        body: [
+          steps([
+            ['Press ', strong('Done'), ' to leave the model editor, then ', strong('Export'), ' the pack as a ', code('.zip'), '.'],
+            ['In Minecraft open ', uiPath('Options…', 'Resource Packs…', 'Open Pack Folder'), ', drop the zip in (keep it zipped) and move the pack to ', strong('Selected'), ', above other packs.'],
+            'Hold the item, press F5 for third person, drop it, and put it in an item frame to check every display.',
+            'After changing the model, export again, replace the zip and press F3 + T in game to reload the packs.',
+          ]),
+          p('More help: ', link('/guides/install-resource-packs', 'How to install resource packs'), ' and ', link('/guides/texture-pack-not-working', 'Texture pack not working'), '.'),
+        ],
+      },
+      {
+        id: 'bedrock',
+        title: 'Bedrock Edition',
+        body: [
+          p('Bedrock packs work differently, and the model editor makes Java models only:'),
+          ul([
+            [strong('Blocks: '), 'a Bedrock resource pack cannot change the shape of the game’s blocks. A custom-shaped block is a new block, added by an add-on with a behaviour pack and a geometry file.'],
+            [strong('Held items: '), 'Bedrock gives items a 3D model in hand with attachables, resource pack files that use Bedrock geometry and animation. The Texture Pack Maker does not make them; ', ext('https://www.blockbench.net/', 'Blockbench'), ' can.'],
+            [strong('A starting point: '), 'in the model editor’s menu, ', strong('Download as Bedrock geometry'), ' saves your model as a ', code('.geo.json'), ' file (format 1.12.0, one bone, all cubes) to import into Blockbench or an add-on. Bedrock geometry uses a single texture, so each face keeps its place on its own texture.'],
+          ]),
+          p('In a Bedrock pack, ', strong('Edit shape'), ' explains this instead of opening the editor. Painting textures works as usual.'),
+        ],
+      },
+      {
+        id: 'problems',
+        title: 'Common problems',
+        body: [
+          ul([
+            [strong('Purple and black faces: '), 'a face uses a texture the game cannot find: a name (', code('#…'), ') that is not set under ', code('textures'), ', a file that is not in the game or the pack, or, since 1.19.3, a texture outside the atlas folders. The Model tab lists these problems with the cube they are on.'],
+            [strong('A purple and black cube instead of the model: '), 'the file did not load. Usual causes are broken JSON, a cube outside -16 to 32, or a rotation the version does not allow. The game’s log names the file.'],
+            [strong('The model does not show at all: '), 'check that the pack is selected and above other packs, that the file has exactly the name and folder of the model it replaces, and, on 1.21.4 and newer, that a new model (such as a ', code('_3d'), ' copy) has an item definition pointing at it.'],
+            [strong('Fine in hand, odd in the inventory: '), ['adjust the Inventory display, try the other inventory light (side or front), or turn on ', strong('Flat in the inventory'), '.']],
+            [strong('Too many cubes: '), 'every cube adds faces to draw. That hardly matters for an item in your hand, but a block placed thousands of times should stay simple. Keep the joined cubes that 3D item from sprite makes instead of splitting them up.'],
+            [strong('An angle is not allowed: '), 'before 1.21.6 a cube turns by 22.5° steps up to 45°, on one axis. For a quarter turn, swap the cube’s size on two axes instead; for other shapes, build them from more cubes.'],
+          ]),
+          p('More fixes for packs in general: ', link('/guides/texture-pack-not-working', 'Texture pack not working? Fixes'), '.'),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'mods',
+        q: 'Do I need OptiFine or a mod for 3D items?',
+        a: [p('No. Java resource packs have been able to replace block and item models since 1.8, so a pack with model files works in the normal game. It changes every item of that type.')],
+      },
+      {
+        id: 'renamed',
+        q: 'Can only a renamed item be 3D?',
+        a: [
+          p(
+            'Not with a plain model change. Packs that change only renamed items use OptiFine’s custom item textures (CIT) or a mod that reads them. Since 1.21.4, item definitions can also pick a model by ',
+            code('custom_model_data'),
+            ', which servers and map makers set with commands. The model editor changes every item of a type.',
+          ),
+        ],
+      },
+      {
+        id: 'bedrock',
+        q: 'Can I make 3D items on Bedrock?',
+        a: [p('Yes, with attachables in a Bedrock resource pack, made in a tool such as Blockbench. This model editor makes Java models, but it can download a model as Bedrock geometry to start from. Bedrock resource packs cannot change the shape of the game’s blocks.')],
+      },
+      {
+        id: 'blockbench',
+        q: 'Can I use models made in Blockbench?',
+        a: [p('Yes. Java block and item models exported from Blockbench are ordinary model files. Put them in your pack under the name of the model they replace and open the pack with ', strong('Open a pack'), ': the files are kept, and the model editor can open and change them.')],
+      },
+      {
+        id: 'undo',
+        q: 'How do I go back to the original shape?',
+        a: [p('In the model editor’s menu, choose ', strong('Put back the original model'), '. Your files for that model are removed from the pack and the game’s model is used again.')],
+      },
+      {
+        id: 'phone',
+        q: 'Can I make 3D items on a phone?',
+        a: [p('Yes. On a phone the 3D view sits above the panels and you work with touch. The pack still has to be a Java pack, so you play it on a computer.')],
+      },
+    ],
+    related: ['make-a-texture-pack', 'texture-pack-not-working', 'install-resource-packs'],
+    cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'shapes' },
   },
 ];
 

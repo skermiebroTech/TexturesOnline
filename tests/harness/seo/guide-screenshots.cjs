@@ -1,5 +1,6 @@
 // Renders the screenshots used by the SEO guide pages (public/screenshots/guides/*.jpg, 1280x800
-// viewport, dark theme) by driving the real app: texture pack maker, skin editor and shader maker.
+// viewport, dark theme; the model editor shots in the light theme) by driving the real app: texture
+// pack maker, model editor, skin editor and shader maker.
 //
 // Game files are served offline from local fixtures through route interception:
 //   TO_FIXTURES  folder with client-26.3.jar, manifest.json and v263.json (required)
@@ -504,6 +505,103 @@ async function shaderShot(browser, base, fx, jar, target, preset, name, file, { 
   await ctx.close();
 }
 
+// ------------------------------------------------------------------------------------- models
+const MODEL_SHOTS = ['model-edit-shape', 'model-sprite-start', 'model-3d-sword', 'model-display', 'model-flat-inventory', 'model-block-shape'];
+
+/** Types a number into one of the model editor's fields (data-key 'size.1', 'pos.0'...). */
+async function meField(page, key, value) {
+  const sel = `.me-side-body [data-key="${key}"]`;
+  await page.fill(sel, String(value));
+  await page.press(sel, 'Enter');
+  await page.waitForTimeout(150);
+}
+
+/** The model editor (light theme): the diamond sword made 3D from its sprite, its hand pose and flat-in-the-inventory option, and stone reshaped into a step. */
+async function modelsFlow(browser, base, fx, jar) {
+  const ctx = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 1, colorScheme: 'light', reducedMotion: 'reduce' });
+  await ctx.addInitScript(() => localStorage.setItem('to-theme', 'light'));
+  await routeMojang(ctx, fx, jar);
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => console.log('  pageerror', e.message));
+  await hideToastsOnLoad(page);
+  await page.goto(`${base}textures/`);
+  await page.waitForSelector('.tx-new');
+  await page.fill('.tx-name-field input', '3D Items');
+  await page.click('.tx-new .segmented-item[data-value="java"]');
+  await page.waitForFunction(() => /26\.3/.test(document.querySelector('.tx-new .vp-trigger')?.textContent ?? ''));
+  await page.click('.tx-create-btn');
+  await page.waitForURL(/textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
+  await txWaitEditor(page);
+  await page.waitForFunction(() => window.__tx.models.lib?.usageReady, null, { timeout: 180000 });
+
+  // 1. the diamond sword in the Items list, with "Edit shape" in the preview
+  await page.locator('.tx-libbar .segmented-item[data-value="items"]:visible').first().click();
+  await page.waitForSelector('.tx-mb .tx-search-input', { state: 'visible' });
+  await page.fill('.tx-mb .tx-search-input', 'diamond sword');
+  await page.waitForSelector('.tx-mb .tx-tile[data-id="diamond_sword"].loaded', { timeout: 30000 });
+  await page.click('.tx-mb .tx-tile[data-id="diamond_sword"]');
+  await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'diamond_sword', null, { timeout: 30000 });
+  await page.waitForSelector('.tx-pv-shapebtn:not([hidden])', { timeout: 30000 });
+  await page.evaluate(() => document.activeElement?.blur());
+  await waitIdle(page, 1500);
+  if (want('model-edit-shape')) {
+    await page.hover('.tx-pv-shapebtn');
+    await shot(page, 'model-edit-shape', null, { keepMouse: true });
+  }
+
+  // 2. the model editor opens on the flat sword: start points
+  await page.click('.tx-pv-shapebtn');
+  await page.waitForSelector('.me-start:not([hidden]) .me-preset[data-preset="sprite3d"]', { timeout: 60000 });
+  await waitIdle(page, 1500);
+  if (want('model-sprite-start')) await shot(page, 'model-sprite-start');
+
+  // 3. 3D item from sprite: the cubes, one picked
+  await page.click('.me-start .me-preset[data-preset="sprite3d"]');
+  await page.waitForFunction(() => window.__tx.modelEditor().test.doc().elements.length > 5, null, { timeout: 10000 });
+  const n = await page.evaluate(() => window.__tx.modelEditor().test.doc().elements.length);
+  console.log(`  3D sword: ${n} cubes`);
+  await page.evaluate(() => window.__tx.modelEditor().test.select(4));
+  await page.click('.me-side-tabs .tab[data-value="cube"]');
+  await waitIdle(page, 1200);
+  if (want('model-3d-sword')) await shot(page, 'model-3d-sword');
+
+  // 4. Display: how it is held in third person
+  await page.click('.me-side-tabs .tab[data-value="display"]');
+  await page.waitForSelector('.me-slots:not([hidden]) .me-slot');
+  await page.click('.me-slots .me-slot[data-slot="thirdperson_righthand"]');
+  await waitIdle(page, 1200);
+  if (want('model-display')) await shot(page, 'model-display');
+
+  // 5. Model tab: flat in the inventory
+  await page.click('.me-side-tabs .tab[data-value="model"]');
+  await page.click('.me-side-body .toggle:has-text("Flat in the inventory") .switch');
+  await page.waitForFunction(() => window.__tx.modelEditor().test.plan().target === 'minecraft:item/diamond_sword_3d');
+  await page.click('.me-slots .me-slot[data-slot="gui"]').catch(() => {});
+  await page.evaluate(() => {
+    const t = [...document.querySelectorAll('.me-side-body .toggle')].find((e) => /Flat in the inventory/.test(e.textContent));
+    t?.scrollIntoView({ block: 'center' });
+  });
+  await waitIdle(page, 1200);
+  if (want('model-flat-inventory')) await shot(page, 'model-flat-inventory');
+  await page.click('.me-back');
+  await page.waitForSelector('.tx-main', { state: 'visible' });
+
+  // 6. a block: stone made into a step from the Slab start point and one more cube
+  await page.evaluate(() => window.__tx.editModel('block', 'stone'));
+  await page.waitForSelector('.me-root .me-cuberow', { timeout: 60000 });
+  await page.click('.me-side-tabs .tab[data-value="model"]');
+  await page.click('.me-side-body .me-preset[data-preset="slab"]');
+  await page.waitForFunction(() => window.__tx.modelEditor().test.doc().elements[0]?.to[1] === 8);
+  await page.click('.me-cubes-head .icon-btn');
+  await page.waitForFunction(() => window.__tx.modelEditor().test.doc().elements.length === 2);
+  await page.click('.me-side-tabs .tab[data-value="cube"]');
+  for (const [k, v] of [['size.0', 16], ['size.1', 8], ['size.2', 8], ['pos.0', 0], ['pos.1', 8], ['pos.2', 8]]) await meField(page, k, v);
+  await page.evaluate(() => document.activeElement?.blur());
+  await waitIdle(page, 1200);
+  if (want('model-block-shape')) await shot(page, 'model-block-shape');
+  await ctx.close();
+}
+
 // The helpers are shared with tests/harness/seo/store-screenshots.cjs.
 module.exports = { fixtures, routeMojang, startDevServer, waitIdle, hideToastsOnLoad, txWaitEditor, txStrokes, skOpenStarter, skApi, skRename, skColor, skStroke, waitPreview };
 
@@ -522,6 +620,7 @@ if (require.main === module) (async () => {
     if (want('shader-vanilla')) await shaderShot(browser, base, fx, jar, 'java-vanilla', 'vivid', 'Vivid Vanilla', 'shader-vanilla', { scroll: 'top' });
     if (want('shader-iris')) await shaderShot(browser, base, fx, jar, 'iris', 'cinematic', 'Cinematic Glow', 'shader-iris', { time: 'sunset', scroll: 'half' });
     if (want('bedrock-vibrant-visuals')) await shaderShot(browser, base, fx, jar, 'bedrock-vibrant', 'vivid', 'Bright Vibrant', 'bedrock-vibrant-visuals', { scroll: 'half' });
+    if (MODEL_SHOTS.some(want)) await modelsFlow(browser, base, fx, jar);
   } finally {
     await browser.close();
     await server?.stop();

@@ -8,6 +8,7 @@ import type { GuideText, GuidesIndexText } from '../../tools/guides/content';
 import { SHOTS } from './shots';
 import { UI_DE } from './ui';
 import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from '../../tools/guides/skin-pack-files';
+import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -120,6 +121,13 @@ const makeATexturePack: GuideText = {
           'Lieber den Block beim Malen sehen? Schalte den Editor auf ',
           strong('3D'),
           ' (oder drücke D) und male direkt auf das Modell: Jede Seite bemalt die Textur, die sie zeigt. Zieh am Hintergrund oder nutze zwei Finger, um den Block zu drehen. Mob-Texturen funktionieren genauso: Wähle Mobs in der Texturliste und blende Körperteile aus, um an die Seiten darunter zu kommen.',
+        ),
+        p(
+          'In Java kannst du auch Formen ändern: Drücke im Tab Preview auf ',
+          strong('Edit shape'),
+          ', um aus einem flachen Item ein 3D-Item zu machen oder einen Block umzuformen. ',
+          link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'),
+          '.',
         ),
         ul([
           'Fang mit Blöcken an, die du ständig siehst: Gras, Erde, Stein, Stämme und Bretter.',
@@ -774,7 +782,7 @@ const makeASkin: GuideText = {
   image: SHOTS.skin2d,
   intro: [
     p(
-      'Ein Minecraft-Skin ist ein PNG-Bild mit 64×64 Pixeln, das sich um das Spielermodell legt. Du kannst einen im Browser gestalten: auf der Vorlage malen, auf einem 3D-Modell prüfen und dann im Minecraft Launcher hochladen (Java) oder als Skinpaket importieren (Bedrock).',
+      'Ein Minecraft-Skin ist ein PNG-Bild mit 64×64 Pixeln, das sich um das Spielermodell legt; Bedrock nimmt auch HD-Skins mit 128×128 Pixeln. Du kannst einen im Browser gestalten: auf der Vorlage malen, auf einem 3D-Modell prüfen und dann im Minecraft Launcher hochladen (Java) oder als Skinpaket importieren (Bedrock).',
     ),
   ],
   quick: {
@@ -794,6 +802,31 @@ const makeASkin: GuideText = {
           [strong('Breite'), ' Arme (Steve) sind 4 Pixel breit, ', strong('schmale'), ' Arme (Alex) 3 Pixel. Lade den Skin mit demselben Modell hoch, mit dem du ihn gemalt hast.'],
           'Ungenutzte Bereiche der Vorlage sollten komplett transparent bleiben.',
         ]),
+      ],
+    },
+    {
+      id: 'hd-skins',
+      title: 'HD-Skins mit 128×128',
+      body: [
+        p(
+          'Ein HD-Skin ist dieselbe Vorlage in doppelter Auflösung: 128×128 statt 64×64 Pixel. Jedes Gesicht, jeder Ärmel und jeder Schuh hat also viermal so viele Pixel für Schattierungen, Augen und feine Muster. Wo er funktioniert:',
+        ),
+        ul([
+          [strong('Bedrock Edition'), ' (Windows, Android, iPhone und iPad): Importiere das PNG im Ankleidezimmer oder pack es in ein Skinpaket. Ein Paket kann Skins mit 64×64 und HD-Skins mischen.'],
+          [strong('Java Edition'), ': Der Minecraft Launcher und minecraft.net nehmen nur Skins mit 64×64 an. Für einen HD-Skin brauchst du eine Mod, die HD-Skins lädt, etwa CustomSkinLoader.'],
+        ]),
+        h3('So erstellst du einen im Skin Maker'),
+        steps([
+          ['Stell auf dem Startbildschirm ', strong('Size'), ' auf ', strong('HD 128×128'), ' und wähle dann einen Startpunkt. Vorlagen und Start-Skins werden auf 128×128 verdoppelt, und ein hochgeladenes PNG mit 128×128 bleibt HD.'],
+          ['Du malst schon an einem Skin mit 64×64? Stell im Editor ', strong('Size'), ' auf ', strong('HD 128'), ' und bestätige mit ', strong('Make HD'), '. Jedes Pixel wird zu einem 2×2-Block, der Skin sieht also gleich aus, bis du feinere Details malst. Mit ', strong('Size'), ' › ', strong('64×64'), ' und ', strong('Reduce to 64×64'), ' geht es zurück.'],
+          ['Exportiere ', strong('Bedrock skin (.png)'), ' für den Import im Ankleidezimmer oder ein ', strong('Bedrock skin pack (.mcpack)'), '. Beide behalten 128×128.'],
+          ['Für Java lädt ', strong('Java skin (.png)'), ' eine Kopie mit 64×64 herunter, bei der jeder 2×2-Block zu einem Pixel wird; dein HD-Skin bleibt, wie er ist. Du nutzt eine HD-Skin-Mod? Dann wähle stattdessen ', strong('128×128 for mods'), '.'],
+        ]),
+        callout(
+          'warn',
+          'Grenzen',
+          'Konsolen können Skin-Dateien in keiner Größe importieren. Skins größer als 128×128 werden nicht unterstützt. Spieler mit eingeschaltetem „Nur vertrauenswürdige Skins erlauben“ sehen jeden eigenen Skin, ob HD oder nicht, als Standard-Skin.',
+        ),
       ],
     },
     {
@@ -844,7 +877,22 @@ const makeASkin: GuideText = {
     },
   ],
   faq: [
-    { id: 'size', q: 'Wie groß sollte ein Minecraft-Skin sein?', a: [p('64×64 Pixel, als PNG gespeichert. 64×32 nur für Java 1.7.10 und älter.')] },
+    { id: 'size', q: 'Wie groß sollte ein Minecraft-Skin sein?', a: [p('64×64 Pixel, als PNG gespeichert. 64×32 nur für Java 1.7.10 und älter. Bedrock nimmt auch HD-Skins mit 128×128 Pixeln.')] },
+    {
+      id: 'hd',
+      q: 'Kann ich einen Minecraft-Skin mit 128×128 erstellen?',
+      a: [
+        p(
+          'Ja, für die Bedrock Edition. Stell im Skin Maker vor dem Start ',
+          strong('Size'),
+          ' auf ',
+          strong('HD 128×128'),
+          ' oder stell einen vorhandenen Skin auf ',
+          strong('HD 128'),
+          ' um und exportiere dann ein Bedrock-PNG oder ein Skinpaket. Die Java Edition zeigt ohne Mods nur Skins mit 64×64, darum macht der Java-Export eine Kopie mit 64×64; HD-Skin-Mods wie CustomSkinLoader können die Datei mit 128×128 nutzen.',
+        ),
+      ],
+    },
     { id: 'username', q: 'Kann ich mit dem Skin von jemand anderem anfangen?', a: [p('Ja. Der Skin Maker kann den aktuellen Skin jedes Java-Spielers per Benutzername laden, sodass du ihn remixen kannst. Bitte respektiere dabei die Arbeit anderer.')] },
     { id: 'phone', q: 'Kann ich einen Skin am Handy erstellen?', a: [p('Ja. Der Editor funktioniert mit Touch, inklusive Zoom mit zwei Fingern.')] },
     {
@@ -1510,6 +1558,302 @@ const bedrockSkinPack: GuideText = {
   ctaLabel: 'Skinpaket-Ersteller öffnen',
 };
 
+// ---------------------------------------------------------------- 3D items
+
+const MODEL_STEPS: Child[] = [
+  ['Öffne den ', link('/textures', 'Texture Pack Maker'), ' und erstelle ein ', strong('Java'), '-Pack für deine Version: 1.8 oder neuer, oder 1.21.4 oder neuer, wenn das Item im Inventar flach bleiben soll.'],
+  ['Stell die Liste auf ', strong('Items'), ' und öffne das Item, zum Beispiel das Diamantschwert. Drücke im Tab ', strong('Preview'), ' auf ', strong('Edit shape'), '.'],
+  ['Wähle ', strong('3D item from sprite'), '. Jedes Pixel des flachen Bildes wird Teil eines Würfels mit 1 Pixel Tiefe.'],
+  ['Ändere die Form: Klicke einen Würfel in der 3D-Ansicht oder in der Liste an und verschiebe, vergrößere oder kopiere ihn oder füge neue hinzu. Unter ', strong('Faces'), ' bekommt eine Seite eine andere Textur oder einen anderen Ausschnitt.'],
+  ['Öffne ', strong('Display'), ' und prüfe das Modell im Inventar, in der Ich- und der Dritte-Person-Ansicht, auf dem Boden, im Rahmen und auf dem Kopf. Passe Drehung, Position oder Größe an, wo es nicht passt.'],
+  ['Optional ab 1.21.4: Schalte im Tab ', strong('Model'), ' die Option ', strong('Flat in the inventory'), ' ein, damit das flache Symbol im Inventar bleibt und das 3D-Modell in der Hand erscheint.'],
+  ['Drücke ', strong('Done'), ', exportiere das Pack als ', code('.zip'), ', leg es in deinen Ordner ', code('resourcepacks'), ' und teste es im Spiel.'],
+];
+
+const make3dItems: GuideText = {
+  image: SHOTS.model3dSword,
+  intro: [
+    p(
+      'Die Form eines Blocks oder Items in Minecraft Java Edition kommt aus seinem ',
+      strong('Modell'),
+      ': einer kleinen JSON-Datei aus Würfeln im Ressourcenpaket. Leg ein neues Modell in dein Texture Pack und die Form ändert sich, ganz ohne Mods und ohne OptiFine: Aus einem flachen Schwert wird ein 3D-Schwert, aus einem Block eine Stufe oder eine Treppe. Der ',
+      link('/textures', 'Texture Pack Maker'),
+      ' hat einen Modell-Editor, der das im Browser erledigt. Er macht mit einem Klick aus dem flachen Sprite eines Items 3D-Würfel, lässt dich jeden Würfel ändern und schreibt die Dateien, die deine Spielversion braucht. Bedrock funktioniert anders, mehr dazu weiter unten.',
+    ),
+  ],
+  quick: {
+    title: 'Die Kurzfassung',
+    items: [
+      ['Zeig das Item im Texture Pack Maker im Tab ', strong('Preview'), ' an und drücke ', strong('Edit shape'), '.'],
+      ['Wähle ', strong('3D item from sprite'), ' und verfeinere dann die Würfel und die Haltung in der Hand.'],
+      ['Exportiere das Pack. Es enthält das Modell in ', code('models/item/'), ' und ab 1.21.4, wenn nötig, eine Item-Definition in ', code('items/'), '.'],
+    ],
+  },
+  howto: { name: '3D-Item in einem Minecraft Texture Pack erstellen', steps: MODEL_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Was ein Minecraft-Modell ist',
+      body: [
+        p('Java Edition ab 1.8 zeichnet die meisten Blöcke und Items aus Modelldateien im Ressourcenpaket:'),
+        ul([
+          [code('assets/minecraft/models/block/'), ' enthält Blockmodelle wie ', code('oak_slab.json'), '. Eine ', strong('Blockzustand'), '-Datei in ', code('blockstates/'), ' legt fest, welches Modell ein Block in jedem Zustand nutzt: eine Stufe unten oder oben, ein liegender Stamm.'],
+          [code('assets/minecraft/models/item/'), ' enthält Item-Modelle. Die meisten Items nutzen ein flaches Modell (', code('item/generated'), '): Das Spiel macht aus dem 16×16-Sprite selbst eine dünne Form. Seit 1.21.4 legt eine ', strong('Item-Definition'), ' in ', code('assets/minecraft/items/'), ' fest, welches Modell ein Item zeigt.'],
+        ]),
+        p('Eine Modelldatei hat vier Hauptteile:'),
+        ul([
+          [code('textures'), ': Namen für die Texturen, die das Modell nutzt, etwa ', code('"oak_planks": "minecraft:block/oak_planks"'), '. ', code('particle'), ' ist die Textur der Partikel beim Abbauen.'],
+          [code('elements'), ': die Würfel. Jeder reicht von einer Ecke (', code('from'), ') zur gegenüberliegenden (', code('to'), '), gemessen in Pixeln eines Blocks von 16 × 16 × 16, und darf auf jeder Achse von -16 bis 32 gehen. Mit ', code('rotation'), ' lässt sich ein Würfel drehen.'],
+          [code('faces'), ': für jede Seite eines Würfels (', code('down'), ', ', code('up'), ', ', code('north'), ', ', code('south'), ', ', code('west'), ', ', code('east'), ') die Textur, ihr Ausschnitt (', code('uv'), ') und ', code('cullface'), ', das die Seite weglässt, wenn ein voller Block sie verdeckt.'],
+          [code('display'), ': wie das Modell gedreht, verschoben und skaliert wird, im Inventar (', code('gui'), '), in den Händen, auf dem Boden, im Rahmen (', code('fixed'), ') und auf dem Kopf.'],
+        ]),
+        p('Hier ein Modell aus einem einzigen Würfel in Form einer Stufe, so aufgebaut, wie der Modell-Editor es schreibt. Eine Datei aus dem Editor enthält die Darstellung aller Plätze, nicht nur die im Inventar:'),
+        pre(MODEL_BLOCK_EXAMPLE.trimEnd()),
+        p(
+          'Von Hand geschriebene Modelle nutzen oft ',
+          code('"parent"'),
+          ', um Texturen, Würfel oder Darstellung von einem anderen Modell zu übernehmen. Der Modell-Editor schreibt dagegen vollständige Dateien: Alles, was er aus den Eltern-Modellen gelesen hat, steht mit drin, deine Datei hängt also von keiner anderen ab.',
+        ),
+        callout('tip', 'Koordinaten sind Pixel', 'Ein Block ist auf jeder Achse 16 Einheiten groß, 8 ist also ein halber Block. Der Modell-Editor rastet in diesem Raster ein, oder in ½ oder ¼ Pixel, und zeigt Größen als „16 = one block“.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Ein 3D-Item Schritt für Schritt',
+      body: [steps(MODEL_STEPS), figure(SHOTS.modelEditShape), figure(SHOTS.modelSpriteStart), figure(SHOTS.model3dSword)],
+    },
+    {
+      id: 'sprite',
+      title: 'So funktioniert „3D item from sprite“',
+      body: [
+        p(
+          'Ein flaches Item ist ein einziges Bild, sein Sprite, meist 16×16 Pixel. Der Startpunkt nimmt jedes Pixel, das nicht durchsichtig ist, und baut daraus Würfel mit 1 Pixel Tiefe, mittig wie die flachen Items des Spiels (von 7,5 bis 8,5 auf der Z-Achse). Pixel in einer Reihe werden zu einem langen Würfel zusammengefasst, gleiche Reihen untereinander zu einem Rechteck. So wird das Diamantschwert zu 19 Würfeln statt zu einem Würfel pro Pixel. Seiten, die ein benachbartes Pixel ganz verdeckt, fallen weg.',
+        ),
+        p('Jede Seite zeigt die passenden Pixel des Sprites. Drei Pixel in einer Reihe, in den Spalten 5 bis 7 der Zeile 3, ergeben diesen Würfel:'),
+        pre(MODEL_SPRITE_CUBE.trimEnd()),
+        p(
+          'Die Vorderseite (',
+          code('south'),
+          ') zeigt die Pixel, wie sie sind, die Rückseite (',
+          code('north'),
+          ') gespiegelt, so wie man ein Bild von hinten sieht. Die Würfel nutzen weiter die Textur des Items (',
+          code('#layer0'),
+          '): Bemalst du das Sprite neu, bekommt das 3D-Item die neuen Farben. Pixel, die du hinzufügst oder löschst, ändern die Form erst, wenn du ',
+          strong('3D item from sprite'),
+          ' noch einmal wählst. Items aus mehreren Ebenen wie Tränke oder Lederrüstung bekommen Würfel für jede Ebene, und das Spiel färbt sie weiterhin ein.',
+        ),
+        p('Dann mach es zu deinem eigenen:'),
+        ul([
+          'Mach die Klinge dicker: Wähle ihre Würfel aus und ändere Z-Position und -Größe, zum Beispiel von 7,5 und 1 auf 7 und 2.',
+          ['Füg mit dem Knopf ', strong('+'), ' (oder N) einen Würfel für eine Parierstange oder einen Edelstein hinzu und gib seinen Seiten unter ', uiPath('Faces', 'Change'), ' eine andere Textur.'],
+          ['Dreh einen Würfel unter ', strong('Rotation'), '. Vor Minecraft 1.21.6 dreht sich ein Würfel nur um eine Achse, um -45°, -22,5°, 0°, 22,5° oder 45°; der Editor bietet an, was deine Version erlaubt.'],
+          'Jede Änderung machst du mit Strg+Z rückgängig.',
+        ]),
+      ],
+    },
+    {
+      id: 'display',
+      title: 'Die Haltung festlegen: Display',
+      body: [
+        p('Der Tab ', strong('Display'), ' zeigt das Modell an sechs Stellen in der Vorschau. Jede hat eine Drehung in Grad, eine Position in Pixeln (bis ±80) und eine Größe (1 ist normal, höchstens 4).'),
+        table(
+          ['Im Editor', 'Wo es zu sehen ist', 'Name in der Datei'],
+          [
+            ['Inventory', 'Inventar und Schnellzugriffsleiste', code('gui')],
+            ['First person', 'In deiner eigenen Hand', [code('firstperson_righthand'), ' (die linke Hand ist das Spiegelbild)']],
+            ['Third person', 'In der Hand eines Spielers, den du ansiehst, oder in der F5-Ansicht', code('thirdperson_righthand')],
+            ['Ground', 'Auf den Boden geworfen', code('ground')],
+            ['Item frame', 'In einem Rahmen', code('fixed')],
+            ['Head', 'Auf dem Kopf getragen', code('head')],
+          ],
+        ),
+        p(
+          strong('3D item from sprite'),
+          ' übernimmt die Darstellung des Items, ein 3D-Schwert wird also gehalten wie das flache. ',
+          strong('Game’s default'),
+          ' setzt einen Platz auf die Werte des Spiels zurück, ',
+          strong('No change'),
+          ' entfernt die Einstellung. Java 1.21.9 hat den Platz ',
+          code('on_shelf'),
+          ' für Regale eingeführt; der Editor übernimmt den Wert aus dem Modell des Spiels.',
+        ),
+        figure(SHOTS.modelDisplay),
+      ],
+    },
+    {
+      id: 'flat',
+      title: 'Flaches Symbol im Inventar behalten (ab 1.21.4)',
+      body: [
+        p(
+          'Viele 3D-Packs behalten im Inventar das gewohnte flache Symbol und zeigen das 3D-Modell nur in der Hand. Seit Java 1.21.4 kann eine Item-Definition das Modell danach wählen, wo das Item gezeigt wird. Schalte im Tab ',
+          strong('Model'),
+          ' die Option ',
+          strong('Flat in the inventory'),
+          ' ein, dann:',
+        ),
+        ul([
+          ['speichert der Editor deine Form als zweites Modell, ', code('models/item/diamond_sword_3d.json'), ', und lässt das flache ', code('diamond_sword.json'), ' unverändert;'],
+          ['schreibt er ', code('items/diamond_sword.json'), ', das im Inventar (', code('gui'), '), auf dem Boden und im Rahmen (', code('fixed'), ') das flache Modell zeigt und überall sonst das 3D-Modell:'],
+        ]),
+        pre(MODEL_FLAT_DEFINITION.trimEnd()),
+        p('Versionen vor 1.21.4 haben keine Item-Definitionen. Dort zeigt ein Item überall dasselbe Modell, und der Schalter fehlt.'),
+        figure(SHOTS.modelFlatInventory),
+      ],
+    },
+    {
+      id: 'blocks',
+      title: 'Die Form eines Blocks ändern',
+      body: [
+        p(
+          'Bei Blöcken geht es genauso. Zeig einen Block im Tab Preview an und drücke ',
+          strong('Edit shape'),
+          '. Der Editor öffnet das Modell, das der Block in dem Zustand nutzt, den du gerade siehst, und das Menü oben listet seine anderen Modelle, etwa die obere und die doppelte Stufe. Behalte das Modell des Spiels oder beginne mit ',
+          strong('Full cube'),
+          ', ',
+          strong('Slab'),
+          ', ',
+          strong('Cross (plant)'),
+          ' oder ',
+          strong('Empty'),
+          ' und füge dann Würfel hinzu, verschiebe sie und ändere ihre Größe. Aus Stein wird eine Treppenstufe mit dem Startpunkt Slab und einem weiteren Würfel:',
+        ),
+        figure(SHOTS.modelBlock),
+        ul([
+          [strong('Geteilte Modelle: '), 'Manche Blöcke nutzen dieselbe Modelldatei. Nutzt ein anderer Block das Modell, das du bearbeitest, sagt dir der Editor welcher; er ändert sich mit.'],
+          [strong('Items bleiben getrennt: '), 'Ein Item, das ein Blockmodell zeigt, etwa eine Stufe in der Hand, bekommt ein eigenes Item-Modell, wenn du das Item bearbeitest. Der Block behält also seine Form.'],
+          [strong('Nur das Aussehen ändert sich: '), 'Hitbox, Kollision und Licht kommen aus dem Code des Spiels. Ein Steinblock in Form einer Stufe hält dich weiter auf wie ein voller Block, und die Blöcke daneben blenden weiter ihre anliegenden Seiten aus. Dadurch können Lücken entstehen, durch die man hindurchsieht.'],
+          [strong('Vom Spiel gezeichnete Blöcke: '), 'Truhen, Betten, Schilder, Banner und andere Blöcke, die das Spiel selbst zeichnet, haben kein Blockmodell, darum gibt es für sie kein Edit shape. Vom Code gezeichnete Items wie der Schild können ein Modell bekommen, das dieses Aussehen ersetzt.'],
+        ]),
+        p(
+          'Stein und einige andere Blöcke wählen zufällig zwischen zwei Modellen: Stein und einer gespiegelten Kopie, jeweils auch gedreht. ',
+          strong('Use for every random variant'),
+          ' im Tab Model setzt deine Form auf alle davon, indem der Editor die Blockzustandsdatei des Blocks schreibt. Der Eintrag ',
+          code('"y": 180'),
+          ' erhält die zufällige Drehung, und ',
+          code('weight'),
+          ' legt fest, wie oft jeder Eintrag gewählt wird:',
+        ),
+        pre(MODEL_STONE_BLOCKSTATE.trimEnd()),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Welche Dateien ins Pack kommen',
+      body: [
+        table(
+          ['Was du änderst', 'Dateien im Pack'],
+          [
+            ['Ein 3D-Item', code(MODEL_FILES.sword.latest[0])],
+            ['Ein 3D-Item, flach im Inventar (ab 1.21.4)', [code(MODEL_FILES.swordFlat.latest[0]), ' und ', code(MODEL_FILES.swordFlat.latest[1])]],
+            ['Die Form eines Blocks', code(MODEL_FILES.slab.latest[0])],
+            ['Die Form eines Blocks für jede Zufallsvariante', [code(MODEL_FILES.stoneEvery.latest[0]), ' und ', code(MODEL_FILES.stoneEvery.latest[1])]],
+          ],
+        ),
+        p(
+          'Alle Pfade liegen in ',
+          code('assets/minecraft/'),
+          '. Jede Java-Version ab 1.8 bekommt dieselben Dateien; nur „flach im Inventar“ braucht 1.21.4 oder neuer. Der Editor fügt eine Item-Definition oder einen Blockzustand nur hinzu, wenn das Spiel sie braucht, und Modelldateien, die schon in einem geöffneten Pack liegen, bleiben erhalten und lassen sich bearbeiten. Beim Export wird jedes Modell für deine Spielversion geprüft, und du bekommst eine Warnung zu allem, was nicht laden würde.',
+        ),
+        h3('Was sich zwischen den Versionen geändert hat'),
+        table(
+          ['Version', 'Was sich für Modelle geändert hat'],
+          [
+            ['1.8', 'Block- und Item-Modelle wurden JSON-Dateien, die Ressourcenpakete ersetzen können. Würfel drehen sich um eine Achse, um -45°, -22,5°, 0°, 22,5° oder 45°.'],
+            ['1.13', ['Die Texturordner heißen nicht mehr ', code('blocks'), ' und ', code('items'), ', sondern ', code('block'), ' und ', code('item'), '. Damit änderten sich auch die Texturnamen in Modellen.']],
+            ['1.15.2', [code('gui_light'), ' legt fest, ob das Inventarsymbol von der Seite (Blöcke) oder von vorn (Items) beleuchtet wird.']],
+            ['1.19.3', ['Modelltexturen müssen in einem Ordner liegen, den die Texturatlanten des Spiels lesen, etwa ', code('textures/block/'), ' oder ', code('textures/item/'), '.']],
+            ['1.21.4', ['Item-Definitionen in ', code('items/'), ' wählen das Modell eines Items, auch danach, wo es gezeigt wird.']],
+            ['1.21.6', 'Würfel lassen sich um jeden Winkel von -45° bis 45° drehen.'],
+            ['1.21.9', ['Neuer Darstellungsplatz ', code('on_shelf'), '.']],
+            ['1.21.11', 'Würfel drehen sich um mehrere Achsen gleichzeitig und um jeden Winkel.'],
+          ],
+        ),
+        p('Der Modell-Editor hält sich an diese Regeln für die Version, für die dein Pack gemacht ist.'),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Installieren und testen',
+      body: [
+        steps([
+          ['Drücke ', strong('Done'), ', um den Modell-Editor zu verlassen, und exportiere das Pack dann mit ', strong('Export'), ' als ', code('.zip'), '.'],
+          ['Öffne in Minecraft ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), ', leg die Zip hinein (nicht entpacken) und verschiebe das Pack nach ', strong('Ausgewählt'), ', über andere Packs.'],
+          'Halte das Item, drücke F5 für die Dritte-Person-Ansicht, wirf es auf den Boden und häng es in einen Rahmen, um jede Darstellung zu prüfen.',
+          'Nach einer Änderung am Modell exportierst du neu, ersetzt die Zip und drückst im Spiel F3 + T, um die Packs neu zu laden.',
+        ]),
+        p('Mehr Hilfe: ', link('/guides/install-resource-packs', 'Ressourcenpakete installieren'), ' und ', link('/guides/texture-pack-not-working', 'Texture Pack funktioniert nicht'), '.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Bedrock-Packs funktionieren anders, und der Modell-Editor macht nur Java-Modelle:'),
+        ul([
+          [strong('Blöcke: '), 'Ein Bedrock-Ressourcenpaket kann die Form der Blöcke des Spiels nicht ändern. Ein Block mit eigener Form ist ein neuer Block, hinzugefügt von einer Erweiterung mit Verhaltenspaket und Geometriedatei.'],
+          [strong('Items in der Hand: '), 'Bedrock gibt Items mit Attachables ein 3D-Modell in der Hand. Das sind Dateien in einem Ressourcenpaket, die Bedrock-Geometrie und Animationen nutzen. Der Texture Pack Maker erstellt sie nicht, ', ext('https://www.blockbench.net/', 'Blockbench'), ' schon.'],
+          [strong('Ein Ausgangspunkt: '), 'Im Menü des Modell-Editors speichert ', strong('Download as Bedrock geometry'), ' dein Modell als ', code('.geo.json'), '-Datei (Format 1.12.0, ein Knochen, alle Würfel), die du in Blockbench oder eine Erweiterung importieren kannst. Bedrock-Geometrie nutzt eine einzige Textur, darum behält jede Seite ihre Stelle auf ihrer eigenen Textur.'],
+        ]),
+        p('In einem Bedrock-Pack erklärt ', strong('Edit shape'), ' das, statt den Editor zu öffnen. Texturen bemalen funktioniert wie gewohnt.'),
+      ],
+    },
+    {
+      id: 'problems',
+      title: 'Häufige Probleme',
+      body: [
+        ul([
+          [strong('Lila-schwarze Seiten: '), 'Eine Seite nutzt eine Textur, die das Spiel nicht findet: einen Namen (', code('#…'), '), der unter ', code('textures'), ' fehlt, eine Datei, die weder im Spiel noch im Pack ist, oder seit 1.19.3 eine Textur außerhalb der Atlas-Ordner. Der Tab Model listet diese Probleme mit dem Würfel, an dem sie liegen.'],
+          [strong('Ein lila-schwarzer Würfel statt des Modells: '), 'Die Datei wurde nicht geladen. Häufige Gründe sind kaputtes JSON, ein Würfel außerhalb von -16 bis 32 oder eine Drehung, die die Version nicht erlaubt. Das Protokoll des Spiels nennt die Datei.'],
+          [strong('Das Modell erscheint gar nicht: '), 'Prüfe, dass das Pack ausgewählt ist und über anderen Packs steht, dass die Datei genau den Namen und Ordner des Modells hat, das sie ersetzt, und ab 1.21.4, dass ein neues Modell (etwa eine ', code('_3d'), '-Kopie) eine Item-Definition hat, die darauf zeigt.'],
+          [strong('In der Hand gut, im Inventar seltsam: '), ['Passe die Darstellung Inventory an, probiere das andere Inventarlicht (seitlich oder von vorn) oder schalte ', strong('Flat in the inventory'), ' ein.']],
+          [strong('Zu viele Würfel: '), 'Jeder Würfel bringt Seiten, die gezeichnet werden müssen. Für ein Item in der Hand spielt das kaum eine Rolle, aber ein Block, der tausendfach platziert wird, sollte einfach bleiben. Behalte die zusammengefassten Würfel von 3D item from sprite, statt sie aufzuteilen.'],
+          [strong('Ein Winkel ist nicht erlaubt: '), 'Vor 1.21.6 dreht sich ein Würfel in Schritten von 22,5° bis 45°, um eine Achse. Für eine Vierteldrehung tauschst du stattdessen die Größe auf zwei Achsen; andere Formen baust du aus mehr Würfeln.'],
+        ]),
+        p('Weitere Lösungen für Packs allgemein: ', link('/guides/texture-pack-not-working', 'Texture Pack funktioniert nicht? Lösungen'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'mods',
+      q: 'Brauche ich OptiFine oder eine Mod für 3D-Items?',
+      a: [p('Nein. Java-Ressourcenpakete können Block- und Item-Modelle seit 1.8 ersetzen, ein Pack mit Modelldateien funktioniert also im normalen Spiel. Es ändert jedes Item dieser Sorte.')],
+    },
+    {
+      id: 'renamed',
+      q: 'Kann nur ein umbenanntes Item 3D sein?',
+      a: [
+        p(
+          'Nicht mit einer einfachen Modelländerung. Packs, die nur umbenannte Items ändern, nutzen die Custom Item Textures (CIT) von OptiFine oder eine Mod, die sie liest. Seit 1.21.4 können Item-Definitionen ein Modell auch nach ',
+          code('custom_model_data'),
+          ' wählen, das Server und Kartenbauer mit Befehlen setzen. Der Modell-Editor ändert jedes Item einer Sorte.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      q: 'Kann ich 3D-Items für Bedrock machen?',
+      a: [p('Ja, mit Attachables in einem Bedrock-Ressourcenpaket, erstellt mit einem Werkzeug wie Blockbench. Dieser Modell-Editor macht Java-Modelle, kann ein Modell aber als Bedrock-Geometrie zum Weiterarbeiten herunterladen. Die Form der Blöcke des Spiels können Bedrock-Ressourcenpakete nicht ändern.')],
+    },
+    {
+      id: 'blockbench',
+      q: 'Kann ich Modelle aus Blockbench verwenden?',
+      a: [p('Ja. Aus Blockbench exportierte Java-Block- und -Item-Modelle sind normale Modelldateien. Leg sie unter dem Namen des Modells, das sie ersetzen, in dein Pack und öffne das Pack mit ', strong('Open a pack'), ': Die Dateien bleiben erhalten, und der Modell-Editor kann sie öffnen und ändern.')],
+    },
+    {
+      id: 'undo',
+      q: 'Wie bekomme ich die ursprüngliche Form zurück?',
+      a: [p('Wähle im Menü des Modell-Editors ', strong('Put back the original model'), '. Deine Dateien für dieses Modell werden aus dem Pack entfernt, und das Spiel nutzt wieder sein eigenes Modell.')],
+    },
+    {
+      id: 'phone',
+      q: 'Kann ich 3D-Items am Handy erstellen?',
+      a: [p('Ja. Auf dem Handy sitzt die 3D-Ansicht über den Feldern, und du arbeitest mit Touch. Das Pack bleibt ein Java-Pack, gespielt wird also am Computer.')],
+    },
+  ],
+  ctaLabel: 'Texture Pack Maker öffnen',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -1522,4 +1866,5 @@ export const GUIDES: Record<string, GuideText> = {
   'convert-java-to-bedrock-texture-pack': convertJavaToBedrock,
   'merge-texture-packs': mergePacks,
   'make-a-bedrock-skin-pack': bedrockSkinPack,
+  'make-3d-items-texture-pack': make3dItems,
 };

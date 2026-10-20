@@ -98,9 +98,9 @@ export const META_ES: MetaTranslation = {
     'make-a-skin': {
       title: 'Cómo hacer una skin de Minecraft (Java y Bedrock)',
       h1: 'Cómo hacer tu propia skin de Minecraft',
-      description: 'Haz una skin de Minecraft gratis: pinta la plantilla de 64×64 en 2D o 3D, elige brazos clásicos o delgados y úsala en Java o en un pack de Bedrock.',
+      description: 'Haz una skin de Minecraft gratis: pinta la plantilla de 64×64 o HD de 128×128 en 2D o 3D, elige brazos clásicos o delgados y úsala en Java o Bedrock.',
       label: 'Hacer una skin',
-      blurb: 'Pinta la plantilla de 64×64 y úsala en Java o en un pack de skins de Bedrock.',
+      blurb: 'Pinta la plantilla de 64×64 o HD de 128×128 para Java o un pack de skins de Bedrock.',
     },
     'make-shaders-without-mods': {
       title: 'Shaders de Minecraft sin mods ni OptiFine (Java y Bedrock)',
@@ -143,6 +143,13 @@ export const META_ES: MetaTranslation = {
       description: 'Crea un pack de skins para Minecraft Bedrock: pinta o sube skins, exporta un .mcpack, impórtalo en PC o móvil, actualízalo o crea los archivos a mano.',
       label: 'Pack de skins de Bedrock',
       blurb: 'Junta tus skins en un .mcpack y póntelas desde el Vestidor.',
+    },
+    'make-3d-items-texture-pack': {
+      title: 'Cómo hacer ítems 3D en un texture pack de Minecraft',
+      h1: 'Cómo hacer ítems 3D y modelos propios en un texture pack de Minecraft',
+      description: 'Convierte ítems planos de Minecraft en 3D y cambia la forma de bloques en un pack de Java: JSON de modelos, definiciones de ítem 1.21.4+ y soluciones.',
+      label: 'Hacer ítems 3D',
+      blurb: 'Convierte ítems planos en modelos 3D y cambia la forma de bloques, archivo a archivo.',
     },
   },
 };
