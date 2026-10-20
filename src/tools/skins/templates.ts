@@ -6,6 +6,7 @@
 // pixels takes a `scale` (1 for 64x64, 2 for 128x128), or reads it from the image width.
 
 import type { SkinModel } from '../../core/types';
+import { partText } from './i18n/parts';
 
 export type SkinPart = 'head' | 'body' | 'rightArm' | 'leftArm' | 'rightLeg' | 'leftLeg';
 export type SkinFace = 'top' | 'bottom' | 'right' | 'front' | 'left' | 'back';
@@ -52,36 +53,64 @@ export const PARTS: readonly SkinPart[] = ['head', 'body', 'rightArm', 'leftArm'
 export const FACES: readonly SkinFace[] = ['top', 'bottom', 'right', 'front', 'left', 'back'];
 
 export interface PartInfo {
-  label: string;
+  /** Name of the part (in the interface's language, like every text field here) */
+  readonly label: string;
   /** Name of the outer layer piece, as the game's skin customisation calls it */
-  outerLabel: string;
-  short: string;
-  outerShort: string;
+  readonly outerLabel: string;
+  readonly short: string;
+  readonly outerShort: string;
+  /** The outer piece under the part in the parts list ("sleeve") */
+  readonly sub: string;
+  /** The part's and its outer piece's names inside sentences ("Fill {part} with colour") */
+  readonly it: string;
+  readonly outerIt: string;
   /** Overlay / UI colour */
-  color: string;
+  readonly color: string;
   /** The part on the other side of the body (itself for head and body) */
-  mirror: SkinPart;
+  readonly mirror: SkinPart;
 }
 
+/** Text is read in the current language each time (getters); colours and mirrors never change. */
+const partInfo = (part: SkinPart, color: string, mirror: SkinPart): PartInfo => ({
+  get label() {
+    return partText[part].name;
+  },
+  get outerLabel() {
+    return partText[part].outer;
+  },
+  get short() {
+    return partText[part].short;
+  },
+  get outerShort() {
+    return partText[part].outerShort;
+  },
+  get sub() {
+    return partText[part].sub;
+  },
+  get it() {
+    return partText[part].it;
+  },
+  get outerIt() {
+    return partText[part].outerIt;
+  },
+  color,
+  mirror,
+});
+
 export const PART_INFO: Record<SkinPart, PartInfo> = {
-  head: { label: 'Head', outerLabel: 'Hat', short: 'Head', outerShort: 'Hat', color: '#ffcf4a', mirror: 'head' },
-  body: { label: 'Body', outerLabel: 'Jacket', short: 'Body', outerShort: 'Jacket', color: '#4fb3ff', mirror: 'body' },
-  rightArm: { label: 'Right Arm', outerLabel: 'Right Sleeve', short: 'R arm', outerShort: 'R sleeve', color: '#5bd35b', mirror: 'leftArm' },
-  leftArm: { label: 'Left Arm', outerLabel: 'Left Sleeve', short: 'L arm', outerShort: 'L sleeve', color: '#2ed8c3', mirror: 'rightArm' },
-  rightLeg: { label: 'Right Leg', outerLabel: 'Right Pants', short: 'R leg', outerShort: 'R pants', color: '#b07cff', mirror: 'leftLeg' },
-  leftLeg: { label: 'Left Leg', outerLabel: 'Left Pants', short: 'L leg', outerShort: 'L pants', color: '#ff7ab8', mirror: 'rightLeg' },
+  head: partInfo('head', '#ffcf4a', 'head'),
+  body: partInfo('body', '#4fb3ff', 'body'),
+  rightArm: partInfo('rightArm', '#5bd35b', 'leftArm'),
+  leftArm: partInfo('leftArm', '#2ed8c3', 'rightArm'),
+  rightLeg: partInfo('rightLeg', '#b07cff', 'leftLeg'),
+  leftLeg: partInfo('leftLeg', '#ff7ab8', 'rightLeg'),
 };
 
-export const FACE_LABELS: Record<SkinFace, string> = {
-  top: 'Top',
-  bottom: 'Bottom',
-  right: 'Right side',
-  front: 'Front',
-  left: 'Left side',
-  back: 'Back',
-};
+/** Face names in the current language. */
+export const FACE_LABELS: Readonly<Record<SkinFace, string>> = partText.faces;
 
-export const LAYER_LABELS: Record<SkinLayer, string> = { base: 'Base layer', outer: 'Outer layer' };
+/** Layer names in the current language. */
+export const LAYER_LABELS: Readonly<Record<SkinLayer, string>> = partText.layers;
 
 /** Size of a part's box in image pixels (w = across, h = tall, d = deep). */
 export function partBox(part: SkinPart, model: SkinLayout, scale: SkinScale = 1): Box {

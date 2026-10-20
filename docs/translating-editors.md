@@ -16,6 +16,7 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | `src/tools/convert/i18n/` | `convert`, `convert.engine` | `convert/view.ts` |
 | `src/tools/merge/i18n/` | `merge` | `merge/view.ts` |
 | `src/tools/totem/i18n/` | `totem` | `totem/view.ts` |
+| `src/tools/skins/i18n/` | `skins` (start screen), `skins.parts`, `skins.editor`, `skins.export` | `skins/view.ts` |
 
 In a folder:
 

@@ -8,12 +8,11 @@ type RGB = readonly [number, number, number];
 type RGBA = readonly [number, number, number, number];
 type Px = RGB | RGBA | null | undefined;
 
+export type StarterId = 'blank' | 'template' | 'explorer' | 'knight' | 'robot' | 'hoodie' | 'ninja' | 'wizard';
+
+/** A starter skin. Its name, description and badge are the start screen's text (i18n/text.ts, `starters`). */
 export interface StarterDef {
-  id: string;
-  name: string;
-  description: string;
-  /** Shown as a small badge on the card */
-  badge?: string;
+  id: StarterId;
   paint(p: Painter): void;
 }
 
@@ -584,20 +583,14 @@ function paintBlank(p: Painter): void {
 }
 
 export const STARTERS: readonly StarterDef[] = [
-  { id: 'blank', name: 'Blank', description: 'A plain mannequin to paint from scratch.', paint: paintBlank },
-  {
-    id: 'template',
-    name: 'Template',
-    description: 'Every body part in its own colour, with each face labelled.',
-    badge: 'Start here',
-    paint: paintTemplate,
-  },
-  { id: 'explorer', name: 'Explorer', description: 'Safari hat, vest, backpack and boots.', paint: paintExplorer },
-  { id: 'knight', name: 'Knight', description: 'Helmet with plume, tabard and chainmail.', paint: paintKnight },
-  { id: 'robot', name: 'Robot', description: 'Metal panels, glowing eyes and chest lights.', paint: paintRobot },
-  { id: 'hoodie', name: 'Creeper Hoodie', description: 'A green hoodie with the hood up.', paint: paintHoodie },
-  { id: 'ninja', name: 'Ninja', description: 'Dark suit, red headband and wrapped arms.', paint: paintNinja },
-  { id: 'wizard', name: 'Wizard', description: 'Starry robe, long beard and a gold-banded hat.', paint: paintWizard },
+  { id: 'blank', paint: paintBlank },
+  { id: 'template', paint: paintTemplate },
+  { id: 'explorer', paint: paintExplorer },
+  { id: 'knight', paint: paintKnight },
+  { id: 'robot', paint: paintRobot },
+  { id: 'hoodie', paint: paintHoodie },
+  { id: 'ninja', paint: paintNinja },
+  { id: 'wizard', paint: paintWizard },
 ];
 
 /** A new 64x64 skin painted by a starter. */

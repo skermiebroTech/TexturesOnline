@@ -499,7 +499,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         a: [
           p(
             'Pinta cada skin como un proyecto propio, luego elige ',
-            strong('Bedrock skin pack (.mcpack)'),
+            strong('Pack de skins de Bedrock (.mcpack)'),
             ' y marca las otras skins que quieras añadir. Cada skin conserva su nombre y sus brazos clásicos o delgados, y al exportar de nuevo se actualiza el pack instalado en vez de añadir una copia. ',
             link('/skin-pack-maker', 'Más sobre el creador de packs de skins'),
             '.',
@@ -545,7 +545,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     steps: [
       'Crea una skin: elige un punto de partida y el tipo de brazos, y píntala. Cada skin se guarda en este dispositivo como un proyecto propio.',
       'Haz del mismo modo las demás skins que quieras en el pack.',
-      ['Abre una de ellas, elige ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', ponle nombre al pack y marca las otras skins que quieras incluir.'],
+      ['Abre una de ellas, elige ', strong('Exportar'), ' › ', strong('Pack de skins de Bedrock (.mcpack)'), ', ponle nombre al pack y marca las otras skins que quieras incluir.'],
       ['Abre el ', code('.mcpack'), ' descargado: doble clic en Windows, o tócalo y elige Minecraft en Android, iPhone y iPad.'],
       ['En Minecraft ve a ', strong('Vestidor'), ' › ', strong('Aspectos clásicos'), ', busca tu pack, elige una skin y pulsa ', strong('Equipar'), '.'],
     ],

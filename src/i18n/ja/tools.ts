@@ -498,7 +498,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         a: [
           p(
             'スキンを1つずつ別のプロジェクトとして描き、',
-            strong('Bedrock skin pack (.mcpack)'),
+            strong('統合版スキンパック（.mcpack）'),
             'を選んで、追加するほかのスキンにチェックを入れます。それぞれのスキンは名前とクラシック／スリムの腕を保ち、書き出し直すとコピーが増えるのではなく導入済みのパックが更新されます。',
             link('/skin-pack-maker', 'スキンパック作成について詳しく'),
             '。',
@@ -544,7 +544,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     steps: [
       'スキンを作ります：始め方と腕の形を選んで描きます。スキンはそれぞれ別のプロジェクトとしてこの端末に保存されます。',
       'パックに入れたいほかのスキンも同じように作ります。',
-      ['どれか1つを開いて', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), 'を選び、パックに名前をつけて、入れるほかのスキンにチェックします。'],
+      ['どれか1つを開いて', strong('書き出し'), ' › ', strong('統合版スキンパック（.mcpack）'), 'を選び、パックに名前をつけて、入れるほかのスキンにチェックします。'],
       ['ダウンロードした', code('.mcpack'), 'を開きます。Windowsならダブルクリック、Android・iPhone・iPadならタップしてMinecraftを選びます。'],
       ['Minecraftで', strong('更衣室'), ' › ', strong('クラシック スキン'), 'を開き、自分のパックからスキンを選んで', strong('装備'), 'を押します。'],
     ],

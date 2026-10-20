@@ -503,7 +503,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         a: [
           p(
             'Male jeden Skin als eigenes Projekt, wähle dann ',
-            strong('Bedrock skin pack (.mcpack)'),
+            strong('Bedrock-Skinpaket (.mcpack)'),
             ' und hake die anderen Skins an, die dazukommen sollen. Jeder Skin behält seinen Namen und seine breiten oder schmalen Arme, und ein erneuter Export aktualisiert das installierte Paket, statt eine Kopie anzulegen. ',
             link('/skin-pack-maker', 'Mehr zum Skinpaket-Ersteller'),
             '.',
@@ -549,7 +549,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     steps: [
       'Erstelle einen Skin: Wähle einen Startpunkt und die Armform und bemale ihn. Jeder Skin wird als eigenes Projekt auf diesem Gerät gespeichert.',
       'Erstelle die anderen Skins für das Paket auf dieselbe Weise.',
-      ['Öffne einen davon, wähle ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
+      ['Öffne einen davon, wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
       ['Öffne das heruntergeladene ', code('.mcpack'), ': unter Windows per Doppelklick, auf Android, iPhone und iPad antippen und Minecraft wählen.'],
       ['Geh in Minecraft zu ', strong('Ankleidezimmer'), ' › ', strong('Klassische Skins'), ', such dein Paket, wähle einen Skin und tippe auf ', strong('Anlegen'), '.'],
     ],

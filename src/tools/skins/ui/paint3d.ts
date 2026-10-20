@@ -14,6 +14,8 @@ import { toast } from '../../../ui/toast';
 import type { SkinHit, SkinOverlay, SkinPaintCursor, SkinPaintHandler, SkinPreview, SkinView } from '../skin-preview';
 import { mirrorFootprint, strokeSteps, surfaceFootprint } from '../surface';
 import { FACE_LABELS, mirrorPixel, PART_INFO, partAt, type LayerSelection, type SkinScale } from '../templates';
+import { fmt } from '../../../i18n/editor-text';
+import { editorText as t } from '../i18n/editor';
 
 export interface Paint3dHost {
   pc: PixelCanvas;
@@ -60,19 +62,20 @@ export interface Paint3d {
 
 const STROKE_TOOLS = new Set<Tool>(['pencil', 'eraser', 'lighten', 'darken', 'noise']);
 
-const TOOLS_3D: { tool: Tool; icon: IconName; label: string }[] = [
-  { tool: 'pencil', icon: 'pencil', label: 'Pencil (B)' },
-  { tool: 'eraser', icon: 'eraser', label: 'Eraser (E)' },
-  { tool: 'fill', icon: 'fill', label: 'Fill a face (G)' },
-  { tool: 'picker', icon: 'pipette', label: 'Pick a colour (I)' },
+// Names are read from the editor's text when the controls are built (never stored at import).
+const TOOLS_3D: { tool: Tool; icon: IconName; label: () => string; key: string }[] = [
+  { tool: 'pencil', icon: 'pencil', label: () => t.tools.pencil, key: 'B' },
+  { tool: 'eraser', icon: 'eraser', label: () => t.tools.eraser, key: 'E' },
+  { tool: 'fill', icon: 'fill', label: () => t.paint3d.fillFace, key: 'G' },
+  { tool: 'picker', icon: 'pipette', label: () => t.tools.picker, key: 'I' },
 ];
 
-const VIEWS: { view: SkinView; key: string; label: string }[] = [
-  { view: 'front', key: 'F', label: 'Front view' },
-  { view: 'back', key: 'B', label: 'Back view' },
-  { view: 'left', key: 'L', label: 'Left side view' },
-  { view: 'right', key: 'R', label: 'Right side view' },
-  { view: 'top', key: 'T', label: 'Top view' },
+const VIEWS: { view: SkinView; key: string }[] = [
+  { view: 'front', key: 'F' },
+  { view: 'back', key: 'B' },
+  { view: 'left', key: 'L' },
+  { view: 'right', key: 'R' },
+  { view: 'top', key: 'T' },
 ];
 
 const toPoints = (pixels: readonly number[], W: number): [number, number][] => pixels.map((p) => [p % W, Math.floor(p / W)]);
@@ -117,23 +120,24 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
   const modeSwitch = segmented<'view' | 'paint'>({
     value: 'view',
     size: 'sm',
-    label: '3D mode',
+    label: t.paint3d.mode,
     options: [
-      { value: 'view', label: 'View', icon: 'hand' },
-      { value: 'paint', label: 'Paint', icon: 'brush' },
+      { value: 'view', label: t.paint3d.view, icon: 'hand' },
+      { value: 'paint', label: t.paint3d.paint, icon: 'brush' },
     ],
     onChange: (v) => setEnabled(v === 'paint'),
   });
   modeSwitch.classList.add('sk-3d-mode');
   const viewItem = modeSwitch.querySelector<HTMLElement>('[data-value="view"]');
   const paintItem = modeSwitch.querySelector<HTMLElement>('[data-value="paint"]');
-  if (viewItem) tooltip(viewItem, 'Turn and zoom the model (D)');
-  if (paintItem) tooltip(paintItem, 'Paint on the model (D)');
+  if (viewItem) tooltip(viewItem, t.paint3d.viewTip);
+  if (paintItem) tooltip(paintItem, t.paint3d.paintTip);
 
-  const views = h('div', { class: 'sk-3d-views', role: 'group', 'aria-label': 'Camera views' });
+  const views = h('div', { class: 'sk-3d-views', role: 'group', 'aria-label': t.paint3d.views });
   for (const v of VIEWS) {
-    const b = h('button', { type: 'button', class: 'sk-view-btn', dataset: { view: v.view }, 'aria-label': v.label }, v.key);
-    tooltip(b, v.label);
+    const label = t.paint3d[v.view];
+    const b = h('button', { type: 'button', class: 'sk-view-btn', dataset: { view: v.view }, 'aria-label': label }, v.key);
+    tooltip(b, label);
     b.addEventListener('click', () => {
       host.beforeView();
       preview?.setView(v.view);
@@ -148,42 +152,42 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
   const layerSeg = segmented<LayerSelection>({
     value: host.layers(),
     size: 'sm',
-    label: 'Layer to paint on',
+    label: t.canvas.layerLabel,
     options: [
-      { value: 'base', label: 'Base' },
-      { value: 'outer', label: 'Outer' },
-      { value: 'both', label: 'Both' },
+      { value: 'base', label: t.canvas.base },
+      { value: 'outer', label: t.canvas.outer },
+      { value: 'both', label: t.canvas.both },
     ],
     onChange: (v) => host.setLayers(v),
   });
-  tooltip(layerSeg, 'Which layer to paint on (1 / 2 / 3)');
+  tooltip(layerSeg, t.canvas.layerTip);
 
-  const well = h('button', { type: 'button', class: 'sk-well sk-3d-well', 'aria-label': 'Paint colour', 'aria-haspopup': 'dialog' }, h('span', { class: 'sk-well-fill' }));
-  tooltip(well, 'Paint colour');
+  const well = h('button', { type: 'button', class: 'sk-well sk-3d-well', 'aria-label': t.canvas.paintColour, 'aria-haspopup': 'dialog' }, h('span', { class: 'sk-well-fill' }));
+  tooltip(well, t.canvas.paintColour);
   well.addEventListener('click', () => host.openColor(well));
   const toolButtons = new Map<Tool, ReturnType<typeof iconButton>>();
-  const toolRow = h('div', { class: 'sk-3d-tools', role: 'toolbar', 'aria-label': 'Tools for painting on the model' }, well);
-  for (const t of TOOLS_3D) {
-    const b = iconButton(t.icon, t.label, () => pc.setTool(t.tool), { size: 'sm', active: false });
-    b.dataset.tool = t.tool;
-    toolButtons.set(t.tool, b);
+  const toolRow = h('div', { class: 'sk-3d-tools', role: 'toolbar', 'aria-label': t.paint3d.tools }, well);
+  for (const tl of TOOLS_3D) {
+    const b = iconButton(tl.icon, `${tl.label()} (${tl.key})`, () => pc.setTool(tl.tool), { size: 'sm', active: false });
+    b.dataset.tool = tl.tool;
+    toolButtons.set(tl.tool, b);
     toolRow.appendChild(b);
   }
-  const mirrorBtn = iconButton('mirror', 'Mirror: paint both arms or legs at once (Y)', () => host.setMirror(!host.mirror()), { size: 'sm', active: host.mirror() });
+  const mirrorBtn = iconButton('mirror', t.paint3d.mirror, () => host.setMirror(!host.mirror()), { size: 'sm', active: host.mirror() });
   mirrorBtn.classList.add('sk-3d-mirror');
   toolRow.append(h('span', { class: 'toolbar-sep', 'aria-hidden': 'true' }), mirrorBtn);
 
   const sizeValue = h('output', { class: 'sk-3d-size-value', 'aria-live': 'polite' }, '1 px');
-  const smaller = iconButton('minus', 'Smaller brush ([)', () => pc.setBrushSize(pc.brushSize - 1), { size: 'sm' });
-  const bigger = iconButton('plus', 'Bigger brush (])', () => pc.setBrushSize(Math.min(maxBrushFor(host.scale()), pc.brushSize + 1)), { size: 'sm' });
-  const sizeRow = h('div', { class: 'sk-3d-size', role: 'group', 'aria-label': 'Brush size' }, smaller, sizeValue, bigger);
+  const smaller = iconButton('minus', t.paint3d.smaller, () => pc.setBrushSize(pc.brushSize - 1), { size: 'sm' });
+  const bigger = iconButton('plus', t.paint3d.bigger, () => pc.setBrushSize(Math.min(maxBrushFor(host.scale()), pc.brushSize + 1)), { size: 'sm' });
+  const sizeRow = h('div', { class: 'sk-3d-size', role: 'group', 'aria-label': t.left.brushSize }, smaller, sizeValue, bigger);
 
   const row = (label: string, control: HTMLElement) => h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, label), control);
-  const controls = h('div', { class: 'sk-3d-paint' }, row('Layer', layerSeg), row('Tool', toolRow), row('Brush', sizeRow));
+  const controls = h('div', { class: 'sk-3d-paint' }, row(t.paint3d.layer, layerSeg), row(t.paint3d.tool, toolRow), row(t.paint3d.brush, sizeRow));
 
   // ---- hints ----
 
-  const idleHint = () => (coarsePointer() ? 'One finger paints · two fingers turn' : 'Drag to paint · right-drag to turn');
+  const idleHint = () => (coarsePointer() ? t.paint3d.touchHint : t.paint3d.mouseHint);
 
   function setHint(hit: SkinHit | null, reason: string | null): void {
     hint.classList.toggle('is-locked', !!reason);
@@ -258,7 +262,7 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
     pc.setTool('pencil');
     if (!toolWarned) {
       toolWarned = true;
-      toast('Shapes and selections work on the template. On the model you paint with the pencil.', { duration: 4000 });
+      toast(t.paint3d.shapesOnTemplate, { duration: 4000 });
     }
     return 'pencil';
   }
@@ -399,10 +403,10 @@ export function createPaint3d(host: Paint3dHost): Paint3d {
 
   function sync(): void {
     const tool = pc.tool;
-    toolButtons.forEach((b, t) => b.setActive(t === tool));
+    toolButtons.forEach((b, tl) => b.setActive(tl === tool));
     const c = pc.color;
     (well.firstElementChild as HTMLElement).style.background = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`;
-    well.setAttribute('aria-label', `Paint colour ${toHex(c, c[3] < 255)}`);
+    well.setAttribute('aria-label', fmt(t.canvas.paintColourValue, { hex: toHex(c, c[3] < 255) }));
     layerSeg.setValue(host.layers());
     mirrorBtn.setActive(host.mirror());
     sizeValue.textContent = `${pc.brushSize} px`;
