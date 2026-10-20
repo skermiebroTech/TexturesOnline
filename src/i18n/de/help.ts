@@ -343,18 +343,18 @@ export const HELP: HelpText = {
       a: [
         p(
           'Ja, in Java-Packs (Minecraft ab 1.8). Zeig einen Block oder ein Item in der Vorschau und drücke ',
-          strong('Edit shape'),
+          strong('Form bearbeiten'),
           '. Der Modell-Editor öffnet das Modell, das das Spiel nutzt, zusammengesetzt aus seinen Eltern-Modellen. Füge Würfel hinzu, kopiere und lösche sie, tippe Position und Größe ein oder ziehe die Pfeile und Griffe in 3D, eingerastet im 16 × 16-Raster oder feiner, und drehe einen Würfel um eine Achse (vor Minecraft 1.21.6 in Schritten von 22,5°). Unter ',
-          strong('Faces'),
+          strong('Seiten'),
           ' bekommt jede Seite eine Textur aus deinem Pack oder eine neue, die du später bemalst, und du ziehst den Ausschnitt der Textur, den sie zeigt; dazu kommen Drehung, wann sie ausgeblendet wird und ob sie eingefärbt wird. ',
-          strong('Display'),
+          strong('Anzeige'),
           ' legt fest, wie das Modell im Inventar, in der Ich- und der Dritte-Person-Ansicht, auf dem Boden, im Rahmen und auf dem Kopf sitzt, jeweils mit Vorschau. Jede Änderung lässt sich rückgängig machen.',
         ),
         p(
           'Als Start nimmst du das Modell des Spiels, ein leeres, einen vollen Würfel, eine Stufe, ein Kreuz wie bei Blumen oder bei Items ',
-          strong('3D item from sprite'),
+          strong('3D-Item aus dem Sprite'),
           ': Das flache Bild wird zu Würfeln mit 1 Pixel Tiefe, zu möglichst wenigen zusammengefasst. Ab 1.21.4 behält ',
-          strong('Flat in the inventory'),
+          strong('Flach im Inventar'),
           ' das flache Symbol im Inventar und zeigt das 3D-Modell in der Hand. Ins Pack kommt die Modelldatei, dazu eine Item-Definition oder ein Blockzustand nur, wenn das Spiel sie braucht; der Export prüft die Modelle für deine Version, und Modelldateien aus geöffneten Packs bleiben erhalten und lassen sich bearbeiten. In Bedrock brauchen neue Blockformen eine Erweiterung und 3D-Items in der Hand Attachable-Dateien, die der Editor nicht erstellt; du kannst ein Modell aber als Bedrock-Geometrie herunterladen und darauf aufbauen. Schritt für Schritt: ',
           link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'),
           '.',
@@ -398,7 +398,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: 'Wo werden meine Projekte gespeichert?',
-      a: [p('Im Speicher deines Browsers auf diesem Gerät. Sie bleiben, bis du sie löschst oder die Daten dieser Website entfernst. Um ein Projekt zu sichern oder auf einen anderen Computer mitzunehmen, exportiere es und öffne die Datei dort mit ', strong('Open a pack'), '.')],
+      a: [p('Im Speicher deines Browsers auf diesem Gerät. Sie bleiben, bis du sie löschst oder die Daten dieser Website entfernst. Um ein Projekt zu sichern oder auf einen anderen Computer mitzunehmen, exportiere es und öffne die Datei dort mit ', strong('Pack öffnen'), '.')],
     },
     {
       id: 'versions',

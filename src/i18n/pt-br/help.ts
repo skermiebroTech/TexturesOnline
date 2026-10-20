@@ -336,18 +336,18 @@ export const HELP: HelpText = {
       a: [
         p(
           'Sim, em packs do Java (Minecraft 1.8 ou mais novo). Mostre um bloco ou item na prévia e toque em ',
-          strong('Edit shape'),
+          strong('Editar forma'),
           '. O editor de modelos abre o modelo que o jogo usa, montado a partir dos modelos pais. Adicione, copie e apague cubos, digite posição e tamanho ou arraste as setas e as alças em 3D, com encaixe na grade de 16 × 16 ou mais fina, e gire um cubo em um eixo (em passos de 22,5° antes do Minecraft 1.21.6). Em ',
           strong('Faces'),
           ', dê a cada face uma textura do seu pack, ou uma nova para pintar depois, e arraste a parte da textura que ela mostra; defina também a rotação, quando ela some e se ela é tingida. ',
-          strong('Display'),
+          strong('Exibição'),
           ' define como o modelo aparece no inventário, em primeira e terceira pessoa, no chão, na moldura e na cabeça, cada um com prévia. Toda mudança pode ser desfeita.',
         ),
         p(
           'Para começar, use o modelo do jogo, um vazio, um cubo inteiro, uma laje, uma cruz como as flores ou, nos itens, ',
-          strong('3D item from sprite'),
+          strong('Item 3D a partir do sprite'),
           ', que transforma a imagem plana em cubos de 1 pixel de espessura, juntados no menor número possível. A partir do 1.21.4, ',
-          strong('Flat in the inventory'),
+          strong('Plano no inventário'),
           ' mantém o ícone plano no inventário e mostra o modelo 3D na mão. O pack recebe o arquivo do modelo e só ganha uma definição de item ou um estado de bloco quando o jogo precisa; a exportação confere os modelos para a sua versão, e os arquivos de modelo dos packs que você abre são mantidos e podem ser editados. No Bedrock, novas formas de bloco exigem um complemento e itens 3D na mão exigem arquivos attachable, que o editor não cria; você pode baixar um modelo como geometria do Bedrock como ponto de partida. Passo a passo: ',
           link('/guides/make-3d-items-texture-pack', 'Como fazer itens 3D'),
           '.',
@@ -383,7 +383,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: 'Onde meus projetos ficam salvos?',
-      a: [p('No armazenamento do seu navegador neste dispositivo. Eles ficam lá até você apagar ou limpar os dados deste site. Para fazer backup de um projeto ou levá-lo para outro computador, exporte e abra o arquivo lá com ', strong('Open a pack'), '.')],
+      a: [p('No armazenamento do seu navegador neste dispositivo. Eles ficam lá até você apagar ou limpar os dados deste site. Para fazer backup de um projeto ou levá-lo para outro computador, exporte e abra o arquivo lá com ', strong('Abrir um pack'), '.')],
     },
     {
       id: 'versions',

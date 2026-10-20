@@ -335,18 +335,18 @@ export const HELP: HelpText = {
       a: [
         p(
           'Sí, en packs de Java (Minecraft 1.8 o posterior). Muestra un bloque o ítem en la vista previa y pulsa ',
-          strong('Edit shape'),
+          strong('Editar forma'),
           '. El editor de modelos abre el modelo que usa el juego, calculado a partir de sus modelos padre. Añade, copia y borra cubos, escribe su posición y tamaño o arrastra las flechas y los tiradores en 3D, ajustados a la cuadrícula de 16 × 16 o más fina, y gira un cubo sobre un eje (en pasos de 22,5° antes de Minecraft 1.21.6). En ',
-          strong('Faces'),
+          strong('Caras'),
           ' da a cada cara una textura de tu pack, o una nueva que pintarás después, y arrastra la parte de la textura que muestra; elige también su giro, cuándo se oculta y si se tiñe. ',
-          strong('Display'),
+          strong('Vista'),
           ' define cómo se ve el modelo en el inventario, en primera y tercera persona, en el suelo, en un marco y en la cabeza, cada uno con vista previa. Cualquier cambio se puede deshacer.',
         ),
         p(
           'Para empezar, toma el modelo del juego, uno vacío, un cubo completo, una losa, una cruz como las flores o, en los ítems, ',
-          strong('3D item from sprite'),
+          strong('Ítem 3D desde el sprite'),
           ', que convierte la imagen plana en cubos de 1 píxel de grosor unidos en el menor número posible. Desde la 1.21.4, ',
-          strong('Flat in the inventory'),
+          strong('Plano en el inventario'),
           ' mantiene el icono plano en el inventario y muestra el modelo 3D en la mano. El pack recibe el archivo del modelo y solo añade una definición de ítem o un estado de bloque cuando el juego los necesita; al exportar se revisan los modelos para tu versión, y los archivos de modelo de los packs que abres se conservan y se pueden editar. En Bedrock, las nuevas formas de bloque necesitan un complemento y los ítems 3D en la mano necesitan archivos attachable, que el editor no crea; puedes descargar un modelo como geometría de Bedrock como punto de partida. Paso a paso: ',
           link('/guides/make-3d-items-texture-pack', 'Cómo hacer ítems 3D'),
           '.',
@@ -382,7 +382,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: '¿Dónde se guardan mis proyectos?',
-      a: [p('En el almacenamiento de tu navegador en este dispositivo. Se quedan ahí hasta que los borres o borres los datos de esta web. Para hacer una copia de seguridad o pasar un proyecto a otro ordenador, expórtalo y abre el archivo allí con ', strong('Open a pack'), '.')],
+      a: [p('En el almacenamiento de tu navegador en este dispositivo. Se quedan ahí hasta que los borres o borres los datos de esta web. Para hacer una copia de seguridad o pasar un proyecto a otro ordenador, expórtalo y abre el archivo allí con ', strong('Abrir un pack'), '.')],
     },
     {
       id: 'versions',

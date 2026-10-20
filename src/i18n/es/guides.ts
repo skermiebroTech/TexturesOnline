@@ -125,7 +125,7 @@ const makeATexturePack: GuideText = {
         ),
         p(
           'En Java también puedes cambiar formas: pulsa ',
-          strong('Edit shape'),
+          strong('Editar forma'),
           ' en la pestaña Preview para convertir un ítem plano en uno 3D o dar otra forma a un bloque. ',
           link('/guides/make-3d-items-texture-pack', 'Cómo hacer ítems 3D'),
           '.',
@@ -867,7 +867,7 @@ const makeASkin: GuideText = {
         ),
         steps([
           ['Pinta cada skin como un proyecto propio. Las skins clásicas y delgadas pueden compartir pack.'],
-          ['Elige ', strong('Export'), ' › ', strong('Bedrock skin pack'), ', ponle nombre al pack y marca las otras skins que quieras incluir.'],
+          ['Elige ', strong('Exportar'), ' › ', strong('Pack de skins de Bedrock (.mcpack)'), ', ponle nombre al pack y marca las otras skins que quieras incluir.'],
           'Abre el .mcpack (doble clic en Windows, «Abrir con Minecraft» en Android, Compartir › Minecraft en iPhone y iPad).',
           ['En Minecraft ve a ', uiPath('Vestidor', 'Aspectos clásicos'), ', busca tu pack, elige la skin y pulsa ', strong('Equipar'), '.'],
         ]),
@@ -1372,7 +1372,7 @@ const SKIN_PACK_STEPS: Child[] = [
   ['Abre el ', link('/skin-pack-maker', 'creador de packs de skins'), ' y empieza una skin: una plantilla en blanco o por colores, un PNG que ya tengas, la skin de un jugador de Java por su nombre de usuario o una de las skins por defecto. Elige brazos clásicos (4 píxeles) o delgados (3 píxeles).'],
   'Píntala sobre la plantilla de 64×64 o directamente sobre el modelo 3D. Cada skin se guarda en tu dispositivo como un proyecto propio, y su nombre es el que verán los jugadores en el juego.',
   'Haz igual el resto de skins del pack.',
-  ['Abre una de ellas, elige ', strong('Export'), ' › ', strong('Pack de skins de Bedrock (.mcpack)'), ', ponle nombre al pack, marca las otras skins que quieras incluir y pulsa ', strong('Descargar el pack'), '.'],
+  ['Abre una de ellas, elige ', strong('Exportar'), ' › ', strong('Pack de skins de Bedrock (.mcpack)'), ', ponle nombre al pack, marca las otras skins que quieras incluir y pulsa ', strong('Descargar el pack'), '.'],
   ['Abre el ', code('.mcpack'), ' en Windows, Android, iPhone o iPad. Minecraft lo importa.'],
   ['En Minecraft ve a ', uiPath('Vestidor', 'Aspectos clásicos'), ', busca tu pack, elige una skin y pulsa ', strong('Equipar'), '.'],
 ];
@@ -1397,7 +1397,7 @@ const bedrockSkinPack: GuideText = {
     title: 'Resumen rápido',
     items: [
       ['Pinta o sube cada skin en el ', link('/skin-pack-maker', 'creador de packs de skins'), ', con brazos clásicos o delgados.'],
-      ['Elige ', strong('Export'), ' › ', strong('Pack de skins de Bedrock (.mcpack)'), ', ponle nombre al pack y marca las otras skins.'],
+      ['Elige ', strong('Exportar'), ' › ', strong('Pack de skins de Bedrock (.mcpack)'), ', ponle nombre al pack y marca las otras skins.'],
       ['Abre el ', code('.mcpack'), ' y equípate una skin en ', uiPath('Vestidor', 'Aspectos clásicos'), '.'],
     ],
   },
@@ -1563,12 +1563,12 @@ const bedrockSkinPack: GuideText = {
 
 const MODEL_STEPS: Child[] = [
   ['Abre el ', link('/textures', 'Texture Pack Maker'), ' y crea un pack de ', strong('Java'), ' para la versión a la que juegas: 1.8 o posterior, o 1.21.4 o posterior si quieres que el ítem siga plano en el inventario.'],
-  ['Cambia la lista a ', strong('Items'), ' y abre el ítem, por ejemplo la espada de diamante. En la pestaña ', strong('Preview'), ', pulsa ', strong('Edit shape'), '.'],
-  ['Elige ', strong('3D item from sprite'), '. Cada píxel de la imagen plana pasa a formar parte de un cubo de 1 píxel de grosor.'],
-  ['Cambia la forma: haz clic en un cubo en la vista 3D o en la lista y muévelo, cambia su tamaño, cópialo o añade otros nuevos. En ', strong('Faces'), ', da a una cara otra textura u otra parte de una.'],
-  ['Abre ', strong('Display'), ' y revisa el modelo en el inventario, en primera y tercera persona, en el suelo, en un marco y en la cabeza. Cambia el giro, la posición o el tamaño donde no se vea bien.'],
-  ['Opcional, desde la 1.21.4: en la pestaña ', strong('Model'), ', activa ', strong('Flat in the inventory'), ' para mantener ahí el icono plano y mostrar el modelo 3D en la mano.'],
-  ['Pulsa ', strong('Done'), ', exporta el pack como ', code('.zip'), ', ponlo en tu carpeta ', code('resourcepacks'), ' y pruébalo en el juego.'],
+  ['Cambia la lista a ', strong('Items'), ' y abre el ítem, por ejemplo la espada de diamante. En la pestaña ', strong('Preview'), ', pulsa ', strong('Editar forma'), '.'],
+  ['Elige ', strong('Ítem 3D desde el sprite'), '. Cada píxel de la imagen plana pasa a formar parte de un cubo de 1 píxel de grosor.'],
+  ['Cambia la forma: haz clic en un cubo en la vista 3D o en la lista y muévelo, cambia su tamaño, cópialo o añade otros nuevos. En ', strong('Caras'), ', da a una cara otra textura u otra parte de una.'],
+  ['Abre ', strong('Vista'), ' y revisa el modelo en el inventario, en primera y tercera persona, en el suelo, en un marco y en la cabeza. Cambia el giro, la posición o el tamaño donde no se vea bien.'],
+  ['Opcional, desde la 1.21.4: en la pestaña ', strong('Modelo'), ', activa ', strong('Plano en el inventario'), ' para mantener ahí el icono plano y mostrar el modelo 3D en la mano.'],
+  ['Pulsa ', strong('Listo'), ', exporta el pack como ', code('.zip'), ', ponlo en tu carpeta ', code('resourcepacks'), ' y pruébalo en el juego.'],
 ];
 
 const make3dItems: GuideText = {
@@ -1585,8 +1585,8 @@ const make3dItems: GuideText = {
   quick: {
     title: 'En resumen',
     items: [
-      ['En el Texture Pack Maker, muestra el ítem en la pestaña ', strong('Preview'), ' y pulsa ', strong('Edit shape'), '.'],
-      ['Elige ', strong('3D item from sprite'), ' y luego ajusta los cubos y cómo se sostiene el ítem.'],
+      ['En el Texture Pack Maker, muestra el ítem en la pestaña ', strong('Preview'), ' y pulsa ', strong('Editar forma'), '.'],
+      ['Elige ', strong('Ítem 3D desde el sprite'), ' y luego ajusta los cubos y cómo se sostiene el ítem.'],
       ['Exporta el pack. Lleva el modelo en ', code('models/item/'), ' y, desde la 1.21.4, una definición de ítem en ', code('items/'), ' cuando hace falta.'],
     ],
   },
@@ -1640,7 +1640,7 @@ const make3dItems: GuideText = {
           ') reflejados, como se ve un dibujo por detrás. Los cubos siguen usando la textura del propio ítem (',
           code('#layer0'),
           '), así que si repintas el sprite, el ítem 3D cambia de color. Los píxeles que añades o borras solo cambian la forma cuando vuelves a elegir ',
-          strong('3D item from sprite'),
+          strong('Ítem 3D desde el sprite'),
           '. Los ítems de varias capas, como las pociones o la armadura de cuero, reciben cubos para cada capa, y el juego los sigue tiñendo.',
         ),
         p('Después, hazlo tuyo:'),
@@ -1656,7 +1656,7 @@ const make3dItems: GuideText = {
       id: 'display',
       title: 'Cómo se sostiene: Display',
       body: [
-        p('La pestaña ', strong('Display'), ' muestra el modelo en seis lugares. Cada uno tiene un giro en grados, una posición en píxeles (hasta ±80) y un tamaño (1 es normal, 4 como máximo).'),
+        p('La pestaña ', strong('Vista'), ' muestra el modelo en seis lugares. Cada uno tiene un giro en grados, una posición en píxeles (hasta ±80) y un tamaño (1 es normal, 4 como máximo).'),
         table(
           ['En el editor', 'Dónde se ve', 'Nombre en el archivo'],
           [
@@ -1669,7 +1669,7 @@ const make3dItems: GuideText = {
           ],
         ),
         p(
-          strong('3D item from sprite'),
+          strong('Ítem 3D desde el sprite'),
           ' conserva la vista del propio ítem, así que una espada 3D se sostiene como la plana. ',
           strong('Game’s default'),
           ' devuelve un lugar a los valores del juego, y ',
@@ -1687,9 +1687,9 @@ const make3dItems: GuideText = {
       body: [
         p(
           'Muchos packs 3D mantienen el icono plano de siempre en el inventario y muestran el modelo 3D solo en la mano. Desde Java 1.21.4, una definición de ítem puede elegir el modelo según dónde se muestra el ítem. Activa ',
-          strong('Flat in the inventory'),
+          strong('Plano en el inventario'),
           ' en la pestaña ',
-          strong('Model'),
+          strong('Modelo'),
           ' y el editor:',
         ),
         ul([
@@ -1707,7 +1707,7 @@ const make3dItems: GuideText = {
       body: [
         p(
           'Con los bloques es igual. Muestra un bloque en la pestaña Preview y pulsa ',
-          strong('Edit shape'),
+          strong('Editar forma'),
           '. El editor abre el modelo que usa el bloque en el estado que estás viendo, y el menú de arriba lista sus otros modelos, como la losa de arriba y la doble. Quédate con el modelo del juego o empieza desde ',
           strong('Full cube'),
           ', ',
@@ -1777,7 +1777,7 @@ const make3dItems: GuideText = {
       title: 'Instalarlo y probarlo',
       body: [
         steps([
-          ['Pulsa ', strong('Done'), ' para salir del editor de modelos y luego exporta el pack con ', strong('Export'), ' como ', code('.zip'), '.'],
+          ['Pulsa ', strong('Listo'), ' para salir del editor de modelos y luego exporta el pack con ', strong('Exportar'), ' como ', code('.zip'), '.'],
           ['En Minecraft abre ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), ', suelta ahí el zip (sin descomprimir) y mueve el pack a ', strong('Seleccionados'), ', por encima de otros packs.'],
           'Sostén el ítem, pulsa F5 para la tercera persona, tíralo al suelo y ponlo en un marco para revisar cada vista.',
           'Después de cambiar el modelo, exporta de nuevo, sustituye el zip y pulsa F3 + T en el juego para recargar los packs.',
@@ -1793,9 +1793,9 @@ const make3dItems: GuideText = {
         ul([
           [strong('Bloques: '), 'un paquete de recursos de Bedrock no puede cambiar la forma de los bloques del juego. Un bloque con forma propia es un bloque nuevo, añadido por un complemento con un paquete de comportamiento y un archivo de geometría.'],
           [strong('Ítems en la mano: '), 'Bedrock da a los ítems un modelo 3D en la mano con attachables, archivos de un paquete de recursos que usan geometría y animaciones de Bedrock. El Texture Pack Maker no los crea; ', ext('https://www.blockbench.net/', 'Blockbench'), ' sí.'],
-          [strong('Un punto de partida: '), 'en el menú del editor de modelos, ', strong('Download as Bedrock geometry'), ' guarda tu modelo como un archivo ', code('.geo.json'), ' (formato 1.12.0, un hueso, todos los cubos) para importarlo en Blockbench o en un complemento. La geometría de Bedrock usa una sola textura, así que cada cara conserva su sitio en su propia textura.'],
+          [strong('Un punto de partida: '), 'en el menú del editor de modelos, ', strong('Descargar como geometría de Bedrock'), ' guarda tu modelo como un archivo ', code('.geo.json'), ' (formato 1.12.0, un hueso, todos los cubos) para importarlo en Blockbench o en un complemento. La geometría de Bedrock usa una sola textura, así que cada cara conserva su sitio en su propia textura.'],
         ]),
-        p('En un pack de Bedrock, ', strong('Edit shape'), ' explica esto en lugar de abrir el editor. Pintar texturas funciona como siempre.'),
+        p('En un pack de Bedrock, ', strong('Editar forma'), ' explica esto en lugar de abrir el editor. Pintar texturas funciona como siempre.'),
       ],
     },
     {
@@ -1806,7 +1806,7 @@ const make3dItems: GuideText = {
           [strong('Caras moradas y negras: '), 'una cara usa una textura que el juego no encuentra: un nombre (', code('#…'), ') que no está en ', code('textures'), ', un archivo que no está ni en el juego ni en el pack, o, desde la 1.19.3, una textura fuera de las carpetas del atlas. La pestaña Model lista estos problemas con el cubo en el que están.'],
           [strong('Un cubo morado y negro en lugar del modelo: '), 'el archivo no se cargó. Las causas habituales son un JSON roto, un cubo fuera de -16 a 32 o un giro que la versión no permite. El registro del juego nombra el archivo.'],
           [strong('El modelo no aparece: '), 'comprueba que el pack está seleccionado y por encima de otros packs, que el archivo tiene exactamente el nombre y la carpeta del modelo que sustituye y, desde la 1.21.4, que un modelo nuevo (como una copia ', code('_3d'), ') tiene una definición de ítem que lo usa.'],
-          [strong('Bien en la mano, raro en el inventario: '), ['ajusta la vista Inventory, prueba la otra luz del inventario (de lado o de frente) o activa ', strong('Flat in the inventory'), '.']],
+          [strong('Bien en la mano, raro en el inventario: '), ['ajusta la vista Inventory, prueba la otra luz del inventario (de lado o de frente) o activa ', strong('Plano en el inventario'), '.']],
           [strong('Demasiados cubos: '), 'cada cubo añade caras que dibujar. Para un ítem en la mano apenas importa, pero un bloque colocado miles de veces debe ser sencillo. Quédate con los cubos unidos que crea 3D item from sprite en lugar de dividirlos.'],
           [strong('Un ángulo no está permitido: '), 'antes de la 1.21.6 un cubo gira en pasos de 22,5° hasta 45°, sobre un eje. Para un cuarto de vuelta, intercambia el tamaño del cubo en dos ejes; otras formas, constrúyelas con más cubos.'],
         ]),
@@ -1839,7 +1839,7 @@ const make3dItems: GuideText = {
     {
       id: 'blockbench',
       q: '¿Puedo usar modelos hechos en Blockbench?',
-      a: [p('Sí. Los modelos de bloque e ítem de Java exportados desde Blockbench son archivos de modelo normales. Ponlos en tu pack con el nombre del modelo que sustituyen y abre el pack con ', strong('Open a pack'), ': los archivos se conservan, y el editor de modelos puede abrirlos y cambiarlos.')],
+      a: [p('Sí. Los modelos de bloque e ítem de Java exportados desde Blockbench son archivos de modelo normales. Ponlos en tu pack con el nombre del modelo que sustituyen y abre el pack con ', strong('Abrir un pack'), ': los archivos se conservan, y el editor de modelos puede abrirlos y cambiarlos.')],
     },
     {
       id: 'undo',

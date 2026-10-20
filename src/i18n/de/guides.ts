@@ -124,7 +124,7 @@ const makeATexturePack: GuideText = {
         ),
         p(
           'In Java kannst du auch Formen ändern: Drücke im Tab Preview auf ',
-          strong('Edit shape'),
+          strong('Form bearbeiten'),
           ', um aus einem flachen Item ein 3D-Item zu machen oder einen Block umzuformen. ',
           link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'),
           '.',
@@ -866,7 +866,7 @@ const makeASkin: GuideText = {
         ),
         steps([
           ['Male jeden Skin als eigenes Projekt. Breite und schmale Skins passen in ein Paket.'],
-          ['Wähle ', strong('Export'), ' › ', strong('Bedrock skin pack'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
+          ['Wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
           'Öffne das .mcpack (Doppelklick unter Windows, „Mit Minecraft öffnen“ auf Android, „Teilen › Minecraft“ auf iPhone und iPad).',
           ['Geh in Minecraft zu ', uiPath('Ankleidezimmer', 'Klassische Skins'), ', such dein Paket, wähle den Skin und tippe auf ', strong('Anlegen'), '.'],
         ]),
@@ -1371,7 +1371,7 @@ const SKIN_PACK_STEPS: Child[] = [
   ['Öffne den ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), ' und starte einen Skin: eine leere oder farbcodierte Vorlage, ein PNG, das du schon hast, den Skin eines Java-Spielers per Benutzername oder einen der Standard-Skins. Wähle breite (4 Pixel) oder schmale (3 Pixel) Arme.'],
   'Bemale ihn auf der 64×64-Vorlage oder direkt auf dem 3D-Modell. Jeder Skin wird als eigenes Projekt auf deinem Gerät gespeichert, und sein Name ist der Name, den Spieler im Spiel sehen.',
   'Erstelle die anderen Skins für das Paket auf dieselbe Weise.',
-  ['Öffne einen davon, wähle ', strong('Export'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen, hake die anderen Skins an und drücke ', strong('Paket herunterladen'), '.'],
+  ['Öffne einen davon, wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen, hake die anderen Skins an und drücke ', strong('Paket herunterladen'), '.'],
   ['Öffne das ', code('.mcpack'), ' unter Windows, Android, auf dem iPhone oder iPad. Minecraft importiert es.'],
   ['Geh in Minecraft zu ', uiPath('Ankleidezimmer', 'Klassische Skins'), ', such dein Paket, wähle einen Skin und tippe auf ', strong('Anlegen'), '.'],
 ];
@@ -1396,7 +1396,7 @@ const bedrockSkinPack: GuideText = {
     title: 'Die Kurzfassung',
     items: [
       ['Male jeden Skin im ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), ' oder lade ihn hoch, mit breiten oder schmalen Armen.'],
-      ['Wähle ', strong('Export'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
+      ['Wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
       ['Öffne das ', code('.mcpack'), ' und leg einen Skin unter ', uiPath('Ankleidezimmer', 'Klassische Skins'), ' an.'],
     ],
   },
@@ -1562,12 +1562,12 @@ const bedrockSkinPack: GuideText = {
 
 const MODEL_STEPS: Child[] = [
   ['Öffne den ', link('/textures', 'Texture Pack Maker'), ' und erstelle ein ', strong('Java'), '-Pack für deine Version: 1.8 oder neuer, oder 1.21.4 oder neuer, wenn das Item im Inventar flach bleiben soll.'],
-  ['Stell die Liste auf ', strong('Items'), ' und öffne das Item, zum Beispiel das Diamantschwert. Drücke im Tab ', strong('Preview'), ' auf ', strong('Edit shape'), '.'],
-  ['Wähle ', strong('3D item from sprite'), '. Jedes Pixel des flachen Bildes wird Teil eines Würfels mit 1 Pixel Tiefe.'],
-  ['Ändere die Form: Klicke einen Würfel in der 3D-Ansicht oder in der Liste an und verschiebe, vergrößere oder kopiere ihn oder füge neue hinzu. Unter ', strong('Faces'), ' bekommt eine Seite eine andere Textur oder einen anderen Ausschnitt.'],
-  ['Öffne ', strong('Display'), ' und prüfe das Modell im Inventar, in der Ich- und der Dritte-Person-Ansicht, auf dem Boden, im Rahmen und auf dem Kopf. Passe Drehung, Position oder Größe an, wo es nicht passt.'],
-  ['Optional ab 1.21.4: Schalte im Tab ', strong('Model'), ' die Option ', strong('Flat in the inventory'), ' ein, damit das flache Symbol im Inventar bleibt und das 3D-Modell in der Hand erscheint.'],
-  ['Drücke ', strong('Done'), ', exportiere das Pack als ', code('.zip'), ', leg es in deinen Ordner ', code('resourcepacks'), ' und teste es im Spiel.'],
+  ['Stell die Liste auf ', strong('Items'), ' und öffne das Item, zum Beispiel das Diamantschwert. Drücke im Tab ', strong('Preview'), ' auf ', strong('Form bearbeiten'), '.'],
+  ['Wähle ', strong('3D-Item aus dem Sprite'), '. Jedes Pixel des flachen Bildes wird Teil eines Würfels mit 1 Pixel Tiefe.'],
+  ['Ändere die Form: Klicke einen Würfel in der 3D-Ansicht oder in der Liste an und verschiebe, vergrößere oder kopiere ihn oder füge neue hinzu. Unter ', strong('Seiten'), ' bekommt eine Seite eine andere Textur oder einen anderen Ausschnitt.'],
+  ['Öffne ', strong('Anzeige'), ' und prüfe das Modell im Inventar, in der Ich- und der Dritte-Person-Ansicht, auf dem Boden, im Rahmen und auf dem Kopf. Passe Drehung, Position oder Größe an, wo es nicht passt.'],
+  ['Optional ab 1.21.4: Schalte im Tab ', strong('Modell'), ' die Option ', strong('Flach im Inventar'), ' ein, damit das flache Symbol im Inventar bleibt und das 3D-Modell in der Hand erscheint.'],
+  ['Drücke ', strong('Fertig'), ', exportiere das Pack als ', code('.zip'), ', leg es in deinen Ordner ', code('resourcepacks'), ' und teste es im Spiel.'],
 ];
 
 const make3dItems: GuideText = {
@@ -1584,8 +1584,8 @@ const make3dItems: GuideText = {
   quick: {
     title: 'Die Kurzfassung',
     items: [
-      ['Zeig das Item im Texture Pack Maker im Tab ', strong('Preview'), ' an und drücke ', strong('Edit shape'), '.'],
-      ['Wähle ', strong('3D item from sprite'), ' und verfeinere dann die Würfel und die Haltung in der Hand.'],
+      ['Zeig das Item im Texture Pack Maker im Tab ', strong('Preview'), ' an und drücke ', strong('Form bearbeiten'), '.'],
+      ['Wähle ', strong('3D-Item aus dem Sprite'), ' und verfeinere dann die Würfel und die Haltung in der Hand.'],
       ['Exportiere das Pack. Es enthält das Modell in ', code('models/item/'), ' und ab 1.21.4, wenn nötig, eine Item-Definition in ', code('items/'), '.'],
     ],
   },
@@ -1639,7 +1639,7 @@ const make3dItems: GuideText = {
           ') gespiegelt, so wie man ein Bild von hinten sieht. Die Würfel nutzen weiter die Textur des Items (',
           code('#layer0'),
           '): Bemalst du das Sprite neu, bekommt das 3D-Item die neuen Farben. Pixel, die du hinzufügst oder löschst, ändern die Form erst, wenn du ',
-          strong('3D item from sprite'),
+          strong('3D-Item aus dem Sprite'),
           ' noch einmal wählst. Items aus mehreren Ebenen wie Tränke oder Lederrüstung bekommen Würfel für jede Ebene, und das Spiel färbt sie weiterhin ein.',
         ),
         p('Dann mach es zu deinem eigenen:'),
@@ -1655,7 +1655,7 @@ const make3dItems: GuideText = {
       id: 'display',
       title: 'Die Haltung festlegen: Display',
       body: [
-        p('Der Tab ', strong('Display'), ' zeigt das Modell an sechs Stellen in der Vorschau. Jede hat eine Drehung in Grad, eine Position in Pixeln (bis ±80) und eine Größe (1 ist normal, höchstens 4).'),
+        p('Der Tab ', strong('Anzeige'), ' zeigt das Modell an sechs Stellen in der Vorschau. Jede hat eine Drehung in Grad, eine Position in Pixeln (bis ±80) und eine Größe (1 ist normal, höchstens 4).'),
         table(
           ['Im Editor', 'Wo es zu sehen ist', 'Name in der Datei'],
           [
@@ -1668,7 +1668,7 @@ const make3dItems: GuideText = {
           ],
         ),
         p(
-          strong('3D item from sprite'),
+          strong('3D-Item aus dem Sprite'),
           ' übernimmt die Darstellung des Items, ein 3D-Schwert wird also gehalten wie das flache. ',
           strong('Game’s default'),
           ' setzt einen Platz auf die Werte des Spiels zurück, ',
@@ -1686,9 +1686,9 @@ const make3dItems: GuideText = {
       body: [
         p(
           'Viele 3D-Packs behalten im Inventar das gewohnte flache Symbol und zeigen das 3D-Modell nur in der Hand. Seit Java 1.21.4 kann eine Item-Definition das Modell danach wählen, wo das Item gezeigt wird. Schalte im Tab ',
-          strong('Model'),
+          strong('Modell'),
           ' die Option ',
-          strong('Flat in the inventory'),
+          strong('Flach im Inventar'),
           ' ein, dann:',
         ),
         ul([
@@ -1706,7 +1706,7 @@ const make3dItems: GuideText = {
       body: [
         p(
           'Bei Blöcken geht es genauso. Zeig einen Block im Tab Preview an und drücke ',
-          strong('Edit shape'),
+          strong('Form bearbeiten'),
           '. Der Editor öffnet das Modell, das der Block in dem Zustand nutzt, den du gerade siehst, und das Menü oben listet seine anderen Modelle, etwa die obere und die doppelte Stufe. Behalte das Modell des Spiels oder beginne mit ',
           strong('Full cube'),
           ', ',
@@ -1776,7 +1776,7 @@ const make3dItems: GuideText = {
       title: 'Installieren und testen',
       body: [
         steps([
-          ['Drücke ', strong('Done'), ', um den Modell-Editor zu verlassen, und exportiere das Pack dann mit ', strong('Export'), ' als ', code('.zip'), '.'],
+          ['Drücke ', strong('Fertig'), ', um den Modell-Editor zu verlassen, und exportiere das Pack dann mit ', strong('Exportieren'), ' als ', code('.zip'), '.'],
           ['Öffne in Minecraft ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), ', leg die Zip hinein (nicht entpacken) und verschiebe das Pack nach ', strong('Ausgewählt'), ', über andere Packs.'],
           'Halte das Item, drücke F5 für die Dritte-Person-Ansicht, wirf es auf den Boden und häng es in einen Rahmen, um jede Darstellung zu prüfen.',
           'Nach einer Änderung am Modell exportierst du neu, ersetzt die Zip und drückst im Spiel F3 + T, um die Packs neu zu laden.',
@@ -1792,9 +1792,9 @@ const make3dItems: GuideText = {
         ul([
           [strong('Blöcke: '), 'Ein Bedrock-Ressourcenpaket kann die Form der Blöcke des Spiels nicht ändern. Ein Block mit eigener Form ist ein neuer Block, hinzugefügt von einer Erweiterung mit Verhaltenspaket und Geometriedatei.'],
           [strong('Items in der Hand: '), 'Bedrock gibt Items mit Attachables ein 3D-Modell in der Hand. Das sind Dateien in einem Ressourcenpaket, die Bedrock-Geometrie und Animationen nutzen. Der Texture Pack Maker erstellt sie nicht, ', ext('https://www.blockbench.net/', 'Blockbench'), ' schon.'],
-          [strong('Ein Ausgangspunkt: '), 'Im Menü des Modell-Editors speichert ', strong('Download as Bedrock geometry'), ' dein Modell als ', code('.geo.json'), '-Datei (Format 1.12.0, ein Knochen, alle Würfel), die du in Blockbench oder eine Erweiterung importieren kannst. Bedrock-Geometrie nutzt eine einzige Textur, darum behält jede Seite ihre Stelle auf ihrer eigenen Textur.'],
+          [strong('Ein Ausgangspunkt: '), 'Im Menü des Modell-Editors speichert ', strong('Als Bedrock-Geometrie herunterladen'), ' dein Modell als ', code('.geo.json'), '-Datei (Format 1.12.0, ein Knochen, alle Würfel), die du in Blockbench oder eine Erweiterung importieren kannst. Bedrock-Geometrie nutzt eine einzige Textur, darum behält jede Seite ihre Stelle auf ihrer eigenen Textur.'],
         ]),
-        p('In einem Bedrock-Pack erklärt ', strong('Edit shape'), ' das, statt den Editor zu öffnen. Texturen bemalen funktioniert wie gewohnt.'),
+        p('In einem Bedrock-Pack erklärt ', strong('Form bearbeiten'), ' das, statt den Editor zu öffnen. Texturen bemalen funktioniert wie gewohnt.'),
       ],
     },
     {
@@ -1805,7 +1805,7 @@ const make3dItems: GuideText = {
           [strong('Lila-schwarze Seiten: '), 'Eine Seite nutzt eine Textur, die das Spiel nicht findet: einen Namen (', code('#…'), '), der unter ', code('textures'), ' fehlt, eine Datei, die weder im Spiel noch im Pack ist, oder seit 1.19.3 eine Textur außerhalb der Atlas-Ordner. Der Tab Model listet diese Probleme mit dem Würfel, an dem sie liegen.'],
           [strong('Ein lila-schwarzer Würfel statt des Modells: '), 'Die Datei wurde nicht geladen. Häufige Gründe sind kaputtes JSON, ein Würfel außerhalb von -16 bis 32 oder eine Drehung, die die Version nicht erlaubt. Das Protokoll des Spiels nennt die Datei.'],
           [strong('Das Modell erscheint gar nicht: '), 'Prüfe, dass das Pack ausgewählt ist und über anderen Packs steht, dass die Datei genau den Namen und Ordner des Modells hat, das sie ersetzt, und ab 1.21.4, dass ein neues Modell (etwa eine ', code('_3d'), '-Kopie) eine Item-Definition hat, die darauf zeigt.'],
-          [strong('In der Hand gut, im Inventar seltsam: '), ['Passe die Darstellung Inventory an, probiere das andere Inventarlicht (seitlich oder von vorn) oder schalte ', strong('Flat in the inventory'), ' ein.']],
+          [strong('In der Hand gut, im Inventar seltsam: '), ['Passe die Darstellung Inventory an, probiere das andere Inventarlicht (seitlich oder von vorn) oder schalte ', strong('Flach im Inventar'), ' ein.']],
           [strong('Zu viele Würfel: '), 'Jeder Würfel bringt Seiten, die gezeichnet werden müssen. Für ein Item in der Hand spielt das kaum eine Rolle, aber ein Block, der tausendfach platziert wird, sollte einfach bleiben. Behalte die zusammengefassten Würfel von 3D item from sprite, statt sie aufzuteilen.'],
           [strong('Ein Winkel ist nicht erlaubt: '), 'Vor 1.21.6 dreht sich ein Würfel in Schritten von 22,5° bis 45°, um eine Achse. Für eine Vierteldrehung tauschst du stattdessen die Größe auf zwei Achsen; andere Formen baust du aus mehr Würfeln.'],
         ]),
@@ -1838,7 +1838,7 @@ const make3dItems: GuideText = {
     {
       id: 'blockbench',
       q: 'Kann ich Modelle aus Blockbench verwenden?',
-      a: [p('Ja. Aus Blockbench exportierte Java-Block- und -Item-Modelle sind normale Modelldateien. Leg sie unter dem Namen des Modells, das sie ersetzen, in dein Pack und öffne das Pack mit ', strong('Open a pack'), ': Die Dateien bleiben erhalten, und der Modell-Editor kann sie öffnen und ändern.')],
+      a: [p('Ja. Aus Blockbench exportierte Java-Block- und -Item-Modelle sind normale Modelldateien. Leg sie unter dem Namen des Modells, das sie ersetzen, in dein Pack und öffne das Pack mit ', strong('Pack öffnen'), ': Die Dateien bleiben erhalten, und der Modell-Editor kann sie öffnen und ändern.')],
     },
     {
       id: 'undo',
