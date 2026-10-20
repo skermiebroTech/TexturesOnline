@@ -56,6 +56,11 @@ export const META_JA: MetaTranslation = {
       description: 'Texture Pack Makerの作者、ほかとの違い（1.6.1以降の全Java版、統合版、変換ツール、オープンソース）と、作品を外に送らない仕組みを紹介します。',
       label: 'このサイトについて',
     },
+    '/privacy': {
+      title: 'プライバシーポリシー｜Texture Pack Maker',
+      description: 'Texture Pack Makerにはアカウントも広告もトラッキングもありません。パック、スキン、シェーダーは端末に残り、作ったものは一切アップロードされません。',
+      label: 'プライバシー',
+    },
     '/guides': {
       title: 'マイクラ テクスチャパック・スキン・シェーダーのガイド',
       description: `Minecraftのテクスチャパック、スキン、シェーダーの作り方と入れ方を手順つきで解説。1.6.1から${LATEST}までの全Java版のパックフォーマットも掲載。`,

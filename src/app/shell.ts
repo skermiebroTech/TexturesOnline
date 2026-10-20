@@ -14,6 +14,7 @@ import { syncToastLayer } from '../ui/toast';
 import { NAV as NAV_ITEMS, brandLink, githubLink as githubTree, languageSwitcher, navLinks as navTree, skipLink, topbar as topbarTree, type NavItem as ChromeNavItem } from './content/chrome';
 import { toDom } from './markup-dom';
 import { REPO_URL } from './site';
+import { drawerInstallItem } from '../pwa/install';
 import { ui } from '../i18n/ui';
 import type { Locale } from '../i18n/locales';
 
@@ -94,7 +95,7 @@ function openDrawer(onNavigate: () => void): void {
       toDom(brandLink()),
       h('button', { type: 'button', class: 'icon-btn', 'aria-label': t.closeMenu, on: { click: () => close() } }, icon('close')),
     ),
-    h('nav', { class: 'drawer-nav', 'aria-label': t.mainNav }, links),
+    h('nav', { class: 'drawer-nav', 'aria-label': t.mainNav }, links, drawerInstallItem(shellLocale, () => close())),
     langs ? toDom(langs) : null,
     h(
       'div',

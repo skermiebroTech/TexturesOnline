@@ -63,7 +63,15 @@ export function startPagesServer({ dist, port = 0, base = '/' }) {
   return new Promise((resolve) => {
     server.listen(port, '127.0.0.1', () => {
       const { port: p } = server.address();
-      resolve({ url: `http://127.0.0.1:${p}${b}`, close: () => new Promise((r) => server.close(r)) });
+      resolve({
+        url: `http://127.0.0.1:${p}${b}`,
+        // Kept-alive browser connections are dropped too, so the port can serve another build at once.
+        close: () =>
+          new Promise((r) => {
+            server.close(r);
+            server.closeAllConnections?.();
+          }),
+      });
     });
   });
 }

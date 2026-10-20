@@ -55,6 +55,11 @@ export const META_DE: MetaTranslation = {
       description: 'Wer hinter Texture Pack Maker steckt, was die Seite ausmacht (jede Java-Version ab 1.6.1, Bedrock, Konverter, Open Source) und wie Daten privat bleiben.',
       label: 'Über uns',
     },
+    '/privacy': {
+      title: 'Datenschutz – Texture Pack Maker',
+      description: 'Texture Pack Maker hat keine Konten, keine Werbung und kein Tracking. Packs, Skins und Shader bleiben auf deinem Gerät, nichts wird hochgeladen.',
+      label: 'Datenschutz',
+    },
     '/guides': {
       title: 'Anleitungen zu Minecraft Texture Packs, Skins & Shadern',
       description: `Schritt-für-Schritt-Anleitungen zum Erstellen und Installieren von Minecraft Texture Packs, Skins und Shadern, plus jedes Pack-Format von 1.6.1 bis ${LATEST}.`,

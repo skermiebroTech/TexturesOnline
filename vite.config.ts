@@ -1,9 +1,11 @@
 /// <reference types="node" />
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { extname, join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { extname, join, relative, resolve, sep } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import { buildSite, iconNamesUsed } from './src/app/seo/build';
 import { SITE_NAME } from './src/app/site';
+import { buildInfo } from './src/pwa/sw-logic';
 
 // Relative base so the same build works at a domain root (https://texturepackmaker.com/), under a
 // GitHub Pages project path or in a test server. Pages use real paths (History API routing); the
@@ -85,6 +87,54 @@ function prerender(): Plugin {
 }
 
 /**
+ * Builds the service worker (src/pwa/sw.ts) as sw.js at the site root, so its scope is the whole
+ * site, and writes this build's precache list into it: every file the worker caches at install,
+ * with a content hash, and the app's entry script. Runs after the prerender plugin, so the pages
+ * it writes are in the bundle too; files from public/ are read from disk.
+ */
+function serviceWorker(): Plugin {
+  let root = '';
+  let publicDir = '';
+  const SW = 'sw.js';
+  const hash = (data: string | Uint8Array) => createHash('sha256').update(data).digest('hex').slice(0, 12);
+  const walk = (dir: string): string[] =>
+    existsSync(dir) ? readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(join(dir, d.name)) : [join(dir, d.name)])) : [];
+  return {
+    name: 'texturepackmaker:service-worker',
+    apply: 'build',
+    enforce: 'post',
+    configResolved(config) {
+      root = config.root;
+      publicDir = config.publicDir;
+    },
+    buildStart() {
+      this.emitFile({ type: 'chunk', id: resolve(root, 'src/pwa/sw.ts'), fileName: SW });
+    },
+    generateBundle: {
+      order: 'post',
+      handler(_options, bundle) {
+        const sw = bundle[SW];
+        if (!sw || sw.type !== 'chunk') return this.error('The service worker chunk is missing');
+        // A classic worker script: it must not share code with the app (that would add imports).
+        if (sw.imports.length || sw.dynamicImports.length) this.error(`sw.js imports other chunks (${sw.imports.join(', ')}): keep src/pwa/sw-logic.ts free of app imports`);
+        const files = new Map<string, string>();
+        for (const file of walk(publicDir)) files.set(relative(publicDir, file).split(sep).join('/'), hash(readFileSync(file)));
+        let entry = '';
+        for (const f of Object.values(bundle)) {
+          if (f.fileName === SW) continue;
+          files.set(f.fileName, hash(f.type === 'chunk' ? f.code : f.source));
+          if (f.type === 'chunk' && f.isEntry && f.name === 'index') entry = f.fileName;
+        }
+        if (!entry) this.error('No app entry chunk found for the service worker');
+        const info = buildInfo(files, entry);
+        // Loaded as a classic script: its top-level names go in a function scope.
+        sw.code = `self.__TPM_SW_BUILD__=${JSON.stringify(info)};\n(() => {\n${sw.code}\n})();\n`;
+      },
+    },
+  };
+}
+
+/**
  * `vite preview` behaves like GitHub Pages: unknown page paths (private project URLs such as
  * /shaders/<id>) get 404.html instead of the SPA fallback. The fallback would serve index.html,
  * whose relative asset paths break on nested URLs.
@@ -125,7 +175,7 @@ function pagesLikePreview(): Plugin {
 
 export default defineConfig({
   base: './',
-  plugins: [prerender(), pagesLikePreview()],
+  plugins: [prerender(), serviceWorker(), pagesLikePreview()],
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1500,

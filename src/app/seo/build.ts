@@ -213,6 +213,9 @@ export function render404(input: SiteBuildInput): string {
         var b = ${JSON.stringify(base)};
         var m = /^\\/([^\\/]+)\\//.exec(location.pathname);
         if (m && /\\.github\\.io$/.test(location.hostname) && ${JSON.stringify(sections)}.indexOf(m[1]) < 0) b = '/' + m[1] + '/';
+        // Served offline by the service worker, which knows the site root on any host.
+        var hint = document.querySelector('meta[name="app-base"]');
+        if (hint && /^\\/[^"<>]*\\/$|^\\/$/.test(hint.content)) b = hint.content;
         document.write(${tagsJson}.split('="./').join('="' + b));
       })();
     </script>`;

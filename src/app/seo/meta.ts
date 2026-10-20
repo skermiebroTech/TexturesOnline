@@ -9,7 +9,7 @@ import { META_ES } from '../../i18n/es/meta';
 import { META_PT_BR } from '../../i18n/pt-br/meta';
 import { META_JA } from '../../i18n/ja/meta';
 
-export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'guides' | 'guide';
+export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'privacy' | 'guides' | 'guide';
 export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
 
 export interface PageMeta {
@@ -136,6 +136,16 @@ export const ABOUT_META: PageMeta = {
   description:
     'Who makes Texture Pack Maker, what sets it apart (every Java version since 1.6.1, Bedrock, a converter, open source) and how it keeps your work private.',
   label: 'About',
+};
+
+export const PRIVACY_META: PageMeta = {
+  path: '/privacy',
+  kind: 'privacy',
+  tool: 'help',
+  title: 'Privacy Policy — Texture Pack Maker',
+  description:
+    'Texture Pack Maker has no accounts, ads or tracking. Your packs, skins and shaders stay on your device and nothing you make is uploaded.',
+  label: 'Privacy',
 };
 
 export const GUIDES_META: PageMeta = {
@@ -275,7 +285,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, GUIDES_META, ...GUIDES];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, GUIDES_META, ...GUIDES, PRIVACY_META];
 
 // ---------------------------------------------------------------- translations
 

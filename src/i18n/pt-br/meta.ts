@@ -56,6 +56,11 @@ export const META_PT_BR: MetaTranslation = {
       description: 'Quem faz o Texture Pack Maker, o que o torna diferente (toda versão do Java desde 1.6.1, Bedrock, conversor, código aberto) e como protege seu trabalho.',
       label: 'Sobre',
     },
+    '/privacy': {
+      title: 'Política de privacidade – Texture Pack Maker',
+      description: 'O Texture Pack Maker não tem contas, anúncios nem rastreamento. Seus packs, skins e shaders ficam no seu dispositivo e nada do que você cria é enviado.',
+      label: 'Privacidade',
+    },
     '/guides': {
       title: 'Guias de Minecraft: texture packs, skins e shaders',
       description: `Guias passo a passo para criar e instalar texture packs, skins e shaders de Minecraft, além do pack format de cada versão do Java de 1.6.1 a ${LATEST}.`,
