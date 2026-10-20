@@ -44,17 +44,33 @@ export const EXPORT_FORMATS: readonly FormatInfo[] = [
   { kind: 'java-legacy', title: 'Old Java skin (64×32)', sub: 'Java 1.7.10 and older', icon: 'clock', edition: 'Java' },
 ];
 
-/** Popover listing the export formats. */
-export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) => void): PopoverHandle {
-  const items = EXPORT_FORMATS.map((f) =>
+/** Extra entry below the formats that does something other than exporting (e.g. make a totem). */
+export interface ExportExtra {
+  title: string;
+  sub: string;
+  icon: IconName;
+  onPick: () => void;
+}
+
+/** Popover listing the export formats, plus optional extra actions after a divider. */
+export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) => void, extras: ExportExtra[] = []): PopoverHandle {
+  const item = (cls: string, ic: IconName, title: string, sub: string, kind?: string) =>
     h(
       'button',
-      { type: 'button', class: 'sk-export-item', role: 'menuitem', tabIndex: -1, dataset: { kind: f.kind } },
-      h('span', { class: ['sk-export-icon', f.edition === 'Java' ? 'is-java' : 'is-bedrock'] }, icon(f.icon)),
-      h('span', { class: 'sk-export-text' }, h('span', { class: 'sk-export-title' }, f.title), h('span', { class: 'sk-export-sub' }, f.sub)),
-    ),
+      { type: 'button', class: 'sk-export-item', role: 'menuitem', tabIndex: -1, dataset: kind ? { kind } : {} },
+      h('span', { class: ['sk-export-icon', cls] }, icon(ic)),
+      h('span', { class: 'sk-export-text' }, h('span', { class: 'sk-export-title' }, title), h('span', { class: 'sk-export-sub' }, sub)),
+    );
+  const formatItems = EXPORT_FORMATS.map((f) => item(f.edition === 'Java' ? 'is-java' : 'is-bedrock', f.icon, f.title, f.sub, f.kind));
+  const extraItems = extras.map((x) => item('is-extra', x.icon, x.title, x.sub));
+  const items = [...formatItems, ...extraItems];
+  const list = h(
+    'div',
+    { class: 'sk-export-menu', role: 'menu', 'aria-label': 'Export formats' },
+    formatItems,
+    extraItems.length ? h('div', { class: 'sk-export-sep', role: 'separator' }) : null,
+    extraItems,
   );
-  const list = h('div', { class: 'sk-export-menu', role: 'menu', 'aria-label': 'Export formats' }, items);
   anchor.setAttribute('aria-expanded', 'true');
   const pop = openPopover(anchor, list, {
     placement: 'bottom-end',
@@ -65,7 +81,8 @@ export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) =
   items.forEach((b, i) => {
     b.addEventListener('click', () => {
       pop.close();
-      onPick(EXPORT_FORMATS[i].kind);
+      if (i < EXPORT_FORMATS.length) onPick(EXPORT_FORMATS[i].kind);
+      else extras[i - EXPORT_FORMATS.length].onPick();
     });
     b.addEventListener('keydown', (e) => {
       let n = -1;

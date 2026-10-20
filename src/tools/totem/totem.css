@@ -646,3 +646,45 @@
     text-align: center;
   }
 }
+
+/* "Use my skin" once the player's name is remembered, and the remember checkbox */
+.tt-mine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 12px;
+}
+.tt-mine-use {
+  max-width: 100%;
+}
+.tt-mine-use .btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tt-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-3);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.tt-link:hover {
+  color: var(--text);
+}
+.tt-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  cursor: pointer;
+}
+.tt-remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold);
+}

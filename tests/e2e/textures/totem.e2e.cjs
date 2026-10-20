@@ -179,6 +179,9 @@ async function noOverflow(page) {
     await page.waitForSelector('.sk-totem-link');
     await page.click('.sk-totem-link');
     await page.waitForURL(/totem-maker\/?$/, { timeout: 15000 });
+    await page.waitForSelector('.tt-tabs');
+    check('"My skin" (username) is the first, selected tab', (await page.getAttribute('.tt-tab[data-source="username"]', 'aria-selected')) === 'true' && (await page.$$eval('.tt-tab', (t) => t[0].dataset.source)) === 'username');
+    await page.click('.tt-tab[data-source="upload"]');
     await page.waitForSelector('.tt-dz');
     check('"Make a custom totem" on the skin start screen opens the totem maker', true);
     check('page title', /Custom Totem of Undying Maker/.test(await page.title()), await page.title());
@@ -353,13 +356,31 @@ async function noOverflow(page) {
     await page.goto(base + 'skins');
     await page.setInputFiles('.sk-import .dropzone input[type=file]', skins.modern);
     await page.waitForURL(/skins\/[0-9a-f-]+\/?$/, { timeout: 30000 });
+    const skinUrl = page.url();
     await page.goto(base + 'totem-maker');
-    await page.waitForSelector('.tt-dz');
+    await page.waitForSelector('.tt-tabs');
+    check('remembered name: one-click "Use my skin"', /Use my skin \(TotemFriend\)/.test((await page.textContent('.tt-mine')) ?? ''));
     await page.click('.tt-tab[data-source="saved"]');
     await page.waitForSelector('.tt-saved .tt-skin-opt', { timeout: 15000 });
     await page.click('.tt-saved .tt-skin-opt');
     await page.waitForFunction(() => document.querySelector('.tt-chosen-name')?.textContent.trim() === 'Red Shirt');
-    check('"My skins": a saved skin project can be used', true);
+    check('"Saved skins": a saved skin project can be used', true);
+
+    // The skin editor's Export menu opens the totem maker with that skin
+    await page.goto(skinUrl);
+    await page.waitForSelector('.sk-export-btn');
+    await page.click('.sk-export-btn');
+    await page.click('.sk-export-item:has-text("Custom totem")');
+    await page.waitForURL(/totem-maker\/?\?skin=/, { timeout: 15000 });
+    await page.waitForFunction(() => document.querySelector('.tt-chosen-name')?.textContent.trim() === 'Red Shirt', null, { timeout: 15000 });
+    check('skin editor "Custom totem" opens the maker with that skin', true);
+
+    // "Not you?" forgets the name
+    await page.click('.tt-change');
+    await page.click('.tt-tab[data-source="username"]');
+    await page.click('.tt-mine .tt-link');
+    check('"Not you?" forgets the remembered name', (await page.isHidden('.tt-mine')) && (await page.evaluate(() => localStorage.getItem('to-my-mc-name'))) === null);
+    await page.click('.tt-change'); // keep this skin: closes the picker again
 
     // ---------------------------------------------------------------- phone width
     await page.setViewportSize({ width: 390, height: 844 });

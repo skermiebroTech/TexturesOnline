@@ -14,7 +14,7 @@ import { badge, button, progressBar, segmented, setButtonBusy, textInput, toggle
 import { dropzone } from '../../ui/dropzone';
 import { toast } from '../../ui/toast';
 import { versionPicker } from '../../ui/version-picker';
-import { listProjects, saveProject } from '../../core/storage';
+import { getProject, listProjects, saveProject } from '../../core/storage';
 import { saveBlob } from '../../core/download';
 import { friendlyError, isAbortError } from '../../core/net';
 import { decodeImage, encodePng, imageDataToCanvas } from '../../core/image';
@@ -60,11 +60,29 @@ interface ShapeEntry {
 }
 
 const SOURCES: { id: Source; label: string; icon: IconName }[] = [
+  { id: 'username', label: 'My skin', icon: 'user' },
   { id: 'upload', label: 'Upload', icon: 'upload' },
-  { id: 'username', label: 'Username', icon: 'user' },
-  { id: 'saved', label: 'My skins', icon: 'human' },
+  { id: 'saved', label: 'Saved skins', icon: 'human' },
   { id: 'default', label: 'Default skins', icon: 'users' },
 ];
+
+/** The player's own Java name, remembered on this device so "use my skin" is one click next time. */
+const MY_NAME_KEY = 'to-my-mc-name';
+function readMyName(): string {
+  try {
+    return localStorage.getItem(MY_NAME_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+function writeMyName(name: string | null): void {
+  try {
+    if (name) localStorage.setItem(MY_NAME_KEY, name);
+    else localStorage.removeItem(MY_NAME_KEY);
+  } catch {
+    /* storage blocked: nothing to remember */
+  }
+}
 
 function pixelCanvas(img: ImageData | null, cls: string): HTMLCanvasElement {
   const c = img ? imageDataToCanvas(img) : h('canvas', { width: 16, height: 16 });
@@ -79,7 +97,7 @@ function figureCanvas(img: ImageData, model: SkinModel, cls: string): HTMLCanvas
   return c;
 }
 
-export default async function view(root: HTMLElement, _ctx: RouteContext): Promise<() => void> {
+export default async function view(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
   root.classList.add('totem-view');
   let alive = true;
   const ctrl = new AbortController();
@@ -94,7 +112,8 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
   const bedrock: { uuids?: { header: string; module: string }; packVersion?: [number, number, number] } = {};
   const shapes = new Map<string, ShapeEntry>();
   let shapeLoad: { key: string; progress: Progress | null; error: string | null } | null = null;
-  let source: Source = 'upload';
+  let source: Source = 'username';
+  let myName = readMyName();
 
   const live = h('p', { class: 'sr-only', 'aria-live': 'polite' });
   const announce = (text: string) => {
@@ -147,11 +166,13 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
   }
 
   // Username
-  const userInput = h('input', { class: 'input', type: 'text', placeholder: 'e.g. Notch', autocomplete: 'off', spellcheck: false, maxLength: 36, 'aria-label': 'Minecraft Java username', id: uid('tt-user') });
+  const userInput = h('input', { class: 'input', type: 'text', placeholder: 'Your Java username', autocomplete: 'off', spellcheck: false, maxLength: 36, 'aria-label': 'Minecraft Java username', id: uid('tt-user'), value: myName });
+  const rememberBox = h('input', { type: 'checkbox', checked: true, id: uid('tt-remember') }) as HTMLInputElement;
+  const rememberRow = h('label', { class: 'tt-remember', for: rememberBox.id }, rememberBox, h('span', null, 'This is me: remember my name on this device'));
   const userError = h('p', { class: 'tt-field-error', role: 'alert', hidden: true });
   const userBtn = button({ label: 'Get skin', icon: 'download', variant: 'primary', class: 'tt-user-go' });
   userBtn.setAttribute('aria-label', 'Get skin');
-  async function lookup() {
+  async function lookup(remember = true) {
     const invalid = validateUsername(userInput.value);
     userError.hidden = !invalid;
     userError.textContent = invalid ?? '';
@@ -164,6 +185,11 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       const loaded = await fetchSkinByUsername(userInput.value, ctrl.signal);
       if (!alive) return;
       setSkin({ image: loaded.image, model: loaded.model, name: loaded.username, source: 'username', notes: loaded.notes });
+      if (remember && rememberBox.checked) {
+        myName = loaded.username;
+        writeMyName(myName);
+        paintMine();
+      }
     } catch (err) {
       if (ctrl.signal.aborted) return;
       userError.hidden = false;
@@ -186,18 +212,41 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       b.addEventListener('click', () => {
         userInput.value = n;
         userError.hidden = true;
-        void lookup();
+        void lookup(false);
       });
       return b;
     }),
   );
+  // One-click "use my skin" once the player's name is remembered
+  const mine = h('div', { class: 'tt-mine', hidden: true });
+  function paintMine() {
+    mine.hidden = !myName;
+    if (!myName) return mine.replaceChildren();
+    const use = button({ label: `Use my skin (${myName})`, icon: 'user', variant: 'primary', class: 'tt-mine-use' });
+    use.addEventListener('click', () => {
+      userInput.value = myName;
+      void lookup(false);
+    });
+    const forget = h('button', { type: 'button', class: 'tt-link' }, 'Not you?');
+    forget.addEventListener('click', () => {
+      myName = '';
+      writeMyName(null);
+      userInput.value = '';
+      paintMine();
+      userInput.focus();
+    });
+    mine.replaceChildren(use, forget);
+  }
+  paintMine();
   const userPanel = h(
     'div',
     { class: 'tt-user' },
+    mine,
     h('div', { class: 'tt-user-row' }, h('div', { class: 'input-with-icon grow' }, icon('user'), userInput), userBtn),
+    rememberRow,
     userError,
     examples,
-    h('p', { class: 'tt-note' }, icon('circle-info', { size: 16 }), h('span', null, 'Java Edition names only: Bedrock gamertags can’t be looked up. Any player’s skin works, so you can make a totem of a friend.')),
+    h('p', { class: 'tt-note' }, icon('circle-info', { size: 16 }), h('span', null, 'Type your Java Edition name to use your own skin. Bedrock gamertags can’t be looked up: upload your skin instead. Any player’s name works too, so you can make a totem of a friend (the examples above are not remembered).')),
   );
 
   // Saved skin projects
@@ -335,7 +384,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
 
   const picker1 = h('div', { class: 'tt-picker' }, tabList, ...panelEls);
   const chosen = h('div', { class: 'tt-chosen', hidden: true });
-  const step1 = stepCard(1, 'Choose a skin', 'Upload a skin, use any Java player’s skin, one of your saved skins or a default character.', 'human', h('div', { class: 'cv-step-body' }, chosen, picker1, live));
+  const step1 = stepCard(1, 'Choose a skin', 'Use your own skin by your Java name, upload one, or pick a saved or default skin.', 'human', h('div', { class: 'cv-step-body' }, chosen, picker1, live));
 
   function paintChosen() {
     if (!skin) {
@@ -811,11 +860,27 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     siteFooter(),
   );
   root.appendChild(page);
-  showSource('upload');
+  showSource('username');
   paintEditions();
   paintChosen();
   regenerate();
   paintShape();
+
+  // Links from other tools: ?skin=<saved skin id> (the skin editor's "Make a totem") or ?user=<name>
+  const linkedSkin = ctx.query.get('skin');
+  const linkedUser = ctx.query.get('user');
+  if (linkedSkin) {
+    void getProject<SkinProjectData>(linkedSkin)
+      .then(async (p) => {
+        if (!alive || !p || p.kind !== 'skin') return;
+        const d = await decodeImage(p.image, 'png');
+        if (alive) setSkin({ image: d, model: p.model, name: p.name || 'My skin', source: 'saved', notes: [] });
+      })
+      .catch(() => toast('That skin could not be opened.', { tone: 'error' }));
+  } else if (linkedUser && !validateUsername(linkedUser)) {
+    userInput.value = linkedUser;
+    void lookup(false);
+  }
 
   return () => {
     alive = false;

@@ -2101,3 +2101,13 @@
     --u: 4px;
   }
 }
+
+/* Export menu: extra actions below the formats */
+.sk-export-sep {
+  height: 2px;
+  margin: 4px 8px;
+  background: var(--border);
+}
+.sk-export-icon.is-extra {
+  color: var(--gold);
+}

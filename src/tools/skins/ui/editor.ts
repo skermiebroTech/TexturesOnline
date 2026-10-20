@@ -358,7 +358,16 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const exportBtn = button({ label: 'Export', icon: 'download', iconEnd: 'chevron-down', variant: 'primary', class: 'sk-export-btn' });
   exportBtn.setAttribute('aria-haspopup', 'menu');
   exportBtn.setAttribute('aria-label', 'Export'); // the label text is hidden on phones
-  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind))));
+  const totemExtra = {
+    title: 'Custom totem',
+    sub: 'Make a Totem of Undying from this skin',
+    icon: 'totem' as const,
+    onPick: () =>
+      void flushSave()
+        .catch(() => undefined)
+        .then(() => navigate(`/totem-maker?skin=${encodeURIComponent(id)}`)),
+  };
+  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [totemExtra])));
   const backBtn = iconButton('arrow-left', 'All skins', () => navigate('/skins'));
 
   const bar = h(
