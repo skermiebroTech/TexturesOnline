@@ -429,6 +429,14 @@ export function mountStart(root: HTMLElement): () => void {
     ),
   );
 
+  const totemLink = h(
+    'a',
+    { class: 'sk-totem-link accent-gold', href: routeHref('/totem-maker') },
+    h('span', { class: 'sk-import-icon' }, icon('totem')),
+    h('span', { class: 'sk-totem-text' }, h('strong', null, 'Make a custom totem'), h('span', { class: 'faint small' }, 'Turn any skin into a Totem of Undying resource pack for Java or Bedrock')),
+    icon('arrow-right'),
+  );
+
   // ---- Recent ----
   const recentList = h('div', { class: 'sk-recent-grid' });
   const recentSection = h('section', { class: 'sk-section', hidden: true, 'aria-labelledby': 'sk-recent-title' });
@@ -455,7 +463,7 @@ export function mountStart(root: HTMLElement): () => void {
     ),
     recentSection,
     h('section', { class: 'sk-section', 'aria-label': 'Start a new skin' }, sectionHead('Start a new skin', 'Pick a starting point. You can change everything.'), starterGrid),
-    h('section', { class: 'sk-section', 'aria-label': 'Bring a skin' }, sectionHead('Bring a skin', 'Open an existing skin and make it yours.'), imports),
+    h('section', { class: 'sk-section', 'aria-label': 'Bring a skin' }, sectionHead('Bring a skin', 'Open an existing skin and make it yours.'), imports, totemLink),
   );
   root.append(page);
 

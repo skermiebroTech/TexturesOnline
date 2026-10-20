@@ -5,8 +5,8 @@ import { el, ic, logo, type ElNode } from '../markup';
 import { GUIDES } from '../seo/meta';
 import { REPO_URL, SITE_NAME } from '../site';
 
-/** 'merge' has no menu item of its own (the menu is full); its page highlights none. */
-export type NavTool = 'home' | 'textures' | 'convert' | 'merge' | 'skins' | 'shaders' | 'help';
+/** 'merge' and 'totem' have no menu item of their own (the menu is full); their pages highlight none. */
+export type NavTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
 
 export interface NavItem {
   path: string;
@@ -102,6 +102,7 @@ export function footer(year: number): ElNode {
           el('a', { to: '/merge-texture-packs' }, 'Merge packs'),
           el('a', { to: '/skins' }, 'Skin editor'),
           el('a', { to: '/skin-pack-maker' }, 'Skin pack maker'),
+          el('a', { to: '/totem-maker' }, 'Totem maker'),
           el('a', { to: '/shaders' }, 'Shader maker'),
         ),
         el(

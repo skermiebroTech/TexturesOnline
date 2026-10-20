@@ -255,6 +255,43 @@
   background: var(--tool-accent-soft);
   color: var(--tool-accent);
 }
+.sk-totem-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--inner-hi), var(--shadow-1);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.sk-totem-link:hover {
+  background: var(--surface-2);
+  border-color: color-mix(in srgb, var(--tool-accent) 55%, var(--border));
+}
+.sk-totem-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.sk-totem-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.sk-totem-link > .icon {
+  flex: none;
+  color: var(--text-3);
+  transition: transform var(--dur-1) var(--ease);
+}
+.sk-totem-link:hover > .icon {
+  transform: translateX(3px);
+  color: var(--tool-accent);
+}
 .sk-import .dropzone {
   flex: 1 1 auto;
 }

@@ -1,0 +1,648 @@
+/* Custom Totem of Undying maker. Builds on the converter's page styles (cv-*); own classes are tt-. */
+
+/* ----------------------------------------------------------------------------- hero */
+.tt-hero-art canvas.tt-hero-figure {
+  width: 96px;
+  height: 120px;
+}
+.tt-hero-art canvas.tt-hero-totem {
+  width: 112px;
+  height: 112px;
+}
+
+/* ----------------------------------------------------------------------------- layout */
+.tt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    's1 pv'
+    's2 pv'
+    's3 pv';
+  grid-template-rows: auto auto 1fr;
+  gap: 24px;
+  align-items: start;
+  padding-bottom: 48px;
+}
+.tt-area-1 {
+  grid-area: s1;
+}
+.tt-area-2 {
+  grid-area: s2;
+}
+.tt-area-3 {
+  grid-area: s3;
+}
+.tt-preview {
+  grid-area: pv;
+  position: sticky;
+  top: calc(var(--topbar-h) + 16px);
+  scroll-margin-top: calc(var(--topbar-h) + 16px);
+}
+.tt-prev-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--tool-accent);
+  color: var(--on-accent);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ----------------------------------------------------------------------------- step 1: skin */
+.tt-picker[hidden],
+.tt-chosen[hidden],
+.tt-panel[hidden] {
+  display: none;
+}
+.tt-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.tt-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.tt-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.tt-tab:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.tt-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.tt-tab[aria-selected='true'] {
+  background: var(--tool-accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 2px var(--tool-accent);
+}
+.tt-tab .icon {
+  color: var(--text-3);
+}
+.tt-tab[aria-selected='true'] .icon {
+  color: var(--tool-accent);
+}
+.tt-dz {
+  min-height: 176px;
+}
+.tt-dz.is-busy {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.tt-user,
+.tt-defaults,
+.tt-saved {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tt-user-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.tt-user-row .grow {
+  flex: 1;
+  min-width: 0;
+}
+.tt-user-row .input {
+  width: 100%;
+}
+.tt-user-go {
+  flex: none;
+}
+.tt-field-error {
+  color: var(--red);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tt-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.tt-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px 2px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.tt-chip:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.tt-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.tt-note {
+  display: flex;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tt-note > .icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--tool-accent);
+}
+.tt-empty a,
+.tt-hint a {
+  color: var(--tool-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tt-skin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  max-height: 336px;
+  overflow: auto;
+  padding: 2px;
+}
+.tt-skin-grid:empty {
+  display: none;
+}
+.tt-skin-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--border);
+  transition: background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.tt-skin-opt:hover {
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 2px var(--tool-accent);
+}
+.tt-skin-opt:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--tool-accent), var(--focus-ring);
+}
+.tt-skin-thumb {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 72px;
+  color: var(--text-3);
+}
+.tt-skin-name {
+  max-width: 100%;
+}
+.tt-figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.tt-default-status[hidden],
+.tt-default-error[hidden] {
+  display: none;
+}
+.tt-default-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.tt-default-error > .icon {
+  color: var(--red);
+}
+
+.tt-chosen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tt-chosen-thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 80px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.tt-change {
+  flex: none;
+  align-self: center;
+}
+
+/* ----------------------------------------------------------------------------- step 2: style */
+.tt-styles .cv-ed {
+  align-items: center;
+}
+.tt-style-thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  color: var(--text-3);
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.tt-style-canvas {
+  width: 48px;
+  height: 48px;
+}
+.tt-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tt-shape {
+  min-height: 24px;
+}
+.tt-shape.is-ready {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tt-shape.is-ready > .icon {
+  color: var(--tool-accent);
+}
+.tt-shape.is-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--red) 40%, transparent);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tt-shape.is-error > span {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.tt-shape.is-error > .icon {
+  flex: none;
+  color: var(--red);
+}
+
+/* ----------------------------------------------------------------------------- preview */
+.tt-preview-body[hidden],
+.tt-preview-empty[hidden],
+.tt-edited[hidden] {
+  display: none;
+}
+.tt-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.tt-preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 280px;
+  padding: 32px 16px;
+  border-radius: var(--r-md);
+  border: 2px dashed var(--border-strong);
+  text-align: center;
+}
+.tt-preview-empty-icon {
+  color: var(--tool-accent);
+  opacity: 0.7;
+}
+.tt-stages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.tt-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+}
+.tt-stage figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  min-height: 28px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tt-big {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.tt-big-canvas {
+  width: 87.5%;
+  height: 87.5%;
+}
+.tt-pop {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  /* A plain "game" scene: sky over grass, the same in both themes */
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 236, 160, 0.35), transparent 55%),
+    linear-gradient(#5d8fe6 0%, #9fc3f5 62%, #6aa84f 62%, #5a9441 72%, #79553a 72%, #5f412b 100%);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.tt-pop-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.tt-pop-play {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.tt-pop-play:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--tool-accent);
+}
+.tt-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px 2px 6px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.tt-replay:hover {
+  background: var(--surface-3);
+}
+.tt-replay:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.tt-replay .icon {
+  color: var(--tool-accent);
+}
+
+.tt-hotbar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tt-hotbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 9fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 440px;
+}
+.tt-hotbar-bar {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 2px;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6);
+}
+.tt-slot {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: #8b8b8b;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+}
+.tt-slot-off {
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.6),
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+}
+.tt-slot.is-selected {
+  position: relative;
+  z-index: 1;
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px #1d1d1d,
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+}
+.tt-slot canvas {
+  width: 72%;
+  height: 72%;
+}
+.tt-preview-actions .tt-discard-btn[hidden] {
+  display: none;
+}
+
+/* ----------------------------------------------------------------------------- step 3: pack */
+.tt-hint.is-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--red) 40%, transparent);
+  color: var(--text);
+}
+.tt-hint.is-alert > .icon {
+  flex: none;
+  color: var(--red);
+}
+.tt-path {
+  overflow-wrap: anywhere;
+  font-size: var(--fs-sm);
+}
+.tt-dl-actions > .btn {
+  flex: 1 1 220px;
+}
+
+/* ----------------------------------------------------------------------------- pixel editor */
+.tt-ed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 272px;
+  gap: 16px;
+  align-items: start;
+}
+.tt-ed-canvas {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 240px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.tt-ed-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.tt-ed-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tt-ed-tools .icon-btn[aria-pressed='true'],
+.tt-ed-mirror[aria-pressed='true'] {
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+  box-shadow: inset 0 0 0 2px var(--tool-accent);
+}
+.tt-ed-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.tt-ed-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tt-ed-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tt-ed-swatch {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.tt-ed-swatch:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ----------------------------------------------------------------------------- responsive */
+@media (max-width: 960px) {
+  .tt-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      's1'
+      's2'
+      'pv'
+      's3';
+    grid-template-rows: none;
+  }
+  .tt-preview {
+    position: static;
+  }
+}
+@media (max-width: 680px) {
+  .tt-ed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tt-ed-canvas {
+    max-height: 52vh;
+    max-width: 52vh;
+    width: 100%;
+    justify-self: center;
+  }
+}
+@media (max-width: 560px) {
+  .tt-grid {
+    gap: 16px;
+  }
+  .tt-tab {
+    font-size: 12px;
+    line-height: 16px;
+    padding: 6px 2px;
+  }
+  .tt-stages {
+    gap: 12px;
+  }
+  .tt-user-go .btn-label {
+    display: none;
+  }
+  .tt-change .btn-label {
+    display: none;
+  }
+  .tt-chosen-thumb {
+    width: 52px;
+    height: 68px;
+  }
+  /* Long labels ("Open in Texture Pack Maker") wrap instead of pushing the page wider */
+  .tt-dl-actions > .btn {
+    height: auto;
+    min-height: var(--btn-h);
+    min-width: 0;
+    padding: 8px 12px 10px;
+    white-space: normal;
+    text-align: center;
+  }
+}

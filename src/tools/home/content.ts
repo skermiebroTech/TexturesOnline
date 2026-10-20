@@ -322,7 +322,7 @@ export function homePage(): ElNode[] {
   const why = el(
     'section',
     { class: 'section home-why container', 'aria-labelledby': 'why-title' },
-    sectionHead('star', 'Why it’s different', 'why-title', `Why ${SITE_NAME}?`, ['Free, open source and private, with every Java version since 1.6.1, Bedrock and six tools in one place. ', link('/about', 'About the project'), '.']),
+    sectionHead('star', 'Why it’s different', 'why-title', `Why ${SITE_NAME}?`, ['Free, open source and private, with every Java version since 1.6.1, Bedrock and seven tools in one place. ', link('/about', 'About the project'), '.']),
     differences('h3'),
   );
 
