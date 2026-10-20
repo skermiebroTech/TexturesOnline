@@ -7,7 +7,7 @@ import type { RouteContext } from '../../core/router';
 import { href, navigate } from '../../core/router';
 import type { Project } from '../../core/types';
 import { deleteProject, getProject, listProjects, saveProject } from '../../core/storage';
-import { h, timeAgo } from '../../ui/dom';
+import { h, timeAgo, whenIdle } from '../../ui/dom';
 import { icon, type IconName } from '../../ui/icons';
 import { button, openMenu } from '../../ui/components';
 import { confirmDialog, openModal, promptDialog } from '../../ui/modal';
@@ -266,8 +266,11 @@ export default function home(root: HTMLElement, _ctx: RouteContext): () => void 
           }
         }, { rootMargin: '80px' })
       : null;
-  if (io) cards.forEach((c) => io.observe(c));
-  else showcases.forEach((s) => s.start());
+  // The previews show their first frame now and start moving once the page has loaded.
+  const cancelStart = whenIdle(() => {
+    if (io) cards.forEach((c) => io.observe(c));
+    else showcases.forEach((s) => s.start());
+  });
   const onVis = () => {
     if (document.hidden) showcases.forEach((s) => s.stop());
     else if (io) {
@@ -280,6 +283,7 @@ export default function home(root: HTMLElement, _ctx: RouteContext): () => void 
   document.addEventListener('visibilitychange', onVis);
 
   return () => {
+    cancelStart();
     block.destroy();
     showcases.forEach((s) => s.destroy());
     io?.disconnect();

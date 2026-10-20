@@ -12,7 +12,7 @@ import { closeAllPopovers } from '../ui/popover';
 import { syncToastLayer } from '../ui/toast';
 import { NAV as NAV_ITEMS, brandLink, githubLink as githubTree, navLinks as navTree, skipLink, topbar as topbarTree, type NavItem as ChromeNavItem } from './content/chrome';
 import { toDom } from './markup-dom';
-import { REPO_URL, SITE_NAME } from './site';
+import { REPO_URL } from './site';
 
 export const GITHUB_URL = REPO_URL;
 
@@ -146,7 +146,6 @@ export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: H
   const gh = topbar.querySelector<HTMLAnchorElement>('.topbar-actions > a.icon-btn');
   if (gh) tooltip(gh, 'Source code on GitHub');
   topbar.querySelector('.menu-btn')?.addEventListener('click', () => openDrawer(() => undefined));
-  topbar.querySelector('.brand')?.setAttribute('aria-label', `${SITE_NAME} home`);
 
   const skip = toDom<HTMLAnchorElement>(skipLink());
   skip.addEventListener('click', (e) => {
@@ -165,7 +164,9 @@ export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: H
 
   const onScroll = () => topbar.classList.toggle('scrolled', window.scrollY > 4);
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  // Not right away: reading the scroll position here would force a layout of the whole page in
+  // the middle of booting (the view is rendered next anyway).
+  requestAnimationFrame(onScroll);
 
   onRouteChange((state) => {
     currentState = state;

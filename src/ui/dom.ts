@@ -135,6 +135,33 @@ export function prefersReducedMotion(): boolean {
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+/**
+ * Runs `fn` once the page has finished loading and the main thread is idle (at the latest `timeout`
+ * ms after that), so decorative work such as animations stays out of the way of the first paint
+ * and of input. Returns a function that cancels it.
+ */
+export function whenIdle(fn: () => void, timeout = 1500): () => void {
+  let cancelled = false;
+  let idleId = 0;
+  let timerId = 0;
+  const run = () => {
+    if (!cancelled) fn();
+  };
+  const schedule = () => {
+    if (cancelled) return;
+    if (typeof requestIdleCallback === 'function') idleId = requestIdleCallback(run, { timeout });
+    else timerId = window.setTimeout(run, 200);
+  };
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule, { once: true });
+  return () => {
+    cancelled = true;
+    window.removeEventListener('load', schedule);
+    if (idleId) cancelIdleCallback(idleId);
+    if (timerId) clearTimeout(timerId);
+  };
+}
+
 /** True when focus is in a text field (keyboard shortcuts should be ignored). */
 export function isTypingTarget(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false;

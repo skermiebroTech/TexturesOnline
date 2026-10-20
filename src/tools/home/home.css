@@ -189,7 +189,7 @@
   margin-left: calc(var(--s) * -0.6);
   border-radius: 50%;
   background: radial-gradient(closest-side, rgba(0, 0, 0, 0.5), transparent);
-  transform: scale(calc(1 - var(--bob, 0) * 0.08));
+  /* scaled with the block's bob by hero-block.ts */
   pointer-events: none;
 }
 :root[data-theme='light'] .hb-shadow {
