@@ -407,6 +407,58 @@ const PURPLE = [140, 40, 200, 255];
 }
 
 // =============================================================================================
+// 2b. The body-part figure never overlaps the stage overlays; on short phone stages it folds into a
+// button under the mode switch and opens in its place.
+for (const [w, hgt, mobile] of [
+  [390, 844, true],
+  [360, 740, true],
+  [1440, 900, false],
+]) {
+  const { page, context, errors } = await newPage(mobile ? { viewport: { width: w, height: hgt }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 } : { viewport: { width: w, height: hgt } });
+  const press = (sel) => (mobile ? page.tap(sel) : page.click(sel));
+  await openStarter(page, 'robot');
+  if (mobile) await page.click('.editor-tab[data-panel="right"]');
+  await page.waitForTimeout(400);
+  const layout = () =>
+    page.evaluate(() => {
+      const wrap = document.querySelector('.sk-body-toggle').closest('.sk-3d-wrap');
+      const box = (s) => {
+        const e = wrap.querySelector(s);
+        const cs = e && getComputedStyle(e);
+        return e && cs.display !== 'none' && cs.visibility !== 'hidden' ? e.getBoundingClientRect().toJSON() : null;
+      };
+      const hit = (a, b) => a && b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const stage = wrap.getBoundingClientRect();
+      const r = Object.fromEntries(['.sk-3d-mode', '.sk-3d-views', '.sk-3d-anim', '.sk-3d-hint', '.sk-body-toggle', '.sk-body-btn'].map((s) => [s, box(s)]));
+      const names = Object.keys(r);
+      const overlaps = names.flatMap((a, i) => names.slice(i + 1).filter((b) => hit(r[a], r[b])).map((b) => `${a}/${b}`));
+      const outside = names.filter((s) => r[s] && (r[s].top < stage.top || r[s].bottom > stage.bottom || r[s].left < stage.left || r[s].right > stage.right));
+      return { stage: Math.round(stage.height), overlaps, outside, figure: !!r['.sk-body-toggle'], button: !!r['.sk-body-btn'] };
+    });
+  for (const mode of ['view', 'paint']) {
+    await press(`.sk-3d-mode [data-value="${mode}"]`);
+    await page.waitForTimeout(300);
+    let l = await layout();
+    check(`figure clears the stage overlays (${w}x${hgt} ${mode}, stage ${l.stage}px)`, l.overlaps.length === 0 && l.outside.length === 0 && l.figure !== l.button, JSON.stringify(l));
+    if (!l.button) continue;
+    await press('.sk-body-btn');
+    await page.waitForTimeout(200);
+    l = await layout();
+    check(`folded figure opens in place of the mode switch (${w}x${hgt} ${mode})`, l.figure && !l.button && l.overlaps.length === 0 && l.outside.length === 0, JSON.stringify(l));
+    await press('.sk-fig-part[data-part="rightArm"]');
+    await page.waitForTimeout(200);
+    check(`a part tap keeps it open and marks the button (${w}x${hgt} ${mode})`, (await page.isVisible('.sk-body-toggle')) && (await page.$eval('.sk-body-btn', (e) => e.classList.contains('has-hidden'))));
+    await press('.sk-fig-part[data-part="rightArm"]');
+    await press('.sk-fig-close');
+    await page.waitForTimeout(200);
+    l = await layout();
+    check(`the close button folds it again (${w}x${hgt} ${mode})`, !l.figure && l.button && l.overlaps.length === 0, JSON.stringify(l));
+  }
+  check(`no page errors (figure ${w}x${hgt})`, errors.length === 0, errors.join(' | '));
+  await context.close();
+}
+
+// =============================================================================================
 // 3. Screenshots: desktop, tablet and phone, dark and light, painting with the hover outline
 for (const theme of ['dark', 'light']) {
   for (const [w, hgt, mobile] of [

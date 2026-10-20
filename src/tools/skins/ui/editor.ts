@@ -685,7 +685,32 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   tooltip(figureAll, 'Show every part again');
   figureAll.addEventListener('click', () => showAllParts());
   const figure = h('div', { class: 'sk-body-toggle', role: 'group', 'aria-label': 'Show or hide body parts in 3D' }, figureGrid, figureAll);
-  stageWrap.appendChild(figure);
+  // On a short stage (phones) the figure folds into a button under the 3D mode switch and opens in
+  // its place, leaving the model in view (see the container query in view.css).
+  const figureBtn = h('button', { type: 'button', class: 'sk-body-btn', 'aria-label': 'Body parts', 'aria-expanded': 'false' }, icon('human'));
+  tooltip(figureBtn, 'Show or hide body parts');
+  const figureClose = h('button', { type: 'button', class: 'sk-fig-close', 'aria-label': 'Close body parts' }, icon('close'));
+  figure.appendChild(figureClose);
+  const figureOpen = () => figureBtn.getAttribute('aria-expanded') === 'true';
+  const setFigureOpen = (open: boolean, keyboard = false) => {
+    stageWrap.classList.toggle('is-figure-open', open);
+    figureBtn.setAttribute('aria-expanded', String(open));
+    if (keyboard) (open ? figureButtons.get('head') : figureBtn)?.focus();
+  };
+  figureBtn.addEventListener('click', (e) => setFigureOpen(!figureOpen(), e.detail === 0));
+  figureClose.addEventListener('click', (e) => setFigureOpen(false, e.detail === 0));
+  figure.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !figureOpen() || !figureBtn.offsetParent) return;
+    e.preventDefault();
+    setFigureOpen(false, true);
+  });
+  const closeFigureOutside = (e: PointerEvent) => {
+    const t = e.target as Node;
+    if (figureOpen() && !figure.contains(t) && !figureBtn.contains(t)) setFigureOpen(false);
+  };
+  document.addEventListener('pointerdown', closeFigureOutside);
+  disposers.push(() => document.removeEventListener('pointerdown', closeFigureOutside));
+  stageWrap.append(figureBtn, figure);
 
   const sizeSeg = segmented<'64' | '128'>({
     value: scale === 2 ? '128' : '64',
@@ -1376,6 +1401,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     figureAll.classList.toggle('is-off', none);
     figureAll.tabIndex = none ? -1 : 0;
     figureAll.setAttribute('aria-hidden', String(none));
+    figureBtn.classList.toggle('has-hidden', !none);
+    figureBtn.setAttribute('aria-label', none ? 'Body parts' : 'Body parts (some hidden)');
   }
 
   /** Part the camera turns around (after "show only"); null = the whole player */

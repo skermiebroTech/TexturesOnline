@@ -1058,11 +1058,19 @@
   flex: 1 1 auto;
 }
 .sk-3d-wrap {
+  /* Bottom clearance for the part figure: the animation bar, or the paint hint (up to two lines). */
+  --sk-fig-clear-b: 72px;
   position: relative;
-  flex: 1 1 auto;
+  /* A definite basis: Chrome sizes the container at 0 for queries when its height only comes from
+     the min-height. */
+  flex: 1 1 240px;
   min-height: 240px;
+  container: sk-stage / size;
   border-bottom: 2px solid var(--border);
   background: var(--sk-stage-bg);
+}
+.sk-3d-wrap[data-mode='view'] {
+  --sk-fig-clear-b: 56px;
 }
 .sk-3d-wrap[data-backdrop='sky'] {
   background: linear-gradient(#6fb2ff, #b9dcff);
@@ -1214,7 +1222,8 @@
 }
 .sk-3d-mode,
 .sk-3d-views,
-.sk-3d-hint {
+.sk-3d-hint,
+.sk-body-btn {
   position: absolute;
   z-index: 2;
   background: color-mix(in srgb, var(--bg-elev) 84%, transparent);
@@ -2055,12 +2064,17 @@
 }
 
 /* ---- Body-part figure on the 3D stage (show / hide / show only) ---- */
+/* Centred in the band between the 3D mode switch (top left, 72px) and the animation bar or paint
+   hint, so it never runs into them. The figure is 32 skin pixels plus 58px of frame and "All" row. */
 .sk-body-toggle {
   --u: 3px; /* one skin pixel */
   position: absolute;
+  top: 80px;
+  bottom: var(--sk-fig-clear-b);
   left: 12px;
-  top: 50%;
   z-index: 2;
+  height: fit-content;
+  margin-block: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2071,7 +2085,6 @@
   background: color-mix(in srgb, var(--bg-elev) 82%, transparent);
   backdrop-filter: blur(8px);
   box-shadow: var(--shadow-1);
-  transform: translateY(-50%);
 }
 .sk-body-toggle-grid {
   display: grid;
@@ -2145,9 +2158,110 @@
 .sk-fig-all.is-off {
   visibility: hidden;
 }
-@media (pointer: coarse) {
+.sk-body-btn,
+.sk-fig-close {
+  display: none;
+}
+/* Too short for the figure under the mode switch (phones): it folds into a button there and opens
+   in place of the mode switch, which steps aside with the bottom bar while it is open. */
+@container sk-stage (height < 306px) {
+  .sk-body-btn {
+    top: 80px;
+    left: 10px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 2px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--text-2);
+    cursor: pointer;
+  }
+  .sk-body-btn:hover {
+    color: var(--text);
+  }
+  .sk-body-btn[aria-expanded='true'] {
+    border-color: var(--tool-accent);
+    color: var(--tool-accent);
+  }
+  /* Some parts are hidden. */
+  .sk-body-btn.has-hidden::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tool-accent);
+  }
   .sk-body-toggle {
-    --u: 4px;
+    display: none;
+  }
+  .sk-3d-wrap.is-figure-open .sk-body-toggle {
+    top: 10px;
+    bottom: 10px;
+    left: 10px;
+    z-index: 3;
+    display: flex;
+  }
+  .sk-3d-wrap.is-figure-open :is(.sk-3d-mode, .sk-body-btn, .sk-3d-anim, .sk-3d-hint) {
+    visibility: hidden;
+  }
+  /* In the empty cell beside the head. */
+  .sk-fig-close {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-xs);
+    background: transparent;
+    color: var(--text-2);
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .sk-fig-close:hover {
+    background: var(--surface-3);
+    color: var(--text);
+  }
+  .sk-3d-wrap.is-figure-open .sk-fig-close {
+    display: grid;
+  }
+}
+/* The open figure needs 78px plus 32 skin pixels. */
+@container sk-stage (height < 174px) {
+  .sk-body-toggle {
+    --u: 2px;
+  }
+}
+@media (pointer: coarse) {
+  /* Bigger parts for fingers, down to 3px a pixel so the figure fits its band. */
+  .sk-body-toggle {
+    --u: clamp(3px, (100cqh - 138px - var(--sk-fig-clear-b)) / 32, 4px);
+  }
+  @container sk-stage (height < 306px) {
+    .sk-body-btn {
+      width: 40px;
+      height: 40px;
+    }
+    .sk-body-toggle {
+      --u: 4px;
+    }
+  }
+  @container sk-stage (height < 206px) {
+    .sk-body-toggle {
+      --u: 3px;
+    }
+  }
+  @container sk-stage (height < 174px) {
+    .sk-body-toggle {
+      --u: 2px;
+    }
   }
 }
 
