@@ -42,7 +42,7 @@ export type ViewModule = {
   hydratable?: boolean;
 };
 
-export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'kit';
+export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all' | 'kit';
 
 export interface RouteDef {
   pattern: string;
@@ -58,7 +58,7 @@ export interface RouteState extends RouteContext {
 
 const APP = SITE_NAME;
 /** Pages without an editor: they need the UI kit's text but not the editors' shared text. */
-const TEXT_ONLY_TOOLS = new Set<ToolId>(['home', 'help']);
+const TEXT_ONLY_TOOLS = new Set<ToolId>(['home', 'help', 'all']);
 
 const textures = () => import('../tools/textures/view');
 const skins = () => import('../tools/skins/view');
@@ -82,7 +82,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/shaders/:id', load: shaders, title: `Shader maker — ${APP}`, tool: 'shaders' },
   { pattern: '/help', load: () => import('../tools/help/help'), title: HELP_META.title, tool: 'help' },
   { pattern: '/about', load: () => import('../tools/about/about'), title: ABOUT_META.title, tool: 'help' },
-  { pattern: '/all', load: () => import('../tools/all/all'), title: ALL_META.title, tool: 'help' },
+  { pattern: '/all', load: () => import('../tools/all/all'), title: ALL_META.title, tool: 'all' },
   { pattern: '/guides', load: guides, title: GUIDES_META.title, tool: 'help' },
   ...GUIDES.map((g): RouteDef => ({ pattern: g.path, load: guides, title: g.title, tool: 'help' })),
   { pattern: '/privacy', load: () => import('../tools/privacy/privacy'), title: PRIVACY_META.title, tool: 'help' },

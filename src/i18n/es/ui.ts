@@ -5,7 +5,7 @@ import type { UiText } from '../ui';
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 export const UI_ES: UiText = {
-  nav: { home: 'Inicio', textures: 'Texturas', convert: 'Convertir', skins: 'Skins', shaders: 'Shaders', help: 'Ayuda' },
+  nav: { home: 'Inicio', textures: 'Texturas', convert: 'Convertir', skins: 'Skins', shaders: 'Shaders', help: 'Ayuda', all: 'Todo' },
   mainNav: 'Principal',
   skipLink: 'Saltar al contenido',
   brandHome: 'Texture Pack Maker: inicio',

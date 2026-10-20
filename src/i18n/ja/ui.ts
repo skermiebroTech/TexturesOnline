@@ -3,7 +3,7 @@
 import type { UiText } from '../ui';
 
 export const UI_JA: UiText = {
-  nav: { home: 'ホーム', textures: 'テクスチャ', convert: '変換', skins: 'スキン', shaders: 'シェーダー', help: 'ヘルプ' },
+  nav: { home: 'ホーム', textures: 'テクスチャ', convert: '変換', skins: 'スキン', shaders: 'シェーダー', help: 'ヘルプ', all: 'すべて' },
   mainNav: 'メイン',
   skipLink: '本文へスキップ',
   brandHome: 'Texture Pack Maker ホーム',

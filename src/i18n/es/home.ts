@@ -145,6 +145,7 @@ export const HOME: HomeText = {
     lead: 'Crea tus propios texture packs, skins y shaders directamente en el navegador: un creador de paquetes de recursos gratis para Java y Bedrock, con descargas listas para meter en el juego.',
     start: 'Empezar a crear',
     install: 'Cómo instalar',
+    everything: 'Mira todo lo que puedes crear',
     editionsLabel: 'Ediciones compatibles',
     chips: [`Java ${LATEST}`, 'Todas las versiones 1.6.1+', 'Bedrock'],
     blockLabel: 'Un bloque de hierba en pixel art',

@@ -52,6 +52,8 @@ export interface HomeText {
     lead: string;
     start: string;
     install: string;
+    /** Link to the page with every tool, feature and guide */
+    everything: string;
     editionsLabel: string;
     chips: [string, string, string];
     blockLabel: string;
@@ -223,6 +225,7 @@ export const HOME_EN: HomeText = {
     lead: 'Create your own texture packs, skins and shaders right in your browser — a free resource pack creator for Java and Bedrock, with downloads ready to drop into the game.',
     start: 'Start creating',
     install: 'How to install',
+    everything: 'See everything you can make',
     editionsLabel: 'Supported editions',
     chips: [`Java ${LATEST}`, 'All versions 1.6.1+', 'Bedrock'],
     blockLabel: 'A pixel-art grass block',
@@ -369,6 +372,7 @@ export function homePage(locale: Locale = 'en'): ElNode[] {
         el('a', { class: 'btn btn-primary btn-lg', to: '/textures', 'data-action': 'start' }, ic('magic-edit'), el('span', { class: 'btn-label' }, t.hero.start)),
         el('a', { class: 'btn btn-secondary btn-lg', to: '/help' }, ic('book-open'), el('span', { class: 'btn-label' }, t.hero.install)),
       ),
+      el('p', { class: 'hero-all', 'data-md': 'skip' }, el('a', { to: '/all' }, ic('grid-2x2-2'), el('span', null, t.hero.everything), ic('arrow-right'))),
       el(
         'ul',
         { class: 'edition-chips', 'aria-label': t.hero.editionsLabel },

@@ -10,7 +10,7 @@ import { UI_PT_BR } from './pt-br/ui';
 import { UI_JA } from './ja/ui';
 
 export interface UiText {
-  nav: { home: string; textures: string; convert: string; skins: string; shaders: string; help: string };
+  nav: { home: string; textures: string; convert: string; skins: string; shaders: string; help: string; all: string };
   /** aria-label of the main navigation */
   mainNav: string;
   skipLink: string;
@@ -76,7 +76,7 @@ export interface UiText {
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 export const UI_EN: UiText = {
-  nav: { home: 'Home', textures: 'Textures', convert: 'Convert', skins: 'Skins', shaders: 'Shaders', help: 'Help' },
+  nav: { home: 'Home', textures: 'Textures', convert: 'Convert', skins: 'Skins', shaders: 'Shaders', help: 'Help', all: 'All' },
   mainNav: 'Main',
   skipLink: 'Skip to content',
   brandHome: `${SITE_NAME} home`,

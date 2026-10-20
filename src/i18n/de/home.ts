@@ -145,6 +145,7 @@ export const HOME: HomeText = {
     lead: 'Erstelle eigene Texture Packs, Skins und Shader direkt im Browser – ein kostenloser Ressourcenpaket-Ersteller für Java und Bedrock, mit Downloads, die sofort ins Spiel passen.',
     start: 'Jetzt loslegen',
     install: 'So installierst du',
+    everything: 'Alles ansehen, was du machen kannst',
     editionsLabel: 'Unterstützte Editionen',
     chips: [`Java ${LATEST}`, 'Alle Versionen ab 1.6.1', 'Bedrock'],
     blockLabel: 'Ein Grasblock in Pixelgrafik',

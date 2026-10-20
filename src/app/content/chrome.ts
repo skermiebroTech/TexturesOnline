@@ -11,7 +11,7 @@ import { ui, type UiText } from '../../i18n/ui';
 import { appText } from '../../pwa/text';
 
 /** 'merge' and 'totem' have no menu item of their own (the menu is full); their pages highlight none. */
-export type NavTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
+export type NavTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
 
 export interface NavItem {
   path: string;
@@ -28,6 +28,7 @@ export const NAV: NavItem[] = [
   { path: '/skins', key: 'skins', icon: 'human', tool: 'skins', accent: 'accent-blue' },
   { path: '/shaders', key: 'shaders', icon: 'sparkles', tool: 'shaders', accent: 'accent-purple' },
   { path: '/help', key: 'help', icon: 'circle-question', tool: 'help', accent: 'accent-gold' },
+  { path: '/all', key: 'all', icon: 'grid-2x2-2', tool: 'all', accent: 'accent-gold' },
 ];
 
 /** Two-tone wordmark: "TexturePack" + accent "Maker". */

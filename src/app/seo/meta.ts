@@ -10,7 +10,7 @@ import { META_PT_BR } from '../../i18n/pt-br/meta';
 import { META_JA } from '../../i18n/ja/meta';
 
 export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'privacy' | 'all' | 'guides' | 'guide';
-export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
+export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
 
 export interface PageMeta {
   /** Page path without trailing slash, including the language folder ('/', '/textures', '/de/guides/make-a-skin') */
@@ -151,7 +151,7 @@ export const PRIVACY_META: PageMeta = {
 export const ALL_META: PageMeta = {
   path: '/all',
   kind: 'all',
-  tool: 'help',
+  tool: 'all',
   title: 'All Minecraft Pack, Skin & Shader Tools — Texture Pack Maker',
   description:
     'Every free tool, feature and guide on Texture Pack Maker in one place: texture packs, 3D models, sounds, skins, skin packs, shaders and more.',

@@ -144,6 +144,7 @@ export const HOME: HomeText = {
     lead: 'テクスチャパック、スキン、シェーダーをブラウザだけで自作。Java版と統合版に対応した無料のリソースパック作成ツールで、ダウンロードしたファイルはそのままゲームで使えます。',
     start: '作り始める',
     install: '入れ方を見る',
+    everything: '作れるものをすべて見る',
     editionsLabel: '対応エディション',
     chips: [`Java版 ${LATEST}`, '1.6.1以降の全バージョン', '統合版'],
     blockLabel: 'ドット絵の草ブロック',

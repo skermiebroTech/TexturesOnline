@@ -41,7 +41,7 @@ export interface PrerenderPage {
   /** The same page in every language it exists in (this one included) */
   alternates: { locale: Locale; url: string }[];
   /** <html data-tool> and <body data-route> */
-  tool: 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
+  tool: 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
   /** Highlighted main-nav link */
   nav: NavTool;
   /** Classes of the view element (same as the router + view add at runtime) */
@@ -251,8 +251,8 @@ function allEntry(locale: Locale): PrerenderPage | null {
   if (!meta || !hasText(locale, (c) => c.all)) return null;
   return {
     ...base(meta, ['src/tools/all/all.ts']),
-    tool: 'help',
-    nav: 'help',
+    tool: 'all',
+    nav: 'all',
     viewClass: 'view view-help guides',
     boot: 'keep',
     styles: ['src/tools/all/all.ts'],

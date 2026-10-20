@@ -165,13 +165,17 @@ body[data-route='shaders'] .topbar {
   }
 }
 
-/* small laptops / tablets in landscape: text-only nav so the bar never overflows */
-@media (max-width: 1260px) {
+/* Narrower screens: text-only nav without "Home" (the logo links home) so the bar never
+   overflows; the widths fit the longest labels (German and Portuguese). */
+@media (max-width: 1439px) {
   .mainnav .nav-link .icon {
     display: none;
   }
+  .mainnav .nav-link[data-tool='home'] {
+    display: none;
+  }
 }
-@media (max-width: 1060px) {
+@media (max-width: 1199px) {
   .topbar-inner {
     gap: 12px;
   }
@@ -182,7 +186,7 @@ body[data-route='shaders'] .topbar {
     padding: 0 8px 2px;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 940px) {
   .mainnav {
     display: none;
   }
