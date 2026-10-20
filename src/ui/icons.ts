@@ -151,6 +151,13 @@ import bulletlistSvg from 'pixelarticons/svg/bulletlist.svg?raw';
 import penSquareSvg from 'pixelarticons/svg/pen-square.svg?raw';
 import wifiSvg from 'pixelarticons/svg/wifi.svg?raw';
 import gitMergeSvg from 'pixelarticons/svg/git-merge.svg?raw';
+import musicSvg from 'pixelarticons/svg/music.svg?raw';
+import albumSvg from 'pixelarticons/svg/album.svg?raw';
+import windSvg from 'pixelarticons/svg/wind.svg?raw';
+import micSvg from 'pixelarticons/svg/mic.svg?raw';
+import stopSvg from 'pixelarticons/svg/stop.svg?raw';
+import volume2Svg from 'pixelarticons/svg/volume-2.svg?raw';
+import volumeXSvg from 'pixelarticons/svg/volume-x.svg?raw';
 
 const PIXELARTICONS = {
   'pencil': pencilSvg,
@@ -303,6 +310,13 @@ const PIXELARTICONS = {
   'pen-square': penSquareSvg,
   'wifi': wifiSvg,
   'git-merge': gitMergeSvg,
+  'music': musicSvg,
+  'album': albumSvg,
+  'wind': windSvg,
+  'mic': micSvg,
+  'stop': stopSvg,
+  'volume-2': volume2Svg,
+  'volume-x': volumeXSvg,
 } as const;
 
 /** Custom glyphs: 12x12 bitmaps, each cell is 2x2 SVG units on the 24x24 icon grid. */

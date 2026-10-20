@@ -30,9 +30,11 @@ import { createPackPanel } from './pack-panel';
 import { openExportDialog } from './export-dialog';
 import { plainText } from './mc-text';
 import { packIconImage } from './icon';
+import type { SoundsMode } from './sounds-mode';
+import './sounds-base.css';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pack';
-type LibMode = 'blocks' | 'items' | 'mobs' | 'textures';
+type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'sounds';
 const LIB_KEY = 'to-tex-library-mode';
 const WS_KEY = 'to-tex-workspace';
 type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pack';
@@ -103,7 +105,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   let libMode: LibMode = 'blocks';
   try {
     const saved = localStorage.getItem(LIB_KEY);
-    if (saved === 'blocks' || saved === 'items' || saved === 'mobs' || saved === 'textures') libMode = saved;
+    if (saved === 'blocks' || saved === 'items' || saved === 'mobs' || saved === 'textures' || saved === 'sounds') libMode = saved;
   } catch {
     /* storage blocked */
   }
@@ -118,6 +120,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         { value: 'items', label: 'Items' },
         { value: 'mobs', label: 'Mobs' },
         { value: 'textures', label: 'All' },
+        { value: 'sounds', label: '', icon: 'music' },
       ],
       onChange: (v) => setLibMode(v, true),
     });
@@ -125,6 +128,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const all = sw.querySelector<HTMLElement>('[data-value="textures"]');
     all?.setAttribute('title', 'All textures');
     all?.setAttribute('aria-label', 'All textures');
+    // Sounds is a note icon at the end of the switch
+    const snd = sw.querySelector<HTMLElement>('[data-value="sounds"]');
+    snd?.setAttribute('title', 'Sounds');
+    snd?.setAttribute('aria-label', 'Sounds');
     switches.push(sw);
     return h('div', { class: 'tx-libbar' }, sw);
   };
@@ -249,14 +256,63 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         /* storage blocked */
       }
     }
-    const models3d = v !== 'textures';
-    browser.el.hidden = models3d;
+    const isSounds = v === 'sounds';
+    const models3d = v !== 'textures' && !isSounds;
+    browser.el.hidden = v !== 'textures';
     modelBrowser.el.hidden = !models3d;
     if (models3d) {
       modelBrowser.setKind(v === 'blocks' ? 'block' : v === 'items' ? 'item' : 'entity');
       modelBrowser.activate();
     }
-    if (user) requestAnimationFrame(() => (models3d ? modelBrowser.focusSearch() : browser.focusSearch()));
+    setSoundsShown(isSounds, user);
+    if (user && !isSounds) requestAnimationFrame(() => (models3d ? modelBrowser.focusSearch() : browser.focusSearch()));
+  }
+
+  // ---------------------------------------------------------------- sounds (loaded on first use)
+  const soundLeft = h('div', { class: 'snd-host', hidden: true }, h('div', { class: 'snd-host-loading' }, spinner(28)));
+  const soundCenter = h('div', { class: 'snd-host', hidden: true });
+  let soundsMode: SoundsMode | null = null;
+  let soundsLoad: Promise<SoundsMode | null> | null = null;
+  function ensureSounds(): Promise<SoundsMode | null> {
+    soundsLoad ??= import('./sounds-mode')
+      .then(({ createSoundsMode }) => {
+        if (life.aborted) return null;
+        soundsMode = createSoundsMode({
+          store,
+          top: makeSwitch(),
+          onSelect: (how) => {
+            if (isPhone() && how !== 'keyboard') showMobile('editor');
+          },
+          onBrowse: () => showMobile('textures', true),
+        });
+        soundLeft.replaceChildren(soundsMode.browserEl);
+        soundCenter.replaceChildren(soundsMode.panelEl);
+        return soundsMode;
+      })
+      .catch((err) => {
+        soundsLoad = null;
+        console.error(err);
+        toast('Sounds couldn’t be opened. Check your connection and try again.', { tone: 'error' });
+        return null;
+      });
+    return soundsLoad;
+  }
+  function setSoundsShown(on: boolean, user: boolean) {
+    shell.dataset.lib = on ? 'sounds' : '';
+    soundLeft.hidden = !on;
+    soundCenter.hidden = !on;
+    paintTabbar();
+    if (!on) {
+      soundsMode?.deactivate();
+      notifyVisibility();
+      return;
+    }
+    notifyVisibility();
+    void ensureSounds().then((m) => {
+      if (!m || libMode !== 'sounds') return;
+      m.activate();
+      if (user) requestAnimationFrame(() => m.focusSearch());
+    });
   }
   const effects = createEffectsPanel(store);
   const pack = createPackPanel({
@@ -383,12 +439,27 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     tabbarButtons.set(t.v, b);
     tabbar.appendChild(b);
   }
+  /** In Sounds mode the list and editor tabs are about sounds. */
+  function paintTabbar() {
+    const sounds = libMode === 'sounds';
+    for (const tab of [tabbarButtons.get('textures'), sideTabs.querySelector<HTMLElement>('.tab[data-value="textures"]')]) {
+      const label = tab?.querySelector('span:not(.icon)');
+      const ic = tab?.querySelector<HTMLElement>('.icon');
+      if (label) label.textContent = sounds ? 'Sounds' : 'Textures';
+      if (ic) setIcon(ic, sounds ? 'music' : 'bulletlist');
+    }
+    const ed = tabbarButtons.get('editor');
+    const label = ed?.querySelector('span:not(.icon)');
+    const ic = ed?.querySelector<HTMLElement>('.icon');
+    if (label) label.textContent = sounds ? 'Edit' : 'Paint';
+    if (ic) setIcon(ic, sounds ? 'volume-2' : 'pencil');
+  }
 
   const main = h(
     'div',
     { class: 'tx-main' },
-    h('div', { class: 'tx-col-left' }, browser.el, modelBrowser.el),
-    h('div', { class: 'tx-col-center' }, canvas.el),
+    h('div', { class: 'tx-col-left' }, browser.el, modelBrowser.el, soundLeft),
+    h('div', { class: 'tx-col-center' }, canvas.el, soundCenter),
     h('div', { class: 'tx-col-tabs' }, sideTabs),
     h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pack),
   );
@@ -400,7 +471,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const phone = isPhone();
     const vis = (t: Side) => (phone ? mobile === t : side === t);
     // In the 3D workspace the model is in the centre, which is on screen unless a phone shows another tab.
-    preview.setVisible(vis('preview') || (workspace === '3d' && (!phone || mobile === 'editor')));
+    preview.setVisible(vis('preview') || (workspace === '3d' && libMode !== 'sounds' && (!phone || mobile === 'editor')));
     effects.setVisible(vis('effects'));
     pack.setVisible(vis('pack'));
   }
@@ -423,7 +494,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     if (isTablet() && v === 'textures') setSide('textures');
     if (focusSearch) requestAnimationFrame(() => focusSearch_());
   }
-  const focusSearch_ = () => (libMode === 'textures' ? browser.focusSearch() : modelBrowser.focusSearch());
+  const focusSearch_ = () => (libMode === 'sounds' ? soundsMode?.focusSearch() : libMode === 'textures' ? browser.focusSearch() : modelBrowser.focusSearch());
 
   setSide(side);
   showMobile('editor');
@@ -439,7 +510,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     () => clearTimeout(libTimer),
     // Versions without block models (Java before 1.8) start in All textures.
     models.events.on('ready', () => {
-      if (models.lib && !models.lib.available && libMode !== 'textures') setLibMode('textures');
+      if (models.lib && !models.lib.available && libMode !== 'textures' && libMode !== 'sounds') setLibMode('textures');
     }),
   );
   const mqs = [matchMedia(PHONE), matchMedia(TABLET)];
@@ -514,6 +585,16 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         title: 'Painting',
         items: PIXEL_SHORTCUTS.filter((s) => !/Undo|Redo/.test(s.action)).map((s) => ({ keys: split(s.keys), label: s.action })),
       },
+      {
+        title: 'Sounds',
+        items: [
+          { keys: ['Space'], label: 'In the list: play or stop the selected sound' },
+          { keys: ['Arrow keys'], label: 'Move between sounds' },
+          { keys: ['Enter'], label: 'Open the sound' },
+          { keys: ['←', '→'], label: 'On a trim handle: move it 0.01 s' },
+          { keys: ['Shift', '←'], label: 'On a trim handle: move it 0.1 s' },
+        ],
+      },
     ]);
   }
 
@@ -536,6 +617,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       if (isPhone()) showMobile('textures');
       else if (isTablet()) setSide('textures');
       requestAnimationFrame(() => focusSearch_());
+    } else if (libMode === 'sounds') {
+      return;
     } else if (e.key === 'd' || e.key === 'D') {
       if (e.shiftKey || !canvas.current()) return;
       e.preventDefault();
@@ -584,6 +667,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       models,
       preview,
       setLibraryMode: (m: LibMode) => setLibMode(m),
+      sounds: () => ensureSounds(),
+      soundState: () => soundsMode?.state ?? null,
       setWorkspace: (ws: Workspace) => setWorkspace(ws, true),
       workspace: () => workspace,
       showBlock: (id: string) => {
@@ -611,6 +696,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     cleanups.forEach((f) => f());
     browser.destroy();
     modelBrowser.destroy();
+    soundsMode?.destroy();
     usedBy.destroy();
     paint3d.destroy();
     canvas.destroy();

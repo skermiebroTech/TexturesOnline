@@ -12,6 +12,7 @@ import { formatPackFormat } from '../../../ui/format';
 import { getEffect } from '../effects';
 import { exportTexturePack, type ExportResult } from '../export';
 import { packFileName } from '../project';
+import { editedSoundStems } from '../sounds/pack';
 import { plainText } from './mc-text';
 import { paintCanvas } from './thumbs';
 import type { TexStore } from './store';
@@ -100,8 +101,10 @@ export function openExportDialog(store: TexStore): void {
     }
     const row = (ic: Parameters<typeof icon>[0], label: string, value: Node | string) =>
       h('div', { class: 'tx-exp-row' }, icon(ic), h('span', { class: 'tx-exp-k' }, label), h('span', { class: 'tx-exp-v' }, value));
+    const sounds = editedSoundStems(project).size;
     const rows = [
       row('pencil', 'Edited textures', String(edited)),
+      sounds ? row('music', 'Replaced sounds', String(sounds)) : null,
       row('sparkles', 'Effects', fx.length ? (preset ? `${preset.label} (${fx.length} effect${fx.length === 1 ? '' : 's'})` : fx.map((l) => getEffect(l.type)!.label).slice(0, 3).join(', ') + (fx.length > 3 ? ` +${fx.length - 3}` : '')) : 'None'),
       row(java ? 'laptop' : 'gamepad', 'Made for', target),
       project.compat && java ? row('arrows-horizontal', 'Also works in', `${project.compat.minVersion} – ${project.compat.maxVersion}`) : null,

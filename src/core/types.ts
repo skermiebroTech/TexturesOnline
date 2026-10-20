@@ -145,6 +145,30 @@ export interface TexturePackProject extends ProjectBase {
   bedrockUuids?: { header: string; module: string };
   /** Semver-like pack version for Bedrock manifest, bumped on each export */
   packVersion?: [number, number, number];
+  /**
+   * Sounds replaced in the editor: pack path of the sound file -> how it was made. The file that goes
+   * into the pack is stored in extraFiles under the same path (so every tool that copies a pack's
+   * files keeps it); this only holds what's needed to keep editing it.
+   */
+  sounds?: Record<string, SoundEdit>;
+}
+
+/** An edited sound file: the user's own audio, trimmed and levelled, saved as Ogg Vorbis. */
+export interface SoundEdit {
+  /** The uploaded / recorded audio as it was picked (absent when it was too large to keep) */
+  source?: Blob;
+  /** File name of the upload, or 'Recording' */
+  sourceName?: string;
+  /** Trim start and end in seconds of the source */
+  start: number;
+  end: number;
+  /** Linear volume (1 = unchanged) */
+  gain: number;
+  /** Keep two channels (only when the source has them) */
+  stereo: boolean;
+  updatedAt: number;
+  /** Bedrock: sound_definitions.json entries (copied from the game) for the events that play this file */
+  definitions?: Record<string, unknown>;
 }
 
 export interface EffectLayer {

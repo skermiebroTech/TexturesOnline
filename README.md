@@ -27,6 +27,11 @@ repository keeps its original name, `TexturesOnline`).
   with overlay layers (wool, eyes, clothes) and body parts you can hide or show on their own. Mobs can
   wear what the game puts on them: saddles, horse, wolf and nautilus armour, llama carpets, the happy
   ghast's harness and humanoid armour (leather dyeable), each its own part on its own texture.
+- Sounds: browse the game's sound events by category, play them, and replace any sound with your own file
+  (MP3, WAV, OGG, M4A...) or a microphone recording, trimmed on its waveform and levelled. Replacements are
+  saved as Ogg Vorbis (Java: `assets/minecraft/sounds/`; Bedrock: `sounds/` plus `sound_definitions.json`
+  entries). Java sounds play straight from Mojang's servers; Bedrock's come from bedrock-samples (FSB5,
+  decoded in the browser).
 - Exports a `.zip` with the exact `pack.mcmeta` rules of the chosen Java version, or a Bedrock `.mcpack`.
 
 ### Skins
@@ -83,6 +88,7 @@ Browser end-to-end suites (need Playwright + Chromium):
 NODE_PATH=$(npm root -g) node tests/e2e/textures/e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/textures/paint3d.e2e.cjs   # painting textures on the 3D model
 NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs      # mob models: painting, body parts, saddles and armour, Bedrock
+NODE_PATH=$(npm root -g) node tests/e2e/textures/sounds.e2e.cjs    # sounds: list, play, upload / record, trim, export as Ogg Vorbis
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs
@@ -168,6 +174,9 @@ so the old project URL keeps working until the redirect is in place. To move to 
 - Libraries: [three.js](https://threejs.org/), [skinview3d](https://github.com/bs-community/skinview3d),
   [fflate](https://github.com/101arrowz/fflate), [fast-png](https://github.com/image-js/fast-png),
   [idb-keyval](https://github.com/jakearchibald/idb-keyval), built with [Vite](https://vite.dev/).
+- Ogg Vorbis encoding: [wasm-media-encoders](https://github.com/arseneyr/wasm-media-encoders) (MIT), libogg and
+  libvorbis by Xiph.Org (BSD). The FSB5 / FADPCM reader follows the format notes of
+  [vgmstream](https://github.com/vgmstream/vgmstream).
 
 ## License
 
