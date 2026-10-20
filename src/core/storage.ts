@@ -1,5 +1,6 @@
 import { createStore, get, set, setMany, getMany, del, delMany, keys, values, clear, type UseStore } from 'idb-keyval';
 import type { Project } from './types';
+import { kit } from '../ui/i18n/kit';
 
 /*
  * Two IndexedDB databases: 'to-cache' (re-downloadable game files, version lists) and
@@ -53,7 +54,7 @@ export function isStoragePersistent(): boolean {
 
 function storageError(err: unknown): Error {
   if (err instanceof Error && (err.name === 'QuotaExceededError' || /quota/i.test(err.message))) {
-    const e = new Error('Your browser is out of storage space for this site. Clear cached game files in Settings or free up disk space.');
+    const e = new Error(kit.storageFull);
     e.name = 'QuotaExceededError';
     return e;
   }

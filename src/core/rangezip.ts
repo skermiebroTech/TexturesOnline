@@ -1,6 +1,8 @@
 import { inflateSync } from 'fflate';
 import type { ProgressFn } from './types';
 import { NetError, abortError, fetchResponse, hostOf, readBodyWithProgress, throwIfAborted, withRetry, createLimiter } from './net';
+import { fileText } from '../shared/i18n/files';
+import { fmt } from '../i18n/editor-text';
 
 /*
  * Random-access zip reader over HTTP Range requests (or a local Blob / bytes).
@@ -59,7 +61,7 @@ export class BlobSource implements ByteSource {
     try {
       return new Uint8Array(await this.blob.slice(Math.max(0, start), Math.min(this.size, end)).arrayBuffer());
     } catch {
-      throw new Error("The file couldn't be read. It may have been moved or deleted; pick it again.");
+      throw new Error(fileText.zip.fileGone);
     }
   }
 }
@@ -128,7 +130,7 @@ export class HttpRangeSource implements ByteSource {
             resp.body?.cancel().catch(() => {});
             const again = this.fullSlice(start, end) ?? (await this.waitForFull(start, end, opts.signal));
             if (again) return again;
-            throw new NetError('network', this.url, `The download from ${hostOf(this.url)} was interrupted. Try again.`);
+            throw new NetError('network', this.url, fmt(fileText.zip.interrupted, { host: hostOf(this.url) }));
           }
           const load = readBodyWithProgress(resp, {
             onProgress: opts.onProgress,
@@ -137,7 +139,7 @@ export class HttpRangeSource implements ByteSource {
             signal: opts.signal,
             url: this.url,
           }).then((body) => {
-            if (body.length !== this.size) throw new NetError('bad-data', this.url, 'The download was incomplete. Try again.');
+            if (body.length !== this.size) throw new NetError('bad-data', this.url, fileText.zip.incomplete);
             this.bytesFetched += body.length;
             this.full = body;
             return body as Uint8Array;
@@ -199,7 +201,7 @@ export function parseEocd(tail: Uint8Array, tailStart: number, readAt?: (abs: nu
       break;
     }
   }
-  if (p < 0) throw new Error("This isn't a valid zip/jar file (no end-of-archive record).");
+  if (p < 0) throw new Error(fileText.zip.noEndRecord);
   let count = u16(tail, p + 10);
   let cdSize = u32(tail, p + 12);
   let cdOffset = u32(tail, p + 16);
@@ -365,7 +367,7 @@ export async function inflateRaw(data: Uint8Array, size: number): Promise<Uint8A
 
 export function inflateRawSync(data: Uint8Array, size: number): Uint8Array {
   const out = inflateSync(data, { out: new Uint8Array(size) });
-  if (out.length !== size) throw new Error('A file inside the archive is damaged.');
+  if (out.length !== size) throw new Error(fileText.zip.entryDamaged);
   return out;
 }
 
@@ -392,7 +394,7 @@ export class RangeZip {
   /** Reads the EOCD and central directory. */
   static async open(source: ByteSource, opts: ReadOptions = {}): Promise<RangeZip> {
     const size = source.size;
-    if (size < 22) throw new Error("This isn't a valid zip/jar file (too small).");
+    if (size < 22) throw new Error(fileText.zip.tooSmall);
     const tailStart = Math.max(0, size - MAX_TAIL);
     const tail = await source.read(tailStart, size, { signal: opts.signal, onProgress: opts.onProgress });
     const extra = new Map<number, Uint8Array>();
@@ -417,7 +419,7 @@ export class RangeZip {
         cdOffset = expected;
       }
     }
-    if (cdOffset + cdSize > size) throw new Error('This zip/jar file is truncated or damaged.');
+    if (cdOffset + cdSize > size) throw new Error(fileText.zip.truncated);
     let cd: Uint8Array;
     if (cdOffset >= tailStart) cd = tail.subarray(cdOffset - tailStart, cdOffset - tailStart + cdSize);
     else {
@@ -425,7 +427,7 @@ export class RangeZip {
       cd = cdOffset + cdSize <= tailStart ? before : concat(before, tail.subarray(0, cdOffset + cdSize - tailStart));
     }
     const entries = parseCentralDirectory(cd, shift);
-    if (!entries.length && eocd.count) throw new Error('The zip directory could not be read.');
+    if (!entries.length && eocd.count) throw new Error(fileText.zip.noDirectory);
     return new RangeZip(source, entries, cdOffset);
   }
 
@@ -446,7 +448,7 @@ export class RangeZip {
     const wanted: ZipEntry[] = [];
     for (const w of which) {
       const e = typeof w === 'string' ? this.byName.get(w) : w;
-      if (!e) throw new Error(`${typeof w === 'string' ? w : w.name} is not in the archive.`);
+      if (!e) throw new Error(fmt(fileText.zip.missing, { name: typeof w === 'string' ? w : w.name }));
       if (!e.name.endsWith('/')) wanted.push(e);
     }
     const out = new Map<string, Uint8Array>();
@@ -494,36 +496,36 @@ export class RangeZip {
   async read(name: string, opts: ReadOptions = {}): Promise<Uint8Array> {
     const m = await this.readMany([name], opts);
     const v = m.get(name);
-    if (!v) throw new Error(`${name} is not in the archive.`);
+    if (!v) throw new Error(fmt(fileText.zip.missing, { name }));
     return v;
   }
 
   private async extract(e: ZipEntry, buf: Uint8Array, bufStart: number, signal?: AbortSignal): Promise<Uint8Array> {
-    if (e.flags & 1) throw new Error(`${e.name} is encrypted and can't be read.`);
-    if (e.method !== 0 && e.method !== 8) throw new Error(`${e.name} uses an unsupported compression method (${e.method}).`);
+    if (e.flags & 1) throw new Error(fmt(fileText.zip.encrypted, { name: e.name }));
+    if (e.method !== 0 && e.method !== 8) throw new Error(fmt(fileText.zip.method, { name: e.name, method: String(e.method) }));
     let rel = e.offset - bufStart;
     let local = buf;
     if (rel < 0 || rel + 30 > local.length) {
       local = await this.source.read(e.offset, e.offset + 30 + 1024, { signal });
       rel = 0;
     }
-    if (u32(local, rel) !== SIG_LOCAL) throw new Error(`The archive is damaged near ${e.name}.`);
+    if (u32(local, rel) !== SIG_LOCAL) throw new Error(fmt(fileText.zip.damagedNear, { name: e.name }));
     const dataStart = rel + 30 + u16(local, rel + 26) + u16(local, rel + 28);
     let comp: Uint8Array;
     if (dataStart + e.compressedSize <= local.length) comp = local.subarray(dataStart, dataStart + e.compressedSize);
     else {
       const abs = (local === buf ? bufStart : e.offset) + dataStart;
       comp = await this.source.read(abs, abs + e.compressedSize, { signal });
-      if (comp.length !== e.compressedSize) throw new Error(`The archive is truncated near ${e.name}.`);
+      if (comp.length !== e.compressedSize) throw new Error(fmt(fileText.zip.truncatedNear, { name: e.name }));
     }
     if (e.method === 0) {
-      if (e.compressedSize !== e.size) throw new Error(`The archive is damaged near ${e.name}.`);
+      if (e.compressedSize !== e.size) throw new Error(fmt(fileText.zip.damagedNear, { name: e.name }));
       return comp.slice();
     }
     try {
       return await inflateRaw(comp, e.size);
     } catch {
-      throw new Error(`${e.name} inside the archive is damaged.`);
+      throw new Error(fmt(fileText.zip.damagedEntry, { name: e.name }));
     }
   }
 }

@@ -6,6 +6,7 @@ import { syncToastLayer, toast } from './toast';
 import { closeAllPopovers, firstFocusable } from './popover';
 import { hideTooltip } from './tooltip';
 import { setButtonBusy } from './components';
+import { kit } from './i18n/kit';
 
 export interface ModalAction {
   label: string;
@@ -57,7 +58,7 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
   hideTooltip();
 
   const closeBtn = dismissible
-    ? h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Close dialog', on: { click: () => close() } }, icon('close'))
+    ? h('button', { type: 'button', class: 'icon-btn', 'aria-label': kit.closeDialog, on: { click: () => close() } }, icon('close'))
     : null;
   const footer = opts.actions?.length ? h('div', { class: 'modal-footer' }) : null;
   const dlg = h(
@@ -131,7 +132,7 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
         }
       } catch (err) {
         console.error(err);
-        toast(err instanceof Error && err.message ? err.message : 'Something went wrong. Please try again.', { tone: 'error' });
+        toast(err instanceof Error && err.message ? err.message : kit.actionFailed, { tone: 'error' });
         return;
       }
       if (result !== false) close();
@@ -185,7 +186,7 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
   return { close, el: dlg, setBusy };
 }
 
-export function confirmDialog(title: string, text: string, confirmLabel = 'Confirm', danger = false): Promise<boolean> {
+export function confirmDialog(title: string, text: string, confirmLabel = kit.confirm, danger = false): Promise<boolean> {
   return new Promise((resolve) => {
     let result = false;
     openModal({
@@ -193,7 +194,7 @@ export function confirmDialog(title: string, text: string, confirmLabel = 'Confi
       body: h('p', null, text),
       width: 440,
       actions: [
-        { label: 'Cancel', variant: 'secondary' },
+        { label: kit.cancel, variant: 'secondary' },
         {
           label: confirmLabel,
           variant: danger ? 'danger' : 'primary',
@@ -227,8 +228,8 @@ export function promptDialog(title: string, label: string, initial = '', opts: {
       width: 440,
       body: h('div', { class: 'field' }, h('label', { class: 'field-label', htmlFor: id }, label), input),
       actions: [
-        { label: 'Cancel', variant: 'secondary' },
-        { label: opts.confirmLabel ?? 'OK', variant: 'primary', onClick: submit },
+        { label: kit.cancel, variant: 'secondary' },
+        { label: opts.confirmLabel ?? kit.ok, variant: 'primary', onClick: submit },
       ],
       onClose: () => resolve(result),
     });
@@ -247,7 +248,7 @@ export interface ShortcutGroup {
 }
 
 /** Keyboard shortcuts sheet (editors open it with "?"). */
-export function openShortcutsSheet(groups: ShortcutGroup[], title = 'Keyboard shortcuts'): { close(): void } {
+export function openShortcutsSheet(groups: ShortcutGroup[], title = kit.keyboardShortcuts): { close(): void } {
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   // ⌥ and ⇧ are not in the UI font, so those keys are spelled out
   const keyLabel = (k: string) => (k === 'Mod' ? (isMac ? '⌘' : 'Ctrl') : k === 'Alt' && isMac ? 'Option' : k);

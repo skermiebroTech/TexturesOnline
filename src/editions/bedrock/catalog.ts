@@ -1,5 +1,6 @@
 import type { TextureCategory, TextureInfo } from '../../core/types';
 import { compareTextures } from '../java/textures';
+import { errorText } from '../../shared/i18n/errors';
 
 /*
  * Bedrock vanilla file catalogue: paths relative to bedrock-samples' resource_pack/.
@@ -72,7 +73,7 @@ export function indexFromPaths(paths: string[], meta: Omit<BedrockIndexFile, 'di
 /** Paths from a GitHub git-trees API response (recursive), relative to resource_pack/. */
 export function pathsFromGitTree(tree: unknown): string[] {
   const items = (tree as { tree?: { path?: string; type?: string }[] })?.tree;
-  if (!Array.isArray(items)) throw new Error('Unexpected file list format.');
+  if (!Array.isArray(items)) throw new Error(errorText.bedrockList);
   const out: string[] = [];
   for (const it of items) {
     if (it?.type !== 'blob' || typeof it.path !== 'string') continue;

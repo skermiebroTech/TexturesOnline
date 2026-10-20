@@ -3,6 +3,8 @@
 import { h, uid } from './dom';
 import { icon } from './icons';
 import { tooltip } from './tooltip';
+import { kit } from './i18n/kit';
+import { fmt } from '../i18n/editor-text';
 import { DEFAULT_PALETTE, hsvToRgb, parseHex, parseHexWhileTyping, rgbToHsv, rgbaCss, rgbaEqual, toHex, type RGBA } from './color';
 
 export type { RGBA } from './color';
@@ -67,7 +69,7 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     class: 'cp-sv',
     tabIndex: 0,
     role: 'slider',
-    'aria-label': 'Saturation and brightness',
+    'aria-label': kit.picker.saturationBrightness,
     'aria-valuemin': 0,
     'aria-valuemax': 100,
   }, svCursor);
@@ -77,7 +79,7 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     class: 'cp-strip',
     tabIndex: 0,
     role: 'slider',
-    'aria-label': 'Hue',
+    'aria-label': kit.picker.hue,
     'aria-valuemin': 0,
     'aria-valuemax': 360,
     style: { background: 'linear-gradient(to right, #f00, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00)' },
@@ -89,13 +91,13 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     class: 'cp-strip checker',
     tabIndex: 0,
     role: 'slider',
-    'aria-label': 'Opacity',
+    'aria-label': kit.picker.opacity,
     'aria-valuemin': 0,
     'aria-valuemax': 100,
   }, alphaFill, alphaThumb);
 
-  const prevOld = h('span', { title: 'Previous' });
-  const prevNew = h('span', { title: 'New' });
+  const prevOld = h('span', { title: kit.picker.previous });
+  const prevNew = h('span', { title: kit.picker.new });
   const preview = h('div', { class: 'cp-preview checker' }, prevOld, prevNew);
 
   const hexId = uid('hex');
@@ -106,7 +108,7 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     spellcheck: false,
     autocomplete: 'off',
     maxLength: withAlpha ? 9 : 7,
-    'aria-label': 'Hex colour',
+    'aria-label': kit.picker.hex,
   });
   const alphaInput = h('input', {
     class: 'input cp-alpha-input',
@@ -114,19 +116,19 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     min: 0,
     max: 100,
     step: 1,
-    'aria-label': 'Opacity percent',
+    'aria-label': kit.picker.opacityPercent,
   });
 
   const EyeDropper = (globalThis as unknown as { EyeDropper?: EyeDropperCtor }).EyeDropper;
   const canPick = Boolean(opts.onEyedropper || EyeDropper);
   const pickBtn = canPick
-    ? h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Pick a colour from the screen' }, icon('pipette'))
+    ? h('button', { type: 'button', class: 'icon-btn', 'aria-label': kit.picker.pickFromScreen }, icon('pipette'))
     : null;
-  if (pickBtn) tooltip(pickBtn, 'Eyedropper');
+  if (pickBtn) tooltip(pickBtn, kit.picker.eyedropper);
 
   const paletteGrid = h('div', { class: 'cp-swatches', role: 'list' });
   const recentGrid = h('div', { class: 'cp-swatches', role: 'list' });
-  const recentWrap = h('div', { class: 'stack', style: { '--gap': '6px' } }, h('div', { class: 'cp-label' }, 'Recent'), recentGrid);
+  const recentWrap = h('div', { class: 'stack', style: { '--gap': '6px' } }, h('div', { class: 'cp-label' }, kit.picker.recent), recentGrid);
 
   const root = h(
     'div',
@@ -135,7 +137,7 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     hueStrip,
     withAlpha ? alphaStrip : null,
     h('div', { class: 'cp-row' }, preview, hexInput, withAlpha ? alphaInput : null, pickBtn),
-    h('div', { class: 'stack', style: { '--gap': '6px' } }, h('div', { class: 'cp-label' }, 'Palette'), paletteGrid),
+    h('div', { class: 'stack', style: { '--gap': '6px' } }, h('div', { class: 'cp-label' }, kit.picker.palette), paletteGrid),
     recentWrap,
   ) as unknown as HTMLElement & { setValue(rgba: RGBA): void };
 
@@ -183,7 +185,7 @@ export function colorPicker(opts: ColorPickerOptions): HTMLElement & { setValue(
     svCursor.style.top = `${(1 - val) * 100}%`;
     svCursor.style.background = toHex(current);
     sv.setAttribute('aria-valuenow', String(Math.round(sat * 100)));
-    sv.setAttribute('aria-valuetext', `Saturation ${Math.round(sat * 100)}%, brightness ${Math.round(val * 100)}%`);
+    sv.setAttribute('aria-valuetext', fmt(kit.picker.saturationValue, { saturation: Math.round(sat * 100), brightness: Math.round(val * 100) }));
     hueThumb.style.left = `${(hue / 360) * 100}%`;
     hueThumb.style.background = `hsl(${hue}, 100%, 50%)`;
     hueStrip.setAttribute('aria-valuenow', String(Math.round(hue)));

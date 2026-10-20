@@ -10,6 +10,8 @@ import { applyEffects, effectsApply, hasActiveEffects, type EffectContext } from
 import { categoryForPath, extOf, imageDims, newBedrockUuids, packFileName, parseBedrockVersion, parseJsonLoose } from './project';
 import { prepareSoundExport } from './sounds/pack';
 import { renderIsoCube } from './iso-cube';
+import { packText } from '../../shared/i18n/packs';
+import { fmt, joinList, textLocale } from '../../i18n/editor-text';
 
 export { renderIsoCube };
 
@@ -63,9 +65,9 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   const progress = progressReporter(opts.onProgress);
   check(signal);
   if (assets.edition !== edition) {
-    throw new Error(`The loaded game files are for ${editionName(assets.edition)}, but this pack is for ${editionName(edition)}.`);
+    throw new Error(fmt(packText.export.wrongEdition, { assets: editionName(assets.edition), pack: editionName(edition) }));
   }
-  progress('Preparing pack…', 0);
+  progress(packText.export.preparing, 0);
 
   const layers: EffectLayer[] = (project.effects ?? []).filter((l) => l.enabled);
   const effectsOn = hasActiveEffects(layers);
@@ -91,13 +93,13 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     if (validUuids(project.bedrockUuids)) nextUuids = { ...project.bedrockUuids! };
     else {
       nextUuids = newBedrockUuids();
-      if (project.bedrockUuids) warnings.push("The pack's IDs were invalid, so it got new ones. It will install as a separate pack.");
+      if (project.bedrockUuids) warnings.push(packText.export.newIds);
     }
     nextVersion = bumpPackVersion(project.packVersion);
     const original = extra.get('manifest.json');
     const extras = original ? manifestExtras(original) : {};
     const manifest = buildResourceManifest({
-      name: project.name?.trim() || 'Texture Pack',
+      name: project.name?.trim() || packText.export.defaultName,
       description: project.description ?? '',
       uuids: nextUuids,
       version: nextVersion,
@@ -123,7 +125,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     }
   }
   if (!jobs.length && !extra.size) {
-    warnings.push("This pack doesn't change any textures yet, so it won't look different in game. Edit a texture or add an effect first.");
+    warnings.push(packText.export.unchanged);
   }
 
   const out = new Map<string, Uint8Array>();
@@ -131,7 +133,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   const failedOverrides: string[] = [];
   const unreadable: string[] = [];
   let done = 0;
-  const label = effectsOn ? 'Applying effects' : 'Adding textures';
+  const label = effectsOn ? packText.export.applyingEffects : packText.export.addingTextures;
   const slice = timeSlicer();
   await runPool(jobs, CONCURRENCY, signal, async (job) => {
     await slice();
@@ -160,43 +162,43 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
       } else failedVanilla.push(job.path);
     }
     done++;
-    progress(`${label}… ${done.toLocaleString('en-US')} / ${jobs.length.toLocaleString('en-US')}`, 0.02 + 0.84 * (done / Math.max(1, jobs.length)));
+    progress(fmt(label, { done, total: jobs.length }), 0.02 + 0.84 * (done / Math.max(1, jobs.length)));
   });
   check(signal);
   if (vanillaJobs > 0 && failedVanilla.length === vanillaJobs) {
-    throw new Error("Couldn't load the game's textures to apply the effects. Check your connection and try again.");
+    throw new Error(packText.export.effectsFailed);
   }
   if (failedVanilla.length) {
-    warnings.push(`${plural(failedVanilla.length, 'texture')} couldn't be loaded, so the effects are missing on ${failedVanilla.length === 1 ? 'it' : 'them'}: ${sample(failedVanilla)}.`);
+    warnings.push(fmt(packText.export.vanillaFailed, { count: failedVanilla.length, files: sample(failedVanilla) }));
   }
   if (failedOverrides.length) {
-    warnings.push(`The effects couldn't be applied to ${plural(failedOverrides.length, 'edited texture')}, so ${failedOverrides.length === 1 ? 'it was' : 'they were'} added as-is: ${sample(failedOverrides)}.`);
+    warnings.push(fmt(packText.export.overridesFailed, { count: failedOverrides.length, files: sample(failedOverrides) }));
   }
   if (unreadable.length) {
-    warnings.push(`${plural(unreadable.length, 'edited texture')} couldn't be read from this browser's storage and ${unreadable.length === 1 ? 'was' : 'were'} left out: ${sample(unreadable)}.`);
+    warnings.push(fmt(packText.export.unreadable, { count: unreadable.length, files: sample(unreadable) }));
   }
 
   // --- icon ---
-  progress('Creating pack icon…', 0.88);
+  progress(packText.export.icon, 0.88);
   const icon = await buildIcon(project, assets, layers, overrides, edition === 'java' ? JAVA_ICON_SIZE : BEDROCK_ICON_SIZE, warnings);
   check(signal);
 
   // --- files ---
-  progress('Writing pack info…', 0.9);
+  progress(packText.export.packInfo, 0.9);
   files[edition === 'java' ? 'pack.png' : 'pack_icon.png'] = icon;
   for (const [path, bytes] of extra) if (!RESERVED[edition].has(path)) files[path] = bytes;
   for (const path of [...out.keys()].sort()) files[path] = out.get(path)!;
   check(signal);
 
   // --- zip ---
-  progress('Compressing…', 0.93);
+  progress(packText.export.compressing, 0.93);
   const blob = await writeZip(files, { mimeType: edition === 'java' ? 'application/zip' : 'application/octet-stream' });
   check(signal);
   if (edition === 'bedrock') {
     project.bedrockUuids = nextUuids;
     project.packVersion = nextVersion;
   }
-  progress('Done', 1);
+  progress(packText.export.done, 1);
   return { blob, filename: packFileName(project), warnings, fileCount: Object.keys(files).length };
 
   // ------------------------------------------------------------------------------------------
@@ -313,7 +315,7 @@ export async function effectiveCompat(
   if (comparePackFormats(target, hiF) > 0) {
     [hi, hiF, widened] = [version, target, true];
   }
-  if (widened) warnings.push(`The version range didn't include Minecraft ${version}, so it was widened to ${lo} – ${hi}.`);
+  if (widened) warnings.push(fmt(packText.export.widened, { version, from: lo, to: hi }));
   if (comparePackFormats(loF, hiF) === 0) return undefined;
   return { minVersion: lo, maxVersion: hi };
 }
@@ -337,7 +339,7 @@ async function buildJavaMcmeta(project: TexturePackProject, assets: AssetIndex, 
       }
     }
     if (!local) throw err instanceof Error ? err : new Error(String(err));
-    if (project.compat) warnings.push(`The version range couldn't be looked up offline, so the pack only declares Minecraft ${project.version}.`);
+    if (project.compat) warnings.push(fmt(packText.export.offlineRange, { version: project.version }));
     text = local;
   }
   return asciiJson(original ? mergePackMcmeta(text, decodeText(original), warnings) : text);
@@ -354,10 +356,7 @@ async function warnIncompatible(text: string, versions: string[], warnings: stri
     if (f && describePackForGame(text, f) !== 'compatible') off.push(v);
   }
   if (off.length) {
-    warnings.push(
-      `Minecraft ${off.join(' and ')} will list this pack as made for another version (it can still be turned on after a warning). ` +
-        `Very old and very new versions can't share one pack; export a separate pack for ${off.length === 1 ? 'that version' : 'those versions'} if you need it.`,
-    );
+    warnings.push(fmt(packText.export.incompatible, { count: off.length, versions: textLocale() === 'en' ? off.join(' and ') : joinList(off) }));
   }
 }
 
@@ -434,7 +433,7 @@ function normalizeOverlays(entries: unknown[], pack: Record<string, unknown>, wa
   }
   if (!parsed.length) return null;
   if (era === 'old') {
-    warnings.push('Overlay folders only work in Minecraft 1.20.2 and newer, so they are kept as files but not active for this version.');
+    warnings.push(packText.export.overlaysInactive);
     return null;
   }
   if (era === 'mid') return parsed.map((p) => ({ directory: p.dir, formats: [p.min.major, p.max] }));
@@ -628,7 +627,7 @@ async function buildIcon(project: TexturePackProject, assets: AssetIndex, layers
       if (isPng(bytes) && img.width === img.height && img.width >= 16 && img.width <= 1024) return bytes;
       return encodePng(fitToSize(img, size, size, img.width > size || img.height > size ? 'smooth' : 'nearest', 'contain'));
     } catch {
-      warnings.push("The pack icon couldn't be read, so a generated icon was used instead.");
+      warnings.push(packText.export.iconUnreadable);
     }
   }
   try {
@@ -757,7 +756,7 @@ async function collectExtraFiles(project: TexturePackProject, warnings: string[]
       lost.push(path);
     }
   }
-  if (lost.length) warnings.push(`${plural(lost.length, 'file')} from the opened pack couldn't be read from this browser's storage and ${lost.length === 1 ? 'was' : 'were'} left out: ${sample(lost)}.`);
+  if (lost.length) warnings.push(fmt(packText.export.lost, { count: lost.length, files: sample(lost) }));
   return out;
 }
 
@@ -796,16 +795,12 @@ function check(signal?: AbortSignal): void {
 }
 
 function editionName(e: Edition): string {
-  return e === 'java' ? 'Java Edition' : 'Bedrock Edition';
-}
-
-function plural(n: number, word: string): string {
-  return `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`;
+  return e === 'java' ? packText.export.javaEdition : packText.export.bedrockEdition;
 }
 
 function sample(paths: string[]): string {
   const names = paths.slice(0, 3).map((p) => p.split('/').pop());
-  return names.join(', ') + (paths.length > 3 ? ` and ${paths.length - 3} more` : '');
+  return paths.length > 3 ? fmt(packText.export.andMore, { list: names.join(', '), count: paths.length - 3 }) : names.join(', ');
 }
 
 function progressReporter(fn?: ProgressFn): (label: string, fraction: number | null) => void {

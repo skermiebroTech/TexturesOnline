@@ -10,7 +10,9 @@ import { buildPackMcmetaForVersions } from '../../editions/java/packmeta';
 import { buildResourceManifest, bumpPackVersion } from '../../editions/bedrock/manifest';
 import { asciiJson } from '../textures/export';
 import { newBedrockUuids, newTextureProject } from '../textures/project';
-import { BEDROCK_ICON_SIZE, DEFAULT_PACK_NAME, FIRST_TOTEM_VERSION, JAVA_ICON_SIZE, javaHasTotem, totemDescription, totemIcon, totemTexturePath, type TotemPack, type TotemPackOptions } from './totem';
+import { BEDROCK_ICON_SIZE, FIRST_TOTEM_VERSION, JAVA_ICON_SIZE, defaultPackName, javaHasTotem, totemDescription, totemIcon, totemTexturePath, type TotemPack, type TotemPackOptions } from './totem';
+import { t } from './i18n/text';
+import { fmt } from '../../i18n/editor-text';
 
 function png(img: ImageData): Uint8Array<ArrayBuffer> {
   return encodePng(img);
@@ -18,14 +20,14 @@ function png(img: ImageData): Uint8Array<ArrayBuffer> {
 
 /** Builds the downloadable pack: Java .zip with pack.mcmeta for the version, or a Bedrock .mcpack. */
 export async function buildTotemPack(totem: ImageData, opts: TotemPackOptions): Promise<TotemPack> {
-  const name = opts.name.trim() || DEFAULT_PACK_NAME;
+  const name = opts.name.trim() || defaultPackName(null);
   const description = (opts.description ?? totemDescription(null)).trim();
   const texturePath = opts.path ?? totemTexturePath(opts.edition, opts.version);
   const files: Record<string, Uint8Array | string> = {};
   let uuids: TotemPack['uuids'];
   let packVersion: TotemPack['packVersion'];
   if (opts.edition === 'java') {
-    if (!javaHasTotem(opts.version)) throw new Error(`Minecraft ${opts.version} has no Totem of Undying: it was added in Java ${FIRST_TOTEM_VERSION}.`);
+    if (!javaHasTotem(opts.version)) throw new Error(fmt(t.pack.noTotem, { version: opts.version, first: FIRST_TOTEM_VERSION }));
     files['pack.mcmeta'] = asciiJson(await buildPackMcmetaForVersions(description, opts.version));
     files['pack.png'] = png(totemIcon(totem, JAVA_ICON_SIZE));
   } else {
@@ -42,7 +44,7 @@ export async function buildTotemPack(totem: ImageData, opts: TotemPackOptions): 
 
 /** A texture pack project holding the totem, to keep editing it in the texture tool. */
 export function totemProject(totem: ImageData, opts: { name: string; description?: string; edition: Edition; version: string; path?: string }): TexturePackProject {
-  const project = newTextureProject({ name: opts.name.trim() || DEFAULT_PACK_NAME, edition: opts.edition, version: opts.version, description: opts.description });
+  const project = newTextureProject({ name: opts.name.trim() || defaultPackName(null), edition: opts.edition, version: opts.version, description: opts.description });
   const path = opts.path ?? totemTexturePath(opts.edition, opts.version);
   project.overrides[path] = new Blob([png(totem)], { type: 'image/png' });
   project.icon = new Blob([png(totemIcon(totem, opts.edition === 'java' ? JAVA_ICON_SIZE : BEDROCK_ICON_SIZE))], { type: 'image/png' });

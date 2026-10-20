@@ -24,15 +24,18 @@ import { siteFooter } from '../../app/footer';
 import type { SkinProjectData } from '../skins/export';
 import { drawFigure } from '../skins/ui/figure';
 import { createStarterSkin } from '../skins/starters';
-import { fetchSkinByUsername, HD_KEPT_NOTE, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from '../skins/ui/sources';
+import { fetchSkinByUsername, isHdKeptNote, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from '../skins/ui/sources';
+import { t } from './i18n/text';
+import { loadTotemText } from './i18n/load';
+import { kit } from '../../ui/i18n/kit';
+import { fmt, fmtNodes } from '../../i18n/editor-text';
+import { targetText } from '../convert/target';
 
 /** HD skins work too: the totem is read from them at 64x64. */
-const TOTEM_HD_NOTE = 'This is an HD 128×128 skin. The totem is 16×16, so it is made from the skin at 64×64.';
-const totemNotes = (notes: readonly string[]): string[] => notes.map((n) => (n === HD_KEPT_NOTE ? TOTEM_HD_NOTE : n));
+const totemNotes = (notes: readonly string[]): string[] => notes.map((n) => (isHdKeptNote(n) ? t.step1.hdNote : n));
 import { hotbarPreview, popPreview } from './preview';
 import {
   DEFAULT_OPTIONS,
-  DEFAULT_PACK_NAME,
   FIRST_TOTEM_VERSION,
   STYLES,
   defaultPackName,
@@ -65,11 +68,11 @@ interface ShapeEntry {
   files: AssetIndex;
 }
 
-const SOURCES: { id: Source; label: string; icon: IconName }[] = [
-  { id: 'username', label: 'My skin', icon: 'user' },
-  { id: 'upload', label: 'Upload', icon: 'upload' },
-  { id: 'saved', label: 'Saved skins', icon: 'human' },
-  { id: 'default', label: 'Default skins', icon: 'users' },
+const SOURCES: { id: Source; label: () => string; icon: IconName }[] = [
+  { id: 'username', label: () => t.step1.mySkin, icon: 'user' },
+  { id: 'upload', label: () => t.step1.upload, icon: 'upload' },
+  { id: 'saved', label: () => t.step1.saved, icon: 'human' },
+  { id: 'default', label: () => t.step1.defaults, icon: 'users' },
 ];
 
 /** The player's own Java name, remembered on this device so "use my skin" is one click next time. */
@@ -104,6 +107,7 @@ function figureCanvas(img: ImageData, model: SkinModel, cls: string): HTMLCanvas
 }
 
 export default async function view(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+  await loadTotemText(ctx.locale);
   root.classList.add('totem-view');
   let alive = true;
   const ctrl = new AbortController();
@@ -113,7 +117,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   let edited: ImageData | null = null;
   let edition: Edition = 'java';
   let javaVersion = DEFAULT_JAVA_VERSION;
-  let packName = DEFAULT_PACK_NAME;
+  let packName = defaultPackName(null);
   let nameTouched = false;
   const bedrock: { uuids?: { header: string; module: string }; packVersion?: [number, number, number] } = {};
   const shapes = new Map<string, ShapeEntry>();
@@ -131,7 +135,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const tabIds = Object.fromEntries(SOURCES.map((s) => [s.id, uid('tt-tab')])) as Record<Source, string>;
   const panelIds = Object.fromEntries(SOURCES.map((s) => [s.id, uid('tt-panel')])) as Record<Source, string>;
   const tabs = SOURCES.map((s) => {
-    const b = h('button', { type: 'button', class: 'tt-tab', role: 'tab', id: tabIds[s.id], 'aria-controls': panelIds[s.id], dataset: { source: s.id } }, icon(s.icon), h('span', null, s.label));
+    const b = h('button', { type: 'button', class: 'tt-tab', role: 'tab', id: tabIds[s.id], 'aria-controls': panelIds[s.id], dataset: { source: s.id } }, icon(s.icon), h('span', null, s.label()));
     b.addEventListener('click', () => showSource(s.id));
     b.addEventListener('keydown', (ev) => {
       const i = SOURCES.findIndex((x) => x.id === s.id);
@@ -140,17 +144,17 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       ev.preventDefault();
       const next = SOURCES[(i + d + SOURCES.length) % SOURCES.length].id;
       showSource(next);
-      tabs.find((t) => t.dataset.source === next)?.focus();
+      tabs.find((tab) => tab.dataset.source === next)?.focus();
     });
     return b;
   });
-  const tabList = h('div', { class: 'tt-tabs', role: 'tablist', 'aria-label': 'Where the skin comes from' }, tabs);
+  const tabList = h('div', { class: 'tt-tabs', role: 'tablist', 'aria-label': t.step1.sources }, tabs);
 
   // Upload
   const dz = dropzone({
     accept: '.png,image/png',
-    label: 'Drop a skin PNG here or click to browse',
-    hint: '64×64 or HD 128×128 skins, or old 64×32 ones',
+    label: t.step1.drop,
+    hint: t.step1.dropHint,
     icon: 'upload',
     onFiles: ([file]) => void uploadSkin(file),
   });
@@ -162,22 +166,22 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     try {
       const loaded = await readSkinFile(file);
       if (!alive) return;
-      const name = file.name.replace(/\.png$/i, '').replace(/[_-]+/g, ' ').trim() || 'Uploaded skin';
+      const name = file.name.replace(/\.png$/i, '').replace(/[_-]+/g, ' ').trim() || t.step1.uploadedName;
       setSkin({ image: loaded.image, model: loaded.model, name, source: 'upload', notes: totemNotes(loaded.notes) });
     } catch (err) {
-      dz.setError(err instanceof SkinSourceError ? err.message : 'That file could not be opened as a skin.');
+      dz.setError(err instanceof SkinSourceError ? err.message : t.step1.uploadFailed);
     } finally {
       dz.classList.remove('is-busy');
     }
   }
 
   // Username
-  const userInput = h('input', { class: 'input', type: 'text', placeholder: 'Your Java username', autocomplete: 'off', spellcheck: false, maxLength: 36, 'aria-label': 'Minecraft Java username', id: uid('tt-user'), value: myName });
+  const userInput = h('input', { class: 'input', type: 'text', placeholder: t.step1.username, autocomplete: 'off', spellcheck: false, maxLength: 36, 'aria-label': t.step1.usernameLabel, id: uid('tt-user'), value: myName });
   const rememberBox = h('input', { type: 'checkbox', checked: true, id: uid('tt-remember') }) as HTMLInputElement;
-  const rememberRow = h('label', { class: 'tt-remember', for: rememberBox.id }, rememberBox, h('span', null, 'This is me: remember my name on this device'));
+  const rememberRow = h('label', { class: 'tt-remember', for: rememberBox.id }, rememberBox, h('span', null, t.step1.remember));
   const userError = h('p', { class: 'tt-field-error', role: 'alert', hidden: true });
-  const userBtn = button({ label: 'Get skin', icon: 'download', variant: 'primary', class: 'tt-user-go' });
-  userBtn.setAttribute('aria-label', 'Get skin');
+  const userBtn = button({ label: t.step1.getSkin, icon: 'download', variant: 'primary', class: 'tt-user-go' });
+  userBtn.setAttribute('aria-label', t.step1.getSkin);
   async function lookup(remember = true) {
     const invalid = validateUsername(userInput.value);
     userError.hidden = !invalid;
@@ -199,7 +203,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     } catch (err) {
       if (ctrl.signal.aborted) return;
       userError.hidden = false;
-      userError.textContent = err instanceof SkinSourceError ? err.message : "Couldn't load that skin. Check your connection and try again.";
+      userError.textContent = err instanceof SkinSourceError ? err.message : t.step1.lookupFailed;
     } finally {
       if (userBtn.isConnected) setButtonBusy(userBtn, false);
     }
@@ -212,7 +216,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const examples = h(
     'div',
     { class: 'tt-examples' },
-    h('span', { class: 'faint small' }, 'Try'),
+    h('span', { class: 'faint small' }, t.step1.try),
     ['jeb_', 'Dinnerbone', 'Notch'].map((n) => {
       const b = h('button', { type: 'button', class: 'tt-chip' }, n);
       b.addEventListener('click', () => {
@@ -228,12 +232,12 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   function paintMine() {
     mine.hidden = !myName;
     if (!myName) return mine.replaceChildren();
-    const use = button({ label: `Use my skin (${myName})`, icon: 'user', variant: 'primary', class: 'tt-mine-use' });
+    const use = button({ label: fmt(t.step1.useMine, { name: myName }), icon: 'user', variant: 'primary', class: 'tt-mine-use' });
     use.addEventListener('click', () => {
       userInput.value = myName;
       void lookup(false);
     });
-    const forget = h('button', { type: 'button', class: 'tt-link' }, 'Not you?');
+    const forget = h('button', { type: 'button', class: 'tt-link' }, t.step1.notYou);
     forget.addEventListener('click', () => {
       myName = '';
       writeMyName(null);
@@ -252,17 +256,15 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     rememberRow,
     userError,
     examples,
-    h('p', { class: 'tt-note' }, icon('circle-info', { size: 16 }), h('span', null, 'Type your Java Edition name to use your own skin. Bedrock gamertags can’t be looked up: upload your skin instead. Any player’s name works too, so you can make a totem of a friend (the examples above are not remembered).')),
+    h('p', { class: 'tt-note' }, icon('circle-info', { size: 16 }), h('span', null, t.step1.usernameNote)),
   );
 
   // Saved skin projects
-  const savedGrid = h('div', { class: 'tt-skin-grid', role: 'list', 'aria-label': 'Your saved skins' });
+  const savedGrid = h('div', { class: 'tt-skin-grid', role: 'list', 'aria-label': t.step1.savedLabel });
   const savedEmpty = h(
     'p',
     { class: 'tt-empty muted', hidden: true },
-    'No saved skins in this browser yet. Skins you paint in the ',
-    h('a', { href: routeHref('/skins') }, 'Skin Editor'),
-    ' show up here.',
+    fmtNodes(t.step1.noSaved, { editor: h('a', { href: routeHref('/skins') }, t.step1.skinEditor) }),
   );
   const savedPanel = h('div', { class: 'tt-saved' }, savedGrid, savedEmpty);
   async function paintSaved() {
@@ -277,7 +279,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     savedGrid.replaceChildren(
       ...projects.map((p) => {
         const thumb = h('span', { class: 'tt-skin-thumb' });
-        const b = h('button', { type: 'button', class: 'tt-skin-opt', role: 'listitem', 'aria-label': `${p.name || 'Untitled'} (${p.model === 'slim' ? 'slim' : 'classic'} arms)` }, thumb, h('span', { class: 'tt-skin-name truncate' }, p.name || 'Untitled'));
+        const b = h('button', { type: 'button', class: 'tt-skin-opt', role: 'listitem', 'aria-label': fmt(t.step1.skinArms, { name: p.name || t.step1.untitled, model: p.model }) }, thumb, h('span', { class: 'tt-skin-name truncate' }, p.name || t.step1.untitled));
         let img: ImageData | null = null;
         void decodeImage(p.image, 'png')
           .then((d) => {
@@ -289,9 +291,9 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
         b.addEventListener('click', async () => {
           try {
             const d = img ?? (await decodeImage(p.image, 'png'));
-            setSkin({ image: d, model: p.model, name: p.name || 'My skin', source: 'saved', notes: [] });
+            setSkin({ image: d, model: p.model, name: p.name || t.step1.myName, source: 'saved', notes: [] });
           } catch {
-            toast('That skin could not be opened.', { tone: 'error' });
+            toast(t.step1.openFailed, { tone: 'error' });
           }
         });
         return b;
@@ -302,16 +304,16 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   // Default skins from the game files
   let defaultsLoad: Promise<AssetIndex> | null = null;
   let defaultModel: SkinModel = 'classic';
-  const defaultBar = progressBar({ label: `Getting the Minecraft ${DEFAULT_JAVA_VERSION} game files…` });
+  const defaultBar = progressBar({ label: fmt(t.step1.gettingDefaults, { version: DEFAULT_JAVA_VERSION }) });
   const defaultStatus = h('div', { class: 'tt-default-status', hidden: true }, defaultBar);
-  const defaultGrid = h('div', { class: 'tt-skin-grid', role: 'list', 'aria-label': 'Default skins' });
+  const defaultGrid = h('div', { class: 'tt-skin-grid', role: 'list', 'aria-label': t.step1.defaultsLabel });
   const defaultModelSeg = segmented<SkinModel>({
     value: 'classic',
-    label: 'Arm style',
+    label: t.step1.armStyle,
     size: 'sm',
     options: [
-      { value: 'classic', label: 'Classic arms' },
-      { value: 'slim', label: 'Slim arms' },
+      { value: 'classic', label: t.step1.classicArms },
+      { value: 'slim', label: t.step1.slimArms },
     ],
     onChange: (m) => {
       defaultModel = m;
@@ -323,7 +325,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const defaultPanel = h(
     'div',
     { class: 'tt-defaults' },
-    h('p', { class: 'tt-note' }, icon('lock', { size: 16 }), h('span', null, `Steve, Alex and the other default characters from the Minecraft ${DEFAULT_JAVA_VERSION} game files. Downloaded once from Mojang’s servers (about 6 MB), then kept on this device.`)),
+    h('p', { class: 'tt-note' }, icon('lock', { size: 16 }), h('span', null, fmt(t.step1.defaultsNote, { version: DEFAULT_JAVA_VERSION }))),
     defaultModelSeg,
     defaultStatus,
     defaultError,
@@ -336,7 +338,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     }
     const load = defaultsLoad;
     defaultStatus.hidden = false;
-    defaultBar.set({ label: 'Checking game files…', fraction: null });
+    defaultBar.set({ label: t.step1.checking, fraction: null });
     let assets: AssetIndex;
     try {
       assets = await load;
@@ -345,7 +347,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       if (defaultsLoad === load) defaultsLoad = null;
       defaultStatus.hidden = true;
       defaultError.hidden = false;
-      defaultError.replaceChildren(icon('warning-diamond', { size: 20 }), h('span', null, friendlyError(err)), button({ label: 'Try again', icon: 'reload', size: 'sm', variant: 'secondary', onClick: () => void paintDefaults() }));
+      defaultError.replaceChildren(icon('warning-diamond', { size: 20 }), h('span', null, friendlyError(err)), button({ label: kit.tryAgain, icon: 'reload', size: 'sm', variant: 'secondary', onClick: () => void paintDefaults() }));
       return;
     }
     if (!alive) return;
@@ -357,7 +359,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     defaultGrid.replaceChildren(
       ...list.map((s: DefaultSkin) => {
         const thumb = h('span', { class: 'tt-skin-thumb' });
-        const b = h('button', { type: 'button', class: 'tt-skin-opt', role: 'listitem', 'aria-label': `${s.name} (${s.model === 'slim' ? 'slim' : 'classic'} arms)`, dataset: { skin: s.id } }, thumb, h('span', { class: 'tt-skin-name truncate' }, s.name));
+        const b = h('button', { type: 'button', class: 'tt-skin-opt', role: 'listitem', 'aria-label': fmt(t.step1.skinArms, { name: s.name, model: s.model }), dataset: { skin: s.id } }, thumb, h('span', { class: 'tt-skin-name truncate' }, s.name));
         void readDefaultSkin(assets, s)
           .then((l) => thumb.appendChild(figureCanvas(l.image, s.model, 'tt-figure')))
           .catch(() => undefined);
@@ -366,7 +368,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
             const l = await readDefaultSkin(assets, s);
             setSkin({ image: l.image, model: s.model, name: s.name, source: 'default', notes: [] });
           } catch (err) {
-            toast(friendlyError(err, 'Could not open that skin'), { tone: 'error' });
+            toast(friendlyError(err, t.step1.openFailedShort), { tone: 'error' });
           }
         });
         return b;
@@ -378,10 +380,10 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const panelEls = SOURCES.map((s) => h('div', { class: 'tt-panel', role: 'tabpanel', id: panelIds[s.id], 'aria-labelledby': tabIds[s.id], dataset: { source: s.id } }, panels[s.id]));
   function showSource(s: Source) {
     source = s;
-    tabs.forEach((t) => {
-      const on = t.dataset.source === s;
-      t.setAttribute('aria-selected', String(on));
-      t.tabIndex = on ? 0 : -1;
+    tabs.forEach((tab) => {
+      const on = tab.dataset.source === s;
+      tab.setAttribute('aria-selected', String(on));
+      tab.tabIndex = on ? 0 : -1;
     });
     panelEls.forEach((p) => (p.hidden = p.dataset.source !== s));
     if (s === 'saved') void paintSaved();
@@ -390,7 +392,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
 
   const picker1 = h('div', { class: 'tt-picker' }, tabList, ...panelEls);
   const chosen = h('div', { class: 'tt-chosen', hidden: true });
-  const step1 = stepCard(1, 'Choose a skin', 'Use your own skin by your Java name, upload one, or pick a saved or default skin.', 'human', h('div', { class: 'cv-step-body' }, chosen, picker1, live));
+  const step1 = stepCard(1, t.step1.title, t.step1.text, 'human', h('div', { class: 'cv-step-body' }, chosen, picker1, live));
 
   function paintChosen() {
     if (!skin) {
@@ -400,15 +402,15 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     }
     const s = skin;
     const notes = s.notes.length
-      ? h('details', { class: 'cv-notes' }, h('summary', null, icon('circle-info', { size: 16 }), s.notes.length === 1 ? '1 note' : `${s.notes.length} notes`), h('ul', null, s.notes.map((n) => h('li', null, n))))
+      ? h('details', { class: 'cv-notes' }, h('summary', null, icon('circle-info', { size: 16 }), fmt(t.step1.notes, { count: s.notes.length })), h('ul', null, s.notes.map((n) => h('li', null, n))))
       : null;
-    const from = { upload: 'Uploaded PNG', username: 'Java player', saved: 'Saved skin', default: 'Default skin' }[s.source];
-    const change = button({ label: picker1.hidden ? 'Change' : 'Keep this skin', icon: picker1.hidden ? 'repeat' : 'check', variant: 'ghost', size: 'sm', class: 'tt-change' });
-    change.setAttribute('aria-label', picker1.hidden ? 'Change the skin' : 'Keep this skin');
+    const from = { upload: t.step1.fromUpload, username: t.step1.fromUsername, saved: t.step1.fromSaved, default: t.step1.fromDefault }[s.source];
+    const change = button({ label: picker1.hidden ? t.step1.change : t.step1.keep, icon: picker1.hidden ? 'repeat' : 'check', variant: 'ghost', size: 'sm', class: 'tt-change' });
+    change.setAttribute('aria-label', picker1.hidden ? t.step1.changeSkin : t.step1.keep);
     change.addEventListener('click', () => {
       picker1.hidden = !picker1.hidden;
       paintChosen();
-      if (!picker1.hidden) tabs.find((t) => t.dataset.source === source)?.focus();
+      if (!picker1.hidden) tabs.find((tab) => tab.dataset.source === source)?.focus();
     });
     chosen.replaceChildren(
       h(
@@ -419,7 +421,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
           'div',
           { class: 'cv-pack-info' },
           h('strong', { class: 'cv-pack-name truncate tt-chosen-name' }, s.name),
-          h('span', { class: 'cv-pack-badges' }, badge(from, 'gold'), badge(s.model === 'slim' ? 'Slim arms' : 'Classic arms', 'gray')),
+          h('span', { class: 'cv-pack-badges' }, badge(from, 'gold'), badge(s.model === 'slim' ? t.step1.slimArms : t.step1.classicArms, 'gray')),
         ),
         change,
       ),
@@ -440,7 +442,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     regenerate();
     paintExport();
     clearInstall();
-    announce(`Totem made from ${next.name}’s skin.`);
+    announce(fmt(t.step1.made, { name: next.name }));
     if (matchMedia('(max-width: 960px)').matches) previewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -466,15 +468,15 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     });
     return b;
   });
-  const styleGroup = h('div', { class: 'cv-eds tt-styles', role: 'radiogroup', 'aria-label': 'Style' }, styleCards);
-  const outerToggle = toggle({ label: 'Outer layer', description: 'Hat, jacket, sleeves and trousers on top', value: opts.outer, onChange: (v) => setOption('outer', v) });
-  const outlineToggle = toggle({ label: 'Gold outline', description: 'Keep the vanilla totem’s outline; the figure is trimmed to its shape', value: opts.outline, onChange: (v) => setOption('outline', v) });
-  const wingsToggle = toggle({ label: 'Gold wings', description: 'The vanilla totem shows wherever the figure leaves a gap, such as the wing tips', value: opts.wings, onChange: (v) => setOption('wings', v) });
+  const styleGroup = h('div', { class: 'cv-eds tt-styles', role: 'radiogroup', 'aria-label': t.step2.style }, styleCards);
+  const outerToggle = toggle({ label: t.step2.outer, description: t.step2.outerHint, value: opts.outer, onChange: (v) => setOption('outer', v) });
+  const outlineToggle = toggle({ label: t.step2.outline, description: t.step2.outlineHint, value: opts.outline, onChange: (v) => setOption('outline', v) });
+  const wingsToggle = toggle({ label: t.step2.wings, description: t.step2.wingsHint, value: opts.wings, onChange: (v) => setOption('wings', v) });
   outerToggle.classList.add('tt-opt-outer');
   outlineToggle.classList.add('tt-opt-outline');
   wingsToggle.classList.add('tt-opt-wings');
   const shapeStatus = h('div', { class: 'tt-shape', role: 'status' });
-  const step2 = stepCard(2, 'Pick a style', 'How the skin is laid out on the 16×16 totem. Every preview updates as you go.', 'sliders', h('div', { class: 'cv-step-body' }, styleGroup, h('div', { class: 'tt-toggles' }, outerToggle, outlineToggle, wingsToggle), shapeStatus));
+  const step2 = stepCard(2, t.step2.title, t.step2.text, 'sliders', h('div', { class: 'cv-step-body' }, styleGroup, h('div', { class: 'tt-toggles' }, outerToggle, outlineToggle, wingsToggle), shapeStatus));
 
   function chooseStyle(s: TotemStyle) {
     if (opts.style === s) return;
@@ -490,7 +492,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   function changedOptions() {
     if (edited) {
       edited = null;
-      toast('Your pixel edits were replaced by the new settings.', { tone: 'info' });
+      toast(t.step2.editsReplaced, { tone: 'info' });
     }
     void ensureShape();
     regenerate();
@@ -510,7 +512,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
 
   // ---------------------------------------------------------------- vanilla totem (outline, wings)
   const shapeKey = () => (edition === 'java' ? `java:${javaVersion}` : `bedrock:${BEDROCK_LATEST_ID}`);
-  const targetLabel = () => (edition === 'java' ? `Java ${javaVersion}` : 'Bedrock');
+  const targetLabel = () => targetText({ edition, version: javaVersion });
   const needsShape = () => opts.outline || opts.wings;
   const currentShape = (): TotemShape | null => (needsShape() ? (shapes.get(shapeKey())?.shape ?? null) : null);
 
@@ -550,7 +552,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     paintShape();
   }
 
-  const shapeBar = progressBar({ label: 'Getting the game files…' });
+  const shapeBar = progressBar({ label: t.step2.gettingFiles });
   function paintShape() {
     const key = shapeKey();
     shapeStatus.className = 'tt-shape';
@@ -559,24 +561,24 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       return;
     }
     if (!needsShape()) {
-      shapeStatus.replaceChildren(h('p', { class: 'faint small' }, `The outline and wings come from the vanilla totem of ${targetLabel()} (the version picked in step 3), downloaded once from the game files.`));
+      shapeStatus.replaceChildren(h('p', { class: 'faint small' }, fmt(t.step2.shapeFrom, { target: targetLabel() })));
       return;
     }
     if (shapes.has(key)) {
       shapeStatus.classList.add('is-ready');
-      shapeStatus.replaceChildren(icon('check', { size: 16 }), h('span', null, `Fitted to the vanilla totem of ${targetLabel()}.`));
+      shapeStatus.replaceChildren(icon('check', { size: 16 }), h('span', null, fmt(t.step2.fitted, { target: targetLabel() })));
       return;
     }
     if (shapeLoad?.key === key && shapeLoad.error) {
       shapeStatus.classList.add('is-error');
       shapeStatus.replaceChildren(
         icon('warning-diamond', { size: 20 }),
-        h('span', null, `The vanilla totem couldn’t be loaded: ${shapeLoad.error} The figure is shown without it.`),
-        button({ label: 'Try again', icon: 'reload', variant: 'secondary', size: 'sm', onClick: () => void ensureShape(true) }),
+        h('span', null, fmt(t.step2.shapeFailed, { error: shapeLoad.error })),
+        button({ label: kit.tryAgain, icon: 'reload', variant: 'secondary', size: 'sm', onClick: () => void ensureShape(true) }),
       );
       return;
     }
-    shapeBar.set(shapeLoad?.progress ?? { label: `Getting the ${targetLabel()} game files…`, fraction: null });
+    shapeBar.set(shapeLoad?.progress ?? { label: fmt(t.step2.gettingTarget, { target: targetLabel() }), fraction: null });
     shapeStatus.classList.add('is-loading');
     shapeStatus.replaceChildren(shapeBar);
   }
@@ -585,11 +587,11 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const bigHost = h('div', { class: 'tt-big checker' });
   const pop = popPreview();
   const hotbar = hotbarPreview();
-  const editedBadge = h('span', { class: 'tt-edited', hidden: true }, badge('Edited by hand', 'gold'));
-  const editBtn = button({ label: 'Edit pixels', icon: 'pencil', variant: 'secondary', class: 'tt-edit-btn', onClick: () => void openEditor() });
-  const pngBtn = button({ label: 'Download PNG', icon: 'image', variant: 'secondary', class: 'tt-png-btn', onClick: () => void downloadPng() });
+  const editedBadge = h('span', { class: 'tt-edited', hidden: true }, badge(t.preview.edited, 'gold'));
+  const editBtn = button({ label: t.preview.edit, icon: 'pencil', variant: 'secondary', class: 'tt-edit-btn', onClick: () => void openEditor() });
+  const pngBtn = button({ label: t.preview.png, icon: 'image', variant: 'secondary', class: 'tt-png-btn', onClick: () => void downloadPng() });
   const discardBtn = button({
-    label: 'Undo hand edits',
+    label: t.preview.undoEdits,
     icon: 'undo',
     variant: 'ghost',
     class: 'tt-discard-btn',
@@ -599,24 +601,24 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       clearInstall();
     },
   });
-  const previewEmpty = h('div', { class: 'tt-preview-empty' }, h('span', { class: 'tt-preview-empty-icon' }, icon('totem', { size: 48 })), h('p', { class: 'muted' }, 'Choose a skin and your totem appears here.'));
+  const previewEmpty = h('div', { class: 'tt-preview-empty' }, h('span', { class: 'tt-preview-empty-icon' }, icon('totem', { size: 48 })), h('p', { class: 'muted' }, t.preview.empty));
   const previewBody = h(
     'div',
     { class: 'tt-preview-body', hidden: true },
     h(
       'div',
       { class: 'tt-stages' },
-      h('figure', { class: 'tt-stage' }, bigHost, h('figcaption', null, h('span', null, '16 × 16 texture'), editedBadge)),
-      h('figure', { class: 'tt-stage' }, pop.el, h('figcaption', null, h('span', null, 'When it saves you'), h('button', { type: 'button', class: 'tt-replay', on: { click: () => pop.play() } }, icon('play', { size: 16 }), 'Play'))),
+      h('figure', { class: 'tt-stage' }, bigHost, h('figcaption', null, h('span', null, t.preview.texture), editedBadge)),
+      h('figure', { class: 'tt-stage' }, pop.el, h('figcaption', null, h('span', null, t.preview.pop), h('button', { type: 'button', class: 'tt-replay', on: { click: () => pop.play() } }, icon('play', { size: 16 }), t.preview.play))),
     ),
-    h('div', { class: 'tt-hotbar-wrap' }, hotbar.el, h('span', { class: 'faint small' }, 'In your hotbar and off-hand')),
+    h('div', { class: 'tt-hotbar-wrap' }, hotbar.el, h('span', { class: 'faint small' }, t.preview.hotbar)),
     h('div', { class: 'cv-actions tt-preview-actions' }, editBtn, pngBtn, discardBtn),
   );
   const previewTitleId = uid('tt-prev');
   const previewCard = h(
     'section',
     { class: 'card tt-preview', 'aria-labelledby': previewTitleId },
-    h('div', { class: 'cv-step-head' }, h('span', { class: 'tt-prev-icon', 'aria-hidden': 'true' }, icon('totem')), h('div', null, h('h2', { id: previewTitleId }, 'Your totem'), h('p', { class: 'muted' }, 'Big, in the totem’s pop and in a hotbar.'))),
+    h('div', { class: 'cv-step-head' }, h('span', { class: 'tt-prev-icon', 'aria-hidden': 'true' }, icon('totem')), h('div', null, h('h2', { id: previewTitleId }, t.preview.title), h('p', { class: 'muted' }, t.preview.text))),
     h('div', { class: 'cv-step-body' }, previewEmpty, previewBody),
   );
 
@@ -636,7 +638,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     editedBadge.hidden = !edited;
     discardBtn.hidden = !edited;
     bigHost.replaceChildren(...(img ? [pixelCanvas(img, 'tt-big-canvas')] : []));
-    if (img) bigHost.setAttribute('aria-label', `Totem texture made from ${skin?.name ?? 'the skin'}`);
+    if (img) bigHost.setAttribute('aria-label', fmt(t.preview.imageLabel, { name: skin?.name ?? t.preview.theSkin }));
     bigHost.setAttribute('role', 'img');
     hotbar.setImage(img);
     const first = !lastShown && !!img;
@@ -659,7 +661,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
         edited = out;
         paintPreview();
         clearInstall();
-        announce('Pixel edits applied to the totem.');
+        announce(t.preview.applied);
       },
     });
   }
@@ -678,7 +680,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       'button',
       { type: 'button', class: 'cv-ed tt-ed-choice', role: 'radio', dataset: { value: e } },
       h('span', { class: 'cv-ed-icon' }, icon(e === 'java' ? 'laptop' : 'gamepad')),
-      h('span', { class: 'cv-ed-text' }, h('strong', null, e === 'java' ? 'Java Edition' : 'Bedrock Edition'), h('span', { class: 'faint small' }, e === 'java' ? 'A .zip resource pack for the version you play' : 'A .mcpack for phones, tablets, consoles and Windows')),
+      h('span', { class: 'cv-ed-text' }, h('strong', null, e === 'java' ? t.step3.java : t.step3.bedrock), h('span', { class: 'faint small' }, e === 'java' ? t.step3.javaText : t.step3.bedrockText)),
       h('span', { class: 'cv-ed-check' }, icon('check', { size: 16 })),
     );
     b.addEventListener('click', () => chooseEdition(e));
@@ -691,11 +693,11 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     });
     return b;
   });
-  const editionGroup = h('div', { class: 'cv-eds tt-eds', role: 'radiogroup', 'aria-label': 'Edition' }, editionCards);
+  const editionGroup = h('div', { class: 'cv-eds tt-eds', role: 'radiogroup', 'aria-label': t.step3.edition }, editionCards);
   const vPicker = versionPicker({
     edition: 'java',
     value: javaVersion,
-    label: 'Java version',
+    label: t.step3.javaVersion,
     onChange: (_e, v) => {
       javaVersion = v;
       targetChanged();
@@ -703,10 +705,10 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   });
   const pickerWrap = h('div', { class: 'cv-version tt-version' }, vPicker);
   const nameField = textInput({
-    label: 'Pack name',
+    label: t.step3.packName,
     value: packName,
     maxLength: 64,
-    placeholder: DEFAULT_PACK_NAME,
+    placeholder: defaultPackName(null),
     onInput: (v) => {
       packName = v;
       nameTouched = true;
@@ -715,13 +717,13 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   });
   nameField.classList.add('tt-name-field');
   const hint = h('div', { class: 'cv-hint tt-hint', role: 'status' });
-  const dlBtn = button({ label: 'Download pack', icon: 'download', variant: 'primary', size: 'lg', class: 'tt-dl-btn', onClick: () => void download() });
-  const openBtn = button({ label: 'Open in Texture Pack Maker', icon: 'pencil', variant: 'secondary', size: 'lg', class: 'tt-open-btn', onClick: () => void openInEditor() });
+  const dlBtn = button({ label: t.step3.download, icon: 'download', variant: 'primary', size: 'lg', class: 'tt-dl-btn', onClick: () => void download() });
+  const openBtn = button({ label: t.step3.open, icon: 'pencil', variant: 'secondary', size: 'lg', class: 'tt-open-btn', onClick: () => void openInEditor() });
   const installBox = h('div', { class: 'cv-install tt-install', hidden: true });
   const step3 = stepCard(
     3,
-    'Download the pack',
-    'A resource pack that swaps the Totem of Undying for yours. Pick where you play.',
+    t.step3.title,
+    t.step3.text,
     'package',
     h('div', { class: 'cv-step-body' }, editionGroup, pickerWrap, nameField, hint, h('div', { class: 'cv-actions tt-dl-actions' }, dlBtn, openBtn), installBox),
   );
@@ -755,19 +757,19 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     const noTotem = edition === 'java' && !javaHasTotem(javaVersion);
     hint.classList.toggle('is-alert', noTotem);
     if (noTotem) {
-      hint.replaceChildren(icon('warning-diamond', { size: 20 }), h('span', null, h('strong', null, `Java ${javaVersion} has no Totem of Undying. `), `Totems were added in Java ${FIRST_TOTEM_VERSION}: pick ${FIRST_TOTEM_VERSION} or newer.`));
+      hint.replaceChildren(icon('warning-diamond', { size: 20 }), h('span', null, h('strong', null, fmt(t.step3.noTotemTitle, { version: javaVersion })), fmt(t.step3.noTotem, { first: FIRST_TOTEM_VERSION })));
     } else if (!img) {
-      hint.replaceChildren('Choose a skin first.');
+      hint.replaceChildren(t.step3.chooseSkin);
     } else {
       hint.replaceChildren(
-        h('span', null, edition === 'java' ? `You’ll get a .zip for Java ${javaVersion} with ` : 'You’ll get a .mcpack for Bedrock with ', h('code', { class: 'tt-path' }, texturePath()), edition === 'java' ? ', pack.mcmeta and a pack icon.' : ', manifest.json and a pack icon.'),
+        h('span', null, fmtNodes(edition === 'java' ? t.step3.javaResult : t.step3.bedrockResult, { version: javaVersion, path: h('code', { class: 'tt-path' }, texturePath()) })),
       );
     }
     const ok = !!img && !noTotem;
     dlBtn.disabled = !ok;
     openBtn.disabled = !ok;
     const label = dlBtn.querySelector('.btn-label');
-    if (label) label.textContent = edition === 'java' ? 'Download .zip' : 'Download .mcpack';
+    if (label) label.textContent = edition === 'java' ? t.step3.downloadZip : t.step3.downloadMcpack;
   }
 
   function clearInstall() {
@@ -798,20 +800,20 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       saveBlob(r.blob, r.filename);
       installBox.hidden = false;
       installBox.replaceChildren(
-        h('div', { class: 'cv-file' }, icon('check', { size: 20 }), h('strong', null, r.filename), h('span', { class: 'faint small' }, `${formatBytes(r.blob.size)} · ${r.files.length} files${r.packVersion ? ` · v${r.packVersion.join('.')}` : ''}`)),
+        h('div', { class: 'cv-file' }, icon('check', { size: 20 }), h('strong', null, r.filename), h('span', { class: 'faint small' }, `${formatBytes(r.blob.size)} · ${fmt(t.step3.files, { count: r.files.length })}${r.packVersion ? ` · v${r.packVersion.join('.')}` : ''}`)),
         h(
           'p',
           { class: 'small muted' },
           edition === 'bedrock'
-            ? 'Open the .mcpack file: Minecraft starts and imports it. Then turn it on in Settings → Global Resources. Downloading again updates the same pack. '
-            : 'Put the .zip in your resourcepacks folder (Options → Resource Packs → Open Pack Folder), don’t unzip it, then move it to the Selected list. ',
-          h('a', { href: routeHref(`/help?s=${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, 'Installing help'),
+            ? t.step3.installBedrock
+            : t.step3.installJava,
+          h('a', { href: routeHref(`/help?s=${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.step3.installHelp),
         ),
       );
-      announce(`${r.filename} downloaded.`);
+      announce(fmt(t.step3.downloaded, { file: r.filename }));
     } catch (err) {
       console.error(err);
-      toast(friendlyError(err, 'Couldn’t build the pack'), { tone: 'error' });
+      toast(friendlyError(err, t.step3.buildFailed), { tone: 'error' });
     } finally {
       if (dlBtn.isConnected) setButtonBusy(dlBtn, false);
       paintExport();
@@ -837,7 +839,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       navigate(`/textures/${encodeURIComponent(project.id)}`);
     } catch (err) {
       console.error(err);
-      toast(friendlyError(err, 'Couldn’t save the pack'), { tone: 'error' });
+      toast(friendlyError(err, t.step3.saveFailed), { tone: 'error' });
       if (openBtn.isConnected) setButtonBusy(openBtn, false);
     }
   }
@@ -848,9 +850,9 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const art = h(
     'div',
     { class: 'cv-hero-art tt-hero-art', 'aria-hidden': 'true' },
-    h('figure', null, figureCanvas(demoSkin, 'classic', 'tt-hero-figure'), h('figcaption', null, icon('human', { size: 16 }), 'Your skin')),
+    h('figure', null, figureCanvas(demoSkin, 'classic', 'tt-hero-figure'), h('figcaption', null, icon('human', { size: 16 }), t.hero.yourSkin)),
     h('span', { class: 'cv-hero-arrows' }, icon('arrow-right', { size: 32 })),
-    h('figure', null, pixelCanvas(demoTotem, 'tt-hero-totem'), h('figcaption', null, icon('totem', { size: 16 }), 'Your totem')),
+    h('figure', null, pixelCanvas(demoTotem, 'tt-hero-totem'), h('figcaption', null, icon('totem', { size: 16 }), t.hero.yourTotem)),
   );
   const grid = h('div', { class: 'container tt-grid' }, step1, step2, previewCard, step3);
   grid.querySelectorAll('.cv-step').forEach((el, i) => el.classList.add(`tt-area-${i + 1}`));
@@ -863,9 +865,9 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       h(
         'div',
         { class: 'cv-hero-text' },
-        h('span', { class: 'eyebrow' }, icon('totem'), 'Totem Maker'),
-        h('h1', { class: 'pixel-shadow' }, 'Custom Totem of Undying Maker'),
-        h('p', { class: 'lead' }, 'Turn any Minecraft skin into a Totem of Undying that looks like the player, then download it as a resource pack for Java or Bedrock. Everything happens in your browser.'),
+        h('span', { class: 'eyebrow' }, icon('totem'), t.hero.eyebrow),
+        h('h1', { class: 'pixel-shadow' }, t.hero.title),
+        h('p', { class: 'lead' }, t.hero.lead),
       ),
       art,
     ),
@@ -887,9 +889,9 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       .then(async (p) => {
         if (!alive || !p || p.kind !== 'skin') return;
         const d = await decodeImage(p.image, 'png');
-        if (alive) setSkin({ image: d, model: p.model, name: p.name || 'My skin', source: 'saved', notes: [] });
+        if (alive) setSkin({ image: d, model: p.model, name: p.name || t.step1.myName, source: 'saved', notes: [] });
       })
-      .catch(() => toast('That skin could not be opened.', { tone: 'error' }));
+      .catch(() => toast(t.step1.openFailed, { tone: 'error' }));
   } else if (linkedUser && !validateUsername(linkedUser)) {
     userInput.value = linkedUser;
     void lookup(false);

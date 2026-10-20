@@ -3,6 +3,7 @@
 import { h } from './dom';
 import { icon, type IconName } from './icons';
 import { floatingHost, showInTopLayer } from './popover';
+import { kit } from './i18n/kit';
 
 type Tone = 'info' | 'success' | 'error' | 'warn';
 
@@ -19,7 +20,7 @@ let region: HTMLElement | null = null;
 function ensureRegion(): HTMLElement {
   if (region && region.isConnected) return region;
   // A polite live region that exists before any toast is added, so screen readers announce them.
-  region = h('div', { class: 'toast-region', role: 'region', 'aria-label': 'Notifications', 'aria-live': 'polite', 'aria-relevant': 'additions' });
+  region = h('div', { class: 'toast-region', role: 'region', 'aria-label': kit.notifications, 'aria-live': 'polite', 'aria-relevant': 'additions' });
   document.body.appendChild(region);
   return region;
 }
@@ -102,7 +103,7 @@ export function toast(
       ),
     );
   }
-  actions.appendChild(h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': 'Dismiss notification', on: { click: close } }, icon('close')));
+  actions.appendChild(h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': kit.dismissNotification, on: { click: close } }, icon('close')));
 
   const el = h(
     'div',

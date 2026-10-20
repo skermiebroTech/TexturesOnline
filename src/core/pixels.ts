@@ -5,6 +5,9 @@
  * file is actually read or written.
  */
 
+import { errorText } from '../shared/i18n/errors';
+import { fmt } from '../i18n/editor-text';
+
 type Pixels = Uint8ClampedArray<ArrayBuffer>;
 
 class ImageDataShim {
@@ -246,7 +249,7 @@ export function forceOpaqueSkinBase(img: ImageData): ImageData {
  */
 export function convertLegacySkin(img: ImageData, opts: { forceOpaqueBase?: boolean } = {}): ImageData {
   if (img.width === 64 && img.height === 64) return cloneImageData(img);
-  if (img.width !== 64 || img.height !== 32) throw new Error(`Skins must be 64x64 or 64x32 pixels (this one is ${img.width}x${img.height}).`);
+  if (img.width !== 64 || img.height !== 32) throw new Error(fmt(errorText.skinSize, { width: String(img.width), height: String(img.height) }));
   const out = createImageData(64, 64);
   out.data.set(img.data, 0);
   const px = new Uint32Array(out.data.buffer);
@@ -281,6 +284,6 @@ export function convertLegacySkin(img: ImageData, opts: { forceOpaqueBase?: bool
 /** Top half of a 64x64 skin: the legacy 64x32 layout (left limbs and extra overlays are dropped). */
 export function toLegacySkin(img: ImageData): ImageData {
   if (img.width === 64 && img.height === 32) return cloneImageData(img);
-  if (img.width !== 64 || img.height !== 64) throw new Error('Only 64x64 skins can be saved in the legacy 64x32 format.');
+  if (img.width !== 64 || img.height !== 64) throw new Error(errorText.legacySkin);
   return cropImageData(img, 0, 0, 64, 32);
 }

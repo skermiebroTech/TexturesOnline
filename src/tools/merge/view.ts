@@ -26,7 +26,12 @@ import { packFileName } from '../textures/project';
 import { plainText } from '../textures/ui/mc-text';
 import { compareJavaVersions } from '../convert/paths';
 import { loadConvertMaps } from '../convert/data';
-import { DEFAULT_MERGED_NAME, MAX_PACKS, MIN_PACKS, defaultMergeVersion, displayPath, editionOf, joinNames, mergeDescription, mergePacks, type MergeReport } from './merge';
+import { MAX_PACKS, MIN_PACKS, defaultMergeVersion, defaultMergedName, displayPath, editionOf, joinNames, mergeDescription, mergePacks, type MergeReport } from './merge';
+import { t } from './i18n/text';
+import { loadMergeText } from './i18n/load';
+import { kit } from '../../ui/i18n/kit';
+import { fmt, fmtNodes, num } from '../../i18n/editor-text';
+import { targetText } from '../convert/target';
 
 // The pack reader and the exporter (zip, image codecs) load when a pack is opened or downloaded.
 const packReader = () => import('../textures/import');
@@ -74,22 +79,19 @@ function isoCube(top: ProceduralTextureName, side: ProceduralTextureName, size: 
 }
 
 function packLabel(p: TexturePackProject): string {
-  return p.edition === 'java' ? `Java ${p.version}` : 'Bedrock';
-}
-
-function plural(n: number, word: string, many = `${word}s`): string {
-  return `${n.toLocaleString('en-US')} ${n === 1 ? word : many}`;
+  return targetText(p);
 }
 
 function nameOf(p: TexturePackProject): string {
-  return plainText(p.name) || 'Untitled pack';
+  return plainText(p.name) || t.step1.untitled;
 }
 
-export default async function view(root: HTMLElement, _ctx: RouteContext): Promise<() => void> {
+export default async function view(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+  await loadMergeText(ctx.locale);
   root.classList.add('merge-view');
   let alive = true;
   let entries: Entry[] = [];
-  let mergedName = DEFAULT_MERGED_NAME;
+  let mergedName = defaultMergedName();
   /** Entry id whose icon is used, 'auto' (top pack with one) or 'none' (generated) */
   let iconChoice: string = 'auto';
   let javaVersion = defaultMergeVersion([]);
@@ -102,30 +104,30 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
 
   // ---------------------------------------------------------------- step 1: the packs
   const live = h('p', { class: 'sr-only', 'aria-live': 'polite' });
-  const busy = h('div', { class: 'cv-busy', hidden: true }, spinner(32), h('span', { class: 'mg-busy-label' }, 'Reading pack…'));
+  const busy = h('div', { class: 'cv-busy', hidden: true }, spinner(32), h('span', { class: 'mg-busy-label' }, t.step1.reading));
   const dz = dropzone({
     accept: '.zip,.mcpack,.mcaddon',
-    label: 'Drop packs here or click to browse',
-    hint: 'Two to eight packs · .zip for Java · .mcpack or .mcaddon for Bedrock',
+    label: t.step1.drop,
+    hint: t.step1.dropHint,
     icon: 'folder-plus',
     multiple: true,
     onFiles: (files) => void addFiles(files),
   });
   dz.classList.add('cv-dz', 'mg-dz');
   const dzWrap = h('div', { class: 'cv-dz-wrap mg-dz-wrap' }, dz, busy);
-  const full = h('p', { class: 'mg-full faint small', hidden: true }, icon('circle-info', { size: 16 }), h('span', null, `That’s the most one merge can take (${MAX_PACKS} packs). Remove one to add another.`));
-  const list = h('ol', { class: 'mg-list', 'aria-label': 'Packs, highest priority first' });
+  const full = h('p', { class: 'mg-full faint small', hidden: true }, icon('circle-info', { size: 16 }), h('span', null, fmt(t.step1.full, { max: MAX_PACKS })));
+  const list = h('ol', { class: 'mg-list', 'aria-label': t.step1.listLabel });
   const listBox = h(
     'div',
     { class: 'mg-list-box', hidden: true },
-    h('div', { class: 'mg-end mg-end-top' }, icon('arrow-up', { size: 16 }), h('span', null, 'Highest priority: wins every conflict')),
+    h('div', { class: 'mg-end mg-end-top' }, icon('arrow-up', { size: 16 }), h('span', null, t.step1.highest)),
     list,
-    h('div', { class: 'mg-end' }, icon('arrow-down', { size: 16 }), h('span', null, 'Lowest priority')),
+    h('div', { class: 'mg-end' }, icon('arrow-down', { size: 16 }), h('span', null, t.step1.lowest)),
   );
   const step1 = stepCard(
     1,
-    'Add your packs',
-    'Drag them into order. As in Minecraft’s pack list, the pack at the top wins where two packs change the same file.',
+    t.step1.title,
+    t.step1.text,
     'files',
     h('div', { class: 'cv-step-body' }, listBox, dzWrap, full, live),
   );
@@ -135,7 +137,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     const room = MAX_PACKS - entries.length;
     const take = files.slice(0, Math.max(0, room));
     const errors: string[] = [];
-    if (files.length > take.length) errors.push(`Up to ${MAX_PACKS} packs can be merged: ${plural(files.length - take.length, 'file')} ${files.length - take.length === 1 ? 'wasn’t' : 'weren’t'} added.`);
+    if (files.length > take.length) errors.push(fmt(t.step1.tooMany, { max: MAX_PACKS, count: files.length - take.length }));
     dz.setError(null);
     busy.hidden = false;
     dz.classList.add('is-busy');
@@ -145,14 +147,14 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       for (let i = 0; i < take.length; i++) {
         const file = take[i];
         const label = busy.querySelector('.mg-busy-label');
-        if (label) label.textContent = take.length > 1 ? `Reading pack ${i + 1} of ${take.length}…` : 'Reading pack…';
+        if (label) label.textContent = take.length > 1 ? fmt(t.step1.readingOf, { n: i + 1, total: take.length }) : t.step1.reading;
         try {
           const { importPack } = await packReader();
           const r = await importPack(file);
           if (!alive) return;
           const entry: Entry = { id: uid('mg-pack'), project: r.project, warnings: r.warnings, fileName: file.name, iconUrl: r.project.icon ? URL.createObjectURL(r.project.icon) : null };
           entries.push(entry);
-          announce(`${nameOf(r.project)} added at position ${entries.length} of ${entries.length}.`);
+          announce(fmt(t.step1.added, { name: nameOf(r.project), position: entries.length, total: entries.length }));
           changed();
         } catch (err) {
           console.error(err);
@@ -197,7 +199,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     entries.splice(from, 1);
     entries.splice(dest, 0, entry);
     changed();
-    announce(`${nameOf(entry.project)} moved to position ${dest + 1} of ${entries.length}.`);
+    announce(fmt(t.step1.moved, { name: nameOf(entry.project), position: dest + 1, total: entries.length }));
     if (focus && entry.row) {
       let target = entry.row.querySelector<HTMLElement>(`.mg-${focus}`);
       if (target && (target as HTMLButtonElement).disabled) target = entry.row.querySelector<HTMLElement>('.mg-handle');
@@ -211,7 +213,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     entries.splice(i, 1);
     if (entry.iconUrl) URL.revokeObjectURL(entry.iconUrl);
     changed();
-    announce(`${nameOf(entry.project)} removed.`);
+    announce(fmt(t.step1.removed, { name: nameOf(entry.project) }));
     const next = entries[Math.min(i, entries.length - 1)];
     (next?.row?.querySelector<HTMLElement>('.mg-remove') ?? dz).focus();
   }
@@ -229,10 +231,10 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     const others = Object.keys(p.extraFiles).length;
     const handle = h(
       'button',
-      { type: 'button', class: 'mg-handle', 'aria-label': `Move ${nameOf(p)}` },
+      { type: 'button', class: 'mg-handle', 'aria-label': fmt(t.step1.move, { name: nameOf(p) }) },
       icon('grip'),
     );
-    tooltip(handle, 'Drag, or use the arrow keys, to reorder');
+    tooltip(handle, t.step1.dragHint);
     handle.addEventListener('pointerdown', (ev) => startDrag(entry, ev));
     handle.addEventListener('keydown', (ev) => {
       if (ev.key === 'ArrowUp' || ev.key === 'ArrowDown') {
@@ -243,14 +245,14 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         move(entry, ev.key === 'Home' ? 0 : entries.length - 1, 'handle');
       }
     });
-    const up = iconButton('arrow-up', 'Move up', () => move(entry, entries.indexOf(entry) - 1, 'up'), { size: 'sm', class: 'mg-up' });
-    const down = iconButton('arrow-down', 'Move down', () => move(entry, entries.indexOf(entry) + 1, 'down'), { size: 'sm', class: 'mg-down' });
-    const del = iconButton('close', 'Remove', () => remove(entry), { size: 'sm', class: 'mg-remove' });
-    up.setAttribute('aria-label', `Move ${nameOf(p)} up`);
-    down.setAttribute('aria-label', `Move ${nameOf(p)} down`);
-    del.setAttribute('aria-label', `Remove ${nameOf(p)}`);
+    const up = iconButton('arrow-up', t.step1.moveUp, () => move(entry, entries.indexOf(entry) - 1, 'up'), { size: 'sm', class: 'mg-up' });
+    const down = iconButton('arrow-down', t.step1.moveDown, () => move(entry, entries.indexOf(entry) + 1, 'down'), { size: 'sm', class: 'mg-down' });
+    const del = iconButton('close', t.step1.remove, () => remove(entry), { size: 'sm', class: 'mg-remove' });
+    up.setAttribute('aria-label', fmt(t.step1.moveNameUp, { name: nameOf(p) }));
+    down.setAttribute('aria-label', fmt(t.step1.moveNameDown, { name: nameOf(p) }));
+    del.setAttribute('aria-label', fmt(t.step1.removeName, { name: nameOf(p) }));
     const notes = entry.warnings.length
-      ? h('details', { class: 'cv-notes mg-notes' }, h('summary', null, icon('circle-info', { size: 16 }), plural(entry.warnings.length, 'note')), h('ul', null, entry.warnings.map((w) => h('li', null, w))))
+      ? h('details', { class: 'cv-notes mg-notes' }, h('summary', null, icon('circle-info', { size: 16 }), fmt(t.step1.notes, { count: entry.warnings.length })), h('ul', null, entry.warnings.map((w) => h('li', null, w))))
       : null;
     const row = h(
       'li',
@@ -263,7 +265,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         { class: 'mg-info' },
         h('strong', { class: 'mg-name truncate', title: `${nameOf(p)} (${entry.fileName})` }, nameOf(p)),
         h('span', { class: 'mg-badges' }, badge(packLabel(p), p.edition === 'java' ? 'green' : 'blue'), p.resolution > 16 ? badge(`${p.resolution}×`, 'gray') : null, h('span', { class: 'mg-top-badge' })),
-        h('span', { class: 'faint small mg-counts' }, `${plural(textures, 'texture')}${others ? ` · ${plural(others, 'other file')}` : ''}`),
+        h('span', { class: 'faint small mg-counts' }, `${fmt(t.step1.textures, { count: textures })}${others ? ` · ${fmt(t.step1.otherFiles, { count: others })}` : ''}`),
         notes,
       ),
       h('div', { class: 'mg-row-actions' }, up, down, del),
@@ -284,7 +286,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       (row.querySelector('.mg-remove') as HTMLButtonElement).disabled = !!running;
       (row.querySelector('.mg-handle') as HTMLButtonElement).disabled = entries.length < 2 || !!running;
       const top = row.querySelector('.mg-top-badge') as HTMLElement;
-      top.replaceChildren(...(i === 0 && entries.length > 1 ? [badge('Wins conflicts', 'gold')] : []));
+      top.replaceChildren(...(i === 0 && entries.length > 1 ? [badge(t.step1.winsConflicts, 'gold')] : []));
       row.classList.toggle('is-odd-edition', !edition && entries.length > 1 && e.project.edition !== majorityEdition());
     });
     listBox.hidden = !entries.length;
@@ -293,7 +295,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     full.hidden = !isFull;
     dz.classList.toggle('compact', entries.length > 0);
     const label = dz.querySelector('.dropzone-label');
-    if (label) label.textContent = entries.length ? 'Add more packs' : 'Drop packs here or click to browse';
+    if (label) label.textContent = entries.length ? t.step1.dropMore : t.step1.drop;
   }
 
   function majorityEdition(): Edition {
@@ -368,10 +370,10 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
 
   // ---------------------------------------------------------------- step 2: settings
   const nameField = textInput({
-    label: 'Name of the merged pack',
+    label: t.step2.name,
     value: mergedName,
     maxLength: 64,
-    placeholder: DEFAULT_MERGED_NAME,
+    placeholder: defaultMergedName(),
     onInput: (v) => {
       mergedName = v;
       paintSettings();
@@ -380,12 +382,12 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
   });
   nameField.classList.add('mg-name-field');
   const descPreview = h('p', { class: 'faint small mg-desc' });
-  const iconGroup = h('div', { class: 'mg-icons', role: 'radiogroup', 'aria-label': 'Pack icon' });
-  const iconField = h('div', { class: 'field mg-icon-field' }, h('div', { class: 'field-label' }, 'Pack icon'), iconGroup);
+  const iconGroup = h('div', { class: 'mg-icons', role: 'radiogroup', 'aria-label': t.step2.icon });
+  const iconField = h('div', { class: 'field mg-icon-field' }, h('div', { class: 'field-label' }, t.step2.icon), iconGroup);
   const picker = versionPicker({
     edition: 'java',
     value: javaVersion,
-    label: 'Java version',
+    label: t.step2.javaVersion,
     onChange: (_e, v) => {
       javaVersion = v;
       versionTouched = true;
@@ -395,8 +397,8 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
   });
   const pickerWrap = h('div', { class: 'cv-version mg-version' }, picker);
   const hint = h('div', { class: 'cv-hint mg-hint', role: 'status' });
-  const mergeBtn = button({ label: 'Merge packs', icon: 'git-merge', variant: 'primary', size: 'lg', class: 'cv-go mg-go', onClick: () => void run() });
-  const step2 = stepCard(2, 'Merge settings', 'Name the new pack and choose its icon. Java packs also get a version.', 'sliders', h('div', { class: 'cv-step-body' }, nameField, descPreview, iconField, pickerWrap, hint, mergeBtn));
+  const mergeBtn = button({ label: t.step2.merge, icon: 'git-merge', variant: 'primary', size: 'lg', class: 'cv-go mg-go', onClick: () => void run() });
+  const step2 = stepCard(2, t.step2.title, t.step2.text, 'sliders', h('div', { class: 'cv-step-body' }, nameField, descPreview, iconField, pickerWrap, hint, mergeBtn));
 
   function iconSource(): Entry | null {
     if (iconChoice === 'none') return null;
@@ -413,7 +415,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       node: h('img', { src: e.iconUrl!, alt: '', class: 'pixelated' }),
       on: chosen === e,
     }));
-    opts.push({ id: 'none', label: 'Generated from the merged textures', node: isoCube('grass_top', 'grass_side', 40), on: !chosen });
+    opts.push({ id: 'none', label: t.step2.generatedIcon, node: isoCube('grass_top', 'grass_side', 40), on: !chosen });
     const buttons = opts.map((o) => {
       const b = h('button', { type: 'button', class: 'mg-icon-opt checker', role: 'radio', 'aria-checked': String(o.on), 'aria-label': o.label, tabIndex: o.on ? 0 : -1, dataset: { value: o.id } }, o.node, h('span', { class: 'mg-icon-check' }, icon('check', { size: 16 })));
       tooltip(b, o.label);
@@ -442,7 +444,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
   function paintSettings() {
     const projects = entries.map((e) => e.project);
     const { edition, java, bedrock } = editionOf(projects);
-    descPreview.textContent = entries.length ? `Description: ${mergeDescription(projects.map(nameOf))}` : '';
+    descPreview.textContent = entries.length ? fmt(t.step2.description, { description: mergeDescription(projects.map(nameOf)) }) : '';
     descPreview.hidden = !entries.length;
     pickerWrap.hidden = edition !== 'java';
     paintIcons();
@@ -450,35 +452,39 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     hint.classList.remove('is-alert');
     if (entries.length < MIN_PACKS) {
       ok = false;
-      hint.replaceChildren(entries.length ? 'Add at least one more pack to merge.' : 'Add two or more packs first.');
+      hint.replaceChildren(entries.length ? t.step2.addOneMore : t.step2.addTwo);
     } else if (!edition) {
       ok = false;
       hint.classList.add('is-alert');
-      const names = (ids: number[]) => joinNames(ids.map((i) => `“${nameOf(projects[i])}”`));
+      const names = (ids: number[]) => joinNames(ids.map((i) => fmt(t.step2.quoted, { name: nameOf(projects[i]) })));
       hint.replaceChildren(
         icon('warning-diamond', { size: 20 }),
         h(
           'span',
           null,
-          h('strong', null, 'Java and Bedrock packs can’t be merged together. '),
-          `${names(java)} ${java.length === 1 ? 'is a Java pack' : 'are Java packs'} and ${names(bedrock)} ${bedrock.length === 1 ? 'is for' : 'are for'} Bedrock: the editions use different files and folders. Convert the packs to one edition first with the `,
-          h('a', { href: routeHref('/texture-pack-converter') }, 'Texture Pack Converter'),
-          ', then merge them here.',
+          h('strong', null, t.step2.mixedTitle),
+          fmtNodes(t.step2.mixed, {
+            java: names(java),
+            javaCount: java.length,
+            bedrock: names(bedrock),
+            bedrockCount: bedrock.length,
+            converter: h('a', { href: routeHref('/texture-pack-converter') }, t.step2.converter),
+          }),
         ),
       );
     } else if (edition === 'bedrock') {
-      hint.replaceChildren(`You’ll get one .mcpack for Bedrock with ${plural(entries.length, 'pack')} in it.`);
+      hint.replaceChildren(fmt(t.step2.bedrockResult, { count: entries.length }));
     } else {
       const other = entries.filter((e) => compareJavaVersions(e.project.version, javaVersion) !== 0);
       hint.replaceChildren(
         other.length
-          ? `${joinNames(other.map((e) => `${nameOf(e.project)} (Java ${e.project.version})`))} will get the texture names of Java ${javaVersion}.`
-          : `All packs are for Java ${javaVersion}. You’ll get one .zip.`,
+          ? fmt(t.step2.renamed, { packs: joinNames(other.map((e) => fmt(t.step2.packVersion, { name: nameOf(e.project), version: e.project.version }))), version: javaVersion })
+          : fmt(t.step2.sameVersion, { version: javaVersion }),
       );
     }
     mergeBtn.disabled = !ok;
     const label = mergeBtn.querySelector('.btn-label');
-    if (label) label.textContent = entries.length >= MIN_PACKS ? `Merge ${entries.length} packs` : 'Merge packs';
+    if (label) label.textContent = entries.length >= MIN_PACKS ? fmt(t.step2.mergeCount, { count: entries.length }) : t.step2.merge;
   }
 
   // ---------------------------------------------------------------- step 3: progress & result
@@ -502,10 +508,10 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     paintList();
     paintSettings();
     const needsRenames = edition === 'java' && projects.some((p) => compareJavaVersions(p.version, javaVersion) !== 0);
-    const steps = [...(needsRenames ? [{ id: 'maps', label: 'Loading the texture names' }] : []), { id: 'merge', label: 'Merging files' }, { id: 'save', label: 'Saving to your packs' }];
+    const steps = [...(needsRenames ? [{ id: 'maps', label: t.progress.maps }] : []), { id: 'merge', label: t.progress.merge }, { id: 'save', label: t.progress.save }];
     const stepEls = steps.map((s) => h('li', { class: 'cv-prog-step', dataset: { state: 'todo' } }, h('span', { class: 'cv-prog-dot' }), h('span', null, s.label)));
-    const bar = progressBar({ label: 'Starting…' });
-    bar.set({ label: 'Starting…', fraction: null });
+    const bar = progressBar({ label: t.progress.starting });
+    bar.set({ label: t.progress.starting, fraction: null });
     const setStep = (id: string) => {
       const i = steps.findIndex((s) => s.id === id);
       stepEls.forEach((el, j) => (el.dataset.state = j < i ? 'done' : j === i ? 'active' : 'todo'));
@@ -516,10 +522,10 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         'div',
         { class: 'cv-res-head' },
         h('span', { class: 'cv-res-icon is-busy' }, spinner(28)),
-        h('div', { class: 'cv-res-titles' }, h('h2', { id: resultTitleId }, `Merging ${plural(projects.length, 'pack')}…`), h('p', { class: 'muted' }, 'Everything happens in your browser. Keep this tab open.')),
+        h('div', { class: 'cv-res-titles' }, h('h2', { id: resultTitleId }, fmt(t.progress.title, { count: projects.length })), h('p', { class: 'muted' }, t.progress.inBrowser)),
       ),
       h('div', { class: 'cv-progress' }, h('ol', { class: 'cv-prog-steps mg-prog-steps', style: { '--steps': String(steps.length) } }, stepEls), bar),
-      h('div', { class: 'cv-actions' }, button({ label: 'Cancel', variant: 'secondary', onClick: () => controller.abort() })),
+      h('div', { class: 'cv-actions' }, button({ label: kit.cancel, variant: 'secondary', onClick: () => controller.abort() })),
     );
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     const signal = controller.signal;
@@ -541,7 +547,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         onProgress: (p) => bar.set(p),
       });
       setStep('save');
-      bar.set({ label: 'Saving…', fraction: null });
+      bar.set({ label: t.progress.saving, fraction: null });
       await saveProject(project);
       running = null;
       if (!alive) return;
@@ -551,7 +557,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       if (!alive) return;
       if (isAbortError(err) || signal.aborted) {
         clearResult();
-        toast('Merge cancelled');
+        toast(t.progress.cancelled);
       } else {
         console.error(err);
         showError(err);
@@ -570,28 +576,28 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         'div',
         { class: 'cv-res-head' },
         h('span', { class: 'cv-res-icon is-error' }, icon('warning-diamond', { size: 32 })),
-        h('div', { class: 'cv-res-titles' }, h('h2', { id: resultTitleId }, 'The merge didn’t finish'), h('p', null, friendlyError(err)), h('p', { class: 'faint small' }, 'Your packs are still here. You can try again right away.')),
+        h('div', { class: 'cv-res-titles' }, h('h2', { id: resultTitleId }, t.error.title), h('p', null, friendlyError(err)), h('p', { class: 'faint small' }, t.error.text)),
       ),
-      h('div', { class: 'cv-actions' }, button({ label: 'Try again', icon: 'reload', variant: 'primary', onClick: () => void run() })),
+      h('div', { class: 'cv-actions' }, button({ label: kit.tryAgain, icon: 'reload', variant: 'primary', onClick: () => void run() })),
     );
   }
 
   function showResult(project: TexturePackProject, report: MergeReport, projects: TexturePackProject[]) {
     const edition = report.edition;
     const names = projects.map(nameOf);
-    const stat = (n: number, label: string, tone: string) => h('div', { class: ['cv-stat', `tone-${tone}`] }, h('strong', null, n.toLocaleString('en-US')), h('span', { class: 'faint small' }, label));
+    const stat = (n: number, label: string, tone: string) => h('div', { class: ['cv-stat', `tone-${tone}`] }, h('strong', null, num(n)), h('span', { class: 'faint small' }, label));
 
-    const dlBar = progressBar({ label: 'Building your pack…' });
+    const dlBar = progressBar({ label: t.result.building });
     const dlBox = h('div', { class: 'cv-dl', hidden: true }, dlBar);
     const installBox = h('div', { class: 'cv-install', hidden: true });
-    const dlBtn = button({ label: 'Download merged pack', icon: 'download', variant: 'primary', size: 'lg', class: 'cv-dl-btn mg-dl-btn', onClick: () => void download() });
-    const openBtn = h('a', { class: 'btn btn-secondary btn-lg cv-open-btn mg-open-btn', href: routeHref(`/textures/${encodeURIComponent(project.id)}`) }, icon('pencil'), h('span', { class: 'btn-label' }, 'Open in editor'));
-    const againBtn = button({ label: 'Start over', icon: 'reload', variant: 'ghost', class: 'cv-again mg-again', onClick: () => resetAll() });
+    const dlBtn = button({ label: t.result.download, icon: 'download', variant: 'primary', size: 'lg', class: 'cv-dl-btn mg-dl-btn', onClick: () => void download() });
+    const openBtn = h('a', { class: 'btn btn-secondary btn-lg cv-open-btn mg-open-btn', href: routeHref(`/textures/${encodeURIComponent(project.id)}`) }, icon('pencil'), h('span', { class: 'btn-label' }, t.result.openEditor));
+    const againBtn = button({ label: t.result.again, icon: 'reload', variant: 'ghost', class: 'cv-again mg-again', onClick: () => resetAll() });
 
     async function download() {
       dlBtn.disabled = true;
       dlBox.hidden = false;
-      dlBar.set({ label: `Getting the ${edition === 'java' ? `Java ${report.version}` : 'Bedrock'} game files…`, fraction: null });
+      dlBar.set({ label: fmt(t.result.gettingFiles, { target: targetText({ edition, version: report.version }) }), fraction: null });
       try {
         const [assets, { exportTexturePack }] = await Promise.all([loadAssets(edition, report.version, { onProgress: (p) => dlBar.set(p) }), exporter()]);
         const r = await withFairYield(() => exportTexturePack(project, assets, { onProgress: (p) => dlBar.set(p) }));
@@ -601,23 +607,21 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         dlBox.hidden = true;
         installBox.hidden = false;
         installBox.replaceChildren(
-          h('div', { class: 'cv-file' }, icon('check', { size: 20 }), h('strong', null, r.filename), h('span', { class: 'faint small' }, `${formatBytes(r.blob.size)} · ${plural(r.fileCount, 'file')}`)),
+          h('div', { class: 'cv-file' }, icon('check', { size: 20 }), h('strong', null, r.filename), h('span', { class: 'faint small' }, `${formatBytes(r.blob.size)} · ${fmt(t.result.files, { count: r.fileCount })}`)),
           h(
             'p',
             { class: 'small muted' },
-            edition === 'bedrock'
-              ? 'Open the .mcpack file: Minecraft starts and imports it. Turn it on in Settings → Global Resources, and turn off the packs it was made from. '
-              : 'Put the .zip in your resourcepacks folder (Options → Resource Packs → Open Pack Folder), don’t unzip it, then select it in game instead of the packs it was made from. ',
-            h('a', { href: routeHref(`/help?s=${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, 'Installing help'),
+            edition === 'bedrock' ? t.result.installBedrock : t.result.installJava,
+            h('a', { href: routeHref(`/help?s=${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.result.installHelp),
           ),
         );
         if (r.warnings.length) {
-          installBox.append(h('details', { class: 'cv-notes' }, h('summary', null, icon('circle-info', { size: 16 }), plural(r.warnings.length, 'note'), ' about the download'), h('ul', null, r.warnings.map((w) => h('li', null, w)))));
+          installBox.append(h('details', { class: 'cv-notes' }, h('summary', null, icon('circle-info', { size: 16 }), fmt(t.result.downloadNotes, { count: r.warnings.length })), h('ul', null, r.warnings.map((w) => h('li', null, w)))));
         }
       } catch (err) {
         console.error(err);
         dlBox.hidden = true;
-        toast(friendlyError(err, 'Couldn’t build the pack'), { tone: 'error' });
+        toast(friendlyError(err, t.result.buildFailed), { tone: 'error' });
       } finally {
         dlBtn.disabled = false;
       }
@@ -626,16 +630,16 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     // Files from each pack
     const contrib = h(
       'ol',
-      { class: 'mg-contrib', 'aria-label': 'Files from each pack' },
+      { class: 'mg-contrib', 'aria-label': t.result.filesFromEach },
       report.packs.map((s, i) => {
         const total = Math.max(1, s.files);
         const seg = (n: number, cls: string) => (n ? h('span', { class: ['mg-seg', cls], style: { width: `${(n / total) * 100}%` } }) : null);
         const parts = [
-          `${plural(s.kept, 'file')} as is`,
-          s.merged ? `${s.merged} merged` : null,
-          s.overridden ? `${s.overridden} not used` : null,
-          s.renamed ? `${plural(s.renamed, 'texture')} renamed` : null,
-          s.removed ? `${s.removed} not in Java ${report.version}` : null,
+          fmt(t.result.asIs, { count: s.kept }),
+          s.merged ? fmt(t.result.merged, { count: String(s.merged) }) : null,
+          s.overridden ? fmt(t.result.notUsed, { count: String(s.overridden) }) : null,
+          s.renamed ? fmt(t.result.renamed, { count: s.renamed }) : null,
+          s.removed ? fmt(t.result.notInJava, { count: String(s.removed), version: report.version }) : null,
         ].filter(Boolean);
         const thumb = h('span', { class: 'mg-contrib-thumb checker' });
         const icn = projects[i]?.icon;
@@ -652,8 +656,8 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
           h(
             'div',
             { class: 'mg-contrib-info' },
-            h('div', { class: 'mg-contrib-head' }, h('strong', { class: 'truncate' }, s.name), h('span', { class: 'faint small' }, `${(s.kept + s.merged).toLocaleString('en-US')} of ${plural(s.files, 'file')}`)),
-            h('div', { class: 'mg-bar', role: 'img', 'aria-label': `${s.kept} used, ${s.merged} merged, ${s.overridden} replaced, of ${s.files} files` }, seg(s.kept, 'is-kept'), seg(s.merged, 'is-merged'), seg(s.overridden, 'is-lost')),
+            h('div', { class: 'mg-contrib-head' }, h('strong', { class: 'truncate' }, s.name), h('span', { class: 'faint small' }, fmt(t.result.usedOf, { used: s.kept + s.merged, total: s.files }))),
+            h('div', { class: 'mg-bar', role: 'img', 'aria-label': fmt(t.result.bar, { used: String(s.kept), merged: String(s.merged), replaced: String(s.overridden), total: String(s.files) }) }, seg(s.kept, 'is-kept'), seg(s.merged, 'is-merged'), seg(s.overridden, 'is-lost')),
             h('span', { class: 'faint small' }, parts.join(' · ')),
           ),
         );
@@ -662,9 +666,9 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     const legend = h(
       'div',
       { class: 'mg-legend faint small', 'aria-hidden': 'true' },
-      h('span', null, h('i', { class: 'mg-seg is-kept' }), 'Used as is'),
-      h('span', null, h('i', { class: 'mg-seg is-merged' }), 'Merged with other packs'),
-      h('span', null, h('i', { class: 'mg-seg is-lost' }), 'Not used: another pack’s copy wins'),
+      h('span', null, h('i', { class: 'mg-seg is-kept' }), t.result.legendUsed),
+      h('span', null, h('i', { class: 'mg-seg is-merged' }), t.result.legendMerged),
+      h('span', null, h('i', { class: 'mg-seg is-lost' }), t.result.legendLost),
     );
 
     const sections: Node[] = [];
@@ -672,14 +676,14 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     if (report.conflicts.length) {
       sections.push(
         group(
-          'Conflicts',
+          t.result.conflicts,
           report.conflicts.length,
           'warn',
-          'Files more than one pack has. The highest pack’s copy is used, together with its own animation file.',
+          t.result.conflictsHint,
           report.conflicts.map((c) =>
             row(
               displayPath(c.path, edition),
-              h('span', { class: 'mg-from' }, 'from ', h('strong', null, names[c.winner]), ', overriding ', joinNames(c.losers.map((i) => names[i]))),
+              h('span', { class: 'mg-from' }, fmtNodes(t.result.conflictFrom, { winner: h('strong', null, names[c.winner]), losers: joinNames(c.losers.map((i) => names[i])) })),
             ),
           ),
           'mg-conflicts',
@@ -689,10 +693,10 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     if (report.merged.length) {
       sections.push(
         group(
-          'Merged files',
+          t.result.mergedFiles,
           report.merged.length,
           'ok',
-          'Files the game reads entry by entry, combined from every pack that has them.',
+          t.result.mergedHint,
           report.merged.map((m) => row(displayPath(m.path, edition), h('span', { class: 'mg-from' }, joinNames(m.packs.map((i) => names[i])), ': ', m.how))),
           'mg-merged',
         ),
@@ -701,7 +705,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     if (report.dropped.length) {
       sections.push(
         group(
-          'Left out',
+          t.result.leftOut,
           report.dropped.length,
           'muted',
           null,
@@ -720,17 +724,24 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         h(
           'div',
           { class: 'cv-res-titles' },
-          h('span', { class: 'eyebrow' }, `${plural(projects.length, 'pack')}${versions.size === 1 ? ` · ${[...versions][0]}` : ''} → ${edition === 'java' ? `Java ${report.version}` : 'Bedrock'}`),
-          h('h2', { id: resultTitleId }, `${plural(projects.length, 'pack')} merged into “${plainText(project.name)}”`),
-          h('p', { class: 'muted cv-saved' }, `Saved in your texture packs · ${packFileName(project)}`),
+          h('span', { class: 'eyebrow' }, `${fmt(t.result.eyebrowPacks, { count: projects.length })}${versions.size === 1 ? ` · ${[...versions][0]}` : ''} → ${targetText({ edition, version: report.version })}`),
+          h('h2', { id: resultTitleId }, fmt(t.result.title, { count: projects.length, name: plainText(project.name) })),
+          h('p', { class: 'muted cv-saved' }, fmt(t.result.saved, { file: packFileName(project) })),
         ),
       ),
       h(
         'div',
         { class: 'cv-summary' },
-        h('div', { class: 'cv-stats' }, stat(report.files, report.files === 1 ? 'file' : 'files', 'ok'), stat(report.textures, report.textures === 1 ? 'texture' : 'textures', 'muted'), stat(report.conflicts.length, report.conflicts.length === 1 ? 'conflict' : 'conflicts', report.conflicts.length ? 'warn' : 'muted'), stat(report.merged.length, report.merged.length === 1 ? 'merged file' : 'merged files', 'muted')),
+        h(
+          'div',
+          { class: 'cv-stats' },
+          stat(report.files, fmt(t.result.statFiles, { count: report.files }), 'ok'),
+          stat(report.textures, fmt(t.result.statTextures, { count: report.textures }), 'muted'),
+          stat(report.conflicts.length, fmt(t.result.statConflicts, { count: report.conflicts.length }), report.conflicts.length ? 'warn' : 'muted'),
+          stat(report.merged.length, fmt(t.result.statMerged, { count: report.merged.length }), 'muted'),
+        ),
       ),
-      h('div', { class: 'mg-contrib-box' }, h('h3', { class: 'mg-sub' }, 'Files from each pack'), contrib, legend),
+      h('div', { class: 'mg-contrib-box' }, h('h3', { class: 'mg-sub' }, t.result.filesFromEach), contrib, legend),
       h('div', { class: 'cv-actions' }, dlBtn, openBtn, againBtn),
       dlBox,
       installBox,
@@ -744,10 +755,10 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     return h(
       'details',
       { class: ['cv-group', `tone-${tone}`, cls] },
-      h('summary', null, h('span', { class: 'cv-group-title' }, title), h('span', { class: 'cv-count' }, count.toLocaleString('en-US')), icon('chevron-down', { size: 16 })),
+      h('summary', null, h('span', { class: 'cv-group-title' }, title), h('span', { class: 'cv-count' }, num(count)), icon('chevron-down', { size: 16 })),
       hintText ? h('p', { class: 'faint small cv-group-hint' }, hintText) : null,
       h('ul', { class: 'cv-list' }, shown),
-      rows.length > shown.length ? h('p', { class: 'faint small cv-more' }, `and ${(rows.length - shown.length).toLocaleString('en-US')} more`) : null,
+      rows.length > shown.length ? h('p', { class: 'faint small cv-more' }, fmt(t.result.more, { count: rows.length - shown.length })) : null,
     );
   }
 
@@ -770,9 +781,9 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
   const art = h(
     'div',
     { class: 'cv-hero-art mg-hero-art', 'aria-hidden': 'true' },
-    h('figure', null, stack, h('figcaption', null, icon('files', { size: 16 }), 'Your packs')),
+    h('figure', null, stack, h('figcaption', null, icon('files', { size: 16 }), t.hero.yourPacks)),
     h('span', { class: 'cv-hero-arrows' }, icon('arrow-right', { size: 32 })),
-    h('figure', null, isoCube('grass_top', 'oak_log', 96), h('figcaption', null, icon('package', { size: 16 }), 'One pack')),
+    h('figure', null, isoCube('grass_top', 'oak_log', 96), h('figcaption', null, icon('package', { size: 16 }), t.hero.onePack)),
   );
   const page = h(
     'div',
@@ -783,9 +794,9 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       h(
         'div',
         { class: 'cv-hero-text' },
-        h('span', { class: 'eyebrow' }, icon('git-merge'), 'Merge Texture Packs'),
-        h('h1', { class: 'pixel-shadow' }, 'Merge Minecraft texture packs into ', h('span', { class: 'accent' }, 'one')),
-        h('p', { class: 'lead' }, 'Add two to eight Java or Bedrock packs and put them in order. Where two packs change the same texture, the one at the top wins, just like in the game. Everything stays in your browser.'),
+        h('span', { class: 'eyebrow' }, icon('git-merge'), t.hero.eyebrow),
+        h('h1', { class: 'pixel-shadow' }, fmtNodes(t.hero.title, { one: h('span', { class: 'accent' }, t.hero.one) })),
+        h('p', { class: 'lead' }, t.hero.lead),
       ),
       art,
     ),

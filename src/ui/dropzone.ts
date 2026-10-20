@@ -3,6 +3,8 @@
 import { h } from './dom';
 import { icon, type IconName } from './icons';
 import { describeAccept, fileMatchesAccept } from './format';
+import { pickers } from '../shared/i18n/pickers';
+import { fmt } from '../i18n/editor-text';
 
 export { fileMatchesAccept } from './format';
 
@@ -47,12 +49,12 @@ export function dropzone(opts: {
     const ok = files.filter((f) => fileMatchesAccept(f, opts.accept));
     const picked = opts.multiple ? ok : ok.slice(0, 1);
     if (!ok.length) {
-      el.setError(`"${files[0].name}" can't be used here. Please choose ${describeAccept(opts.accept)}.`);
+      el.setError(fmt(pickers.drop.wrongType, { name: files[0].name, accept: describeAccept(opts.accept) }));
       return;
     }
     const notes: string[] = [];
-    if (ok.length < files.length) notes.push(`Skipped ${files.length - ok.length} unsupported file${files.length - ok.length === 1 ? '' : 's'}.`);
-    if (!opts.multiple && ok.length > 1) notes.push(`One file at a time: using "${ok[0].name}".`);
+    if (ok.length < files.length) notes.push(fmt(pickers.drop.skipped, { count: files.length - ok.length }));
+    if (!opts.multiple && ok.length > 1) notes.push(fmt(pickers.drop.oneAtATime, { name: ok[0].name }));
     el.setError(notes.length ? notes.join(' ') : null);
     opts.onFiles(picked);
   };

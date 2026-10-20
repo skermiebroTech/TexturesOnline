@@ -9,7 +9,10 @@ import { stringifyPretty } from '../../editions/java/packmeta';
 import { BEDROCK_TEXTURE_ROOT, JAVA_TEXTURE_ROOT, extOf, imageDims, newTextureProject, parseJsonLoose } from '../textures/project';
 import { flipbookEntries, flipbookToJava, javaFrameSize, javaToFlipbook, parseJavaAnimation, terrainTiles, type FlipbookEntry, type JavaAnimation } from './anim';
 import { buildPairIndex, pairKey, renameChain, rewriteModelTextures, type JavaBedrockMap, type JavaRenames, type PairIndex, type RenameChain } from './paths';
-import { isSameTarget, targetLabel } from './target';
+import { isSameTarget, targetLabel, targetText } from './target';
+import { engineText } from './i18n/engine';
+import { fmt } from '../../i18n/editor-text';
+import { kit } from '../../ui/i18n/kit';
 
 export interface ConvertTarget {
   edition: Edition;
@@ -113,10 +116,10 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
     }
   };
   check(signal);
-  if (assets.edition !== target.edition) throw new Error(`The loaded game files are for ${target.edition === 'java' ? 'Bedrock' : 'Java'}, not ${targetLabel(target)}.`);
-  if (isSameTarget(source, target) && !(opts.allowSameVersion && source.edition === 'java')) throw new Error(`This pack is already for ${targetLabel(target)}. Pick another edition or version.`);
+  if (assets.edition !== target.edition) throw new Error(fmt(engineText.wrongAssets, { loaded: target.edition === 'java' ? kit.edition.bedrock : kit.edition.java, target: targetText(target) }));
+  if (isSameTarget(source, target) && !(opts.allowSameVersion && source.edition === 'java')) throw new Error(fmt(engineText.sameTarget, { target: targetText(target) }));
   const kind: 'j2b' | 'b2j' | 'j2j' = source.edition === 'java' ? (target.edition === 'bedrock' ? 'j2b' : 'j2j') : 'b2j';
-  if (kind !== 'j2j' && !maps.javaBedrock) throw new Error('The Java/Bedrock texture list is missing, so the pack can’t be converted.');
+  if (kind !== 'j2j' && !maps.javaBedrock) throw new Error(engineText.noMaps);
 
   const project = newTextureProject({ name: convertedName(source.name, target), edition: target.edition, version: target.version, resolution: source.resolution });
   project.description = source.description ?? '';
@@ -134,7 +137,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
     carried: 0,
     notes: [],
   };
-  progress('Matching texture names…', 0);
+  progress(engineText.matching, 0);
 
   // ---- path mapping ----
   const pairs = maps.javaBedrock ? buildPairIndex(maps.javaBedrock) : null;
@@ -160,7 +163,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
     const free = plan.targets.filter((t) => !taken.has(t.path));
     if (!free.length) {
       const first = plan.targets[0];
-      report.skipped.push({ source: plan.source, reason: 'duplicate', target: first?.path, detail: `${baseName(taken.get(first.path) ?? '')} already fills ${baseName(first.path)}` });
+      report.skipped.push({ source: plan.source, reason: 'duplicate', target: first?.path, detail: fmt(engineText.skip.duplicate, { name: baseName(taken.get(first.path) ?? ''), target: baseName(first.path) }) });
       plan.targets = [];
       continue;
     }
@@ -186,7 +189,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
     const item = await convertTexture(plan);
     if (item) results.set(plan.source, item);
     done++;
-    progress(`Converting textures… ${done.toLocaleString('en-US')} / ${work.length.toLocaleString('en-US')}`, 0.05 + 0.9 * (done / Math.max(1, work.length)));
+    progress(fmt(engineText.converting, { done, total: work.length }), 0.05 + 0.9 * (done / Math.max(1, work.length)));
   });
   check(signal);
   for (const plan of work) {
@@ -200,20 +203,20 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
   report.kept.sort(bySource);
   report.skipped.sort(bySource);
   if (readFailures) {
-    report.notes.push(`${plural(readFailures, 'vanilla texture')} couldn't be loaded, so ${readFailures === 1 ? 'its size wasn’t' : 'their sizes weren’t'} checked.`);
+    report.notes.push(fmt(engineText.notes.readFailures, { count: readFailures }));
   }
   if (flipOut.size) project.extraFiles[FLIPBOOK] = jsonBlob([...flipOut.values()].sort((a, b) => a.flipbook_texture.localeCompare(b.flipbook_texture)));
 
   // ---- other files ----
-  progress('Carrying over pack files…', 0.96);
+  progress(engineText.carrying, 0.96);
   await convertExtraFiles();
   report.dropped.sort(bySource);
 
   // ---- notes ----
-  if (tgaToPng) report.notes.push(`${plural(tgaToPng, 'TGA image')} ${tgaToPng === 1 ? 'was' : 'were'} saved as PNG, the format Java uses.`);
-  if (source.compat && kind === 'j2j') report.notes.push(`The pack's version range (${source.compat.minVersion} – ${source.compat.maxVersion}) was replaced by Java ${target.version} only. You can set a range again in the Pack settings.`);
+  if (tgaToPng) report.notes.push(fmt(engineText.notes.tgaToPng, { count: tgaToPng }));
+  if (source.compat && kind === 'j2j') report.notes.push(fmt(engineText.notes.rangeReplaced, { from: source.compat.minVersion, to: source.compat.maxVersion, version: target.version }));
   if (report.kept.length) {
-    report.notes.push(`${plural(report.kept.length, 'texture')} ${report.kept.length === 1 ? "isn't" : "aren't"} part of vanilla Java ${target.version}. ${report.kept.length === 1 ? 'It was' : 'They were'} kept in case the pack's own models use ${report.kept.length === 1 ? 'it' : 'them'}.`);
+    report.notes.push(fmt(engineText.notes.kept, { count: report.kept.length, version: target.version }));
   }
   progress('Done', 1);
   return { project, report };
@@ -222,7 +225,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
 
   function planTexture(path: string): Plan | null {
     if (!path.startsWith(sourceRoot)) {
-      report.skipped.push({ source: path, reason: 'no-counterpart', detail: 'Not in the textures folder' });
+      report.skipped.push({ source: path, reason: 'no-counterpart', detail: engineText.skip.notTextures });
       return null;
     }
     const ext = extOf(path);
@@ -233,7 +236,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
     };
     if (kind === 'j2j') {
       const r = javaChain!.map(rel);
-      if (r.kind === 'removed') return skip('removed', `Removed in Java ${r.version}`);
+      if (r.kind === 'removed') return skip('removed', fmt(engineText.skip.removedIn, { version: r.version }));
       return {
         source: path,
         renamed: r.renamed,
@@ -245,21 +248,21 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
     }
     if (kind === 'j2b') {
       const r = javaChain!.map(rel);
-      if (r.kind === 'removed') return skip('removed', `Removed in Java ${r.version}`);
+      if (r.kind === 'removed') return skip('removed', fmt(engineText.skip.removedIn, { version: r.version }));
       const stems: { stem: string; java: string }[] = [];
       for (const j of r.paths) for (const b of pairs!.toBedrock.get(j) ?? []) if (!stems.some((s) => s.stem === b)) stems.push({ stem: b, java: j });
-      if (!stems.length) return skip('no-counterpart', 'Bedrock has no matching texture');
+      if (!stems.length) return skip('no-counterpart', engineText.skip.noBedrock);
       const targets: Plan['targets'] = [];
       for (const { stem, java } of stems) {
         const full = bedrockPath(stem);
         if (full) targets.push({ path: full, inCatalogue: true, layoutDiffers: pairs!.layoutDiffers.has(pairKey(java, stem)) });
       }
-      if (!targets.length) return skip('no-counterpart', 'Not in this Bedrock version');
+      if (!targets.length) return skip('no-counterpart', engineText.skip.notInBedrock);
       return finishCross(path, targets);
     }
     // b2j
     const javaRels = pairs!.toJava.get(rel) ?? [];
-    if (!javaRels.length) return skip('no-counterpart', 'Java has no matching texture');
+    if (!javaRels.length) return skip('no-counterpart', engineText.skip.noJava);
     const targets: Plan['targets'] = [];
     let removedIn: string | null = null;
     for (const j of javaRels) {
@@ -276,8 +279,8 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
       }
     }
     if (!targets.length) {
-      if (removedIn) return skip('removed', `Not in Java ${target.version}`);
-      return skip('missing', `Not in Java ${target.version}`);
+      if (removedIn) return skip('removed', fmt(engineText.skip.notInJava, { version: target.version }));
+      return skip('missing', fmt(engineText.skip.notInJava, { version: target.version }));
     }
     return finishCross(path, targets);
   }
@@ -285,7 +288,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
   function finishCross(path: string, targets: Plan['targets']): Plan | null {
     const ok = targets.filter((t) => !t.layoutDiffers);
     if (!ok.length) {
-      report.skipped.push({ source: path, reason: 'layout', target: targets[0].path, detail: `Laid out differently in ${target.edition === 'bedrock' ? 'Bedrock' : 'Java'}` });
+      report.skipped.push({ source: path, reason: 'layout', target: targets[0].path, detail: fmt(engineText.skip.layout, { edition: target.edition === 'bedrock' ? kit.edition.bedrock : kit.edition.java }) });
       return null;
     }
     return { source: path, targets: ok, renamed: true };
@@ -305,12 +308,12 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
     try {
       bytes = new Uint8Array(await source.overrides[plan.source].arrayBuffer());
     } catch {
-      report.skipped.push({ source: plan.source, reason: 'unreadable', detail: "Couldn't be read from this browser's storage" });
+      report.skipped.push({ source: plan.source, reason: 'unreadable', detail: engineText.skip.storage });
       return null;
     }
     const dims = imageDims(bytes, srcExt);
     if (!dims) {
-      report.skipped.push({ source: plan.source, reason: 'unreadable', detail: 'Not a readable image' });
+      report.skipped.push({ source: plan.source, reason: 'unreadable', detail: engineText.skip.notImage });
       return null;
     }
     // Source animation
@@ -398,12 +401,12 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
             if (tile) for (const k of ['atlas_index', 'atlas_tile_variant', 'replicate'] as const) if (tile[k] !== undefined) extra[k] = tile[k] as number;
             if (!tile && terrain?.index !== undefined) extra.atlas_index = terrain.index;
             flipOut.set(tStem, javaToFlipbook(javaAnim, count, { stem: tStem, atlasTile: tile?.atlas_tile ?? terrain!.tile, extra }));
-            notes.push('animation converted');
+            notes.push(engineText.converted.animation);
           } else if (count > 1) {
-            await firstFrame(ownFrame, javaAnim.frames?.[0]?.index ?? 0, 'first frame only: Bedrock can’t animate this texture');
+            await firstFrame(ownFrame, javaAnim.frames?.[0]?.index ?? 0, engineText.converted.bedrockStill);
           } else if (tgtExt !== srcExt) out = encode(await image(), tgtExt);
         } else if (implicitStrip && matched === 'frames' && !tile) {
-          await firstFrame({ w: dims.w, h: dims.w }, 0, 'first frame only: its animation needs a .mcmeta file');
+          await firstFrame({ w: dims.w, h: dims.w }, 0, engineText.converted.needsMcmeta);
         } else if (tgtExt !== srcExt) out = encode(await image(), tgtExt);
         // A vanilla flipbook must not point at frames the new image doesn't have.
         if (tile && !flipOut.has(tStem) && Array.isArray(tile.frames)) {
@@ -416,17 +419,17 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
             flipOut.set(tStem, copy);
           }
         }
-        if (tgtExt === 'tga' && srcExt !== 'tga') notes.push('saved as TGA');
+        if (tgtExt === 'tga' && srcExt !== 'tga') notes.push(engineText.converted.savedAsTga);
       } else {
         // b2j
         if (flip) {
           const count = Math.max(1, Math.floor(dims.h / dims.w));
           if (count > 1) {
             project.extraFiles[`${t.path}.mcmeta`] = jsonBlob(flipbookToJava(flip, count));
-            notes.push('animation converted');
+            notes.push(engineText.converted.animation);
           }
         } else if (implicitStrip && matched === 'frames' && !assets.hasFile(`${t.path}.mcmeta`)) {
-          await firstFrame({ w: dims.w, h: dims.w }, 0, 'first frame only: Java doesn’t animate this texture');
+          await firstFrame({ w: dims.w, h: dims.w }, 0, engineText.converted.javaStill);
         }
         if (srcExt === 'tga' && out === bytes) {
           out = encode(await image(), 'png');
@@ -443,7 +446,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
 
     if (!item.targets.length) {
       const first = plan.targets[0];
-      report.skipped.push({ source: plan.source, reason: 'layout', target: first?.path, detail: `Its size doesn’t fit the ${targetLabel(target)} texture` });
+      report.skipped.push({ source: plan.source, reason: 'layout', target: first?.path, detail: fmt(engineText.skip.size, { target: targetText(target) }) });
       return null;
     }
     if (kept && plan.targets.every((t) => !t.inCatalogue)) {
@@ -451,7 +454,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
         // A vanilla texture the target version doesn't have.
         for (const t of item.targets) delete project.overrides[t];
         for (const t of item.targets) delete project.extraFiles[`${t}.mcmeta`];
-        report.skipped.push({ source: plan.source, reason: 'missing', target: item.targets[0], detail: `Not in Java ${target.version}` });
+        report.skipped.push({ source: plan.source, reason: 'missing', target: item.targets[0], detail: fmt(engineText.skip.notInJava, { version: target.version }) });
         return null;
       }
       keptPaths.add(plan.source);
@@ -480,7 +483,7 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
           const rel = path.slice(JAVA_TEXTURE_ROOT.length, -'.png.mcmeta'.length);
           const r = chain.map(rel);
           if (r.kind === 'removed') {
-            report.dropped.push({ source: path, kind: `Animation settings (removed in Java ${r.version})` });
+            report.dropped.push({ source: path, kind: fmt(engineText.kind.animationRemoved, { version: r.version }) });
             continue;
           }
           for (const p of r.paths) {
@@ -510,13 +513,13 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
       report.dropped.push({ source: path, kind: fileKind(path, source.edition) });
     }
     if (kind === 'j2j') {
-      if (rewritten) report.notes.push(`${plural(rewritten, 'model file')} had ${rewritten === 1 ? 'its' : 'their'} texture names updated.`);
+      if (rewritten) report.notes.push(fmt(engineText.notes.modelsRewritten, { count: rewritten }));
       if (hasModels && (rewritten || work.some((p) => p.renamed))) {
-        report.notes.push('Minecraft also renamed some models and block states between these versions. Check that the pack’s custom models still work in game.');
+        report.notes.push(engineText.notes.modelsRenamed);
       }
     } else if (report.dropped.length) {
-      const other = target.edition === 'bedrock' ? 'Bedrock' : 'Java';
-      report.notes.push(`${plural(report.dropped.length, 'other file')} (models, sounds, fonts, texts…) ${report.dropped.length === 1 ? 'was' : 'were'} left out: ${other} uses different formats for ${report.dropped.length === 1 ? 'it' : 'them'}.`);
+      const other = target.edition === 'bedrock' ? kit.edition.bedrock : kit.edition.java;
+      report.notes.push(fmt(engineText.notes.dropped, { count: report.dropped.length, edition: other }));
     }
   }
 }
@@ -552,34 +555,35 @@ function isKnownVanilla(path: string, set: Set<string>): boolean {
 
 function fileKind(path: string, edition: Edition): string {
   const p = path.toLowerCase();
+  const K = engineText.kind;
   if (edition === 'java') {
-    if (/^assets\/[^/]+\/models\//.test(p)) return 'Model';
-    if (/^assets\/[^/]+\/(blockstates|items)\//.test(p)) return 'Block state or item definition';
-    if (/^assets\/[^/]+\/sounds\//.test(p) || p.endsWith('sounds.json') || p.endsWith('.ogg')) return 'Sound';
-    if (/^assets\/[^/]+\/font\//.test(p) || /textures\/font\//.test(p)) return 'Font';
-    if (/^assets\/[^/]+\/lang\//.test(p)) return 'Language file';
-    if (/^assets\/[^/]+\/shaders\//.test(p) || /^assets\/[^/]+\/post_effect\//.test(p)) return 'Shader';
-    if (/^assets\/[^/]+\/(optifine|mcpatcher)\//.test(p)) return 'OptiFine file';
-    if (/^assets\/[^/]+\/(texts|atlases|particles|equipment|waypoint_style)\//.test(p)) return 'Game data file';
-    if (/^assets\/(?!minecraft\/)[^/]+\/textures\//.test(p)) return 'Mod texture';
-    if (p.endsWith('.png.mcmeta')) return 'Animation settings';
-    if (/^[^/]+\/assets\//.test(p)) return 'Overlay folder file';
-    if (/\.(png|tga)$/.test(p)) return 'Image that isn’t a texture';
-    return 'Other file';
+    if (/^assets\/[^/]+\/models\//.test(p)) return K.model;
+    if (/^assets\/[^/]+\/(blockstates|items)\//.test(p)) return K.blockState;
+    if (/^assets\/[^/]+\/sounds\//.test(p) || p.endsWith('sounds.json') || p.endsWith('.ogg')) return K.sound;
+    if (/^assets\/[^/]+\/font\//.test(p) || /textures\/font\//.test(p)) return K.font;
+    if (/^assets\/[^/]+\/lang\//.test(p)) return K.lang;
+    if (/^assets\/[^/]+\/shaders\//.test(p) || /^assets\/[^/]+\/post_effect\//.test(p)) return K.shader;
+    if (/^assets\/[^/]+\/(optifine|mcpatcher)\//.test(p)) return K.optifine;
+    if (/^assets\/[^/]+\/(texts|atlases|particles|equipment|waypoint_style)\//.test(p)) return K.gameData;
+    if (/^assets\/(?!minecraft\/)[^/]+\/textures\//.test(p)) return K.modTexture;
+    if (p.endsWith('.png.mcmeta')) return K.animation;
+    if (/^[^/]+\/assets\//.test(p)) return K.overlay;
+    if (/\.(png|tga)$/.test(p)) return K.image;
+    return K.other;
   }
-  if (p.startsWith('subpacks/')) return 'Sub-pack file';
-  if (p.endsWith('.texture_set.json') || /_(mers?|normal|heightmap)\.(png|tga)$/.test(p)) return 'Vibrant Visuals (PBR) file';
-  if (p.startsWith('models/') || p.startsWith('attachables/') || p.startsWith('entity/') || p.startsWith('render_controllers/') || p.startsWith('animations/') || p.startsWith('animation_controllers/')) return 'Model';
-  if (p.startsWith('sounds/') || p === 'sounds.json' || p.endsWith('.ogg') || p.endsWith('.fsb')) return 'Sound';
-  if (p.startsWith('font/')) return 'Font';
-  if (p.startsWith('texts/')) return 'Language file';
-  if (p.startsWith('ui/')) return 'Menu layout';
-  if (p.startsWith('particles/')) return 'Particle definition';
-  if (p.startsWith('shaders/') || p.startsWith('materials/')) return 'Shader';
-  if (p.endsWith('blocks.json') || p.endsWith('biomes_client.json')) return 'Game data file';
-  if (/^textures\/.+\.json$/.test(p)) return 'Texture settings';
-  if (/\.(png|tga|jpe?g)$/.test(p)) return 'Image that isn’t a texture';
-  return 'Other file';
+  if (p.startsWith('subpacks/')) return K.subpack;
+  if (p.endsWith('.texture_set.json') || /_(mers?|normal|heightmap)\.(png|tga)$/.test(p)) return K.pbr;
+  if (p.startsWith('models/') || p.startsWith('attachables/') || p.startsWith('entity/') || p.startsWith('render_controllers/') || p.startsWith('animations/') || p.startsWith('animation_controllers/')) return K.model;
+  if (p.startsWith('sounds/') || p === 'sounds.json' || p.endsWith('.ogg') || p.endsWith('.fsb')) return K.sound;
+  if (p.startsWith('font/')) return K.font;
+  if (p.startsWith('texts/')) return K.lang;
+  if (p.startsWith('ui/')) return K.menu;
+  if (p.startsWith('particles/')) return K.particle;
+  if (p.startsWith('shaders/') || p.startsWith('materials/')) return K.shader;
+  if (p.endsWith('blocks.json') || p.endsWith('biomes_client.json')) return K.gameData;
+  if (/^textures\/.+\.json$/.test(p)) return K.textureSettings;
+  if (/\.(png|tga|jpe?g)$/.test(p)) return K.image;
+  return K.other;
 }
 
 function isStrip(d: Dims): boolean {
@@ -639,10 +643,6 @@ function jsonBlob(v: unknown): Blob {
 
 function baseName(p: string): string {
   return p.slice(p.lastIndexOf('/') + 1);
-}
-
-function plural(n: number, word: string): string {
-  return `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`;
 }
 
 function check(signal?: AbortSignal): void {

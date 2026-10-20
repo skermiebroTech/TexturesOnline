@@ -10,6 +10,8 @@ import { initHead } from './app/head';
 import { initTheme } from './ui/theme';
 import { initToasts, toast } from './ui/toast';
 import { initPwa } from './pwa';
+import { kit } from './ui/i18n/kit';
+import { fmt } from './i18n/editor-text';
 
 initTheme();
 
@@ -89,7 +91,7 @@ function reportError(err: unknown): void {
   lastErrorAt = now;
   const msg = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
   if (/ResizeObserver loop/i.test(msg)) return;
-  toast(msg && msg.length < 160 ? `Something went wrong: ${msg}` : 'Something went wrong. If it keeps happening, try reloading the page.', { tone: 'error' });
+  toast(msg && msg.length < 160 ? fmt(kit.errorWithMessage, { message: msg }) : kit.errorGeneric, { tone: 'error' });
 }
 window.addEventListener('unhandledrejection', (e) => {
   const reason = e.reason as unknown;

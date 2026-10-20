@@ -2,6 +2,8 @@ import type { GameVersion, PackFormat } from '../../core/types';
 import { fetchJson, fetchFirst, NetError } from '../../core/net';
 import { cacheGet, cacheSet } from '../../core/storage';
 import { bundledPackFormat, FIRST_RESOURCE_PACK_TIME, KNOWN_RELEASE_FORMATS } from './packformats';
+import { errorText } from '../../shared/i18n/errors';
+import { fmt } from '../../i18n/editor-text';
 
 export const MANIFEST_URLS = [
   'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
@@ -194,12 +196,12 @@ export async function getClientJarInfo(id: string): Promise<ClientJarInfo> {
   }
   if (!entry) {
     if (cached) return cached;
-    throw new Error(`Minecraft ${id} isn't in Mojang's version list.`);
+    throw new Error(fmt(errorText.notInVersionList, { version: id }));
   }
   if (cached && (!entry.sha1 || cached.jsonSha1 === entry.sha1)) return cached;
   const vj = await fetchJson<VersionJson>(entry.url, { retries: 2 });
   const client = vj.downloads?.client;
-  if (!client?.url || !client.size) throw new Error(`Mojang doesn't provide a client download for Minecraft ${id}.`);
+  if (!client?.url || !client.size) throw new Error(fmt(errorText.noClient, { version: id }));
   const info: ClientJarInfo = { id, url: client.url, size: client.size, sha1: client.sha1, releaseTime: entry.releaseTime, type: entry.type, jsonSha1: entry.sha1 };
   cacheSet(key, info).catch(() => {});
   return info;

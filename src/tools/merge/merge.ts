@@ -11,10 +11,15 @@ import { stringifyPretty } from '../../editions/java/packmeta';
 import { DEFAULT_JAVA_VERSION } from '../../editions/versions';
 import { BEDROCK_TEXTURE_ROOT, JAVA_TEXTURE_ROOT, extOf, newTextureProject, parseBedrockVersion, parseJsonLoose } from '../textures/project';
 import { compareJavaVersions, renameChain, rewriteModelTextures, type JavaRenames, type RenameChain } from '../convert/paths';
+import { t } from './i18n/text';
+import { fmt, joinList } from '../../i18n/editor-text';
 
 export const MIN_PACKS = 2;
 export const MAX_PACKS = 8;
-export const DEFAULT_MERGED_NAME = 'Merged Pack';
+/** Name of a merged pack when none is given ("Merged Pack" in English). */
+export function defaultMergedName(): string {
+  return t.step2.defaultName;
+}
 
 export interface MergeOptions {
   /** Name of the merged pack (default "Merged Pack") */
@@ -107,15 +112,14 @@ export function defaultMergeVersion(projects: Pick<TexturePackProject, 'edition'
   return best ?? DEFAULT_JAVA_VERSION;
 }
 
-/** "A", "A and B", "A, B and C". */
+/** "A", "A and B", "A, B and C" (in the interface's language). */
 export function joinNames(names: string[]): string {
-  if (names.length <= 1) return names[0] ?? '';
-  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  return joinList(names);
 }
 
 /** Description of the merged pack: the packs in it, top first. */
 export function mergeDescription(names: string[]): string {
-  return `Merged from ${joinNames(names.map((n) => n.trim() || 'Untitled pack'))}`;
+  return fmt(t.engine.description, { names: joinNames(names.map((n) => n.trim() || t.step1.untitled)) });
 }
 
 /** Path shown in reports: texture paths relative to the texture folder. */
@@ -148,44 +152,44 @@ type Rule =
   | { kind: 'flipbook'; how: string };
 
 const FLIPBOOK = 'textures/flipbook_textures.json';
-const KEYED_HOW = 'key by key, the top pack wins';
 const IMAGE = /\.(png|tga|jpe?g)$/i;
 
 /** How a file is merged when several packs have it, or null when the top pack's copy wins. */
 function ruleFor(path: string, edition: Edition): Rule | null {
+  const H = t.engine.how;
   if (edition === 'java') {
-    if (/^assets\/[^/]+\/lang\/[^/]+\.json$/.test(path)) return { kind: 'keyed', spec: '*', how: 'translations key by key, the top pack wins' };
-    if (/^assets\/[^/]+\/lang\/[^/]+\.lang$/.test(path)) return { kind: 'lines', how: 'translations key by key, the top pack wins' };
-    if (/^assets\/[^/]+\/sounds\.json$/.test(path)) return { kind: 'keyed', spec: '*', how: 'sound events one by one, the top pack wins' };
-    if (/^assets\/[^/]+\/atlases\/.+\.json$/.test(path)) return { kind: 'concat', field: 'sources', topFirst: false, how: 'sources of every pack, the top pack’s last so they win' };
-    if (/^assets\/[^/]+\/font\/.+\.json$/.test(path)) return { kind: 'concat', field: 'providers', topFirst: true, how: 'font providers of every pack, the top pack’s first' };
+    if (/^assets\/[^/]+\/lang\/[^/]+\.json$/.test(path)) return { kind: 'keyed', spec: '*', how: H.translations };
+    if (/^assets\/[^/]+\/lang\/[^/]+\.lang$/.test(path)) return { kind: 'lines', how: H.translations };
+    if (/^assets\/[^/]+\/sounds\.json$/.test(path)) return { kind: 'keyed', spec: '*', how: H.soundEvents };
+    if (/^assets\/[^/]+\/atlases\/.+\.json$/.test(path)) return { kind: 'concat', field: 'sources', topFirst: false, how: H.atlases };
+    if (/^assets\/[^/]+\/font\/.+\.json$/.test(path)) return { kind: 'concat', field: 'providers', topFirst: true, how: H.fonts };
     return null;
   }
   switch (path) {
     case 'textures/terrain_texture.json':
     case 'textures/item_texture.json':
-      return { kind: 'keyed', spec: { texture_data: '*' }, how: 'texture entries one by one, the top pack wins' };
+      return { kind: 'keyed', spec: { texture_data: '*' }, how: H.textures };
     case FLIPBOOK:
-      return { kind: 'flipbook', how: 'animations one by one, each from the pack its texture comes from' };
+      return { kind: 'flipbook', how: H.flipbook };
     case 'blocks.json':
-      return { kind: 'keyed', spec: '*', how: 'blocks one by one, the top pack wins' };
+      return { kind: 'keyed', spec: '*', how: H.blocks };
     case 'biomes_client.json':
-      return { kind: 'keyed', spec: { biomes: '*' }, how: 'biomes one by one, the top pack wins' };
+      return { kind: 'keyed', spec: { biomes: '*' }, how: H.biomes };
     case 'sounds/sound_definitions.json':
-      return { kind: 'sound-definitions', how: 'sounds one by one, the top pack wins' };
+      return { kind: 'sound-definitions', how: H.sounds };
     case 'sounds.json':
       return {
         kind: 'keyed',
         spec: { block_sounds: '*', entity_sounds: { entities: '*' }, individual_event_sounds: { events: '*' }, interactive_sounds: { block_sounds: '*', entity_sounds: { entities: '*' } } },
-        how: 'sound events one by one, the top pack wins',
+        how: H.soundEvents,
       };
     case 'textures/texture_list.json':
     case 'textures/textures_list.json':
     case 'texts/languages.json':
     case 'texts/language_names.json':
-      return { kind: 'union', how: 'entries of every pack' };
+      return { kind: 'union', how: H.union };
   }
-  if (/^texts\/[^/]+\.lang$/.test(path)) return { kind: 'lines', how: KEYED_HOW };
+  if (/^texts\/[^/]+\.lang$/.test(path)) return { kind: 'lines', how: H.keyed };
   return null;
 }
 
@@ -203,22 +207,22 @@ export async function mergePacks(projects: TexturePackProject[], opts: MergeOpti
     }
   };
   check(signal);
-  if (projects.length < MIN_PACKS) throw new Error('Add at least two packs to merge.');
-  if (projects.length > MAX_PACKS) throw new Error(`Up to ${MAX_PACKS} packs can be merged at once.`);
+  if (projects.length < MIN_PACKS) throw new Error(t.engine.needTwo);
+  if (projects.length > MAX_PACKS) throw new Error(fmt(t.engine.tooMany, { max: MAX_PACKS }));
   const { edition } = editionOf(projects);
-  if (!edition) throw new Error('Java and Bedrock packs can’t be merged into one pack. Convert the packs to one edition first.');
+  if (!edition) throw new Error(t.engine.mixed);
   const version = edition === 'java' ? (opts.version?.trim() || defaultMergeVersion(projects)) : projects[0].version;
 
   const dropped: DroppedFile[] = [];
   const notes: string[] = [];
-  progress('Reading packs…', 0);
+  progress(t.engine.reading, 0);
 
   // ---- every pack's files, with Java textures renamed for the target version ----
   const layers: Layer[] = [];
   for (let i = 0; i < projects.length; i++) {
     check(signal);
     layers.push(edition === 'java' ? await javaLayer(projects[i], i, version, opts.renames ?? null, dropped) : bedrockLayer(projects[i], i, dropped));
-    progress('Reading packs…', 0.3 * ((i + 1) / projects.length));
+    progress(t.engine.reading, 0.3 * ((i + 1) / projects.length));
   }
 
   // ---- groups: a texture and its sidecar files count as one ----
@@ -237,7 +241,7 @@ export async function mergePacks(projects: TexturePackProject[], opts: MergeOpti
     }
   }
 
-  const project = newTextureProject({ name: opts.name?.trim() || DEFAULT_MERGED_NAME, edition, version, resolution: Math.max(16, ...projects.map((p) => p.resolution || 16)) });
+  const project = newTextureProject({ name: opts.name?.trim() || defaultMergedName(), edition, version, resolution: Math.max(16, ...projects.map((p) => p.resolution || 16)) });
   project.description = mergeDescription(projects.map((p) => p.name));
   const conflicts: MergeConflict[] = [];
   const merged: MergedFile[] = [];
@@ -261,7 +265,7 @@ export async function mergePacks(projects: TexturePackProject[], opts: MergeOpti
     for (const i of losers) layers[i].summary.overridden += g.byPack.get(i)!.length;
     if (losers.length) conflicts.push({ path: (files.find((f) => !f.side) ?? files[0]).path, winner, losers });
   }
-  progress('Merging files…', 0.5);
+  progress(t.engine.merging, 0.5);
 
   // Mergeable JSON and language files
   const mergeable = [...groups].filter(([, g]) => !!g.rule).sort(([a], [b]) => a.localeCompare(b));
@@ -280,7 +284,7 @@ export async function mergePacks(projects: TexturePackProject[], opts: MergeOpti
       layers[order[0]].summary.kept++;
       for (const i of order.slice(1)) layers[i].summary.overridden++;
       if (order.length > 1) conflicts.push({ path, winner: order[0], losers: order.slice(1) });
-      notes.push(`${displayPath(path, edition)} couldn’t be read in every pack, so the copy from ${projects[order[0]].name || 'the top pack'} was used as it is.`);
+      notes.push(fmt(t.engine.unreadable, { path: displayPath(path, edition), pack: projects[order[0]].name || t.engine.topPack }));
       continue;
     }
     if (out.text === null) continue;
@@ -293,7 +297,7 @@ export async function mergePacks(projects: TexturePackProject[], opts: MergeOpti
     }
     for (const i of order) if (!out.packs.includes(i)) layers[i].summary.overridden++;
   }
-  progress('Writing pack info…', 0.85);
+  progress(t.engine.packInfo, 0.85);
 
   // ---- pack info ----
   const metaFile = edition === 'java' ? await mergeJavaPackMeta(layers, project.description) : await mergeBedrockManifest(layers, projects);
@@ -309,18 +313,18 @@ export async function mergePacks(projects: TexturePackProject[], opts: MergeOpti
   const renamedPacks = edition === 'java' ? layers.filter((l) => compareJavaVersions(l.summary.version, version) !== 0) : [];
   if (renamedPacks.length) {
     const n = layers.reduce((s, l) => s + l.summary.renamed, 0);
-    notes.push(`${joinNames(renamedPacks.map((l) => l.summary.name))} ${renamedPacks.length === 1 ? 'was' : 'were'} made for another version${n ? `: ${plural(n, 'texture')} got ${n === 1 ? 'its' : 'their'} Java ${version} name` : ''}.`);
+    notes.push(fmt(t.engine.otherVersion, { packs: joinNames(renamedPacks.map((l) => l.summary.name)), packCount: renamedPacks.length, renamed: n ? fmt(t.engine.otherVersionRenamed, { count: n, version }) : '' }));
   }
   const removed = layers.reduce((s, l) => s + l.summary.removed, 0);
-  if (removed) notes.push(`${plural(removed, 'texture')} ${removed === 1 ? 'isn’t' : 'aren’t'} part of Java ${version} and ${removed === 1 ? 'was' : 'were'} left out.`);
+  if (removed) notes.push(fmt(t.engine.removed, { count: removed, version }));
   const resolutions = [...new Set(projects.map((p) => p.resolution || 16))].sort((a, b) => a - b);
-  if (resolutions.length > 1) notes.push(`The packs use different resolutions (${joinNames(resolutions.map((r) => `${r}×`))}). Every texture keeps its own size, which Minecraft handles fine.`);
+  if (resolutions.length > 1) notes.push(fmt(t.engine.resolutions, { list: joinNames(resolutions.map((r) => `${r}×`)) }));
   const flipDrops = dropped.filter((d) => d.path === FLIPBOOK).length;
-  if (flipDrops) notes.push(`${plural(flipDrops, 'animation entry', 'animation entries')} ${flipDrops === 1 ? 'was' : 'were'} left out because ${flipDrops === 1 ? 'its texture comes' : 'their textures come'} from another pack.`);
+  if (flipDrops) notes.push(fmt(t.engine.flipDrops, { count: flipDrops }));
 
   const files = Object.keys(project.overrides).length + Object.keys(project.extraFiles).filter((p) => p !== 'pack.mcmeta' && p !== 'manifest.json').length;
   const textures = Object.keys(project.overrides).length;
-  progress('Done', 1);
+  progress(t.engine.done, 1);
   return {
     project,
     report: { edition, version, packs: layers.map((l) => l.summary), conflicts, merged, dropped, notes, files, textures },
@@ -331,7 +335,7 @@ export async function mergePacks(projects: TexturePackProject[], opts: MergeOpti
 // Layers
 
 function summaryOf(p: TexturePackProject): PackSummary {
-  return { name: p.name || 'Untitled pack', edition: p.edition, version: p.version, files: 0, textures: 0, kept: 0, merged: 0, overridden: 0, renamed: 0, removed: 0 };
+  return { name: p.name || t.step1.untitled, edition: p.edition, version: p.version, files: 0, textures: 0, kept: 0, merged: 0, overridden: 0, renamed: 0, removed: 0 };
 }
 
 function entriesOf(p: TexturePackProject): { path: string; blob: Blob; texture: boolean }[] {
@@ -360,7 +364,7 @@ async function javaLayer(p: TexturePackProject, index: number, target: string, r
       const rel = e.path.slice(JAVA_TEXTURE_ROOT.length, -(meta ? '.png.mcmeta' : '.png').length);
       const r = chain.map(rel);
       if (r.kind === 'removed') {
-        dropped.push({ path: e.path, pack: index, reason: `Not in Java ${target} (removed in ${r.version})` });
+        dropped.push({ path: e.path, pack: index, reason: fmt(t.engine.removedIn, { target, version: r.version }) });
         if (!meta) layer.summary.removed++;
         continue;
       }
@@ -380,7 +384,7 @@ async function javaLayer(p: TexturePackProject, index: number, target: string, r
   for (const it of items) {
     const free = it.targets.filter((t) => !layer.files.has(t));
     if (!free.length) {
-      dropped.push({ path: it.source, pack: index, reason: `Same file as ${it.targets[0].slice(it.targets[0].lastIndexOf('/') + 1)} after renaming` });
+      dropped.push({ path: it.source, pack: index, reason: fmt(t.engine.sameFile, { name: it.targets[0].slice(it.targets[0].lastIndexOf('/') + 1) }) });
       continue;
     }
     for (const t of free) {
@@ -403,7 +407,7 @@ function bedrockLayer(p: TexturePackProject, index: number, dropped: DroppedFile
     }
     if (e.path === 'pack_icon.png') continue;
     if (e.path === 'contents.json') {
-      dropped.push({ path: e.path, pack: index, reason: 'Lists the files of the original pack only' });
+      dropped.push({ path: e.path, pack: index, reason: t.engine.contents });
       continue;
     }
     layer.files.set(e.path, e.blob);
@@ -488,7 +492,7 @@ async function mergeFile(
         all,
         (stem) => imageWinner.get(stem),
       );
-      for (const d of r.dropped) dropped.push({ path, pack: d.pack, reason: `Animation of ${d.stem.replace(/^textures\//, '')}, whose texture comes from another pack` });
+      for (const d of r.dropped) dropped.push({ path, pack: d.pack, reason: fmt(t.engine.animationOf, { name: d.stem.replace(/^textures\//, '') }) });
       return { text: r.value.length ? stringifyPretty(r.value) : null, packs: r.used.map((i) => all[i]) };
     }
   }
@@ -776,9 +780,6 @@ async function blobText(b: Blob): Promise<string> {
   return t.charCodeAt(0) === 0xfeff ? t.slice(1) : t;
 }
 
-function plural(n: number, word: string, many = `${word}s`): string {
-  return `${n.toLocaleString('en-US')} ${n === 1 ? word : many}`;
-}
 
 function check(signal?: AbortSignal): void {
   if (signal?.aborted) throw abortError();

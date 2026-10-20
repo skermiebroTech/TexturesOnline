@@ -6,6 +6,11 @@ import type { TexturePackProject } from '../../core/types';
 import { isPng } from '../../core/pixels';
 import { isZip, readZip } from '../../core/zip';
 import { JAVA_TEXTURE_ROOT, imageDims, newTextureProject, normalizeResolution } from '../textures/project';
+import { engineText } from './i18n/engine';
+import { fmt } from '../../i18n/editor-text';
+
+/** `code` of the error thrown when no image is named like a texture. */
+export const NO_MATCH = 'no-match';
 
 export interface LooseImport {
   project: TexturePackProject;
@@ -27,7 +32,7 @@ export async function importLoosePngs(file: File, known: Set<string>, latestJava
   let files: Record<string, Uint8Array>;
   if (isPng(bytes)) files = { [file.name || 'texture.png']: bytes };
   else if (isZip(bytes)) files = await readZip(bytes);
-  else throw new Error('Choose a .zip, .mcpack or .mcaddon pack, or PNG textures.');
+  else throw new Error(engineText.loose.choose);
 
   const byBase = new Map<string, string[]>();
   for (const k of known) {
@@ -72,11 +77,8 @@ export async function importLoosePngs(file: File, known: Set<string>, latestJava
     if (!matched.has(rel)) matched.set(rel, { rel, data, path });
   }
   if (!matched.size) {
-    throw new Error(
-      unmatched.length
-        ? 'None of the images are named like Minecraft textures. Name them after the texture they replace, for example stone.png or block/stone.png.'
-        : "This archive doesn't contain a resource pack or any PNG textures.",
-    );
+    // The converter tells the first case apart by its code (the message is translated).
+    throw unmatched.length ? Object.assign(new Error(engineText.loose.noMatch), { code: NO_MATCH }) : new Error(engineText.loose.nothing);
   }
 
   const legacy = [...matched.keys()].filter((r) => LEGACY_DIR.test(r)).length;
@@ -91,7 +93,8 @@ export async function importLoosePngs(file: File, known: Set<string>, latestJava
   const warnings: string[] = [];
   if (unmatched.length) {
     const names = unmatched.slice(0, 3).map((p) => p.slice(p.lastIndexOf('/') + 1));
-    warnings.push(`${unmatched.length} image${unmatched.length === 1 ? '' : 's'} didn't match a texture name and ${unmatched.length === 1 ? 'was' : 'were'} left out: ${names.join(', ')}${unmatched.length > 3 ? ` and ${unmatched.length - 3} more` : ''}.`);
+    const files = unmatched.length > 3 ? fmt(engineText.loose.andMore, { files: names.join(', '), count: unmatched.length - 3 }) : names.join(', ');
+    warnings.push(fmt(engineText.loose.unmatched, { count: unmatched.length, files }));
   }
   return { project, warnings, unmatched };
 }

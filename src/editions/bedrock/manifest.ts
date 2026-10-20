@@ -1,5 +1,7 @@
 import type { FileMap, SkinModel } from '../../core/types';
 import { convertLegacySkin, decodeImage, decodeImageSync, encodePng, isPng } from '../../core/image';
+import { errorText } from '../../shared/i18n/errors';
+import { fmt } from '../../i18n/editor-text';
 
 /*
  * Bedrock manifest.json / skin pack builders: format_version 2 with array versions,
@@ -26,8 +28,8 @@ function vec(v: readonly number[], fallback: Vec3): Vec3 {
 
 function checkUuids(uuids: { header: string; module: string }): void {
   const re = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!re.test(uuids.header) || !re.test(uuids.module)) throw new Error('The pack IDs are invalid. Create the pack again to get new ones.');
-  if (uuids.header.toLowerCase() === uuids.module.toLowerCase()) throw new Error('The pack header and module IDs must be different.');
+  if (!re.test(uuids.header) || !re.test(uuids.module)) throw new Error(errorText.badIds);
+  if (uuids.header.toLowerCase() === uuids.module.toLowerCase()) throw new Error(errorText.sameIds);
 }
 
 /** JSON with two-space indent and number arrays on one line (UTF-8, no BOM when encoded). */
@@ -141,7 +143,7 @@ export interface SkinPackSkin {
  * with Java's algorithm. Only 64x64, 128x128 and 64x32 are accepted.
  */
 export function prepareSkinPngSync(png: Uint8Array): Uint8Array {
-  if (!isPng(png)) throw new Error('Skins must be PNG images.');
+  if (!isPng(png)) throw new Error(errorText.skinNotPng);
   const img = decodeImageSync(png, 'png');
   return prepareSkinImage(img, png);
 }
@@ -150,7 +152,7 @@ function prepareSkinImage(img: ImageData, original: Uint8Array | null): Uint8Arr
   const { width: w, height: h } = img;
   if (w === 64 && h === 32) return encodePng(convertLegacySkin(img));
   if ((w === 64 && h === 64) || (w === 128 && h === 128)) return original ?? encodePng(img);
-  throw new Error(`Skins must be 64x64 or 128x128 pixels (this one is ${w}x${h}).`);
+  throw new Error(fmt(errorText.bedrockSkinSize, { width: String(w), height: String(h) }));
 }
 
 export async function prepareSkinPng(png: Blob | Uint8Array): Promise<Uint8Array> {
@@ -173,7 +175,7 @@ export function buildSkinPackFiles(opts: {
   author?: string;
 }): FileMap {
   checkUuids(opts.uuids);
-  if (!opts.skins.length) throw new Error('Add at least one skin to the pack.');
+  if (!opts.skins.length) throw new Error(errorText.noSkins);
   const version = vec(opts.version, [1, 0, 0]);
   const packName = singleLine(opts.name, 100) || 'My Skins';
   // Unique across installed packs: the name plus a slice of the pack uuid.

@@ -12,6 +12,8 @@ import { convertLegacySkin, createImageData, resizeNearest } from '../../core/pi
 import { downscaleSkin } from '../skins/hd';
 import { compareJavaVersions } from '../convert/paths';
 import { detectSlim, faceRect, type SkinPart } from '../skins/templates';
+import { t } from './i18n/text';
+import { fmt } from '../../i18n/editor-text';
 
 export const TOTEM_SIZE = 16;
 /** Totems of Undying were added in Java 1.11 (Bedrock 1.0). */
@@ -44,11 +46,18 @@ export interface StyleInfo {
   description: string;
 }
 
-export const STYLES: readonly StyleInfo[] = [
-  { id: 'classic', name: 'Classic', description: 'Full-size face on top, arms spread like the totem’s wings, body and legs below.' },
-  { id: 'bighead', name: 'Big head', description: 'An oversized head with a small body under it.' },
-  { id: 'fullbody', name: 'Full body', description: 'The whole player standing, arms down, so the outfit shows.' },
-];
+/** A style whose name and description are read in the interface's language. */
+const style = (id: TotemStyle): StyleInfo => ({
+  id,
+  get name() {
+    return t.styles[id];
+  },
+  get description() {
+    return t.styles[`${id}Text`];
+  },
+});
+
+export const STYLES: readonly StyleInfo[] = [style('classic'), style('bighead'), style('fullbody')];
 
 /** Where one body part goes: its front face is resampled into this rectangle of the 16x16 item. */
 interface Placement {
@@ -343,11 +352,9 @@ export interface TotemPack {
   packVersion?: [number, number, number];
 }
 
-export const DEFAULT_PACK_NAME = 'Custom Totem';
-
 export function totemDescription(skinName: string | null | undefined): string {
   const who = (skinName ?? '').trim();
-  return who ? `Totem of Undying that looks like ${who}` : 'A custom Totem of Undying';
+  return who ? fmt(t.pack.description, { name: who }) : t.pack.descriptionAnyone;
 }
 
 /** Default pack name for a skin name: "Notch" -> "Notch Totem". */
@@ -357,5 +364,5 @@ export function defaultPackName(skinName: string | null | undefined): string {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 40);
-  return who ? `${who} Totem` : DEFAULT_PACK_NAME;
+  return who ? fmt(t.pack.name, { name: who }) : t.pack.defaultName;
 }

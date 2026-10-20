@@ -658,7 +658,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       },
       {
         title: 'Painting',
-        items: PIXEL_SHORTCUTS.filter((s) => !/Undo|Redo/.test(s.action)).map((s) => ({ keys: split(s.keys), label: s.action })),
+        items: PIXEL_SHORTCUTS.filter((s) => !/undo|redo/i.test(s.id)).map((s) => ({ keys: split(s.keys), label: s.action })),
       },
       {
         title: 'Sounds',

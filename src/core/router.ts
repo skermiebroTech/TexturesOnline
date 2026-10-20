@@ -12,6 +12,9 @@ import { SITE_NAME } from '../app/site';
 import { DEFAULT_LOCALE, splitLocale, type Locale } from '../i18n/locales';
 import { ui } from '../i18n/ui';
 import { loadContent } from '../i18n/content';
+import { setTextLocale } from '../i18n/editor-text';
+import { loadKitText } from '../ui/i18n/load';
+import { loadSharedText } from '../shared/i18n/load';
 
 export interface RouteContext {
   params: Record<string, string>;
@@ -54,6 +57,8 @@ export interface RouteState extends RouteContext {
 }
 
 const APP = SITE_NAME;
+/** Pages without an editor: they need the UI kit's text but not the editors' shared text. */
+const TEXT_ONLY_TOOLS = new Set<ToolId>(['home', 'help']);
 
 const textures = () => import('../tools/textures/view');
 const skins = () => import('../tools/skins/view');
@@ -389,6 +394,9 @@ async function render(force = false): Promise<void> {
 
   const tool = match?.route.tool ?? null;
   document.documentElement.dataset.tool = tool ?? '';
+  // Interface text of the UI kit (and of the pieces the editors share) in the page's language.
+  setTextLocale(locale);
+  const text = Promise.all([loadKitText(locale), tool && !TEXT_ONLY_TOOLS.has(tool) ? loadSharedText(locale) : null]);
   current = { params: match?.params ?? {}, query, path, locale, tool, pattern: match?.route.pattern ?? null };
   emit(navListeners);
   emit();
@@ -415,7 +423,7 @@ async function render(force = false): Promise<void> {
   }
   // A translated page's text arrives in its own chunk: wait for it before swapping, so the page on
   // screen (often the prerendered one) never goes blank while the view waits for its words.
-  await loadContent(locale).catch(() => undefined);
+  await Promise.all([loadContent(locale).catch(() => undefined), text]);
   clearTimeout(loadingTimer);
   if (my !== token) return;
 

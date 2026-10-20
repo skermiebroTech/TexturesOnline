@@ -5,6 +5,7 @@
 import { h } from '../../ui/dom';
 import { imageDataToCanvas } from '../../core/pixels';
 import { popFrame } from './totem';
+import { t } from './i18n/text';
 
 interface Particle {
   x: number;
@@ -36,7 +37,7 @@ export interface PopPreview {
 /** The totem pop on a small "game" stage, with a replay button. */
 export function popPreview(): PopPreview {
   const canvas = h('canvas', { class: 'tt-pop-canvas', 'aria-hidden': 'true' });
-  const replay = h('button', { type: 'button', class: 'tt-pop-play', 'aria-label': 'Play the totem animation' });
+  const replay = h('button', { type: 'button', class: 'tt-pop-play', 'aria-label': t.preview.playLabel });
   const el = h('div', { class: 'tt-pop' }, canvas, replay);
   let item: HTMLCanvasElement | null = null;
   let raf = 0;

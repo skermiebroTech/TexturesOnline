@@ -1,5 +1,7 @@
 import { unzip, zip, strToU8, type Unzipped, type AsyncZippable } from 'fflate';
 import type { FileMap } from './types';
+import { fileText } from '../shared/i18n/files';
+import { fmt } from '../i18n/editor-text';
 
 export type ZipInput = Blob | Uint8Array | ArrayBuffer;
 
@@ -30,10 +32,10 @@ export function normalizeZipPath(name: string): string {
 function zipError(err: unknown): Error {
   const msg = err instanceof Error ? err.message : String(err);
   if (/unknown compression type|compression/i.test(msg))
-    return new Error("This archive uses a compression method that can't be read in the browser. Re-save it as a normal .zip and try again.");
+    return new Error(fileText.zip.unsupportedMethod);
   if (/invalid zip|unexpected EOF|invalid/i.test(msg))
-    return new Error("This file isn't a valid .zip archive, or it is damaged.");
-  return new Error(`Couldn't read the archive: ${msg}`);
+    return new Error(fileText.zip.invalid);
+  return new Error(fmt(fileText.zip.unreadable, { message: msg }));
 }
 
 /**
@@ -45,7 +47,7 @@ export const MAX_UNZIPPED_BYTES = 1024 * 1024 * 1024;
 
 export async function readZip(data: ZipInput, filter?: (path: string) => boolean): Promise<Record<string, Uint8Array>> {
   const bytes = await toBytes(data);
-  if (!isZip(bytes)) throw new Error("This file isn't a .zip archive.");
+  if (!isZip(bytes)) throw new Error(fileText.zip.notZip);
   const renamed = new Map<string, string>();
   let expanded = 0;
   let tooBig = false;
@@ -74,7 +76,7 @@ export async function readZip(data: ZipInput, filter?: (path: string) => boolean
       reject(zipError(err));
     }
   });
-  if (tooBig) throw new Error('This archive is too large to open here (over 1 GB when unpacked).');
+  if (tooBig) throw new Error(fileText.zip.tooLarge);
   if (!renamed.size) return files;
   const out: Record<string, Uint8Array> = {};
   for (const [name, content] of Object.entries(files)) out[renamed.get(name) ?? name] = content;
