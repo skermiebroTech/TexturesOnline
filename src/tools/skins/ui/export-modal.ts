@@ -31,29 +31,42 @@ import {
 } from '../export';
 import { isHdSkin } from '../templates';
 import { drawFigure } from './figure';
+import { fmt, fmtNodes } from '../../../i18n/editor-text';
+import { kit } from '../../../ui/i18n/kit';
+import { exportText as t } from '../i18n/export';
 
 interface FormatInfo {
-  kind: ExportKind;
-  title: string;
-  sub: string;
-  icon: IconName;
-  edition: 'Java' | 'Bedrock';
+  readonly kind: ExportKind;
+  readonly title: string;
+  readonly sub: string;
+  /** Menu line for an HD skin: what the format does with the extra detail */
+  readonly hdSub: string;
+  readonly icon: IconName;
+  readonly edition: 'Java' | 'Bedrock';
 }
 
-export const EXPORT_FORMATS: readonly FormatInfo[] = [
-  { kind: 'java', title: 'Java skin (.png)', sub: 'For the Launcher or minecraft.net', icon: 'monitor', edition: 'Java' },
-  { kind: 'bedrock-pack', title: 'Bedrock skin pack (.mcpack)', sub: 'One or more skins, opens in Minecraft', icon: 'package', edition: 'Bedrock' },
-  { kind: 'bedrock-png', title: 'Bedrock skin (.png)', sub: 'For the Dressing Room import slot', icon: 'smartphone', edition: 'Bedrock' },
-  { kind: 'java-legacy', title: 'Old Java skin (64×32)', sub: 'Java 1.7.10 and older', icon: 'clock', edition: 'Java' },
-];
+/** Text is read in the current language each time (getters). */
+const format = (kind: ExportKind, icon: IconName, edition: 'Java' | 'Bedrock', key: 'java' | 'bedrockPack' | 'bedrockPng' | 'legacy'): FormatInfo => ({
+  kind,
+  icon,
+  edition,
+  get title() {
+    return t.menu[key];
+  },
+  get sub() {
+    return t.menu[`${key}Sub`];
+  },
+  get hdSub() {
+    return t.menu[`${key}Hd`];
+  },
+});
 
-/** Menu lines for an HD skin: what each format does with the extra detail. */
-const HD_SUBS: Record<ExportKind, string> = {
-  java: 'Reduced to 64×64: Java has no HD skins',
-  'bedrock-pack': 'Keeps HD 128×128, opens in Minecraft',
-  'bedrock-png': 'HD 128×128 for the Dressing Room import',
-  'java-legacy': 'Java 1.7.10 and older, reduced to 64×32',
-};
+export const EXPORT_FORMATS: readonly FormatInfo[] = [
+  format('java', 'monitor', 'Java', 'java'),
+  format('bedrock-pack', 'package', 'Bedrock', 'bedrockPack'),
+  format('bedrock-png', 'smartphone', 'Bedrock', 'bedrockPng'),
+  format('java-legacy', 'clock', 'Java', 'legacy'),
+];
 
 /** Extra entry below the formats that does something other than exporting (e.g. make a totem). */
 export interface ExportExtra {
@@ -72,12 +85,12 @@ export function openExportMenu(anchor: HTMLElement, onPick: (kind: ExportKind) =
       h('span', { class: ['sk-export-icon', cls] }, icon(ic)),
       h('span', { class: 'sk-export-text' }, h('span', { class: 'sk-export-title' }, title), h('span', { class: 'sk-export-sub' }, sub)),
     );
-  const formatItems = EXPORT_FORMATS.map((f) => item(f.edition === 'Java' ? 'is-java' : 'is-bedrock', f.icon, f.title, opts.hd ? HD_SUBS[f.kind] : f.sub, f.kind));
+  const formatItems = EXPORT_FORMATS.map((f) => item(f.edition === 'Java' ? 'is-java' : 'is-bedrock', f.icon, f.title, opts.hd ? f.hdSub : f.sub, f.kind));
   const extraItems = extras.map((x) => item('is-extra', x.icon, x.title, x.sub));
   const items = [...formatItems, ...extraItems];
   const list = h(
     'div',
-    { class: 'sk-export-menu', role: 'menu', 'aria-label': 'Export formats' },
+    { class: 'sk-export-menu', role: 'menu', 'aria-label': t.menu.label },
     formatItems,
     extraItems.length ? h('div', { class: 'sk-export-sep', role: 'separator' }) : null,
     extraItems,
@@ -120,44 +133,44 @@ function steps(...items: (string | Node | (string | Node)[])[]): HTMLElement {
 }
 
 function modelName(m: SkinModel): string {
-  return m === 'slim' ? 'Slim (3-pixel arms)' : 'Classic (4-pixel arms)';
+  return m === 'slim' ? t.steps.slimModel : t.steps.classicModel;
 }
 
 function instructions(kind: ExportKind, model: SkinModel, filename: string, packName: string, skinCount = 1): Node[] {
+  const s = t.steps;
+  const file = () => h('code', null, filename);
   switch (kind) {
     case 'java':
       return [
-        h('h3', { class: 'sk-guide-title' }, icon('monitor'), 'Minecraft Launcher'),
+        h('h3', { class: 'sk-guide-title' }, icon('monitor'), s.launcherTitle),
         steps(
-          ['Open the Launcher and go to ', path('Minecraft: Java Edition', 'Skins'), '.'],
-          ['Click ', strong('New skin'), ', give it a name and choose ', strong(modelName(model)), '.'],
-          ['Click ', strong('Browse'), ', pick ', h('code', null, filename), ', then ', strong('Save & Use'), '.'],
+          fmtNodes(s.launcherOpen, { path: path('Minecraft: Java Edition', s.javaSkins) }),
+          fmtNodes(s.launcherNew, { newSkin: strong(s.newSkin), model: strong(modelName(model)) }),
+          fmtNodes(s.launcherBrowse, { browse: strong(s.browse), file: file(), save: strong(s.saveUse) }),
         ),
-        h('h3', { class: 'sk-guide-title' }, icon('globe'), 'Or on minecraft.net'),
-        steps(['Sign in, open your profile and choose ', strong(modelName(model)), '.'], 'Upload the PNG. It shows up next time you join a world.'),
+        h('h3', { class: 'sk-guide-title' }, icon('globe'), s.webTitle),
+        steps(fmtNodes(s.webSignIn, { model: strong(modelName(model)) }), s.webUpload),
       ];
     case 'java-legacy':
-      return [
-        h('p', null, 'Use this file only where a 64×32 skin is required: Java 1.7.10 and older, or launchers and servers for those versions. Newer versions read the normal 64×64 skin.'),
-      ];
+      return [h('p', null, s.legacyText)];
     case 'bedrock-pack':
       return [
-        h('h3', { class: 'sk-guide-title' }, icon('package'), 'Install the skin pack'),
+        h('h3', { class: 'sk-guide-title' }, icon('package'), s.packTitle),
         steps(
-          ['Open ', h('code', null, filename), ': double-click it on Windows, or tap it and choose ', strong('Open with Minecraft'), ' on phones and tablets.'],
-          'Minecraft starts and says the import was successful.',
-          ['Go to ', path('Dressing Room', 'Classic Skins'), ' and scroll to the pack ', strong(packName), '.'],
-          skinCount > 1 ? ['Pick one of the ', strong(String(skinCount)), ' skins and press ', strong('Equip'), '.'] : ['Pick your skin and press ', strong('Equip'), '.'],
+          fmtNodes(s.packOpen, { file: file(), openWith: strong(s.openWith) }),
+          s.packImported,
+          fmtNodes(s.packFind, { path: path(s.dressingRoom, s.classicSkins), pack: strong(packName) }),
+          skinCount > 1 ? fmtNodes(s.packPickOne, { count: strong(String(skinCount)), equip: strong(s.equip) }) : fmtNodes(s.packPickYours, { equip: strong(s.equip) }),
         ),
-        h('p', { class: 'sk-note' }, icon('info'), "Consoles can't import skin packs. Friends with “Only Allow Trusted Skins” turned on will see a default skin."),
+        h('p', { class: 'sk-note' }, icon('info'), s.packNote),
       ];
     case 'bedrock-png':
       return [
-        h('h3', { class: 'sk-guide-title' }, icon('smartphone'), 'Import in the Dressing Room'),
+        h('h3', { class: 'sk-guide-title' }, icon('smartphone'), s.pngTitle),
         steps(
-          ['Open ', path('Dressing Room', 'Classic Skins'), '.'],
-          ['Under ', strong('Owned'), ' select the blank ', strong('Import'), ' slot, then ', strong('Choose New Skin'), '.'],
-          ['Pick ', h('code', null, filename), ' and choose the ', strong(model === 'slim' ? 'slim (Alex)' : 'classic (Steve)'), ' arm model.'],
+          fmtNodes(s.pngOpen, { path: path(s.dressingRoom, s.classicSkins) }),
+          fmtNodes(s.pngSlot, { owned: strong(s.owned), import: strong(s.import), choose: strong(s.chooseNew) }),
+          fmtNodes(s.pngPick, { file: file(), model: strong(model === 'slim' ? s.pngSlim : s.pngClassic) }),
         ),
       ];
   }
@@ -183,7 +196,7 @@ function figure(img: ImageData, model: SkinModel, label: string): HTMLElement {
 }
 
 function armsLabel(m: SkinModel): string {
-  return m === 'slim' ? 'Slim arms' : 'Classic arms';
+  return m === 'slim' ? t.pack.slimArms : t.pack.classicArms;
 }
 
 function packRow(opts: { name: string; model: SkinModel; image: ImageData | Blob; checked: boolean; current?: boolean; id?: string }): HTMLLabelElement {
@@ -191,7 +204,7 @@ function packRow(opts: { name: string; model: SkinModel; image: ImageData | Blob
   const meta = h('span', { class: 'sk-pack-meta' }, armsLabel(opts.model));
   const draw = (img: ImageData) => {
     // 64x64 and HD 128x128 skins mix freely in one pack (each is its own texture).
-    if (isHdSkin(img)) meta.textContent = `${armsLabel(opts.model)} · HD 128×128`;
+    if (isHdSkin(img)) meta.textContent = `${armsLabel(opts.model)} · ${t.pack.hd}`;
     else if (img.width !== 64 || img.height !== 64) return;
     const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
     thumb.appendChild(c);
@@ -208,8 +221,8 @@ function packRow(opts: { name: string; model: SkinModel; image: ImageData | Blob
     { class: ['sk-pack-skin', opts.current ? 'is-current' : null] },
     check,
     thumb,
-    h('span', { class: 'sk-pack-info' }, h('span', { class: 'sk-pack-name truncate' }, opts.name || 'Untitled'), meta),
-    opts.current ? badge('This skin', 'blue') : null,
+    h('span', { class: 'sk-pack-info' }, h('span', { class: 'sk-pack-name truncate' }, opts.name || t.pack.untitled), meta),
+    opts.current ? badge(t.pack.thisSkin, 'blue') : null,
   );
 }
 
@@ -234,10 +247,10 @@ async function choosePackSkins(project: SkinProjectData, img: ImageData): Promis
 
   let packName = packNameOf(project);
   const nameField = textInput({
-    label: 'Pack name',
+    label: t.pack.name,
     value: packName,
     maxLength: 60,
-    description: 'Shown in the Dressing Room under Classic Skins.',
+    description: t.pack.nameHint,
     onInput: (v) => (packName = v),
     onEnter: () => (modal.el.querySelector('.modal-footer .btn-primary') as HTMLButtonElement | null)?.click(),
   });
@@ -249,7 +262,7 @@ async function choosePackSkins(project: SkinProjectData, img: ImageData): Promis
     const n = boxes.filter((b) => b.checked).length;
     count.textContent = skinCountLabel(n + 1);
     const all = n === boxes.length;
-    allBtn.querySelector('.btn-label')!.textContent = all ? 'Clear' : 'Select all';
+    allBtn.querySelector('.btn-label')!.textContent = all ? t.pack.clear : t.pack.selectAll;
   };
   boxes.forEach((b) => b.addEventListener('change', sync));
   allBtn.addEventListener('click', () => {
@@ -266,33 +279,33 @@ async function choosePackSkins(project: SkinProjectData, img: ImageData): Promis
     h(
       'div',
       { class: 'sk-pack-head' },
-      h('h3', { class: 'sk-guide-title' }, icon('package'), 'Skins in this pack'),
+      h('h3', { class: 'sk-guide-title' }, icon('package'), t.pack.skins),
       count,
       allBtn,
     ),
     h(
       'div',
-      { class: 'sk-pack-list', role: 'group', 'aria-label': 'Skins in this pack' },
+      { class: 'sk-pack-list', role: 'group', 'aria-label': t.pack.skins },
       packRow({ name: project.name, model: project.model, image: img, checked: true, current: true }),
       rows,
     ),
-    h('p', { class: 'sk-note' }, icon('info'), 'Each skin keeps its own name, arm model and size (64×64 and HD 128×128 skins can share a pack). Exporting again updates the installed pack.'),
+    h('p', { class: 'sk-note' }, icon('info'), t.pack.note),
   );
 
   let result: PackSkinSource[] | null = null;
   let resolveChoice: (v: PackSkinSource[] | null) => void = () => {};
   const choice = new Promise<PackSkinSource[] | null>((resolve) => (resolveChoice = resolve));
   const modal = openModal({
-    title: 'Make a skin pack',
+    title: t.pack.title,
     body,
     width: 560,
     initialFocus: nameField.input,
     // Runs once the dialog is gone, so the next dialog returns focus properly.
     onClose: () => resolveChoice(result),
     actions: [
-      { label: 'Cancel', variant: 'ghost' },
+      { label: kit.cancel, variant: 'ghost' },
       {
-        label: 'Download pack',
+        label: t.pack.download,
         variant: 'primary',
         onClick: () => {
           const name = packName.trim();
@@ -318,25 +331,25 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
     const body = h(
       'div',
       { class: 'sk-export' },
-      h('div', { class: 'sk-export-compare' }, figure(img, project.model, 'Your skin'), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), figure(after, 'classic', 'Old versions')),
+      h('div', { class: 'sk-export-compare' }, figure(img, project.model, t.legacy.yourSkin), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), figure(after, 'classic', t.legacy.oldVersions)),
       losses.length
-        ? h('div', { class: 'sk-losses' }, h('h3', { class: 'sk-guide-title' }, icon('warning'), 'What changes'), h('ul', null, losses.map((l) => h('li', null, l))))
-        : h('p', { class: 'sk-note' }, icon('check'), 'Nothing gets lost: your skin already fits the old layout.'),
+        ? h('div', { class: 'sk-losses' }, h('h3', { class: 'sk-guide-title' }, icon('warning'), t.legacy.changes), h('ul', null, losses.map((l) => h('li', null, l))))
+        : h('p', { class: 'sk-note' }, icon('check'), t.legacy.nothingLost),
       ...instructions(kind, project.model, '', project.name),
     );
     openModal({
-      title: 'Export for old Java versions',
+      title: t.legacy.title,
       body,
       width: 620,
       actions: [
-        { label: 'Cancel', variant: 'ghost' },
+        { label: kit.cancel, variant: 'ghost' },
         {
-          label: 'Download 64×32 PNG',
+          label: t.legacy.download,
           variant: 'primary',
           onClick: async () => {
             const res = await runExport(kind, project, img);
             saveBlob(res.blob, res.filename);
-            toast(`Downloaded ${res.filename}`, { tone: 'success' });
+            toast(fmt(t.done.downloaded, { file: res.filename }), { tone: 'success' });
           },
         },
       ],
@@ -363,7 +376,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
   try {
     res = await runExport(kind, project, img, packSkins, keepHd);
   } catch (err) {
-    toast(err instanceof Error ? err.message : 'Export failed.', { tone: 'error' });
+    toast(err instanceof Error ? err.message : t.done.failed, { tone: 'error' });
     return;
   }
   saveBlob(res.blob, res.filename);
@@ -372,14 +385,14 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
   if (!isOpen()) return;
 
   const skinCount = res.skinCount ?? 1;
-  const again = button({ label: 'Download again', icon: 'download', variant: 'secondary', size: 'sm' });
+  const again = button({ label: t.done.again, icon: 'download', variant: 'secondary', size: 'sm' });
   again.addEventListener('click', () =>
     void withBusy(again, async () => {
       const r = kind === 'bedrock-pack' ? res : await runExport(kind, project, img, [], keepHd);
       saveBlob(r.blob, r.filename);
     }),
   );
-  const help = h('a', { class: 'sk-help-link', href: routeHref(`/help?s=${info.edition === 'Java' ? 'java-skins' : 'bedrock-skins'}`) }, icon('book-open'), 'Full install guide');
+  const help = h('a', { class: 'sk-help-link', href: routeHref(`/help?s=${info.edition === 'Java' ? 'java-skins' : 'bedrock-skins'}`) }, icon('book-open'), t.done.guide);
   const body = h(
     'div',
     { class: 'sk-export' },
@@ -390,9 +403,9 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
       h(
         'div',
         { class: 'sk-export-file' },
-        h('span', { class: 'sk-export-ok' }, icon('check'), 'Download started'),
+        h('span', { class: 'sk-export-ok' }, icon('check'), t.done.started),
         h('code', { class: 'sk-export-name' }, res.filename),
-        h('span', { class: 'muted small sk-export-meta' }, [`${info.edition} Edition`, skinCount > 1 ? null : armsLabel(project.model), res.meta].filter(Boolean).join(' · ')),
+        h('span', { class: 'muted small sk-export-meta' }, [info.edition === 'Java' ? t.done.javaEdition : t.done.bedrockEdition, skinCount > 1 ? null : armsLabel(project.model), res.meta].filter(Boolean).join(' · ')),
         h('div', { class: 'row', style: { '--gap': '8px', marginTop: '8px' } }, again),
       ),
     ),
@@ -400,7 +413,8 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
     ...instructions(kind, project.model, res.filename, kind === 'bedrock-pack' ? packNameOf(project) : project.name, skinCount),
     help,
   );
-  const m = openModal({ title: skinCount > 1 ? `Your ${info.edition} skin pack is ready` : `Your ${info.edition} skin is ready`, body, width: 620, actions: [{ label: 'Done', variant: 'primary' }] });
+  const title = skinCount > 1 ? t.done.packReady : info.edition === 'Java' ? t.done.javaReady : t.done.bedrockReady;
+  const m = openModal({ title, body, width: 620, actions: [{ label: t.done.finished, variant: 'primary' }] });
   help.addEventListener('click', () => m.close());
 }
 
@@ -412,20 +426,20 @@ function chooseJavaSize(img: ImageData, model: SkinModel): Promise<'64' | 'hd' |
     const body = h(
       'div',
       { class: 'sk-export' },
-      h('div', { class: 'sk-export-compare' }, figure(img, model, 'Your HD skin'), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), figure(javaImage(img), model, 'Java 64×64')),
-      h('p', { class: 'sk-note is-warn sk-java-hd-note' }, icon('warning'), h('span', null, h('strong', null, 'Java Edition only shows 64×64 skins without mods. '), 'The Launcher and minecraft.net refuse bigger files, so your skin is reduced: each 2×2 block becomes one pixel.')),
-      lost ? h('p', { class: 'muted small' }, `About ${lost}% of the painted areas have finer HD detail that gets simplified. Your HD skin stays as it is for Bedrock.`) : h('p', { class: 'muted small' }, 'This skin has no finer HD detail yet, so nothing is lost.'),
-      h('p', { class: 'muted small' }, 'Using an HD skin mod (such as CustomSkinLoader)? Download the 128×128 file instead.'),
+      h('div', { class: 'sk-export-compare' }, figure(img, model, t.hd.yourSkin), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), figure(javaImage(img), model, t.hd.java)),
+      h('p', { class: 'sk-note is-warn sk-java-hd-note' }, icon('warning'), h('span', null, h('strong', null, t.hd.strong), t.hd.text)),
+      lost ? h('p', { class: 'muted small' }, fmt(t.hd.lost, { percent: lost })) : h('p', { class: 'muted small' }, t.hd.nothingLost),
+      h('p', { class: 'muted small' }, t.hd.mods),
     );
     openModal({
-      title: 'Export an HD skin for Java',
+      title: t.hd.title,
       body,
       width: 620,
       onClose: () => resolve(answer),
       actions: [
-        { label: 'Cancel', variant: 'ghost' },
-        { label: '128×128 for mods', variant: 'secondary', onClick: () => void (answer = 'hd') },
-        { label: 'Download 64×64', variant: 'primary', onClick: () => void (answer = '64') },
+        { label: kit.cancel, variant: 'ghost' },
+        { label: t.hd.forMods, variant: 'secondary', onClick: () => void (answer = 'hd') },
+        { label: t.hd.download64, variant: 'primary', onClick: () => void (answer = '64') },
       ],
     });
   });

@@ -16,6 +16,7 @@ import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { openModal, openShortcutsSheet } from '../../../ui/modal';
 import type { PopoverHandle } from '../../../ui/popover';
 import { toast } from '../../../ui/toast';
+import { kit } from '../../../ui/i18n/kit';
 import type { SkinAnimation, SkinPreview } from '../skin-preview';
 import { exportSkin, openExportMenu } from './export-modal';
 import { hdLossPercent, type SkinProjectData } from '../export';
@@ -45,6 +46,9 @@ import { SKIN_PALETTES } from './palettes';
 import { normalizeSkinImage } from './sources';
 import { setOuterSeeThrough, setPartVisible } from './preview-extras';
 import { createPaint3d, drawPixelOutline, maxBrushFor } from './paint3d';
+import { fmt } from '../../../i18n/editor-text';
+import { editorText as t, type SkinEditorText } from '../i18n/editor';
+import { t as startText } from '../i18n/text';
 
 // ---------------------------------------------------------------------------------------------
 // Preferences (per browser)
@@ -113,46 +117,39 @@ function savePrefs(p: Prefs): void {
 
 // ---------------------------------------------------------------------------------------------
 
-const TOOLS: { tool: Tool; icon: IconName; label: string; key?: string }[] = [
-  { tool: 'pencil', icon: 'pencil', label: 'Pencil', key: 'B' },
-  { tool: 'eraser', icon: 'eraser', label: 'Eraser', key: 'E' },
-  { tool: 'fill', icon: 'fill', label: 'Fill', key: 'G' },
-  { tool: 'picker', icon: 'pipette', label: 'Pick a colour', key: 'I' },
-  { tool: 'line', icon: 'line', label: 'Line', key: 'L' },
-  { tool: 'rect', icon: 'rect', label: 'Rectangle', key: 'U' },
-  { tool: 'rect-fill', icon: 'rect-fill', label: 'Filled rectangle', key: 'U' },
-  { tool: 'ellipse', icon: 'ellipse', label: 'Ellipse', key: 'O' },
-  { tool: 'lighten', icon: 'sun', label: 'Lighten (shading)' },
-  { tool: 'darken', icon: 'moon', label: 'Darken (shading)' },
-  { tool: 'noise', icon: 'noise', label: 'Noise (texture)' },
-  { tool: 'select', icon: 'select', label: 'Select', key: 'M' },
-  { tool: 'move', icon: 'move', label: 'Move', key: 'V' },
+// Names are read from the editor's text when the controls are built (never stored at import).
+const TOOLS: { tool: Tool; icon: IconName; text: keyof SkinEditorText['tools']; key?: string }[] = [
+  { tool: 'pencil', icon: 'pencil', text: 'pencil', key: 'B' },
+  { tool: 'eraser', icon: 'eraser', text: 'eraser', key: 'E' },
+  { tool: 'fill', icon: 'fill', text: 'fill', key: 'G' },
+  { tool: 'picker', icon: 'pipette', text: 'picker', key: 'I' },
+  { tool: 'line', icon: 'line', text: 'line', key: 'L' },
+  { tool: 'rect', icon: 'rect', text: 'rect', key: 'U' },
+  { tool: 'rect-fill', icon: 'rect-fill', text: 'rectFill', key: 'U' },
+  { tool: 'ellipse', icon: 'ellipse', text: 'ellipse', key: 'O' },
+  { tool: 'lighten', icon: 'sun', text: 'lighten' },
+  { tool: 'darken', icon: 'moon', text: 'darken' },
+  { tool: 'noise', icon: 'noise', text: 'noise' },
+  { tool: 'select', icon: 'select', text: 'select', key: 'M' },
+  { tool: 'move', icon: 'move', text: 'move', key: 'V' },
 ];
 
-const BACKDROPS: { id: string; label: string; color: string | null; swatch: string }[] = [
-  { id: 'studio', label: 'Studio (transparent)', color: null, swatch: 'transparent' },
-  { id: 'sky', label: 'Sky', color: '#8ec5ff', swatch: '#8ec5ff' },
-  { id: 'night', label: 'Night', color: '#11141c', swatch: '#11141c' },
-  { id: 'paper', label: 'Light', color: '#eef1f6', swatch: '#eef1f6' },
+type BackdropId = keyof SkinEditorText['right']['backdrops'];
+const BACKDROPS: { id: BackdropId; color: string | null; swatch: string }[] = [
+  { id: 'studio', color: null, swatch: 'transparent' },
+  { id: 'sky', color: '#8ec5ff', swatch: '#8ec5ff' },
+  { id: 'night', color: '#11141c', swatch: '#11141c' },
+  { id: 'paper', color: '#eef1f6', swatch: '#eef1f6' },
 ];
 
-const ANIMATIONS: { value: SkinAnimation; label: string }[] = [
-  { value: 'idle', label: 'Idle' },
-  { value: 'walk', label: 'Walk' },
-  { value: 'run', label: 'Run' },
-  { value: 'none', label: 'Still' },
-];
+const ANIMATIONS: (SkinAnimation & keyof SkinEditorText['right']['animations'])[] = ['idle', 'walk', 'run', 'none'];
 
-const TIPS = [
-  'Hover the template to see which part and face you are painting.',
-  'Turn on Mirror to paint both arms or both legs at once.',
-  'Paint hats, jackets and sleeves on the Outer layer — it can be see-through.',
-  'Lock a part in the Body parts list so you can’t paint outside it.',
-  'Shading tip: use Lighten and Darken to add depth.',
-  'Press ? to see every keyboard shortcut.',
-  'Press D to paint straight onto the 3D model.',
-  'Bedrock skin? Switch Size to HD 128×128 for twice the detail.',
-];
+const TIPS: (keyof SkinEditorText['tips'])[] = ['hover', 'mirror', 'outer', 'lock', 'shading', 'keys', 'paint3d', 'hd'];
+
+/** A sentence that may start with a part's name (German "den rechten Arm …"), capitalised. */
+function upperFirst(s: string): string {
+  return s.charAt(0).toLocaleUpperCase() + s.slice(1);
+}
 
 function isLight(): boolean {
   return document.documentElement.dataset.theme === 'light';
@@ -167,7 +164,7 @@ function notFound(root: HTMLElement, title: string, text: string): () => void {
         icon: 'human',
         title,
         text,
-        action: button({ label: 'All skins', icon: 'arrow-left', variant: 'primary', onClick: () => navigate('/skins') }),
+        action: button({ label: t.missing.allSkins, icon: 'arrow-left', variant: 'primary', onClick: () => navigate('/skins') }),
       }),
     ),
   );
@@ -288,7 +285,7 @@ export interface SkinEditorTestApi {
 export async function mountEditor(root: HTMLElement, id: string): Promise<() => void> {
   const found = await getProject<SkinProjectData>(id);
   if (!found || found.kind !== 'skin') {
-    return notFound(root, 'Skin not found', 'This skin is not saved in this browser. It may have been deleted, or it was made on another device.');
+    return notFound(root, t.missing.title, t.missing.text);
   }
   const project: SkinProjectData = found;
   let initial: ImageData | null = null;
@@ -321,7 +318,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       const decoded = await decodeImage(project.image, 'png');
       initial = (decoded.width === 64 && decoded.height === 64) || (decoded.width === 128 && decoded.height === 128) ? decoded : normalizeSkinImage(decoded).image;
     } catch {
-      return notFound(root, "This skin can't be opened", 'The saved image is damaged. Try making a new skin.');
+      return notFound(root, t.missing.damagedTitle, t.missing.damagedText);
     }
   }
 
@@ -357,26 +354,26 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     maxLength: 60,
     spellcheck: false,
     autocomplete: 'off',
-    'aria-label': 'Skin name',
+    'aria-label': t.bar.name,
   });
   const saveIcon = h('span', { class: 'sk-save-icon' }, icon('check'));
-  const saveText = h('span', { class: 'sk-save-text' }, 'Saved');
+  const saveText = h('span', { class: 'sk-save-text' }, t.bar.saved);
   const saveState = h('button', { type: 'button', class: 'sk-save', dataset: { state: 'saved' }, 'aria-live': 'polite' }, saveIcon, saveText);
-  const hdBadge = h('button', { type: 'button', class: 'sk-hd-badge', hidden: scale !== 2, 'aria-label': 'HD 128×128 skin for Bedrock. Change the size' }, 'HD');
-  tooltip(hdBadge, 'HD 128×128 skin (Bedrock). Java exports are reduced to 64×64.');
+  const hdBadge = h('button', { type: 'button', class: 'sk-hd-badge', hidden: scale !== 2, 'aria-label': t.bar.hdBadge }, 'HD');
+  tooltip(hdBadge, t.bar.hdBadgeTip);
   hdBadge.addEventListener('click', () => {
     if (layout.current() !== 'right' && window.matchMedia('(max-width: 720px)').matches) layout.show('right');
     sizeSeg.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
   });
-  const undoBtn = iconButton('undo', 'Undo (Ctrl+Z)', () => pc.undo(), { disabled: true });
-  const redoBtn = iconButton('redo', 'Redo (Ctrl+Shift+Z)', () => pc.redo(), { disabled: true });
-  const keysBtn = iconButton('keyboard', 'Keyboard shortcuts (?)', () => showShortcuts());
-  const exportBtn = button({ label: 'Export', icon: 'download', iconEnd: 'chevron-down', variant: 'primary', class: 'sk-export-btn' });
+  const undoBtn = iconButton('undo', t.bar.undo, () => pc.undo(), { disabled: true });
+  const redoBtn = iconButton('redo', t.bar.redo, () => pc.redo(), { disabled: true });
+  const keysBtn = iconButton('keyboard', t.bar.shortcuts, () => showShortcuts(), { class: 'sk-keys-btn' });
+  const exportBtn = button({ label: t.bar.export, icon: 'download', iconEnd: 'chevron-down', variant: 'primary', class: 'sk-export-btn' });
   exportBtn.setAttribute('aria-haspopup', 'menu');
-  exportBtn.setAttribute('aria-label', 'Export'); // the label text is hidden on phones
+  exportBtn.setAttribute('aria-label', t.bar.export); // the label text is hidden on phones
   const totemExtra = {
-    title: 'Custom totem',
-    sub: 'Make a Totem of Undying from this skin',
+    title: t.bar.totemTitle,
+    sub: t.bar.totemText,
     icon: 'totem' as const,
     onPick: () =>
       void flushSave()
@@ -384,7 +381,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         .then(() => navigate(`/totem-maker?skin=${encodeURIComponent(id)}`)),
   };
   exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [totemExtra], { hd: scale === 2 })));
-  const backBtn = iconButton('arrow-left', 'All skins', () => navigate('/skins'));
+  const backBtn = iconButton('arrow-left', t.bar.allSkins, () => navigate('/skins'));
 
   const bar = h(
     'div',
@@ -399,26 +396,26 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
 
   const layerSeg = segmented<LayerSelection>({
     value: prefs.layers,
-    label: 'Layer to paint on',
+    label: t.canvas.layerLabel,
     size: 'sm',
     options: [
-      { value: 'base', label: 'Base' },
-      { value: 'outer', label: 'Outer' },
-      { value: 'both', label: 'Both' },
+      { value: 'base', label: t.canvas.base },
+      { value: 'outer', label: t.canvas.outer },
+      { value: 'both', label: t.canvas.both },
     ],
     onChange: (v) => setLayers(v),
   });
-  tooltip(layerSeg, 'Which layer to paint on (1 / 2 / 3)');
-  const mirrorBtn = h('button', { type: 'button', class: 'sk-toggle-btn', 'aria-pressed': String(prefs.mirror) }, icon('mirror'), h('span', null, 'Mirror'));
-  tooltip(mirrorBtn, 'Mirror: paint both arms or both legs at once (Y)');
+  tooltip(layerSeg, t.canvas.layerTip);
+  const mirrorBtn = h('button', { type: 'button', class: 'sk-toggle-btn', 'aria-pressed': String(prefs.mirror) }, icon('mirror'), h('span', null, t.canvas.mirror));
+  tooltip(mirrorBtn, t.canvas.mirrorTip);
   mirrorBtn.addEventListener('click', () => setMirror(!prefs.mirror));
-  const guidesBtn = iconButton('label', 'Part guides (P)', () => setGuides(!prefs.guides), { active: prefs.guides });
-  const gridBtn = iconButton('grid', 'Pixel grid (#)', () => pc.setShowGrid(!pc.showGrid), { active: prefs.grid });
-  const fitBtn = iconButton('aspect-ratio', 'Fit to screen (0)', () => fitView());
+  const guidesBtn = iconButton('label', t.canvas.guides, () => setGuides(!prefs.guides), { active: prefs.guides });
+  const gridBtn = iconButton('grid', t.canvas.grid, () => pc.setShowGrid(!pc.showGrid), { active: prefs.grid, class: 'sk-grid-btn' });
+  const fitBtn = iconButton('aspect-ratio', t.canvas.fit, () => fitView());
 
   const workspaceSeg = segmented<'2d' | '3d'>({
     value: prefs.workspace,
-    label: 'Main editor view',
+    label: t.canvas.workspace,
     size: 'sm',
     options: [
       { value: '2d', label: '2D', icon: 'grid' },
@@ -427,7 +424,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     onChange: (v) => setWorkspace(v),
   });
   workspaceSeg.classList.add('sk-workspace');
-  tooltip(workspaceSeg, 'Paint on the flat 2D template or directly on the 3D model (D)');
+  tooltip(workspaceSeg, t.canvas.workspaceTip);
   const canvasTools = h('div', { class: 'sk-tools-group' }, guidesBtn, gridBtn, fitBtn);
   const barTools = h('div', { class: 'sk-bar-tools' }, canvasTools);
   const canvasBar = h(
@@ -435,7 +432,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     { class: 'sk-canvas-bar' },
     workspaceSeg,
     h('span', { class: 'toolbar-sep' }),
-    h('div', { class: 'sk-cb-group' }, h('span', { class: 'sk-cb-label' }, 'Paint on'), layerSeg),
+    h('div', { class: 'sk-cb-group' }, h('span', { class: 'sk-cb-label' }, t.canvas.paintOn), layerSeg),
     h('span', { class: 'toolbar-sep' }),
     mirrorBtn,
     h('span', { class: 'grow' }),
@@ -443,11 +440,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   );
 
   const toolButtons = new Map<Tool, ReturnType<typeof iconButton>>();
-  const railTools = h('div', { class: 'sk-rail-tools', role: 'toolbar', 'aria-label': 'Drawing tools' });
-  for (const t of TOOLS) {
-    const b = iconButton(t.icon, t.key ? `${t.label} (${t.key})` : t.label, () => pc.setTool(t.tool), { active: false, class: 'sk-tool' });
-    b.dataset.tool = t.tool;
-    toolButtons.set(t.tool, b);
+  const railTools = h('div', { class: 'sk-rail-tools', role: 'toolbar', 'aria-label': t.canvas.tools });
+  for (const tl of TOOLS) {
+    const label = t.tools[tl.text];
+    const b = iconButton(tl.icon, tl.key ? `${label} (${tl.key})` : label, () => pc.setTool(tl.tool), { active: false, class: 'sk-tool' });
+    b.dataset.tool = tl.tool;
+    toolButtons.set(tl.tool, b);
     railTools.appendChild(b);
   }
   // The rail is one tab stop; arrow keys move between tools in whichever direction it is laid out
@@ -487,12 +485,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     toolList.forEach((b) => (b.tabIndex = b === next ? 0 : -1));
     next.focus();
   });
-  const primarySwatch = h('button', { type: 'button', class: 'sk-well sk-well-primary', 'aria-label': 'Paint colour' }, h('span', { class: 'sk-well-fill' }));
-  const secondarySwatch = h('button', { type: 'button', class: 'sk-well sk-well-secondary', 'aria-label': 'Right-click colour' }, h('span', { class: 'sk-well-fill' }));
-  const swapBtn = h('button', { type: 'button', class: 'sk-swap', 'aria-label': 'Swap colours (X)' }, icon('arrows-horizontal'));
-  tooltip(primarySwatch, 'Paint colour');
-  tooltip(secondarySwatch, 'Right-click colour (transparent = erase)');
-  tooltip(swapBtn, 'Swap colours (X)');
+  const primarySwatch = h('button', { type: 'button', class: 'sk-well sk-well-primary', 'aria-label': t.canvas.paintColour }, h('span', { class: 'sk-well-fill' }));
+  const secondarySwatch = h('button', { type: 'button', class: 'sk-well sk-well-secondary', 'aria-label': t.canvas.rightColour }, h('span', { class: 'sk-well-fill' }));
+  const swapBtn = h('button', { type: 'button', class: 'sk-swap', 'aria-label': t.canvas.swap }, icon('arrows-horizontal'));
+  tooltip(primarySwatch, t.canvas.paintColour);
+  tooltip(secondarySwatch, t.canvas.rightColourTip);
+  tooltip(swapBtn, t.canvas.swap);
   const wells = h('div', { class: 'sk-wells' }, primarySwatch, secondarySwatch, swapBtn);
   const rail = h('div', { class: 'sk-rail' }, wells, railTools);
 
@@ -500,12 +498,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const canvasHost = h('div', { class: 'sk-canvas-host' }, tip);
   const statusText = h('span', { class: 'sk-status-text' });
   const status = h('div', { class: 'sk-status' }, icon('info'), statusText);
-  const center = h('section', { class: 'panel sk-center', 'aria-label': 'Skin template' }, canvasBar, h('div', { class: 'sk-work' }, rail, canvasHost), status);
+  const center = h('section', { class: 'panel sk-center', 'aria-label': t.canvas.template }, canvasBar, h('div', { class: 'sk-work' }, rail, canvasHost), status);
 
   // =============================================================================================
   // Left: colours, brush, parts, guides
 
-  const paletteChips = h('div', { class: 'sk-chips', role: 'group', 'aria-label': 'Colour presets' });
+  const paletteChips = h('div', { class: 'sk-chips', role: 'group', 'aria-label': t.left.presets });
   const pickerSlot = h('div', { class: 'sk-picker-slot' });
   let picker: ReturnType<typeof colorPicker> | null = null;
   let pickerColor: RGBA = [0, 0, 0, 255];
@@ -527,7 +525,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     paletteChips.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === group.id)));
   };
   for (const g of SKIN_PALETTES) {
-    const b = h('button', { type: 'button', class: 'sk-chip', dataset: { id: g.id }, 'aria-pressed': String(g.id === prefs.palette) }, g.label);
+    const b = h('button', { type: 'button', class: 'sk-chip', dataset: { id: g.id }, 'aria-pressed': String(g.id === prefs.palette) }, t.left.palettes[g.id]);
     b.addEventListener('click', () => {
       setPref('palette', g.id);
       buildPicker();
@@ -536,33 +534,33 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   }
 
   // Up to 8 px on 64x64 skins and 16 px on HD skins (the same reach on the model).
-  const makeBrushSlider = (value = 1) => slider({ label: 'Brush size', min: 1, max: maxBrushFor(scale), step: 1, value, unit: 'px', onInput: (v) => pc.setBrushSize(v) });
+  const makeBrushSlider = (value = 1) => slider({ label: t.left.brushSize, min: 1, max: maxBrushFor(scale), step: 1, value, unit: 'px', onInput: (v) => pc.setBrushSize(v) });
   let brushSlider = makeBrushSlider();
   const brushShape = segmented<'square' | 'round'>({
     value: 'square',
     size: 'sm',
-    label: 'Brush shape',
+    label: t.left.brushShape,
     options: [
-      { value: 'square', label: 'Square', icon: 'rect' },
-      { value: 'round', label: 'Round', icon: 'ellipse' },
+      { value: 'square', label: t.left.square, icon: 'rect' },
+      { value: 'round', label: t.left.round, icon: 'ellipse' },
     ],
     onChange: (v) => pc.setBrushShape(v),
   });
 
   // Parts list
   const partRows = new Map<SkinPart, { row: HTMLElement; eye: ReturnType<typeof iconButton>; lock: ReturnType<typeof iconButton> }>();
-  const partsList = h('ul', { class: 'sk-parts', 'aria-label': 'Body parts' });
+  const partsList = h('ul', { class: 'sk-parts', 'aria-label': t.left.parts });
   for (const part of PARTS) {
     const info = PART_INFO[part];
-    const eye = iconButton('eye', `Show ${info.label} in 3D`, () => togglePartVisible(part), { size: 'sm', active: true });
-    const lock = iconButton('lock', `Only paint the ${info.label}`, () => toggleLock(part), { size: 'sm', active: false });
-    const more = iconButton('more-horizontal', `More for ${info.label}`, () => togglePopover(more, () => partMenu(part, more)), { size: 'sm' });
+    const eye = iconButton('eye', fmt(t.left.show3d, { part: info.label }), () => togglePartVisible(part), { size: 'sm', active: true });
+    const lock = iconButton('lock', fmt(t.left.lockPart, { part: info.label }), () => toggleLock(part), { size: 'sm', active: false });
+    const more = iconButton('more-horizontal', fmt(t.left.more, { part: info.label }), () => togglePopover(more, () => partMenu(part, more)), { size: 'sm' });
     more.setAttribute('aria-haspopup', 'menu');
     const row = h(
       'li',
       { class: 'sk-part', dataset: { part }, style: { '--part': info.color } },
       h('span', { class: 'sk-part-dot', 'aria-hidden': 'true' }),
-      h('span', { class: 'sk-part-name' }, h('span', null, info.label), h('span', { class: 'sk-part-sub' }, `+ ${info.outerLabel.replace(/^(Left|Right) /, '').toLowerCase()}`)),
+      h('span', { class: 'sk-part-name' }, h('span', null, info.label), h('span', { class: 'sk-part-sub' }, `+ ${info.sub}`)),
       h('span', { class: 'sk-part-actions' }, lock, eye, more),
     );
     row.addEventListener('pointerenter', () => setHighlight(part));
@@ -574,13 +572,13 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     partRows.set(part, { row, eye, lock });
     partsList.appendChild(row);
   }
-  const resetPartsBtn = button({ label: 'Reset', variant: 'ghost', size: 'sm', onClick: () => resetParts() });
+  const resetPartsBtn = button({ label: t.left.reset, variant: 'ghost', size: 'sm', onClick: () => resetParts() });
   resetPartsBtn.hidden = true;
 
-  const guidesToggle = toggle({ label: 'Part guides', description: 'Outlines and names on the template.', value: prefs.guides, onChange: (v) => setGuides(v) });
+  const guidesToggle = toggle({ label: t.left.guidesToggle, description: t.left.guidesText, value: prefs.guides, onChange: (v) => setGuides(v) });
   const seeThroughToggle = toggle({
-    label: 'See-through outer layer',
-    description: 'In 3D, so you can see the base layer under hats and jackets.',
+    label: t.left.seeThrough,
+    description: t.left.seeThroughText,
     value: prefs.seeThrough,
     onChange: (v) => {
       setPref('seeThrough', v);
@@ -593,20 +591,20 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
 
   const left = h(
     'aside',
-    { class: 'panel sk-left', 'aria-label': 'Colours and parts' },
+    { class: 'panel sk-left', 'aria-label': t.left.label },
     h(
       'div',
       { class: 'sk-left-scroll scroll' },
-      block('Colour', 'sk-block-color', paletteChips, pickerSlot),
+      block(t.left.colour, 'sk-block-color', paletteChips, pickerSlot),
       h(
         'section',
         { class: 'sk-block sk-block-parts' },
-        h('div', { class: 'sk-block-head' }, h('h3', { class: 'section-title' }, 'Body parts'), resetPartsBtn),
-        h('p', { class: 'sk-block-hint' }, icon('lock', { size: 24 }), h('span', null, 'Lock parts to paint only inside them. The eye hides a part in 3D.')),
+        h('div', { class: 'sk-block-head' }, h('h3', { class: 'section-title' }, t.left.parts), resetPartsBtn),
+        h('p', { class: 'sk-block-hint' }, icon('lock', { size: 24 }), h('span', null, t.left.partsHint)),
         partsList,
       ),
-      block('Brush', 'sk-block-brush', brushSlider, brushShape),
-      block('Guides', 'sk-block-guides', guidesToggle, seeThroughToggle),
+      block(t.left.brush, 'sk-block-brush', brushSlider, brushShape),
+      block(t.left.guides, 'sk-block-guides', guidesToggle, seeThroughToggle),
     ),
   );
 
@@ -617,27 +615,27 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const animSeg = segmented<SkinAnimation>({
     value: prefs.animation,
     size: 'sm',
-    label: 'Animation',
-    options: ANIMATIONS,
+    label: t.right.animation,
+    options: ANIMATIONS.map((value) => ({ value, label: t.right.animations[value] })),
     onChange: (v) => {
       setPref('animation', v);
       preview?.setAnimation(v);
     },
   });
-  const rotateBtn = iconButton('rotate', 'Spin automatically', () => {
+  const rotateBtn = iconButton('rotate', t.right.spin, () => {
     setPref('autoRotate', !prefs.autoRotate);
     rotateBtn.setActive(prefs.autoRotate);
     preview?.setAutoRotate(prefs.autoRotate);
   }, { size: 'sm', active: prefs.autoRotate });
-  const resetCamBtn = iconButton('target', 'Reset view (0)', () => preview?.resetCamera(), { size: 'sm' });
-  const shotBtn = iconButton('camera', 'Save a picture of the 3D view', () => void screenshot(), { size: 'sm' });
+  const resetCamBtn = iconButton('target', t.right.resetView, () => preview?.resetCamera(), { size: 'sm' });
+  const shotBtn = iconButton('camera', t.right.picture, () => void screenshot(), { size: 'sm' });
   const modelSeg = segmented<SkinModel>({
     value: model,
     size: 'sm',
-    label: 'Arm style',
+    label: t.right.armStyle,
     options: [
-      { value: 'classic', label: 'Classic' },
-      { value: 'slim', label: 'Slim' },
+      { value: 'classic', label: t.right.classic },
+      { value: 'slim', label: t.right.slim },
     ],
     onChange: (v) => void switchModel(v),
   });
@@ -652,8 +650,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     return b;
   };
   const backdropBtns = BACKDROPS.map((b) => {
-    const el = h('button', { type: 'button', class: 'sk-backdrop', 'aria-label': `Background: ${b.label}`, 'aria-pressed': String(prefs.backdrop === b.id), style: { '--sw': b.swatch }, dataset: { id: b.id } });
-    tooltip(el, b.label);
+    const name = t.right.backdrops[b.id];
+    const el = h('button', { type: 'button', class: 'sk-backdrop', 'aria-label': fmt(t.right.background, { name }), 'aria-pressed': String(prefs.backdrop === b.id), style: { '--sw': b.swatch }, dataset: { id: b.id } });
+    tooltip(el, name);
     el.addEventListener('click', () => {
       setPref('backdrop', b.id);
       backdropBtns.forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.id === b.id)));
@@ -661,8 +660,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     });
     return el;
   });
-  const dollFront = h('canvas', { class: 'sk-doll pixelated', 'aria-label': 'Front view', role: 'img' });
-  const dollBack = h('canvas', { class: 'sk-doll pixelated', 'aria-label': 'Back view', role: 'img' });
+  const dollFront = h('canvas', { class: 'sk-doll pixelated', 'aria-label': t.right.frontView, role: 'img' });
+  const dollBack = h('canvas', { class: 'sk-doll pixelated', 'aria-label': t.right.backView, role: 'img' });
 
   const stageWrap = h('div', { class: 'sk-3d-wrap', dataset: { backdrop: prefs.backdrop } }, stage, h('div', { class: 'sk-3d-anim' }, animSeg));
   // Body-part figure over the stage: a click shows or hides a part in 3D (to reach the sides of the
@@ -673,7 +672,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   for (const part of ['head', 'rightArm', 'body', 'leftArm', 'rightLeg', 'leftLeg'] as SkinPart[]) {
     const info = PART_INFO[part];
     const b = h('button', { type: 'button', class: 'sk-fig-part', dataset: { part }, style: { '--part': info.color }, 'aria-pressed': 'true' });
-    tooltip(b, `${info.label}: click to show or hide, double-click to see only this`);
+    tooltip(b, fmt(t.right.figurePart, { part: info.label }));
     b.addEventListener('click', (e) => {
       if (e.detail >= 2 || e.shiftKey) soloPart(part);
       else togglePartVisible(part);
@@ -681,45 +680,45 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     figureButtons.set(part, b);
     figureGrid.appendChild(b);
   }
-  const figureAll = h('button', { type: 'button', class: 'sk-fig-all is-off', tabIndex: -1, 'aria-hidden': 'true' }, icon('eye'), h('span', null, 'All'));
-  tooltip(figureAll, 'Show every part again');
+  const figureAll = h('button', { type: 'button', class: 'sk-fig-all is-off', tabIndex: -1, 'aria-hidden': 'true' }, icon('eye'), h('span', null, t.right.all));
+  tooltip(figureAll, t.right.allTip);
   figureAll.addEventListener('click', () => showAllParts());
-  const figure = h('div', { class: 'sk-body-toggle', role: 'group', 'aria-label': 'Show or hide body parts in 3D' }, figureGrid, figureAll);
+  const figure = h('div', { class: 'sk-body-toggle', role: 'group', 'aria-label': t.right.figure }, figureGrid, figureAll);
 
   const sizeSeg = segmented<'64' | '128'>({
     value: scale === 2 ? '128' : '64',
     size: 'sm',
-    label: 'Skin size',
+    label: t.right.sizeLabel,
     options: [
       { value: '64', label: '64×64' },
-      { value: '128', label: 'HD 128' },
+      { value: '128', label: t.right.hd },
     ],
     onChange: (v) => void switchSize(v === '128' ? 128 : 64),
   });
   sizeSeg.classList.add('sk-size-seg');
-  tooltip(sizeSeg, 'HD 128×128 skins have twice the detail and work on Bedrock only');
+  tooltip(sizeSeg, t.right.sizeTip);
   const viewControls = h(
     'div',
     { class: 'sk-3d-controls' },
-    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Arms'), modelSeg),
-    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Size'), sizeSeg),
-    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Show'), h('div', { class: 'sk-chips' }, layerChip('Base', 'base3d'), layerChip('Outer', 'outer3d'))),
-    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, 'Backdrop'), h('div', { class: 'sk-backdrops' }, backdropBtns)),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, t.right.arms), modelSeg),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, t.right.size), sizeSeg),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, t.right.show), h('div', { class: 'sk-chips' }, layerChip(t.right.base, 'base3d'), layerChip(t.right.outer, 'outer3d'))),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, t.right.backdrop), h('div', { class: 'sk-backdrops' }, backdropBtns)),
   );
   const camTools = h('div', { class: 'sk-tools-group' }, rotateBtn, resetCamBtn, shotBtn);
-  const rightTitle = h('h2', null, '3D preview');
-  const openBigBtn = iconButton('expand', 'Paint in 3D in the main editor (D)', () => setWorkspace('3d'), { size: 'sm' });
+  const rightTitle = h('h2', null, t.right.preview);
+  const openBigBtn = iconButton('expand', t.right.paintBig, () => setWorkspace('3d'), { size: 'sm' });
   const headTools = h('div', { class: 'sk-head-tools' }, camTools);
   // Holds the 2D template while the 3D model fills the main editor area.
   const templateSlot = h('div', { class: 'sk-template-slot' });
   const right = h(
     'aside',
-    { class: 'panel sk-right', 'aria-label': '3D preview', dataset: { mode: 'view' } },
+    { class: 'panel sk-right', 'aria-label': t.right.preview, dataset: { mode: 'view' } },
     h('div', { class: 'panel-header' }, rightTitle, openBigBtn, headTools),
     templateSlot,
     stageWrap,
     viewControls,
-    h('div', { class: 'sk-dolls' }, h('figure', null, dollFront, h('figcaption', null, 'Front')), h('figure', null, dollBack, h('figcaption', null, 'Back'))),
+    h('div', { class: 'sk-dolls' }, h('figure', null, dollFront, h('figcaption', null, t.right.front)), h('figure', null, dollBack, h('figcaption', null, t.right.back))),
   );
 
   // =============================================================================================
@@ -729,7 +728,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     left,
     center,
     right,
-    labels: { left: 'Parts', center: 'Paint', right: '3D' },
+    labels: { left: t.tabs.parts, center: t.tabs.paint, right: t.tabs.model },
     icons: { left: 'human', center: 'brush', right: 'cube' },
     initial: 'center',
     onPanelChange: (p: EditorPanel) => {
@@ -741,7 +740,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const sideLeft = layout.querySelector<HTMLElement>('.editor-sidetabs .segmented-item[data-value="left"]');
   const sideLeftText = sideLeft?.querySelector('span:not(.icon)');
   const sideLeftIcon = sideLeft?.querySelector<HTMLSpanElement>('.icon');
-  if (sideLeftText) sideLeftText.textContent = 'Paint';
+  if (sideLeftText) sideLeftText.textContent = t.tabs.paint;
   if (sideLeftIcon) setIcon(sideLeftIcon, 'brush');
   layout.show(prefs.side);
   layout.show('center');
@@ -761,7 +760,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   const pc = new PixelCanvas(canvasHost, {
     image: initial,
     showGrid: prefs.grid,
-    label: 'Skin template. Paint with the current tool.',
+    label: t.canvas.canvasLabel,
     mirrorMap: mirrorMapFor(model, scale),
     decodeImage: (b) => decodeImage(b),
   });
@@ -911,11 +910,11 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       center.insertBefore(paint3d.controls, status3d);
       barTools.replaceChildren(camTools);
       headTools.replaceChildren(canvasTools);
-      rightTitle.textContent = '2D template';
-      right.setAttribute('aria-label', '2D template');
-      center.setAttribute('aria-label', '3D model');
-      setTabLabel('center', '3D', 'cube');
-      setTabLabel('right', 'Template', 'grid');
+      rightTitle.textContent = t.right.template;
+      right.setAttribute('aria-label', t.right.template);
+      center.setAttribute('aria-label', t.right.model);
+      setTabLabel('center', t.tabs.model, 'cube');
+      setTabLabel('right', t.tabs.template, 'grid');
       paint3d.setEnabled(true);
     } else {
       paint3d.setEnabled(false);
@@ -924,11 +923,11 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       viewControls.after(paint3d.controls);
       barTools.replaceChildren(canvasTools);
       headTools.replaceChildren(camTools);
-      rightTitle.textContent = '3D preview';
-      right.setAttribute('aria-label', '3D preview');
-      center.setAttribute('aria-label', 'Skin template');
-      setTabLabel('center', 'Paint', 'brush');
-      setTabLabel('right', '3D', 'cube');
+      rightTitle.textContent = t.right.preview;
+      right.setAttribute('aria-label', t.right.preview);
+      center.setAttribute('aria-label', t.canvas.template);
+      setTabLabel('center', t.tabs.paint, 'brush');
+      setTabLabel('right', t.tabs.model, 'cube');
     }
     if (layout.current() !== 'center' && window.matchMedia('(max-width: 720px)').matches) layout.show('center');
     requestAnimationFrame(() => {
@@ -944,9 +943,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
 
   // ---- sync UI from the canvas ----
   const syncTool = () =>
-    toolButtons.forEach((b, t) => {
-      b.setActive(t === pc.tool);
-      if (!railTools.contains(document.activeElement)) b.tabIndex = t === pc.tool ? 0 : -1;
+    toolButtons.forEach((b, tool) => {
+      b.setActive(tool === pc.tool);
+      if (!railTools.contains(document.activeElement)) b.tabIndex = tool === pc.tool ? 0 : -1;
     });
   const syncColors = () => {
     const c = pc.color;
@@ -954,7 +953,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     (primarySwatch.firstElementChild as HTMLElement).style.background = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`;
     (secondarySwatch.firstElementChild as HTMLElement).style.background = s[3] === 0 ? '' : `rgba(${s[0]}, ${s[1]}, ${s[2]}, ${s[3] / 255})`;
     secondarySwatch.classList.toggle('is-clear', s[3] === 0);
-    primarySwatch.setAttribute('aria-label', `Paint colour ${toHex(c, c[3] < 255)}`);
+    primarySwatch.setAttribute('aria-label', fmt(t.canvas.paintColourValue, { hex: toHex(c, c[3] < 255) }));
     if (picker && (c[0] !== pickerColor[0] || c[1] !== pickerColor[1] || c[2] !== pickerColor[2] || c[3] !== pickerColor[3])) {
       pickerColor = [...c] as RGBA;
       picker.setValue(c);
@@ -1015,7 +1014,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       chips.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === g.id)));
     };
     for (const g of SKIN_PALETTES) {
-      const b = h('button', { type: 'button', class: 'sk-chip', dataset: { id: g.id } }, g.label);
+      const b = h('button', { type: 'button', class: 'sk-chip', dataset: { id: g.id } }, t.left.palettes[g.id]);
       b.addEventListener('click', () => {
         setPref('palette', g.id);
         build(g.id);
@@ -1025,13 +1024,13 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     }
     build(group.id);
     content.append(chips, slot);
-    const pop = openPopover(anchor, content, { placement: placement ?? (phone ? 'top-start' : 'right-start'), label: 'Paint colour', focus: true, class: 'sk-color-popover' });
+    const pop = openPopover(anchor, content, { placement: placement ?? (phone ? 'top-start' : 'right-start'), label: t.canvas.paintColour, focus: true, class: 'sk-color-popover' });
     return pop;
   };
   secondarySwatch.addEventListener('click', () => {
     const s = pc.secondaryColor;
     pc.setSecondaryColor(s[3] === 0 ? pc.color : [0, 0, 0, 0]);
-    toast(s[3] === 0 ? 'Right-click now paints with this colour.' : 'Right-click now erases.', { duration: 2500 });
+    toast(s[3] === 0 ? t.canvas.rightNowPaints : t.canvas.rightNowErases, { duration: 2500 });
   });
   swapBtn.addEventListener('click', () => pc.swapColors());
 
@@ -1039,7 +1038,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   let tipIndex = Math.floor(Math.random() * TIPS.length);
   const showTipText = () => {
     status.classList.remove('is-hover');
-    statusText.textContent = TIPS[tipIndex % TIPS.length];
+    statusText.textContent = t.tips[TIPS[tipIndex % TIPS.length]];
   };
   showTipText();
   const tipTimer = window.setInterval(() => {
@@ -1080,12 +1079,12 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   /** Why a pixel can't be painted (locked part or layer), or null when it can. */
   const lockReasonAt = (x: number, y: number, r: FaceRect | null = partAt(x, y, model, scale)): string | null => {
     if (mask[y * W() + x]) return null;
-    if (!r) return 'Unused area (not shown in game)';
+    if (!r) return t.status.unused;
     if (prefs.layers !== 'both' && r.layer !== prefs.layers) {
-      return `Locked: painting the ${prefs.layers} layer only (press 3 for both)`;
+      return prefs.layers === 'base' ? t.status.lockedBase : t.status.lockedOuter;
     }
     const open = [...(prefs.mirror ? withMirrorParts(locked) : locked)].map((p) => PART_INFO[p].label);
-    return open.length ? `Locked: only ${open.join(', ')} can be painted` : 'Locked';
+    return open.length ? fmt(t.status.lockedOnly, { parts: open.join(t.status.listSeparator) }) : t.status.locked;
   };
   const updateHoverUi = () => {
     if (hoverRect) {
@@ -1100,8 +1099,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       status.classList.add('is-hover');
     } else if (hoverPixel) {
       tip.classList.remove('is-locked');
-      tip.replaceChildren(h('span', { class: 'sk-tip-dot is-unused' }), h('span', { class: 'sk-tip-text' }, 'Unused area (not shown in game)'));
-      statusText.textContent = 'Unused area — pixels here are not shown in game.';
+      tip.replaceChildren(h('span', { class: 'sk-tip-dot is-unused' }), h('span', { class: 'sk-tip-text' }, t.status.unused));
+      statusText.textContent = t.status.unusedLong;
       status.classList.add('is-hover');
     } else {
       showTipText();
@@ -1167,7 +1166,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     const ok = setOuterSeeThrough(preview, prefs.seeThrough);
     if (!ok && prefs.seeThrough && !seeThroughWarned) {
       seeThroughWarned = true;
-      toast('See-through mode is not available in this 3D preview.', { tone: 'warn' });
+      toast(t.right.seeThroughMissing, { tone: 'warn' });
     }
     applyLayers3d();
   };
@@ -1192,7 +1191,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       disposers.push(() => preview?.destroy());
     })
     .catch(() => {
-      stage.replaceChildren(h('p', { class: 'sk-3d-error muted' }, 'The 3D preview could not be loaded. You can still paint and export.'));
+      stage.replaceChildren(h('p', { class: 'sk-3d-error muted' }, t.right.loadFailed));
     });
 
   // ---- saving ----
@@ -1202,10 +1201,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   let saveErrorShown = false;
   const setSaveState = (state: 'saved' | 'saving' | 'unsaved' | 'error', detail?: string) => {
     saveState.dataset.state = state;
-    const map = { saved: ['check', 'Saved'], saving: ['cloud', 'Saving…'], unsaved: ['clock', 'Unsaved'], error: ['warning', "Couldn't save"] } as const;
+    const map = { saved: ['check', t.bar.saved], saving: ['cloud', t.bar.saving], unsaved: ['clock', t.bar.unsaved], error: ['warning', t.bar.saveError] } as const;
     saveIcon.replaceChildren(icon(map[state][0]));
     saveText.textContent = map[state][1];
-    saveState.title = detail ?? (state === 'error' ? 'Click to try again' : 'Your skin is saved in this browser');
+    saveState.title = detail ?? (state === 'error' ? t.bar.clickToRetry : t.bar.savedHere);
   };
   const persist = async (): Promise<void> => {
     if (saving) {
@@ -1218,7 +1217,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       try {
         project.image = new Blob([encodePng(latest)], { type: 'image/png' });
         project.model = model;
-        project.name = nameInput.value.trim() || 'My skin';
+        project.name = nameInput.value.trim() || startText.defaultName;
         await saveProject(project);
         savedVersion = v;
         if (version === v) clearBackup(id);
@@ -1228,7 +1227,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         if (!destroyed) setSaveState('error', err instanceof Error ? err.message : undefined);
         if (!saveErrorShown) {
           saveErrorShown = true;
-          toast(`Couldn't save your skin in this browser${err instanceof Error ? `: ${err.message}` : '.'} Export it to keep a copy.`, { tone: 'error', duration: 8000 });
+          toast(err instanceof Error ? fmt(t.saveFailed, { error: err.message }) : t.saveFailedPlain, { tone: 'error', duration: 8000 });
         }
         throw err;
       } finally {
@@ -1255,7 +1254,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   /** Synchronous copy of unsaved work (see readBackup); false when it could not be written. */
   const backupNow = (): boolean => {
     if (version === savedVersion) return true;
-    return writeBackup(id, { png: bytesToBase64(encodePng(latest)), model, name: nameInput.value.trim() || 'My skin', t: Date.now() });
+    return writeBackup(id, { png: bytesToBase64(encodePng(latest)), model, name: nameInput.value.trim() || startText.defaultName, t: Date.now() });
   };
   saveState.addEventListener('click', () => void flushSave());
 
@@ -1265,7 +1264,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   });
   nameInput.addEventListener('blur', () => {
     if (!nameInput.value.trim()) {
-      nameInput.value = 'My skin';
+      nameInput.value = startText.defaultName;
       markDirty();
     }
   });
@@ -1284,7 +1283,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     // Bedrock (the only place HD skins show) allows see-through base pixels, so no tip for HD.
     if (nextHoles > holes && !holesTipShown && pc.tool === 'eraser' && scale === 1) {
       holesTipShown = true;
-      toast('Heads-up: holes in the base layer show up solid in game. Only the outer layer can be see-through.', { tone: 'info', duration: 7000 });
+      toast(t.holes, { tone: 'info', duration: 7000 });
     }
     holes = nextHoles;
   };
@@ -1368,7 +1367,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     figureButtons.forEach((b, p) => {
       const shown = !hidden.has(p);
       b.setAttribute('aria-pressed', String(shown));
-      b.setAttribute('aria-label', `${PART_INFO[p].label}: ${shown ? 'shown' : 'hidden'} in 3D`);
+      b.setAttribute('aria-label', fmt(shown ? t.right.figureShown : t.right.figureHidden, { part: PART_INFO[p].label }));
       b.classList.toggle('is-focus', focusedPart === p);
     });
     // The figure is pinned to the top, so showing or hiding "All" below it never moves a part.
@@ -1396,7 +1395,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     if (preview) applyLayers3d();
     setFocus(part);
     syncPartsUi();
-    statusText.textContent = `Showing only the ${PART_INFO[part].label.toLowerCase()} in 3D. Turn it with the side buttons or right-drag.`;
+    statusText.textContent = upperFirst(fmt(t.status.showingOnly, { part: PART_INFO[part].it }));
   }
 
   function showAllParts() {
@@ -1416,7 +1415,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       const ok = setPartVisible(preview, part, !hidden.has(part));
       if (!ok && !visibilityWarned) {
         visibilityWarned = true;
-        toast('Hiding parts is not available in this 3D preview.', { tone: 'warn' });
+        toast(t.right.hidingMissing, { tone: 'warn' });
       }
       applyLayers3d();
     }
@@ -1429,7 +1428,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     updateMask();
     syncPartsUi();
     pc.redraw();
-    if (locked.size) statusText.textContent = `Painting only inside: ${[...(prefs.mirror ? withMirrorParts(locked) : locked)].map((p) => PART_INFO[p].label).join(', ')}`;
+    if (locked.size) statusText.textContent = fmt(t.status.paintingInside, { parts: [...(prefs.mirror ? withMirrorParts(locked) : locked)].map((p) => PART_INFO[p].label).join(t.status.listSeparator) });
   }
 
   function resetParts() {
@@ -1446,14 +1445,14 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   /** Undo from a toast: only steps back while nothing else was painted since `after`. */
   function undoIfUnchanged(after: Uint8ClampedArray) {
     if (samePixels(pc.getImage().data, after)) pc.undo();
-    else toast('You painted after that, so use Undo (Ctrl+Z) to step back.', { duration: 3500 });
+    else toast(t.paintedSince, { duration: 3500 });
   }
 
   function applyImageOp(label: string, fn: (img: ImageData) => ImageData) {
     pc.deselect();
     pc.applyFilter(fn);
     const after = pc.getImage().data;
-    toast(label, { tone: 'success', duration: 3500, action: { label: 'Undo', onClick: () => undoIfUnchanged(after) } });
+    toast(label, { tone: 'success', duration: 3500, action: { label: t.undo, onClick: () => undoIfUnchanged(after) } });
   }
 
   function partMenu(part: SkinPart, anchor: HTMLElement): PopoverHandle {
@@ -1463,55 +1462,52 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     const c = pc.color;
     const items = [
       {
-        label: `Fill ${layer === 'outer' ? info.outerLabel.toLowerCase() : info.label.toLowerCase()} with colour`,
+        label: upperFirst(fmt(t.partMenu.fill, { part: layer === 'outer' ? info.outerIt : info.it })),
         icon: 'fill' as IconName,
-        onClick: () => applyImageOp(`Filled the ${info.label.toLowerCase()}`, (img) => fillPart(img, part, layer, model, [c[0], c[1], c[2], layer === 'base' ? 255 : c[3]])),
+        onClick: () => applyImageOp(upperFirst(fmt(t.partMenu.filled, { part: info.it })), (img) => fillPart(img, part, layer, model, [c[0], c[1], c[2], layer === 'base' ? 255 : c[3]])),
       },
       ...(info.mirror !== part
         ? [
             {
-              label: `Copy to ${other.label.toLowerCase()}`,
+              label: upperFirst(fmt(t.partMenu.copyTo, { part: other.it })),
               icon: 'mirror' as IconName,
-              onClick: () => applyImageOp(`Copied the ${info.label.toLowerCase()} to the ${other.label.toLowerCase()}`, (img) => copyToMirror(img, part, model)),
+              onClick: () => applyImageOp(upperFirst(fmt(t.partMenu.copied, { part: info.it, other: other.it })), (img) => copyToMirror(img, part, model)),
             },
           ]
         : []),
       {
-        label: `Clear ${info.outerLabel.toLowerCase()} (outer layer)`,
+        label: upperFirst(fmt(t.partMenu.clear, { part: info.outerIt })),
         icon: 'eraser' as IconName,
-        onClick: () => applyImageOp(`Cleared the ${info.outerLabel.toLowerCase()}`, (img) => fillPart(img, part, 'outer', model, null)),
+        onClick: () => applyImageOp(upperFirst(fmt(t.partMenu.cleared, { part: info.outerIt })), (img) => fillPart(img, part, 'outer', model, null)),
       },
       {
-        label: `Show only the ${info.label.toLowerCase()} in 3D`,
+        label: upperFirst(fmt(t.partMenu.showOnly, { part: info.it })),
         icon: 'eye' as IconName,
         onClick: () => soloPart(part),
       },
       ...(hidden.size
         ? [
             {
-              label: 'Show all parts in 3D',
+              label: t.partMenu.showAll,
               icon: 'eye' as IconName,
               onClick: () => showAllParts(),
             },
           ]
         : []),
     ];
-    return openMenu(anchor, items, { label: `${info.label} actions` });
+    return openMenu(anchor, items, { label: fmt(t.partMenu.actions, { part: info.label }) });
   }
 
   async function switchModel(to: SkinModel) {
     if (to === model) return;
     const from = model;
-    const text =
-      to === 'slim'
-        ? 'Slim arms are 3 pixels wide instead of 4. Convert your arm pixels so sleeves and hands still line up? The column next to the body is removed.'
-        : 'Classic arms are 4 pixels wide instead of 3. Convert your arm pixels to fill the wider arms? The column next to the body is repeated.';
+    const text = to === 'slim' ? t.arms.toSlim : t.arms.toClassic;
     const answer = await choose<'convert' | 'switch'>(
-      to === 'slim' ? 'Switch to slim arms?' : 'Switch to classic arms?',
-      h('div', { class: 'stack' }, h('p', null, text), h('p', { class: 'muted small' }, 'You can undo this afterwards.')),
+      to === 'slim' ? t.arms.toSlimTitle : t.arms.toClassicTitle,
+      h('div', { class: 'stack' }, h('p', null, text), h('p', { class: 'muted small' }, t.arms.undoLater)),
       [
-        { value: 'switch', label: 'Just switch', variant: 'ghost' },
-        { value: 'convert', label: 'Convert arms', variant: 'primary' },
+        { value: 'switch', label: t.arms.justSwitch, variant: 'ghost' },
+        { value: 'convert', label: t.arms.convert, variant: 'primary' },
       ],
     );
     if (!answer) {
@@ -1524,11 +1520,11 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       setModel(to);
       markDirty();
     }
-    toast(`Switched to ${to === 'slim' ? 'slim' : 'classic'} arms`, {
+    toast(to === 'slim' ? t.arms.switchedSlim : t.arms.switchedClassic, {
       tone: 'success',
       duration: 5000,
       action: {
-        label: 'Undo',
+        label: t.undo,
         onClick: () => {
           if (model !== to) return;
           if (!after) {
@@ -1627,22 +1623,22 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         ? h(
             'div',
             { class: 'stack' },
-            h('p', null, 'Every pixel becomes a 2×2 block, so your skin looks exactly the same, with room for finer detail: eyes, shading, patterns, text.'),
-            h('p', { class: 'sk-note' }, icon('smartphone'), h('span', null, h('strong', null, 'HD skins are for Bedrock Edition. '), 'Java Edition only shows 64×64 skins without mods, so Java exports are reduced back to 64×64.')),
-            h('p', { class: 'muted small' }, 'You can undo this afterwards.'),
+            h('p', null, t.size.hdText),
+            h('p', { class: 'sk-note' }, icon('smartphone'), h('span', null, h('strong', null, t.size.hdStrong), t.size.hdNote)),
+            h('p', { class: 'muted small' }, t.arms.undoLater),
           )
         : h(
             'div',
             { class: 'stack sk-export' },
-            h('div', { class: 'sk-export-compare' }, sizeFigure(img, 'HD 128×128'), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), sizeFigure(reduced!, '64×64')),
+            h('div', { class: 'sk-export-compare' }, sizeFigure(img, startText.pick.hd), h('span', { class: 'sk-export-arrow' }, icon('arrow-right')), sizeFigure(reduced!, '64×64')),
             lost
-              ? h('p', { class: 'sk-note is-warn' }, icon('warning'), h('span', null, `About ${lost}% of the painted areas have finer HD detail. Each 2×2 block becomes one pixel, so that detail is simplified.`))
-              : h('p', { class: 'sk-note' }, icon('check'), h('span', null, 'Nothing is lost: this skin has no finer HD detail yet.')),
-            h('p', { class: 'muted small' }, 'Only for Java? You do not need to reduce it: the Java export makes a 64×64 copy and keeps this HD skin. You can undo this afterwards.'),
+              ? h('p', { class: 'sk-note is-warn' }, icon('warning'), h('span', null, fmt(t.size.lost, { percent: lost })))
+              : h('p', { class: 'sk-note' }, icon('check'), h('span', null, t.size.nothingLost)),
+            h('p', { class: 'muted small' }, t.size.javaOnly),
           );
-    const answer = await choose<'go' | 'cancel'>(to === 128 ? 'Make this skin HD?' : 'Reduce to 64×64?', body, [
-      { value: 'cancel', label: 'Cancel', variant: 'ghost' },
-      { value: 'go', label: to === 128 ? 'Make HD' : 'Reduce to 64×64', variant: 'primary' },
+    const answer = await choose<'go' | 'cancel'>(to === 128 ? t.size.makeHdTitle : t.size.reduceTitle, body, [
+      { value: 'cancel', label: kit.cancel, variant: 'ghost' },
+      { value: 'go', label: to === 128 ? t.size.makeHd : t.size.reduce, variant: 'primary' },
     ]);
     if (answer !== 'go' || destroyed) {
       sizeSeg.setValue(current === 128 ? '128' : '64');
@@ -1651,10 +1647,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     pc.deselect();
     pc.applyFilter((src) => resizeSkin(src, to));
     const after = pc.getImage().data;
-    toast(to === 128 ? 'Your skin is now HD 128×128' : 'Reduced to 64×64', {
+    toast(to === 128 ? t.size.nowHd : t.size.reduced, {
       tone: 'success',
       duration: 5000,
-      action: { label: 'Undo', onClick: () => undoIfUnchanged(after) },
+      action: { label: t.undo, onClick: () => undoIfUnchanged(after) },
     });
   }
 
@@ -1663,84 +1659,86 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     try {
       const blob = await preview.screenshot();
       saveBlob(blob, `${nameInput.value.trim() || 'skin'}-3d.png`);
-      toast('Saved a picture of your skin', { tone: 'success' });
+      toast(t.right.pictureSaved, { tone: 'success' });
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Could not capture the 3D view.', { tone: 'error' });
+      toast(err instanceof Error ? err.message : t.right.pictureFailed, { tone: 'error' });
     }
   }
 
   async function doExport(kind: Parameters<typeof exportSkin>[0]) {
-    project.name = nameInput.value.trim() || 'My skin';
+    project.name = nameInput.value.trim() || startText.defaultName;
     project.model = model;
     await exportSkin(kind, project, pc.getImage(), () => (destroyed ? void persist() : markDirty()), () => !destroyed);
   }
 
   function showShortcuts() {
+    const s = t.shortcuts;
+    const k = s.keys;
     openShortcutsSheet([
       {
-        title: 'Tools',
+        title: s.tools,
         items: [
-          { keys: ['B'], label: 'Pencil' },
-          { keys: ['E'], label: 'Eraser' },
-          { keys: ['G'], label: 'Fill' },
-          { keys: ['I'], label: 'Pick a colour' },
-          { keys: ['Alt'], label: 'Pick while held' },
-          { keys: ['L'], label: 'Line' },
-          { keys: ['U'], label: 'Rectangle (again: filled)' },
-          { keys: ['O'], label: 'Ellipse' },
-          { keys: ['M'], label: 'Select' },
-          { keys: ['V'], label: 'Move' },
+          { keys: ['B'], label: t.tools.pencil },
+          { keys: ['E'], label: t.tools.eraser },
+          { keys: ['G'], label: t.tools.fill },
+          { keys: ['I'], label: t.tools.picker },
+          { keys: ['Alt'], label: s.pickHeld },
+          { keys: ['L'], label: t.tools.line },
+          { keys: ['U'], label: s.rectAgain },
+          { keys: ['O'], label: t.tools.ellipse },
+          { keys: ['M'], label: t.tools.select },
+          { keys: ['V'], label: t.tools.move },
         ],
       },
       {
-        title: 'Skin',
+        title: s.skin,
         items: [
-          { keys: ['Y'], label: 'Mirror on / off' },
-          { keys: ['1'], label: 'Paint on base layer' },
-          { keys: ['2'], label: 'Paint on outer layer' },
-          { keys: ['3'], label: 'Paint on both layers' },
-          { keys: ['P'], label: 'Part guides on / off' },
-          { keys: ['D'], label: 'Paint on the 3D model on / off' },
-          { keys: ['H'], label: 'Flip the selection' },
-          { keys: ['R'], label: 'Rotate the selection' },
+          { keys: ['Y'], label: s.mirror },
+          { keys: ['1'], label: s.base },
+          { keys: ['2'], label: s.outer },
+          { keys: ['3'], label: s.both },
+          { keys: ['P'], label: s.guides },
+          { keys: ['D'], label: s.paint3d },
+          { keys: ['H'], label: s.flip },
+          { keys: ['R'], label: s.rotate },
         ],
       },
       {
-        title: 'Colour & brush',
+        title: s.colourBrush,
         items: [
-          { keys: ['X'], label: 'Swap colours' },
-          { keys: ['Right click'], label: 'Paint with the second colour' },
-          { keys: ['['], label: 'Smaller brush' },
-          { keys: [']'], label: 'Bigger brush' },
-          { keys: ['Shift', 'Click'], label: 'Straight line from last point' },
+          { keys: ['X'], label: s.swap },
+          { keys: [k.rightClick], label: s.second },
+          { keys: ['['], label: s.smaller },
+          { keys: [']'], label: s.bigger },
+          { keys: ['Shift', k.click], label: s.straight },
         ],
       },
       {
-        title: 'Edit & view',
+        title: s.editView,
         items: [
-          { keys: ['Mod', 'Z'], label: 'Undo' },
-          { keys: ['Mod', 'Shift', 'Z'], label: 'Redo' },
-          { keys: ['Mod', 'S'], label: 'Save now' },
-          { keys: ['0'], label: 'Fit to screen' },
-          { keys: ['+'], label: 'Zoom in' },
-          { keys: ['-'], label: 'Zoom out' },
-          { keys: ['#'], label: 'Pixel grid' },
-          { keys: ['Space'], label: 'Hold and drag to pan' },
-          { keys: ['?'], label: 'This list' },
+          { keys: ['Mod', 'Z'], label: s.undo },
+          { keys: ['Mod', 'Shift', 'Z'], label: s.redo },
+          { keys: ['Mod', 'S'], label: s.save },
+          { keys: ['0'], label: s.fit },
+          { keys: ['+'], label: s.zoomIn },
+          { keys: ['-'], label: s.zoomOut },
+          { keys: ['#'], label: s.grid },
+          { keys: [k.space], label: s.pan },
+          { keys: ['?'], label: s.list },
         ],
       },
       {
-        title: 'Painting on the 3D model',
+        title: s.on3d,
         items: [
-          { keys: ['Drag'], label: 'Paint with the current tool' },
-          { keys: ['Right drag'], label: 'Turn the model' },
-          { keys: ['Space', 'Drag'], label: 'Turn the model (Alt works too)' },
-          { keys: ['Wheel'], label: 'Zoom to the pointer' },
-          { keys: ['Arrow keys'], label: 'Turn the player' },
-          { keys: ['Home'], label: 'Reset the view' },
+          { keys: [k.drag], label: s.drag3d },
+          { keys: [k.rightDrag], label: s.turn },
+          { keys: [k.space, k.drag], label: s.turnAlt },
+          { keys: [k.wheel], label: s.wheelZoom },
+          { keys: [k.arrows], label: s.turnPlayer },
+          { keys: [k.home], label: s.resetView },
         ],
       },
-    ], 'Skin editor shortcuts');
+    ], s.title);
   }
 
   // ---- keyboard ----
@@ -1751,19 +1749,19 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     // Flipping or rotating the whole template scrambles the skin; only allow it on a selection.
     if ((k === 'h' || k === 'r') && !pc.getSelection() && editorRoot.isConnected) {
       e.preventDefault();
-      toast('Select an area first (M), then press H to flip or R to rotate it.', { duration: 3500 });
+      toast(t.selectFirst, { duration: 3500 });
     }
   };
   const onKey = (e: KeyboardEvent) => {
     if (!editorRoot.isConnected) return;
     if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') {
       e.preventDefault();
-      void flushSave().then(() => toast('Saved', { tone: 'success', duration: 1500 }));
+      void flushSave().then(() => toast(t.savedNow, { tone: 'success', duration: 1500 }));
       return;
     }
     if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target) || modalOpen()) return;
-    const t = e.target as HTMLElement | null;
-    if (t?.closest?.('[role="menu"], [role="listbox"], [role="slider"]')) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest?.('[role="menu"], [role="listbox"], [role="slider"]')) return;
     let handled = true;
     switch (e.key) {
       case '?':
@@ -1772,7 +1770,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       case 'y':
       case 'Y':
         setMirror(!prefs.mirror);
-        toast(prefs.mirror ? 'Mirror on: both sides paint together' : 'Mirror off', { duration: 1800 });
+        toast(prefs.mirror ? t.mirrorOn : t.mirrorOff, { duration: 1800 });
         break;
       case '1':
         setLayers('base');
@@ -1834,7 +1832,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
 
   if (recovered) {
     markDirty();
-    toast('Restored the changes you made just before the page closed.', { tone: 'success', duration: 5000 });
+    toast(t.restored, { tone: 'success', duration: 5000 });
   }
 
   return () => {

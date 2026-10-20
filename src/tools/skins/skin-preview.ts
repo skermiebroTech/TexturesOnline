@@ -10,6 +10,7 @@ import { createStage, prefersReducedMotion, watchDevicePixelRatio } from '../../
 import { isTypingTarget } from '../../ui/dom';
 import { BOX_FACE_ORDER, texelPlace } from './surface';
 import { faceRect, PARTS, scaleOf, type LayerSelection, type SkinFace, type SkinLayer, type SkinPart } from './templates';
+import { editorText } from './i18n/editor';
 
 export type SkinAnimation = 'idle' | 'walk' | 'run' | 'fly' | 'none';
 export type SkinPartId = 'head' | 'body' | 'rightArm' | 'leftArm' | 'rightLeg' | 'leftLeg' | 'cape';
@@ -167,8 +168,8 @@ const VIEW_DIRS: Record<SkinView, [number, number, number]> = {
   right: [-1, 0, 0],
   top: [0, 1, 0.05],
 };
-const VIEW_LABEL = '3D skin preview. Drag to rotate, scroll to zoom, arrow keys turn the player.';
-const PAINT_LABEL = '3D skin preview, paint mode. Drag on the model to paint; right-drag or drag the background to turn; scroll to zoom.';
+const viewLabel = (): string => editorText.preview.viewLabel;
+const paintLabel = (): string => editorText.preview.paintLabel;
 
 const pixelRatio = (): number => Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
 
@@ -782,7 +783,7 @@ class SkinPreviewImpl implements SkinPreview {
       delete this.stage.root.dataset.cursor;
       this.setOverlay(null);
     }
-    this.stage.canvas.setAttribute('aria-label', handler ? PAINT_LABEL : VIEW_LABEL);
+    this.stage.canvas.setAttribute('aria-label', handler ? paintLabel() : viewLabel());
     this.applyAnimation();
     this.viewer.autoRotate = this.wantAutoRotate && !handler;
     this.applyVisibility();
@@ -1225,7 +1226,7 @@ class SkinPreviewImpl implements SkinPreview {
   // ---- misc ----
 
   screenshot(): Promise<Blob> {
-    if (this.destroyed) return Promise.reject(new Error('The preview has been closed.'));
+    if (this.destroyed) return Promise.reject(new Error(editorText.preview.closed));
     const pending = this.pendingSkin;
     if (pending) {
       this.pendingSkin = null;
@@ -1236,7 +1237,7 @@ class SkinPreviewImpl implements SkinPreview {
     for (const m of outlined) m.visible = false;
     this.renderNow();
     const shot = new Promise<Blob>((resolve, reject) => {
-      this.stage.canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not capture the preview image.'))), 'image/png');
+      this.stage.canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(editorText.preview.captureFailed))), 'image/png');
     });
     if (outlined.length) {
       for (const m of outlined) m.visible = true;
@@ -1373,7 +1374,7 @@ class UnavailableSkinPreview implements SkinPreview {
     return null;
   }
   screenshot(): Promise<Blob> {
-    return Promise.reject(new Error('The 3D preview is not available in this browser.'));
+    return Promise.reject(new Error(editorText.preview.unavailable));
   }
   destroy(): void {
     this.stage.root.remove();
@@ -1382,12 +1383,12 @@ class UnavailableSkinPreview implements SkinPreview {
 
 /** Creates the 3D skin preview inside `container` (fills it; give the container a size). */
 export function createSkinPreview(container: HTMLElement, opts: SkinPreviewOptions): SkinPreview {
-  const stage = createStage(container, VIEW_LABEL);
+  const stage = createStage(container, viewLabel());
   try {
     return new SkinPreviewImpl(stage, opts);
   } catch (err) {
     console.warn('Skin preview unavailable', err);
-    stage.message('The 3D preview needs WebGL, which is turned off or not supported in this browser. You can still paint and export your skin.');
+    stage.message(editorText.preview.noWebgl);
     return new UnavailableSkinPreview(stage);
   }
 }

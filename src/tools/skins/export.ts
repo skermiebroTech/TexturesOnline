@@ -11,6 +11,8 @@ import type { SkinModel, SkinProject } from '../../core/types';
 import { buildSkinPackFiles, bumpPackVersion, prepareSkinPngSync } from '../../editions/bedrock/manifest';
 import { downscaleSkin, hdDetail } from './hd';
 import { convertArms, countBaseHoles, countOuterPixels, faceRects, isHdSkin, mirrorPixel, type SkinPart } from './templates';
+import { fmt } from '../../i18n/editor-text';
+import { exportText as t } from './i18n/export';
 
 /** Skin project with the extra fields the skin tool stores (IndexedDB keeps any shape). */
 export interface SkinProjectData extends SkinProject {
@@ -52,9 +54,6 @@ export function baseName(name: string): string {
   return sanitizeFilename((name || 'skin').trim(), 'skin').replace(/\.(png|mcpack)$/i, '');
 }
 
-/** Shown wherever an HD skin is reduced for Java. */
-export const JAVA_HD_NOTE = 'Java Edition only shows 64×64 skins without mods, so this HD skin was reduced to 64×64.';
-
 /** The 64x64 skin Java Edition reads: HD skins reduced, 64x64 skins as they are. */
 export function javaImage(img: ImageData): ImageData {
   return isHdSkin(img) ? downscaleSkin(img) : img;
@@ -78,14 +77,14 @@ export function exportJavaPng(img: ImageData, name: string, model: SkinModel, op
   const out = keep ? img : javaImage(img);
   if (hd && !keep) {
     const lost = hdLossPercent(img);
-    notes.push(lost ? `${JAVA_HD_NOTE} About ${lost}% of the painted areas had finer detail, which is simplified.` : `${JAVA_HD_NOTE} Nothing is lost: it has no finer HD detail yet.`);
+    notes.push(`${t.notes.javaHd} ${lost ? fmt(t.notes.javaHdLost, { percent: lost }) : t.notes.javaHdNothing}`);
   }
-  if (keep) notes.push('This is the 128×128 HD file. The Minecraft Launcher and minecraft.net only accept 64×64 skins: use it with an HD skin mod only.');
+  if (keep) notes.push(t.notes.hdFile);
   const holes = countBaseHoles(out, model);
   if (holes > 0) {
-    notes.push(`${holes} pixel${holes === 1 ? ' is' : 's are'} see-through on the base layer. Java shows those as solid colour (often black). Only the outer layer can be transparent.`);
+    notes.push(fmt(t.notes.holes, { count: holes, n: String(holes) }));
   }
-  return { blob: pngBlob(out), filename: `${baseName(name)}${keep ? '-hd' : ''}.png`, notes, meta: keep ? '128×128 HD' : hd ? '64×64, reduced from HD' : undefined };
+  return { blob: pngBlob(out), filename: `${baseName(name)}${keep ? '-hd' : ''}.png`, notes, meta: keep ? t.notes.hdMeta : hd ? t.notes.reducedMeta : undefined };
 }
 
 /** What gets lost when saving in the old 64x32 layout (HD skins are reduced to 64x64 first). */
@@ -109,12 +108,12 @@ export function legacyLosses(img: ImageData, model: SkinModel): string[] {
     }
     return false;
   };
-  if (differs('leftArm')) lost.push('The left arm becomes a mirror copy of the right arm.');
-  if (differs('leftLeg')) lost.push('The left leg becomes a mirror copy of the right leg.');
+  if (differs('leftArm')) lost.push(t.legacy.leftArm);
+  if (differs('leftLeg')) lost.push(t.legacy.leftLeg);
   const outer = countOuterPixels(img, model);
   const hatOnly = countOuterPixels(img, 'legacy');
-  if (outer - hatOnly > 0) lost.push('Jacket, sleeves and pants (the outer layer below the head) are dropped. Only the hat layer is kept.');
-  if (model === 'slim') lost.push('Old versions only have classic 4-pixel arms, so the slim arms are widened by repeating the column next to the body.');
+  if (outer - hatOnly > 0) lost.push(t.legacy.outer);
+  if (model === 'slim') lost.push(t.legacy.slim);
   return lost;
 }
 
@@ -136,9 +135,9 @@ export function exportBedrockPng(img: ImageData, name: string): ExportResult {
   // Bedrock hides pixels with opacity of about 10% or less.
   let faint = 0;
   for (let i = 3; i < img.data.length; i += 4) if (img.data[i] > 0 && img.data[i] <= 25) faint++;
-  if (faint) notes.push(`${faint} nearly invisible pixel${faint === 1 ? '' : 's'} (10% opacity or less) will not show on Bedrock.`);
+  if (faint) notes.push(fmt(t.notes.faint, { count: faint, n: String(faint) }));
   const hd = isHdSkin(img);
-  return { blob: pngBlob(img), filename: `${baseName(name)}-bedrock.png`, notes, meta: hd ? '128×128 HD' : undefined };
+  return { blob: pngBlob(img), filename: `${baseName(name)}-bedrock.png`, notes, meta: hd ? t.notes.hdMeta : undefined };
 }
 
 /** Width and height from a PNG's header (0 x 0 when it is not a PNG). */
@@ -150,7 +149,7 @@ export function pngSize(bytes: Uint8Array): { width: number; height: number } {
 
 /** Name shown for the pack in the Dressing Room: the stored pack name, else the project name. */
 export function packNameOf(project: Pick<SkinProjectData, 'name' | 'packName'>): string {
-  return project.packName?.trim() || project.name?.trim() || 'My Skin';
+  return project.packName?.trim() || project.name?.trim() || t.pack.defaultName;
 }
 
 /**
@@ -182,7 +181,7 @@ export function orderPackSkinIds(previous: readonly string[] | undefined, checke
 }
 
 export function skinCountLabel(n: number): string {
-  return `${n} skin${n === 1 ? '' : 's'}`;
+  return fmt(t.pack.count, { count: n });
 }
 
 /**
@@ -192,15 +191,15 @@ export function skinCountLabel(n: number): string {
  * (bedrockUuids / packVersion) — save it afterwards.
  */
 export async function exportBedrockPack(project: SkinProjectData, img: ImageData, extras: readonly PackSkinSource[] = []): Promise<ExportResult> {
-  const skinName = (project.name || 'My Skin').trim() || 'My Skin';
+  const skinName = (project.name || t.pack.defaultName).trim() || t.pack.defaultName;
   const packName = packNameOf(project);
   const others = await Promise.all(
     extras.map(async (p) => {
-      const name = (p.name || 'Skin').trim() || 'Skin';
+      const name = (p.name || t.pack.skinName).trim() || t.pack.skinName;
       try {
         return { name, model: p.model, png: prepareSkinPngSync(new Uint8Array(await p.image.arrayBuffer())) };
       } catch (err) {
-        throw new Error(`"${name}" could not be added to the pack: ${err instanceof Error ? err.message : 'the image is unreadable.'}`);
+        throw new Error(fmt(t.pack.addFailed, { name, error: err instanceof Error ? err.message : t.pack.unreadable }));
       }
     }),
   );
@@ -211,12 +210,12 @@ export async function exportBedrockPack(project: SkinProjectData, img: ImageData
   const blob = await writeZip(files, { mimeType: 'application/octet-stream' });
   // HD and 64x64 skins mix freely: every skin is its own texture on the same model.
   const hdCount = skins.filter((sk) => pngSize(sk.png).width === 128).length;
-  const hdLabel = hdCount ? (skins.length === 1 ? '128×128 HD' : `${hdCount} HD`) : null;
+  const hdLabel = hdCount ? (skins.length === 1 ? t.notes.hdMeta : fmt(t.pack.hdCount, { count: hdCount })) : null;
   return {
     blob,
     filename: `${baseName(packName)}.mcpack`,
     notes: [],
-    meta: [`Pack v${project.packVersion.join('.')}`, skinCountLabel(skins.length), hdLabel].filter(Boolean).join(' · '),
+    meta: [fmt(t.pack.version, { version: project.packVersion.join('.') }), skinCountLabel(skins.length), hdLabel].filter(Boolean).join(' · '),
     skinCount: skins.length,
     hdCount,
   };

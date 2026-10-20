@@ -1136,7 +1136,8 @@
 .sk-ctl .sk-chip {
   flex: 1 1 0;
   justify-content: center;
-  min-width: 0;
+  /* Equal halves, but never narrower than the label (longer words in some languages). */
+  min-width: max-content;
   padding-inline: 8px;
 }
 .sk-backdrop {
@@ -1493,12 +1494,27 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Before/after captions are labels, not names: they wrap instead of being cut off. */
+.sk-export-compare figcaption {
+  white-space: normal;
+  text-wrap: balance;
+}
 .sk-export-file {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   min-width: 0;
+}
+/* "Download again" wraps rather than run past the dialog on small phones (longer languages). */
+.sk-export-file .row,
+.sk-export-file .btn {
+  max-width: 100%;
+}
+.sk-export-file .btn {
+  height: auto;
+  min-height: 32px;
+  white-space: normal;
 }
 .sk-export-ok {
   display: inline-flex;
@@ -1644,8 +1660,9 @@
 /* Skin pack maker (modal) */
 .sk-pack-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
   margin-bottom: -8px;
 }
 .sk-pack-head .sk-guide-title {
@@ -1729,6 +1746,13 @@
   color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
+}
+/* Small phones: tighter rows, so names and arm labels keep their room next to the badge. */
+@media (max-width: 400px) {
+  .sk-pack-skin {
+    gap: 8px;
+    padding-inline: 8px;
+  }
 }
 
 .sk-missing {
@@ -1851,7 +1875,7 @@
     padding: 0 8px;
   }
   .sk-bar .toolbar-sep,
-  .sk-bar [aria-label^='Keyboard'],
+  .sk-bar .sk-keys-btn,
   .sk-save-text {
     display: none;
   }
@@ -1931,7 +1955,7 @@
   }
   .sk-cb-label,
   .sk-toggle-btn > span:not(.icon),
-  .sk-canvas-bar [aria-label^='Pixel grid'] {
+  .sk-canvas-bar .sk-grid-btn {
     display: none;
   }
   .sk-toggle-btn {

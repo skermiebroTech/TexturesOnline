@@ -21,6 +21,8 @@ import { createStarterSkin, STARTERS } from '../starters';
 import { isHdSkin } from '../templates';
 import { drawFigure } from './figure';
 import { fetchSkinByUsername, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from './sources';
+import { fmt } from '../../../i18n/editor-text';
+import { t } from '../i18n/text';
 
 const MODEL_KEY = 'to-skins-new-model';
 const SIZE_KEY = 'to-skins-new-size';
@@ -40,9 +42,6 @@ function saveSizePref(s: SkinSize): void {
     /* private mode */
   }
 }
-
-/** Shown when a 64x64 skin is doubled because HD was picked for new skins. */
-const DOUBLED_NOTE = 'Doubled to an HD 128×128 skin, as picked under Size. It looks the same until you paint finer detail.';
 
 /**
  * A new skin at the size picked for new skins: 64x64 skins are doubled for HD. HD skins always stay
@@ -88,7 +87,7 @@ async function saveNewProject(opts: { image: ImageData; model: SkinModel; name: 
   const project: SkinProjectData = {
     id: uuidv4(),
     kind: 'skin',
-    name: opts.name.trim().slice(0, 60) || 'My skin',
+    name: opts.name.trim().slice(0, 60) || t.defaultName,
     model: opts.model,
     image: new Blob([encodePng(opts.image)], { type: 'image/png' }),
     createdAt: now,
@@ -114,7 +113,7 @@ function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
   const ctrl = new AbortController();
   const body = h('div', { class: 'sk-defaults' });
   const modal = openModal({
-    title: 'Default skins from Minecraft',
+    title: t.defaults.title,
     body,
     width: 720,
     onClose: () => ctrl.abort(),
@@ -124,12 +123,12 @@ function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
     start();
   };
   const panel = assetLoadingPanel({ edition: 'java', version: DEFAULT_JAVA_VERSION, onPickJar: useJar });
-  const intro = h('p', { class: 'muted' }, `Start from one of the nine default characters in Minecraft Java ${DEFAULT_JAVA_VERSION}. They come straight from the official game files.`);
+  const intro = h('p', { class: 'muted' }, fmt(t.defaults.intro, { version: DEFAULT_JAVA_VERSION }));
 
   const showGrid = (assets: AssetIndex) => {
     const skins = listDefaultSkins(assets);
     if (!skins.length) {
-      panel.error("These game files don't contain the default skins.");
+      panel.error(t.defaults.none);
       return;
     }
     let model: SkinModel = skins.some((s) => s.model === preferred) ? preferred : skins[0].model;
@@ -142,7 +141,7 @@ function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
           .map((s) => {
             const b = h(
               'button',
-              { type: 'button', class: 'sk-default', role: 'listitem', 'aria-label': `${s.name} (${s.model === 'slim' ? 'slim' : 'classic'} arms)` },
+              { type: 'button', class: 'sk-default', role: 'listitem', 'aria-label': fmt(t.defaults.skinArms, { name: s.name, model: s.model }) },
               h('span', { class: 'sk-default-thumb' }),
               h('span', { class: 'sk-default-name' }, s.name),
             );
@@ -162,7 +161,7 @@ function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
         await createSkinProject({ image: atNewSize(loaded.image, size).image, model: s.model, name: s.name, source: 'game' });
       } catch (err) {
         setButtonBusy(b, false);
-        toast(err instanceof Error ? err.message : 'Could not open that skin.', { tone: 'error' });
+        toast(err instanceof Error ? err.message : t.defaults.openFailed, { tone: 'error' });
       }
     };
     const head = h(
@@ -172,11 +171,11 @@ function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
       hasBoth
         ? segmented<SkinModel>({
             value: model,
-            label: 'Arm style',
+            label: t.defaults.armStyle,
             size: 'sm',
             options: [
-              { value: 'classic', label: 'Classic arms' },
-              { value: 'slim', label: 'Slim arms' },
+              { value: 'classic', label: t.defaults.classic },
+              { value: 'slim', label: t.defaults.slim },
             ],
             onChange: (v) => {
               model = v;
@@ -191,7 +190,7 @@ function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
 
   const start = () => {
     body.replaceChildren(intro, panel);
-    panel.set({ label: 'Checking game files…', fraction: null });
+    panel.set({ label: t.defaults.checking, fraction: null });
     if (!assetsLoad || assetsLoad.signal?.aborted) {
       assetsLoad = { promise: loadAssets('java', DEFAULT_JAVA_VERSION, { onProgress: (p: Progress) => panel.set(p), signal: ctrl.signal }), signal: ctrl.signal };
     }
@@ -205,7 +204,7 @@ function openDefaultSkinsModal(preferred: SkinModel, size: SkinSize): void {
       .catch((err: unknown) => {
         if (assetsLoad === load) assetsLoad = null;
         if (ctrl.signal.aborted) return;
-        const msg = err instanceof Error ? err.message : 'Could not download the game files.';
+        const msg = err instanceof Error ? err.message : t.defaults.downloadFailed;
         panel.error(msg, start, useJar);
       });
   };
@@ -222,7 +221,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
   list.replaceChildren(
     ...projects.map((p) => {
       const thumb = h('span', { class: 'sk-recent-thumb' });
-      const armsText = p.model === 'slim' ? 'Slim' : 'Classic';
+      const armsText = p.model === 'slim' ? t.recent.slim : t.recent.classic;
       const when = timeAgo(p.updatedAt || p.createdAt);
       const meta = h('span', { class: 'sk-recent-meta truncate' }, `${armsText} · ${when}`);
       const hdTag = h('span', { class: 'sk-hd-tag', hidden: true, 'aria-hidden': 'true' }, 'HD');
@@ -236,7 +235,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
           }
         })
         .catch(() => thumb.appendChild(icon('human')));
-      const menuBtn = h('button', { type: 'button', class: 'icon-btn sm sk-recent-menu', 'aria-label': `More actions for ${p.name}`, 'aria-haspopup': 'menu' }, icon('more-vertical'));
+      const menuBtn = h('button', { type: 'button', class: 'icon-btn sm sk-recent-menu', 'aria-label': fmt(t.recent.moreActions, { name: p.name }), 'aria-haspopup': 'menu' }, icon('more-vertical'));
       let menu: PopoverHandle | null = null;
       menuBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -246,12 +245,12 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
           return;
         }
         menu = openMenu(menuBtn, [
-          { label: 'Open', icon: 'pencil', onClick: () => navigate(`/skins/${p.id}`) },
+          { label: t.recent.open, icon: 'pencil', onClick: () => navigate(`/skins/${p.id}`) },
           {
-            label: 'Rename',
+            label: t.recent.rename,
             icon: 'text-cursor',
             onClick: async () => {
-              const name = await promptDialog('Rename skin', 'Name', p.name, { maxLength: 60, confirmLabel: 'Rename' });
+              const name = await promptDialog(t.recent.renameTitle, t.recent.name, p.name, { maxLength: 60, confirmLabel: t.recent.rename });
               if (name === null || !name.trim()) return;
               p.name = name.trim();
               await saveProject(p);
@@ -259,25 +258,25 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
             },
           },
           {
-            label: 'Duplicate',
+            label: t.recent.duplicate,
             icon: 'copy',
             onClick: async () => {
               const now = Date.now();
-              const copy: SkinProjectData = { ...p, id: uuidv4(), name: `${p.name} copy`, createdAt: now, updatedAt: now, bedrockUuids: undefined, packVersion: undefined, packSkinIds: undefined, packName: undefined };
+              const copy: SkinProjectData = { ...p, id: uuidv4(), name: fmt(t.recent.copyName, { name: p.name }), createdAt: now, updatedAt: now, bedrockUuids: undefined, packVersion: undefined, packSkinIds: undefined, packName: undefined };
               await saveProject(copy);
-              toast(`Made a copy of "${p.name}"`, { tone: 'success' });
+              toast(fmt(t.recent.copied, { name: p.name }), { tone: 'success' });
               void renderRecent(list, section, urls);
             },
           },
           {
-            label: 'Delete',
+            label: t.recent.delete,
             icon: 'trash',
             danger: true,
             onClick: async () => {
-              const ok = await confirmDialog('Delete this skin?', `"${p.name}" will be removed from this browser. Export it first if you want to keep a copy.`, 'Delete', true);
+              const ok = await confirmDialog(t.recent.deleteTitle, fmt(t.recent.deleteText, { name: p.name }), t.recent.delete, true);
               if (!ok) return;
               await deleteProject(p.id);
-              toast('Skin deleted', { tone: 'success' });
+              toast(t.recent.deleted, { tone: 'success' });
               void renderRecent(list, section, urls);
             },
           },
@@ -293,7 +292,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
           h(
             'span',
             { class: 'sk-recent-info' },
-            h('span', { class: 'sk-recent-name truncate' }, p.name || 'Untitled'),
+            h('span', { class: 'sk-recent-name truncate' }, p.name || t.untitled),
             meta,
           ),
         ),
@@ -315,6 +314,7 @@ export function mountStart(root: HTMLElement): () => void {
     starterGrid.replaceChildren(
       ...STARTERS.map((s) => {
         const img = atNewSize(createStarterSkin(s.id, model), size).image;
+        const text = t.starters[s.id];
         const card = h(
           'button',
           { type: 'button', class: ['sk-starter', `sk-starter-${s.id}`], dataset: { starter: s.id } },
@@ -322,18 +322,18 @@ export function mountStart(root: HTMLElement): () => void {
           h(
             'span',
             { class: 'sk-starter-text' },
-            h('span', { class: 'sk-starter-name' }, h('span', null, s.name), s.badge ? badge(s.badge, 'green') : null),
-            h('span', { class: 'sk-starter-desc' }, s.description),
+            h('span', { class: 'sk-starter-name' }, h('span', null, text.name), 'badge' in text ? badge(text.badge, 'green') : null),
+            h('span', { class: 'sk-starter-desc' }, text.description),
           ),
         );
         card.addEventListener('click', async () => {
           if (card.classList.contains('busy')) return;
           card.classList.add('busy');
           try {
-            await createSkinProject({ image: atNewSize(createStarterSkin(s.id, model), size).image, model, name: s.id === 'blank' || s.id === 'template' ? 'My skin' : s.name, source: s.id });
+            await createSkinProject({ image: atNewSize(createStarterSkin(s.id, model), size).image, model, name: s.id === 'blank' || s.id === 'template' ? t.defaultName : text.name, source: s.id });
           } catch (err) {
             card.classList.remove('busy');
-            toast(err instanceof Error ? err.message : 'Could not create the skin.', { tone: 'error' });
+            toast(err instanceof Error ? err.message : t.start.createFailed, { tone: 'error' });
           }
         });
         return card;
@@ -351,8 +351,8 @@ export function mountStart(root: HTMLElement): () => void {
         'span',
         null,
         size === 128
-          ? [h('strong', null, 'HD skin, Bedrock only: '), 'twice the detail. Java exports are reduced to 64×64.']
-          : [h('strong', null, 'Standard size: '), 'works in Java and Bedrock.'],
+          ? [h('strong', null, t.pick.hdStrong), t.pick.hdText]
+          : [h('strong', null, t.pick.standardStrong), t.pick.standardText],
       ),
     );
   };
@@ -360,13 +360,13 @@ export function mountStart(root: HTMLElement): () => void {
   const modelPick = h(
     'div',
     { class: 'sk-model-pick' },
-    h('span', { class: 'sk-model-label' }, 'Arm style'),
+    h('span', { class: 'sk-model-label' }, t.pick.armStyle),
     segmented<SkinModel>({
       value: model,
-      label: 'Arm style for new skins',
+      label: t.pick.armStyleLabel,
       options: [
-        { value: 'classic', label: 'Classic · 4px' },
-        { value: 'slim', label: 'Slim · 3px' },
+        { value: 'classic', label: t.pick.classic },
+        { value: 'slim', label: t.pick.slim },
       ],
       onChange: (v) => {
         model = v;
@@ -374,13 +374,13 @@ export function mountStart(root: HTMLElement): () => void {
         renderStarters();
       },
     }),
-    h('span', { class: 'sk-model-label' }, 'Size'),
+    h('span', { class: 'sk-model-label' }, t.pick.size),
     segmented<'64' | '128'>({
       value: size === 128 ? '128' : '64',
-      label: 'Size for new skins',
+      label: t.pick.sizeLabel,
       options: [
         { value: '64', label: '64×64' },
-        { value: '128', label: 'HD 128×128' },
+        { value: '128', label: t.pick.hd },
       ],
       onChange: (v) => {
         size = v === '128' ? 128 : 64;
@@ -395,20 +395,20 @@ export function mountStart(root: HTMLElement): () => void {
   // ---- Bring a skin ----
   const upload = dropzone({
     accept: '.png,image/png',
-    label: 'Drop a skin PNG here or click to browse',
-    hint: '64×64 or HD 128×128 skins, or old 64×32 ones (converted for you).',
+    label: t.bring.drop,
+    hint: t.bring.dropHint,
     icon: 'upload',
     onFiles: async ([file]) => {
       upload.setError(null);
       upload.classList.add('busy');
       try {
         const loaded = await readSkinFile(file);
-        const name = file.name.replace(/\.png$/i, '').replace(/[_-]+/g, ' ').trim() || 'Uploaded skin';
+        const name = file.name.replace(/\.png$/i, '').replace(/[_-]+/g, ' ').trim() || t.bring.uploadedName;
         const sized = atNewSize(loaded.image, size);
-        for (const n of [...loaded.notes, ...(sized.doubled ? [DOUBLED_NOTE] : [])]) toast(n, { tone: 'info', duration: 7000 });
+        for (const n of [...loaded.notes, ...(sized.doubled ? [t.pick.doubled] : [])]) toast(n, { tone: 'info', duration: 7000 });
         await createSkinProject({ image: sized.image, model: loaded.model, name, source: 'upload' });
       } catch (err) {
-        upload.setError(err instanceof SkinSourceError ? err.message : 'That file could not be opened as a skin.');
+        upload.setError(err instanceof SkinSourceError ? err.message : t.bring.uploadFailed);
       } finally {
         upload.classList.remove('busy');
       }
@@ -418,15 +418,15 @@ export function mountStart(root: HTMLElement): () => void {
   const userInput = h('input', {
     class: 'input',
     type: 'text',
-    placeholder: 'e.g. Notch',
+    placeholder: t.bring.placeholder,
     autocomplete: 'off',
     spellcheck: false,
     maxLength: 36,
-    'aria-label': 'Minecraft Java username',
+    'aria-label': t.bring.usernameLabel,
     id: 'sk-username',
   });
   const userError = h('p', { class: 'sk-field-error', role: 'alert', hidden: true });
-  const userBtn = button({ label: 'Import', icon: 'download', variant: 'primary' });
+  const userBtn = button({ label: t.bring.import, icon: 'download', variant: 'primary' });
   const doImport = async () => {
     const invalid = validateUsername(userInput.value);
     userError.hidden = !invalid;
@@ -439,11 +439,11 @@ export function mountStart(root: HTMLElement): () => void {
     try {
       const loaded = await fetchSkinByUsername(userInput.value, ctrl.signal);
       for (const n of loaded.notes) toast(n, { tone: 'info', duration: 7000 });
-      await createSkinProject({ image: atNewSize(loaded.image, size).image, model: loaded.model, name: `${loaded.username}'s skin`, source: 'username' });
+      await createSkinProject({ image: atNewSize(loaded.image, size).image, model: loaded.model, name: fmt(t.bring.playerSkin, { name: loaded.username }), source: 'username' });
     } catch (err) {
       if (ctrl.signal.aborted) return;
       userError.hidden = false;
-      userError.textContent = err instanceof SkinSourceError ? err.message : "Couldn't load that skin. Check your connection and try again.";
+      userError.textContent = err instanceof SkinSourceError ? err.message : t.bring.lookupFailed;
     } finally {
       if (userBtn.isConnected) setButtonBusy(userBtn, false);
     }
@@ -464,11 +464,11 @@ export function mountStart(root: HTMLElement): () => void {
       ...content,
     );
 
-  const gameBtn = button({ label: 'Choose a default skin', icon: 'users', variant: 'secondary', onClick: () => openDefaultSkinsModal(model, size) });
+  const gameBtn = button({ label: t.bring.chooseDefault, icon: 'users', variant: 'secondary', onClick: () => openDefaultSkinsModal(model, size) });
   const examples = h(
     'div',
     { class: 'sk-examples' },
-    h('span', { class: 'faint small' }, 'Try'),
+    h('span', { class: 'faint small' }, t.bring.try),
     ['jeb_', 'Dinnerbone', 'Notch'].map((n) => {
       const b = h('button', { type: 'button', class: 'sk-chip sk-example' }, n);
       b.addEventListener('click', () => {
@@ -484,21 +484,21 @@ export function mountStart(root: HTMLElement): () => void {
   const imports = h(
     'div',
     { class: 'sk-imports' },
-    importCard('upload', 'Upload a PNG', 'Keep editing a skin you already have.', upload),
+    importCard('upload', t.bring.uploadTitle, t.bring.uploadText, upload),
     importCard(
       'user',
-      'Import by username',
-      "Grab any Java player's current skin.",
+      t.bring.userTitle,
+      t.bring.userText,
       h('div', { class: 'sk-user-row' }, h('div', { class: 'input-with-icon grow' }, icon('user'), userInput), userBtn),
       userError,
       examples,
-      note('info', 'Java Edition names only. Bedrock gamertags can’t be looked up.'),
+      note('info', t.bring.userNote),
     ),
     importCard(
       'gamepad',
-      'Steve, Alex & friends',
-      `The nine default skins from the Minecraft ${DEFAULT_JAVA_VERSION} game files, in classic or slim.`,
-      note('lock', 'Downloaded once from Mojang’s servers (about 6 MB), then kept on this device.'),
+      t.bring.gameTitle,
+      fmt(t.bring.gameText, { version: DEFAULT_JAVA_VERSION }),
+      note('lock', t.bring.gameNote),
       h('div', { class: 'sk-game-actions' }, gameBtn),
     ),
   );
@@ -507,7 +507,7 @@ export function mountStart(root: HTMLElement): () => void {
     'a',
     { class: 'sk-totem-link accent-gold', href: routeHref('/totem-maker') },
     h('span', { class: 'sk-import-icon' }, icon('totem')),
-    h('span', { class: 'sk-totem-text' }, h('strong', null, 'Make a custom totem'), h('span', { class: 'faint small' }, 'Turn any skin into a Totem of Undying resource pack for Java or Bedrock')),
+    h('span', { class: 'sk-totem-text' }, h('strong', null, t.bring.totemTitle), h('span', { class: 'faint small' }, t.bring.totemText)),
     icon('arrow-right'),
   );
 
@@ -515,7 +515,7 @@ export function mountStart(root: HTMLElement): () => void {
   const recentList = h('div', { class: 'sk-recent-grid' });
   const recentSection = h('section', { class: 'sk-section', hidden: true, 'aria-labelledby': 'sk-recent-title' });
   recentSection.append(
-    h('div', { class: 'sk-section-head' }, h('div', { class: 'stack', style: { '--gap': '4px' } }, h('h2', { id: 'sk-recent-title' }, 'Your skins'), h('p', { class: 'muted' }, 'Saved in this browser. Export them to keep a copy.'))),
+    h('div', { class: 'sk-section-head' }, h('div', { class: 'stack', style: { '--gap': '4px' } }, h('h2', { id: 'sk-recent-title' }, t.recent.title), h('p', { class: 'muted' }, t.recent.text))),
     recentList,
   );
   void renderRecent(recentList, recentSection, urls);
@@ -529,15 +529,15 @@ export function mountStart(root: HTMLElement): () => void {
       h(
         'div',
         { class: 'sk-hero-text' },
-        h('span', { class: 'eyebrow' }, icon('human'), 'Skin Maker'),
-        h('h1', { class: 'pixel-shadow' }, 'Design your own skin'),
-        h('p', { class: 'lead' }, 'Paint on the skin template or right onto the 3D model, and watch your character come to life. Export for Java or Bedrock when you are done.'),
+        h('span', { class: 'eyebrow' }, icon('human'), t.hero.eyebrow),
+        h('h1', { class: 'pixel-shadow' }, t.hero.title),
+        h('p', { class: 'lead' }, t.hero.lead),
       ),
       modelPick,
     ),
     recentSection,
-    h('section', { class: 'sk-section', 'aria-label': 'Start a new skin' }, sectionHead('Start a new skin', 'Pick a starting point. You can change everything.'), starterGrid),
-    h('section', { class: 'sk-section', 'aria-label': 'Bring a skin' }, sectionHead('Bring a skin', 'Open an existing skin and make it yours.'), imports, totemLink),
+    h('section', { class: 'sk-section', 'aria-label': t.start.title }, sectionHead(t.start.title, t.start.text), starterGrid),
+    h('section', { class: 'sk-section', 'aria-label': t.bring.title }, sectionHead(t.bring.title, t.bring.text), imports, totemLink),
   );
   root.append(page);
 
