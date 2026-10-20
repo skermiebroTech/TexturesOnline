@@ -151,6 +151,7 @@ import bulletlistSvg from 'pixelarticons/svg/bulletlist.svg?raw';
 import penSquareSvg from 'pixelarticons/svg/pen-square.svg?raw';
 import wifiSvg from 'pixelarticons/svg/wifi.svg?raw';
 import gitMergeSvg from 'pixelarticons/svg/git-merge.svg?raw';
+import humanArmsUpSvg from 'pixelarticons/svg/human-arms-up.svg?raw';
 
 const PIXELARTICONS = {
   'pencil': pencilSvg,
@@ -303,6 +304,7 @@ const PIXELARTICONS = {
   'pen-square': penSquareSvg,
   'wifi': wifiSvg,
   'git-merge': gitMergeSvg,
+  'human-arms-up': humanArmsUpSvg,
 } as const;
 
 /** Custom glyphs: 12x12 bitmaps, each cell is 2x2 SVG units on the 24x24 icon grid. */
@@ -418,6 +420,20 @@ const CUSTOM = {
     '.....##.....',
     '............',
     '............',
+  ],
+  totem: [
+    '...######...',
+    '..########..',
+    '..#..##..#..',
+    '..########..',
+    '..###..###..',
+    '############',
+    '.##########.',
+    '...######...',
+    '...######...',
+    '....####....',
+    '....####....',
+    '.....##.....',
   ],
 } as const;
 

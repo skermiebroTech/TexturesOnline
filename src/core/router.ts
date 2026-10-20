@@ -18,7 +18,7 @@ export type ViewModule = {
   default: (root: HTMLElement, ctx: RouteContext) => void | (() => void) | Promise<void | (() => void)>;
 };
 
-export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'skins' | 'shaders' | 'help' | 'kit';
+export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'kit';
 
 export interface RouteDef {
   pattern: string;
@@ -40,6 +40,7 @@ const shaders = () => import('../tools/shaders/view');
 const guides = () => import('../tools/guides/guides');
 const converter = () => import('../tools/convert/view');
 const merger = () => import('../tools/merge/view');
+const totemMaker = () => import('../tools/totem/view');
 
 export const ROUTES: RouteDef[] = [
   { pattern: '/', load: () => import('../tools/home/home'), title: HOME_META.title, tool: 'home' },
@@ -47,6 +48,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/textures/:id', load: textures, title: `Texture packs — ${APP}`, tool: 'textures' },
   { pattern: '/texture-pack-converter', load: converter, title: TOOL_META.converter.title, tool: 'convert' },
   { pattern: '/merge-texture-packs', load: merger, title: TOOL_META.merge.title, tool: 'merge' },
+  { pattern: '/totem-maker', load: totemMaker, title: TOOL_META.totem.title, tool: 'totem' },
   { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
   { pattern: '/skin-pack-maker', load: skins, title: TOOL_META.skinpack.title, tool: 'skins' },
   { pattern: '/skins/:id', load: skins, title: `Skin editor — ${APP}`, tool: 'skins' },

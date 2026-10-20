@@ -4,7 +4,7 @@
 import { SITE_NAME } from '../site';
 
 export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'guides' | 'guide';
-export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'skins' | 'shaders' | 'help';
+export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
 
 export interface PageMeta {
   /** Route path without trailing slash ('/', '/textures', '/guides/make-a-skin') */
@@ -42,7 +42,7 @@ export const HOME_META: PageMeta = {
   label: 'Home',
 };
 
-export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
+export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'totem' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
   textures: {
     path: '/textures',
     kind: 'tool',
@@ -69,6 +69,15 @@ export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'skins' | 's
     description:
       'Combine several Minecraft texture packs into one .zip or .mcpack. Put them in order and the top pack wins, as in the game. Free, in your browser.',
     label: 'Merge texture packs',
+  },
+  totem: {
+    path: '/totem-maker',
+    kind: 'tool',
+    tool: 'totem',
+    title: 'Custom Totem of Undying Maker — Minecraft Java & Bedrock',
+    description:
+      'Turn any Minecraft skin into a custom Totem of Undying: upload a PNG or type a username, pick a style, then download a Java .zip or Bedrock .mcpack. Free.',
+    label: 'Totem maker',
   },
   skins: {
     path: '/skins',
@@ -245,7 +254,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, GUIDES_META, ...GUIDES];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, GUIDES_META, ...GUIDES];
 
 /** Meta for a route path ('/help', '/help/'), or undefined for private and unknown paths. */
 export function publicPageMeta(path: string): PageMeta | undefined {
