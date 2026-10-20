@@ -32,6 +32,15 @@ body {
   overflow-x: hidden;
 }
 
+/* Japanese pages: kana and kanji come from a system font (see --font in tokens.css) that needs
+   smoothing, and headings break between phrases instead of inside words. */
+:root:lang(ja) body {
+  -webkit-font-smoothing: auto;
+}
+:root:lang(ja) :is(h1, h2, h3, h4, .lead, .hero-lead) {
+  word-break: auto-phrase;
+}
+
 /* Subtle pixel grid + soft glows behind everything */
 body::before {
   content: '';

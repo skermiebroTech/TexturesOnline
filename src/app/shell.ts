@@ -1,8 +1,9 @@
 // App shell: sticky top bar (logo, main nav, theme toggle, GitHub), mobile menu drawer and
 // the page outlet the router renders into. The markup comes from content/chrome.ts, the same tree
 // the build prerenders, so the booted shell replaces the static one without any visible change.
+// The top bar follows the page's language (it is rebuilt when the language changes).
 
-import { onNavigation, onRouteChange, type RouteState, type ToolId } from '../core/router';
+import { currentLocale, onNavigation, onRouteChange, type RouteState, type ToolId } from '../core/router';
 import { h } from '../ui/dom';
 import { icon, setIcon } from '../ui/icons';
 import { hideTooltip, tooltip } from '../ui/tooltip';
@@ -10,9 +11,11 @@ import { getTheme, onThemeChange, toggleTheme } from '../ui/theme';
 import { closeAllModals, setScrollLock } from '../ui/modal';
 import { closeAllPopovers } from '../ui/popover';
 import { syncToastLayer } from '../ui/toast';
-import { NAV as NAV_ITEMS, brandLink, githubLink as githubTree, navLinks as navTree, skipLink, topbar as topbarTree, type NavItem as ChromeNavItem } from './content/chrome';
+import { NAV as NAV_ITEMS, brandLink, githubLink as githubTree, languageSwitcher, navLinks as navTree, skipLink, topbar as topbarTree, type NavItem as ChromeNavItem } from './content/chrome';
 import { toDom } from './markup-dom';
-import { REPO_URL, SITE_NAME } from './site';
+import { REPO_URL } from './site';
+import { ui } from '../i18n/ui';
+import type { Locale } from '../i18n/locales';
 
 export const GITHUB_URL = REPO_URL;
 
@@ -20,13 +23,18 @@ type NavItem = Omit<ChromeNavItem, 'tool'> & { tool: ToolId };
 
 export const NAV: NavItem[] = NAV_ITEMS;
 
+/** Language of the shell's texts (the current page's). */
+let shellLocale: Locale = 'en';
+
 /** Adds the theme toggle behaviour to a button (the icon follows the current theme). */
 function wireThemeButton(b: HTMLButtonElement): HTMLButtonElement {
   const glyph = b.querySelector<HTMLElement>('.icon') ?? b.appendChild(icon('moon'));
+  const locale = shellLocale;
   const paint = () => {
     const dark = getTheme() === 'dark';
     setIcon(glyph, dark ? 'moon' : 'sun');
-    const label = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    const t = ui(locale);
+    const label = dark ? t.themeToLight : t.themeToDark;
     b.setAttribute('aria-label', label);
     tooltip(b, label);
   };
@@ -36,7 +44,7 @@ function wireThemeButton(b: HTMLButtonElement): HTMLButtonElement {
     b.classList.add('spin');
     toggleTheme();
   });
-  // The drawer creates short-lived copies of this button: drop their listener once detached.
+  // The drawer and a language change create short-lived copies of this button: drop their listener once detached.
   let attached = false;
   const off = onThemeChange(() => {
     if (b.isConnected) attached = true;
@@ -55,14 +63,14 @@ function themeButton(): HTMLButtonElement {
 }
 
 function githubLink(): HTMLAnchorElement {
-  const a = toDom<HTMLAnchorElement>(githubTree());
-  tooltip(a, 'Source code on GitHub');
+  const a = toDom<HTMLAnchorElement>(githubTree(shellLocale));
+  tooltip(a, ui(shellLocale).githubTooltip);
   return a;
 }
 
 function navLinks(cls: string, active: ToolId | null): HTMLAnchorElement[] {
   const tool = active === 'kit' ? null : active;
-  return navTree(cls, tool).map((n) => toDom<HTMLAnchorElement>(n));
+  return navTree(cls, tool, shellLocale).map((n) => toDom<HTMLAnchorElement>(n));
 }
 
 function markActive(links: HTMLAnchorElement[], state: RouteState): void {
@@ -74,23 +82,26 @@ function markActive(links: HTMLAnchorElement[], state: RouteState): void {
 }
 
 function openDrawer(onNavigate: () => void): void {
+  const t = ui(shellLocale);
   const links = navLinks('drawer-link', currentState?.tool ?? null);
+  const langs = languageSwitcher(currentState?.path ?? '/', shellLocale, 'lang-switch drawer-langs');
   const dlg = h(
     'dialog',
-    { class: 'nav-drawer', 'aria-label': 'Menu' },
+    { class: 'nav-drawer', 'aria-label': t.menu },
     h(
       'div',
       { class: 'drawer-head' },
       toDom(brandLink()),
-      h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Close menu', on: { click: () => close() } }, icon('close')),
+      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t.closeMenu, on: { click: () => close() } }, icon('close')),
     ),
-    h('nav', { class: 'drawer-nav', 'aria-label': 'Main' }, links),
+    h('nav', { class: 'drawer-nav', 'aria-label': t.mainNav }, links),
+    langs ? toDom(langs) : null,
     h(
       'div',
       { class: 'drawer-foot' },
       themeButton(),
       githubLink(),
-      h('span', { class: 'faint small' }, 'Not affiliated with Mojang or Microsoft'),
+      h('span', { class: 'faint small' }, t.notAffiliatedShort),
     ),
   );
   let closed = false;
@@ -109,7 +120,7 @@ function openDrawer(onNavigate: () => void): void {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) done();
     else setTimeout(done, 180);
   };
-  links.forEach((a) =>
+  [...links, ...Array.from(dlg.querySelectorAll<HTMLAnchorElement>('.drawer-langs a'))].forEach((a) =>
     a.addEventListener('click', () => {
       onNavigate();
       close();
@@ -140,15 +151,21 @@ export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: H
   outlet.append(...prerendered);
 
   const tool = (document.documentElement.dataset.tool || null) as ToolId | null;
-  const topbar = toDom(topbarTree(tool === 'kit' ? null : (tool as ChromeNavItem['tool'] | null)));
-  const links = Array.from(topbar.querySelectorAll<HTMLAnchorElement>('.mainnav .nav-link'));
-  wireThemeButton(topbar.querySelector<HTMLButtonElement>('.theme-toggle')!);
-  const gh = topbar.querySelector<HTMLAnchorElement>('.topbar-actions > a.icon-btn');
-  if (gh) tooltip(gh, 'Source code on GitHub');
-  topbar.querySelector('.menu-btn')?.addEventListener('click', () => openDrawer(() => undefined));
-  topbar.querySelector('.brand')?.setAttribute('aria-label', `${SITE_NAME} home`);
+  shellLocale = currentLocale();
+  const navTool = (t: ToolId | null) => (t === 'kit' ? null : (t as ChromeNavItem['tool'] | null));
+  const topbar = toDom(topbarTree(navTool(tool), shellLocale));
+  let links: HTMLAnchorElement[] = [];
+  /** Wires the top bar's buttons (again after a language change rebuilt it). */
+  const wireTopbar = () => {
+    links = Array.from(topbar.querySelectorAll<HTMLAnchorElement>('.mainnav .nav-link'));
+    wireThemeButton(topbar.querySelector<HTMLButtonElement>('.theme-toggle')!);
+    const gh = topbar.querySelector<HTMLAnchorElement>('.topbar-actions > a.icon-btn');
+    if (gh) tooltip(gh, ui(shellLocale).githubTooltip);
+    topbar.querySelector('.menu-btn')?.addEventListener('click', () => openDrawer(() => undefined));
+  };
+  wireTopbar();
 
-  const skip = toDom<HTMLAnchorElement>(skipLink());
+  const skip = toDom<HTMLAnchorElement>(skipLink(shellLocale));
   skip.addEventListener('click', (e) => {
     e.preventDefault();
     outlet.focus();
@@ -169,6 +186,13 @@ export function createShell(root: HTMLElement): { outlet: HTMLElement; topbar: H
 
   onRouteChange((state) => {
     currentState = state;
+    if (state.locale !== shellLocale) {
+      shellLocale = state.locale;
+      const fresh = toDom(topbarTree(navTool(state.tool), shellLocale));
+      topbar.replaceChildren(...Array.from(fresh.childNodes));
+      wireTopbar();
+      skip.textContent = ui(shellLocale).skipLink;
+    }
     markActive(links, state);
     document.body.dataset.route = state.tool ?? 'missing';
   });

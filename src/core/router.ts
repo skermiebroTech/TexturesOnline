@@ -2,16 +2,23 @@
 // cleanup. Real URLs ("/textures/", "/skins/<id>") under a site base worked out at runtime, so
 // the same build runs at a domain root or under a GitHub Pages project path. Old "#/..." links
 // are redirected to the matching path. Internal <a href> links are intercepted (no reloads).
+// Translated pages live in a language folder ("/de/textures/"): routes are matched without it and
+// links made with href() stay in the current language wherever that page exists.
 // Pure helpers (parseLocation, matchRoute, resolveRoute, toHref, stripBase) have no DOM dependency.
 
 import { appBasePath } from './base';
-import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META } from '../app/seo/meta';
+import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META, localizedPath, pageMeta } from '../app/seo/meta';
 import { SITE_NAME } from '../app/site';
+import { DEFAULT_LOCALE, splitLocale, type Locale } from '../i18n/locales';
+import { ui } from '../i18n/ui';
 
 export interface RouteContext {
   params: Record<string, string>;
   query: URLSearchParams;
+  /** Route path without the language folder ('/de/help' -> '/help') */
   path: string;
+  /** Language of the page ('en' at the site root) */
+  locale: Locale;
 }
 
 export type ViewModule = {
@@ -115,14 +122,15 @@ export function resolveRoute(path: string, routes: RouteDef[] = ROUTES): { route
   return null;
 }
 
-/** Section pages ('/', '/help', '/guides/x') are folders on the server, so their URLs end in '/'. */
+/** Section pages ('/', '/help', '/guides/x', '/de/help') are folders on the server, so their URLs end in '/'. */
 function isFolderPath(path: string, routes: RouteDef[]): boolean {
-  if (path === '/') return true;
-  const r = resolveRoute(path, routes);
+  const p = splitLocale(path).path;
+  if (p === '/') return true;
+  const r = resolveRoute(p, routes);
   return !!r && !r.route.pattern.includes(':');
 }
 
-/** URL for a route path under a site base: toHref('/help?s=faq', '/Repo/') === '/Repo/help/?s=faq' */
+/** URL for a route path under a site base: toHref('/help?s=faq', '/Repo/') === '/Repo/help/?s=faq' (no language changes) */
 export function toHref(path: string, base = '/', routes: RouteDef[] = ROUTES): string {
   const { path: p, query } = parseLocation(path);
   const qs = query.toString();
@@ -140,9 +148,25 @@ export function stripBase(pathname: string, base = '/'): string | null {
   return normalizePath(pathname.slice(b.length - 1));
 }
 
-/** Link target for a route path: href('/help') === '/help/' at a domain root. */
+/** Language of the address bar's page ('en' outside a browser). */
+export function currentLocale(): Locale {
+  if (typeof location === 'undefined') return DEFAULT_LOCALE;
+  if (location.hash.startsWith('#/')) return splitLocale(parseLocation(location.hash).path).locale;
+  return splitLocale(stripBase(location.pathname, appBasePath()) ?? '/').locale;
+}
+
+/**
+ * Link target for a route path in the current language: href('/help') === '/help/' at a domain
+ * root, '/de/help/' on a German page. A path that already names its language folder is kept.
+ */
 export function href(path: string): string {
-  return toHref(path.startsWith('/') || path.startsWith('#') ? path : `/${path}`, appBasePath());
+  const p = path.startsWith('/') ? path : path.startsWith('#') ? path.slice(1) || '/' : `/${path}`;
+  return toHref(localizedPath(p, currentLocale()), appBasePath());
+}
+
+/** Link target for a route path exactly as given (its language included): exactHref('/help') === '/help/' on every page. */
+export function exactHref(path: string): string {
+  return toHref(path.startsWith('/') ? path : `/${path}`, appBasePath());
 }
 
 // ---------------- Runtime (browser only) ----------------
@@ -169,21 +193,29 @@ let restoring = false;
 
 const SCROLL_KEY = 'to-router-scroll';
 
-/** Current route path + query from the address bar (legacy '#/...' hashes win). */
-function readLocation(): { path: string; query: URLSearchParams } {
-  if (location.hash.startsWith('#/')) return parseLocation(location.hash);
+/** Current language, route path and query from the address bar (legacy '#/...' hashes win). */
+function readLocation(): { locale: Locale; path: string; query: URLSearchParams } {
+  if (location.hash.startsWith('#/')) {
+    const { path, query } = parseLocation(location.hash);
+    return { ...splitLocale(path), query };
+  }
   const path = stripBase(location.pathname, appBasePath());
-  return { path: path ?? normalizePath(location.pathname), query: new URLSearchParams(location.search) };
+  return { ...splitLocale(path ?? normalizePath(location.pathname)), query: new URLSearchParams(location.search) };
 }
 
 function currentUrl(): string {
   return location.pathname + location.search;
 }
 
-export function navigate(path: string, opts: { replace?: boolean } = {}): void {
+/**
+ * Opens a route path in the current language (navigate('/help') goes to '/de/help/' on German
+ * pages). `exact`: the path already names its language ('/textures' then means English).
+ */
+export function navigate(path: string, opts: { replace?: boolean; exact?: boolean } = {}): void {
   const hashAt = path.startsWith('#') ? -1 : path.indexOf('#');
   pendingFragment = hashAt >= 0 ? path.slice(hashAt + 1) : '';
-  const target = href(hashAt >= 0 ? path.slice(0, hashAt) : path);
+  const bare = hashAt >= 0 ? path.slice(0, hashAt) : path;
+  const target = opts.exact ? exactHref(bare) : href(bare);
   if (!started) {
     if (opts.replace) location.replace(target);
     else location.assign(target);
@@ -205,14 +237,16 @@ export function navigate(path: string, opts: { replace?: boolean } = {}): void {
 export function replacePath(path: string): void {
   const target = href(path);
   history.replaceState(history.state, '', target);
-  const { path: p, query } = parseLocation(path);
-  currentKey = `${p}?${query.toString()}`;
+  const { locale, path: p, query } = readLocation();
+  currentKey = routeKey(locale, p, query);
   if (current) {
     const match = resolveRoute(p);
-    current = { ...current, path: p, query, params: match?.params ?? current.params };
+    current = { ...current, locale, path: p, query, params: match?.params ?? current.params };
     emit();
   }
 }
+
+const routeKey = (locale: Locale, path: string, query: URLSearchParams) => `${locale}:${path}?${query.toString()}`;
 
 export function currentRoute(): RouteState | null {
   return current;
@@ -294,11 +328,14 @@ function trackEntry(): number {
   return 0;
 }
 
-/** Rewrites legacy '#/x' URLs and non-canonical paths ('/help' -> '/help/') in place. */
+/**
+ * Rewrites legacy '#/x' URLs and non-canonical paths ('/help' -> '/help/') in place. A language
+ * folder in front of a page that has not been translated leads to the English page.
+ */
 function canonicalizeUrl(): void {
-  const { path, query } = readLocation();
+  const { locale, path, query } = readLocation();
   const qs = query.toString();
-  const target = href(qs ? `${path}?${qs}` : path);
+  const target = exactHref(localizedPath(qs ? `${path}?${qs}` : path, locale));
   const legacy = location.hash.startsWith('#/');
   const inBase = stripBase(location.pathname, appBasePath()) !== null;
   if (!inBase && !legacy) return;
@@ -315,8 +352,8 @@ async function render(force = false): Promise<void> {
   const outlet = outletEl;
   if (!outlet) return;
   canonicalizeUrl();
-  const { path, query } = readLocation();
-  const key = `${path}?${query.toString()}`;
+  const { locale, path, query } = readLocation();
+  const key = routeKey(locale, path, query);
   const restoreY = trackEntry();
   if (!force && key === currentKey && !firstRender && outlet.firstChild) return;
   currentKey = key;
@@ -337,7 +374,7 @@ async function render(force = false): Promise<void> {
 
   const tool = match?.route.tool ?? null;
   document.documentElement.dataset.tool = tool ?? '';
-  current = { params: match?.params ?? {}, query, path, tool, pattern: match?.route.pattern ?? null };
+  current = { params: match?.params ?? {}, query, path, locale, tool, pattern: match?.route.pattern ?? null };
   emit(navListeners);
   emit();
 
@@ -358,7 +395,7 @@ async function render(force = false): Promise<void> {
     if (my !== token) return;
     console.error('Failed to load view', err);
     outlet.replaceChildren(pages.loadErrorView(err));
-    document.title = `Something went wrong — ${APP}`;
+    document.title = ui(locale).loadError.pageTitle;
     return;
   }
   clearTimeout(loadingTimer);
@@ -367,11 +404,11 @@ async function render(force = false): Promise<void> {
   const root = document.createElement('div');
   root.className = `view view-${tool ?? 'missing'}`;
   outlet.replaceChildren(root);
-  document.title = match ? match.route.title : `Page not found — ${APP}`;
+  document.title = match ? (pageMeta(path, locale)?.title ?? match.route.title) : ui(locale).notFound.pageTitle;
   restoring = restoreY > 0;
 
   try {
-    const result = await mod.default(root, { params: current.params, query, path });
+    const result = await mod.default(root, { params: current.params, query, path, locale });
     if (my !== token) {
       if (typeof result === 'function') result();
       return;
@@ -434,7 +471,8 @@ function onDocumentClick(e: MouseEvent): void {
   if (path === null || FILE_RE.test(path)) return;
   if (url.hash && url.pathname === location.pathname && url.search === location.search) return;
   e.preventDefault();
-  navigate(path + url.search + url.hash);
+  // The link's own address already names its language.
+  navigate(path + url.search + url.hash, { exact: true });
 }
 
 export function startRouter(outlet: HTMLElement): void {

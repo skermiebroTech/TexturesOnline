@@ -1,15 +1,22 @@
 // Help page content (install guides for every edition and platform, plus FAQ) as a markup tree.
 // Rendered to static HTML at build time and to DOM by help.ts; also feeds the HowTo and FAQPage
-// structured data and llms-full.txt. No DOM access here.
+// structured data and llms-full.txt. No DOM access here. The English text is in SECTIONS, FAQ and
+// HELP_EN; translations fill in the same HelpText (src/i18n/<lang>/help.ts).
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../../app/markup';
 import { breadcrumbs, callout, code, ext, faqList, folderTable, link, steps, strong, tabbed, uiPath, type FaqItem } from '../../app/content/blocks';
 import { REPO_URL, SITE_NAME } from '../../app/site';
-import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../editions/java/packformats';
+import { F, LATEST, maxFormat, minFormat } from '../../app/content/facts';
+import { HELP_META, pageMeta } from '../../app/seo/meta';
+import type { Locale } from '../../i18n/locales';
+import { ui } from '../../i18n/ui';
+import { contentOf } from '../../i18n/content';
+
+export type HelpSectionId = 'java-packs' | 'bedrock-packs' | 'java-skins' | 'bedrock-skins' | 'iris' | 'vanilla-shaders' | 'vibrant-visuals' | 'folders';
 
 export interface HelpSection {
-  id: string;
+  id: HelpSectionId;
   title: string;
   short: string;
   icon: IconName;
@@ -300,8 +307,6 @@ export const SECTIONS: HelpSection[] = [
   },
 ];
 
-const format263 = formatPackFormat(KNOWN_RELEASE_FORMATS['26.3']);
-
 export const FAQ: FaqItem[] = [
   {
     id: 'vanilla-source',
@@ -446,21 +451,21 @@ export const FAQ: FaqItem[] = [
       el(
         'p',
         null,
-        'Java 26.3 is the default, and every Java release back to 1.6.1 (when resource packs were introduced) works — snapshots too if you switch them on. For Bedrock you can use the latest release, the latest preview and older versions.',
+        `Java ${LATEST} is the default, and every Java release back to 1.6.1 (when resource packs were introduced) works — snapshots too if you switch them on. For Bedrock you can use the latest release, the latest preview and older versions.`,
       ),
     ],
   },
   {
     id: 'pack-format',
-    q: 'What is the resource pack format for Minecraft Java 26.3?',
+    q: `What is the resource pack format for Minecraft Java ${LATEST}?`,
     a: [
       el(
         'p',
         null,
-        `Java 26.3 uses resource pack format ${format263}. A pack made only for 26.3 declares `,
-        code('"min_format": [97, 1]'),
+        `Java ${LATEST} uses resource pack format ${F(LATEST)}. A pack made only for ${LATEST} declares `,
+        code(`"min_format": ${minFormat(LATEST)}`),
         ' and ',
-        code('"max_format": 97'),
+        code(`"max_format": ${maxFormat(LATEST)}`),
         ' in its ',
         code('pack.mcmeta'),
         '. The Texture Pack Maker writes these fields for you. See ',
@@ -529,12 +534,80 @@ export const FAQ: FaqItem[] = [
 
 export const HELP_SECTION_IDS = [...SECTIONS.map((s) => s.id), 'faq'];
 
-const QUICK: { id: string; label: string; icon: IconName; accent: string }[] = [
-  { id: 'java-packs', label: 'Install a texture pack', icon: 'image', accent: 'accent-green' },
-  { id: 'java-skins', label: 'Change your skin', icon: 'human', accent: 'accent-blue' },
-  { id: 'iris', label: 'Use a shader pack', icon: 'sparkles', accent: 'accent-purple' },
-  { id: 'faq', label: 'Questions', icon: 'circle-question', accent: 'accent-gold' },
+type QuickId = 'java-packs' | 'java-skins' | 'iris' | 'faq';
+
+const QUICK: { id: QuickId; icon: IconName; accent: string }[] = [
+  { id: 'java-packs', icon: 'image', accent: 'accent-green' },
+  { id: 'java-skins', icon: 'human', accent: 'accent-blue' },
+  { id: 'iris', icon: 'sparkles', accent: 'accent-purple' },
+  { id: 'faq', icon: 'circle-question', accent: 'accent-gold' },
 ];
+
+/** The translatable part of a help section. */
+export type HelpSectionText = Pick<HelpSection, 'title' | 'short' | 'body' | 'howto'>;
+
+/** Every text on the help page. */
+export interface HelpText {
+  /** By section id (a section without a translation keeps its English text; a unit test flags it) */
+  sections: Partial<Record<HelpSectionId, HelpSectionText>>;
+  /** Same ids as the English FAQ (links such as /help?s=offline open them) */
+  faq: FaqItem[];
+  quick: Record<QuickId, string>;
+  toc: {
+    title: string;
+    textures: string;
+    skins: string;
+    shaders: string;
+    more: string;
+    irisOptifine: string;
+    vanilla: string;
+    vibrant: string;
+    folders: string;
+    faq: string;
+    allGuides: string;
+  };
+  /** Edition badge for sections about both editions */
+  bothEditions: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  faqTitle: string;
+}
+
+export const HELP_EN: HelpText = {
+  sections: Object.fromEntries(SECTIONS.map((s) => [s.id, { title: s.title, short: s.short, body: s.body, howto: s.howto }])) as Record<HelpSectionId, HelpSectionText>,
+  faq: FAQ,
+  quick: { 'java-packs': 'Install a texture pack', 'java-skins': 'Change your skin', iris: 'Use a shader pack', faq: 'Questions' },
+  toc: {
+    title: 'On this page',
+    textures: 'Texture packs',
+    skins: 'Skins',
+    shaders: 'Shaders',
+    more: 'More',
+    irisOptifine: 'Iris / OptiFine',
+    vanilla: 'Vanilla (no mods)',
+    vibrant: 'Vibrant Visuals',
+    folders: 'Folders',
+    faq: 'FAQ',
+    allGuides: 'All guides',
+  },
+  bothEditions: 'Java & Bedrock',
+  eyebrow: 'Install guide & help',
+  title: 'How to install texture packs, skins and shaders',
+  lead: 'Get your creations into Minecraft: step-by-step guides for Java and Bedrock on PC, Mac, phones and consoles, plus answers to common questions.',
+  faqTitle: 'Frequently asked questions',
+};
+
+/** The help page texts of a language. */
+export function helpText(locale: Locale = 'en'): HelpText {
+  return locale === 'en' ? HELP_EN : (contentOf(locale).help ?? HELP_EN);
+}
+
+/** Sections with the texts of a language (structured data). */
+export function helpSections(locale: Locale = 'en'): HelpSection[] {
+  const t = helpText(locale);
+  return SECTIONS.map((s) => ({ ...s, ...(t.sections[s.id] ?? HELP_EN.sections[s.id]) }));
+}
 
 const tocItem = (id: string, label: string, icon: IconName, accent: string, active: boolean) =>
   el('a', { class: ['toc-link', accent], to: `/help?s=${id}`, 'data-section': id, 'aria-current': active ? 'true' : null }, ic(icon), el('span', null, label));
@@ -542,32 +615,35 @@ const tocItem = (id: string, label: string, icon: IconName, accent: string, acti
 const BADGE_TONE: Record<NonNullable<HelpSection['edition']>, string> = { Java: 'green', Bedrock: 'blue', 'Java & Bedrock': 'gold' };
 
 /** The whole help page (without the footer). */
-export function helpPage(): ElNode[] {
+export function helpPage(locale: Locale = 'en'): ElNode[] {
+  const t = helpText(locale);
+  const u = ui(locale);
+  const meta = pageMeta(HELP_META.path, locale) ?? HELP_META;
   const toc = el(
     'nav',
-    { class: 'help-toc', 'aria-label': 'On this page', 'data-md': 'skip' },
-    el('div', { class: 'section-title' }, 'On this page'),
-    el('div', { class: 'toc-group' }, el('span', { class: 'toc-label' }, 'Texture packs'), tocItem('java-packs', 'Java', 'image', 'accent-green', true), tocItem('bedrock-packs', 'Bedrock', 'gamepad', 'accent-green', false)),
-    el('div', { class: 'toc-group' }, el('span', { class: 'toc-label' }, 'Skins'), tocItem('java-skins', 'Java', 'human', 'accent-blue', false), tocItem('bedrock-skins', 'Bedrock', 'shirt', 'accent-blue', false)),
+    { class: 'help-toc', 'aria-label': t.toc.title, 'data-md': 'skip' },
+    el('div', { class: 'section-title' }, t.toc.title),
+    el('div', { class: 'toc-group' }, el('span', { class: 'toc-label' }, t.toc.textures), tocItem('java-packs', 'Java', 'image', 'accent-green', true), tocItem('bedrock-packs', 'Bedrock', 'gamepad', 'accent-green', false)),
+    el('div', { class: 'toc-group' }, el('span', { class: 'toc-label' }, t.toc.skins), tocItem('java-skins', 'Java', 'human', 'accent-blue', false), tocItem('bedrock-skins', 'Bedrock', 'shirt', 'accent-blue', false)),
     el(
       'div',
       { class: 'toc-group' },
-      el('span', { class: 'toc-label' }, 'Shaders'),
-      tocItem('iris', 'Iris / OptiFine', 'sparkles', 'accent-purple', false),
-      tocItem('vanilla-shaders', 'Vanilla (no mods)', 'sun', 'accent-purple', false),
-      tocItem('vibrant-visuals', 'Vibrant Visuals', 'cloud-sun', 'accent-purple', false),
+      el('span', { class: 'toc-label' }, t.toc.shaders),
+      tocItem('iris', t.toc.irisOptifine, 'sparkles', 'accent-purple', false),
+      tocItem('vanilla-shaders', t.toc.vanilla, 'sun', 'accent-purple', false),
+      tocItem('vibrant-visuals', t.toc.vibrant, 'cloud-sun', 'accent-purple', false),
     ),
     el(
       'div',
       { class: 'toc-group' },
-      el('span', { class: 'toc-label' }, 'More'),
-      tocItem('folders', 'Folders', 'folder', 'accent-gold', false),
-      tocItem('faq', 'FAQ', 'circle-question', 'accent-gold', false),
-      el('a', { class: ['toc-link', 'accent-gold'], to: '/guides' }, ic('book-open'), el('span', null, 'All guides')),
+      el('span', { class: 'toc-label' }, t.toc.more),
+      tocItem('folders', t.toc.folders, 'folder', 'accent-gold', false),
+      tocItem('faq', t.toc.faq, 'circle-question', 'accent-gold', false),
+      el('a', { class: ['toc-link', 'accent-gold'], to: '/guides' }, ic('book-open'), el('span', null, t.toc.allGuides)),
     ),
   );
 
-  const sections = SECTIONS.map((s) =>
+  const sections = helpSections(locale).map((s) =>
     el(
       'section',
       { class: ['help-section', s.accent], id: `help-${s.id}`, tabindex: '-1', 'aria-labelledby': `help-${s.id}-title` },
@@ -576,7 +652,7 @@ export function helpPage(): ElNode[] {
         { class: 'help-section-head' },
         el('span', { class: 'help-section-icon' }, ic(s.icon)),
         el('h2', { id: `help-${s.id}-title` }, s.title),
-        s.edition ? el('span', { class: ['badge', `tone-${BADGE_TONE[s.edition]}`], 'data-md': 'skip' }, s.edition) : null,
+        s.edition ? el('span', { class: ['badge', `tone-${BADGE_TONE[s.edition]}`], 'data-md': 'skip' }, s.edition === 'Java & Bedrock' ? t.bothEditions : s.edition) : null,
       ),
       el('div', { class: 'help-section-body' }, s.body),
     ),
@@ -585,18 +661,18 @@ export function helpPage(): ElNode[] {
   const faq = el(
     'section',
     { class: 'help-section accent-gold', id: 'help-faq', tabindex: '-1', 'aria-labelledby': 'help-faq-title' },
-    el('header', { class: 'help-section-head' }, el('span', { class: 'help-section-icon' }, ic('circle-question')), el('h2', { id: 'help-faq-title' }, 'Frequently asked questions')),
-    faqList(FAQ),
+    el('header', { class: 'help-section-head' }, el('span', { class: 'help-section-icon' }, ic('circle-question')), el('h2', { id: 'help-faq-title' }, t.faqTitle)),
+    faqList(t.faq),
   );
 
   return [
     el(
       'header',
       { class: 'help-hero container' },
-      breadcrumbs([{ label: 'Home', to: '/' }, { label: 'Help' }]),
-      el('span', { class: 'eyebrow' }, ic('book-open'), 'Install guide & help'),
-      el('h1', { class: 'pixel-shadow' }, 'How to install texture packs, skins and shaders'),
-      el('p', { class: 'lead' }, 'Get your creations into Minecraft: step-by-step guides for Java and Bedrock on PC, Mac, phones and consoles, plus answers to common questions.'),
+      breadcrumbs([{ label: u.home, to: '/' }, { label: meta.label }], u.breadcrumb),
+      el('span', { class: 'eyebrow' }, ic('book-open'), t.eyebrow),
+      el('h1', { class: 'pixel-shadow' }, t.title),
+      el('p', { class: 'lead' }, t.lead),
       el(
         'div',
         { class: 'help-quick', 'data-md': 'skip' },
@@ -605,7 +681,7 @@ export function helpPage(): ElNode[] {
             'a',
             { class: ['help-quick-card', q.accent], to: `/help?s=${q.id}`, 'data-section': q.id },
             el('span', { class: 'help-quick-icon' }, ic(q.icon)),
-            el('span', null, q.label),
+            el('span', null, t.quick[q.id]),
             ic('arrow-right', { class: 'help-quick-go' }),
           ),
         ),

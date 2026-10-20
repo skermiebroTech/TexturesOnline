@@ -1,14 +1,24 @@
-// Titles and descriptions of every public (indexable) page. Kept free of DOM and content imports so
-// the router, the runtime head updater and the build-time prerender can all share it.
+// Titles and descriptions of every public (indexable) page, in English and in every language a page
+// has been translated into. Kept free of DOM and content imports so the router, the runtime head
+// updater and the build-time prerender can all share it.
 
 import { SITE_NAME } from '../site';
+import { DEFAULT_LOCALE, LOCALES, TRANSLATED_LOCALES, prefixPath, splitLocale, type Locale, type TranslatedLocale } from '../../i18n/locales';
+import { META_DE } from '../../i18n/de/meta';
+import { META_ES } from '../../i18n/es/meta';
+import { META_PT_BR } from '../../i18n/pt-br/meta';
+import { META_JA } from '../../i18n/ja/meta';
 
 export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'guides' | 'guide';
 export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
 
 export interface PageMeta {
-  /** Route path without trailing slash ('/', '/textures', '/guides/make-a-skin') */
+  /** Page path without trailing slash, including the language folder ('/', '/textures', '/de/guides/make-a-skin') */
   path: string;
+  /** Language of the page (English when left out) */
+  locale?: Locale;
+  /** Route path without the language folder ('/de/textures' -> '/textures'); same as path when left out */
+  route?: string;
   kind: PageKind;
   /** Nav section the page belongs to (sets the accent colour and active link) */
   tool: PageTool;
@@ -256,8 +266,98 @@ export const GUIDES: GuideMeta[] = [
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
 export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, GUIDES_META, ...GUIDES];
 
-/** Meta for a route path ('/help', '/help/'), or undefined for private and unknown paths. */
-export function publicPageMeta(path: string): PageMeta | undefined {
-  const p = path.length > 1 ? path.replace(/\/+$/, '') : path;
+// ---------------------------------------------------------------- translations
+
+/** Translated title, description and short name of one page. */
+export interface PageText {
+  title: string;
+  description: string;
+  label: string;
+}
+
+export interface GuidePageText extends PageText {
+  h1: string;
+  blurb: string;
+}
+
+/**
+ * One language's page texts. A page counts as translated (and gets its own URL, hreflang links and
+ * sitemap entry) once it has an entry here and its content in src/i18n/<lang>/content.ts.
+ */
+export interface MetaTranslation {
+  /** By English route path: '/', '/textures', '/help', '/guides'... */
+  pages: Partial<Record<string, PageText>>;
+  /** By guide slug */
+  guides: Partial<Record<string, GuidePageText>>;
+}
+
+export const META_TRANSLATIONS: Record<TranslatedLocale, MetaTranslation> = { de: META_DE, es: META_ES, 'pt-br': META_PT_BR, ja: META_JA };
+
+const trimSlash = (p: string) => (p.length > 1 ? p.replace(/\/+$/, '') : p);
+
+/** Language of a page (English when not set). */
+export const metaLocale = (m: PageMeta): Locale => m.locale ?? DEFAULT_LOCALE;
+/** Route path of a page without its language folder. */
+export const metaRoute = (m: PageMeta): string => m.route ?? m.path;
+
+/** English meta of a public route path ('/help'), or undefined. */
+function englishMeta(route: string): PageMeta | undefined {
+  const p = trimSlash(route);
   return PUBLIC_PAGES.find((m) => m.path === p);
+}
+
+/** Meta of a public page in one language ('/textures', 'de'); undefined when it is not public or not translated. */
+export function pageMeta(route: string, locale: Locale): PageMeta | undefined {
+  const en = englishMeta(route);
+  if (!en || locale === 'en') return en;
+  const t = META_TRANSLATIONS[locale];
+  const text = en.kind === 'guide' ? t.guides[(en as GuideMeta).slug] : t.pages[en.path];
+  if (!text) return undefined;
+  return { ...en, ...text, locale, route: en.path, path: prefixPath(en.path, locale) };
+}
+
+/** A guide's meta in one language, or undefined when it is not translated. */
+export function guideMeta(slug: string, locale: Locale): GuideMeta | undefined {
+  const en = GUIDES.find((g) => g.slug === slug);
+  return en ? (pageMeta(en.path, locale) as GuideMeta | undefined) : undefined;
+}
+
+/** The guides available in a language, in the English order. */
+export function guidesIn(locale: Locale): GuideMeta[] {
+  return GUIDES.map((g) => guideMeta(g.slug, locale)).filter((g): g is GuideMeta => !!g);
+}
+
+/** Every language a public route path is available in (English first). */
+export function pageLocales(route: string): Locale[] {
+  return LOCALES.filter((l) => !!pageMeta(route, l));
+}
+
+/** Translated pages of one language, in sitemap order. */
+export function translatedPages(locale: TranslatedLocale): PageMeta[] {
+  return PUBLIC_PAGES.map((m) => pageMeta(m.path, locale)).filter((m): m is PageMeta => !!m);
+}
+
+/** Every public page in every language: English first, then each translation. */
+export function allPublicPages(): PageMeta[] {
+  return [...PUBLIC_PAGES, ...TRANSLATED_LOCALES.flatMap(translatedPages)];
+}
+
+/**
+ * Route path in a language's folder when that page exists there ('/help?s=faq', 'de' ->
+ * '/de/help?s=faq'). Public pages without a translation stay English; app pages (projects, the UI
+ * kit) always follow the language. Paths that already name a language folder are kept.
+ */
+export function localizedPath(path: string, locale: Locale): string {
+  const m = /^([^?#]*)(.*)$/.exec(path)!;
+  const route = m[1] || '/';
+  if (locale === DEFAULT_LOCALE || splitLocale(route).locale !== DEFAULT_LOCALE) return path;
+  if (/\.[a-z0-9]{1,8}$/i.test(route)) return path; // site files
+  if (englishMeta(route) && !pageMeta(route, locale)) return path;
+  return prefixPath(path, locale);
+}
+
+/** Meta for a page path in any language ('/help', '/help/', '/de/help'), or undefined for private and unknown paths. */
+export function publicPageMeta(path: string): PageMeta | undefined {
+  const { locale, path: route } = splitLocale(trimSlash(path));
+  return pageMeta(route, locale);
 }

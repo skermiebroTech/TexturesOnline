@@ -4,7 +4,12 @@
 import { renderText, type Child } from '../markup';
 import type { Crumb, FaqItem } from '../content/blocks';
 import { CONTENT_UPDATED, OG_IMAGE, PUBLISHER, REPO_URL, SITE_ALT_NAME, SITE_NAME, SITE_SUMMARY, SITE_URL, SOCIAL_PROFILES, absoluteUrl } from '../site';
-import type { PageMeta } from './meta';
+import { metaLocale, type PageMeta } from './meta';
+import { LOCALES, LOCALE_INFO } from '../../i18n/locales';
+import { ui } from '../../i18n/ui';
+
+/** BCP 47 language of a page (JSON-LD inLanguage). */
+const langOf = (meta: PageMeta): string => LOCALE_INFO[metaLocale(meta)].lang;
 
 export type JsonLd = Record<string, unknown>;
 
@@ -42,7 +47,8 @@ export function website(): JsonLd {
     name: SITE_NAME,
     alternateName: [SITE_ALT_NAME, `Minecraft ${SITE_NAME}`],
     description: SITE_SUMMARY,
-    inLanguage: 'en',
+    // The public pages are written in these languages (the editors themselves are English).
+    inLanguage: LOCALES.map((l) => LOCALE_INFO[l].lang),
     publisher: { '@id': ORG_ID },
   };
 }
@@ -56,14 +62,15 @@ export function webPage(meta: PageMeta, opts: { type?: string; breadcrumb?: bool
     name: meta.title,
     description: meta.description,
     isPartOf: { '@id': WEBSITE_ID },
-    inLanguage: 'en',
-    primaryImageOfPage: image(DEFAULT_SCREENSHOT),
+    inLanguage: langOf(meta),
+    primaryImageOfPage: image({ ...DEFAULT_SCREENSHOT, caption: ui(metaLocale(meta)).ogImageAlt }),
     ...(opts.about ? { about: { '@id': opts.about } } : {}),
     ...(opts.breadcrumb ? { breadcrumb: { '@id': `${url}#breadcrumb` } } : {}),
   };
 }
 
-export function breadcrumbList(meta: PageMeta, crumbs: Crumb[]): JsonLd {
+/** `urlOf` turns a crumb's route path into its absolute URL (translated pages link their own language). */
+export function breadcrumbList(meta: PageMeta, crumbs: Crumb[], urlOf: (to: string) => string = absoluteUrl): JsonLd {
   const url = absoluteUrl(meta.path);
   return {
     '@type': 'BreadcrumbList',
@@ -72,7 +79,7 @@ export function breadcrumbList(meta: PageMeta, crumbs: Crumb[]): JsonLd {
       '@type': 'ListItem',
       position: i + 1,
       name: c.label,
-      item: absoluteUrl(c.to ?? meta.path),
+      item: c.to ? urlOf(c.to) : url,
     })),
   };
 }
@@ -92,6 +99,7 @@ export function webApplication(opts: { id: string; name: string; url: string; de
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     featureList: opts.featureList,
     screenshot: image(opts.screenshot),
+    // The editor's own interface is English on every page for now.
     inLanguage: 'en',
     publisher: { '@id': ORG_ID },
     isPartOf: { '@id': WEBSITE_ID },
@@ -119,7 +127,7 @@ export function howTo(meta: PageMeta, id: string, name: string, steps: Child[]):
     '@type': 'HowTo',
     '@id': `${url}#howto-${id}`,
     name,
-    inLanguage: 'en',
+    inLanguage: langOf(meta),
     step: steps.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, text: renderText(s) })),
   };
 }
@@ -138,7 +146,7 @@ export function techArticle(meta: PageMeta & { h1: string }, shot: Screenshot = 
     author: { '@id': ORG_ID },
     publisher: { '@id': ORG_ID },
     image: image(shot),
-    inLanguage: 'en',
+    inLanguage: langOf(meta),
     isPartOf: { '@id': WEBSITE_ID },
   };
 }

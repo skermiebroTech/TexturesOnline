@@ -16,7 +16,10 @@ import { siteFooter } from '../../app/footer';
 import { toDomAll } from '../../app/markup-dom';
 import { heroBlock } from './hero-block';
 import { shaderShowcase, skinShowcase, textureShowcase, type Showcase } from './art';
-import { TOOLS, homePage, type ToolKey } from './content';
+import { homePage, homeText, homeTools, type ToolKey } from './content';
+import { loadContent } from '../../i18n/content';
+import { ui, type UiText } from '../../i18n/ui';
+import type { Locale } from '../../i18n/locales';
 
 /** Starts the live preview inside a (prerendered) tool card. */
 function toolPreview(card: HTMLElement, key: ToolKey): Showcase {
@@ -27,8 +30,8 @@ function toolPreview(card: HTMLElement, key: ToolKey): Showcase {
   return shaderShowcase(canvas);
 }
 
-function startDialog(): void {
-  const options = TOOLS.map((t) =>
+function startDialog(locale: Locale): void {
+  const options = homeTools(locale).map((t) =>
     h(
       'a',
       { class: ['start-option', t.accent], href: href(`/${t.key}`) },
@@ -38,7 +41,7 @@ function startDialog(): void {
     ),
   );
   const m = openModal({
-    title: 'What do you want to make?',
+    title: homeText(locale).startDialog,
     width: 560,
     body: h('div', { class: 'start-options' }, options),
   });
@@ -107,21 +110,21 @@ function projectThumb(p: Project, urls: string[]): HTMLElement {
   return wrap;
 }
 
-function recentSection(): { el: HTMLElement; destroy(): void } {
+function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void } {
   const urls: string[] = [];
   const grid = h('div', { class: 'recent-grid' });
-  const moreBtn = button({ label: 'Show all', variant: 'ghost', size: 'sm', iconEnd: 'chevron-down' });
+  const moreBtn = button({ label: t.showAll(0), variant: 'ghost', size: 'sm', iconEnd: 'chevron-down' });
   const el = h(
     'section',
     { class: 'section recent container', hidden: true, 'aria-labelledby': 'recent-title' },
     h(
       'div',
       { class: 'recent-head' },
-      h('div', { class: 'stack', style: { '--gap': '8px' } }, h('span', { class: 'eyebrow' }, icon('clock'), 'Your projects'), h('h2', { id: 'recent-title' }, 'Continue where you left off')),
+      h('div', { class: 'stack', style: { '--gap': '8px' } }, h('span', { class: 'eyebrow' }, icon('clock'), t.eyebrow), h('h2', { id: 'recent-title' }, t.title)),
       moreBtn,
     ),
     grid,
-    h('p', { class: 'recent-note faint small' }, icon('lock', { size: 24 }), 'Projects are saved in this browser only. Export them to keep a copy.'),
+    h('p', { class: 'recent-note faint small' }, icon('lock', { size: 24 }), t.note),
   );
 
   let projects: Project[] = [];
@@ -134,7 +137,7 @@ function recentSection(): { el: HTMLElement; destroy(): void } {
     if (destroyed) return; // the list finished loading after the user left the page
     el.hidden = projects.length === 0;
     moreBtn.hidden = projects.length <= LIMIT;
-    moreBtn.querySelector('.btn-label')!.textContent = expanded ? 'Show fewer' : `Show all ${projects.length}`;
+    moreBtn.querySelector('.btn-label')!.textContent = expanded ? t.showFewer : t.showAll(projects.length);
     const shown = expanded ? projects : projects.slice(0, LIMIT);
     grid.replaceChildren(
       ...shown.map((p) => {
@@ -144,9 +147,9 @@ function recentSection(): { el: HTMLElement; destroy(): void } {
           e.preventDefault();
           e.stopPropagation();
           openMenu(menuBtn, [
-            { label: 'Open', icon: 'external-link', onClick: () => navigate(`/${info.route}/${encodeURIComponent(p.id)}`) },
-            { label: 'Rename', icon: 'pen-square', onClick: () => void rename(p) },
-            { label: 'Delete', icon: 'trash', danger: true, onClick: () => void remove(p) },
+            { label: t.open, icon: 'external-link', onClick: () => navigate(`/${info.route}/${encodeURIComponent(p.id)}`) },
+            { label: t.rename, icon: 'pen-square', onClick: () => void rename(p) },
+            { label: t.delete, icon: 'trash', danger: true, onClick: () => void remove(p) },
           ]);
         });
         return h(
@@ -233,9 +236,10 @@ function recentSection(): { el: HTMLElement; destroy(): void } {
   };
 }
 
-export default function home(root: HTMLElement, _ctx: RouteContext): () => void {
+export default async function home(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+  await loadContent(ctx.locale);
   root.classList.add('home');
-  root.append(...toDomAll(homePage()), siteFooter());
+  root.append(...toDomAll(homePage(ctx.locale)), siteFooter());
 
   const block = heroBlock();
   root.querySelector('[data-hero-block]')?.replaceWith(block.el);
@@ -244,14 +248,14 @@ export default function home(root: HTMLElement, _ctx: RouteContext): () => void 
     a.addEventListener('click', (e) => {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      startDialog();
+      startDialog(ctx.locale);
     }),
   );
 
   const cards = Array.from(root.querySelectorAll<HTMLAnchorElement>('a[data-tool-card]'));
   const showcases: Showcase[] = cards.map((card) => toolPreview(card, card.dataset.toolCard as ToolKey));
 
-  const recent = recentSection();
+  const recent = recentSection(ui(ctx.locale).recent);
   root.querySelector('.tools')?.after(recent.el);
 
   // Only animate previews while they are on screen.

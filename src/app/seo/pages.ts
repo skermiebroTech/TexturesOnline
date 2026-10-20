@@ -1,12 +1,14 @@
-// Every prerendered page: its content tree, structured data and the view module it boots into.
+// Every prerendered page: its content tree, structured data and the view module it boots into, in
+// English and in every language the page has been translated into.
 // Used at build time (vite.config.ts) and by the unit tests; nothing here touches the DOM.
 
+import '../../i18n/all-content';
 import type { Child } from '../markup';
 import { footer, type NavTool } from '../content/chrome';
 import type { Crumb } from '../content/blocks';
-import { TOOL_INTROS, toolIntro, type IntroTool } from '../content/tools';
-import { absoluteUrl, SITE_NAME, SITE_URL } from '../site';
-import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META, type PageMeta } from './meta';
+import { TOOL_INTROS, toolIntro, toolIntroIn, type IntroTool } from '../content/tools';
+import { absoluteUrl, SITE_NAME } from '../site';
+import { ABOUT_META, GUIDES, GUIDES_META, HELP_META, HOME_META, TOOL_META, guidesIn, metaLocale, metaRoute, pageLocales, pageMeta, type PageMeta } from './meta';
 import {
   APP_ID,
   DEFAULT_SCREENSHOT,
@@ -23,13 +25,19 @@ import {
   type JsonLd,
   type Screenshot,
 } from './jsonld';
-import { HOME_FAQ, TOOLS, homePage } from '../../tools/home/content';
-import { FAQ as HELP_FAQ, SECTIONS as HELP_SECTIONS, helpPage } from '../../tools/help/content';
-import { GUIDE_CONTENT, guidePage, guidesIndexPage } from '../../tools/guides/content';
-import { ABOUT_FAQ, aboutPage } from '../../tools/about/content';
+import { homePage, homeText, homeTools } from '../../tools/home/content';
+import { helpPage, helpSections, helpText } from '../../tools/help/content';
+import { guideBySlug, guidePage, guidesIndexPage } from '../../tools/guides/content';
+import { aboutPage, aboutText } from '../../tools/about/content';
+import { CONTENT_MODULES, contentOf, hasContent } from '../../i18n/content';
+import { TRANSLATED_LOCALES, type Locale } from '../../i18n/locales';
+import { ui } from '../../i18n/ui';
 
 export interface PrerenderPage {
   meta: PageMeta;
+  locale: Locale;
+  /** The same page in every language it exists in (this one included) */
+  alternates: { locale: Locale; url: string }[];
   /** <html data-tool> and <body data-route> */
   tool: 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help';
   /** Highlighted main-nav link */
@@ -67,14 +75,6 @@ export const SCREENSHOTS: Record<IntroTool | 'home', Screenshot> = {
   shaders: { path: 'screenshots/shaders.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker shader maker: Iris / OptiFine, vanilla Java or Bedrock Vibrant Visuals' },
 };
 
-const HOME_FEATURES = [
-  'Minecraft texture pack maker for Java Edition (26.3 and every version since 1.6.1) and Bedrock Edition',
-  'Minecraft skin editor with a live 3D preview, classic and slim models, Java PNG and Bedrock skin pack export',
-  'Shader maker for Iris / OptiFine shader packs, no-mod vanilla Java shaders and Bedrock Vibrant Visuals packs',
-  'Exports ready-to-use .zip and .mcpack files with the correct pack.mcmeta or manifest.json',
-  'Runs in the browser: no sign-up, nothing uploaded, works offline after the first visit',
-];
-
 const TOOL_ROUTE_MODULE: Record<IntroTool, string> = {
   textures: 'src/tools/textures/view.ts',
   skins: 'src/tools/skins/view.ts',
@@ -85,160 +85,196 @@ const TOOL_ROUTE_MODULE: Record<IntroTool, string> = {
   shaders: 'src/tools/shaders/view.ts',
 };
 
-const crumbsFor = (...items: Crumb[]): Crumb[] => [{ label: 'Home', to: '/' }, ...items];
+/** A page's screenshot with its caption in the page's language. */
+function shotIn(locale: Locale, key: IntroTool | 'home'): Screenshot {
+  if (locale === 'en') return SCREENSHOTS[key];
+  const caption = key === 'home' ? ui(locale).ogImageAlt : (toolIntroIn(key, locale).screenshotCaption ?? ui(locale).ogImageAlt);
+  return { ...SCREENSHOTS[key], caption };
+}
 
-function homeEntry(): PrerenderPage {
+/** Breadcrumbs from the language's home page. */
+const crumbsFor = (locale: Locale, ...items: Crumb[]): Crumb[] => [{ label: ui(locale).home, to: '/' }, ...items];
+
+/** Fields every page shares: language, alternates, footer and the language's content module. */
+function base(meta: PageMeta, preload: string[]): Pick<PrerenderPage, 'meta' | 'locale' | 'alternates' | 'preload'> {
+  const locale = metaLocale(meta);
+  const route = metaRoute(meta);
   return {
-    meta: HOME_META,
+    meta,
+    locale,
+    alternates: pageLocales(route).map((l) => ({ locale: l, url: absoluteUrl(pageMeta(route, l)!.path) })),
+    // The view waits for its language's text before replacing the prerendered page.
+    preload: locale === 'en' ? preload : [...preload, CONTENT_MODULES[locale]],
+  };
+}
+
+const footerFor = (meta: PageMeta) => (year: number) => footer(year, metaLocale(meta), metaRoute(meta));
+
+/** Absolute URL of a breadcrumb or link path in a language (English route paths are localized). */
+const urlIn = (locale: Locale) => (to: string) => absoluteUrl(pageMeta(to, locale)?.path ?? to);
+
+function homeEntry(locale: Locale): PrerenderPage | null {
+  const meta = pageMeta(HOME_META.path, locale);
+  if (!meta || !hasText(locale, (c) => c.home)) return null;
+  const t = homeText(locale);
+  const url = absoluteUrl(meta.path);
+  const appId = locale === 'en' ? APP_ID : `${url}#app`;
+  return {
+    ...base(meta, ['src/tools/home/home.ts']),
     tool: 'home',
     nav: 'home',
     viewClass: 'view view-home home',
     boot: 'keep',
     styles: ['src/tools/home/home.ts'],
-    preload: ['src/tools/home/home.ts'],
-    body: (year) => [homePage(), footer(year)],
-    content: () => homePage(),
+    body: (year) => [homePage(locale), footerFor(meta)(year)],
+    content: () => homePage(locale),
     preconnect: false,
-    og: { type: 'website', image: SCREENSHOTS.home },
+    og: { type: 'website', image: shotIn(locale, 'home') },
     jsonld: () =>
       graph([
         organization(),
         website(),
-        webPage(HOME_META, { about: APP_ID }),
+        webPage(meta, { about: appId }),
         webApplication({
-          id: APP_ID,
+          id: appId,
           name: SITE_NAME,
-          url: SITE_URL,
-          description: HOME_META.description,
-          featureList: [...HOME_FEATURES, ...TOOLS.map((t) => `${t.title}: ${t.blurb}`)],
-          screenshot: SCREENSHOTS.home,
+          url,
+          description: meta.description,
+          featureList: [...t.appFeatures, ...homeTools(locale).map((tool) => `${tool.title}: ${tool.blurb}`)],
+          screenshot: shotIn(locale, 'home'),
         }),
-        faqPage(HOME_META, HOME_FAQ),
+        faqPage(meta, t.faq),
       ]),
   };
 }
 
-function toolEntry(tool: IntroTool): PrerenderPage {
-  const meta = TOOL_META[tool];
-  const intro = TOOL_INTROS[tool];
+function toolEntry(tool: IntroTool, locale: Locale): PrerenderPage | null {
+  const meta = pageMeta(TOOL_META[tool].path, locale);
+  if (!meta || !hasText(locale, (c) => c.tools[tool])) return null;
+  const intro = toolIntroIn(tool, locale);
   const url = absoluteUrl(meta.path);
-  const crumbs = crumbsFor({ label: meta.label });
-  const base = intro.base ?? (tool as Exclude<IntroTool, 'skinpack' | 'converter' | 'merge' | 'totem'>);
+  const crumbs = crumbsFor(locale, { label: meta.label });
+  const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'skinpack' | 'converter' | 'merge' | 'totem'>);
   return {
-    meta,
-    tool: base,
-    nav: base,
-    viewClass: `view view-${base}`,
+    ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts']),
+    tool: tb,
+    nav: tb,
+    viewClass: `view view-${tb}`,
     boot: 'replace',
     styles: ['src/app/tool-intro.ts'],
-    preload: [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts'],
-    body: (year) => [toolIntro(tool, { prerender: true }), footer(year)],
-    content: () => [toolIntro(tool, { prerender: true })],
+    body: (year) => [toolIntro(tool, { prerender: true, locale }), footerFor(meta)(year)],
+    content: () => [toolIntro(tool, { prerender: true, locale })],
     preconnect: true,
-    og: { type: 'website', image: SCREENSHOTS[tool] },
+    og: { type: 'website', image: shotIn(locale, tool) },
     jsonld: () =>
       graph([
         organization(),
         website(),
         webPage(meta, { breadcrumb: true, about: `${url}#app` }),
-        breadcrumbList(meta, crumbs),
-        webApplication({ id: `${url}#app`, name: intro.appName, url, description: meta.description, featureList: intro.featureList, screenshot: SCREENSHOTS[tool] }),
+        breadcrumbList(meta, crumbs, urlIn(locale)),
+        webApplication({ id: `${url}#app`, name: intro.appName, url, description: meta.description, featureList: intro.featureList, screenshot: shotIn(locale, tool) }),
         faqPage(meta, intro.faq),
       ]),
   };
 }
 
-function helpEntry(): PrerenderPage {
+function helpEntry(locale: Locale): PrerenderPage | null {
+  const meta = pageMeta(HELP_META.path, locale);
+  if (!meta || !hasText(locale, (c) => c.help)) return null;
   return {
-    meta: HELP_META,
+    ...base(meta, ['src/tools/help/help.ts']),
     tool: 'help',
     nav: 'help',
     viewClass: 'view view-help help',
     boot: 'keep',
     styles: ['src/tools/help/help.ts'],
-    preload: ['src/tools/help/help.ts'],
-    body: (year) => [helpPage(), footer(year)],
-    content: () => helpPage(),
+    body: (year) => [helpPage(locale), footerFor(meta)(year)],
+    content: () => helpPage(locale),
     preconnect: false,
-    og: { type: 'website', image: SCREENSHOTS.home },
+    og: { type: 'website', image: shotIn(locale, 'home') },
     jsonld: () =>
       graph([
         organization(),
         website(),
-        webPage(HELP_META, { breadcrumb: true }),
-        breadcrumbList(HELP_META, crumbsFor({ label: HELP_META.label })),
-        faqPage(HELP_META, HELP_FAQ),
-        ...HELP_SECTIONS.filter((s) => s.howto).map((s) => howTo(HELP_META, s.id, s.howto!.name, s.howto!.steps)),
+        webPage(meta, { breadcrumb: true }),
+        breadcrumbList(meta, crumbsFor(locale, { label: meta.label }), urlIn(locale)),
+        faqPage(meta, helpText(locale).faq),
+        ...helpSections(locale)
+          .filter((s) => s.howto)
+          .map((s) => howTo(meta, s.id, s.howto!.name, s.howto!.steps)),
       ]),
   };
 }
 
-function aboutEntry(): PrerenderPage {
+function aboutEntry(locale: Locale): PrerenderPage | null {
+  const meta = pageMeta(ABOUT_META.path, locale);
+  if (!meta || !hasText(locale, (c) => c.about)) return null;
   return {
-    meta: ABOUT_META,
+    ...base(meta, ['src/tools/about/about.ts']),
     tool: 'help',
     nav: 'help',
     viewClass: 'view view-help guides',
     boot: 'keep',
     styles: ['src/tools/about/about.ts'],
-    preload: ['src/tools/about/about.ts'],
-    body: (year) => [aboutPage(), footer(year)],
-    content: () => [aboutPage()],
+    body: (year) => [aboutPage(locale), footerFor(meta)(year)],
+    content: () => [aboutPage(locale)],
     preconnect: false,
-    og: { type: 'website', image: SCREENSHOTS.home },
+    og: { type: 'website', image: shotIn(locale, 'home') },
     jsonld: () =>
       graph([
         organization(),
         website(),
-        { ...webPage(ABOUT_META, { type: 'AboutPage', breadcrumb: true }), mainEntity: { '@id': APP_ID } },
-        breadcrumbList(ABOUT_META, crumbsFor({ label: ABOUT_META.label })),
-        faqPage(ABOUT_META, ABOUT_FAQ),
+        { ...webPage(meta, { type: 'AboutPage', breadcrumb: true }), mainEntity: { '@id': APP_ID } },
+        breadcrumbList(meta, crumbsFor(locale, { label: meta.label }), urlIn(locale)),
+        faqPage(meta, aboutText(locale).faq),
       ]),
   };
 }
 
-function guidesIndexEntry(): PrerenderPage {
-  const url = absoluteUrl(GUIDES_META.path);
+function guidesIndexEntry(locale: Locale): PrerenderPage | null {
+  const meta = pageMeta(GUIDES_META.path, locale);
+  if (!meta || !hasText(locale, (c) => c.guidesIndex)) return null;
+  const url = absoluteUrl(meta.path);
   return {
-    meta: GUIDES_META,
+    ...base(meta, ['src/tools/guides/guides.ts']),
     tool: 'help',
     nav: 'help',
     viewClass: 'view view-help guides',
     boot: 'keep',
     styles: ['src/tools/guides/guides.ts'],
-    preload: ['src/tools/guides/guides.ts'],
-    body: (year) => [guidesIndexPage(), footer(year)],
-    content: () => [guidesIndexPage()],
+    body: (year) => [guidesIndexPage(locale), footerFor(meta)(year)],
+    content: () => [guidesIndexPage(locale)],
     preconnect: false,
-    og: { type: 'website', image: SCREENSHOTS.home },
+    og: { type: 'website', image: shotIn(locale, 'home') },
     jsonld: () =>
       graph([
         organization(),
         website(),
-        { ...webPage(GUIDES_META, { type: 'CollectionPage', breadcrumb: true }), mainEntity: { '@id': `${url}#list` } },
-        breadcrumbList(GUIDES_META, crumbsFor({ label: GUIDES_META.label })),
+        { ...webPage(meta, { type: 'CollectionPage', breadcrumb: true }), mainEntity: { '@id': `${url}#list` } },
+        breadcrumbList(meta, crumbsFor(locale, { label: meta.label }), urlIn(locale)),
         itemList(
           `${url}#list`,
-          GUIDES.map((g) => ({ name: g.h1, url: absoluteUrl(g.path) })),
+          guidesIn(locale).map((g) => ({ name: g.h1, url: absoluteUrl(g.path) })),
         ),
       ]),
   };
 }
 
-function guideEntry(slug: string): PrerenderPage {
-  const g = GUIDE_CONTENT.find((x) => x.meta.slug === slug)!;
+function guideEntry(slug: string, locale: Locale): PrerenderPage | null {
+  const g = guideBySlug(slug, locale);
+  if (!g) return null;
   const meta = g.meta;
+  const index = pageMeta(GUIDES_META.path, locale) ?? GUIDES_META;
   // The guide's main screenshot, when it has one, for link previews and the article image
-  const shot: Screenshot = g.image ? { path: g.image.src.replace(/^\//, ''), width: g.image.width, height: g.image.height, caption: g.image.alt } : SCREENSHOTS.home;
+  const shot: Screenshot = g.image ? { path: g.image.src.replace(/^\//, ''), width: g.image.width, height: g.image.height, caption: g.image.alt } : shotIn(locale, 'home');
   return {
-    meta,
+    ...base(meta, ['src/tools/guides/guides.ts']),
     tool: 'help',
     nav: 'help',
     viewClass: 'view view-help guides',
     boot: 'keep',
     styles: ['src/tools/guides/guides.ts'],
-    preload: ['src/tools/guides/guides.ts'],
-    body: (year) => [guidePage(g), footer(year)],
+    body: (year) => [guidePage(g), footerFor(meta)(year)],
     content: () => [guidePage(g)],
     preconnect: false,
     og: { type: 'article', image: shot },
@@ -247,7 +283,7 @@ function guideEntry(slug: string): PrerenderPage {
         organization(),
         website(),
         webPage(meta, { breadcrumb: true }),
-        breadcrumbList(meta, crumbsFor({ label: GUIDES_META.label, to: GUIDES_META.path }, { label: meta.label })),
+        breadcrumbList(meta, crumbsFor(locale, { label: index.label, to: GUIDES_META.path }, { label: meta.label }), urlIn(locale)),
         techArticle(meta, shot),
         ...(g.howto ? [howTo(meta, 'steps', g.howto.name, g.howto.steps)] : []),
         ...(g.faq?.length ? [faqPage(meta, g.faq)] : []),
@@ -255,7 +291,20 @@ function guideEntry(slug: string): PrerenderPage {
   };
 }
 
-/** All prerendered pages, in sitemap order. */
+/** True for English, or when the language's content bundle has this page's text. */
+function hasText(locale: Locale, pick: (c: ReturnType<typeof contentOf>) => unknown): boolean {
+  return locale === 'en' || (hasContent(locale) && !!pick(contentOf(locale)));
+}
+
+/** Every page of one language, in sitemap order (pages it has no translation for are left out). */
+export function pagesIn(locale: Locale): PrerenderPage[] {
+  const tools: IntroTool[] = ['textures', 'converter', 'merge', 'totem', 'skins', 'skinpack', 'shaders'];
+  return [homeEntry(locale), ...tools.map((t) => toolEntry(t, locale)), helpEntry(locale), aboutEntry(locale), guidesIndexEntry(locale), ...GUIDES.map((g) => guideEntry(g.slug, locale))].filter(
+    (p): p is PrerenderPage => !!p,
+  );
+}
+
+/** All prerendered pages, in sitemap order: English first, then each translation. */
 export function prerenderPages(): PrerenderPage[] {
-  return [homeEntry(), toolEntry('textures'), toolEntry('converter'), toolEntry('merge'), toolEntry('totem'), toolEntry('skins'), toolEntry('skinpack'), toolEntry('shaders'), helpEntry(), aboutEntry(), guidesIndexEntry(), ...GUIDES.map((g) => guideEntry(g.slug))];
+  return [...pagesIn('en'), ...TRANSLATED_LOCALES.flatMap(pagesIn)];
 }

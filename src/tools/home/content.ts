@@ -1,12 +1,16 @@
 // Landing page content as a markup tree (prerendered at build time, rendered to DOM by home.ts,
-// which then adds the live previews, the 3D block and recent projects).
+// which then adds the live previews, the 3D block and recent projects). The English text is
+// HOME_EN; translations fill in the same HomeText (src/i18n/<lang>/home.ts).
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, logo, type Child, type ElNode } from '../../app/markup';
 import { faqList, link, type FaqItem } from '../../app/content/blocks';
 import { guideCards } from '../../app/content/guide-cards';
 import { SITE_NAME } from '../../app/site';
+import { F, LATEST } from '../../app/content/facts';
 import { differences } from '../about/content';
+import type { Locale } from '../../i18n/locales';
+import { contentOf } from '../../i18n/content';
 
 export type ToolKey = 'textures' | 'skins' | 'shaders';
 
@@ -22,7 +26,48 @@ export interface ToolInfo {
   previewLabel: string;
 }
 
-export const TOOLS: ToolInfo[] = [
+/** The translatable part of a tool card. */
+export type ToolCardText = Pick<ToolInfo, 'title' | 'blurb' | 'features' | 'cta' | 'previewLabel'>;
+
+interface Item {
+  title: string;
+  text: string;
+}
+
+type Six<T> = [T, T, T, T, T, T];
+
+/** Every text on the home page. */
+export interface HomeText {
+  /** Tool cards (a card without a translation keeps its English text; a unit test flags it) */
+  tools: Partial<Record<ToolKey, ToolCardText>>;
+  faq: FaqItem[];
+  /** WebApplication featureList in the structured data (the tools' blurbs are added to it) */
+  appFeatures: string[];
+  hero: {
+    chip: string;
+    chipOffline: string;
+    /** Title around its accent-coloured word: pre + accent + post */
+    title: { pre?: string; accent: string; post?: string };
+    lead: string;
+    start: string;
+    install: string;
+    editionsLabel: string;
+    chips: [string, string, string];
+    blockLabel: string;
+    dragHint: string;
+  };
+  toolsSection: { eyebrow: string; title: string; lead: string };
+  converter: { title: string; text: string; cta: string };
+  features: { eyebrow: string; title: string; lead: string; titles: Six<string>; items: Six<Child[]> };
+  why: { eyebrow: string; title: string; lead: Child[] };
+  how: { eyebrow: string; title: string; steps: [Item, Item, Item]; values: [Item, Item, Item] };
+  guides: { eyebrow: string; title: string; lead: string; all: string };
+  faqHead: { eyebrow: string; title: string };
+  cta: { title: string; text: string; button: string };
+  startDialog: string;
+}
+
+const TOOL_LIST: ToolInfo[] = [
   {
     key: 'textures',
     title: 'Texture Packs',
@@ -55,7 +100,7 @@ export const TOOLS: ToolInfo[] = [
   },
 ];
 
-export const HOME_FAQ: FaqItem[] = [
+const HOME_FAQ_EN: FaqItem[] = [
   {
     id: 'how',
     q: 'How do I make a Minecraft texture pack?',
@@ -113,9 +158,9 @@ export const HOME_FAQ: FaqItem[] = [
       el(
         'p',
         null,
-        'Java 26.3 is ready by default, and every release back to 1.6.1 works. Each pack gets the ',
+        `Java ${LATEST} is ready by default, and every release back to 1.6.1 works. Each pack gets the `,
         el('code', null, 'pack.mcmeta'),
-        ' rules of the version you choose (26.3 uses resource pack format 97.1). ',
+        ` rules of the version you choose (${LATEST} uses resource pack format ${F(LATEST)}). `,
         link('/guides/minecraft-pack-format-versions', 'All pack formats'),
         '.',
       ),
@@ -156,19 +201,116 @@ export const HOME_FAQ: FaqItem[] = [
   },
 ];
 
+const STEP_ICONS: [IconName, IconName, IconName] = ['gamepad', 'brush', 'download'];
+const VALUE_ICONS: [IconName, IconName, IconName] = ['lock', 'cloud', 'check-double'];
+const FEATURE_ICONS: Six<IconName> = ['box', 'wand', 'upload', 'file-text', 'human', 'sparkles'];
+
+export const HOME_EN: HomeText = {
+  tools: Object.fromEntries(TOOL_LIST.map((t) => [t.key, { title: t.title, blurb: t.blurb, features: t.features, cta: t.cta, previewLabel: t.previewLabel }])) as Record<ToolKey, ToolCardText>,
+  faq: HOME_FAQ_EN,
+  appFeatures: [
+    `Minecraft texture pack maker for Java Edition (${LATEST} and every version since 1.6.1) and Bedrock Edition`,
+    'Minecraft skin editor with a live 3D preview, classic and slim models, Java PNG and Bedrock skin pack export',
+    'Shader maker for Iris / OptiFine shader packs, no-mod vanilla Java shaders and Bedrock Vibrant Visuals packs',
+    'Exports ready-to-use .zip and .mcpack files with the correct pack.mcmeta or manifest.json',
+    'Runs in the browser: no sign-up, nothing uploaded, works offline after the first visit',
+  ],
+  hero: {
+    chip: 'Free · No sign-up',
+    chipOffline: ' · Works offline',
+    title: { accent: 'Minecraft', post: ' Texture Pack Maker' },
+    lead: 'Create your own texture packs, skins and shaders right in your browser — a free resource pack creator for Java and Bedrock, with downloads ready to drop into the game.',
+    start: 'Start creating',
+    install: 'How to install',
+    editionsLabel: 'Supported editions',
+    chips: [`Java ${LATEST}`, 'All versions 1.6.1+', 'Bedrock'],
+    blockLabel: 'A pixel-art grass block',
+    dragHint: 'Drag to spin',
+  },
+  toolsSection: {
+    eyebrow: 'Three tools, one place',
+    title: 'What do you want to make?',
+    lead: 'Everything you need to give Minecraft your own style. No installs, no accounts — just open a tool and start.',
+  },
+  converter: {
+    title: 'Texture Pack Converter',
+    text: `Turn a Java pack into a Bedrock one or back, update an old pack to ${LATEST}, or turn PNGs into an .mcpack.`,
+    cta: 'Convert a pack',
+  },
+  features: {
+    eyebrow: 'Free texture pack creator',
+    title: 'Everything a texture pack maker needs',
+    lead: 'From a single repainted sword to a full HD resource pack, made and exported without leaving the browser.',
+    titles: [
+      'Texture pack editor with 3D models',
+      'One-click texture pack generator',
+      'Open and edit existing packs',
+      'Java and Bedrock resource packs',
+      'Skin editor and skin pack maker',
+      'Shader maker, with or without mods',
+    ],
+    items: [
+      ['Paint every block, item and mob of the version you play, right on its real 3D model: furnaces, chests, stairs, and over 80 mobs from creepers to villagers.'],
+      ['Restyle the whole game at once with effects such as Dark Mode, Pastel, Retro 8-bit, Autumn or Smooth HD, then fine-tune by hand.'],
+      ['Load any Java ', el('code', null, '.zip'), ' or Bedrock ', el('code', null, '.mcpack'), ' and keep editing, or switch it to the other edition with the ', link('/texture-pack-converter', 'pack converter'), '.'],
+      ['A resource pack builder that writes the exact ', el('code', null, 'pack.mcmeta'), ` for Java ${LATEST} back to 1.6.1, or a Bedrock `, el('code', null, 'manifest.json'), '.'],
+      ['Design skins in 2D or 3D with classic or slim arms, and bundle them with the ', link('/skin-pack-maker', 'skin pack maker'), ' into one Bedrock .mcpack.'],
+      ['Build Iris and OptiFine shader packs, vanilla Java shaders that need no mods, or Bedrock Vibrant Visuals packs.'],
+    ],
+  },
+  why: {
+    eyebrow: 'Why it’s different',
+    title: `Why ${SITE_NAME}?`,
+    lead: ['Free, open source and private, with every Java version since 1.6.1, Bedrock and seven tools in one place. ', link('/about', 'About the project'), '.'],
+  },
+  how: {
+    eyebrow: 'How it works',
+    title: 'From idea to in-game in minutes',
+    steps: [
+      { title: 'Pick your game', text: `Java ${LATEST} is ready by default — or choose any Java version back to 1.6.1, or Bedrock.` },
+      { title: 'Create', text: 'Paint pixels, stack one-click effects or move shader sliders, with live 3D previews as you go.' },
+      { title: 'Export & play', text: 'Download a ready-to-use .zip or .mcpack, then follow the install guide to use it in game.' },
+    ],
+    values: [
+      { title: 'Private by design', text: 'Your work never leaves your device. Game files are fetched from Mojang by your own browser.' },
+      { title: 'Works offline', text: 'After the first visit the app and downloaded game files are kept on this device.' },
+      { title: 'The right format, always', text: 'Pack files are written for the exact version you pick, so Minecraft loads them without complaints.' },
+    ],
+  },
+  guides: { eyebrow: 'Guides', title: 'Learn the ropes', lead: 'Short, fact-checked guides for making and installing packs, skins and shaders.', all: 'All guides' },
+  faqHead: { eyebrow: 'Questions', title: 'Good to know' },
+  cta: { title: 'Ready to build something?', text: 'Pick a tool and your first pack can be in game in a few minutes.', button: 'Start creating' },
+  startDialog: 'What do you want to make?',
+};
+
+/** The home page texts of a language. */
+export function homeText(locale: Locale = 'en'): HomeText {
+  return locale === 'en' ? HOME_EN : (contentOf(locale).home ?? HOME_EN);
+}
+
+/** The three tool cards in a language. */
+export function homeTools(locale: Locale = 'en'): ToolInfo[] {
+  const t = homeText(locale);
+  return TOOL_LIST.map((tool) => ({ ...tool, ...(t.tools[tool.key] ?? HOME_EN.tools[tool.key]) }));
+}
+
+/** English tool cards and questions. */
+export const TOOLS: ToolInfo[] = TOOL_LIST;
+export const HOME_FAQ: FaqItem[] = HOME_FAQ_EN;
+
 /** Placeholder for the 3D block: the logo block is shown when JavaScript is off. */
-const heroArt = (): ElNode =>
+const heroArt = (t: HomeText): ElNode =>
   el(
     'div',
     { class: 'hero-art' },
     el(
       'div',
-      { class: 'hero-block', role: 'img', 'aria-label': 'A pixel-art grass block', 'data-hero-block': '' },
+      { class: 'hero-block', role: 'img', 'aria-label': t.hero.blockLabel, 'data-hero-block': '' },
       el('div', { class: 'hb-glow' }),
       el('div', { class: 'hb-stage hb-static' }, logo(32)),
       el('div', { class: 'hb-shadow' }),
     ),
-    el('p', { class: 'hero-art-hint faint small', 'aria-hidden': 'true' }, ic('hand', { size: 24 }), 'Drag to spin'),
+    el('p', { class: 'hero-art-hint faint small', 'aria-hidden': 'true' }, ic('hand', { size: 24 }), t.hero.dragHint),
   );
 
 function toolCard(t: ToolInfo): ElNode {
@@ -196,52 +338,6 @@ function toolCard(t: ToolInfo): ElNode {
   );
 }
 
-const STEPS: { title: string; text: string; icon: IconName }[] = [
-  { title: 'Pick your game', text: 'Java 26.3 is ready by default — or choose any Java version back to 1.6.1, or Bedrock.', icon: 'gamepad' },
-  { title: 'Create', text: 'Paint pixels, stack one-click effects or move shader sliders, with live 3D previews as you go.', icon: 'brush' },
-  { title: 'Export & play', text: 'Download a ready-to-use .zip or .mcpack, then follow the install guide to use it in game.', icon: 'download' },
-];
-
-const VALUES: { icon: IconName; title: string; text: string }[] = [
-  { icon: 'lock', title: 'Private by design', text: 'Your work never leaves your device. Game files are fetched from Mojang by your own browser.' },
-  { icon: 'cloud', title: 'Works offline', text: 'After the first visit the app and downloaded game files are kept on this device.' },
-  { icon: 'check-double', title: 'The right format, always', text: 'Pack files are written for the exact version you pick, so Minecraft loads them without complaints.' },
-];
-
-/** What the texture pack maker does, in the words people search with. */
-const FEATURES: { icon: IconName; title: string; text: Child[] }[] = [
-  {
-    icon: 'box',
-    title: 'Texture pack editor with 3D models',
-    text: ['Paint every block, item and mob of the version you play, right on its real 3D model: furnaces, chests, stairs, and over 80 mobs from creepers to villagers.'],
-  },
-  {
-    icon: 'wand',
-    title: 'One-click texture pack generator',
-    text: ['Restyle the whole game at once with effects such as Dark Mode, Pastel, Retro 8-bit, Autumn or Smooth HD, then fine-tune by hand.'],
-  },
-  {
-    icon: 'upload',
-    title: 'Open and edit existing packs',
-    text: ['Load any Java ', el('code', null, '.zip'), ' or Bedrock ', el('code', null, '.mcpack'), ' and keep editing, or switch it to the other edition with the ', link('/texture-pack-converter', 'pack converter'), '.'],
-  },
-  {
-    icon: 'file-text',
-    title: 'Java and Bedrock resource packs',
-    text: ['A resource pack builder that writes the exact ', el('code', null, 'pack.mcmeta'), ' for Java 26.3 back to 1.6.1, or a Bedrock ', el('code', null, 'manifest.json'), '.'],
-  },
-  {
-    icon: 'human',
-    title: 'Skin editor and skin pack maker',
-    text: ['Design skins in 2D or 3D with classic or slim arms, and bundle them with the ', link('/skin-pack-maker', 'skin pack maker'), ' into one Bedrock .mcpack.'],
-  },
-  {
-    icon: 'sparkles',
-    title: 'Shader maker, with or without mods',
-    text: ['Build Iris and OptiFine shader packs, vanilla Java shaders that need no mods, or Bedrock Vibrant Visuals packs.'],
-  },
-];
-
 const sectionHead = (eyebrowIcon: IconName, eyebrow: string, id: string, title: string, lead?: Child): ElNode =>
   el(
     'div',
@@ -251,117 +347,106 @@ const sectionHead = (eyebrowIcon: IconName, eyebrow: string, id: string, title: 
     lead ? el('p', { class: 'lead' }, lead) : null,
   );
 
+const value = (icon: IconName, title: string, text: Child): ElNode =>
+  el('div', { class: 'value' }, el('span', { class: 'value-icon' }, ic(icon)), el('div', null, el('h3', null, title), el('p', { class: 'muted' }, text)));
+
 /** Hero, tools, how it works, guides, questions and the final call to action (no footer). */
-export function homePage(): ElNode[] {
+export function homePage(locale: Locale = 'en'): ElNode[] {
+  const t = homeText(locale);
   const hero = el(
     'section',
     { class: 'hero container' },
     el(
       'div',
       { class: 'hero-copy' },
-      el('span', { class: 'hero-chip' }, ic('sparkle'), 'Free · No sign-up', el('span', { class: 'hide-sm' }, ' · Works offline')),
-      el('h1', { class: 'hero-title' }, el('span', { class: 'hero-accent' }, 'Minecraft'), ' Texture Pack Maker'),
-      el(
-        'p',
-        { class: 'hero-lead' },
-        'Create your own texture packs, skins and shaders right in your browser — a free resource pack creator for Java and Bedrock, with downloads ready to drop into the game.',
-      ),
+      el('span', { class: 'hero-chip' }, ic('sparkle'), t.hero.chip, el('span', { class: 'hide-sm' }, t.hero.chipOffline)),
+      el('h1', { class: 'hero-title' }, t.hero.title.pre, el('span', { class: 'hero-accent' }, t.hero.title.accent), t.hero.title.post),
+      el('p', { class: 'hero-lead' }, t.hero.lead),
       el(
         'div',
         { class: 'hero-cta', 'data-md': 'skip' },
-        el('a', { class: 'btn btn-primary btn-lg', to: '/textures', 'data-action': 'start' }, ic('magic-edit'), el('span', { class: 'btn-label' }, 'Start creating')),
-        el('a', { class: 'btn btn-secondary btn-lg', to: '/help' }, ic('book-open'), el('span', { class: 'btn-label' }, 'How to install')),
+        el('a', { class: 'btn btn-primary btn-lg', to: '/textures', 'data-action': 'start' }, ic('magic-edit'), el('span', { class: 'btn-label' }, t.hero.start)),
+        el('a', { class: 'btn btn-secondary btn-lg', to: '/help' }, ic('book-open'), el('span', { class: 'btn-label' }, t.hero.install)),
       ),
       el(
         'ul',
-        { class: 'edition-chips', 'aria-label': 'Supported editions' },
-        el('li', { class: 'chip' }, ic('laptop'), 'Java 26.3'),
-        el('li', { class: 'chip' }, ic('clock'), 'All versions 1.6.1+'),
-        el('li', { class: 'chip' }, ic('gamepad'), 'Bedrock'),
+        { class: 'edition-chips', 'aria-label': t.hero.editionsLabel },
+        el('li', { class: 'chip' }, ic('laptop'), t.hero.chips[0]),
+        el('li', { class: 'chip' }, ic('clock'), t.hero.chips[1]),
+        el('li', { class: 'chip' }, ic('gamepad'), t.hero.chips[2]),
       ),
     ),
-    heroArt(),
+    heroArt(t),
   );
 
   const tools = el(
     'section',
     { class: 'section tools container', 'aria-labelledby': 'tools-title' },
-    sectionHead('tools', 'Three tools, one place', 'tools-title', 'What do you want to make?', 'Everything you need to give Minecraft your own style. No installs, no accounts — just open a tool and start.'),
-    el('div', { class: 'tool-grid' }, TOOLS.map(toolCard)),
+    sectionHead('tools', t.toolsSection.eyebrow, 'tools-title', t.toolsSection.title, t.toolsSection.lead),
+    el('div', { class: 'tool-grid' }, homeTools(locale).map(toolCard)),
     el(
       'a',
       { class: 'convert-banner accent-green', to: '/texture-pack-converter' },
       el('span', { class: 'convert-banner-icon' }, ic('repeat')),
-      el(
-        'span',
-        { class: 'convert-banner-text' },
-        el('strong', { class: 'convert-banner-title' }, 'Texture Pack Converter'),
-        el('span', { class: 'muted' }, 'Turn a Java pack into a Bedrock one or back, update an old pack to 26.3, or turn PNGs into an .mcpack.'),
-      ),
-      el('span', { class: 'convert-banner-cta', 'data-md': 'skip' }, 'Convert a pack', ic('arrow-right')),
+      el('span', { class: 'convert-banner-text' }, el('strong', { class: 'convert-banner-title' }, t.converter.title), el('span', { class: 'muted' }, t.converter.text)),
+      el('span', { class: 'convert-banner-cta', 'data-md': 'skip' }, t.converter.cta, ic('arrow-right')),
     ),
   );
 
   const features = el(
     'section',
     { class: 'section home-features container', 'aria-labelledby': 'features-title' },
-    sectionHead(
-      'check-double',
-      'Free texture pack creator',
-      'features-title',
-      'Everything a texture pack maker needs',
-      'From a single repainted sword to a full HD resource pack, made and exported without leaving the browser.',
-    ),
+    sectionHead('check-double', t.features.eyebrow, 'features-title', t.features.title, t.features.lead),
     el(
       'div',
       { class: 'values feature-grid' },
-      FEATURES.map((v) => el('div', { class: 'value' }, el('span', { class: 'value-icon' }, ic(v.icon)), el('div', null, el('h3', null, v.title), el('p', { class: 'muted' }, v.text)))),
+      FEATURE_ICONS.map((icon, i) => value(icon, t.features.titles[i], t.features.items[i])),
     ),
   );
 
   const why = el(
     'section',
     { class: 'section home-why container', 'aria-labelledby': 'why-title' },
-    sectionHead('star', 'Why it’s different', 'why-title', `Why ${SITE_NAME}?`, ['Free, open source and private, with every Java version since 1.6.1, Bedrock and seven tools in one place. ', link('/about', 'About the project'), '.']),
-    differences('h3'),
+    sectionHead('star', t.why.eyebrow, 'why-title', t.why.title, t.why.lead),
+    differences('h3', locale),
   );
 
   const how = el(
     'section',
     { class: 'section how container', 'aria-labelledby': 'how-title' },
-    sectionHead('bulletlist', 'How it works', 'how-title', 'From idea to in-game in minutes'),
+    sectionHead('bulletlist', t.how.eyebrow, 'how-title', t.how.title),
     el(
       'ol',
       { class: 'steps' },
-      STEPS.map((s, i) =>
+      t.how.steps.map((s, i) =>
         el(
           'li',
           { class: 'step' },
           el('span', { class: 'step-num', 'aria-hidden': 'true' }, String(i + 1)),
-          el('div', { class: 'step-body' }, el('h3', null, ic(s.icon), s.title), el('p', { class: 'muted' }, s.text)),
+          el('div', { class: 'step-body' }, el('h3', null, ic(STEP_ICONS[i]), s.title), el('p', { class: 'muted' }, s.text)),
         ),
       ),
     ),
     el(
       'div',
       { class: 'values' },
-      VALUES.map((v) => el('div', { class: 'value' }, el('span', { class: 'value-icon' }, ic(v.icon)), el('div', null, el('h3', null, v.title), el('p', { class: 'muted' }, v.text)))),
+      t.how.values.map((v, i) => value(VALUE_ICONS[i], v.title, v.text)),
     ),
   );
 
   const guides = el(
     'section',
     { class: 'section home-guides container', 'aria-labelledby': 'guides-title' },
-    sectionHead('book-open', 'Guides', 'guides-title', 'Learn the ropes', 'Short, fact-checked guides for making and installing packs, skins and shaders.'),
-    guideCards(['make-a-texture-pack', 'install-resource-packs', 'texture-pack-not-working', 'make-a-skin', 'make-shaders-without-mods', 'java-vs-bedrock-packs']),
-    el('p', { class: 'home-guides-more' }, link('/guides', 'All guides', ic('arrow-right'))),
+    sectionHead('book-open', t.guides.eyebrow, 'guides-title', t.guides.title, t.guides.lead),
+    guideCards(['make-a-texture-pack', 'install-resource-packs', 'texture-pack-not-working', 'make-a-skin', 'make-shaders-without-mods', 'java-vs-bedrock-packs'], 'h3', 3, locale),
+    el('p', { class: 'home-guides-more' }, link('/guides', t.guides.all, ic('arrow-right'))),
   );
 
   const faq = el(
     'section',
     { class: 'section home-faq container', 'aria-labelledby': 'home-faq-title' },
-    sectionHead('circle-question', 'Questions', 'home-faq-title', 'Good to know'),
-    el('div', { class: 'home-faq-box accent-gold' }, faqList(HOME_FAQ, { idPrefix: 'home-faq' })),
+    sectionHead('circle-question', t.faqHead.eyebrow, 'home-faq-title', t.faqHead.title),
+    el('div', { class: 'home-faq-box accent-gold' }, faqList(t.faq, { idPrefix: 'home-faq' })),
   );
 
   const cta = el(
@@ -370,8 +455,8 @@ export function homePage(): ElNode[] {
     el(
       'div',
       { class: 'final-cta-box' },
-      el('div', { class: 'stack', style: '--gap: 8px;' }, el('h2', null, 'Ready to build something?'), el('p', { class: 'muted' }, 'Pick a tool and your first pack can be in game in a few minutes.')),
-      el('div', { class: 'row wrap', 'data-md': 'skip' }, el('a', { class: 'btn btn-primary btn-lg', to: '/textures', 'data-action': 'start' }, ic('magic-edit'), el('span', { class: 'btn-label' }, 'Start creating'))),
+      el('div', { class: 'stack', style: '--gap: 8px;' }, el('h2', null, t.cta.title), el('p', { class: 'muted' }, t.cta.text)),
+      el('div', { class: 'row wrap', 'data-md': 'skip' }, el('a', { class: 'btn btn-primary btn-lg', to: '/textures', 'data-action': 'start' }, ic('magic-edit'), el('span', { class: 'btn-label' }, t.cta.button))),
     ),
   );
 

@@ -1,8 +1,10 @@
-// Grid of guide cards (home page, guides index, tool pages).
+// Grid of guide cards (home page, guides index, tool pages). Translated pages only list the guides
+// that exist in their language.
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type ElNode } from '../markup';
-import { GUIDES, type GuideMeta } from '../seo/meta';
+import { guideMeta, guidesIn, type GuideMeta } from '../seo/meta';
+import type { Locale } from '../../i18n/locales';
 
 export function guideCard(g: GuideMeta, headingTag = 'h3'): ElNode {
   return el(
@@ -15,7 +17,7 @@ export function guideCard(g: GuideMeta, headingTag = 'h3'): ElNode {
 }
 
 /** Cards for the given guide slugs (all guides when omitted); `columns` 2 or 3 on wide screens. */
-export function guideCards(slugs?: string[], headingTag = 'h3', columns: 2 | 3 = 3): ElNode {
-  const list = slugs ? slugs.map((s) => GUIDES.find((g) => g.slug === s)).filter((g): g is GuideMeta => !!g) : GUIDES;
+export function guideCards(slugs?: string[], headingTag = 'h3', columns: 2 | 3 = 3, locale: Locale = 'en'): ElNode {
+  const list = slugs ? slugs.map((s) => guideMeta(s, locale)).filter((g): g is GuideMeta => !!g) : guidesIn(locale);
   return el('div', { class: ['guide-grid', columns === 2 ? 'cols-2' : null] }, list.map((g) => guideCard(g, headingTag)));
 }

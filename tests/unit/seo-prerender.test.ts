@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildSite, iconNamesUsed, pageFileName, relativeHref, rootPrefix, type SiteFile } from '../../src/app/seo/build';
 import { prerenderPages } from '../../src/app/seo/pages';
-import { GUIDES, PUBLIC_PAGES } from '../../src/app/seo/meta';
+import { GUIDES, PUBLIC_PAGES, allPublicPages, metaRoute } from '../../src/app/seo/meta';
 import { SITE_URL, absoluteUrl } from '../../src/app/site';
 import { renderHtml, renderMarkdown, renderText, el, ic } from '../../src/app/markup';
 import { formatGroups, BEDROCK_MIN_ENGINE } from '../../src/tools/guides/content';
@@ -60,7 +60,13 @@ const visibleText = (html: string) =>
 const jsonLd = (html: string) => JSON.parse(one(html, /<script type="application\/ld\+json">([\s\S]*?)<\/script>/)) as { '@context': string; '@graph': Record<string, unknown>[] };
 
 test('one HTML file per public page, plus 404, sitemap, robots and llms files', () => {
-  assert.equal(pages.length, PUBLIC_PAGES.length);
+  assert.equal(pages.length, allPublicPages().length);
+  assert.ok(pages.length > PUBLIC_PAGES.length, 'translated pages are prerendered too');
+  assert.deepEqual(
+    pages.filter((p) => p.locale === 'en').map((p) => p.meta.path),
+    PUBLIC_PAGES.map((m) => m.path),
+    'every English page, in order',
+  );
   for (const p of pages) assert.ok(byName.has(pageFileName(p.meta.path)), pageFileName(p.meta.path));
   for (const f of ['404.html', 'sitemap.xml', 'robots.txt', 'llms.txt', 'llms-full.txt']) assert.ok(byName.has(f), f);
   assert.equal(pageFileName('/'), 'index.html');
@@ -74,8 +80,10 @@ test('titles, descriptions and canonicals are unique, sized and absolute', () =>
     const title = decode(one(html, /<title>([^<]*)<\/title>/));
     const description = decode(one(html, /<meta name="description" content="([^"]*)"/));
     const canonical = one(html, /<link rel="canonical" href="([^"]*)"/);
-    assert.ok(title.length >= 20 && title.length <= 60, `title length ${title.length}: ${title}`);
-    assert.ok(description.length >= 70 && description.length <= 155, `description length ${description.length}: ${description}`);
+    // Japanese packs more meaning into each character: shorter limits.
+    const [tMin, tMax, dMin, dMax] = p.locale === 'ja' ? [15, 45, 50, 120] : [20, 60, 70, 155];
+    assert.ok(title.length >= tMin && title.length <= tMax, `title length ${title.length}: ${title}`);
+    assert.ok(description.length >= dMin && description.length <= dMax, `description length ${description.length}: ${description}`);
     assert.equal(canonical, absoluteUrl(p.meta.path));
     assert.ok(canonical.startsWith(SITE_URL) && canonical.endsWith('/'), canonical);
     assert.equal(one(html, /<meta property="og:url" content="([^"]*)"/), canonical);
@@ -166,7 +174,7 @@ test('structured data parses and has the required properties', () => {
       });
     }
     const crumbs = ofType(g, 'BreadcrumbList');
-    if (p.meta.path !== '/') {
+    if (metaRoute(p.meta) !== '/') {
       assert.equal(crumbs.length, 1, `${p.meta.path} has breadcrumbs`);
       const items = crumbs[0].itemListElement as Node[];
       items.forEach((it, i) => {
@@ -249,7 +257,7 @@ test('404.html boots the app from the site root and is not indexed', () => {
 
 test('sitemap lists every public page with the build date', () => {
   const xml = byName.get('sitemap.xml')!;
-  assert.match(xml, /^<\?xml version="1.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
+  assert.match(xml, /^<\?xml version="1.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9" xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml">/);
   const locs = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g), (m) => m[1]);
   assert.deepEqual(locs.sort(), pages.map((p) => absoluteUrl(p.meta.path)).sort());
   assert.equal((xml.match(/<lastmod>2026-09-27<\/lastmod>/g) ?? []).length, pages.length);
@@ -280,14 +288,15 @@ test('llms.txt follows the llmstxt.org layout and every link resolves', () => {
   for (const g of GUIDES) assert.ok(txt.includes(absoluteUrl(g.path)), g.path);
 });
 
-test('llms-full.txt has the text of every public page', () => {
+test('llms-full.txt has the text of every English page (translations say the same)', () => {
   const md = byName.get('llms-full.txt')!;
-  for (const p of pages) {
+  for (const p of pages.filter((x) => x.locale === 'en')) {
     const h1 = decode(one(byName.get(pageFileName(p.meta.path))!, /<h1[^>]*>([\s\S]*?)<\/h1>/).replace(/<[^>]+>/g, ''));
     assert.ok(md.includes(`# ${h1}`), `llms-full has "${h1}"`);
     assert.ok(md.includes(`Source: ${absoluteUrl(p.meta.path)}`));
   }
   assert.ok(!md.includes('<svg'), 'no markup');
+  for (const p of pages.filter((x) => x.locale !== 'en')) assert.ok(!md.includes(`Source: ${absoluteUrl(p.meta.path)}`), `${p.meta.path} is not in llms-full`);
   assert.match(md, /\| Pack format \| Minecraft Java versions \|/);
 });
 

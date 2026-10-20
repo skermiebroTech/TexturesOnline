@@ -1,14 +1,18 @@
 // What each tool does, how to use it and common questions. Prerendered as the content of
 // /textures/, /skins/ and /shaders/ (the pages search engines and AI crawlers read) and shown
 // below each tool's start screen once the app is running, so both say the same thing.
+// English text here; translations fill in ToolIntroText (src/i18n/<lang>/tools.ts).
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../markup';
 import { breadcrumbs, code, figure, link, steps, strong, faqList, type FaqItem } from './blocks';
 import { SHOTS } from './shots';
 import { guideCards } from './guide-cards';
-import { TOOL_META } from '../seo/meta';
+import { TOOL_META, pageMeta } from '../seo/meta';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../editions/java/packformats';
+import type { Locale } from '../../i18n/locales';
+import { ui } from '../../i18n/ui';
+import { contentOf, hasContent } from '../../i18n/content';
 
 export type IntroTool = 'textures' | 'converter' | 'merge' | 'totem' | 'skins' | 'skinpack' | 'shaders';
 
@@ -33,6 +37,18 @@ export interface ToolIntro {
   faq: FaqItem[];
   guides: string[];
   cta: string;
+}
+
+/** The translatable part of a tool introduction. */
+export type ToolIntroText = Pick<ToolIntro, 'eyebrow' | 'heading' | 'lead' | 'appName' | 'features' | 'featureList' | 'howTitle' | 'steps' | 'extra' | 'faq' | 'cta'> & {
+  /** Alt text of the page's link-preview screenshot */
+  screenshotCaption?: string;
+};
+
+/** A tool introduction in a language (English when that language has no text for it). */
+export function toolIntroIn(tool: IntroTool, locale: Locale): ToolIntro & { locale: Locale; screenshotCaption?: string } {
+  const text = locale !== 'en' && hasContent(locale) ? contentOf(locale).tools[tool] : undefined;
+  return text ? { ...TOOL_INTROS[tool], ...text, locale } : { ...TOOL_INTROS[tool], locale: 'en' };
 }
 
 const f263 = formatPackFormat(KNOWN_RELEASE_FORMATS['26.3']);
@@ -819,15 +835,16 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
  * The introduction as a page section. `prerender` renders it as the whole page content (h1, and a
  * link to the tool itself); otherwise it sits below the tool's own start screen (h2).
  */
-export function toolIntro(tool: IntroTool, opts: { prerender: boolean }): ElNode {
-  const t = TOOL_INTROS[tool];
-  const meta = TOOL_META[tool];
+export function toolIntro(tool: IntroTool, opts: { prerender: boolean; locale?: Locale }): ElNode {
+  const t = toolIntroIn(tool, opts.locale ?? 'en');
+  const u = ui(t.locale);
+  const meta = pageMeta(TOOL_META[tool].path, t.locale) ?? TOOL_META[tool];
   const H = opts.prerender ? 'h1' : 'h2';
   const sub = opts.prerender ? 'h2' : 'h3';
   return el(
     'section',
     { class: ['tool-intro', 'container', t.accent, opts.prerender ? null : 'is-below'], 'aria-labelledby': `intro-${tool}-title`, 'data-tool-intro': tool },
-    breadcrumbs([{ label: 'Home', to: '/' }, { label: meta.label }]),
+    breadcrumbs([{ label: u.home, to: '/' }, { label: meta.label }], u.breadcrumb),
     el(
       'header',
       { class: 'tool-intro-head' },
@@ -838,7 +855,7 @@ export function toolIntro(tool: IntroTool, opts: { prerender: boolean }): ElNode
         ? el(
             'noscript',
             null,
-            el('p', { class: 'tool-intro-noscript' }, 'The editor needs JavaScript. Turn it on to start making; the guides on this page work without it.'),
+            el('p', { class: 'tool-intro-noscript' }, u.toolIntro.noscript),
           )
         : null,
     ),
@@ -848,7 +865,7 @@ export function toolIntro(tool: IntroTool, opts: { prerender: boolean }): ElNode
       el(
         'div',
         { class: 'tool-intro-card' },
-        el(sub, null, 'What you can do'),
+        el(sub, null, u.toolIntro.whatYouCanDo),
         el(
           'ul',
           { class: 'tool-intro-list' },
@@ -858,7 +875,7 @@ export function toolIntro(tool: IntroTool, opts: { prerender: boolean }): ElNode
       el('div', { class: 'tool-intro-card' }, el(sub, null, t.howTitle), steps(t.steps)),
     ),
     t.extra ? t.extra(sub) : null,
-    el('div', { class: 'tool-intro-faq' }, el(sub, null, 'Questions'), el('div', { class: 'tool-intro-card flush' }, faqList(t.faq, { idPrefix: `${tool}-faq` }))),
-    el('div', { class: 'tool-intro-guides' }, el(sub, null, 'Guides'), guideCards(t.guides, opts.prerender ? 'h3' : 'h4', 2)),
+    el('div', { class: 'tool-intro-faq' }, el(sub, null, u.toolIntro.questions), el('div', { class: 'tool-intro-card flush' }, faqList(t.faq, { idPrefix: `${tool}-faq` }))),
+    el('div', { class: 'tool-intro-guides' }, el(sub, null, u.toolIntro.guides), guideCards(t.guides, opts.prerender ? 'h3' : 'h4', 2, t.locale)),
   );
 }

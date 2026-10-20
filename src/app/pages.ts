@@ -1,16 +1,17 @@
-// Router fallback views: loading, not found and load/render errors.
+// Router fallback views: loading, not found and load/render errors (in the page's language).
 
-import { navigate, type RouteContext } from '../core/router';
+import { currentLocale, navigate, type RouteContext } from '../core/router';
 import { h } from '../ui/dom';
 import { button, emptyState, spinner } from '../ui/components';
 import { siteFooter } from './footer';
-import { SITE_NAME } from './site';
+import { ui } from '../i18n/ui';
 
 export function loadingView(): HTMLElement {
-  return h('div', { class: 'route-loading', role: 'status' }, spinner(32), h('span', { class: 'muted' }, 'Loading…'));
+  return h('div', { class: 'route-loading', role: 'status' }, spinner(32), h('span', { class: 'muted' }, ui(currentLocale()).loading));
 }
 
 export function notFoundView(root: HTMLElement, ctx: RouteContext): void {
+  const t = ui(ctx.locale).notFound;
   root.classList.add('fallback-page');
   root.append(
     h(
@@ -18,13 +19,13 @@ export function notFoundView(root: HTMLElement, ctx: RouteContext): void {
       { class: 'container fallback-body' },
       emptyState({
         icon: 'map',
-        title: 'This page wandered off',
-        text: `There's nothing at "${ctx.path}". It may have been moved, or the link is mistyped.`,
+        title: t.title,
+        text: t.text(ctx.path),
         action: h(
           'div',
           { class: 'row wrap', style: { justifyContent: 'center' } },
-          button({ label: 'Go home', icon: 'home', variant: 'primary', onClick: () => navigate('/') }),
-          button({ label: 'Help', icon: 'circle-question', onClick: () => navigate('/help') }),
+          button({ label: t.goHome, icon: 'home', variant: 'primary', onClick: () => navigate('/') }),
+          button({ label: t.help, icon: 'circle-question', onClick: () => navigate('/help') }),
         ),
       }),
     ),
@@ -33,20 +34,18 @@ export function notFoundView(root: HTMLElement, ctx: RouteContext): void {
 }
 
 export function loadErrorView(err: unknown): HTMLElement {
+  const u = ui(currentLocale());
+  const t = u.loadError;
   const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
   const chunk = err instanceof Error && /dynamically imported module|Importing a module script failed|Failed to fetch/i.test(err.message);
-  const text = offline
-    ? "You're offline and this part of the app hasn't been saved on this device yet. Reconnect and try again."
-    : chunk
-      ? `A newer version of ${SITE_NAME} may have been published. Reloading the page usually fixes this.`
-      : 'Something went wrong while opening this page. Your projects are safe — try reloading.';
+  const text = offline ? t.offline : chunk ? t.newVersion : t.generic;
   const detail = err instanceof Error ? err.message : String(err ?? '');
   return h(
     'div',
     { class: 'container fallback-body' },
     emptyState({
       icon: 'warning-diamond',
-      title: "This page couldn't be opened",
+      title: t.title,
       text,
       action: h(
         'div',
@@ -54,10 +53,10 @@ export function loadErrorView(err: unknown): HTMLElement {
         h(
           'div',
           { class: 'row wrap', style: { justifyContent: 'center' } },
-          button({ label: 'Reload', icon: 'reload', variant: 'primary', onClick: () => location.reload() }),
-          button({ label: 'Go home', icon: 'home', onClick: () => navigate('/') }),
+          button({ label: t.reload, icon: 'reload', variant: 'primary', onClick: () => location.reload() }),
+          button({ label: u.notFound.goHome, icon: 'home', onClick: () => navigate('/') }),
         ),
-        detail ? h('details', { class: 'error-detail' }, h('summary', null, 'Technical details'), h('code', null, detail)) : null,
+        detail ? h('details', { class: 'error-detail' }, h('summary', null, t.details), h('code', null, detail)) : null,
       ),
     }),
   );

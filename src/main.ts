@@ -31,7 +31,7 @@ onViewRendered((state, view) => {
   const tool = state.pattern ? INTRO_ROUTES[state.pattern] : undefined;
   if (!tool) return;
   import('./app/tool-intro')
-    .then((m) => m.mountToolIntro(view, tool))
+    .then((m) => m.mountToolIntro(view, tool, state.locale))
     .catch((err) => console.warn('Tool introduction unavailable', err));
 });
 

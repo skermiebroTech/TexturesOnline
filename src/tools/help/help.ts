@@ -10,10 +10,12 @@ import { siteFooter } from '../../app/footer';
 import { toDomAll } from '../../app/markup-dom';
 import { wireContent } from '../../app/content/wire';
 import { FAQ, HELP_SECTION_IDS, helpPage } from './content';
+import { loadContent } from '../../i18n/content';
 
-export default function help(root: HTMLElement, ctx: RouteContext): () => void {
+export default async function help(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
+  await loadContent(ctx.locale);
   root.classList.add('help');
-  root.append(...toDomAll(helpPage()), siteFooter());
+  root.append(...toDomAll(helpPage(ctx.locale)), siteFooter());
   const unwire = wireContent(root);
 
   const tocLinks = new Map<string, HTMLAnchorElement>();
