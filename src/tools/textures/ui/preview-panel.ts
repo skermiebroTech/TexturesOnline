@@ -5,8 +5,9 @@
 // complete it. In the 3D workspace the 3D view moves to the main editor area to be painted on, and the
 // pixel editor takes its place here.
 
-import type { BlockPreview, ModelCameraView, ModelHit, ModelPaintHandler, PaintCursor } from '../../../shared/preview/block-preview';
+import type { BlockPreview, ModelCameraView, ModelHit, ModelPaintHandler, ModelScene, PaintCursor } from '../../../shared/preview/block-preview';
 import type { BlockState, ModelEntry, ModelTexture, ModelView, StateProperty } from '../../../shared/models/index';
+import { paletteSwatches } from '../../../shared/models/trims';
 import { cloneImageData } from '../../../core/image';
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
@@ -189,6 +190,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     closeBtn,
   );
   const note = h('p', { class: 'tx-inline-note tx-pv-note', hidden: true });
+  const trimNote = h('div', { class: 'tx-inline-note tx-pv-note tx-pv-trimnote', hidden: true, role: 'note' });
   const statesEl = h('div', { class: 'tx-pv-states', role: 'group', 'aria-label': 'Block state', hidden: true });
   const texList = h('ul', { class: 'tx-pv-texlist', role: 'list', 'aria-label': 'Textures of this model' });
   const texHint = h('p', { class: 'faint small tx-pv-texhint' });
@@ -234,7 +236,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   partsBtn.addEventListener('click', () => togglePartsPopover());
   hero.appendChild(partsBtn);
   const controls = h('div', { class: 'tx-pv-controls' }, modeSeg, itemSeg);
-  const body = h('div', { class: 'tx-pv' }, head, hero, canvasSlot, note, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
+  const body = h('div', { class: 'tx-pv' }, head, hero, canvasSlot, note, trimNote, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
   const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, 'Loading the model…'));
   hero.appendChild(loadingModel);
   const el = h('div', { class: 'tx-pv-wrap' }, body, empty);
@@ -475,11 +477,14 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         ? segmented<string>({ value, size: 'sm', label: p.label, options: p.values.map((v) => ({ value: v.value, label: v.label })), onChange: (v) => set({ [p.name]: v }) })
         : select<string>({ value, options: p.values.map((v) => ({ value: v.value, label: v.label })), onChange: (v) => set({ [p.name]: v }) });
       if (!short) control.querySelector('select')?.setAttribute('aria-label', p.label);
-      return h('div', { class: 'tx-pv-state', dataset: { prop: p.name } }, h('span', { class: 'tx-pv-state-label' }, p.label), control);
+      // (the trim's material sits under the trim: "Material" is enough there)
+      const shown = p.name === 'trim_material' ? 'Material' : p.label;
+      return h('div', { class: 'tx-pv-state', dataset: { prop: p.name } }, h('span', { class: 'tx-pv-state-label' }, shown), control);
     };
     const nodes: HTMLElement[] = props.filter((p) => !p.gear).map(row);
-    // things the mob wears, under their own heading
-    const gear = props.filter((p) => p.gear);
+    // things the mob wears, under their own heading (an armour trim after the armour and its dye)
+    const isTrim = (p: StateProperty) => p.name === 'trim' || p.name === 'trim_material';
+    const gear = props.filter((p) => p.gear).sort((a, b) => Number(isTrim(a)) - Number(isTrim(b)));
     if (gear.length) {
       nodes.push(h('div', { class: 'tx-pv-gearhead', role: 'presentation' }, icon('shirt', { size: 16 }), h('span', null, 'Wearing')));
       const armor = gear.filter((p) => p.group === 'armor');
@@ -797,6 +802,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     if (modelMode) {
       paintHead();
       paintNote();
+      paintTrimNote();
       paintStates();
       paintTextures();
       paintParts();
@@ -804,6 +810,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       partsSection.hidden = true;
       partsBtn.hidden = true;
       note.hidden = true;
+      trimNote.hidden = true;
+      trimNoteKey = '';
       statesEl.hidden = true;
       texSection.hidden = true;
       hoverTag.hidden = true;
@@ -846,6 +854,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const off = v.parts ? hidden() : null;
     const shown = off?.size ? { ...v, quads: v.quads.filter((q) => !off.has(v.parts![q.part]?.name ?? '')) } : v;
     const built = await models.scene(shown, { fx: fxOn(), live: live() });
+    if (built && !built.flat) await addPalettes(built.scene, shown);
     clearTimeout(slow);
     loadingModel.hidden = true;
     if (my !== token) return;
@@ -873,6 +882,81 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       }
     }
     if (hoverPath) preview?.highlightTexture(hoverPath);
+  }
+
+  /** Palettes of the trims on show (the pack's pixels), so the model colours them as the game does. */
+  async function addPalettes(scene: ModelScene, v: ModelView) {
+    const paths = new Set<string>();
+    for (const q of v.quads) if (q.palette) paths.add(q.palette.key).add(q.palette.values);
+    await Promise.all(
+      [...paths].map(async (p) => {
+        if (scene.textures.has(p) || (!store.assets.hasFile(p) && !store.isEdited(p))) return;
+        const t = await models.texture(p, { fx: fxOn(), live: live(), whole: true });
+        if (t) scene.textures.set(p, t);
+      }),
+    );
+  }
+
+  /** The trim palettes of the model on show that colour a pattern (null: it isn't a coloured trim). */
+  const trimPalettesOf = (path: string): { key: string; values: string } | null => view?.quads.find((q) => q.texture === path && q.palette)?.palette ?? null;
+  const usesPalette = (path: string) => !!view?.quads.some((q) => q.palette && (q.palette.key === path || q.palette.values === path));
+
+  /**
+   * How the game colours a trim: shown while a trim pattern (or a trim palette) of the model on show is
+   * open. Patterns are painted as they are; the swatches show which greys take the trim's colours.
+   */
+  let trimNoteKey = '';
+  function paintTrimNote() {
+    const path = tex?.key ?? '';
+    const pal = entry?.kind === 'entity' && path ? trimPalettesOf(path) : null;
+    const isPalette = !pal && entry?.kind === 'entity' && !!path && usesPalette(path);
+    const key = pal ? `p|${path}|${pal.key}|${pal.values}|${store.stamp(pal.key)}|${store.stamp(pal.values)}` : isPalette ? `k|${path}` : '';
+    if (key === trimNoteKey) return;
+    trimNoteKey = key;
+    if (!pal && !isPalette) {
+      trimNote.hidden = true;
+      trimNote.replaceChildren();
+      return;
+    }
+    if (isPalette) {
+      const isKey = !!view?.quads.some((q) => q.palette?.key === path);
+      trimNote.replaceChildren(
+        icon('palette'),
+        h(
+          'span',
+          null,
+          isKey
+            ? 'Trim colour key: the grey shades trim patterns are drawn in, lightest first. The game gives each pattern pixel of one of these greys the colour at the same place in the trim material’s palette.'
+            : 'Trim colours: the colour each grey shade of every trim pattern becomes for this material, lightest first. Repaint a pixel to recolour that shade on every trim.',
+        ),
+      );
+      trimNote.hidden = false;
+      return;
+    }
+    const text = h('span', null, 'The game colours this trim: each of these greys becomes the trim material’s colour shown under it. Paint with them to keep the trim’s colour; any other colour shows as painted on every material.');
+    const row = h('span', { class: 'tx-pv-trimkeys', style: 'display:flex;flex-wrap:wrap;gap:4px;margin-top:6px' });
+    trimNote.replaceChildren(icon('palette'), h('span', { style: 'display:flex;flex-direction:column;min-width:0' }, text, row));
+    trimNote.hidden = false;
+    const my = trimNoteKey;
+    void Promise.all([store.getFull(pal!.key), store.getFull(pal!.values)])
+      .then(([k, vals]) => {
+        if (trimNoteKey !== my) return;
+        const hex = (c: number[]) => `#${c.slice(0, 3).map((x) => x.toString(16).padStart(2, '0')).join('')}`;
+        for (const s of paletteSwatches(k, vals)) {
+          const sw = h(
+            'span',
+            { style: 'display:inline-flex;flex-direction:column;width:22px;height:30px;border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px var(--border, rgba(127,127,127,.4))' },
+            h('span', { style: `flex:1;background:${hex(s.key)}` }),
+            h('span', { style: `flex:1;background:${s.value ? hex(s.value) : 'transparent'}` }),
+          );
+          const label = `${hex(s.key)} becomes ${s.value ? hex(s.value) : 'no colour'}`;
+          sw.setAttribute('role', 'img');
+          sw.setAttribute('aria-label', label);
+          tooltip(sw, label);
+          row.appendChild(sw);
+        }
+      })
+      .catch(() => undefined);
   }
 
   function renderTexture(pv: BlockPreview, t: OpenTexture, my: number) {
@@ -944,7 +1028,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       if (!tex || path !== tex.key) return;
       paintTiled(tex);
       if (entry && view) {
-        if (view.shape === 'model' && view.quads.some((q) => q.texture === path)) {
+        // (a trim palette recolours the trims using it)
+        if (view.shape === 'model' && (view.quads.some((q) => q.texture === path) || usesPalette(path))) {
           // Fast path: swap the pixels of that texture on the model.
           livePending = { path, full };
           liveRaf ||= requestAnimationFrame(pushLive);

@@ -78,7 +78,7 @@ export function javaEntityTextureSizes(version: string): Map<string, [number, nu
   const out = new Map<string, [number, number]>();
   const jar = javaJarPath(version);
   if (!jar) return out;
-  const files = unzipSync(new Uint8Array(readFileSync(jar)), { filter: (f) => /^assets\/minecraft\/textures\/entity\/.*\.png$/.test(f.name) });
+  const files = unzipSync(new Uint8Array(readFileSync(jar)), { filter: (f) => /^assets\/minecraft\/textures\/(entity|trims|palettes)\/.*\.png$/.test(f.name) });
   for (const [name, data] of Object.entries(files)) out.set(name, pngSize(data));
   return out;
 }

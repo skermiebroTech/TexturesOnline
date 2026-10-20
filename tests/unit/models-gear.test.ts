@@ -93,7 +93,8 @@ test('Java 26.3: every worn texture exists with the size its layer maps', { skip
     for (const st of gearLooks(spec)) {
       for (const l of spec.layers(st).filter((x) => x.gear)) {
         const first = (Array.isArray(l.texture) ? l.texture : [l.texture])[0];
-        const path = `${E}${first}.png`;
+        // (trims live outside entity/: relative to textures/ with a leading '/')
+        const path = first.startsWith('/') ? `assets/minecraft/textures${first}.png` : `${E}${first}.png`;
         const size = sizes263.get(path);
         assert.ok(size, `${spec.id}: ${path} in the 26.3 jar`);
         const [w, h] = mobLayer(l.model)!.texSize;

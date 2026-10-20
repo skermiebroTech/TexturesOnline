@@ -9,8 +9,9 @@ import type { BakedQuad, RGB, Tint } from './geometry';
 import { bakeEntityModel, mat4Chain, mat4Scale, mat4Translation, type EntityModel, type EntityPart } from './entity-models';
 import { addAnimation, flattenGeo, geoToModel, parseGeoFile, type GeoDef, type NativeTurns, type RestPose } from './bedrock-geo';
 import { evalMolang } from './molang';
-import { ARMOR_MATERIALS, ARMOR_SLOTS, JAVA_MOBS, LEATHER_RGB, type JavaMobSpec, type MobLayerRef, type MobProp, type MobState } from './mobs-java';
+import { ARMOR_MATERIALS, ARMOR_SLOTS, JAVA_MOBS, LEATHER_RGB, type JavaMobSpec, type MobLayerRef, type MobProp, type MobState, type MobValue } from './mobs-java';
 import { DYE_COLORS, DYE_RGB } from './block-entities';
+import { BEDROCK_TRIM_KEY, bedrockTrimPalette, bedrockTrimPattern, materialLabel, materialNames, patternNames, sortMaterials, sortPatterns, trimLabel, trimPaletteName } from './trims';
 import type { BlockState, StateProperty, StateValue, TextureStates } from './types';
 
 export interface EntityPartInfo {
@@ -81,7 +82,12 @@ interface LayerInput {
   only?: (name: string) => boolean;
   /** Bedrock: the texture's alpha is where the dye goes (leather armour) */
   tintMask?: boolean | 'armor';
+  /** Armour trims: the grey pattern is recoloured from the key palette to the values palette (pack paths) */
+  palette?: { key: string; values: string };
 }
+
+/** Labels of a trim's palettes in the textures list */
+const PALETTE_LABELS = { key: 'Trim colour key', values: 'Trim colours' };
 
 /**
  * Bakes the layers of a look, part by part (quad.part = index into the returned parts): body parts by
@@ -105,6 +111,10 @@ function bakeLayers(layers: LayerInput[]): EntityView {
   for (const l of layers) {
     if (!labels.has(l.texture)) labels.set(l.texture, l.label);
     if (!texSizes.has(l.texture)) texSizes.set(l.texture, l.model.texSize);
+    if (l.palette) {
+      if (!labels.has(l.palette.key)) labels.set(l.palette.key, PALETTE_LABELS.key);
+      if (!labels.has(l.palette.values)) labels.set(l.palette.values, PALETTE_LABELS.values);
+    }
     for (const path of partPaths(l.model)) {
       const name = partName(path);
       if (l.only && !l.only(name.toLowerCase())) continue;
@@ -113,6 +123,7 @@ function bakeLayers(layers: LayerInput[]): EntityView {
       const i = l.part ? partIndex(`gear:${l.part.name}`, gearLabel!) : partIndex(name, pretty(name));
       const baked = bakeEntityModel(l.model, MOB_TRANSFORM, { texture: l.texture, role: l.label, part: i, tint: l.tint ?? null, only: (p) => p === path });
       if (l.tintMask && l.tint) for (const q of baked) q.tintMask = l.tintMask;
+      if (l.palette) for (const q of baked) q.palette = l.palette;
       quads.push(...baked);
     }
   }
@@ -165,6 +176,8 @@ const lookProps = (props: StateProperty[]) => props.filter((p) => !p.gear);
 
 export interface JavaEntityContext {
   hasFile(path: string): boolean;
+  /** Pack paths starting with a prefix (finds trim patterns and materials newer than the lists) */
+  listFiles?(prefix: string): string[];
   /** Loads the geometry tables (a lazily loaded chunk in the app) */
   geometry?: () => Promise<(name: string) => EntityModel | null>;
 }
@@ -185,33 +198,52 @@ export class JavaEntities implements EntityBackend {
     return rel.startsWith('/') ? `assets/minecraft/textures${rel}.png` : `assets/minecraft/textures/entity/${rel}.png`;
   }
 
-  /** The texture a layer draws in this version: the first of its places the version has */
-  private texture(l: MobLayerRef): string | null {
-    for (const t of Array.isArray(l.texture) ? l.texture : [l.texture]) {
+  /** The first of a texture's places the version has */
+  private first(names: string | string[]): string | null {
+    for (const t of Array.isArray(names) ? names : [names]) {
       const p = this.path(t);
       if (this.ctx.hasFile(p)) return p;
     }
     return null;
   }
 
+  /** The texture a layer draws in this version: the first of its places the version has */
+  private texture(l: MobLayerRef): string | null {
+    return this.first(l.texture);
+  }
+
   private firstState(s: JavaMobSpec): MobState {
     return Object.fromEntries(s.props.map((p) => [p.name, p.values[0].value]));
   }
 
-  /** The look's layers with the textures the version has (none when the base texture is missing). */
-  private layers(s: JavaMobSpec, state: MobState): (MobLayerRef & { path: string })[] {
+  /**
+   * The look's layers with the textures the version has (none when the base texture is missing); a
+   * trim's palettes where the version has them (without, the game draws the pattern uncoloured).
+   */
+  private layers(s: JavaMobSpec, state: MobState): (MobLayerRef & { path: string; palettePaths?: { key: string; values: string } })[] {
     const all = s.layers(state);
-    const out: (MobLayerRef & { path: string })[] = [];
+    const out: (MobLayerRef & { path: string; palettePaths?: { key: string; values: string } })[] = [];
     for (const l of all) {
       const path = this.texture(l);
-      if (path) out.push({ ...l, path });
-      else if (l === all[0]) return [];
+      if (!path) {
+        if (l === all[0]) return [];
+        continue;
+      }
+      const key = l.palette ? this.first(l.palette.key) : null;
+      const values = l.palette ? this.first(l.palette.values) : null;
+      out.push(key && values ? { ...l, path, palettePaths: { key, values } } : { ...l, path });
     }
     return out;
   }
 
   private paths(s: JavaMobSpec, state: MobState): TextureRef[] {
-    return this.layers(s, state).map((l) => ({ path: l.path, label: l.label, gear: !!l.gear, home: !!l.gear && !!s.home?.includes(l.gear) }));
+    const out: TextureRef[] = [];
+    for (const l of this.layers(s, state)) {
+      const ref = { label: l.label, gear: !!l.gear, home: !!l.gear && !!s.home?.includes(l.gear) };
+      out.push({ ...ref, path: l.path });
+      if (l.palettePaths) out.push({ ...ref, path: l.palettePaths.key, label: PALETTE_LABELS.key }, { ...ref, path: l.palettePaths.values, label: PALETTE_LABELS.values });
+    }
+    return out;
   }
 
   /** Whether a gear choice's value shows in this version (its textures are there, or it's "none"). */
@@ -219,8 +251,17 @@ export class JavaEntities implements EntityBackend {
     if (value === p.values[0].value) return true;
     if (p.since && !this.ctx.hasFile(this.path(p.since))) return false;
     const layers = this.layers(s, { ...base, ...p.with, [p.name]: value });
-    // a dye colour tints a worn layer; other gear draws layers of its own
+    // a trim material is a palette; a dye colour tints a worn layer; other gear draws layers of its own
+    if (p.palette) return layers.some((l) => !!l.gear && !!l.palettePaths && l.palettePaths.values.endsWith(`/${value}.png`));
     return layers.some((l) => (p.tint ? !!l.tint && !!l.gear : l.gear === p.name));
+  }
+
+  /** A choice's values, with the ones the version has beyond the listed ones (newer trim patterns). */
+  private valuesOf(p: MobProp): MobValue[] {
+    if (!p.discover || !this.ctx.listFiles) return p.values;
+    const known = new Set(p.values.map((v) => v.value));
+    const extra = p.discover((prefix) => this.ctx.listFiles!(prefix)).filter((v) => !known.has(v.value) && known.add(v.value));
+    return extra.length ? [...p.values, ...extra.sort((a, b) => a.label.localeCompare(b.label))] : p.values;
   }
 
   ids(): string[] {
@@ -241,7 +282,7 @@ export class JavaEntities implements EntityBackend {
     // copper armour...)
     const props: StateProperty[] = s.props
       .map((p) => {
-        const values = p.gear ? p.values.filter((v) => this.gearShows(s, base, p, v.value)) : p.values.filter((v) => this.paths(s, { ...base, [p.name]: v.value }).length > 0);
+        const values = p.gear ? this.valuesOf(p).filter((v) => this.gearShows(s, base, p, v.value)) : p.values.filter((v) => this.paths(s, { ...base, [p.name]: v.value }).length > 0);
         const out: StateProperty = { name: p.name, label: p.label, values };
         if (p.gear) out.gear = true;
         if (p.group) out.group = p.group;
@@ -272,6 +313,12 @@ export class JavaEntities implements EntityBackend {
       const gear = Object.fromEntries(Object.entries(g).filter(([k]) => shown.has(k)));
       if (!Object.keys(gear).length) continue;
       for (const age of ages) states.push({ ...this.defaultState(id), ...(age ? { age } : {}), ...gear });
+    }
+    // values the version has beyond the listed ones (a newer trim pattern), each on the choice's own look
+    for (const p of s.props) {
+      if (!p.discover) continue;
+      const listed = new Set(p.values.map((v) => v.value));
+      for (const v of props.find((x) => x.name === p.name)?.values ?? []) if (!listed.has(v.value)) states.push({ ...this.defaultState(id), ...p.with, [p.name]: v.value });
     }
     const out = collectTextures(states, (st) => this.paths(s, { ...base, ...st }));
     this.texCache.set(id, out);
@@ -304,7 +351,7 @@ export class JavaEntities implements EntityBackend {
     for (const l of this.layers(s, { ...this.firstState(s), ...state })) {
       const model = this.layerOf(l.model);
       if (!model) continue;
-      inputs.push({ model, texture: l.path, label: l.label, tint: l.tint ? { kind: 'fixed', rgb: l.tint } : null, part: l.part });
+      inputs.push({ model, texture: l.path, label: l.label, tint: l.tint ? { kind: 'fixed', rgb: l.tint } : null, part: l.part, palette: l.palettePaths });
     }
     return bakeLayers(inputs);
   }
@@ -440,7 +487,7 @@ const BEDROCK_MOBS: BedrockMobSpec[] = [
   { id: 'tadpole', name: 'Tadpole', file: 'tadpole', dirs: ['tadpole'] },
   { id: 'allay', name: 'Allay', file: 'allay', dirs: ['allay'] },
   { id: 'warden', name: 'Warden', file: 'warden', dirs: ['warden'], over: (k) => (k !== 'default' ? 'default' : null) },
-  { id: 'armor_stand', name: 'Armor Stand', file: 'armor_stand', dirs: [''], armor: true, home: ['textures/models/armor/'] },
+  { id: 'armor_stand', name: 'Armor Stand', file: 'armor_stand', dirs: [''], armor: true, home: ['textures/models/armor/', 'textures/trims/'] },
   { id: 'polar_bear', name: 'Polar Bear', file: 'polar_bear', dirs: ['polarbear', 'bear'] },
   { id: 'panda', name: 'Panda', file: 'panda', dirs: ['panda'] },
   { id: 'rabbit', name: 'Rabbit', file: 'rabbit', dirs: ['rabbit'] },
@@ -532,6 +579,7 @@ interface RenderController {
 const SADDLED = { 'query.is_saddled': 1 };
 const ARMORED = { 'variable.has_armor': 1 };
 const SADDLE_PART = { name: 'saddle', label: 'Saddle' };
+const TRIM_PART = { name: 'trim', label: 'Trim' };
 const NONE: StateValue = { value: 'none', label: 'None' };
 const DYE_VALUES: StateValue[] = [{ value: 'none', label: 'Undyed' }, ...DYE_COLORS.map((c) => ({ value: c, label: pretty(c) }))];
 const dyeTint = (s: BlockState, undyed: RGB | null): Tint | null => {
@@ -584,7 +632,14 @@ export class BedrockEntities implements EntityBackend {
       const states: BlockState[] = l.looks.length > 1 ? l.looks.map((k) => ({ look: k.key })) : [{}];
       const base = this.defaultState(id);
       for (const g of l.gear) for (const st of g.states) states.push({ ...base, ...st });
-      return collectTextures(states, (s) => this.layersOf(l, { ...base, ...s }).map((x) => ({ path: x.texture, label: x.label, gear: !!x.part || x.gear, home: (!!x.part || x.gear) && l.home })));
+      return collectTextures(states, (s) =>
+        this.layersOf(l, { ...base, ...s }).flatMap((x) => {
+          const ref = { label: x.label, gear: !!x.part || x.gear, home: (!!x.part || x.gear) && l.home };
+          const out: TextureRef[] = [{ ...ref, path: x.texture }];
+          if (x.palette) out.push({ ...ref, path: x.palette.key, label: PALETTE_LABELS.key }, { ...ref, path: x.palette.values, label: PALETTE_LABELS.values });
+          return out;
+        }),
+      );
     }
     // Before the entity file is read: the textures in the mob's folders whose names fit it.
     if (!this.specs.has(id)) return [];
@@ -615,7 +670,7 @@ export class BedrockEntities implements EntityBackend {
     }
     // worn textures kept outside the mob's folders (armour, harnesses...)
     for (const s of this.specs.values())
-      for (const prefix of s.home ?? []) for (const p of this.ctx.listFiles(prefix)) if (/\.(png|tga)$/i.test(p) && !/_none\./.test(p)) out.set(s.id, [...(out.get(s.id) ?? []), p]);
+      for (const prefix of s.home ?? []) for (const p of this.ctx.listFiles(prefix)) if (/\.(png|tga)$/i.test(p) && !/_none\.|\/items\/|_mers\./.test(p)) out.set(s.id, [...(out.get(s.id) ?? []), p]);
     this.guessCache = out;
     return out;
   }
@@ -1184,6 +1239,21 @@ export class BedrockEntities implements EntityBackend {
     const label = new Map(ARMOR_MATERIALS);
     const gear: BedrockGear[] = [];
     const firstAdult = looks.find((l) => !l.baby)!;
+    // trims: textures/trims/<pattern>(_leggings), coloured with color_palettes/ (adults only)
+    const trimKey = this.texturePath(BEDROCK_TRIM_KEY);
+    const patterns = trimKey ? sortPatterns(patternNames(this.ctx.listFiles('textures/trims/'), 'textures/trims/')) : [];
+    const trimMats = patterns.length ? sortMaterials(materialNames(this.ctx.listFiles('textures/trims/color_palettes/'), 'textures/trims/color_palettes/')) : [];
+    const palette = (name: string) => this.texturePath(bedrockTrimPalette(name));
+    const trimLayer = (slot: string, armorMat: string, layer: LayerInput, st: BlockState): LayerInput | null => {
+      const pattern = st.trim && st.trim !== 'none' ? st.trim : null;
+      if (!pattern || !trimMats.length) return null;
+      const legs = slot === 'leggings';
+      const texture = this.texturePath(bedrockTrimPattern(pattern, legs));
+      if (!texture) return null;
+      const mat = st.trim_material && trimMats.includes(st.trim_material) ? st.trim_material : trimMats[0];
+      const values = palette(trimPaletteName(mat, armorMat, (n) => !!palette(n)));
+      return { model: layer.model, texture, label: legs ? 'Leggings trim' : 'Trim', part: TRIM_PART, palette: trimKey && values ? { key: trimKey, values } : undefined };
+    };
     for (const [slot, slotLabel] of ARMOR_SLOTS) {
       const mats = [...new Set(items.filter((i) => i.slot === slot).map((i) => i.material))].sort((a, b) => ((order.indexOf(a) + 99) % 99) - ((order.indexOf(b) + 99) % 99));
       if (!mats.length) continue;
@@ -1197,11 +1267,41 @@ export class BedrockEntities implements EntityBackend {
         states: [],
       });
     }
+    const setOf = (m: string): BlockState => Object.fromEntries(items.filter((i) => i.material === m).map((i) => [i.slot, m]));
     // a full set of each material
     if (gear.length) {
       const sets = order.filter((m) => items.some((i) => i.material === m));
-      gear[0] = { ...gear[0], states: sets.map((m) => ({ look: firstAdult.key, ...Object.fromEntries(items.filter((i) => i.material === m).map((i) => [i.slot, m])) })) };
+      gear[0] = { ...gear[0], states: sets.map((m) => ({ look: firstAdult.key, ...setOf(m) })) };
       if (items.some((i) => i.leather)) dyed.push((st) => !!lookOf(st) && wears(lookOf(st)!) && ARMOR_SLOTS.some(([slot]) => st[slot] === 'leather'));
+    }
+    if (gear.length && patterns.length && trimMats.length) {
+      const trimmable = (st: BlockState) => !!lookOf(st) && !lookOf(st)!.baby && ARMOR_SLOTS.some(([slot]) => !!st[slot] && st[slot] !== 'none');
+      const iron = setOf('iron');
+      gear.push({
+        prop: { name: 'trim', label: 'Trim', values: [NONE, ...patterns.map((p) => ({ value: p, label: trimLabel(p) }))], gear: true, showIf: trimmable },
+        // over each worn piece, after all of them (babies' armour has none)
+        layers: (_v, look, st) => {
+          if (look.baby) return [];
+          const out: LayerInput[] = [];
+          for (const [slot] of ARMOR_SLOTS) {
+            const m = st[slot];
+            const layer = m && m !== 'none' ? pieces.get(`${look.key}|${m}`)?.get(slot) : undefined;
+            const trim = layer ? trimLayer(slot, m, layer, st) : null;
+            if (trim) out.push(trim);
+          }
+          return out;
+        },
+        states: patterns.map((p) => ({ look: firstAdult.key, ...iron, trim: p, trim_material: trimMats[0] })),
+      });
+      const states: BlockState[] = [];
+      for (const m of trimMats) {
+        states.push({ look: firstAdult.key, ...setOf(m === 'iron' ? 'gold' : 'iron'), trim: patterns[0], trim_material: m });
+        if (items.some((i) => i.material === m)) states.push({ look: firstAdult.key, ...setOf(m), trim: patterns[0], trim_material: m });
+      }
+      gear.push({
+        prop: { name: 'trim_material', label: 'Trim material', values: trimMats.map((m) => ({ value: m, label: materialLabel(m) })), gear: true, showIf: (st) => trimmable(st) && !!st.trim && st.trim !== 'none' },
+        states,
+      });
     }
     return gear;
   }

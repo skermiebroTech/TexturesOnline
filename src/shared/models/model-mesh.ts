@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { alphaMode, makePixelTexture, type PixelImage } from '../preview/three-utils';
 import { DIR_VEC as DIR_NORMAL, type BakedQuad, type RGB, type Tint } from './geometry';
 import { coplanarLifts } from './model-paint';
+import { recolorTrim } from './trims';
 
 export interface ModelTextureImage {
   /** Straight RGBA; a vertical strip of square frames when `frames` > 1 */
@@ -169,6 +170,12 @@ export function faceShade(n: readonly number[]): number {
 
 interface Group {
   key: string;
+  /** Pack path of the texture (MISSING for the checker) */
+  path: string;
+  /** Armour trims: the texture is recoloured from this palette pair */
+  palette: { key: string; values: string } | null;
+  /** The texture as given (before a palette recolours it) */
+  source: ModelTextureImage | null;
   mesh: THREE.Mesh;
   material: THREE.ShaderMaterial;
   texture: THREE.DataTexture | null;
@@ -196,21 +203,30 @@ export class ModelMesh {
   private readonly cursorSize = new THREE.Vector2(1, 1);
   /** Painting holds animations still: textures show these frames (others frame 0) */
   private pinned: Map<string, number> | null = null;
+  /** Palette images of trims (by pack path) */
+  private palettes = new Map<string, ModelTextureImage>();
 
-  /** Builds meshes for quads; `textures` must hold every texture path the quads use (missing ones draw the game's magenta checker). */
+  /**
+   * Builds meshes for quads; `textures` must hold every texture path the quads use (missing ones draw
+   * the game's magenta checker) and the palettes of trims (a trim without its palettes draws its grey
+   * pattern, as the game does).
+   */
   build(quads: BakedQuad[], textures: Map<string, ModelTextureImage>, tint: (t: Tint) => RGB): void {
     this.clear();
     this.quads = quads;
-    const byKey = new Map<string, number[]>();
+    const byKey = new Map<string, { path: string; palette: Group['palette']; list: number[] }>();
     quads.forEach((q, i) => {
-      const key = q.texture && textures.has(q.texture) ? q.texture : MISSING;
-      let list = byKey.get(key);
-      if (!list) byKey.set(key, (list = []));
-      list.push(i);
+      const path = q.texture && textures.has(q.texture) ? q.texture : MISSING;
+      const palette = path !== MISSING && q.palette && textures.has(q.palette.key) && textures.has(q.palette.values) ? q.palette : null;
+      const key = palette ? `${path}\u0001${palette.key}\u0001${palette.values}` : path;
+      let g = byKey.get(key);
+      if (!g) byKey.set(key, (g = { path, palette, list: [] }));
+      g.list.push(i);
+      if (palette) for (const p of [palette.key, palette.values]) this.palettes.set(p, textures.get(p)!);
     });
     const lifts = coplanarLifts(quads);
-    for (const [key, list] of byKey) {
-      const tex = key === MISSING ? null : textures.get(key)!;
+    for (const [key, { path, palette, list }] of byKey) {
+      const tex = path === MISSING ? null : textures.get(path)!;
       const pos = new Float32Array(list.length * 4 * 3);
       const nrm = new Float32Array(list.length * 4 * 3);
       const uv = new Float32Array(list.length * 4 * 2);
@@ -268,7 +284,7 @@ export class ModelMesh {
           uHalf: { value: new THREE.Vector2(0, 0) },
           uAlphaTest: { value: 0 },
           uBlend: { value: 0 },
-          uMissing: { value: key === MISSING ? 1 : 0 },
+          uMissing: { value: path === MISSING ? 1 : 0 },
           uGlow: { value: 0 },
           uHoverFace: { value: -1 },
           uAccent: { value: this.accent },
@@ -283,9 +299,9 @@ export class ModelMesh {
       });
       const mesh = new THREE.Mesh(geo, material);
       mesh.userData.modelKey = key;
-      const g: Group = { key, mesh, material, texture: null, quads: list, image: null, frames: 1, frametime: 0, firstFace: list[0] };
+      const g: Group = { key, path, palette, source: tex, mesh, material, texture: null, quads: list, image: null, frames: 1, frametime: 0, firstFace: list[0] };
       this.groups.set(key, g);
-      if (tex) this.applyTexture(g, tex);
+      if (tex) this.applyTexture(g, this.drawn(g, tex));
       this.group.add(mesh);
     }
     this.cursorKey = null;
@@ -324,12 +340,42 @@ export class ModelMesh {
     g.mesh.renderOrder = blend ? 2 : 0;
   }
 
-  /** Swaps a texture's pixels (live painting). Returns false when the path isn't part of the model. */
+  /** A group's texture as drawn: recoloured by its trim palettes (the game's palette swap), else as given. */
+  private drawn(g: Group, tex: ModelTextureImage): ModelTextureImage {
+    if (!g.palette) return tex;
+    const key = this.palettes.get(g.palette.key);
+    const values = this.palettes.get(g.palette.values);
+    if (!key || !values) return tex;
+    return { ...tex, image: recolorTrim(tex.image, firstFrameOf(key.image, key.frames), firstFrameOf(values.image, values.frames)) };
+  }
+
+  /** The groups drawing a texture (one per palette pair for trims). */
+  private groupsOf(path: string): Group[] {
+    const out: Group[] = [];
+    for (const g of this.groups.values()) if (g.path === path) out.push(g);
+    return out;
+  }
+
+  /**
+   * Swaps a texture's pixels (live painting), or a trim palette's (recolouring the trims using it).
+   * Returns false when the path isn't part of the model.
+   */
   updateTexture(path: string, tex: ModelTextureImage): boolean {
-    const g = this.groups.get(path);
-    if (!g) return false;
-    this.applyTexture(g, tex);
-    return true;
+    let hit = false;
+    if (this.palettes.has(path)) {
+      this.palettes.set(path, tex);
+      for (const g of this.groups.values()) {
+        if (!g.palette || (g.palette.key !== path && g.palette.values !== path) || !g.source) continue;
+        this.applyTexture(g, this.drawn(g, g.source));
+        hit = true;
+      }
+    }
+    for (const g of this.groupsOf(path)) {
+      g.source = tex;
+      this.applyTexture(g, this.drawn(g, tex));
+      hit = true;
+    }
+    return hit;
   }
 
   /** Advances animated strips to the frame for `seconds` of play time. Returns true when any texture animates. */
@@ -338,7 +384,7 @@ export class ModelMesh {
     for (const g of this.groups.values()) {
       if (g.frames <= 1) continue;
       if (this.pinned) {
-        g.material.uniforms.uFrame.value = Math.min(g.frames - 1, Math.max(0, this.pinned.get(g.key) ?? 0));
+        g.material.uniforms.uFrame.value = Math.min(g.frames - 1, Math.max(0, this.pinned.get(g.path) ?? 0));
         continue;
       }
       if (g.frametime <= 0) continue;
@@ -359,7 +405,7 @@ export class ModelMesh {
 
   /** Size of one frame of a texture as drawn (texels), or null when the model doesn't use it. */
   frameSize(path: string): [number, number] | null {
-    const g = this.groups.get(path);
+    const g = this.groupsOf(path)[0];
     if (!g?.image) return null;
     return [g.image.width, Math.max(1, Math.floor(g.image.height / g.frames))];
   }
@@ -369,7 +415,8 @@ export class ModelMesh {
    * frame on show. 255 for faces whose alpha is a tint mask or that draw opaque.
    */
   alphaAt(path: string, uv: readonly [number, number], quadIndex?: number): number {
-    const g = this.groups.get(path);
+    const all = this.groupsOf(path);
+    const g = (quadIndex !== undefined && all.find((x) => x.quads.includes(quadIndex))) || all[0];
     if (!g?.image) return 255;
     const q = quadIndex !== undefined ? this.quads[quadIndex] : undefined;
     const armorMask = q?.tintMask === 'armor' && !!q.tint;
@@ -386,7 +433,7 @@ export class ModelMesh {
 
   /** Outlines the texels a brush would paint on one texture (null clears). */
   setCursor(c: PaintCursor | null): void {
-    const target = c && this.groups.has(c.texture) && (c.pixels.length || c.echo?.length) ? c : null;
+    const target = c && this.groupsOf(c.texture).length && (c.pixels.length || c.echo?.length) ? c : null;
     if (!target) {
       if (this.cursorKey !== null) for (const g of this.groups.values()) g.material.uniforms.uCursorOn.value = 0;
       this.cursorKey = null;
@@ -419,7 +466,7 @@ export class ModelMesh {
     if (target.tone === 'locked') this.cursorLine.setRGB(1, 0.36, 0.36);
     else this.cursorLine.setRGB(1, 1, 1);
     for (const g of this.groups.values()) {
-      const on = g.key === target.texture;
+      const on = g.path === target.texture;
       g.material.uniforms.uCursorOn.value = on ? 1 : 0;
       if (on) g.material.uniforms.uCursor.value = tex;
     }
@@ -432,12 +479,13 @@ export class ModelMesh {
     return false;
   }
 
-  /** Highlights every face using a texture, and outlines one face (index into the quads). */
+  /** Highlights every face using a texture (or a trim palette), and outlines one face (index into the quads). */
   highlight(texture: string | null, face = -1): void {
     this.hoverKey = texture;
     this.hoverFace = face;
     for (const g of this.groups.values()) {
-      g.material.uniforms.uGlow.value = texture !== null && g.key === texture ? 1 : 0;
+      const uses = texture !== null && (g.path === texture || g.palette?.key === texture || g.palette?.values === texture);
+      g.material.uniforms.uGlow.value = uses ? 1 : 0;
       g.material.uniforms.uHoverFace.value = face;
     }
   }
@@ -470,7 +518,7 @@ export class ModelMesh {
         const y = Math.min(fh - 1, Math.max(0, Math.floor(h.uv.y * fh)));
         if (img.data[(y * img.width + x) * 4 + 3] === 0) continue;
       }
-      return { index: qi, quad: q, texture: q.texture && this.groups.has(q.texture) ? q.texture : null, point: h.point.clone() };
+      return { index: qi, quad: q, texture: g.path !== MISSING ? g.path : null, point: h.point.clone() };
     }
     return null;
   }
@@ -496,6 +544,7 @@ export class ModelMesh {
       g.texture?.dispose();
     }
     this.groups.clear();
+    this.palettes.clear();
     this.quads = [];
     this.hoverFace = -1;
     this.hoverKey = null;

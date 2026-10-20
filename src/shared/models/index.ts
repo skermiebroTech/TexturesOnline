@@ -262,7 +262,11 @@ export class ModelLibrary {
     if (!eb || !eb.ready(entry.id)) return { entry, state: s, shape: 'special', quads: [], sprite: [], textures: [], category: 'mob', note: 'Loading the model…' };
     const v = eb.resolve(entry.id, s);
     const faces = new Map<string, number>();
-    for (const q of v.quads) if (q.texture) faces.set(q.texture, (faces.get(q.texture) ?? 0) + 1);
+    for (const q of v.quads) {
+      if (q.texture) faces.set(q.texture, (faces.get(q.texture) ?? 0) + 1);
+      // a trim's palettes colour the faces of its pattern
+      if (q.palette) for (const p of [q.palette.key, q.palette.values]) faces.set(p, (faces.get(p) ?? 0) + 1);
+    }
     const all = this.textureStates(entry);
     const worn = new Set(all.filter((t) => t.gear).map((t) => t.path));
     const textures: ModelTexture[] = [];
@@ -545,7 +549,7 @@ async function loadJava(assets: AssetIndex, opts: LoadOptions): Promise<ModelLib
   const lang = await readJavaLang(assets);
   const backend = new JavaBackend({ version: assets.version, json, hasFile: (p) => assets.hasFile(p), listFiles: (p) => assets.listFiles(p), animated: animatedSet(assets), lang });
   const lib = new ModelLibrary('java', assets.version, backend);
-  lib.setEntities(new JavaEntities({ hasFile: (p) => assets.hasFile(p) }));
+  lib.setEntities(new JavaEntities({ hasFile: (p) => assets.hasFile(p), listFiles: (p) => assets.listFiles(p) }));
   return lib;
 }
 
