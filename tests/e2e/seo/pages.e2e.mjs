@@ -42,6 +42,7 @@ const PAGES = [
   { path: 'guides/minecraft-pack-format-versions/', tool: 'help', ready: '.formats-table' },
   { path: 'guides/install-resource-packs/', tool: 'help', ready: '.guide-page .guide-tabs' },
   { path: 'guides/texture-pack-not-working/', tool: 'help', ready: '.guide-page h1' },
+  { path: 'guides/make-a-bedrock-skin-pack/', tool: 'help', ready: '.guide-page .guide-tabs' },
 ];
 
 // Translated pages: language folder, html lang, the help link's label and a phrase of the page.

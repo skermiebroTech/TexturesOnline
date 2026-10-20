@@ -755,7 +755,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         a: [el('p', null, 'No. The skins and the pack are made in your browser and stay on your device until you share the file.')],
       },
     ],
-    guides: ['make-a-skin', 'install-resource-packs', 'java-vs-bedrock-packs'],
+    guides: ['make-a-bedrock-skin-pack', 'make-a-skin', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: 'Start a skin pack',
   },
   shaders: {

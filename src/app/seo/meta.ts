@@ -207,6 +207,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-blue',
   }),
   guide({
+    slug: 'make-a-bedrock-skin-pack',
+    blurb: 'Bundle your skins into one .mcpack and wear them in the Dressing Room.',
+    title: 'How to Make a Minecraft Bedrock Skin Pack (Free .mcpack)',
+    h1: 'How to make a Minecraft Bedrock skin pack',
+    description:
+      'Make a custom skin pack for Minecraft Bedrock: paint or upload skins, export one .mcpack, import it on PC or phone, update it, or build the files by hand.',
+    label: 'Make a Bedrock skin pack',
+    icon: 'users',
+    accent: 'accent-blue',
+  }),
+  guide({
     slug: 'make-shaders-without-mods',
     blurb: 'What vanilla Java shader packs and Bedrock Vibrant Visuals can do.',
     title: 'Minecraft Shaders Without Mods or OptiFine (Java & Bedrock)',
