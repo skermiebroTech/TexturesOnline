@@ -290,7 +290,6 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
     dz.classList.toggle('compact', entries.length > 0);
     const label = dz.querySelector('.dropzone-label');
     if (label) label.textContent = entries.length ? 'Add more packs' : 'Drop packs here or click to browse';
-    dz.setAttribute('aria-label', entries.length ? 'Add more packs' : 'Drop packs here or click to browse');
   }
 
   function majorityEdition(): Edition {
