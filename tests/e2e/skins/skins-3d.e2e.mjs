@@ -413,6 +413,7 @@ for (const theme of ['dark', 'light']) {
     [1440, 900, false],
     [1024, 768, false],
     [390, 844, true],
+    [360, 740, true],
   ]) {
     const { page, context, errors } = await newPage(mobile ? { viewport: { width: w, height: hgt }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 } : { viewport: { width: w, height: hgt } }, theme);
     await openStarter(page, 'explorer');
@@ -437,7 +438,12 @@ for (const theme of ['dark', 'light']) {
       const overlays = ['.sk-3d-mode', '.sk-3d-views', '.sk-3d-hint'].map((s) => document.querySelector(s).getBoundingClientRect());
       const inStage = overlays.every((r) => r.left >= stage.left && r.right <= stage.right && r.top >= stage.top && r.bottom <= stage.bottom);
       const [mode, views] = overlays;
-      return inPanel && inStage && mode.right < views.left;
+      // The body-part figure sits under the mode switch, inside the stage, clear of the animation bar.
+      const fig = document.querySelector('.sk-body-toggle').getBoundingClientRect();
+      const anim = document.querySelector('.sk-3d-anim .segmented').getBoundingClientRect();
+      const apart = (a, b) => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+      const figOk = fig.top >= mode.bottom && fig.bottom <= stage.bottom && apart(fig, anim) && apart(fig, mode);
+      return inPanel && inStage && mode.right < views.left && figOk;
     });
     check(`3D paint controls fit (${w} ${theme})`, fits);
     await page.screenshot({ path: path.join(shots, `skins3d-${w}-${theme}.png`) });

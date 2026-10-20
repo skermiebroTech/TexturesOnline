@@ -2055,12 +2055,25 @@
 }
 
 /* ---- Body-part figure on the 3D stage (show / hide / show only) ---- */
+.sk-3d-side {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+.sk-3d-side > * {
+  pointer-events: auto;
+}
+.sk-3d-side > .sk-3d-mode {
+  position: static;
+}
 .sk-body-toggle {
   --u: 3px; /* one skin pixel */
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2071,7 +2084,6 @@
   background: color-mix(in srgb, var(--bg-elev) 82%, transparent);
   backdrop-filter: blur(8px);
   box-shadow: var(--shadow-1);
-  transform: translateY(-50%);
 }
 .sk-body-toggle-grid {
   display: grid;
@@ -2143,9 +2155,9 @@
   cursor: pointer;
 }
 .sk-fig-all.is-off {
-  visibility: hidden;
+  display: none;
 }
-@media (pointer: coarse) {
+@media (pointer: coarse) and (min-width: 381px) {
   .sk-body-toggle {
     --u: 4px;
   }

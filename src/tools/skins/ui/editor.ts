@@ -685,7 +685,6 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   tooltip(figureAll, 'Show every part again');
   figureAll.addEventListener('click', () => showAllParts());
   const figure = h('div', { class: 'sk-body-toggle', role: 'group', 'aria-label': 'Show or hide body parts in 3D' }, figureGrid, figureAll);
-  stageWrap.appendChild(figure);
 
   const sizeSeg = segmented<'64' | '128'>({
     value: scale === 2 ? '128' : '64',
@@ -881,7 +880,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       }
     },
   });
-  stageWrap.append(paint3d.modeSwitch, paint3d.views, paint3d.hint);
+  // The mode switch and the figure share the top-left corner, stacked, so they never overlap.
+  stageWrap.append(h('div', { class: 'sk-3d-side' }, paint3d.modeSwitch, figure), paint3d.views, paint3d.hint);
   stageWrap.dataset.mode = 'view';
   viewControls.after(paint3d.controls);
 
@@ -1371,7 +1371,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       b.setAttribute('aria-label', `${PART_INFO[p].label}: ${shown ? 'shown' : 'hidden'} in 3D`);
       b.classList.toggle('is-focus', focusedPart === p);
     });
-    // Hidden with visibility, not display, so the figure never shifts under a double-click.
+    // The figure is pinned to the top, so showing or hiding "All" below it never moves a part.
     const none = hidden.size === 0;
     figureAll.classList.toggle('is-off', none);
     figureAll.tabIndex = none ? -1 : 0;
