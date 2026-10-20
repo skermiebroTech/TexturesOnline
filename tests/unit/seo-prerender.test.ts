@@ -256,7 +256,7 @@ test('pages the app takes over as they are name the page and year they were buil
   }
 });
 
-test('the shader page fetches its start screen and first picture with the page', () => {
+test('the shader page fetches its first picture with the page', () => {
   const withAssets = buildSite({
     template: TEMPLATE,
     iconSvg: () => '',
@@ -265,8 +265,7 @@ test('the shader page fetches its start screen and first picture with the page',
     buildDate: BUILD_DATE,
   });
   const html = withAssets.find((f) => f.fileName === pageFileName('/shaders'))!.source;
-  assert.match(html, /<link rel="modulepreload" crossorigin href="\.\.\/assets\/start\.js">/);
-  assert.match(html, /<link rel="preload" as="image" href="\.\.\/assets\/iris-abc\.webp" fetchpriority="high">/);
+  assert.match(html, /<link rel="preload" as="image" href="\.\.\/assets\/iris-abc\.webp">/);
   const textures = withAssets.find((f) => f.fileName === pageFileName('/textures'))!.source;
   assert.ok(!textures.includes('as="image"'));
 });

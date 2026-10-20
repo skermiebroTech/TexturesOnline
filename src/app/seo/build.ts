@@ -180,7 +180,7 @@ function pageAssets(input: SiteBuildInput, page: PrerenderPage, prefix: string):
     ...css.map((f) => `<link rel="stylesheet" crossorigin href="${prefix}${f}">`),
     ...lateCss.map((f) => `<link rel="preload" as="style" crossorigin href="${prefix}${f}">`),
     ...js.map((f) => `<link rel="modulepreload" crossorigin href="${prefix}${f}">`),
-    ...images.map((f) => `<link rel="preload" as="image" href="${prefix}${f}" fetchpriority="high">`),
+    ...images.map((f) => `<link rel="preload" as="image" href="${prefix}${f}">`),
   ].join('\n    ');
 }
 
