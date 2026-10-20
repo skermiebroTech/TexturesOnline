@@ -355,7 +355,7 @@ export const HELP: HelpText = {
           strong('3D item from sprite'),
           ': Das flache Bild wird zu Würfeln mit 1 Pixel Tiefe, zu möglichst wenigen zusammengefasst. Ab 1.21.4 behält ',
           strong('Flat in the inventory'),
-          ' das flache Symbol im Inventar und zeigt das 3D-Modell in der Hand. Ins Pack kommt die Modelldatei, dazu eine Item-Definition oder ein Blockzustand nur, wenn das Spiel sie braucht; der Export prüft die Modelle für deine Version, und Modelldateien aus geöffneten Packs bleiben erhalten und lassen sich bearbeiten. Bedrock-Ressourcenpakete können keine Formen ändern (dafür braucht es eine Erweiterung), aber du kannst ein Modell als Bedrock-Geometrie herunterladen, um eine zu beginnen. Schritt für Schritt: ',
+          ' das flache Symbol im Inventar und zeigt das 3D-Modell in der Hand. Ins Pack kommt die Modelldatei, dazu eine Item-Definition oder ein Blockzustand nur, wenn das Spiel sie braucht; der Export prüft die Modelle für deine Version, und Modelldateien aus geöffneten Packs bleiben erhalten und lassen sich bearbeiten. In Bedrock brauchen neue Blockformen eine Erweiterung und 3D-Items in der Hand Attachable-Dateien, die der Editor nicht erstellt; du kannst ein Modell aber als Bedrock-Geometrie herunterladen und darauf aufbauen. Schritt für Schritt: ',
           link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'),
           '.',
         ),

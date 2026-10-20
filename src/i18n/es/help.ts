@@ -347,7 +347,7 @@ export const HELP: HelpText = {
           strong('3D item from sprite'),
           ', que convierte la imagen plana en cubos de 1 píxel de grosor unidos en el menor número posible. Desde la 1.21.4, ',
           strong('Flat in the inventory'),
-          ' mantiene el icono plano en el inventario y muestra el modelo 3D en la mano. El pack recibe el archivo del modelo y solo añade una definición de ítem o un estado de bloque cuando el juego los necesita; al exportar se revisan los modelos para tu versión, y los archivos de modelo de los packs que abres se conservan y se pueden editar. Los paquetes de recursos de Bedrock no pueden cambiar formas (hace falta un complemento), pero puedes descargar un modelo como geometría de Bedrock para empezar uno. Paso a paso: ',
+          ' mantiene el icono plano en el inventario y muestra el modelo 3D en la mano. El pack recibe el archivo del modelo y solo añade una definición de ítem o un estado de bloque cuando el juego los necesita; al exportar se revisan los modelos para tu versión, y los archivos de modelo de los packs que abres se conservan y se pueden editar. En Bedrock, las nuevas formas de bloque necesitan un complemento y los ítems 3D en la mano necesitan archivos attachable, que el editor no crea; puedes descargar un modelo como geometría de Bedrock como punto de partida. Paso a paso: ',
           link('/guides/make-3d-items-texture-pack', 'Cómo hacer ítems 3D'),
           '.',
         ),
