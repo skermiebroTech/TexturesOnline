@@ -8,6 +8,8 @@ import type { ModelEntry } from '../../../shared/models/index';
 import type { ModelService } from './models';
 import { paintCanvas } from './thumbs';
 import type { TexStore } from './store';
+import { fmt } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export interface UsedByApi {
   el: HTMLElement;
@@ -25,7 +27,7 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
   let current: ModelEntry | null = null;
   let menu: PopoverHandle | null = null;
   const chips = h('div', { class: 'tx-usedby-chips' });
-  const el = h('div', { class: 'tx-usedby', hidden: true, role: 'group', 'aria-label': 'Used by' }, h('span', { class: 'tx-usedby-label' }, icon('link', { size: 16 }), 'Used by'), chips);
+  const el = h('div', { class: 'tx-usedby', hidden: true, role: 'group', 'aria-label': te.preview.usedBy }, h('span', { class: 'tx-usedby-label' }, icon('link', { size: 16 }), te.preview.usedBy), chips);
 
   const iconInto = (canvas: HTMLCanvasElement, e: ModelEntry) => {
     const draw = (img: HTMLCanvasElement | ImageData | null) => {
@@ -45,7 +47,7 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
   const chip = (e: ModelEntry) => {
     const c = h('canvas', { class: 'tx-usedby-icon', 'aria-hidden': 'true' });
     const b = h('button', { type: 'button', class: 'chip tx-usedby-chip', 'aria-pressed': String(!!current && current.kind === e.kind && current.id === e.id), dataset: { kind: e.kind, id: e.id } }, c, h('span', { class: 'truncate' }, e.name));
-    tooltip(b, `Show ${e.name} (${e.kind === 'entity' ? 'mob' : e.kind})`);
+    tooltip(b, fmt(te.preview.show, { name: e.name, kind: e.kind }));
     b.addEventListener('click', () => opts.onPick(e));
     iconInto(c, e);
     return b;
@@ -77,13 +79,13 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
     const nodes: HTMLElement[] = shown.map(chip);
     if (rest.length) {
       const more = h('button', { type: 'button', class: 'chip tx-usedby-more', 'aria-haspopup': 'menu', 'aria-expanded': 'false' }, `+${rest.length}`);
-      tooltip(more, `${rest.length} more`);
+      tooltip(more, fmt(te.preview.more, { count: rest.length }));
       more.addEventListener('click', () => {
         if (menu?.open) return menu.close();
-        const listEl = h('div', { class: 'tx-usedby-menu', role: 'menu', 'aria-label': 'Also used by' });
+        const listEl = h('div', { class: 'tx-usedby-menu', role: 'menu', 'aria-label': te.preview.alsoUsedBy });
         const buttons = rest.map((e) => {
           const c = h('canvas', { class: 'tx-usedby-icon', 'aria-hidden': 'true' });
-          const b = h('button', { type: 'button', class: 'tx-usedby-menuitem', role: 'menuitem', tabIndex: -1 }, c, h('span', { class: 'truncate' }, e.name), h('span', { class: 'tx-usedby-kind' }, e.kind === 'block' ? 'Block' : e.kind === 'item' ? 'Item' : 'Mob'));
+          const b = h('button', { type: 'button', class: 'tx-usedby-menuitem', role: 'menuitem', tabIndex: -1 }, c, h('span', { class: 'truncate' }, e.name), h('span', { class: 'tx-usedby-kind' }, e.kind === 'block' ? te.preview.kind.block : e.kind === 'item' ? te.preview.kind.item : te.preview.kind.mob));
           b.addEventListener('click', () => {
             menu?.close();
             opts.onPick(e);

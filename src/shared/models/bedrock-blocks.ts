@@ -12,7 +12,8 @@ import type { BlockState, EditionBackend, ModelCategory, RawView, SpriteLayer, T
 import { pretty } from './labels';
 import { bedrockEntityBlock, type EntityBlock, type EntityTextureSource } from './block-entities';
 import { JAVA_FORMS, JavaShapes, chainStrip, javaTargetFor, pickBedrockTexture, textureTokens, type JavaForms, type JavaTarget, type TextureCandidate, type TextureHow } from './bedrock-java';
-import { INVISIBLE_NOTE } from './java-blocks';
+import { invisibleNote } from './java-blocks';
+import { mt } from './i18n/text';
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
@@ -237,9 +238,6 @@ type ShapeKind =
 
 /** Bedrock blocks that are invisible in the world: shown as their icon. */
 const INVISIBLE = /^(barrier|structure_void|light_block(_\d+)?)$/;
-const ENGINE_NOTE =
-  "Bedrock builds this block's shape in the game. The shapes are read from the game's block models, which couldn't be loaded (they need an internet connection the first time), so it's shown as a simple cube with the textures blocks.json gives each face.";
-const JAVA_NOTE = 'Bedrock builds this shape in the game. Shown with the matching block model and the textures blocks.json gives this block.';
 
 /** Model rotation of an item frame hanging on a wall (the model hangs on the south side facing north). */
 const FRAME_ROTATION: Record<string, { x: number; y: number }> = { north: { x: 0, y: 0 }, east: { x: 0, y: 90 }, south: { x: 0, y: 180 }, west: { x: 0, y: 270 }, up: { x: 270, y: 0 }, down: { x: 90, y: 0 } };
@@ -524,12 +522,12 @@ export class BedrockBackend implements EditionBackend {
       const b = base ?? this.engineView(id, state, 'world', shape.base.kind === 'engine' && shape.base.cube);
       return { shape: 'model', quads: [...b.quads, ...quads], sprite: [], category: b.category === 'cube' ? 'shape' : b.category, note: e.note };
     }
-    if (shape.kind === 'invisible') return this.iconView(id, state, 'inventory', 'special', INVISIBLE_NOTE);
+    if (shape.kind === 'invisible') return this.iconView(id, state, 'inventory', 'special', invisibleNote());
     const look = state.look ?? 'world';
     if (shape.kind === 'java' && this.java) {
       if (look === 'inventory') {
         const icon = this.iconView(id, state, 'inventory', 'shape');
-        if (icon.sprite.length) return { ...icon, note: 'Bedrock shows this block as its inventory icon here.' };
+        if (icon.sprite.length) return { ...icon, note: mt.notes.bedrockIcon };
       }
       const view = this.javaView(id, shape, state);
       if (view) return view;
@@ -629,7 +627,7 @@ export class BedrockBackend implements EditionBackend {
     });
     const category: ModelCategory = models.some((m) => m.chain.some((c) => /(^|:)block\/(cross|tinted_cross|crop|flower_pot_cross|cross_emissive)$/.test(c))) ? 'plant' : 'shape';
     // Faces of layers Bedrock doesn't have (redstone dust overlay) are left out.
-    return { shape: 'model', quads: out.filter((q) => q.texture !== ''), sprite: [], category, note: JAVA_NOTE };
+    return { shape: 'model', quads: out.filter((q) => q.texture !== ''), sprite: [], category, note: mt.notes.bedrockJava };
   }
 
   /**
@@ -652,7 +650,7 @@ export class BedrockBackend implements EditionBackend {
   /** The shapes Bedrock builds in, redrawn here without the game's block models (offline). */
   private engineView(id: string, state: BlockState, look: string, cube = false): RawView {
     const f = this.faces(id, look);
-    if (!f) return { shape: 'special', quads: [], sprite: [], category: 'special', note: 'This block has no textures of its own.' };
+    if (!f) return { shape: 'special', quads: [], sprite: [], category: 'special', note: mt.notes.bedrockNoTextures };
     const variant = Number(state.variant ?? 0) || 0;
     const { shape, height } = cube ? { shape: 'cube' as Shape, height: undefined } : bedrockShape(id);
     const textures: Record<string, string> = {};
@@ -685,10 +683,10 @@ export class BedrockBackend implements EditionBackend {
       approximate: approx || undefined,
       note: approx
         ? this.java
-          ? 'Bedrock builds this block\'s shape in the game and there is no matching block model: shown as a simple cube with the textures blocks.json gives each face.'
-          : ENGINE_NOTE
+          ? mt.notes.bedrockCube
+          : mt.notes.bedrockEngine
         : shape === 'liquid'
-          ? 'Liquids are drawn by the game from their still and flowing textures, shown here as a still source block.'
+          ? mt.notes.bedrockLiquid
           : undefined,
     };
   }

@@ -14,6 +14,9 @@ import { cacheGet, cacheSet } from '../../../core/storage';
 import { findManifestVersion } from '../../../editions/java/versions';
 import { bedrockRefOf, fetchSampleFile } from '../../../editions/bedrock/assets';
 import { parseLenientJson } from '../../../editions/bedrock/catalog';
+import { fmt } from '../../../i18n/editor-text';
+import { errorText } from '../../../shared/i18n/errors';
+import { ts } from '../ui/i18n/sounds';
 import { javaCatalogFromFiles, javaSoundStem, parseJavaSoundsJson, parseBedrockDefinitions, BEDROCK_DEFINITIONS, type SoundCatalog } from './catalog';
 
 export const MOJANG_RESOURCES = 'https://resources.download.minecraft.net';
@@ -78,12 +81,12 @@ async function assetIndexRef(versionId: string, signal?: AbortSignal): Promise<A
   }
   if (!entry) {
     if (cached) return cached;
-    throw new Error(`Minecraft ${versionId} isn't in Mojang's version list.`);
+    throw new Error(fmt(errorText.notInVersionList, { version: versionId }));
   }
   if (cached && (!entry.sha1 || cached.jsonSha1 === entry.sha1)) return cached;
   const vj = await fetchJson<{ assetIndex?: { id?: string; url?: string; sha1?: string } }>(entry.url, { retries: 2, signal });
   const ai = vj.assetIndex;
-  if (!ai?.url || !ai.sha1) throw new SoundsUnsupportedError(`Mojang doesn't list sounds for Minecraft ${versionId}.`);
+  if (!ai?.url || !ai.sha1) throw new SoundsUnsupportedError(fmt(ts.errors.noSounds, { version: versionId }));
   const ref: AssetIndexRef = { id: ai.id ?? '', url: ai.url, sha1: ai.sha1, jsonSha1: entry.sha1 };
   cacheSet(key, ref).catch(() => {});
   return ref;
@@ -92,7 +95,7 @@ async function assetIndexRef(versionId: string, signal?: AbortSignal): Promise<A
 /** The sound files of an asset index (paths under minecraft/sounds/ without '.ogg', with hashes). */
 export function soundFilesFromIndex(index: unknown): { files: string[]; hashes: string[]; hasSoundsJson: boolean } {
   const objects = (index as { objects?: Record<string, { hash?: string }> })?.objects;
-  if (!objects || typeof objects !== 'object') throw new Error('The asset index is damaged.');
+  if (!objects || typeof objects !== 'object') throw new Error(ts.errors.damagedIndex);
   const files: string[] = [];
   const hashes: string[] = [];
   for (const [path, o] of Object.entries(objects)) {
@@ -111,7 +114,7 @@ async function loadJava(versionId: string, signal?: AbortSignal): Promise<Vanill
   if (!stored || stored.format !== FORMAT || !Array.isArray(stored.files)) {
     const index = await fetchJson(ref.url, { retries: 2, timeoutMs: 45_000, signal });
     const { files, hashes, hasSoundsJson } = soundFilesFromIndex(index);
-    if (!files.length || !hasSoundsJson) throw new SoundsUnsupportedError('Sound editing works with Minecraft 1.7.10 and newer.');
+    if (!files.length || !hasSoundsJson) throw new SoundsUnsupportedError(ts.errors.tooOld);
     stored = { format: FORMAT, files, hashes };
   }
   if (stored.soundsJson === undefined) {

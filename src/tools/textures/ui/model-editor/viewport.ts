@@ -11,6 +11,7 @@ import { ModelMesh, type ModelTextureImage } from '../../../../shared/models/mod
 import { bakeModel, type DisplayTransform, type ResolvedModel } from '../../../../shared/models/java-models';
 import type { BakedQuad, Dir, RGB, Tint } from '../../../../shared/models/geometry';
 import type { EditElement } from '../../models/doc';
+import { tm } from '../i18n/model-editor';
 
 export type Tool = 'move' | 'resize';
 export type CameraView = 'front' | 'back' | 'left' | 'right' | 'top';
@@ -164,7 +165,7 @@ export class ModelEditorViewport {
 
   constructor(container: HTMLElement, handlers: ViewportHandlers) {
     this.handlers = handlers;
-    this.stage = createStage(container, 'Model editor 3D view. Click a cube to select it; drag the arrows to move it or the knobs to resize it; drag elsewhere to turn the view; scroll to zoom.');
+    this.stage = createStage(container, tm.stage3d);
     this.root = this.stage.root;
     let renderer: THREE.WebGLRenderer | null = null;
     try {

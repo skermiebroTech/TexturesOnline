@@ -8,6 +8,8 @@ import { openPopover, tooltip, type PopoverHandle } from '../../../ui/components
 import { addRecentColor, colorPicker, getRecentColors } from '../../../ui/color-picker';
 import { parseHex } from '../../../ui/color';
 import { extractPalette, rgbaHex, type RGBA } from './meta';
+import { fmt } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export interface ColorDock {
   el: HTMLElement;
@@ -26,21 +28,21 @@ export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock 
 
   const primary = h('button', { type: 'button', class: 'tx-swatch tx-swatch-primary checker', 'aria-haspopup': 'dialog' }, h('span', { class: 'tx-swatch-fill' }));
   const secondary = h('button', { type: 'button', class: 'tx-swatch tx-swatch-secondary checker', 'aria-haspopup': 'dialog' }, h('span', { class: 'tx-swatch-fill' }));
-  const swap = h('button', { type: 'button', class: 'tx-swap', 'aria-label': 'Swap colours (X)' }, icon('arrows-horizontal', { size: 16 }));
-  tooltip(swap, 'Swap colours — X');
+  const swap = h('button', { type: 'button', class: 'tx-swap', 'aria-label': te.canvas.swap }, icon('arrows-horizontal', { size: 16 }));
+  tooltip(swap, te.canvas.swapKey);
   const swatches = h('div', { class: 'tx-swatches' }, secondary, primary, swap);
 
-  const palRow = h('div', { class: 'tx-pal-row', role: 'list', 'aria-label': 'Colours in this texture' });
-  const recentRow = h('div', { class: 'tx-pal-row', role: 'list', 'aria-label': 'Recent colours' });
-  const palGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, 'In this texture'), palRow);
-  const recentGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, 'Recent'), recentRow);
+  const palRow = h('div', { class: 'tx-pal-row', role: 'list', 'aria-label': te.canvas.paletteLabel });
+  const recentRow = h('div', { class: 'tx-pal-row', role: 'list', 'aria-label': te.canvas.recentLabel });
+  const palGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, te.canvas.inTexture), palRow);
+  const recentGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, te.canvas.recent), recentRow);
 
   const el = h('div', { class: 'tx-colordock' }, swatches, h('div', { class: 'tx-pal-scroll' }, palGroup, recentGroup));
 
   const chip = (c: RGBA) => {
     const b = h(
       'button',
-      { type: 'button', class: ['tx-pal', c[3] < 255 && 'checker'], role: 'listitem', 'aria-label': `${rgbaHex(c)} — click for main colour, right-click for second colour`, title: rgbaHex(c) },
+      { type: 'button', class: ['tx-pal', c[3] < 255 && 'checker'], role: 'listitem', 'aria-label': fmt(te.canvas.chip, { hex: rgbaHex(c) }), title: rgbaHex(c) },
       h('span', { style: { background: css(c) } }),
     );
     b.addEventListener('click', () => {
@@ -75,8 +77,8 @@ export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock 
     const s = pc.secondaryColor as RGBA;
     (primary.firstChild as HTMLElement).style.background = css(p);
     (secondary.firstChild as HTMLElement).style.background = css(s);
-    primary.setAttribute('aria-label', `Main colour ${rgbaHex(p)}. Change colour`);
-    secondary.setAttribute('aria-label', `Second colour ${s[3] === 0 ? 'transparent' : rgbaHex(s)}. Change colour`);
+    primary.setAttribute('aria-label', fmt(te.canvas.mainColour, { hex: rgbaHex(p) }));
+    secondary.setAttribute('aria-label', fmt(te.canvas.secondColour, { hex: s[3] === 0 ? te.canvas.transparent : rgbaHex(s) }));
     const mark = rgbaHex(p);
     palRow.querySelectorAll<HTMLElement>('.tx-pal').forEach((b) => b.classList.toggle('selected', b.title === mark));
     recentRow.querySelectorAll<HTMLElement>('.tx-pal').forEach((b) => b.classList.toggle('selected', b.title === mark));
@@ -106,7 +108,7 @@ export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock 
         return null;
       },
     });
-    pop = openPopover(anchor, picker, { placement: 'top-start', focus: true, label: which === 'primary' ? 'Main colour' : 'Second colour', onClose: () => renderRecent() });
+    pop = openPopover(anchor, picker, { placement: 'top-start', focus: true, label: which === 'primary' ? te.canvas.main : te.canvas.second, onClose: () => renderRecent() });
     pop.el.dataset.which = which;
   };
   primary.addEventListener('click', () => openPicker('primary'));

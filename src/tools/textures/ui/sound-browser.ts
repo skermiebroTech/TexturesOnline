@@ -6,7 +6,9 @@ import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { button, emptyState, openPopover, spinner, tooltip, type PopoverHandle } from '../../../ui/components';
 import { toast } from '../../../ui/toast';
 import { friendlyError } from '../../../core/net';
-import { SOUND_CATEGORY_LABELS, SOUND_CATEGORY_ORDER, searchSoundEvents, type SoundCategory, type SoundEvent } from '../sounds/catalog';
+import { SOUND_CATEGORY_ORDER, searchSoundEvents, type SoundCategory, type SoundEvent } from '../sounds/catalog';
+import { fmt, num } from '../../../i18n/editor-text';
+import { ts } from './i18n/sounds';
 import type { SoundState } from './sound-store';
 
 export const SOUND_CATEGORY_ICONS: Record<SoundCategory, IconName> = {
@@ -39,7 +41,7 @@ export interface SoundBrowserOptions {
 const ROW = 48;
 const PAD = 6;
 const OVERSCAN = 6;
-const nf = new Intl.NumberFormat();
+const nf = { format: (n: number) => num(n) };
 type Cat = SoundCategory | 'all';
 
 export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
@@ -55,25 +57,25 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
   const input = h('input', {
     class: 'input tx-search-input',
     type: 'search',
-    placeholder: 'Search sounds',
+    placeholder: ts.browser.search,
     autocomplete: 'off',
     spellcheck: false,
-    'aria-label': 'Search sounds',
+    'aria-label': ts.browser.search,
     enterKeyHint: 'search',
   });
-  const clearBtn = h('button', { type: 'button', class: 'icon-btn sm tx-search-clear', 'aria-label': 'Clear search', hidden: true }, icon('close'));
+  const clearBtn = h('button', { type: 'button', class: 'icon-btn sm tx-search-clear', 'aria-label': ts.browser.clearSearch, hidden: true }, icon('close'));
   const search = h('div', { class: 'tx-search' }, icon('search', { class: 'tx-search-icon' }), input, clearBtn, h('kbd', { class: 'kbd tx-search-kbd', 'aria-hidden': 'true' }, '/'));
 
   const catIcon = h('span', { class: 'tx-catpick-icon' });
   const catLabel = h('span', { class: 'tx-catpick-label truncate' });
   const catCount = h('span', { class: 'tx-chip-count' });
   const catPick = h('button', { type: 'button', class: 'chip tx-catpick', 'aria-haspopup': 'menu', 'aria-expanded': 'false' }, catIcon, catLabel, catCount, icon('chevron-down', { class: 'tx-catpick-chev' }));
-  tooltip(catPick, 'Show one kind of sound');
-  const editedBtn = h('button', { type: 'button', class: 'chip tx-edited-chip', 'aria-pressed': 'false' }, icon('pencil'), h('span', null, 'Edited'), h('span', { class: 'tx-chip-count' }, '0'));
-  tooltip(editedBtn, 'Show only the sounds you replaced');
+  tooltip(catPick, ts.browser.kindHint);
+  const editedBtn = h('button', { type: 'button', class: 'chip tx-edited-chip', 'aria-pressed': 'false' }, icon('pencil'), h('span', null, ts.browser.edited), h('span', { class: 'tx-chip-count' }, '0'));
+  tooltip(editedBtn, ts.browser.editedHint);
   const count = h('span', { class: 'tx-browser-count' });
 
-  const list = h('div', { class: 'snd-list', role: 'listbox', tabIndex: 0, 'aria-label': 'Sounds' });
+  const list = h('div', { class: 'snd-list', role: 'listbox', tabIndex: 0, 'aria-label': ts.browser.sounds });
   const sizer = h('div', { class: 'tx-grid-sizer' });
   const scroller = h('div', { class: 'tx-grid-scroll scroll' }, sizer, list);
   const empty = h('div', { class: 'tx-grid-empty', hidden: true });
@@ -81,7 +83,7 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
 
   const el = h(
     'section',
-    { class: 'panel tx-browser snd-browser', 'aria-label': 'Sound browser', hidden: true },
+    { class: 'panel tx-browser snd-browser', 'aria-label': ts.browser.label, hidden: true },
     opts.top ?? null,
     h('div', { class: 'tx-browser-head' }, search, catPick),
     h('div', { class: 'tx-browser-bar' }, editedBtn, h('span', { class: 'grow' }), count),
@@ -102,33 +104,33 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
     m.set('all', n);
     return m;
   };
-  const catName = (c: Cat) => (c === 'all' ? 'All sounds' : SOUND_CATEGORY_LABELS[c]);
+  const catName = (c: Cat) => (c === 'all' ? ts.browser.allSounds : ts.categories[c]);
 
   function paintHead() {
     const m = counts();
     catIcon.replaceChildren(icon(cat === 'all' ? 'music' : SOUND_CATEGORY_ICONS[cat]));
     catLabel.textContent = catName(cat);
     catCount.textContent = nf.format(m.get(cat) ?? 0);
-    catPick.setAttribute('aria-label', `Category: ${catName(cat)}, ${m.get(cat) ?? 0} sounds. Change category`);
+    catPick.setAttribute('aria-label', fmt(ts.browser.categoryButton, { category: catName(cat), count: m.get(cat) ?? 0 }));
     catPick.classList.toggle('is-filtered', cat !== 'all');
     editedBtn.querySelector('.tx-chip-count')!.textContent = nf.format(sounds.editedEventCount());
     editedBtn.setAttribute('aria-pressed', String(editedOnly));
     const total = all().length;
-    count.textContent = items.length === total ? `${nf.format(total)} sounds` : `${nf.format(items.length)} of ${nf.format(total)}`;
+    count.textContent = items.length === total ? fmt(ts.browser.count, { count: total }) : fmt(ts.browser.countOf, { count: items.length, total });
     clearBtn.hidden = !query;
   }
 
   let catMenu: PopoverHandle | null = null;
   function openCatMenu() {
     const m = counts();
-    const menu = h('div', { class: 'tx-catmenu', role: 'menu', 'aria-label': 'Sound categories' });
+    const menu = h('div', { class: 'tx-catmenu', role: 'menu', 'aria-label': ts.browser.categories });
     const btns: HTMLButtonElement[] = [];
     const mk = (c: Cat) => {
       const b = h(
         'button',
         { type: 'button', class: 'tx-catmenu-item', role: 'menuitemradio', 'aria-checked': String(cat === c), tabIndex: -1, dataset: { cat: c } },
         icon(c === 'all' ? 'music' : SOUND_CATEGORY_ICONS[c]),
-        h('span', { class: 'tx-catmenu-label' }, c === 'all' ? 'All' : SOUND_CATEGORY_LABELS[c]),
+        h('span', { class: 'tx-catmenu-label' }, c === 'all' ? ts.browser.all : ts.categories[c]),
         h('span', { class: 'tx-chip-count' }, nf.format(m.get(c) ?? 0)),
       );
       b.addEventListener('click', () => {
@@ -181,7 +183,7 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
     const st = sounds.status;
     if (st === 'loading' || st === 'idle') {
       empty.hidden = false;
-      empty.replaceChildren(h('div', { class: 'snd-loading' }, spinner(28), h('span', { class: 'muted' }, 'Loading the game’s sounds…')));
+      empty.replaceChildren(h('div', { class: 'snd-loading' }, spinner(28), h('span', { class: 'muted' }, ts.browser.loading)));
       return;
     }
     if (st === 'error' || st === 'unsupported') {
@@ -189,9 +191,9 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
       empty.replaceChildren(
         emptyState({
           icon: st === 'error' ? 'wifi' : 'volume-x',
-          title: st === 'error' ? 'Couldn’t load the sounds' : 'No sounds for this version',
+          title: st === 'error' ? ts.browser.loadFailed : ts.browser.unsupported,
           text: sounds.error || undefined,
-          action: st === 'error' ? button({ label: 'Try again', icon: 'reload', size: 'sm', onClick: () => void sounds.load() }) : undefined,
+          action: st === 'error' ? button({ label: ts.browser.tryAgain, icon: 'reload', size: 'sm', onClick: () => void sounds.load() }) : undefined,
         }),
       );
       return;
@@ -205,19 +207,19 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
       empty.replaceChildren(
         emptyState({
           icon: 'music',
-          title: 'No sounds replaced yet',
-          text: 'Pick a sound and replace it with a file or a recording. It shows up here.',
-          action: button({ label: 'Show all sounds', size: 'sm', onClick: () => ((editedOnly = false), refilter(true)) }),
+          title: ts.browser.noneReplacedTitle,
+          text: ts.browser.noneReplacedText,
+          action: button({ label: ts.browser.showAll, size: 'sm', onClick: () => ((editedOnly = false), refilter(true)) }),
         }),
       );
     } else {
       empty.replaceChildren(
         emptyState({
           icon: 'search',
-          title: 'No sounds found',
-          text: query ? `Nothing matches "${query}". Try a word like "door", "creeper" or "step".` : 'This category is empty.',
+          title: ts.browser.noneFound,
+          text: query ? fmt(ts.browser.noMatch, { query }) : ts.browser.emptyCategory,
           action: button({
-            label: 'Clear filters',
+            label: ts.browser.clearFilters,
             size: 'sm',
             onClick: () => {
               query = '';
@@ -261,12 +263,12 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
         role: 'option',
         id: rowId(i),
         'aria-selected': String(e.id === selected),
-        'aria-label': `${e.name}${edited ? ', replaced' : ''}, ${n} ${n === 1 ? 'sound' : 'sounds'}`,
+        'aria-label': fmt(ts.browser.row, { name: e.name, replaced: edited ? ts.browser.replacedSuffix : '', count: n }),
         dataset: { index: i },
       },
       play,
       h('span', { class: 'tx-tile-text' }, h('span', { class: 'tx-tile-name' }, e.name), h('span', { class: 'tx-tile-id' }, e.id)),
-      h('span', { class: 'snd-row-meta', 'aria-hidden': 'true' }, n > 1 ? h('span', { class: 'snd-row-count' }, `×${n}`) : null, h('span', { class: 'tx-badge-edit', title: 'Replaced' }, icon('pencil', { size: 16 }))),
+      h('span', { class: 'snd-row-meta', 'aria-hidden': 'true' }, n > 1 ? h('span', { class: 'snd-row-count' }, `×${n}`) : null, h('span', { class: 'tx-badge-edit', title: ts.browser.replaced }, icon('pencil', { size: 16 }))),
     );
   }
 
@@ -303,7 +305,7 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
       r.setAttribute('aria-selected', String(items[i]?.id === selected));
     }
     const e = document.activeElement === list ? items[active] : undefined;
-    status.replaceChildren(...(e ? [h('strong', null, e.name), h('span', null, e.id)] : [h('span', null, sounds.status === 'ready' ? 'Space plays the sound' : '')]));
+    status.replaceChildren(...(e ? [h('strong', null, e.name), h('span', null, e.id)] : [h('span', null, sounds.status === 'ready' ? ts.browser.spacePlays : '')]));
   }
 
   function reveal(i: number) {

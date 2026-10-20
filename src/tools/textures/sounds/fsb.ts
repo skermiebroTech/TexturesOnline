@@ -3,6 +3,9 @@
 // coded as FADPCM (FMOD's ADPCM: frames of 0x8C bytes, 256 samples each); 16-bit PCM is read too.
 // Header layout and the FADPCM algorithm follow the descriptions in vgmstream (ISC licence).
 
+import { fmt } from '../../../i18n/editor-text';
+import { ts } from '../ui/i18n/sounds';
+
 export interface DecodedAudio {
   sampleRate: number;
   /** One Float32Array per channel, -1..1 */
@@ -32,7 +35,7 @@ export function isFsb5(bytes: Uint8Array): boolean {
 
 /** Decodes the first sound of an FSB5 bank. Throws for codecs other than FADPCM / PCM16. */
 export function decodeFsb5(bytes: Uint8Array): DecodedAudio {
-  if (!isFsb5(bytes)) throw new Error('Not an FSB5 sound bank.');
+  if (!isFsb5(bytes)) throw new Error(ts.errors.notFsb);
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const version = dv.getUint32(4, true);
   const count = dv.getUint32(8, true);
@@ -40,7 +43,7 @@ export function decodeFsb5(bytes: Uint8Array): DecodedAudio {
   const namesSize = dv.getUint32(16, true);
   const dataSize = dv.getUint32(20, true);
   const mode = dv.getUint32(24, true);
-  if (!count) throw new Error('The sound bank is empty.');
+  if (!count) throw new Error(ts.errors.emptyBank);
   const base = version === 0 ? 0x40 : 0x3c;
   const dataStart = base + headersSize + namesSize;
 
@@ -72,11 +75,11 @@ export function decodeFsb5(bytes: Uint8Array): DecodedAudio {
   }
   const start = dataStart + dataOffset;
   const end = Math.min(bytes.length, dataStart + Math.max(dataOffset, dataEnd));
-  if (!channels || !sampleRate || start >= end) throw new Error('The sound bank is damaged.');
+  if (!channels || !sampleRate || start >= end) throw new Error(ts.errors.damagedBank);
   const data = bytes.subarray(start, end);
   if (mode === MODE_FADPCM) return { sampleRate, channels: decodeFadpcm(data, channels, samples) };
   if (mode === MODE_PCM16) return { sampleRate, channels: decodePcm16(data, channels, samples) };
-  throw new Error(`Unsupported FMOD codec ${mode}.`);
+  throw new Error(fmt(ts.errors.codec, { mode: String(mode) }));
 }
 
 /** FADPCM: per channel, frames of a 12-byte header (coefficient indexes, shifts, history) and 128 bytes of nibbles. */

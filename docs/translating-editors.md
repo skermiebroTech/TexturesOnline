@@ -16,6 +16,9 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | `src/tools/convert/i18n/` | `convert`, `convert.engine` | `convert/view.ts` |
 | `src/tools/merge/i18n/` | `merge` | `merge/view.ts` |
 | `src/tools/totem/i18n/` | `totem` | `totem/view.ts` |
+| `src/tools/textures/i18n/` | `textures` (start screen), `textures.effects`, `textures.pack` | `textures/view.ts` |
+| `src/tools/textures/ui/i18n/` | `textures.editor`, `textures.sounds`, `textures.modelRules`, `textures.modelEditor` | `textures/view.ts`, with the editor's code |
+| `src/shared/models/i18n/` | `shared.models` (texture roles, block states, mob looks and parts, model notes) | `textures/view.ts`, with the editor's code |
 
 In a folder:
 

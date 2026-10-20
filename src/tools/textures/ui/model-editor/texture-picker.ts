@@ -12,6 +12,8 @@ import { searchScore, type TextureEntry } from '../meta';
 import type { TexStore } from '../store';
 import type { ThumbService } from '../thumbs';
 import { paintCanvas } from '../thumbs';
+import { fmt } from '../../../../i18n/editor-text';
+import { tm } from '../i18n/model-editor';
 
 export interface PickedTexture {
   /** Texture ref for the model ('minecraft:block/stone') */
@@ -41,8 +43,8 @@ export function openTexturePicker(opts: {
   const { store, thumbs } = opts;
   const usable = (e: TextureEntry) => /^assets\/[^/]+\/textures\/.+\.png$/.test(e.path) && (e.category === 'block' || e.category === 'item' || e.custom);
   const all = store.entries.filter(usable);
-  const search = h('input', { class: 'input', type: 'search', placeholder: 'Search textures', 'aria-label': 'Search textures', autocomplete: 'off', spellcheck: false });
-  const grid = h('div', { class: 'me-tp-grid', role: 'listbox', 'aria-label': 'Textures' });
+  const search = h('input', { class: 'input', type: 'search', placeholder: tm.picker.search, 'aria-label': tm.picker.search, autocomplete: 'off', spellcheck: false });
+  const grid = h('div', { class: 'me-tp-grid', role: 'listbox', 'aria-label': tm.picker.textures });
   const more = h('p', { class: 'faint small me-tp-more' });
   let handle: { close(): void } | null = null;
 
@@ -56,7 +58,7 @@ export function openTexturePicker(opts: {
       { type: 'button', class: 'me-tp-tile', role: 'option', title: e.id, dataset: { path: e.path } },
       h('span', { class: 'me-tp-thumbbox checker' }, c),
       h('span', { class: 'me-tp-name truncate' }, e.name),
-      store.isEdited(e.path) ? h('span', { class: 'me-tp-dot', title: 'Edited in this pack' }) : null,
+      store.isEdited(e.path) ? h('span', { class: 'me-tp-dot', title: tm.picker.edited }) : null,
     );
     b.addEventListener('click', () => {
       const ref = refOfPath(e.path);
@@ -85,16 +87,16 @@ export function openTexturePicker(opts: {
       list = [...first, ...own, ...rest];
     }
     grid.replaceChildren(...list.slice(0, MAX_SHOWN).map(tile));
-    more.textContent = list.length > MAX_SHOWN ? `Showing ${MAX_SHOWN} of ${list.length.toLocaleString('en-US')}. Search to find others.` : list.length ? '' : 'No texture matches. Try another word, or make a new texture.';
+    more.textContent = list.length > MAX_SHOWN ? fmt(tm.picker.showing, { shown: MAX_SHOWN, total: list.length }) : list.length ? '' : tm.picker.noMatch;
   };
   search.addEventListener('input', render);
 
   // a new texture of the pack, made from the face's texture or empty
-  const nameInput = h('input', { class: 'input', type: 'text', placeholder: 'ruby_block', 'aria-label': 'New texture name', autocomplete: 'off', spellcheck: false, maxLength: 48 });
+  const nameInput = h('input', { class: 'input', type: 'text', placeholder: 'ruby_block', 'aria-label': tm.picker.newName, autocomplete: 'off', spellcheck: false, maxLength: 48 });
   const copyBox = h('input', { type: 'checkbox', checked: !!opts.current, disabled: !opts.current });
   const err = h('p', { class: 'me-tp-err small', role: 'alert' });
   const create = button({
-    label: 'Make texture',
+    label: tm.picker.make,
     icon: 'plus',
     variant: 'secondary',
     onClick: () => void make(),
@@ -106,13 +108,13 @@ export function openTexturePicker(opts: {
       .replace(/\s+/g, '_')
       .replace(/[^a-z0-9_.-]/g, '');
     if (!name) {
-      err.textContent = 'Give it a name: lower-case letters, numbers and _.';
+      err.textContent = tm.picker.nameHint;
       nameInput.focus();
       return;
     }
     const path = `assets/minecraft/textures/${opts.newDir}/${name}.png`;
     if (store.byPath.has(path) || store.isEdited(path)) {
-      err.textContent = 'There is already a texture with that name. Pick it from the list, or choose another name.';
+      err.textContent = tm.picker.exists;
       return;
     }
     let img: ImageData;
@@ -140,13 +142,13 @@ export function openTexturePicker(opts: {
     h(
       'details',
       { class: 'me-tp-new' },
-      h('summary', null, icon('plus', { size: 16 }), 'New texture'),
-      h('p', { class: 'faint small' }, `Saved in this pack as textures/${opts.newDir}/<name>.png. Paint it afterwards like any other texture.`),
+      h('summary', null, icon('plus', { size: 16 }), tm.picker.newTexture),
+      h('p', { class: 'faint small' }, fmt(tm.picker.savedAs, { path: `textures/${opts.newDir}/<name>.png` })),
       h('div', { class: 'me-tp-newrow' }, nameInput, create),
-      h('label', { class: 'me-tp-copy small' }, copyBox, h('span', null, 'Start from the face’s current texture')),
+      h('label', { class: 'me-tp-copy small' }, copyBox, h('span', null, tm.picker.copy)),
       err,
     ),
   );
   render();
-  handle = openModal({ title: 'Choose a texture', body, width: 640, class: 'me-tp-modal', initialFocus: search });
+  handle = openModal({ title: tm.picker.title, body, width: 640, class: 'me-tp-modal', initialFocus: search });
 }

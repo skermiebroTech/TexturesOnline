@@ -1075,6 +1075,7 @@ input[type='number']::-webkit-outer-spin-button {
 .toast {
   --tone: var(--blue);
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
   width: 100%;
@@ -1095,16 +1096,18 @@ input[type='number']::-webkit-outer-spin-button {
   margin-top: 0;
 }
 .toast-msg {
-  flex: 1 1 auto;
+  flex: 1 1 12em;
   min-width: 0;
   padding-top: 0;
   overflow-wrap: anywhere;
 }
+/* A long action label (in some languages) moves under the message rather than squeezing it */
 .toast-actions {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 4px;
-  margin: -4px 0;
+  margin: -4px 0 -4px auto;
 }
 .toast.tone-success {
   --tone: var(--green);

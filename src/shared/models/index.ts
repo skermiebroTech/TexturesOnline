@@ -10,9 +10,11 @@ import { JavaBackend, javaModelFiles } from './java-blocks';
 import { BedrockEntities, JavaEntities, type EntityBackend } from './entities';
 import { loadJavaModelMirror } from './java-mirror';
 import type { JavaModelSet, JsonGet } from './java-models';
-import { labelTextures, pretty, propertyLabel, valueLabel, type LabelInput } from './labels';
+import { labelTextures, modelLabel, partLabel, pretty, propertyLabel, valueLabel, type LabelInput } from './labels';
 import type { BakedQuad, Dir } from './geometry';
 import type { BlockState, EditionBackend, ModelCategory, ModelEntry, ModelTexture, ModelView, RawView, StateProperty, TextureStates, TextureUsage } from './types';
+import { fmt } from '../../i18n/editor-text';
+import { mt } from './i18n/text';
 
 export * from './types';
 export type { BakedQuad, Tint, Dir, Vec3, RGB } from './geometry';
@@ -196,10 +198,11 @@ export class ModelLibrary {
   properties(entry: ModelEntry): StateProperty[] {
     const b = this.backend;
     if (!b) return [];
-    if (entry.kind === 'entity') return this.entityBackend?.properties(entry.id) ?? [];
+    // (mob and item labels are English data: shown in the page's language)
+    if (entry.kind === 'entity') return (this.entityBackend?.properties(entry.id) ?? []).map((p) => ({ ...p, label: modelLabel(p.label), values: p.values.map((v) => ({ ...v, label: modelLabel(v.label) })) }));
     if (entry.kind === 'item') {
       const opts = b.itemOptions(entry.id);
-      return opts.length > 1 ? [{ name: 'model', label: 'Look', values: opts.map((l, i) => ({ value: String(i), label: l })) }] : [];
+      return opts.length > 1 ? [{ name: 'model', label: modelLabel('Look'), values: opts.map((l, i) => ({ value: String(i), label: modelLabel(l) })) }] : [];
     }
     const rec = this.blockIndex.get(entry.id);
     if (!rec) return [];
@@ -284,7 +287,7 @@ export class ModelLibrary {
   private resolveEntity(entry: ModelEntry, state: BlockState): ModelView {
     const eb = this.entityBackend;
     const s = { ...this.defaultState(entry), ...state };
-    if (!eb || !eb.ready(entry.id)) return { entry, state: s, shape: 'special', quads: [], sprite: [], textures: [], category: 'mob', note: 'Loading the model…' };
+    if (!eb || !eb.ready(entry.id)) return { entry, state: s, shape: 'special', quads: [], sprite: [], textures: [], category: 'mob', note: mt.loading };
     const v = eb.resolve(entry.id, s);
     const faces = new Map<string, number>();
     for (const q of v.quads) {
@@ -298,14 +301,15 @@ export class ModelLibrary {
     const seen = new Set<string>();
     for (const [path, n] of faces) {
       seen.add(path);
-      textures.push({ path, label: v.labels.get(path) ?? 'Body', role: v.labels.get(path) ?? 'body', faces: n, missing: !this.backend!.hasTexture(path) || undefined, gear: worn.has(path) || undefined });
+      textures.push({ path, label: modelLabel(v.labels.get(path) ?? 'Body'), role: v.labels.get(path) ?? 'body', faces: n, missing: !this.backend!.hasTexture(path) || undefined, gear: worn.has(path) || undefined });
     }
     for (const t of all) {
       if (seen.has(t.path)) continue;
       seen.add(t.path);
-      textures.push({ path: t.path, label: t.role, role: t.role, faces: 0, state: { ...s, ...closestState(t.states, s) }, gear: t.gear || undefined });
+      textures.push({ path: t.path, label: modelLabel(t.role), role: t.role, faces: 0, state: { ...s, ...closestState(t.states, s) }, gear: t.gear || undefined });
     }
-    return { entry, state: s, shape: 'model', quads: v.quads, sprite: [], textures, category: 'mob', parts: v.parts, texSizes: v.texSizes, note: v.note };
+    const parts = v.parts?.map((p) => ({ ...p, label: partLabel(p.name, p.label) }));
+    return { entry, state: s, shape: 'model', quads: v.quads, sprite: [], textures, category: 'mob', parts, texSizes: v.texSizes, note: v.note };
   }
 
   /** Every texture the entry can show, with the (partial) states that show it. */
@@ -539,7 +543,7 @@ function animatedSet(assets: AssetIndex): Set<string> {
 async function loadJava(assets: AssetIndex, opts: LoadOptions): Promise<ModelLibrary> {
   const files = javaModelFiles((p) => assets.listFiles(p));
   if (!files.some((f) => f.includes('/blockstates/'))) {
-    return new ModelLibrary('java', assets.version, null, `Minecraft ${assets.version} draws blocks with its own code: block model files arrived in 1.8. Use All textures to edit them.`);
+    return new ModelLibrary('java', assets.version, null, fmt(mt.notes.oldJava, { version: assets.version }));
   }
   if (opts.prefetch) await opts.prefetch(['blockstates', 'models', 'items', 'lang'], { onProgress: opts.onProgress, signal: opts.signal });
   const texts = new Map<string, string>();
@@ -610,7 +614,7 @@ async function loadBedrock(assets: AssetIndex, opts: LoadOptions): Promise<Model
     javaModels().catch(() => null),
   ]);
   if (!blocks || !terrain) {
-    return new ModelLibrary('bedrock', assets.version, null, "The block list for this Bedrock version couldn't be loaded. Check your connection, or use All textures.");
+    return new ModelLibrary('bedrock', assets.version, null, mt.notes.bedrockList);
   }
   const backend = new BedrockBackend({ blocks, terrain, items, lang: parseLang(langText), hasFile: (p) => assets.hasFile(p), animated: animatedSet(assets), java });
   const lib = new ModelLibrary('bedrock', assets.version, backend);

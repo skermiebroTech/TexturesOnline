@@ -13,7 +13,7 @@ import { toast } from '../../../ui/toast';
 import { getProject } from '../../../core/storage';
 import { friendlyError, isAbortError } from '../../../core/net';
 import { navigate, href as routeHref } from '../../../core/router';
-import { bedrockDisplayVersion, isAssetsCached, loadAssets } from '../../../editions/index';
+import { isAssetsCached, loadAssets } from '../../../editions/index';
 import { PIXEL_SHORTCUTS } from '../../../shared/pixel-canvas';
 import { TexStore, ICON_KEY, type SaveState } from './store';
 import { ThumbService, paintCanvas } from './thumbs';
@@ -35,6 +35,10 @@ import type { ModelEditor } from './model-editor/editor';
 import type { BlockState } from '../../../shared/models/index';
 import './sounds-base.css';
 import './model-host.css';
+import { fmt } from '../../../i18n/editor-text';
+import { kit } from '../../../ui/i18n/kit';
+import { te } from './i18n/editor';
+import { versionLabel } from './start-screen';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'sounds';
@@ -45,16 +49,14 @@ type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pack';
 const PHONE = '(max-width: 760px)';
 const TABLET = '(max-width: 1180px)';
 
-function versionText(p: TexturePackProject): string {
-  return p.edition === 'java' ? `Java ${p.version}` : `Bedrock ${p.version === 'latest' ? 'latest' : p.version === 'preview' ? 'preview' : bedrockDisplayVersion(p.version)}`;
-}
+const versionText = (p: TexturePackProject): string => versionLabel(p);
 
 export async function renderEditor(root: HTMLElement, id: string, life: AbortSignal): Promise<() => void> {
   const cleanups: (() => void)[] = [];
   const shell = h('div', { class: 'tx-editor accent-green' });
   root.appendChild(shell);
 
-  const loadingView = h('div', { class: 'tx-boot' }, spinner(32), h('span', { class: 'muted' }, 'Opening pack…'));
+  const loadingView = h('div', { class: 'tx-boot' }, spinner(32), h('span', { class: 'muted' }, te.opening));
   shell.appendChild(loadingView);
 
   let project: TexturePackProject | undefined;
@@ -72,13 +74,13 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         { class: 'tx-missing' },
         emptyState({
           icon: 'map',
-          title: 'This pack isn’t here',
-          text: 'It may have been deleted, or it was made in another browser. Projects are saved in the browser you made them in.',
+          title: te.missingTitle,
+          text: te.missingText,
           action: h(
             'div',
             { class: 'row wrap', style: { justifyContent: 'center' } },
-            button({ label: 'All texture packs', icon: 'arrow-left', onClick: () => navigate('/textures') }),
-            button({ label: 'New pack', icon: 'plus', variant: 'primary', onClick: () => navigate('/textures') }),
+            button({ label: te.allPacks, icon: 'arrow-left', onClick: () => navigate('/textures') }),
+            button({ label: te.newPack, icon: 'plus', variant: 'primary', onClick: () => navigate('/textures') }),
           ),
         }),
       ),
@@ -117,24 +119,24 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const sw = segmented<LibMode>({
       value: libMode,
       size: 'sm',
-      label: 'Browse by',
+      label: te.browseBy,
       options: [
-        { value: 'blocks', label: 'Blocks' },
-        { value: 'items', label: 'Items' },
-        { value: 'mobs', label: 'Mobs' },
-        { value: 'textures', label: 'All' },
+        { value: 'blocks', label: te.lib.blocks },
+        { value: 'items', label: te.lib.items },
+        { value: 'mobs', label: te.lib.mobs },
+        { value: 'textures', label: te.lib.all },
         { value: 'sounds', label: '', icon: 'music' },
       ],
       onChange: (v) => setLibMode(v, true),
     });
     // "All" keeps four labels apart in the narrow side panel; say in full what it lists
     const all = sw.querySelector<HTMLElement>('[data-value="textures"]');
-    all?.setAttribute('title', 'All textures');
-    all?.setAttribute('aria-label', 'All textures');
+    all?.setAttribute('title', te.lib.allTextures);
+    all?.setAttribute('aria-label', te.lib.allTextures);
     // Sounds is a note icon at the end of the switch
     const snd = sw.querySelector<HTMLElement>('[data-value="sounds"]');
-    snd?.setAttribute('title', 'Sounds');
-    snd?.setAttribute('aria-label', 'Sounds');
+    snd?.setAttribute('title', te.lib.sounds);
+    snd?.setAttribute('aria-label', te.lib.sounds);
     switches.push(sw);
     return h('div', { class: 'tx-libbar' }, sw);
   };
@@ -223,7 +225,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     for (const tab of [tabbarButtons.get('preview'), sideTabs.querySelector<HTMLElement>('.tab[data-value="preview"]')]) {
       const label = tab?.querySelector('span:not(.icon)');
       const ic = tab?.querySelector<HTMLElement>('.icon');
-      if (label) label.textContent = ws === '3d' ? 'Texture' : 'Preview';
+      if (label) label.textContent = ws === '3d' ? te.tabs.texture : te.tabs.preview;
       if (ic) setIcon(ic, ws === '3d' ? 'grid' : 'cube');
     }
     notifyVisibility();
@@ -299,7 +301,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       .catch((err) => {
         soundsLoad = null;
         console.error(err);
-        toast('Sounds couldn’t be opened. Check your connection and try again.', { tone: 'error' });
+        toast(te.soundsFailed, { tone: 'error' });
         return null;
       });
     return soundsLoad;
@@ -343,13 +345,13 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     }, 250);
   };
   cleanups.push(() => iconTimer && clearTimeout(iconTimer));
-  const nameInput = h('input', { class: 'tx-name-input', value: plainText(proj.name), maxLength: 80, 'aria-label': 'Pack name', spellcheck: false, autocomplete: 'off' });
+  const nameInput = h('input', { class: 'tx-name-input', value: plainText(proj.name), maxLength: 80, 'aria-label': te.packName, spellcheck: false, autocomplete: 'off' });
   nameInput.addEventListener('focus', () => {
     if (nameInput.value !== proj.name) nameInput.value = proj.name;
   });
   const measurer = h('span', { class: 'tx-name-measure', 'aria-hidden': 'true' });
   const sizeName = () => {
-    measurer.textContent = nameInput.value || 'Untitled pack';
+    measurer.textContent = nameInput.value || te.untitled;
     if (measurer.isConnected) nameInput.style.width = `${Math.ceil(measurer.getBoundingClientRect().width) + 20}px`;
   };
   sizeName();
@@ -360,7 +362,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   });
   nameInput.addEventListener('blur', () => {
     if (!nameInput.value.trim()) {
-      proj.name = 'Untitled pack';
+      proj.name = te.untitled;
       store.touch('meta');
     }
     nameInput.value = plainText(proj.name);
@@ -373,29 +375,30 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       nameInput.blur();
     }
   });
-  tooltip(nameInput, 'Rename your pack');
+  tooltip(nameInput, te.renameHint);
 
   const saveEl = h('button', { type: 'button', class: 'tx-save', 'aria-live': 'polite' });
   const paintSave = (s: SaveState) => {
     saveEl.dataset.state = s;
     saveEl.disabled = s !== 'error';
     const map: Record<SaveState, [IconName, string]> = {
-      saved: ['check', 'Saved'],
-      dirty: ['clock', 'Saving…'],
-      saving: ['clock', 'Saving…'],
-      error: ['warning-diamond', 'Not saved — retry'],
+      saved: ['check', te.save.saved],
+      dirty: ['clock', te.save.saving],
+      saving: ['clock', te.save.saving],
+      error: ['warning-diamond', te.save.error],
     };
     const [ic, label] = map[s];
     saveEl.replaceChildren(s === 'saving' ? spinner(16) : icon(ic, { size: 16 }), h('span', null, label));
-    saveEl.title = s === 'error' ? store.lastError : s === 'saved' ? 'Every change is saved in this browser' : '';
+    saveEl.title = s === 'error' ? store.lastError : s === 'saved' ? te.save.savedHint : '';
   };
   saveEl.addEventListener('click', () => void store.flush());
   paintSave(store.saveState);
 
-  const undoBtn = iconButton('undo', 'Undo — Ctrl+Z', () => (modelEditor ? modelEditor.undo() : canvas.undo()), { disabled: true });
-  const redoBtn = iconButton('redo', 'Redo — Ctrl+Shift+Z', () => (modelEditor ? modelEditor.redo() : canvas.redo()), { disabled: true });
-  const helpBtn = iconButton('keyboard', 'Keyboard shortcuts — ?', () => showShortcuts());
-  const exportBtn = button({ label: 'Export', icon: 'download', variant: 'primary', class: 'tx-export-btn', onClick: () => openExportDialog(store) });
+  const undoBtn = iconButton('undo', te.undo, () => (modelEditor ? modelEditor.undo() : canvas.undo()), { disabled: true });
+  const redoBtn = iconButton('redo', te.redo, () => (modelEditor ? modelEditor.redo() : canvas.redo()), { disabled: true });
+  const helpBtn = iconButton('keyboard', te.shortcutsButton, () => showShortcuts());
+  helpBtn.classList.add('tx-keys-btn');
+  const exportBtn = button({ label: te.exportButton, icon: 'download', variant: 'primary', class: 'tx-export-btn', onClick: () => openExportDialog(store) });
   function paintHistory() {
     undoBtn.disabled = modelEditor ? !modelEditor.canUndo() : !canvas.canUndo();
     redoBtn.disabled = modelEditor ? !modelEditor.canRedo() : !canvas.canRedo();
@@ -411,7 +414,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     }
     modelOpening = true;
     modelHost.hidden = false;
-    modelHost.replaceChildren(h('div', { class: 'tx-boot' }, spinner(28), h('span', { class: 'muted' }, 'Opening the model editor…')));
+    modelHost.replaceChildren(h('div', { class: 'tx-boot' }, spinner(28), h('span', { class: 'muted' }, te.openingModelEditor)));
     shell.dataset.mode = 'model';
     try {
       const { createModelEditor } = await import('./model-editor/editor');
@@ -440,7 +443,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     } catch (err) {
       console.error(err);
       closeModelEditor();
-      toast(err instanceof Error && err.message ? err.message : 'The model editor couldn’t be opened. Check your connection and try again.', { tone: 'error' });
+      toast(err instanceof Error && err.message ? err.message : te.modelEditorFailed, { tone: 'error' });
     } finally {
       modelOpening = false;
     }
@@ -456,15 +459,15 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   }
   function bedrockShapeNote() {
     openModal({
-      title: 'Shapes on Bedrock',
+      title: te.bedrockShapes.title,
       width: 520,
       body: h(
         'div',
         { class: 'stack' },
-        h('p', null, 'Bedrock resource packs can’t change the shape of blocks or items. Custom shapes need an add-on: a behaviour pack that adds new blocks or items, with geometry files for their shapes.'),
-        h('p', { class: 'muted' }, 'Painting textures works as usual. To start an add-on’s shape, make it in a Java pack here, then use “Download as Bedrock geometry” in the model editor.'),
+        h('p', null, te.bedrockShapes.text),
+        h('p', { class: 'muted' }, te.bedrockShapes.note),
       ),
-      actions: [{ label: 'OK', variant: 'primary' }],
+      actions: [{ label: kit.ok, variant: 'primary' }],
     });
   }
   cleanups.push(() => modelEditor?.destroy());
@@ -472,42 +475,42 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const bar = h(
     'header',
     { class: 'tx-bar' },
-    h('a', { class: 'icon-btn tx-back', href: routeHref('/textures'), 'aria-label': 'All texture packs' }, icon('arrow-left')),
+    h('a', { class: 'icon-btn tx-back', href: routeHref('/textures'), 'aria-label': te.allPacks }, icon('arrow-left')),
     h('div', { class: 'tx-bar-iconbox checker' }, barIcon),
     h('div', { class: 'tx-bar-title' }, nameInput, measurer, h('span', { class: 'tx-bar-sub' }, badge(versionText(proj), proj.edition === 'java' ? 'green' : 'blue'), saveEl)),
     h('span', { class: 'grow' }),
     h('div', { class: 'tx-bar-actions' }, undoBtn, redoBtn, h('span', { class: 'toolbar-sep' }), helpBtn, exportBtn),
   );
-  tooltip(bar.querySelector('.tx-back') as HTMLElement, 'All texture packs');
+  tooltip(bar.querySelector('.tx-back') as HTMLElement, te.allPacks);
   paintBarIcon();
 
   // ---------------------------------------------------------------- side panel + layout
   const sideTabs = tabs<Side>({
     value: side,
-    label: 'Side panel',
+    label: kit.sidePanel,
     tabs: [
-      { value: 'textures', label: 'Textures', icon: 'bulletlist' },
-      { value: 'preview', label: 'Preview', icon: 'cube' },
-      { value: 'effects', label: 'Effects', icon: 'sparkles' },
-      { value: 'pack', label: 'Pack', icon: 'settings' },
+      { value: 'textures', label: te.tabs.textures, icon: 'bulletlist' },
+      { value: 'preview', label: te.tabs.preview, icon: 'cube' },
+      { value: 'effects', label: te.tabs.effects, icon: 'sparkles' },
+      { value: 'pack', label: te.tabs.pack, icon: 'settings' },
     ],
     onChange: (v) => setSide(v),
   });
   const bodies: Record<Exclude<Side, 'textures'>, HTMLElement> = {
-    preview: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'preview' }, role: 'tabpanel', 'aria-label': 'Preview' }, preview.el),
-    effects: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'effects' }, role: 'tabpanel', 'aria-label': 'Effects' }, effects.el),
-    pack: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'pack' }, role: 'tabpanel', 'aria-label': 'Pack settings' }, pack.el),
+    preview: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'preview' }, role: 'tabpanel', 'aria-label': te.tabs.preview }, preview.el),
+    effects: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'effects' }, role: 'tabpanel', 'aria-label': te.tabs.effects }, effects.el),
+    pack: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'pack' }, role: 'tabpanel', 'aria-label': te.packSettings }, pack.el),
   };
 
   const tabbarItems: { v: Mobile; label: string; ic: IconName }[] = [
-    { v: 'textures', label: 'Textures', ic: 'bulletlist' },
-    { v: 'editor', label: 'Paint', ic: 'pencil' },
-    { v: 'preview', label: 'Preview', ic: 'cube' },
-    { v: 'effects', label: 'Effects', ic: 'sparkles' },
-    { v: 'pack', label: 'Pack', ic: 'settings' },
+    { v: 'textures', label: te.tabs.textures, ic: 'bulletlist' },
+    { v: 'editor', label: te.tabs.paint, ic: 'pencil' },
+    { v: 'preview', label: te.tabs.preview, ic: 'cube' },
+    { v: 'effects', label: te.tabs.effects, ic: 'sparkles' },
+    { v: 'pack', label: te.tabs.pack, ic: 'settings' },
   ];
   const tabbarButtons = new Map<Mobile, HTMLButtonElement>();
-  const tabbar = h('nav', { class: 'tx-tabbar', 'aria-label': 'Editor sections' });
+  const tabbar = h('nav', { class: 'tx-tabbar', 'aria-label': te.sections });
   for (const t of tabbarItems) {
     const b = h('button', { type: 'button', class: 'tx-tabbar-btn', dataset: { v: t.v } }, icon(t.ic), h('span', null, t.label));
     b.addEventListener('click', () => showMobile(t.v));
@@ -520,13 +523,13 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     for (const tab of [tabbarButtons.get('textures'), sideTabs.querySelector<HTMLElement>('.tab[data-value="textures"]')]) {
       const label = tab?.querySelector('span:not(.icon)');
       const ic = tab?.querySelector<HTMLElement>('.icon');
-      if (label) label.textContent = sounds ? 'Sounds' : 'Textures';
+      if (label) label.textContent = sounds ? te.tabs.sounds : te.tabs.textures;
       if (ic) setIcon(ic, sounds ? 'music' : 'bulletlist');
     }
     const ed = tabbarButtons.get('editor');
     const label = ed?.querySelector('span:not(.icon)');
     const ic = ed?.querySelector<HTMLElement>('.icon');
-    if (label) label.textContent = sounds ? 'Edit' : 'Paint';
+    if (label) label.textContent = sounds ? te.tabs.edit : te.tabs.paint;
     if (ic) setIcon(ic, sounds ? 'volume-2' : 'pencil');
   }
 
@@ -614,6 +617,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
 
   // ---------------------------------------------------------------- shortcuts
   function showShortcuts() {
+    const k = te.shortcuts;
     const split = (k: string) =>
       k
         .replace('Ctrl/Cmd', 'Mod')
@@ -622,52 +626,52 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         .filter(Boolean);
     openShortcutsSheet([
       {
-        title: 'Editor',
+        title: k.editor,
         items: [
-          { keys: ['?'], label: 'Show this list' },
-          { keys: ['Mod', 'S'], label: 'Save now (it also saves by itself)' },
-          { keys: ['/'], label: 'Search textures' },
-          { keys: ['C'], label: 'Hold to compare with the original' },
-          { keys: [','], label: 'Previous animation frame' },
-          { keys: ['.'], label: 'Next animation frame' },
-          { keys: ['Mod', 'Z'], label: 'Undo' },
-          { keys: ['Mod', 'Shift', 'Z'], label: 'Redo' },
+          { keys: ['?'], label: k.showList },
+          { keys: ['Mod', 'S'], label: k.saveNow },
+          { keys: ['/'], label: k.search },
+          { keys: ['C'], label: k.compare },
+          { keys: [','], label: k.prevFrame },
+          { keys: ['.'], label: k.nextFrame },
+          { keys: ['Mod', 'Z'], label: k.undo },
+          { keys: ['Mod', 'Shift', 'Z'], label: k.redo },
         ],
       },
       {
-        title: 'Painting on the 3D model',
+        title: k.model,
         items: [
-          { keys: ['D'], label: 'Paint on the 3D model / the flat texture' },
-          { keys: ['Drag'], label: 'Paint with the current tool' },
-          { keys: ['Alt', 'Click'], label: 'Pick a colour from the model' },
-          { keys: ['Right drag'], label: 'Turn the model (or drag the background)' },
-          { keys: ['Space', 'Drag'], label: 'Turn the model' },
-          { keys: ['Wheel'], label: 'Zoom' },
-          { keys: ['Arrow keys'], label: 'Turn the model' },
+          { keys: ['D'], label: k.toggle3d },
+          { keys: [k.drag], label: k.paintTool },
+          { keys: ['Alt', k.click], label: k.pickColour },
+          { keys: [k.rightDrag], label: k.turnOrDrag },
+          { keys: [k.space, k.drag], label: k.turn },
+          { keys: [k.wheel], label: k.zoom },
+          { keys: [k.arrows], label: k.turn },
         ],
       },
       {
-        title: 'Texture list',
+        title: k.list,
         items: [
-          { keys: ['Click'], label: 'On the 3D model: paint the texture of that face' },
-          { keys: ['Arrow keys'], label: 'Move between textures' },
-          { keys: ['Enter'], label: 'Open and start painting' },
-          { keys: ['Shift', 'F10'], label: 'More actions' },
-          { keys: ['Esc'], label: 'Clear the search' },
+          { keys: [k.click], label: k.clickFace },
+          { keys: [k.arrows], label: k.moveTextures },
+          { keys: ['Enter'], label: k.openPaint },
+          { keys: ['Shift', 'F10'], label: k.more },
+          { keys: ['Esc'], label: k.clearSearch },
         ],
       },
       {
-        title: 'Painting',
+        title: k.painting,
         items: PIXEL_SHORTCUTS.filter((s) => !/undo|redo/i.test(s.id)).map((s) => ({ keys: split(s.keys), label: s.action })),
       },
       {
-        title: 'Sounds',
+        title: k.sounds,
         items: [
-          { keys: ['Space'], label: 'In the list: play or stop the selected sound' },
-          { keys: ['Arrow keys'], label: 'Move between sounds' },
-          { keys: ['Enter'], label: 'Open the sound' },
-          { keys: ['←', '→'], label: 'On a trim handle: move it 0.01 s' },
-          { keys: ['Shift', '←'], label: 'On a trim handle: move it 0.1 s' },
+          { keys: [k.space], label: k.playStop },
+          { keys: [k.arrows], label: k.moveSounds },
+          { keys: ['Enter'], label: k.openSound },
+          { keys: ['←', '→'], label: k.trimSmall },
+          { keys: ['Shift', '←'], label: k.trimBig },
         ],
       },
     ]);
@@ -679,7 +683,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
       e.preventDefault();
       void store.flush().then(() => {
-        if (store.saveState === 'saved') toast('Saved', { tone: 'success', duration: 1400 });
+        if (store.saveState === 'saved') toast(te.save.saved, { tone: 'success', duration: 1400 });
       });
       return;
     }
@@ -806,18 +810,18 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         h(
           'div',
           { class: 'tx-assets-head' },
-          h('span', { class: 'eyebrow' }, icon('image'), 'Texture pack'),
-          h('h1', { class: 'tx-assets-name truncate' }, plainText(p.name) || 'Untitled pack'),
+          h('span', { class: 'eyebrow' }, icon('image'), te.texturePack),
+          h('h1', { class: 'tx-assets-name truncate' }, plainText(p.name) || te.untitled),
           h('p', { class: 'muted' }, `${versionText(p)} · ${p.resolution}×`),
         ),
         panel,
-        h('a', { class: 'btn btn-ghost btn-sm tx-assets-back', href: routeHref('/textures') }, icon('arrow-left'), h('span', { class: 'btn-label' }, 'All texture packs')),
+        h('a', { class: 'btn btn-ghost btn-sm tx-assets-back', href: routeHref('/textures') }, icon('arrow-left'), h('span', { class: 'btn-label' }, te.allPacks)),
       );
       host.replaceChildren(wrap);
     };
     let timer: ReturnType<typeof setTimeout> | null = cached ? setTimeout(showPanel, 600) : null;
     if (!cached) showPanel();
-    else placeholder.querySelector('span')!.textContent = 'Loading textures…';
+    else placeholder.querySelector('span')!.textContent = te.loadingTextures;
 
     let resolveDone!: (a: AssetIndex | null) => void;
     const done = new Promise<AssetIndex | null>((r) => (resolveDone = r));
@@ -827,7 +831,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     async function attempt(jarFile?: File) {
       const my = ++attemptId;
       if (jarFile) showPanel();
-      panel?.set({ label: jarFile ? `Reading ${jarFile.name}…` : 'Starting…', fraction: null });
+      panel?.set({ label: jarFile ? fmt(te.readingJar, { name: jarFile.name }) : te.starting, fraction: null });
       try {
         const a = await loadAssets(p.edition, p.version, {
           jarFile,

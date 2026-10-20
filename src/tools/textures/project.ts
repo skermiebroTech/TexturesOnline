@@ -4,6 +4,8 @@ import { decodeImage, loadImageCodecs } from '../../core/image-lazy';
 import { uuidv4 } from '../../core/uuid';
 import { javaTextureCategory } from '../../editions/java/textures';
 import { bedrockTextureCategory, parseLenientJson } from '../../editions/bedrock/catalog';
+import { fmt } from '../../i18n/editor-text';
+import { tp } from './i18n/pack';
 
 /** Resolutions offered for texture packs (pixels per block face). */
 export const RESOLUTIONS = [16, 32, 64, 128, 256, 512] as const;
@@ -75,15 +77,14 @@ export async function getBaseImage(project: TexturePackProject, assets: AssetInd
     }
   }
   if (!assets.hasFile(path)) {
-    const game = assets.edition === 'java' ? `Minecraft ${assets.version}` : 'this Bedrock version';
-    throw new Error(`"${path.slice(path.lastIndexOf('/') + 1)}" isn't a texture in ${game}, and this pack has no copy of it.`);
+    throw new Error(fmt(tp.notInGame, { file: path.slice(path.lastIndexOf('/') + 1), edition: assets.edition, version: assets.version }));
   }
   return assets.readImage(path);
 }
 
 /** Stores an edited texture, encoded in the format the path needs (.tga stays TGA for Bedrock). */
 export async function setOverride(project: TexturePackProject, path: string, img: ImageData): Promise<void> {
-  if (!img || img.width < 1 || img.height < 1) throw new Error('The image is empty.');
+  if (!img || img.width < 1 || img.height < 1) throw new Error(tp.emptyImage);
   const ext = extOf(path) === 'tga' ? 'tga' : 'png';
   const { encodeImage } = await loadImageCodecs();
   project.overrides[path] = await encodeImage(img, ext);

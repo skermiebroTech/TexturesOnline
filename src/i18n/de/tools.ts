@@ -33,7 +33,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Eigene PNGs hochladen, automatisch auf die Textur skaliert (16x bis 512x)',
       'Sounds des Spiels durch eigene Dateien oder Mikrofonaufnahmen ersetzen, gekürzt und als Ogg Vorbis exportiert',
       'Animierte Texturen Bild für Bild bearbeiten',
-      'Effekte für das ganze Pack per Klick, etwa Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon und Smooth HD',
+      'Effekte für das ganze Pack per Klick, etwa Dunkelmodus, Pastelltraum, Neon-Umriss, Retro 8-Bit, Herbst, Winterfrost, Noir, Cartoon und Glattes HD',
       'Vorhandene .zip- oder .mcpack-Packs öffnen und weiterbearbeiten',
       '3D-Blockvorschau, Pack-Symbol, Beschreibung und Java-Kompatibilitätsbereich',
       'Exportiert eine .zip mit der passenden pack.mcmeta für die Java-Version oder ein Bedrock-.mcpack',
@@ -46,7 +46,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Formen ändern (Java): Bearbeite das Modell eines Blocks oder Items Würfel für Würfel, mit Texturen, UVs und der Haltung in der Hand, oder mach aus einem flachen Item ein 3D-Item. Die Modelldateien kommen passend zu deiner Version ins Pack.'],
       ['Eigene PNGs hochladen (automatisch auf die Textur skaliert, 16x bis 512x) und animierte Texturen Bild für Bild bearbeiten.'],
       ['Sounds ändern: jeden Spielsound abspielen und durch eine eigene Datei oder eine Mikrofonaufnahme ersetzen, an der Wellenform gekürzt. Gespeichert wird als Ogg Vorbis, das Format, das Minecraft abspielt.'],
-      ['Effekte für das ganze Pack per Klick, etwa Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon und Smooth HD – stapelbar, ohne deine eigenen Änderungen anzutasten.'],
+      ['Effekte für das ganze Pack per Klick, etwa Dunkelmodus, Pastelltraum, Neon-Umriss, Retro 8-Bit, Herbst, Winterfrost, Noir, Cartoon und Glattes HD – stapelbar, ohne deine eigenen Änderungen anzutasten.'],
       ['Eine vorhandene ', code('.zip'), ' oder ein ', code('.mcpack'), ' öffnen und weiterbearbeiten.'],
       ['3D-Blockvorschau, Pack-Symbol, Beschreibung und ein Java-Kompatibilitätsbereich.'],
       ['Exportiert eine ', code('.zip'), ' mit genau den ', code('pack.mcmeta'), '-Regeln deiner Java-Version oder ein Bedrock-', code('.mcpack'), '.'],
@@ -99,7 +99,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'hd',
         q: 'Kann ich ein HD-Texture-Pack erstellen?',
-        a: [p('Ja. Wähle beim Anlegen des Packs eine Auflösung von 16× (der Vanilla-Look) bis 512×. Hochgeladene Bilder werden passend skaliert, und der Effekt Smooth HD rechnet alle Texturen auf einmal hoch.')],
+        a: [p('Ja. Wähle beim Anlegen des Packs eine Auflösung von 16× (der Vanilla-Look) bis 512×. Hochgeladene Bilder werden passend skaliert, und der Effekt Glattes HD-Hochskalieren rechnet alle Texturen auf einmal hoch.')],
       },
       {
         id: 'devices',
@@ -109,7 +109,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'existing',
         q: 'Kann ich ein vorhandenes Texture Pack bearbeiten?',
-        a: [p('Ja. Wähle ', strong('Open a pack'), ' und such dir eine Java-', code('.zip'), ' oder ein Bedrock-', code('.mcpack'), ' aus. Edition und Version werden aus dem Pack erkannt.')],
+        a: [p('Ja. Wähle ', strong('Pack öffnen'), ' und such dir eine Java-', code('.zip'), ' oder ein Bedrock-', code('.mcpack'), ' aus. Edition und Version werden aus dem Pack erkannt.')],
       },
       {
         id: 'purple',

@@ -6,6 +6,8 @@ import type { PackFormat } from '../../../core/types';
 import { DIRS, type Dir } from '../../../shared/models/geometry';
 import { javaTexturePath, resolveTextureVar } from '../../../shared/models/java-models';
 import type { EditModel } from './doc';
+import { fmt } from '../../../i18n/editor-text';
+import { tr } from '../ui/i18n/model-rules';
 
 export interface ModelRules {
   /** Models are JSON files (1.8+); older versions draw blocks with code */
@@ -95,28 +97,28 @@ const MAX = 32;
 export function validateModel(m: EditModel, ctx: ValidateContext): ModelIssue[] {
   const out: ModelIssue[] = [];
   const { rules } = ctx;
-  const cube = (i: number) => m.elements[i]?.name ? `“${m.elements[i].name}”` : `Cube ${i + 1}`;
-  if (!m.elements.length) out.push({ level: 'warning', message: 'This model has no cubes, so it is invisible in game.' });
+  const cube = (i: number) => (m.elements[i]?.name ? fmt(tr.named, { name: m.elements[i].name! }) : fmt(tr.cube, { n: i + 1 }));
+  if (!m.elements.length) out.push({ level: 'warning', message: tr.noCubes });
   const missingVars = new Set<string>();
   const missingFiles = new Set<string>();
   const outsideAtlas = new Set<string>();
   m.elements.forEach((e, i) => {
     const coords = [...e.from, ...e.to];
-    if (coords.some((v) => !Number.isFinite(v))) out.push({ level: 'error', element: i, message: `${cube(i)} has a position that isn't a number.` });
-    else if (coords.some((v) => v < MIN || v > MAX)) out.push({ level: 'error', element: i, message: `${cube(i)} reaches outside the space the game allows (-16 to 32 on each axis), so the model won't load.` });
+    if (coords.some((v) => !Number.isFinite(v))) out.push({ level: 'error', element: i, message: fmt(tr.notNumber, { cube: cube(i) }) });
+    else if (coords.some((v) => v < MIN || v > MAX)) out.push({ level: 'error', element: i, message: fmt(tr.outside, { cube: cube(i) }) });
     const faces = DIRS.filter((d) => e.faces[d]);
-    if (!faces.length) out.push({ level: 'error', element: i, message: `${cube(i)} has no faces. The game only loads cubes with at least one face.` });
+    if (!faces.length) out.push({ level: 'error', element: i, message: fmt(tr.noFaces, { cube: cube(i) }) });
     const r = e.rotation;
     if (r) {
       if (!r.axis) {
-        if (rules.rotation !== 'free') out.push({ level: 'error', element: i, message: `${cube(i)} turns on more than one axis, which needs Minecraft 1.21.11 or newer.` });
+        if (rules.rotation !== 'free') out.push({ level: 'error', element: i, message: fmt(tr.multiAxis, { cube: cube(i) }) });
       } else {
         const a = r.angle ?? 0;
         if (rules.rotation === 'steps' && !(ROTATION_STEPS as readonly number[]).includes(a))
-          out.push({ level: 'error', element: i, message: `${cube(i)} is turned ${a}°. This version only allows -45, -22.5, 0, 22.5 or 45.` });
-        else if (rules.rotation === 'range' && (a < -45 || a > 45)) out.push({ level: 'error', element: i, message: `${cube(i)} is turned ${a}°. This version allows -45° to 45°.` });
+          out.push({ level: 'error', element: i, message: fmt(tr.steps, { cube: cube(i), angle: String(a) }) });
+        else if (rules.rotation === 'range' && (a < -45 || a > 45)) out.push({ level: 'error', element: i, message: fmt(tr.range, { cube: cube(i), angle: String(a) }) });
       }
-      if (r.origin.some((v) => !Number.isFinite(v))) out.push({ level: 'error', element: i, message: `${cube(i)} has a rotation centre that isn't a number.` });
+      if (r.origin.some((v) => !Number.isFinite(v))) out.push({ level: 'error', element: i, message: fmt(tr.pivot, { cube: cube(i) }) });
     }
     for (const d of faces) {
       const f = e.faces[d]!;
@@ -130,15 +132,15 @@ export function validateModel(m: EditModel, ctx: ValidateContext): ModelIssue[] 
       const path = javaTexturePath(ref);
       if (!ctx.hasTexture(path)) missingFiles.add(ref);
       else if (ctx.atlasDirs && !inAtlas(path, ctx.atlasDirs)) outsideAtlas.add(ref);
-      if (f.uv && f.uv.some((v) => v < 0 || v > 16)) out.push({ level: 'warning', element: i, face: d, message: `The ${d} face of ${cube(i)} reaches outside its texture (UV 0 to 16), which shows stretched or repeated pixels.` });
+      if (f.uv && f.uv.some((v) => v < 0 || v > 16)) out.push({ level: 'warning', element: i, face: d, message: fmt(tr.uv, { face: tr.faces[d], cube: cube(i) }) });
     }
   });
-  for (const v of missingVars) out.push({ level: 'error', message: `A face uses the texture “#${v}”, which isn't set. It shows as the magenta and black missing texture.` });
-  for (const ref of missingFiles) out.push({ level: 'warning', message: `The texture “${ref}” isn't in the game or this pack. Faces using it show as magenta and black.` });
-  for (const ref of outsideAtlas) out.push({ level: 'warning', message: `The texture “${ref}” isn't in a folder the game uses for models (${ctx.atlasDirs!.join(', ')}), so it shows as missing.` });
+  for (const v of missingVars) out.push({ level: 'error', message: fmt(tr.missingVar, { name: v }) });
+  for (const ref of missingFiles) out.push({ level: 'warning', message: fmt(tr.missingFile, { ref }) });
+  for (const ref of outsideAtlas) out.push({ level: 'warning', message: fmt(tr.outsideAtlas, { ref, dirs: ctx.atlasDirs!.join(', ') }) });
   for (const [slot, t] of Object.entries(m.display)) {
-    if (t.translation.some((v) => Math.abs(v) > 80)) out.push({ level: 'warning', message: `The ${slotName(slot)} position goes past ±80, the most the game uses.` });
-    if (t.scale.some((v) => Math.abs(v) > 4)) out.push({ level: 'warning', message: `The ${slotName(slot)} size goes past 4, the most the game uses.` });
+    if (t.translation.some((v) => Math.abs(v) > 80)) out.push({ level: 'warning', message: fmt(tr.position, { slot: slotName(slot) }) });
+    if (t.scale.some((v) => Math.abs(v) > 4)) out.push({ level: 'warning', message: fmt(tr.size, { slot: slotName(slot) }) });
   }
   return out;
 }
@@ -169,20 +171,7 @@ export function atlasDirsFrom(files: unknown[]): string[] | null {
   return any ? [...out] : null;
 }
 
-const SLOT_NAMES: Record<string, string> = {
-  gui: 'inventory',
-  ground: 'on the ground',
-  fixed: 'item frame',
-  head: 'on the head',
-  thirdperson_righthand: 'third person (right hand)',
-  thirdperson_lefthand: 'third person (left hand)',
-  firstperson_righthand: 'first person (right hand)',
-  firstperson_lefthand: 'first person (left hand)',
-  thirdperson: 'third person',
-  firstperson: 'first person',
-  on_shelf: 'on a shelf',
-};
-
+/** A display slot's name, as written inside a sentence ("inventory", "on the ground"). */
 export function slotName(slot: string): string {
-  return SLOT_NAMES[slot] ?? slot.replace(/_/g, ' ');
+  return (tr.slots as Record<string, string>)[slot] ?? slot.replace(/_/g, ' ');
 }

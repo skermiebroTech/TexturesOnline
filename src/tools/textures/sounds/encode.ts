@@ -1,6 +1,8 @@
 // Main-thread side of the Ogg Vorbis encoder: one lazily started worker, one job at a time.
 
 import type { EncodeReply, EncodeRequest } from './vorbis.worker';
+import { ts } from '../ui/i18n/sounds';
+import { errorText } from '../../../shared/i18n/errors';
 
 /** libvorbis quality (0..10): 4 is about 128 kbps stereo / 80 kbps mono, close to the game's own files. */
 export const VORBIS_QUALITY = 4;
@@ -21,7 +23,7 @@ function getWorker(): Worker {
   };
   w.onerror = (e) => {
     e.preventDefault();
-    const err = new Error("The sound encoder couldn't start. Reload the page and try again.");
+    const err = new Error(ts.errors.encoder);
     for (const job of waiting.values()) job.reject(err);
     waiting.clear();
     w.terminate();
@@ -50,7 +52,7 @@ export function encodeOggVorbis(channels: Float32Array[], sampleRate: number, qu
 export function stopEncoder(): void {
   worker?.terminate();
   worker = null;
-  const err = new Error('Cancelled.');
+  const err = new Error(errorText.cancelledShort);
   err.name = 'AbortError';
   for (const job of waiting.values()) job.reject(err);
   waiting.clear();

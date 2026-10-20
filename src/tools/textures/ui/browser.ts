@@ -8,6 +8,8 @@ import { TEXTURE_CATEGORY_ORDER } from '../../../editions/index';
 import { CATEGORY_INFO, searchScore, tokenize, type TextureEntry } from './meta';
 import { paintCanvas, type ThumbService } from './thumbs';
 import type { TexStore } from './store';
+import { fmt, num } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export interface BrowserApi {
   el: HTMLElement;
@@ -36,7 +38,7 @@ const PAD = 8;
 const LIST_ROW = 48;
 const OVERSCAN = 3;
 const MODE_KEY = 'to-tex-browser-mode';
-const nf = new Intl.NumberFormat();
+const nf = { format: (n: number) => num(n) };
 
 type Cat = TextureCategory | 'all';
 
@@ -63,30 +65,30 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   const input = h('input', {
     class: 'input tx-search-input',
     type: 'search',
-    placeholder: 'Search textures',
+    placeholder: te.browser.search,
     autocomplete: 'off',
     spellcheck: false,
-    'aria-label': 'Search textures',
+    'aria-label': te.browser.search,
     enterKeyHint: 'search',
   });
-  const clearBtn = h('button', { type: 'button', class: 'icon-btn sm tx-search-clear', 'aria-label': 'Clear search', hidden: true }, icon('close'));
+  const clearBtn = h('button', { type: 'button', class: 'icon-btn sm tx-search-clear', 'aria-label': te.browser.clearSearch, hidden: true }, icon('close'));
   const search = h('div', { class: 'tx-search' }, icon('search', { class: 'tx-search-icon' }), input, clearBtn, h('kbd', { class: 'kbd tx-search-kbd', 'aria-hidden': 'true' }, '/'));
 
   const editedBtn = h(
     'button',
     { type: 'button', class: 'chip tx-edited-chip', 'aria-pressed': 'false' },
     icon('pencil'),
-    h('span', null, 'Edited'),
+    h('span', null, te.browser.edited),
     h('span', { class: 'tx-chip-count' }, '0'),
   );
-  tooltip(editedBtn, 'Show only the textures you changed');
-  const fxBtn = h('button', { type: 'button', class: 'icon-btn sm tx-fx-toggle', 'aria-pressed': 'true', 'aria-label': 'Preview effects in thumbnails' }, icon('sparkles'));
-  tooltip(fxBtn, 'Preview effects in thumbnails');
+  tooltip(editedBtn, te.browser.editedHint);
+  const fxBtn = h('button', { type: 'button', class: 'icon-btn sm tx-fx-toggle', 'aria-pressed': 'true', 'aria-label': te.browser.fxThumbs }, icon('sparkles'));
+  tooltip(fxBtn, te.browser.fxThumbs);
 
-  const gridBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(mode === 'grid'), 'aria-label': 'Show as a grid' }, icon('grid-2x2-2'));
-  const listBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(mode === 'list'), 'aria-label': 'Show as a list with names' }, icon('bulletlist'));
-  tooltip(gridBtn, 'Grid');
-  tooltip(listBtn, 'List with names');
+  const gridBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(mode === 'grid'), 'aria-label': te.browser.showGrid }, icon('grid-2x2-2'));
+  const listBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-pressed': String(mode === 'list'), 'aria-label': te.browser.showList }, icon('bulletlist'));
+  tooltip(gridBtn, te.browser.grid);
+  tooltip(listBtn, te.browser.list);
   const setMode = (m: 'grid' | 'list') => {
     if (m === mode) return;
     mode = m;
@@ -120,7 +122,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     catCount,
     icon('chevron-down', { class: 'tx-catpick-chev' }),
   );
-  tooltip(catPick, 'Show one kind of texture');
+  tooltip(catPick, te.browser.kindHint);
   let catMenu: PopoverHandle | null = null;
   catPick.addEventListener('click', () => {
     if (catMenu?.open) catMenu.close();
@@ -132,7 +134,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
       openCatMenu();
     }
   });
-  const grid = h('div', { class: ['tx-grid', mode === 'list' && 'is-list'], role: 'listbox', tabIndex: 0, 'aria-label': 'Textures', 'aria-multiselectable': 'false' });
+  const grid = h('div', { class: ['tx-grid', mode === 'list' && 'is-list'], role: 'listbox', tabIndex: 0, 'aria-label': te.browser.textures, 'aria-multiselectable': 'false' });
   const sizer = h('div', { class: 'tx-grid-sizer' });
   const scroller = h('div', { class: 'tx-grid-scroll scroll' }, sizer, grid);
   const empty = h('div', { class: 'tx-grid-empty', hidden: true });
@@ -141,7 +143,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
 
   const el = h(
     'section',
-    { class: 'panel tx-browser', 'aria-label': 'Texture browser' },
+    { class: 'panel tx-browser', 'aria-label': te.browser.label },
     opts.top ?? null,
     h('div', { class: 'tx-browser-head' }, search, catPick),
     h('div', { class: 'tx-browser-bar' }, editedBtn, h('span', { class: 'grow' }), fxBtn, h('span', { class: 'tx-seg' }, gridBtn, listBtn)),
@@ -166,19 +168,19 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     return m;
   };
 
-  const catName = (c: Cat) => (c === 'all' ? 'All textures' : CATEGORY_INFO[c].label);
+  const catName = (c: Cat) => (c === 'all' ? te.lib.allTextures : CATEGORY_INFO[c].label);
   const renderCats = () => {
     const m = counts();
     catIcon.replaceChildren(icon(cat === 'all' ? 'grid' : CATEGORY_INFO[cat].icon));
     catLabel.textContent = catName(cat);
     catCount.textContent = nf.format(m.get(cat) ?? 0);
-    catPick.setAttribute('aria-label', `Category: ${catName(cat)}, ${m.get(cat) ?? 0} textures. Change category`);
+    catPick.setAttribute('aria-label', fmt(te.browser.categoryButton, { category: catName(cat), count: m.get(cat) ?? 0 }));
     catPick.classList.toggle('is-filtered', cat !== 'all');
   };
 
   function openCatMenu() {
     const m = counts();
-    const list = h('div', { class: 'tx-catmenu', role: 'menu', 'aria-label': 'Texture categories' });
+    const list = h('div', { class: 'tx-catmenu', role: 'menu', 'aria-label': te.browser.categories });
     const items: HTMLButtonElement[] = [];
     const mk = (c: Cat) => {
       const on = cat === c;
@@ -186,7 +188,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         'button',
         { type: 'button', class: 'tx-catmenu-item', role: 'menuitemradio', 'aria-checked': String(on), tabIndex: -1, dataset: { cat: c } },
         icon(c === 'all' ? 'grid' : CATEGORY_INFO[c].icon),
-        h('span', { class: 'tx-catmenu-label' }, c === 'all' ? 'All' : CATEGORY_INFO[c].label),
+        h('span', { class: 'tx-catmenu-label' }, c === 'all' ? te.browser.all : CATEGORY_INFO[c].label),
         h('span', { class: 'tx-chip-count' }, nf.format(m.get(c) ?? 0)),
       );
       b.addEventListener('click', () => {
@@ -248,7 +250,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     fxBtn.hidden = !store.effectsActive();
     fxBtn.setAttribute('aria-pressed', String(thumbs.showEffects));
     const total = store.entries.length;
-    count.textContent = items.length === total ? `${nf.format(total)} textures` : `${nf.format(items.length)} of ${nf.format(total)}`;
+    count.textContent = items.length === total ? fmt(te.browser.count, { count: total }) : fmt(te.browser.countOf, { count: items.length, total });
     clearBtn.hidden = !query;
   };
 
@@ -262,19 +264,19 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
       empty.replaceChildren(
         emptyState({
           icon: 'pencil',
-          title: 'Nothing edited yet',
-          text: 'Pick any texture and start painting. Everything you change shows up here.',
-          action: button({ label: 'Show all textures', size: 'sm', onClick: () => { editedOnly = false; refilter(true); } }),
+          title: te.browser.nothingEditedTitle,
+          text: te.browser.nothingEditedText,
+          action: button({ label: te.browser.showAll, size: 'sm', onClick: () => { editedOnly = false; refilter(true); } }),
         }),
       );
     } else {
       empty.replaceChildren(
         emptyState({
           icon: 'search',
-          title: 'No textures found',
-          text: query ? `Nothing matches "${query}"${cat !== 'all' ? ` in ${CATEGORY_INFO[cat].label}` : ''}. Try a shorter word, like "stone" or "sword".` : 'This category is empty.',
+          title: te.browser.noneFoundTitle,
+          text: query ? (cat !== 'all' ? fmt(te.browser.noMatchIn, { query, category: CATEGORY_INFO[cat].label }) : fmt(te.browser.noMatch, { query })) : te.browser.emptyCategory,
           action: button({
-            label: 'Clear filters',
+            label: te.browser.clearFilters,
             size: 'sm',
             onClick: () => {
               query = '';
@@ -351,7 +353,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         role: 'option',
         id: tileId(i),
         'aria-selected': String(e.path === selected),
-        'aria-label': `${e.pretty}${edited ? ', edited' : ''}${e.animated ? ', animated' : ''}`,
+        'aria-label': `${e.pretty}${edited ? te.browser.editedSuffix : ''}${e.animated ? te.browser.animatedSuffix : ''}`,
         dataset: { index: i, path: e.path },
       },
       h('span', { class: 'tx-tile-img' }, h('canvas', { class: 'tx-thumb-canvas', 'aria-hidden': 'true' })),
@@ -359,8 +361,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
       h(
         'span',
         { class: 'tx-tile-badges', 'aria-hidden': 'true' },
-        e.animated ? h('span', { class: 'tx-badge-anim', title: 'Animated' }, icon('play', { size: 16 })) : null,
-        h('span', { class: 'tx-badge-edit', title: 'Edited' }, icon('pencil', { size: 16 })),
+        e.animated ? h('span', { class: 'tx-badge-anim', title: te.browser.animated }, icon('play', { size: 16 })) : null,
+        h('span', { class: 'tx-badge-edit', title: te.browser.edited }, icon('pencil', { size: 16 })),
       ),
     );
     const cached = thumbs.peek(e);
@@ -469,7 +471,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
       const e = items[i];
       const edited = store.isEdited(path);
       t.classList.toggle('is-edited', edited);
-      t.setAttribute('aria-label', `${e.pretty}${edited ? ', edited' : ''}${e.animated ? ', animated' : ''}`);
+      t.setAttribute('aria-label', `${e.pretty}${edited ? te.browser.editedSuffix : ''}${e.animated ? te.browser.animatedSuffix : ''}`);
       void loadThumb(t);
     }
   };
@@ -519,12 +521,12 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     const edited = store.isEdited(e.path);
     const hasVanilla = store.assets.hasFile(e.path);
     const menu: MenuItem[] = [
-      { label: 'Open', icon: 'pencil', onClick: () => openAt(i, 'pointer') },
-      { label: 'Replace with upload…', icon: 'upload', onClick: () => opts.onUpload(e.path) },
-      { label: 'Download PNG', icon: 'download', onClick: () => opts.onDownload(e.path) },
+      { label: te.browser.open, icon: 'pencil', onClick: () => openAt(i, 'pointer') },
+      { label: te.browser.replace, icon: 'upload', onClick: () => opts.onUpload(e.path) },
+      { label: te.browser.downloadPng, icon: 'download', onClick: () => opts.onDownload(e.path) },
     ];
-    if (edited) menu.push({ label: hasVanilla ? 'Reset to vanilla' : 'Remove from pack', icon: 'reset', danger: true, onClick: () => opts.onReset(e.path) });
-    openMenu(ctxAnchor, menu, { placement: 'bottom-start', label: `${e.pretty} actions` });
+    if (edited) menu.push({ label: hasVanilla ? te.browser.resetVanilla : te.browser.removeFromPack, icon: 'reset', danger: true, onClick: () => opts.onReset(e.path) });
+    openMenu(ctxAnchor, menu, { placement: 'bottom-start', label: fmt(te.browser.actions, { name: e.pretty }) });
   };
 
   grid.addEventListener('contextmenu', (ev) => {

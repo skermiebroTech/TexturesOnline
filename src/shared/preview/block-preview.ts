@@ -9,6 +9,7 @@ import { createStage, OrbitController, prefersReducedMotion, ViewportLoop } from
 import { ModelMesh, type ModelHit, type ModelTextureImage, type PaintCursor } from '../models/model-mesh';
 import type { BakedQuad, RGB, Tint, Vec3 } from '../models/geometry';
 import { liftedPositions, pointForUv, quadTexelRect, raycastQuads } from '../models/model-paint';
+import { mt } from '../models/i18n/text';
 
 export type { ModelHit, ModelTextureImage, PaintCursor } from '../models/model-mesh';
 
@@ -182,8 +183,6 @@ const DEFAULT_VIEW = { azimuth: (3 * Math.PI) / 4, elevation: 0.52, distance: 3.
 const ITEM_VIEW = { azimuth: 0.42, elevation: 0.24, distance: 3.3 };
 const MOB_VIEW = { azimuth: 0.6, elevation: 0.3, distance: 3.4 };
 const CLICK_SLOP = 6;
-const VIEW_LABEL = 'Block preview. Drag or use the arrow keys to rotate, scroll to zoom, double-click or press Home to reset.';
-const PAINT_LABEL = '3D model, paint mode. Drag on the model to paint; right-drag, drag the background or hold Space to turn; scroll to zoom.';
 
 type PaintDrag =
   | { kind: 'paint'; id: number; x: number; y: number; distance: number }
@@ -253,12 +252,12 @@ class BlockPreviewImpl implements BlockPreview {
   private readonly invMatrix = new THREE.Matrix4();
 
   constructor(container: HTMLElement, opts: BlockPreviewOptions) {
-    this.stage = createStage(container, VIEW_LABEL);
+    this.stage = createStage(container, mt.stage.view);
     this.stage.root.style.minHeight = '80px';
     this.flat = document.createElement('canvas');
     this.flat.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none;';
     this.flat.setAttribute('role', 'img');
-    this.flat.setAttribute('aria-label', 'Texture preview');
+    this.flat.setAttribute('aria-label', mt.stage.flat);
     this.stage.root.appendChild(this.flat);
 
     let renderer: THREE.WebGLRenderer | null = null;
@@ -421,7 +420,7 @@ class BlockPreviewImpl implements BlockPreview {
     this.spaceHeld = this.altHeld = false;
     this.orbit.pointerEnabled = !handler;
     this.stage.root.dataset.mode = handler ? 'paint' : 'view';
-    this.stage.canvas.setAttribute('aria-label', handler ? PAINT_LABEL : VIEW_LABEL);
+    this.stage.canvas.setAttribute('aria-label', handler ? mt.stage.paint : mt.stage.view);
     if (!handler) {
       this.setPaintCursor(null);
       delete this.stage.root.dataset.cursor;

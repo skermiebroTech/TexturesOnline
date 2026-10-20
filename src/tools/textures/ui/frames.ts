@@ -6,6 +6,8 @@ import { icon, setIcon } from '../../../ui/icons';
 import { tooltip } from '../../../ui/components';
 import { getFrame, type AnimInfo } from './meta';
 import { paintCanvas } from './thumbs';
+import { fmt } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export interface FrameStrip {
   el: HTMLElement;
@@ -25,16 +27,16 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
   let raf = 0;
 
   const playGlyph = icon('play');
-  const playBtn = h('button', { type: 'button', class: 'icon-btn sm tx-frames-play', 'aria-pressed': 'false', 'aria-label': 'Play animation' }, playGlyph);
-  tooltip(playBtn, 'Play the animation');
+  const playBtn = h('button', { type: 'button', class: 'icon-btn sm tx-frames-play', 'aria-pressed': 'false', 'aria-label': te.canvas.play }, playGlyph);
+  tooltip(playBtn, te.canvas.playHint);
   const preview = h('canvas', { class: 'tx-frames-preview pixelated', 'aria-hidden': 'true' });
   const info = h('span', { class: 'tx-frames-info' });
-  const prev = h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': 'Previous frame (,)' }, icon('chevron-left'));
-  const next = h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': 'Next frame (.)' }, icon('chevron-right'));
-  tooltip(prev, 'Previous frame — ,');
-  tooltip(next, 'Next frame — .');
-  const list = h('div', { class: 'tx-frames-list', role: 'listbox', 'aria-label': 'Animation frames', 'aria-orientation': 'horizontal' });
-  const title = h('span', { class: 'tx-frames-title' }, 'Animation');
+  const prev = h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': te.canvas.prevFrame }, icon('chevron-left'));
+  const next = h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': te.canvas.nextFrame }, icon('chevron-right'));
+  tooltip(prev, te.canvas.prevFrameKey);
+  tooltip(next, te.canvas.nextFrameKey);
+  const list = h('div', { class: 'tx-frames-list', role: 'listbox', 'aria-label': te.canvas.animationFrames, 'aria-orientation': 'horizontal' });
+  const title = h('span', { class: 'tx-frames-title' }, te.canvas.animation);
   const el = h(
     'div',
     { class: 'tx-frames', hidden: true },
@@ -59,7 +61,7 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
 
   const paintInfo = () => {
     if (!anim) return;
-    info.textContent = anim.still ? `Frame ${current + 1} of ${anim.count}` : `Frame ${current + 1} of ${anim.count} · ${anim.frametime} tick${anim.frametime === 1 ? '' : 's'}`;
+    info.textContent = anim.still ? fmt(te.canvas.frameOf, { n: current + 1, count: anim.count }) : fmt(te.canvas.frameOfTicks, { n: current + 1, count: anim.count, ticks: anim.frametime });
     list.querySelectorAll<HTMLElement>('.tx-frame').forEach((b, i) => {
       b.setAttribute('aria-selected', String(i === current));
       b.tabIndex = i === current ? 0 : -1;
@@ -81,7 +83,7 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
     raf = 0;
     setIcon(playGlyph, 'play');
     playBtn.setAttribute('aria-pressed', 'false');
-    playBtn.setAttribute('aria-label', 'Play animation');
+    playBtn.setAttribute('aria-label', te.canvas.play);
     paintPreview(current);
   };
 
@@ -90,7 +92,7 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
     playing = true;
     setIcon(playGlyph, 'pause');
     playBtn.setAttribute('aria-pressed', 'true');
-    playBtn.setAttribute('aria-label', 'Pause animation');
+    playBtn.setAttribute('aria-label', te.canvas.pause);
     let step = 0;
     let due = performance.now();
     const loop = (t: number) => {
@@ -138,11 +140,11 @@ export function createFrameStrip(onSelect: (i: number) => void): FrameStrip {
       el.hidden = !a || !f;
       list.replaceChildren();
       if (!a || !f) return;
-      title.textContent = a.still ? 'Frames' : 'Animation';
+      title.textContent = a.still ? te.canvas.framesTitle : te.canvas.animation;
       for (let i = 0; i < a.count; i++) {
         const c = h('canvas', { class: 'pixelated', 'aria-hidden': 'true' });
         paintThumb(c, i);
-        const b = h('button', { type: 'button', class: 'tx-frame checker', role: 'option', 'aria-label': `Frame ${i + 1}` }, c, h('span', { class: 'tx-frame-n' }, String(i + 1)));
+        const b = h('button', { type: 'button', class: 'tx-frame checker', role: 'option', 'aria-label': fmt(te.canvas.frame, { n: i + 1 }) }, c, h('span', { class: 'tx-frame-n' }, String(i + 1)));
         b.addEventListener('click', () => select(i));
         list.appendChild(b);
       }

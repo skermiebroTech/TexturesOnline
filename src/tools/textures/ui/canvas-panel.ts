@@ -34,7 +34,10 @@ import { createFrameStrip } from './frames';
 import { openUploadDialog, type UploadScope } from './upload-dialog';
 import { ICON_KEY, type TexStore } from './store';
 import { paintCanvas } from './thumbs';
+import type { EditorText } from './i18n/editor';
 import { autoPackIcon } from './icon';
+import { fmt, fmtNodes } from '../../../i18n/editor-text';
+import { te } from './i18n/editor';
 
 export interface OpenTexture {
   key: string;
@@ -104,20 +107,33 @@ export interface CanvasPanelOptions {
   onCanvasHover?(p: { x: number; y: number } | null): void;
 }
 
-const TOOLS: { tool: Tool; label: string; icon: IconName; key?: string; hint?: string }[] = [
-  { tool: 'pencil', label: 'Pencil', icon: 'pencil', key: 'B' },
-  { tool: 'eraser', label: 'Eraser', icon: 'eraser', key: 'E' },
-  { tool: 'fill', label: 'Fill bucket', icon: 'fill', key: 'G' },
-  { tool: 'picker', label: 'Colour picker', icon: 'pipette', key: 'I', hint: 'or hold Alt' },
-  { tool: 'line', label: 'Line', icon: 'line', key: 'L' },
-  { tool: 'rect', label: 'Rectangle', icon: 'rect', key: 'U' },
-  { tool: 'ellipse', label: 'Ellipse', icon: 'ellipse', key: 'O' },
-  { tool: 'lighten', label: 'Lighten', icon: 'sun' },
-  { tool: 'darken', label: 'Darken', icon: 'moon' },
-  { tool: 'noise', label: 'Noise brush', icon: 'noise' },
-  { tool: 'select', label: 'Select', icon: 'select', key: 'M' },
-  { tool: 'move', label: 'Move', icon: 'move', key: 'V' },
-];
+type RailTool = keyof EditorText['canvas']['tools'] & Tool;
+const TOOLS: { tool: RailTool; readonly label: string; icon: IconName; key?: string; readonly hint?: string }[] = (
+  [
+    ['pencil', 'pencil', 'B'],
+    ['eraser', 'eraser', 'E'],
+    ['fill', 'fill', 'G'],
+    ['picker', 'pipette', 'I'],
+    ['line', 'line', 'L'],
+    ['rect', 'rect', 'U'],
+    ['ellipse', 'ellipse', 'O'],
+    ['lighten', 'sun'],
+    ['darken', 'moon'],
+    ['noise', 'noise'],
+    ['select', 'select', 'M'],
+    ['move', 'move', 'V'],
+  ] as [RailTool, IconName, string?][]
+).map(([tool, ic, key]) => ({
+  tool,
+  icon: ic,
+  key,
+  get label() {
+    return te.canvas.tools[tool];
+  },
+  get hint() {
+    return tool === 'picker' ? te.canvas.tools.pickerHint : undefined;
+  },
+}));
 
 const PAINT_TOOLS = new Set<Tool>(['pencil', 'fill', 'line', 'rect', 'rect-fill', 'ellipse']);
 const SIZE_TOOLS = new Set<Tool>(['pencil', 'eraser', 'line', 'rect', 'ellipse', 'lighten', 'darken', 'noise']);
@@ -133,15 +149,15 @@ function samePixels(a: ImageData, b: ImageData): boolean {
   return true;
 }
 
-const QUICK_PICKS: { label: string; ids: string[] }[] = [
-  { label: 'Grass block', ids: ['block/grass_block_side', 'blocks/grass_side_carried', 'blocks/grass_side'] },
-  { label: 'Stone', ids: ['block/stone', 'blocks/stone'] },
-  { label: 'Oak planks', ids: ['block/oak_planks', 'blocks/planks_oak'] },
-  { label: 'Diamond ore', ids: ['block/diamond_ore', 'blocks/diamond_ore'] },
-  { label: 'Diamond sword', ids: ['item/diamond_sword', 'items/diamond_sword'] },
-  { label: 'Apple', ids: ['item/apple', 'items/apple'] },
-  { label: 'Creeper', ids: ['entity/creeper/creeper'] },
-  { label: 'Sun', ids: ['environment/celestial/sun', 'environment/sun'] },
+const QUICK_PICKS: { pick: keyof EditorText['canvas']['picks']; ids: string[] }[] = [
+  { pick: 'grass', ids: ['block/grass_block_side', 'blocks/grass_side_carried', 'blocks/grass_side'] },
+  { pick: 'stone', ids: ['block/stone', 'blocks/stone'] },
+  { pick: 'planks', ids: ['block/oak_planks', 'blocks/planks_oak'] },
+  { pick: 'diamondOre', ids: ['block/diamond_ore', 'blocks/diamond_ore'] },
+  { pick: 'sword', ids: ['item/diamond_sword', 'items/diamond_sword'] },
+  { pick: 'apple', ids: ['item/apple', 'items/apple'] },
+  { pick: 'creeper', ids: ['entity/creeper/creeper'] },
+  { pick: 'sun', ids: ['environment/celestial/sun', 'environment/sun'] },
 ];
 
 export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
@@ -159,21 +175,21 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
 
   // ---------------------------------------------------------------- header
   const headThumb = h('canvas', { class: 'tx-head-thumb pixelated', 'aria-hidden': 'true' });
-  const headTitle = h('h2', { class: 'tx-head-title truncate' }, 'No texture open');
+  const headTitle = h('h2', { class: 'tx-head-title truncate' }, te.canvas.noTexture);
   const headSub = h('span', { class: 'tx-head-sub truncate' });
   const headBadges = h('span', { class: 'tx-head-badges' });
 
-  const compareBtn = button({ label: 'Compare', icon: 'eye', variant: 'ghost', size: 'sm', title: 'Hold to see the original — or hold C', class: 'tx-act-compare' });
-  const uploadBtn = button({ label: 'Upload', icon: 'upload', variant: 'ghost', size: 'sm', title: 'Replace with your own image', class: 'tx-act-upload', onClick: () => panel.upload() });
-  const resetBtn = button({ label: 'Reset', icon: 'reset', variant: 'ghost', size: 'sm', title: 'Back to the original texture', class: 'tx-act-reset', onClick: () => void panel.reset() });
-  const moreBtn = iconButton('more-vertical', 'More actions', () => {
+  const compareBtn = button({ label: te.canvas.compare, icon: 'eye', variant: 'ghost', size: 'sm', title: te.canvas.compareHint, class: 'tx-act-compare' });
+  const uploadBtn = button({ label: te.canvas.upload, icon: 'upload', variant: 'ghost', size: 'sm', title: te.canvas.uploadHint, class: 'tx-act-upload', onClick: () => panel.upload() });
+  const resetBtn = button({ label: te.canvas.reset, icon: 'reset', variant: 'ghost', size: 'sm', title: te.canvas.resetHint, class: 'tx-act-reset', onClick: () => void panel.reset() });
+  const moreBtn = iconButton('more-vertical', te.canvas.more, () => {
     if (!cur) return;
     const t = cur;
     openMenu(moreBtn, [
-      { label: 'Download PNG', icon: 'download', onClick: () => void panel.download(t.key) },
-      { label: 'Copy texture name', icon: 'copy', onClick: () => void navigator.clipboard?.writeText(t.entry?.id ?? t.name).then(() => toast('Copied', { tone: 'success', duration: 1600 })) },
-      { label: 'Fit to screen', icon: 'expand', onClick: () => pc?.zoomToFit() },
-      { label: ws === '3d' ? 'Paint the flat texture (2D)' : 'Paint on the 3D model', icon: ws === '3d' ? 'grid' : 'cube', onClick: () => opts.onWorkspace?.(ws === '3d' ? '2d' : '3d') },
+      { label: te.canvas.downloadPng, icon: 'download', onClick: () => void panel.download(t.key) },
+      { label: te.canvas.copyName, icon: 'copy', onClick: () => void navigator.clipboard?.writeText(t.entry?.id ?? t.name).then(() => toast(te.canvas.copied, { tone: 'success', duration: 1600 })) },
+      { label: te.canvas.fit, icon: 'expand', onClick: () => pc?.zoomToFit() },
+      { label: ws === '3d' ? te.canvas.paint2d : te.canvas.paint3d, icon: ws === '3d' ? 'grid' : 'cube', onClick: () => opts.onWorkspace?.(ws === '3d' ? '2d' : '3d') },
     ]);
   }, { size: 'sm' });
   const actions = h('div', { class: 'tx-head-actions' }, compareBtn, uploadBtn, resetBtn, moreBtn);
@@ -189,11 +205,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const channelSeg = segmented<'rgb' | 'alpha' | 'rgba'>({
     value: 'rgb',
     size: 'sm',
-    label: 'Paint mode',
+    label: te.canvas.paintMode,
     options: [
-      { value: 'rgb', label: 'Colour' },
-      { value: 'alpha', label: 'Mask' },
-      { value: 'rgba', label: 'Both' },
+      { value: 'rgb', label: te.canvas.colour },
+      { value: 'alpha', label: te.canvas.mask },
+      { value: 'rgba', label: te.canvas.both },
     ],
     onChange: (v) => {
       pc?.setChannelMode(v);
@@ -207,11 +223,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (!t.alphaData) return;
     const tint = !!t.entry && isTintMaskBlock(t.full, t.entry.category);
     bannerText.replaceChildren(
-      tint ? 'The see-through part is where grass colour goes. ' : 'Faint pixels here are a dye or glow mask. ',
-      h('strong', null, 'Colour'),
-      ' keeps that mask safe; ',
-      h('strong', null, 'Mask'),
-      ' edits it.',
+      tint ? te.canvas.tintMask : te.canvas.dyeMask,
+      ...fmtNodes(te.canvas.maskSafe, { colour: h('strong', null, te.canvas.colour), mask: h('strong', null, te.canvas.mask) }),
     );
   }
   /** Colours to offer: in colour-only mode every pixel counts, even the see-through ones. */
@@ -219,14 +232,14 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
 
   // ---------------------------------------------------------------- tool rail
   const railButtons = new Map<Tool, HTMLButtonElement>();
-  const rail = h('div', { class: 'tx-rail', role: 'toolbar', 'aria-label': 'Drawing tools', 'aria-orientation': 'vertical' });
+  const rail = h('div', { class: 'tx-rail', role: 'toolbar', 'aria-label': te.canvas.drawingTools, 'aria-orientation': 'vertical' });
   TOOLS.forEach((t, i) => {
     const b = h('button', { type: 'button', class: 'tx-tool', 'aria-pressed': 'false', 'aria-label': `${t.label}${t.key ? ` (${t.key})` : ''}`, dataset: { tool: t.tool } }, icon(t.icon));
     tooltip(b, `${t.label}${t.key ? ` — ${t.key}` : ''}${t.hint ? ` ${t.hint}` : ''}`);
     b.addEventListener('click', () => {
       if (!pc) return;
       if (ws === '3d' && !TOOLS_3D.has(t.tool)) {
-        toast(`${t.label} works on the flat texture: switch to 2D to use it.`, { duration: 3200 });
+        toast(fmt(te.canvas.flatOnly, { tool: t.label }), { duration: 3200 });
         return;
       }
       if (t.tool === 'rect' && (pc.tool === 'rect' || pc.tool === 'rect-fill')) pc.setTool(pc.tool === 'rect' ? 'rect-fill' : 'rect');
@@ -252,16 +265,16 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   // ---------------------------------------------------------------- stage
   const host = h('div', { class: 'tx-canvas-host' });
   const compareCanvas = h('canvas', { class: 'tx-compare', 'aria-hidden': 'true', hidden: true });
-  const compareTag = h('span', { class: 'tx-compare-tag', hidden: true }, icon('eye', { size: 16 }), 'Original');
-  const loading = h('div', { class: 'tx-stage-loading', hidden: true }, spinner(24), h('span', null, 'Loading texture…'));
-  const dropHint = h('div', { class: 'tx-drop-hint', 'aria-hidden': 'true' }, icon('upload', { size: 48 }), h('span', null, 'Drop to replace this texture'));
+  const compareTag = h('span', { class: 'tx-compare-tag', hidden: true }, icon('eye', { size: 16 }), te.canvas.original);
+  const loading = h('div', { class: 'tx-stage-loading', hidden: true }, spinner(24), h('span', null, te.canvas.loading));
+  const dropHint = h('div', { class: 'tx-drop-hint', 'aria-hidden': 'true' }, icon('upload', { size: 48 }), h('span', null, te.canvas.dropToReplace));
   const emptyEl = h('div', { class: 'tx-stage-empty' });
   const canvasBox = h('div', { class: 'tx-canvas-box' }, host, compareCanvas, compareTag);
   const stage3d = h('div', { class: 'tx-stage3d', hidden: true });
   const wsSwitch = segmented<Workspace>({
     value: ws,
     size: 'sm',
-    label: 'Paint on',
+    label: te.canvas.paintOn,
     options: [
       { value: '2d', label: '2D', icon: 'grid' },
       { value: '3d', label: '3D', icon: 'cube' },
@@ -274,40 +287,40 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   wsSwitch.classList.add('tx-ws-switch');
   const ws2d = wsSwitch.querySelector<HTMLElement>('[data-value="2d"]');
   const ws3d = wsSwitch.querySelector<HTMLElement>('[data-value="3d"]');
-  if (ws2d) tooltip(ws2d, 'Paint the flat texture (D)');
-  if (ws3d) tooltip(ws3d, 'Paint on the 3D model (D)');
+  if (ws2d) tooltip(ws2d, te.canvas.paintFlatKey);
+  if (ws3d) tooltip(ws3d, te.canvas.paint3dKey);
   const stage = h('div', { class: 'tx-stage' }, canvasBox, stage3d, wsSwitch, loading, dropHint, emptyEl);
 
   // ---------------------------------------------------------------- options bar
   const sizeVal = h('output', { class: 'tx-size-val', 'aria-live': 'polite' }, '1');
-  const sizeDown = iconButton('minus', 'Smaller brush — [', () => pc?.setBrushSize(pc.brushSize - 1), { size: 'sm' });
-  const sizeUp = iconButton('plus', 'Bigger brush — ]', () => pc?.setBrushSize(pc.brushSize + 1), { size: 'sm' });
-  const sizeGroup = h('div', { class: 'tx-opt tx-opt-size' }, h('span', { class: 'tx-opt-label' }, 'Size'), sizeDown, sizeVal, sizeUp);
-  const mirrorX = iconButton('mirror', 'Mirror left ↔ right', () => pc?.setMirror(!pc.mirrorX, pc.mirrorY), { size: 'sm', active: false });
-  const mirrorY = iconButton('mirror', 'Mirror top ↕ bottom', () => pc?.setMirror(pc.mirrorX, !pc.mirrorY), { size: 'sm', active: false, class: 'tx-rot90' });
+  const sizeDown = iconButton('minus', te.canvas.smaller, () => pc?.setBrushSize(pc.brushSize - 1), { size: 'sm' });
+  const sizeUp = iconButton('plus', te.canvas.bigger, () => pc?.setBrushSize(pc.brushSize + 1), { size: 'sm' });
+  const sizeGroup = h('div', { class: 'tx-opt tx-opt-size' }, h('span', { class: 'tx-opt-label' }, te.canvas.size), sizeDown, sizeVal, sizeUp);
+  const mirrorX = iconButton('mirror', te.canvas.mirrorX, () => pc?.setMirror(!pc.mirrorX, pc.mirrorY), { size: 'sm', active: false });
+  const mirrorY = iconButton('mirror', te.canvas.mirrorY, () => pc?.setMirror(pc.mirrorX, !pc.mirrorY), { size: 'sm', active: false, class: 'tx-rot90' });
   const mirrorGroup = h('div', { class: 'tx-opt' }, mirrorX, mirrorY);
-  const fillAll = h('button', { type: 'button', class: 'chip tx-opt-chip', 'aria-pressed': 'false' }, 'Fill all matching');
-  tooltip(fillAll, 'Recolour every pixel of that colour, not just the touching ones');
+  const fillAll = h('button', { type: 'button', class: 'chip tx-opt-chip', 'aria-pressed': 'false' }, te.canvas.fillAll);
+  tooltip(fillAll, te.canvas.fillAllHint);
   fillAll.addEventListener('click', () => pc?.setFillContiguous(!pc.fillContiguous));
-  const filledChip = h('button', { type: 'button', class: 'chip tx-opt-chip', 'aria-pressed': 'false' }, 'Filled');
+  const filledChip = h('button', { type: 'button', class: 'chip tx-opt-chip', 'aria-pressed': 'false' }, te.canvas.filled);
   filledChip.addEventListener('click', () => pc?.setTool(pc.tool === 'rect-fill' ? 'rect' : 'rect-fill'));
-  const strength = h('input', { type: 'range', class: 'range tx-mini-range', min: 2, max: 60, step: 1, value: 15, 'aria-label': 'Strength' });
+  const strength = h('input', { type: 'range', class: 'range tx-mini-range', min: 2, max: 60, step: 1, value: 15, 'aria-label': te.canvas.strength });
   strength.addEventListener('input', () => {
     pc?.setShadeStrength(Number(strength.value) / 100);
     strength.style.setProperty('--fill', `${((Number(strength.value) - 2) / 58) * 100}%`);
   });
-  const strengthGroup = h('label', { class: 'tx-opt' }, h('span', { class: 'tx-opt-label' }, 'Strength'), strength);
+  const strengthGroup = h('label', { class: 'tx-opt' }, h('span', { class: 'tx-opt-label' }, te.canvas.strength), strength);
   const toolOpts = h('div', { class: 'tx-optgroup' }, sizeGroup, mirrorGroup, fillAll, filledChip, strengthGroup);
 
-  const gridBtn = iconButton('grid', 'Pixel grid — #', () => pc?.setShowGrid(!pc.showGrid), { size: 'sm', active: true });
-  const tiledBtn = iconButton('grid-2x2-2', 'Tiled 3×3 view (see seams)', () => pc?.setTiledPreview(!pc.tiledPreview), { size: 'sm', active: false });
-  const flipH = iconButton('flip-h', 'Flip left ↔ right — H', () => pc?.flipH(), { size: 'sm' });
-  const flipV = iconButton('flip-v', 'Flip top ↕ bottom — Shift+H', () => pc?.flipV(), { size: 'sm' });
-  const rotate = iconButton('rotate', 'Rotate 90° — R', () => pc?.rotate90(), { size: 'sm' });
-  const zoomOut = iconButton('zoom-out', 'Zoom out — −', () => pc?.zoomOut(), { size: 'sm' });
-  const zoomIn = iconButton('zoom-in', 'Zoom in — +', () => pc?.zoomIn(), { size: 'sm' });
+  const gridBtn = iconButton('grid', te.canvas.grid, () => pc?.setShowGrid(!pc.showGrid), { size: 'sm', active: true });
+  const tiledBtn = iconButton('grid-2x2-2', te.canvas.tiled, () => pc?.setTiledPreview(!pc.tiledPreview), { size: 'sm', active: false });
+  const flipH = iconButton('flip-h', te.canvas.flipH, () => pc?.flipH(), { size: 'sm' });
+  const flipV = iconButton('flip-v', te.canvas.flipV, () => pc?.flipV(), { size: 'sm' });
+  const rotate = iconButton('rotate', te.canvas.rotate, () => pc?.rotate90(), { size: 'sm' });
+  const zoomOut = iconButton('zoom-out', te.canvas.zoomOut, () => pc?.zoomOut(), { size: 'sm' });
+  const zoomIn = iconButton('zoom-in', te.canvas.zoomIn, () => pc?.zoomIn(), { size: 'sm' });
   const zoomVal = h('button', { type: 'button', class: 'tx-zoom-val' }, '100%');
-  tooltip(zoomVal, 'Fit to screen — 0');
+  tooltip(zoomVal, te.canvas.fitKey);
   zoomVal.addEventListener('click', () => pc?.zoomToFit());
   // Grid, tiling and zoom belong to the flat view: the 3D workspace hides them.
   for (const b of [gridBtn, tiledBtn, zoomOut, zoomVal, zoomIn]) b.classList.add('tx-2d-only');
@@ -325,7 +338,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     zoomVal,
     zoomIn,
   );
-  const optbar = h('div', { class: 'tx-optbar', role: 'toolbar', 'aria-label': 'Tool options' }, toolOpts, viewOpts);
+  const optbar = h('div', { class: 'tx-optbar', role: 'toolbar', 'aria-label': te.canvas.toolOptions }, toolOpts, viewOpts);
 
   const dock = createColorDock(() => pc);
   const frames = createFrameStrip((i) => selectFrame(i));
@@ -362,7 +375,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const paintOptFade = fades(optbar);
   const el = h(
     'section',
-    { class: 'panel tx-center is-empty', 'aria-label': 'Texture editor' },
+    { class: 'panel tx-center is-empty', 'aria-label': te.canvas.label },
     header,
     opts.belowHeader ?? null,
     maskBanner,
@@ -383,7 +396,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     const chips = picks.map(({ q, id }) => {
       const path = pathOf(id);
       const c = h('canvas', { class: 'pixelated', 'aria-hidden': 'true' });
-      const b = h('button', { type: 'button', class: 'tx-pick' }, h('span', { class: 'tx-pick-img checker' }, c), h('span', null, q.label));
+      const b = h('button', { type: 'button', class: 'tx-pick' }, h('span', { class: 'tx-pick-img checker' }, c), h('span', null, te.canvas.picks[q.pick]));
       b.addEventListener('click', () => void panel.open(path, { focus: true }));
       const e = store.byPath.get(path);
       if (e)
@@ -401,10 +414,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         'div',
         { class: 'tx-empty-inner' },
         h('div', { class: 'empty-icon' }, icon('image', { size: 48 })),
-        h('h3', null, 'Pick a texture to paint'),
-        h('p', { class: 'muted' }, 'Pick a block or a texture from the list, or start with one of these:'),
+        h('h3', null, te.canvas.pickTitle),
+        h('p', { class: 'muted' }, te.canvas.pickText),
         h('div', { class: 'tx-picks' }, chips),
-        button({ label: 'Browse all textures', icon: 'search', variant: 'secondary', class: 'tx-browse-btn', onClick: () => opts.onBrowse() }),
+        button({ label: te.canvas.browseAll, icon: 'search', variant: 'secondary', class: 'tx-browse-btn', onClick: () => opts.onBrowse() }),
       ),
     );
   };
@@ -413,7 +426,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   // ---------------------------------------------------------------- canvas lifecycle
   const ensureCanvas = (img: ImageData): PixelCanvas => {
     if (pc) return pc;
-    pc = new PixelCanvas(host, { image: img, showGrid: true, label: 'Texture pixels', decodeImage: (b) => decodeImage(b), overlay: (ctx, view) => drawHover(ctx, view) });
+    pc = new PixelCanvas(host, { image: img, showGrid: true, label: te.canvas.pixels, decodeImage: (b) => decodeImage(b), overlay: (ctx, view) => drawHover(ctx, view) });
     pc.setColor([91, 211, 91, 255]);
     offs.push(
       pc.on('change', (img2) => onChange(img2)),
@@ -434,8 +447,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   function syncSettings(s: PixelCanvasSettings) {
     // A shortcut picked a tool the model can't take (a shape, the selection): back to the pencil.
     if (ws === '3d' && pc && !TOOLS_3D.has(s.tool === 'rect-fill' ? 'rect' : s.tool)) {
-      const label = TOOLS.find((t) => t.tool === (s.tool === 'rect-fill' ? 'rect' : s.tool))?.label ?? 'That tool';
-      toast(`${label} works on the flat texture: press D for 2D.`, { duration: 3000 });
+      const label = TOOLS.find((t) => t.tool === (s.tool === 'rect-fill' ? 'rect' : s.tool))?.label ?? te.canvas.thatTool;
+      toast(fmt(te.canvas.flatOnlyKey, { tool: label }), { duration: 3000 });
       pc.setTool('pencil');
       return;
     }
@@ -556,8 +569,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     const t = cur;
     headBadges.replaceChildren();
     if (!t) {
-      headTitle.textContent = 'No texture open';
-      headSub.textContent = 'Choose a texture from the list';
+      headTitle.textContent = te.canvas.noTexture;
+      headSub.textContent = te.canvas.chooseTexture;
       return;
     }
     const f0 = t.anim ? getFrame(t.full, t.anim, 0) : firstSquare(t.full);
@@ -566,21 +579,21 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     headTitle.textContent = t.name;
     const size = `${t.full.width}×${t.full.height}`;
     const cat = t.entry ? CATEGORY_INFO[t.entry.category].short : '';
-    headSub.textContent = t.key === ICON_KEY ? `Pack icon · ${size}` : `${cat ? `${cat} · ` : ''}${size}${t.anim ? ` · ${t.anim.count} frames` : ''} · ${t.entry?.id ?? t.key}`;
+    headSub.textContent = t.key === ICON_KEY ? fmt(te.canvas.packIconSub, { size }) : `${cat ? `${cat} · ` : ''}${size}${t.anim ? ` · ${fmt(te.canvas.frames, { count: t.anim.count })}` : ''} · ${t.entry?.id ?? t.key}`;
     headSub.title = t.key;
     const edited = t.key === ICON_KEY ? !!project.icon : store.isEdited(t.key);
-    if (edited && t.key !== ICON_KEY) headBadges.append(badge('Edited', 'green'));
-    if (t.anim && !t.anim.still) headBadges.append(badge('Animated', 'blue'));
+    if (edited && t.key !== ICON_KEY) headBadges.append(badge(te.canvas.edited, 'green'));
+    if (t.anim && !t.anim.still) headBadges.append(badge(te.canvas.animated, 'blue'));
     if (t.upscaled) {
-      const b = badge(`Upscaled to ${project.resolution}×`, 'purple');
-      tooltip(b, `Vanilla is ${t.vanilla?.width}×${t.vanilla?.height}. Your pack is ${project.resolution}×, so it was scaled up for extra detail. It is saved at this size when you edit it.`);
+      const b = badge(fmt(te.canvas.upscaled, { res: project.resolution }), 'purple');
+      tooltip(b, fmt(te.canvas.upscaledHint, { width: String(t.vanilla?.width), height: String(t.vanilla?.height), res: project.resolution }));
       headBadges.append(b);
     }
-    if (t.entry?.custom) headBadges.append(badge('Custom', 'gold'));
+    if (t.entry?.custom) headBadges.append(badge(te.canvas.custom, 'gold'));
     const canCompare = !!t.vanilla && (edited || t.upscaled);
     compareBtn.disabled = !canCompare;
     resetBtn.disabled = t.key === ICON_KEY ? !project.icon : !edited;
-    resetBtn.querySelector('.btn-label')!.textContent = t.vanilla || t.key === ICON_KEY ? 'Reset' : 'Remove';
+    resetBtn.querySelector('.btn-label')!.textContent = t.vanilla || t.key === ICON_KEY ? te.canvas.reset : te.canvas.remove;
     compareBtn.hidden = t.key === ICON_KEY || !t.vanilla;
   }
 
@@ -602,7 +615,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       } catch {
         full = await defaultIcon();
       }
-      return { key: ICON_KEY, entry: null, name: 'Pack icon', full, vanilla: null, upscaled: false, anim: null, frame: 0, alphaData: false, base: null, baseUpscaled: false };
+      return { key: ICON_KEY, entry: null, name: te.canvas.packIcon, full, vanilla: null, upscaled: false, anim: null, frame: 0, alphaData: false, base: null, baseUpscaled: false };
     }
     const entry = store.byPath.get(path) ?? store.ensureEntry(path) ?? null;
     const edited = store.isEdited(path);
@@ -637,7 +650,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       if (my !== token) return;
       loading.hidden = true;
       console.error(err);
-      toast(err instanceof Error ? err.message : "This texture couldn't be opened.", { tone: 'error' });
+      toast(err instanceof Error ? err.message : te.canvas.openFailed, { tone: 'error' });
       return;
     } finally {
       if (loadingTimer) clearTimeout(loadingTimer);
@@ -792,7 +805,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (cur && cur.key === path && viaHistory && pc && !cur.anim && pc.width === next.width && pc.height === next.height) {
       pc.setImage(next, { resetHistory: false, resetView: false });
       onChange(pc.getImage());
-      toast(`${label} — press Ctrl+Z to undo`, { tone: 'success' });
+      toast(fmt(te.canvas.undoHint, { action: label }), { tone: 'success' });
       return;
     }
     store.setImage(path, next);
@@ -802,7 +815,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       tone: 'success',
       action: before
         ? {
-            label: 'Undo',
+            label: te.canvas.undo,
             onClick: () => {
               if (wasEdited) store.setImage(path, before);
               else if (path !== ICON_KEY) store.resetToVanilla(path);
@@ -825,7 +838,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     upload(path, file) {
       const key = path ?? cur?.key;
       if (!key) {
-        toast('Open a texture first, then upload an image for it.', { tone: 'info' });
+        toast(te.canvas.uploadFirst, { tone: 'info' });
         return;
       }
       const go = async () => {
@@ -845,11 +858,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
               if (scope === 'frame') putFrame(next, t.anim, t.frame, img);
               else for (let i = 0; i < t.anim.count; i++) putFrame(next, t.anim, i, img);
             }
-            void replaceFull(key, next, `Replaced ${t.name}`, true);
+            void replaceFull(key, next, fmt(te.canvas.replaced, { name: t.name }), true);
           },
         });
       };
-      void go().catch((err) => toast(err instanceof Error ? err.message : "Couldn't open that texture.", { tone: 'error' }));
+      void go().catch((err) => toast(err instanceof Error ? err.message : te.canvas.openTextureFailed, { tone: 'error' }));
     },
     async reset(path) {
       const key = path ?? cur?.key;
@@ -857,13 +870,13 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       if (key === ICON_KEY) {
         store.setIconBlob(undefined);
         if (cur?.key === ICON_KEY) await open(ICON_KEY);
-        toast('Pack icon reset — an automatic icon will be used', { tone: 'success' });
+        toast(te.canvas.iconReset, { tone: 'success' });
         return;
       }
       const hasVanilla = store.assets.hasFile(key);
       const name = store.byPath.get(key)?.pretty ?? key;
       if (!hasVanilla) {
-        const ok = await confirmDialog('Remove this texture?', `"${name}" isn't part of vanilla Minecraft ${store.assets.version}, so removing it deletes it from your pack.`, 'Remove', true);
+        const ok = await confirmDialog(te.canvas.removeTitle, fmt(te.canvas.removeText, { name, version: store.assets.version }), te.canvas.remove, true);
         if (!ok) return;
       }
       let before: ImageData | null = null;
@@ -883,11 +896,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
           opts.onOpened(null);
         }
       }
-      toast(hasVanilla ? `${name} is back to vanilla` : `Removed ${name}`, {
+      toast(fmt(hasVanilla ? te.canvas.backToVanilla : te.canvas.removed, { name }), {
         tone: 'success',
         action: before
           ? {
-              label: 'Undo',
+              label: te.canvas.undo,
               onClick: () => {
                 store.setImage(key, before!);
                 void open(key);
@@ -902,7 +915,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         const name = path === ICON_KEY ? 'pack' : (store.byPath.get(path)?.name ?? 'texture');
         saveBlob(new Blob([encodePng(img)], { type: 'image/png' }), `${name}.png`);
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Couldn't download that texture.", { tone: 'error' });
+        toast(err instanceof Error ? err.message : te.canvas.downloadFailed, { tone: 'error' });
       }
     },
     setCompare,

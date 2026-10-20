@@ -670,7 +670,8 @@
 .tx-col-tabs .tab {
   flex: 1 1 0;
   justify-content: center;
-  padding: 0 8px 2px;
+  gap: 6px;
+  padding: 0 6px 2px;
 }
 .tx-col-tabs .tab[data-value='textures'] {
   display: none;
@@ -2012,9 +2013,7 @@
 }
 .tx-l-name {
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .tx-l-sum {
   color: var(--text-3);
@@ -2819,7 +2818,7 @@
     display: none;
   }
   .tx-bar-actions .toolbar-sep,
-  .tx-bar-actions [aria-label^='Keyboard'] {
+  .tx-bar-actions .tx-keys-btn {
     display: none;
   }
   .tx-export-btn {
@@ -2893,6 +2892,9 @@
     line-height: var(--lh-sm);
   }
   .tx-tabbar-btn span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
   .tx-tabbar-btn[aria-current='page'] {
@@ -3218,7 +3220,7 @@
 }
 .tx-pv-state {
   display: grid;
-  grid-template-columns: minmax(72px, 88px) minmax(0, 1fr);
+  grid-template-columns: minmax(72px, 104px) minmax(0, 1fr);
   align-items: center;
   gap: 12px;
 }
@@ -3226,9 +3228,7 @@
   color: var(--text-2);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .tx-pv-state .segmented {
   display: flex;
@@ -3572,6 +3572,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+}
+/* The idle hint (how to paint and turn) wraps rather than being cut off in longer languages */
+.tx-pv-hint.is-idle .tx-pv-hint-text {
+  white-space: normal;
+  text-align: center;
 }
 .tx-pv-hint-text span {
   color: var(--text-2);

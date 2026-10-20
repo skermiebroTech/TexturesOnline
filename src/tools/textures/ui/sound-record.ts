@@ -5,14 +5,15 @@ import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import { button, spinner } from '../../../ui/components';
 import { openModal } from '../../../ui/modal';
+import { ts } from './i18n/sounds';
 
 const MAX_SECONDS = 5 * 60;
 const TYPES = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm'];
 
 export function recordingSupported(): { ok: boolean; reason?: string } {
-  if (typeof window === 'undefined' || !window.isSecureContext) return { ok: false, reason: 'Recording needs a secure page (https).' };
-  if (!navigator.mediaDevices?.getUserMedia) return { ok: false, reason: 'This browser can’t use a microphone.' };
-  if (typeof MediaRecorder === 'undefined') return { ok: false, reason: 'This browser can’t record audio. Try Chrome, Edge, Firefox or Safari.' };
+  if (typeof window === 'undefined' || !window.isSecureContext) return { ok: false, reason: ts.record.secure };
+  if (!navigator.mediaDevices?.getUserMedia) return { ok: false, reason: ts.record.noMic };
+  if (typeof MediaRecorder === 'undefined') return { ok: false, reason: ts.record.noRecorder };
   return { ok: true };
 }
 
@@ -21,15 +22,15 @@ function micError(err: unknown): string {
   switch (name) {
     case 'NotAllowedError':
     case 'SecurityError':
-      return 'Microphone access is blocked. Allow it for this site (the microphone or padlock icon in the address bar, or your browser’s site settings), then try again.';
+      return ts.record.blocked;
     case 'NotFoundError':
     case 'OverconstrainedError':
-      return 'No microphone was found. Plug one in, or pick an input in your system’s sound settings, then try again.';
+      return ts.record.notFound;
     case 'NotReadableError':
     case 'AbortError':
-      return 'The microphone is busy or couldn’t start. Close other apps that use it and try again.';
+      return ts.record.busy;
     default:
-      return 'The microphone couldn’t be started. Check that one is connected and try again.';
+      return ts.record.failed;
   }
 }
 
@@ -47,11 +48,11 @@ export function openRecorder(opts: { title: string; subtitle?: string }): Promis
     const status = h('p', { class: 'snd-rec-status', role: 'status', 'aria-live': 'polite' });
     const timer = h('span', { class: 'snd-rec-time' }, '0:00');
     const meterFill = h('span', { class: 'snd-rec-meter-fill' });
-    const meter = h('span', { class: 'snd-rec-meter', role: 'meter', 'aria-label': 'Microphone level', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': '0' }, meterFill);
+    const meter = h('span', { class: 'snd-rec-meter', role: 'meter', 'aria-label': ts.record.level, 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': '0' }, meterFill);
     const dot = h('span', { class: 'snd-rec-dot', 'aria-hidden': 'true' });
     const live = h('div', { class: 'snd-rec-live', hidden: true }, dot, timer, meter);
-    const startBtn = button({ label: 'Start recording', icon: 'mic', variant: 'primary', class: 'snd-rec-start' });
-    const stopBtn = button({ label: 'Stop', icon: 'stop', variant: 'primary', class: 'snd-rec-stop' });
+    const startBtn = button({ label: ts.record.start, icon: 'mic', variant: 'primary', class: 'snd-rec-start' });
+    const stopBtn = button({ label: ts.record.stop, icon: 'stop', variant: 'primary', class: 'snd-rec-stop' });
     stopBtn.hidden = true;
     const body = h(
       'div',
@@ -59,7 +60,7 @@ export function openRecorder(opts: { title: string; subtitle?: string }): Promis
       opts.subtitle ? h('p', { class: 'muted snd-rec-sub' }, opts.subtitle) : null,
       h('div', { class: 'snd-rec-stage' }, h('span', { class: 'snd-rec-icon', 'aria-hidden': 'true' }, icon('mic', { size: 48 })), live, status),
       h('div', { class: 'snd-rec-actions' }, startBtn, stopBtn),
-      h('p', { class: 'faint small snd-rec-note' }, 'The recording stays on this device. It’s trimmed and levelled for you; you can change both afterwards.'),
+      h('p', { class: 'faint small snd-rec-note' }, ts.record.note),
     );
 
     const modal = openModal({
@@ -76,7 +77,7 @@ export function openRecorder(opts: { title: string; subtitle?: string }): Promis
       status.textContent = supported.reason!;
       status.classList.add('is-error');
       startBtn.disabled = true;
-    } else status.textContent = 'Press Start, then allow the microphone if your browser asks.';
+    } else status.textContent = ts.record.press;
 
     function cleanup() {
       if (raf) cancelAnimationFrame(raf);
@@ -108,14 +109,14 @@ export function openRecorder(opts: { title: string; subtitle?: string }): Promis
     startBtn.addEventListener('click', async () => {
       startBtn.disabled = true;
       status.classList.remove('is-error');
-      status.replaceChildren(spinner(16), ' Waiting for microphone access…');
+      status.replaceChildren(spinner(16), ts.record.waiting);
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: false } });
       } catch (err) {
         status.textContent = micError(err);
         status.classList.add('is-error');
         startBtn.disabled = false;
-        startBtn.querySelector('.btn-label')!.textContent = 'Try again';
+        startBtn.querySelector('.btn-label')!.textContent = ts.record.tryAgain;
         return;
       }
       if (settled) return cleanup();
@@ -123,7 +124,7 @@ export function openRecorder(opts: { title: string; subtitle?: string }): Promis
       try {
         recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
       } catch {
-        status.textContent = 'This browser can’t record audio.';
+        status.textContent = ts.record.cantRecord;
         status.classList.add('is-error');
         cleanup();
         return;
@@ -135,7 +136,7 @@ export function openRecorder(opts: { title: string; subtitle?: string }): Promis
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: recorder?.mimeType || type || 'audio/webm' });
         if (!blob.size) {
-          status.textContent = 'Nothing was recorded. Try again.';
+          status.textContent = ts.record.nothing;
           status.classList.add('is-error');
           cleanup();
           return;
@@ -175,12 +176,12 @@ export function openRecorder(opts: { title: string; subtitle?: string }): Promis
       startBtn.hidden = true;
       stopBtn.hidden = false;
       stopBtn.focus();
-      status.textContent = 'Recording… press Stop when you’re done.';
+      status.textContent = ts.record.recording;
     });
 
     stopBtn.addEventListener('click', () => {
       stopBtn.disabled = true;
-      status.replaceChildren(spinner(16), ' Finishing…');
+      status.replaceChildren(spinner(16), ts.record.finishing);
       if (recorder && recorder.state !== 'inactive') recorder.stop();
     });
   });

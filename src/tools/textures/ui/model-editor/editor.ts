@@ -71,6 +71,9 @@ import { createUvEditor } from './uv-editor';
 import { numField, section, vecFields } from './fields';
 import { openTexturePicker } from './texture-picker';
 import './model-editor.css';
+import { fmt } from '../../../../i18n/editor-text';
+import { tm } from '../i18n/model-editor';
+import { tr } from '../i18n/model-rules';
 
 export interface ModelEditorOptions {
   store: TexStore;
@@ -108,14 +111,13 @@ export interface ModelEditor {
 
 type Tab = 'cubes' | 'cube' | 'faces' | 'display' | 'model';
 const SNAP_KEY = 'to-model-snap';
-const FACE_LABEL: Record<Dir, string> = { up: 'Top', down: 'Bottom', north: 'North', south: 'South', west: 'West', east: 'East' };
 const FACE_ORDER: Dir[] = ['up', 'north', 'east', 'down', 'south', 'west'];
 
 export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEditor> {
   const { store, models, thumbs, entry } = o;
   const project = store.project;
   const lib = models.lib ?? (await models.load());
-  if (!lib?.javaFiles()) throw new Error('The model files of this version couldn’t be loaded. Check your connection and try again.');
+  if (!lib?.javaFiles()) throw new Error(tm.loadFailed);
   const files = () => lib.javaFiles()!;
   const rules = modelRules(project.version);
   const kind = entry.kind === 'item' ? 'item' : 'block';
@@ -150,7 +152,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   if (kind === 'block') {
     const bsJson = baseJson(blockstatePath(entry.id));
     choices = blockModelChoices(bsJson);
-    if (!choices.length) throw new Error('This block has no blockstate file, so its model can’t be changed here.');
+    if (!choices.length) throw new Error(tm.noBlockstate);
     const bs = parseBlockstate(bsJson);
     const shown = bs ? variantsForState(bs, o.state)[0]?.model : undefined;
     const mine = existing()[0]?.model;
@@ -211,12 +213,12 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   // ---------------------------------------------------------------- DOM
   const titleName = h('h2', { class: 'me-title-name truncate' }, entry.name);
   const titleSub = h('span', { class: 'me-title-sub truncate' });
-  const backBtn = button({ label: 'Done', icon: 'arrow-left', variant: 'ghost', size: 'sm', class: 'me-back', onClick: () => close() });
-  tooltip(backBtn, 'Back to painting textures');
+  const backBtn = button({ label: tm.done, icon: 'arrow-left', variant: 'ghost', size: 'sm', class: 'me-back', onClick: () => close() });
+  tooltip(backBtn, tm.doneHint);
   const choiceBox = h('div', { class: 'me-choice' });
   const statusChip = h('button', { type: 'button', class: 'me-status' });
   statusChip.addEventListener('click', () => setTab('model', true));
-  const moreBtn = iconButton('more-vertical', 'More', () => openMore(), { size: 'sm' });
+  const moreBtn = iconButton('more-vertical', tm.more, () => openMore(), { size: 'sm' });
   const head = h(
     'header',
     { class: 'me-head' },
@@ -229,17 +231,17 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   );
 
   // cubes
-  const cubeList = h('ul', { class: 'me-cubelist', role: 'listbox', 'aria-label': 'Cubes' });
+  const cubeList = h('ul', { class: 'me-cubelist', role: 'listbox', 'aria-label': tm.cubes });
   const cubeCount = h('span', { class: 'me-count' });
-  const addBtn = iconButton('plus', 'Add a cube — N', () => addCube(), { size: 'sm' });
-  const dupBtn = iconButton('copy', 'Duplicate — Ctrl+D', () => duplicate(), { size: 'sm' });
-  const delBtn = iconButton('trash', 'Delete — Delete key', () => remove(), { size: 'sm' });
-  const upBtn = iconButton('arrow-up', 'Move up the list', () => reorder(-1), { size: 'sm' });
-  const downBtn = iconButton('arrow-down', 'Move down the list', () => reorder(1), { size: 'sm' });
+  const addBtn = iconButton('plus', tm.addCubeKey, () => addCube(), { size: 'sm' });
+  const dupBtn = iconButton('copy', tm.duplicateKey, () => duplicate(), { size: 'sm' });
+  const delBtn = iconButton('trash', tm.deleteKey, () => remove(), { size: 'sm' });
+  const upBtn = iconButton('arrow-up', tm.moveUp, () => reorder(-1), { size: 'sm' });
+  const downBtn = iconButton('arrow-down', tm.moveDown, () => reorder(1), { size: 'sm' });
   const cubesPanel = h(
     'div',
     { class: 'me-cubes panel', dataset: { pane: 'cubes' } },
-    h('div', { class: 'me-cubes-head' }, h('h3', { class: 'me-section-title' }, icon('box', { size: 16 }), 'Cubes', cubeCount), h('span', { class: 'grow' }), addBtn),
+    h('div', { class: 'me-cubes-head' }, h('h3', { class: 'me-section-title' }, icon('box', { size: 16 }), tm.cubes, cubeCount), h('span', { class: 'grow' }), addBtn),
     h('div', { class: 'me-cubes-scroll scroll' }, cubeList),
     h('div', { class: 'me-cubes-foot' }, dupBtn, delBtn, h('span', { class: 'grow' }), upBtn, downBtn),
   );
@@ -249,10 +251,10 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   const toolSeg = segmented<Tool>({
     value: tool,
     size: 'sm',
-    label: 'Handles',
+    label: tm.handles,
     options: [
-      { value: 'move', label: 'Move', icon: 'move' },
-      { value: 'resize', label: 'Resize', icon: 'expand' },
+      { value: 'move', label: tm.move, icon: 'move' },
+      { value: 'resize', label: tm.resize, icon: 'expand' },
     ],
     onChange: (v) => {
       tool = v;
@@ -262,10 +264,10 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   const snapSel = select<string>({
     value: String(snap),
     options: [
-      { value: '1', label: 'Snap 1' },
-      { value: '0.5', label: 'Snap ½' },
-      { value: '0.25', label: 'Snap ¼' },
-      { value: '0', label: 'No snap' },
+      { value: '1', label: tm.snap1 },
+      { value: '0.5', label: tm.snapHalf },
+      { value: '0.25', label: tm.snapQuarter },
+      { value: '0', label: tm.noSnap },
     ],
     onChange: (v) => {
       snap = Number(v);
@@ -277,16 +279,12 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     },
   });
   snapSel.classList.add('me-snap');
-  snapSel.querySelector('select')?.setAttribute('aria-label', 'Grid snap (in pixels of a 16 × 16 texture)');
-  tooltip(snapSel, 'Grid snap, in pixels of a 16 × 16 texture');
-  const views = h('div', { class: 'me-views', role: 'group', 'aria-label': 'Camera views' });
-  for (const [v, k, label] of [
-    ['front', 'N', 'Look at the north side'],
-    ['right', 'E', 'Look at the east side'],
-    ['back', 'S', 'Look at the south side'],
-    ['left', 'W', 'Look at the west side'],
-    ['top', 'T', 'Look from the top'],
-  ] as const) {
+  snapSel.querySelector('select')?.setAttribute('aria-label', tm.snapLabel);
+  tooltip(snapSel, tm.snapHint);
+  const views = h('div', { class: 'me-views', role: 'group', 'aria-label': tm.cameraViews });
+  for (const v of ['front', 'right', 'back', 'left', 'top'] as const) {
+    const label = tm.views[v];
+    const k = tm.viewKeys[v];
     const b = h('button', { type: 'button', class: 'me-view-btn', 'aria-label': label }, k);
     tooltip(b, label);
     b.addEventListener('click', () => viewport.setCameraView(v));
@@ -295,19 +293,19 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   const stageTools = h('div', { class: 'me-stage-tools' }, toolSeg, snapSel);
   const stageHint = h('p', { class: 'me-stage-hint' });
   const startCard = h('div', { class: 'me-start', hidden: true });
-  const slotBar = h('div', { class: 'me-slots', role: 'radiogroup', 'aria-label': 'Where the model is shown', hidden: true });
+  const slotBar = h('div', { class: 'me-slots', role: 'radiogroup', 'aria-label': tm.slotsLabel, hidden: true });
   const stage = h('div', { class: 'me-stage checker-soft' }, stageBox, stageTools, views, slotBar, stageHint, startCard);
 
   // side
   const sideTabs = tabs<Tab>({
     value: tab,
-    label: 'Model editor panels',
+    label: tm.panels,
     tabs: [
-      { value: 'cubes', label: 'Cubes' },
-      { value: 'cube', label: 'Cube' },
-      { value: 'faces', label: 'Faces' },
-      { value: 'display', label: 'Display' },
-      { value: 'model', label: 'Model' },
+      { value: 'cubes', label: tm.tabs.cubes },
+      { value: 'cube', label: tm.tabs.cube },
+      { value: 'faces', label: tm.tabs.faces },
+      { value: 'display', label: tm.tabs.display },
+      { value: 'model', label: tm.tabs.model },
     ],
     onChange: (v) => setTab(v, true),
   });
@@ -551,7 +549,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     const e = doc.elements[sel];
     if (!e) return;
     const s = sizeOf(e);
-    stageHint.textContent = tool === 'move' ? `From ${e.from.map(fmtN).join(', ')}` : `Size ${s.map(fmtN).join(' × ')}`;
+    stageHint.textContent = tool === 'move' ? fmt(tm.dragFrom, { values: e.from.map(fmtN).join(', ') }) : fmt(tm.dragSize, { values: s.map(fmtN).join(' × ') });
   }
 
   // ---------------------------------------------------------------- list
@@ -563,7 +561,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     upBtn.disabled = !has || sel === 0;
     downBtn.disabled = !has || sel >= doc.elements.length - 1;
     if (!doc.elements.length) {
-      cubeList.replaceChildren(h('li', { class: 'me-cubelist-empty faint small' }, 'No cubes yet. Add one, or pick a start point in the Model tab.'));
+      cubeList.replaceChildren(h('li', { class: 'me-cubelist-empty faint small' }, tm.noCubesYet));
       return;
     }
     cubeList.replaceChildren(
@@ -665,22 +663,22 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       'div',
       { class: 'me-empty' },
       icon('box', { size: 32 }),
-      h('p', null, doc.elements.length ? 'Pick a cube in the list or click it in the 3D view.' : 'This model has no cubes yet.'),
-      button({ label: 'Add a cube', icon: 'plus', variant: 'secondary', size: 'sm', onClick: () => addCube() }),
+      h('p', null, doc.elements.length ? tm.pickCube : tm.noCubes),
+      button({ label: tm.addCube, icon: 'plus', variant: 'secondary', size: 'sm', onClick: () => addCube() }),
     );
 
   function cubePanel(): HTMLElement {
     const e = doc.elements[sel];
     if (!e) return noCube();
     const i = sel;
-    const name = h('input', { class: 'input me-name', type: 'text', value: e.name ?? '', placeholder: `Cube ${i + 1}`, maxLength: 60, 'aria-label': 'Cube name', dataset: { key: 'name' } });
+    const name = h('input', { class: 'input me-name', type: 'text', value: e.name ?? '', placeholder: fmt(tr.cube, { n: i + 1 }), maxLength: 60, 'aria-label': tm.cubeName, dataset: { key: 'name' } });
     name.addEventListener('input', () => edit(() => (doc.elements[i].name = name.value.trim() || undefined), { key: `name:${i}`, panel: true }));
     const size = sizeOf(e);
-    const pos = vecFields({ label: 'Position', hint: 'from the block’s corner', value: [...e.from], step, min: -16, max: 32, key: 'pos', onInput: (v, done) => edit(() => setPositionSize(doc, i, v, sizeOf(doc.elements[i])), { key: `pos:${i}`, panel: !done }) });
-    const sz = vecFields({ label: 'Size', hint: '16 = one block', value: size, step, min: 0, max: 48, key: 'size', onInput: (v, done) => edit(() => setPositionSize(doc, i, [...doc.elements[i].from], v), { key: `size:${i}`, panel: !done }) });
-    const out = h('div', { class: 'me-panel' }, h('div', { class: 'me-field' }, h('label', { class: 'me-field-label' }, 'Name'), name), pos, sz, rotationSection(i));
-    const shade = toggle({ label: 'Shading', value: e.shade !== false, description: 'Darker sides, like every block. Off for flat lighting (plants).', onChange: (v) => edit(() => (doc.elements[i].shade = v ? undefined : false)) });
-    out.appendChild(section('Lighting', 'sun', shade));
+    const pos = vecFields({ label: tm.position, hint: tm.positionHint, value: [...e.from], step, min: -16, max: 32, key: 'pos', onInput: (v, done) => edit(() => setPositionSize(doc, i, v, sizeOf(doc.elements[i])), { key: `pos:${i}`, panel: !done }) });
+    const sz = vecFields({ label: tm.size, hint: tm.sizeHint, value: size, step, min: 0, max: 48, key: 'size', onInput: (v, done) => edit(() => setPositionSize(doc, i, [...doc.elements[i].from], v), { key: `size:${i}`, panel: !done }) });
+    const out = h('div', { class: 'me-panel' }, h('div', { class: 'me-field' }, h('label', { class: 'me-field-label' }, tm.name), name), pos, sz, rotationSection(i));
+    const shade = toggle({ label: tm.shading, value: e.shade !== false, description: tm.shadingHint, onChange: (v) => edit(() => (doc.elements[i].shade = v ? undefined : false)) });
+    out.appendChild(section(tm.lighting, 'sun', shade));
     return out;
   }
 
@@ -690,7 +688,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     const free = !!r && !r.axis;
     const axisNow = !r ? 'none' : free ? 'free' : r.axis!;
     const axisOptions: { value: string; label: string }[] = [
-      { value: 'none', label: 'None' },
+      { value: 'none', label: tm.none },
       { value: 'x', label: 'X' },
       { value: 'y', label: 'Y' },
       { value: 'z', label: 'Z' },
@@ -700,7 +698,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     const axisSeg = segmented<string>({
       value: axisNow,
       size: 'sm',
-      label: 'Rotation axis',
+      label: tm.rotationAxis,
       options: axisOptions,
       onChange: (v) =>
         edit(() => {
@@ -717,27 +715,27 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       if (rules.rotation === 'steps') {
         const valid = (ROTATION_STEPS as readonly number[]).includes(a);
         const opts = ROTATION_STEPS.map((s) => ({ value: String(s), label: `${s}°` }));
-        if (!valid) opts.push({ value: String(a), label: `${fmtN(a)}° (not allowed)` });
-        const seg = segmented<string>({ value: String(a), size: 'sm', label: 'Angle', options: opts, onChange: (v) => edit(() => (doc.elements[i].rotation!.angle = Number(v))) });
+        if (!valid) opts.push({ value: String(a), label: fmt(tm.notAllowed, { angle: fmtN(a) }) });
+        const seg = segmented<string>({ value: String(a), size: 'sm', label: tm.angle, options: opts, onChange: (v) => edit(() => (doc.elements[i].rotation!.angle = Number(v))) });
         seg.classList.add('me-angles');
-        parts.push(h('div', { class: 'me-field' }, h('span', { class: 'me-field-label' }, 'Angle'), seg, h('p', { class: 'me-field-note' }, `Minecraft ${project.version} turns cubes in steps of 22.5°.`)));
+        parts.push(h('div', { class: 'me-field' }, h('span', { class: 'me-field-label' }, tm.angle), seg, h('p', { class: 'me-field-note' }, fmt(tm.stepsNote, { version: project.version }))));
       } else {
         const lim = rules.rotation === 'range' ? 45 : 180;
-        const f = numField({ label: '°', aria: 'Angle in degrees', value: a, step: () => (snap >= 1 ? 22.5 : 1), min: -lim, max: lim, key: 'angle', onInput: (v, done) => edit(() => (doc.elements[i].rotation!.angle = v), { key: `angle:${i}`, panel: !done }) });
+        const f = numField({ label: '°', aria: tm.angleDegrees, value: a, step: () => (snap >= 1 ? 22.5 : 1), min: -lim, max: lim, key: 'angle', onInput: (v, done) => edit(() => (doc.elements[i].rotation!.angle = v), { key: `angle:${i}`, panel: !done }) });
         const presets = h('div', { class: 'me-chips' }, ...[-45, -22.5, 0, 22.5, 45].map((s) => chip(`${s}°`, a === s, () => edit(() => (doc.elements[i].rotation!.angle = s)))));
-        parts.push(h('div', { class: 'me-field' }, h('span', { class: 'me-field-label' }, 'Angle'), h('div', { class: 'me-angle-row' }, f, presets), rules.rotation === 'range' ? h('p', { class: 'me-field-note' }, `Minecraft ${project.version} allows -45° to 45°.`) : null));
+        parts.push(h('div', { class: 'me-field' }, h('span', { class: 'me-field-label' }, tm.angle), h('div', { class: 'me-angle-row' }, f, presets), rules.rotation === 'range' ? h('p', { class: 'me-field-note' }, fmt(tm.rangeNote, { version: project.version })) : null));
       }
     } else if (r && free) {
-      parts.push(vecFields({ label: 'Angles', hint: 'X, then Y, then Z', value: [r.x ?? 0, r.y ?? 0, r.z ?? 0], step: () => 1, min: -360, max: 360, key: 'euler', onInput: (v, done) => edit(() => Object.assign(doc.elements[i].rotation!, { x: v[0], y: v[1], z: v[2] }), { key: `euler:${i}`, panel: !done }) }));
+      parts.push(vecFields({ label: tm.angles, hint: tm.anglesHint, value: [r.x ?? 0, r.y ?? 0, r.z ?? 0], step: () => 1, min: -360, max: 360, key: 'euler', onInput: (v, done) => edit(() => Object.assign(doc.elements[i].rotation!, { x: v[0], y: v[1], z: v[2] }), { key: `euler:${i}`, panel: !done }) }));
     }
     if (r) {
       parts.push(
-        vecFields({ label: 'Pivot', hint: 'the point it turns around', value: [...r.origin], step, min: -16, max: 32, key: 'origin', onInput: (v, done) => edit(() => (doc.elements[i].rotation!.origin = v), { key: `origin:${i}`, panel: !done }) }),
-        h('div', { class: 'me-row' }, button({ label: 'Pivot at the cube’s centre', icon: 'target', variant: 'ghost', size: 'sm', onClick: () => edit(() => (doc.elements[i].rotation!.origin = centre())) }), button({ label: 'Block centre', variant: 'ghost', size: 'sm', onClick: () => edit(() => (doc.elements[i].rotation!.origin = [8, 8, 8])) })),
-        toggle({ label: 'Rescale', value: !!r.rescale, description: 'Stretches a turned cube to span the block again, like plants do.', onChange: (v) => edit(() => (doc.elements[i].rotation!.rescale = v || undefined)) }),
+        vecFields({ label: tm.pivot, hint: tm.pivotHint, value: [...r.origin], step, min: -16, max: 32, key: 'origin', onInput: (v, done) => edit(() => (doc.elements[i].rotation!.origin = v), { key: `origin:${i}`, panel: !done }) }),
+        h('div', { class: 'me-row' }, button({ label: tm.pivotCube, icon: 'target', variant: 'ghost', size: 'sm', onClick: () => edit(() => (doc.elements[i].rotation!.origin = centre())) }), button({ label: tm.pivotBlock, variant: 'ghost', size: 'sm', onClick: () => edit(() => (doc.elements[i].rotation!.origin = [8, 8, 8])) })),
+        toggle({ label: tm.rescale, value: !!r.rescale, description: tm.rescaleHint, onChange: (v) => edit(() => (doc.elements[i].rotation!.rescale = v || undefined)) }),
       );
     }
-    return section('Rotation', 'reload', ...parts);
+    return section(tm.rotation, 'reload', ...parts);
   }
 
   function chip(label: string, on: boolean, fn: () => void): HTMLButtonElement {
@@ -775,9 +773,9 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     const e = doc.elements[sel];
     if (!e) return noCube();
     const i = sel;
-    const grid = h('div', { class: 'me-facegrid', role: 'radiogroup', 'aria-label': 'Face' });
+    const grid = h('div', { class: 'me-facegrid', role: 'radiogroup', 'aria-label': tm.faceLabel });
     for (const d of FACE_ORDER) {
-      const b = h('button', { type: 'button', class: ['me-facebtn', !e.faces[d] && 'is-off'], role: 'radio', 'aria-checked': String(d === face), dataset: { face: d } }, FACE_LABEL[d]);
+      const b = h('button', { type: 'button', class: ['me-facebtn', !e.faces[d] && 'is-off'], role: 'radio', 'aria-checked': String(d === face), dataset: { face: d } }, tm.faces[d]);
       b.addEventListener('click', () => {
         face = d;
         syncSelection();
@@ -788,27 +786,27 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     const f = e.faces[face];
     const out = h('div', { class: 'me-panel' }, grid);
     const on = toggle({
-      label: `Show the ${FACE_LABEL[face].toLowerCase()} face`,
+      label: fmt(tm.showFace, { face: tm.faceWords[face] }),
       value: !!f,
-      description: f ? undefined : 'Hidden faces aren’t drawn at all.',
+      description: f ? undefined : tm.hiddenFaces,
       onChange: (v) => edit(() => setFace(doc, i, face, v ? { texture: Object.values(doc.elements[i].faces).find(Boolean)?.texture ?? '#texture' } : null)),
     });
     out.appendChild(on);
     if (!f) return out;
     const path = faceTexturePath(f);
-    const texName = path ? path.replace(/^.*\/textures\//, '').replace(/\.png$/, '') : 'Missing texture';
+    const texName = path ? path.replace(/^.*\/textures\//, '').replace(/\.png$/, '') : tm.missingTexture;
     const thumb = h('canvas', { class: 'me-tex-thumb', 'aria-hidden': 'true' });
     const entryOf = path ? store.byPath.get(path) : undefined;
     if (entryOf) void thumbs.get(entryOf).then((img) => img && paintCanvas(thumb, img));
-    const change = button({ label: 'Change', icon: 'images', variant: 'secondary', size: 'sm', onClick: () => pickTexture(i, face, path) });
-    const paint = button({ label: 'Paint', icon: 'pencil', variant: 'ghost', size: 'sm', disabled: !path || (!store.assets.hasFile(path) && !store.isEdited(path)), onClick: () => path && paintTex(path) });
-    tooltip(paint, 'Open this texture in the pixel editor');
+    const change = button({ label: tm.change, icon: 'images', variant: 'secondary', size: 'sm', onClick: () => pickTexture(i, face, path) });
+    const paint = button({ label: tm.paint, icon: 'pencil', variant: 'ghost', size: 'sm', disabled: !path || (!store.assets.hasFile(path) && !store.isEdited(path)), onClick: () => path && paintTex(path) });
+    tooltip(paint, tm.paintHint);
     out.appendChild(
       section(
-        'Texture',
+        tm.texture,
         'image',
-        h('div', { class: 'me-texrow' }, h('span', { class: 'me-tex-thumbbox checker' }, thumb), h('span', { class: 'me-tex-text' }, h('span', { class: 'me-tex-name truncate', title: texName }, texName), h('span', { class: 'me-tex-var' }, `Variable ${f.texture}`))),
-        h('div', { class: 'me-row wrap' }, change, paint, button({ label: 'Use on every face', variant: 'ghost', size: 'sm', onClick: () => edit(() => DIRS.forEach((d) => doc.elements[i].faces[d] && setFace(doc, i, d, { texture: f.texture }))) })),
+        h('div', { class: 'me-texrow' }, h('span', { class: 'me-tex-thumbbox checker' }, thumb), h('span', { class: 'me-tex-text' }, h('span', { class: 'me-tex-name truncate', title: texName }, texName), h('span', { class: 'me-tex-var' }, fmt(tm.variable, { name: f.texture })))),
+        h('div', { class: 'me-row wrap' }, change, paint, button({ label: tm.everyFace, variant: 'ghost', size: 'sm', onClick: () => edit(() => DIRS.forEach((d) => doc.elements[i].faces[d] && setFace(doc, i, d, { texture: f.texture }))) })),
       ),
     );
     // UV
@@ -824,7 +822,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       ...(['U1', 'V1', 'U2', 'V2'] as const).map((lbl, k) =>
         numField({
           label: lbl,
-          aria: `UV ${lbl}`,
+          aria: fmt(tm.uvLabel, { name: lbl }),
           value: uv[k],
           step,
           min: -16,
@@ -839,31 +837,31 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
         }),
       ),
     );
-    const autoToggle = toggle({ label: 'Follow the cube', value: auto, description: 'The face shows the part of the texture under it, and keeps doing so as the cube moves.', onChange: (v) => edit(() => setFace(doc, i, face, { uv: v ? undefined : [...effectiveUv(doc.elements[i], face)] as UV4 })) });
+    const autoToggle = toggle({ label: tm.follow, value: auto, description: tm.followHint, onChange: (v) => edit(() => setFace(doc, i, face, { uv: v ? undefined : [...effectiveUv(doc.elements[i], face)] as UV4 })) });
     const tools = h(
       'div',
       { class: 'me-row wrap' },
-      button({ label: 'Whole texture', variant: 'ghost', size: 'sm', onClick: () => edit(() => setFace(doc, i, face, { uv: [0, 0, 16, 16] })) }),
-      iconButton('flip-h', 'Flip left to right', () => edit(() => { const u = effectiveUv(doc.elements[i], face); setFace(doc, i, face, { uv: [u[2], u[1], u[0], u[3]] }); }), { size: 'sm' }),
-      iconButton('flip-v', 'Flip upside down', () => edit(() => { const u = effectiveUv(doc.elements[i], face); setFace(doc, i, face, { uv: [u[0], u[3], u[2], u[1]] }); }), { size: 'sm' }),
+      button({ label: tm.wholeTexture, variant: 'ghost', size: 'sm', onClick: () => edit(() => setFace(doc, i, face, { uv: [0, 0, 16, 16] })) }),
+      iconButton('flip-h', tm.flipH, () => edit(() => { const u = effectiveUv(doc.elements[i], face); setFace(doc, i, face, { uv: [u[2], u[1], u[0], u[3]] }); }), { size: 'sm' }),
+      iconButton('flip-v', tm.flipV, () => edit(() => { const u = effectiveUv(doc.elements[i], face); setFace(doc, i, face, { uv: [u[0], u[3], u[2], u[1]] }); }), { size: 'sm' }),
     );
-    out.appendChild(section('Texture area (UV)', 'crop', uvEditor.el, uvFields, tools, autoToggle));
-    const rot = segmented<string>({ value: String(f.rotation ?? 0), size: 'sm', label: 'Texture rotation', options: ['0', '90', '180', '270'].map((v) => ({ value: v, label: `${v}°` })), onChange: (v) => edit(() => setFace(doc, i, face, { rotation: (Number(v) || undefined) as EditFace['rotation'] })) });
+    out.appendChild(section(tm.uvSection, 'crop', uvEditor.el, uvFields, tools, autoToggle));
+    const rot = segmented<string>({ value: String(f.rotation ?? 0), size: 'sm', label: tm.textureRotation, options: ['0', '90', '180', '270'].map((v) => ({ value: v, label: `${v}°` })), onChange: (v) => edit(() => setFace(doc, i, face, { rotation: (Number(v) || undefined) as EditFace['rotation'] })) });
     const cull = select<string>({
-      label: 'Hide when covered',
+      label: tm.cull,
       value: f.cullface ?? 'none',
-      options: [{ value: 'none', label: 'Never' }, ...DIRS.map((d) => ({ value: d, label: `When a block is to the ${FACE_LABEL[d].toLowerCase()}` }))],
-      description: 'Faces on the block’s edge can be skipped when a full block covers that side.',
+      options: [{ value: 'none', label: tm.never }, ...DIRS.map((d) => ({ value: d, label: fmt(tm.whenBlock, { side: tm.faceWords[d] }) }))],
+      description: tm.cullHint,
       onChange: (v) => edit(() => setFace(doc, i, face, { cullface: v === 'none' ? undefined : (v as Dir) })),
     });
     const tint = toggle({
-      label: 'Tinted',
+      label: tm.tinted,
       value: f.tintindex !== undefined,
-      description: kind === 'block' ? 'Coloured by the game, like grass and leaves.' : 'Coloured by the game, like dyed leather or potions.',
+      description: kind === 'block' ? tm.tintBlock : tm.tintItem,
       onChange: (v) => edit(() => setFace(doc, i, face, { tintindex: v ? 0 : undefined })),
     });
-    const tintIdx = f.tintindex !== undefined ? numField({ label: 'Index', aria: 'Tint index', value: f.tintindex, step: () => 1, min: 0, max: 15, key: 'tint', onInput: (v, done) => edit(() => setFace(doc, i, face, { tintindex: Math.round(v) }), { key: `tint:${i}:${face}`, panel: !done }) }) : null;
-    out.appendChild(section('Face', 'square', h('div', { class: 'me-field' }, h('span', { class: 'me-field-label' }, 'Rotate the texture'), rot), cull, tint, tintIdx));
+    const tintIdx = f.tintindex !== undefined ? numField({ label: tm.index, aria: tm.tintIndex, value: f.tintindex, step: () => 1, min: 0, max: 15, key: 'tint', onInput: (v, done) => edit(() => setFace(doc, i, face, { tintindex: Math.round(v) }), { key: `tint:${i}:${face}`, panel: !done }) }) : null;
+    out.appendChild(section(tm.faceLabel, 'square', h('div', { class: 'me-field' }, h('span', { class: 'me-field-label' }, tm.rotateTexture), rot), cull, tint, tintIdx));
     return out;
   }
 
@@ -886,14 +884,22 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   }
 
   // ---- display
-  const SLOTS: { slot: string; label: string; ic: IconName }[] = [
-    { slot: 'gui', label: 'Inventory', ic: 'grid' },
-    { slot: 'firstperson_righthand', label: 'First person', ic: 'hand' },
-    { slot: 'thirdperson_righthand', label: 'Third person', ic: 'human' },
-    { slot: 'ground', label: 'Ground', ic: 'leaf' },
-    { slot: 'fixed', label: 'Item frame', ic: 'frame' },
-    { slot: 'head', label: 'Head', ic: 'user' },
-  ];
+  const SLOTS: { slot: string; readonly label: string; ic: IconName }[] = (
+    [
+      ['gui', 'gui', 'grid'],
+      ['firstperson_righthand', 'first', 'hand'],
+      ['thirdperson_righthand', 'third', 'human'],
+      ['ground', 'ground', 'leaf'],
+      ['fixed', 'fixed', 'frame'],
+      ['head', 'head', 'user'],
+    ] as [string, keyof typeof tm.slots, IconName][]
+  ).map(([slot, k, ic]) => ({
+    slot,
+    ic,
+    get label() {
+      return tm.slots[k];
+    },
+  }));
   const slotKey = (s: string) => (s === 'firstperson_righthand' || s === 'thirdperson_righthand' ? handSlot(rules, s) : s);
 
   function paintSlots() {
@@ -927,7 +933,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
         { key: `display:${key}:${part}`, panel: !done },
       );
     const out = h('div', { class: 'me-panel' });
-    const chooser = h('div', { class: 'me-slotlist', role: 'radiogroup', 'aria-label': 'Display slot' });
+    const chooser = h('div', { class: 'me-slotlist', role: 'radiogroup', 'aria-label': tm.displaySlot });
     for (const s of SLOTS) {
       const b = h('button', { type: 'button', class: ['chip', 'me-chip'], 'aria-pressed': String(s.slot === slot) }, icon(s.ic, { size: 16 }), h('span', null, s.label));
       b.addEventListener('click', () => {
@@ -944,11 +950,11 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       section(
         slotName(key).replace(/^./, (c) => c.toUpperCase()),
         null,
-        vecFields({ label: 'Rotation', hint: 'degrees', value: [...t.rotation], step: () => 15, min: -360, max: 360, key: 'drot', onInput: (v, done) => apply({ ...now(), rotation: v }, done, 'rot') }),
-        vecFields({ label: 'Position', hint: 'pixels, up to ±80', value: [...t.translation], step: () => (snap || 0.25), min: -80, max: 80, key: 'dpos', onInput: (v, done) => apply({ ...now(), translation: v }, done, 'pos') }),
+        vecFields({ label: tm.rotationLabel, hint: tm.degrees, value: [...t.rotation], step: () => 15, min: -360, max: 360, key: 'drot', onInput: (v, done) => apply({ ...now(), rotation: v }, done, 'rot') }),
+        vecFields({ label: tm.position, hint: tm.positionPixels, value: [...t.translation], step: () => (snap || 0.25), min: -80, max: 80, key: 'dpos', onInput: (v, done) => apply({ ...now(), translation: v }, done, 'pos') }),
         vecFields({
-          label: 'Size',
-          hint: '1 = normal',
+          label: tm.size,
+          hint: tm.sizeNormal,
           value: [...t.scale],
           step: () => 0.05,
           min: -4,
@@ -961,22 +967,22 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
             apply({ ...cur, scale: next }, done, 'scale');
           },
         }),
-        toggle({ label: 'Keep proportions', value: uniform, onChange: (v) => (uniform = v) }),
+        toggle({ label: tm.proportions, value: uniform, onChange: (v) => (uniform = v) }),
         h(
           'div',
           { class: 'me-row wrap' },
-          button({ label: 'Game’s default', icon: 'reset', variant: 'ghost', size: 'sm', onClick: () => edit(() => { setDisplay(doc, key, defaults[key] ?? null); viewport.updateDisplay(doc.display[key] ?? null); }) }),
-          button({ label: 'No change', variant: 'ghost', size: 'sm', onClick: () => edit(() => { setDisplay(doc, key, null); viewport.updateDisplay(null); }) }),
+          button({ label: tm.gameDefault, icon: 'reset', variant: 'ghost', size: 'sm', onClick: () => edit(() => { setDisplay(doc, key, defaults[key] ?? null); viewport.updateDisplay(doc.display[key] ?? null); }) }),
+          button({ label: tm.noChange, variant: 'ghost', size: 'sm', onClick: () => edit(() => { setDisplay(doc, key, null); viewport.updateDisplay(null); }) }),
         ),
-        hand ? h('p', { class: 'me-field-note' }, 'The left hand shows a mirror image of this.') : null,
+        hand ? h('p', { class: 'me-field-note' }, tm.mirror) : null,
       ),
     );
     if (rules.guiLight && slot === 'gui') {
       out.appendChild(
         section(
-          'Inventory light',
+          tm.inventoryLight,
           'sun',
-          segmented<string>({ value: doc.guiLight ?? 'side', size: 'sm', label: 'Inventory light', options: [{ value: 'side', label: 'From the side (blocks)' }, { value: 'front', label: 'From the front (items)' }], onChange: (v) => edit(() => (doc.guiLight = v as 'side' | 'front')) }),
+          segmented<string>({ value: doc.guiLight ?? 'side', size: 'sm', label: tm.inventoryLight, options: [{ value: 'side', label: tm.fromSide }, { value: 'front', label: tm.fromFront }], onChange: (v) => edit(() => (doc.guiLight = v as 'side' | 'front')) }),
         ),
       );
     }
@@ -988,13 +994,14 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   function presets(): Preset[] {
     const out: Preset[] = [];
     const layers = Object.keys(doc.textures).filter((k) => /^layer\d+$/.test(k)).sort();
-    if (kind === 'item' && layers.length) out.push({ id: 'sprite3d', label: '3D item from sprite', text: 'Every pixel of the flat item becomes a 1-pixel-deep cube, joined into as few cubes as possible.', ic: 'sword', run: () => sprite3d(layers) });
-    if (gameHasCubes) out.push({ id: 'game', label: 'The game’s model', text: 'Start again from the model the game uses.', ic: 'reset', run: () => gameModel() });
+    const p = tm.presets;
+    if (kind === 'item' && layers.length) out.push({ id: 'sprite3d', label: p.sprite3d, text: p.sprite3dText, ic: 'sword', run: () => sprite3d(layers) });
+    if (gameHasCubes) out.push({ id: 'game', label: p.game, text: p.gameText, ic: 'reset', run: () => gameModel() });
     out.push(
-      { id: 'cube', label: 'Full cube', text: 'One cube filling the block.', ic: 'box', run: () => fullCube(doc) },
-      { id: 'slab', label: 'Slab', text: 'A half-height cube.', ic: 'flatten', run: () => slab(doc) },
-      { id: 'cross', label: 'Cross (plant)', text: 'Two crossed planes, like flowers and saplings.', ic: 'leaf', run: () => cross(doc) },
-      { id: 'blank', label: 'Empty', text: 'No cubes: add your own.', ic: 'square-dashed-cursor', run: () => blankModel(doc) },
+      { id: 'cube', label: p.cube, text: p.cubeText, ic: 'box', run: () => fullCube(doc) },
+      { id: 'slab', label: p.slab, text: p.slabText, ic: 'flatten', run: () => slab(doc) },
+      { id: 'cross', label: p.cross, text: p.crossText, ic: 'leaf', run: () => cross(doc) },
+      { id: 'blank', label: p.blank, text: p.blankText, ic: 'square-dashed-cursor', run: () => blankModel(doc) },
     );
     return out;
   }
@@ -1015,7 +1022,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       }
     }
     if (!inputs.length) {
-      toast('The item’s sprite couldn’t be read.', { tone: 'error' });
+      toast(tm.spriteFailed, { tone: 'error' });
       return null;
     }
     const m = spriteTo3d(doc, inputs);
@@ -1042,7 +1049,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       sel = doc.elements.length ? 0 : -1;
     });
     if (doc.elements.length && tab === 'model' && !isPhone()) setTab('cube');
-    toast(`${p.label}: ${doc.elements.length} ${doc.elements.length === 1 ? 'cube' : 'cubes'}`, { tone: 'success', duration: 1800 });
+    toast(fmt(tm.presetDone, { name: p.label, count: doc.elements.length }), { tone: 'success', duration: 1800 });
   }
 
   function presetButtons(compact: boolean): HTMLElement {
@@ -1060,15 +1067,15 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
 
   function modelPanel(): HTMLElement {
     const out = h('div', { class: 'me-panel' });
-    out.appendChild(section('Start from', 'magic-edit', presetButtons(false), h('p', { class: 'me-field-note' }, 'Every start point can be undone.')));
+    out.appendChild(section(tm.startFrom, 'magic-edit', presetButtons(false), h('p', { class: 'me-field-note' }, tm.undoable)));
     // in game
     const notes: Node[] = [];
     if (kind === 'item' && rules.itemDefinitions && plan.canFlatGui) {
       notes.push(
         toggle({
-          label: 'Flat in the inventory',
+          label: tm.flatInventory,
           value: flatGui,
-          description: 'Keeps the flat icon in the inventory, on the ground and in item frames; your model shows in hand.',
+          description: tm.flatInventoryHint,
           onChange: (v) => {
             flatGui = v;
             replan();
@@ -1079,9 +1086,9 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     if (kind === 'block' && siblings.length) {
       notes.push(
         toggle({
-          label: 'Use for every random variant',
+          label: tm.everyVariant,
           value: everyVariant,
-          description: `The game picks at random between this model and ${siblings.map(shortModelName).join(', ')}. On: your shape is used every time (the pack gets the block’s blockstate file).`,
+          description: fmt(tm.everyVariantHint, { models: siblings.map(shortModelName).join(', ') }),
           onChange: (v) => {
             everyVariant = v;
             replan();
@@ -1089,29 +1096,32 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
         }),
       );
     }
-    if (plan.replacesSpecial) notes.push(note('info', 'The game draws this item with its own code. Your model replaces that look.'));
-    else if (kind === 'item' && plan.source !== plan.base) notes.push(note('info', `This item shows the ${shortModelName(plan.source)} model. Your shape is saved for the item only.`));
+    if (plan.replacesSpecial) notes.push(note('info', tm.replacesSpecial));
+    else if (kind === 'item' && plan.source !== plan.base) notes.push(note('info', fmt(tm.showsModel, { model: shortModelName(plan.source) })));
     if (kind === 'block') {
       const others = usersOf(plan.base).filter((b) => b !== entry.id);
-      if (others.length) notes.push(note('warning', `This model is also used by ${others.slice(0, 4).map((b) => lib!.block(b)?.name ?? b).join(', ')}${others.length > 4 ? ` and ${others.length - 4} more` : ''}. They change too.`));
+      if (others.length) {
+        const names = others.slice(0, 4).map((b) => lib!.block(b)?.name ?? b).join(', ');
+        notes.push(note('warning', fmt(tm.alsoUsedBy, { blocks: others.length > 4 ? fmt(tm.andMore, { list: names, count: others.length - 4 }) : names })));
+      }
     }
-    if (!rules.itemDefinitions && kind === 'item' && doc.extra.overrides) notes.push(note('info', 'The item’s other looks (its "overrides") are kept.'));
-    if (notes.length) out.appendChild(section('In game', 'gamepad', ...notes));
+    if (!rules.itemDefinitions && kind === 'item' && doc.extra.overrides) notes.push(note('info', tm.overrides));
+    if (notes.length) out.appendChild(section(tm.inGame, 'gamepad', ...notes));
     // lighting
-    const light: Node[] = [toggle({ label: 'Smooth lighting', value: doc.ambientOcclusion !== false, description: 'Soft shadows in corners (ambient occlusion). Off for plants and glowing things.', onChange: (v) => edit(() => (doc.ambientOcclusion = v ? undefined : false)) })];
+    const light: Node[] = [toggle({ label: tm.smoothLighting, value: doc.ambientOcclusion !== false, description: tm.smoothLightingHint, onChange: (v) => edit(() => (doc.ambientOcclusion = v ? undefined : false)) })];
     if (rules.guiLight)
       light.push(
         h(
           'div',
           { class: 'me-field' },
-          h('span', { class: 'me-field-label' }, 'Light in the inventory'),
-          segmented<string>({ value: doc.guiLight ?? 'side', size: 'sm', label: 'Light in the inventory', options: [{ value: 'side', label: 'Side' }, { value: 'front', label: 'Front' }], onChange: (v) => edit(() => (doc.guiLight = v as 'side' | 'front')) }),
+          h('span', { class: 'me-field-label' }, tm.inventoryLightLabel),
+          segmented<string>({ value: doc.guiLight ?? 'side', size: 'sm', label: tm.inventoryLightLabel, options: [{ value: 'side', label: tm.side }, { value: 'front', label: tm.front }], onChange: (v) => edit(() => (doc.guiLight = v as 'side' | 'front')) }),
         ),
       );
-    out.appendChild(section('Lighting', 'sun', ...light));
+    out.appendChild(section(tm.lighting, 'sun', ...light));
     // problems
     const list = h('ul', { class: 'me-issues' });
-    if (!issues.length) list.appendChild(h('li', { class: 'me-issue is-ok' }, icon('check', { size: 16 }), h('span', null, `No problems for Minecraft ${project.version}.`)));
+    if (!issues.length) list.appendChild(h('li', { class: 'me-issue is-ok' }, icon('check', { size: 16 }), h('span', null, fmt(tm.noProblems, { version: project.version }))));
     for (const is of issues) {
       const li = h('li', { class: ['me-issue', `is-${is.level}`] }, icon(is.level === 'error' ? 'error' : 'warning', { size: 16 }), h('span', null, is.message));
       if (is.element !== undefined) {
@@ -1129,22 +1139,22 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       }
       list.appendChild(li);
     }
-    out.appendChild(section('Problems', 'warning', list));
+    out.appendChild(section(tm.problems, 'warning', list));
     // files
     const fileList = Object.keys(planFiles(plan, ''));
     out.appendChild(
       section(
-        'Files in the pack',
+        tm.files,
         'file',
         h('ul', { class: 'me-files' }, ...fileList.map((p) => h('li', { class: 'truncate', title: p }, icon('file-text', { size: 16 }), h('span', null, p)))),
-        h('p', { class: 'me-field-note' }, changed ? 'Saved in this pack. Export the pack to use it in game.' : 'Nothing is changed until you edit the model.'),
+        h('p', { class: 'me-field-note' }, changed ? tm.savedHere : tm.notChanged),
         h(
           'div',
           { class: 'me-row wrap' },
-          button({ label: 'Download .json', icon: 'download', variant: 'ghost', size: 'sm', onClick: () => saveBlob(new Blob([modelText(doc)], { type: 'application/json' }), `${shortModelName(plan.target).replace(/^.*\//, '')}.json`) }),
-          button({ label: 'Bedrock geometry', icon: 'download', variant: 'ghost', size: 'sm', onClick: () => downloadBedrock() }),
+          button({ label: tm.downloadJson, icon: 'download', variant: 'ghost', size: 'sm', onClick: () => saveBlob(new Blob([modelText(doc)], { type: 'application/json' }), `${shortModelName(plan.target).replace(/^.*\//, '')}.json`) }),
+          button({ label: tm.bedrockGeometry, icon: 'download', variant: 'ghost', size: 'sm', onClick: () => downloadBedrock() }),
         ),
-        changed ? button({ label: 'Put back the original model', icon: 'reset', variant: 'ghost', size: 'sm', class: 'me-danger', onClick: () => void resetModel() }) : null,
+        changed ? button({ label: tm.putBack, icon: 'reset', variant: 'ghost', size: 'sm', class: 'me-danger', onClick: () => void resetModel() }) : null,
       ),
     );
     return out;
@@ -1183,11 +1193,11 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   function downloadBedrock() {
     const geo = toBedrockGeometry(doc, `${entry.id}`);
     saveBlob(new Blob([JSON.stringify(geo, null, 2)], { type: 'application/json' }), `${entry.id}.geo.json`);
-    toast('Bedrock geometry downloaded. Bedrock models use one texture: each face keeps its spot on its own texture.', { duration: 6000 });
+    toast(tm.bedrockDone, { duration: 6000 });
   }
 
   async function resetModel() {
-    const ok = await confirmDialog('Put back the original model?', `Your changes to ${shortModelName(plan.base)} are removed from this pack. The game’s model (or the pack’s own one) is used again.`, 'Put back', true);
+    const ok = await confirmDialog(tm.putBackTitle, fmt(tm.putBackText, { model: shortModelName(plan.base) }), tm.putBackButton, true);
     if (!ok) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = null;
@@ -1213,22 +1223,22 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
 
   // ---------------------------------------------------------------- header, status, start
   function paintHeader() {
-    titleSub.textContent = `${kind === 'block' ? 'Block' : 'Item'} · ${shortModelName(plan.target)}.json`;
+    titleSub.textContent = `${tm.kind[kind]} · ${shortModelName(plan.target)}.json`;
     choiceBox.replaceChildren();
     if (kind === 'block' && choices.length > 1) {
       const s = select<string>({
         value: chosen,
-        options: choices.map((c) => ({ value: c.model, label: `${c.label || 'Model'} · ${shortModelName(c.model).replace(/^.*\//, '')}` })),
+        options: choices.map((c) => ({ value: c.model, label: `${c.label || tm.model} · ${shortModelName(c.model).replace(/^.*\//, '')}` })),
         onChange: (v) => switchModel(() => (chosen = v)),
       });
-      s.querySelector('select')?.setAttribute('aria-label', 'Model of the block');
+      s.querySelector('select')?.setAttribute('aria-label', tm.blockModel);
       choiceBox.appendChild(s);
     }
     if (kind === 'item') {
       const looks = lib!.properties(entry).find((p) => p.name === 'model');
       if (looks && looks.values.length > 1) {
         const s = select<string>({ value: String(option), options: looks.values.map((v) => ({ value: v.value, label: v.label })), onChange: (v) => switchModel(() => (option = Number(v))) });
-        s.querySelector('select')?.setAttribute('aria-label', 'Look of the item');
+        s.querySelector('select')?.setAttribute('aria-label', tm.itemLook);
         choiceBox.appendChild(s);
       }
     }
@@ -1264,9 +1274,10 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     const errors = issues.filter((i) => i.level === 'error').length;
     const warnings = issues.length - errors;
     statusChip.className = `me-status ${errors ? 'is-error' : warnings ? 'is-warning' : 'is-ok'}`;
-    const text = errors ? `${errors} ${errors === 1 ? 'problem' : 'problems'}` : warnings ? `${warnings} ${warnings === 1 ? 'warning' : 'warnings'}` : state === 'saving' ? 'Saving…' : changed ? 'Saved' : 'Not changed';
+    const st = tm.status;
+    const text = errors ? fmt(st.problems, { count: errors }) : warnings ? fmt(st.warnings, { count: warnings }) : state === 'saving' ? st.saving : changed ? st.saved : st.notChanged;
     statusChip.replaceChildren(icon(errors ? 'error' : warnings ? 'warning' : state === 'saving' ? 'clock' : 'check', { size: 16 }), h('span', null, text));
-    statusChip.title = errors || warnings ? 'See the problems in the Model tab' : changed ? 'Saved in this pack' : 'The game’s model is used until you change it';
+    statusChip.title = errors || warnings ? st.seeProblems : changed ? st.savedHere : st.gameModel;
   }
 
   function validate() {
@@ -1280,38 +1291,38 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     startCard.hidden = !show;
     if (!show) return;
     startCard.replaceChildren(
-      h('h3', { class: 'me-start-title' }, kind === 'item' && Object.keys(doc.textures).some((k) => /^layer\d+$/.test(k)) ? 'This item is a flat sprite' : 'This model has no cubes'),
-      h('p', { class: 'faint small' }, 'Pick a start point, or add cubes one by one.'),
+      h('h3', { class: 'me-start-title' }, kind === 'item' && Object.keys(doc.textures).some((k) => /^layer\d+$/.test(k)) ? tm.flatSprite : tm.noCubesTitle),
+      h('p', { class: 'faint small' }, tm.pickStart),
       presetButtons(true),
-      button({ label: 'Add a cube', icon: 'plus', variant: 'primary', size: 'sm', onClick: () => addCube() }),
+      button({ label: tm.addCube, icon: 'plus', variant: 'primary', size: 'sm', onClick: () => addCube() }),
     );
   }
 
   function openMore() {
     openMenu(moreBtn, [
-      { label: 'Add a cube', icon: 'plus', onClick: () => addCube() },
-      { label: 'Download model .json', icon: 'download', onClick: () => saveBlob(new Blob([modelText(doc)], { type: 'application/json' }), `${shortModelName(plan.target).replace(/^.*\//, '')}.json`) },
-      { label: 'Download as Bedrock geometry', icon: 'download', onClick: () => downloadBedrock() },
-      { label: 'Keyboard shortcuts', icon: 'keyboard', onClick: () => shortcuts() },
-      { label: 'Put back the original model', icon: 'reset', danger: true, disabled: !changed, onClick: () => void resetModel() },
+      { label: tm.addCube, icon: 'plus', onClick: () => addCube() },
+      { label: tm.downloadModel, icon: 'download', onClick: () => saveBlob(new Blob([modelText(doc)], { type: 'application/json' }), `${shortModelName(plan.target).replace(/^.*\//, '')}.json`) },
+      { label: tm.downloadBedrock, icon: 'download', onClick: () => downloadBedrock() },
+      { label: tm.keyboard, icon: 'keyboard', onClick: () => shortcuts() },
+      { label: tm.putBack, icon: 'reset', danger: true, disabled: !changed, onClick: () => void resetModel() },
     ]);
   }
 
   function shortcuts() {
     openModal({
-      title: 'Model editor keys',
+      title: tm.keysTitle,
       body: h(
         'dl',
         { class: 'me-keys' },
         ...[
-          ['N', 'Add a cube'],
-          ['Ctrl + D', 'Duplicate the cube'],
-          ['Delete', 'Delete the cube'],
-          ['M / R', 'Move or resize handles'],
-          ['Ctrl + Z', 'Undo'],
-          ['Ctrl + Shift + Z', 'Redo'],
-          ['↑ ↓ in a field', 'Change by one step (Shift: four)'],
-          ['Drag a field’s letter', 'Slide the value'],
+          ['N', tm.keys.add],
+          ['Ctrl + D', tm.keys.duplicate],
+          [tm.keys.deleteKey, tm.keys.delete],
+          ['M / R', tm.keys.handles],
+          ['Ctrl + Z', tm.keys.undo],
+          ['Ctrl + Shift + Z', tm.keys.redo],
+          [tm.keys.fieldKeys, tm.keys.step],
+          [tm.keys.dragKey, tm.keys.slide],
         ].flatMap(([k, v]) => [h('dt', null, h('kbd', { class: 'kbd' }, k)), h('dd', null, v)]),
       ),
     });

@@ -8,17 +8,7 @@ export type SoundCategory = 'ambient' | 'block' | 'entity' | 'item' | 'music' | 
 
 export const SOUND_CATEGORY_ORDER: SoundCategory[] = ['ambient', 'block', 'entity', 'item', 'music', 'records', 'ui', 'weather', 'other'];
 
-export const SOUND_CATEGORY_LABELS: Record<SoundCategory, string> = {
-  ambient: 'Ambient',
-  block: 'Blocks',
-  entity: 'Mobs',
-  item: 'Items',
-  music: 'Music',
-  records: 'Records',
-  ui: 'Menus',
-  weather: 'Weather',
-  other: 'Other',
-};
+// (Category names shown in the editor: ui/i18n/sounds.ts, categories.)
 
 export const JAVA_SOUND_ROOT = 'assets/minecraft/sounds/';
 export const BEDROCK_SOUND_ROOT = 'sounds/';
