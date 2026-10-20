@@ -24,6 +24,12 @@ export const MAX_PAGES = 60;
 export const MAX_RUNTIME = 120;
 /** How long a page request may take before a cached copy is shown instead (slow connections). */
 export const NAV_TIMEOUT_MS = 4000;
+/**
+ * How long a refresh in the background (a page or file already answered from the cache) may keep
+ * the worker busy. An update can't activate while the old worker is busy, and the page reloading
+ * into it waits meanwhile, so a stalled connection must not hold it up; the download itself goes on.
+ */
+export const BACKGROUND_MS = 10000;
 /** Precache generations kept: the current one and the one before it, for tabs still running the previous build. */
 export const KEEP_PRECACHES = 2;
 

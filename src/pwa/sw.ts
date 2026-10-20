@@ -15,6 +15,7 @@
 import {
   MAX_PAGES,
   MAX_RUNTIME,
+  BACKGROUND_MS,
   NAV_TIMEOUT_MS,
   PAGES_CACHE,
   RUNTIME_CACHE,
@@ -135,6 +136,10 @@ async function remember(name: string, max: number, key: string, res: Response): 
 
 const timeout = (ms: number) => new Promise<null>((resolve) => setTimeout(() => resolve(null), ms));
 
+/** Keeps the worker alive for background work, but no longer than BACKGROUND_MS. */
+const background = (event: ExtendableEvent, work: Promise<unknown>): void =>
+  event.waitUntil(Promise.race([work.then(() => undefined, () => undefined), timeout(BACKGROUND_MS)]));
+
 async function navigate(event: FetchEvent): Promise<Response> {
   const req = event.request;
   const key = pageKey(req.url);
@@ -144,11 +149,11 @@ async function navigate(event: FetchEvent): Promise<Response> {
     const preloaded = (await event.preloadResponse.catch(() => undefined)) as Response | undefined;
     const res = preloaded ?? (await fetch(req));
     if (cacheable(res) && (res.headers.get('content-type') ?? '').includes('text/html') && !res.redirected) {
-      event.waitUntil(remember(PAGES_CACHE, MAX_PAGES, key, res.clone()).catch(() => undefined));
+      background(event, remember(PAGES_CACHE, MAX_PAGES, key, res.clone()));
     }
     return res;
   })();
-  event.waitUntil(network.then(() => undefined, () => undefined));
+  background(event, network);
 
   try {
     const cached = await cachedPage();
@@ -198,7 +203,7 @@ async function staleWhileRevalidate(event: FetchEvent): Promise<Response> {
     return res;
   });
   if (hit) {
-    event.waitUntil(refresh.then(() => undefined, () => undefined));
+    background(event, refresh);
     return hit;
   }
   return refresh;

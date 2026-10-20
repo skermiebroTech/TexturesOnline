@@ -205,6 +205,9 @@ try {
     const quiet = await page.evaluate(() => ({ toast: [...document.querySelectorAll('.toast')].some((t) => /new version/i.test(t.textContent)), stay: window.__stay }));
     const third = await workerVersion(page);
     check(!quiet.toast && quiet.stay === 1 && third.version !== after.version, 'a worker for the build the page runs takes over silently', JSON.stringify({ quiet, third }));
+    // The worker deletes old caches once it activates, which waits for the old worker's background
+    // refreshes (at most BACKGROUND_MS, 10 s, on a stalled connection).
+    await page.waitForFunction(async () => (await caches.keys()).filter((n) => n.startsWith('tpm-precache-')).length <= 2, null, { timeout: 20000, polling: 250 }).catch(() => {});
     const caches2 = await page.evaluate(() => caches.keys());
     check(caches2.filter((n) => n.startsWith('tpm-precache-')).length === 2, 'old precaches are cleaned up (two kept)', caches2.join(' '));
 
