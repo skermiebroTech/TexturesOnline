@@ -43,6 +43,11 @@ export interface BakedQuad {
    * 'armor': leather armour's mask (alpha 0 see-through, low alpha drawn undyed, full alpha dyed)
    */
   tintMask?: boolean | 'armor';
+  /**
+   * Armour trims: the texture is a grey pattern the game recolours, each colour of the `key` palette
+   * becoming the colour at the same place in the `values` palette (pack paths of the palette images)
+   */
+  palette?: { key: string; values: string };
   /** Directional shading applies (Java "shade": false turns it off) */
   shade: boolean;
   /** Shade as if facing this way (26.x "shade_direction_override", e.g. plants lit like a top face) */

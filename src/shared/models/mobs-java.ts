@@ -1,7 +1,8 @@
 // Java Edition mobs: which model layers the game draws for each mob and which textures go on them,
 // with the choices that change the look (variant, baby, wool, profession, collar...) and the things a
-// mob can wear (saddles, armour, harnesses, carpets). Texture paths are relative to textures/entity/
-// without .png; model names are the layers of mob-geometry.ts. Follows the 26.x renderers (baby models
+// mob can wear (saddles, armour and its trims, harnesses, carpets). Texture paths are relative to
+// textures/entity/ (to textures/ with a leading '/', as trims are) without .png; model names are the
+// layers of mob-geometry.ts. Follows the 26.x renderers (baby models
 // and textures, temperature variants, equipment layers); textures missing from the version on show are
 // left out, so older versions show the mobs whose files and layouts still match, and worn things take
 // the path the version keeps them at (armour moved to entity/equipment/ in 1.21.2, saddles in 1.21.5).
@@ -9,6 +10,7 @@
 
 import type { RGB } from './geometry';
 import { DYE_COLORS, DYE_RGB } from './block-entities';
+import { JAVA_TRIM_DIRS, JAVA_TRIM_KEY, TRIM_MATERIALS, TRIM_PATTERNS, javaTrimPalette, javaTrimPattern, materialNames, patternNames, trimLabel } from './trims';
 
 export interface MobValue {
   value: string;
@@ -31,6 +33,10 @@ export interface MobProp {
   tint?: boolean;
   /** Only in versions that have this texture (renderers that draw a layer since a version) */
   since?: string;
+  /** A colour of a worn layer's palette (trim material): the version has the value when that palette is there */
+  palette?: boolean;
+  /** Values the version has beyond the listed ones (newer trim patterns), from its file list (pack paths) */
+  discover?: (list: (prefix: string) => string[]) => MobValue[];
 }
 
 /** One textured model the game draws for a mob (base, then overlays in drawing order). */
@@ -50,6 +56,11 @@ export interface MobLayerRef {
   gear?: string;
   /** A worn thing's entry in the parts list: the layer's boxes show and hide together */
   part?: { name: string; label: string };
+  /**
+   * Armour trims: the texture is a grey pattern the game recolours from the `key` palette's colours to
+   * the `values` palette's (texture names like `texture`, the first one the version has wins)
+   */
+  palette?: { key: string[]; values: string[] };
 }
 
 export type MobState = Record<string, string>;
@@ -174,21 +185,61 @@ const slotMaterials = (slot: string) => ARMOR_MATERIALS.filter(([m]) => m !== 't
 const OLD_ARMOR: Record<string, string> = { leather: 'leather', chainmail: 'chainmail', iron: 'iron', gold: 'gold', diamond: 'diamond', netherite: 'netherite', turtle_scute: 'turtle' };
 const wearsLeather = (s: MobState) => ARMOR_SLOTS.some(([slot]) => s[slot] === 'leather');
 
+/** Wears some humanoid armour */
+const wearsArmor = (s: MobState) => ARMOR_SLOTS.some(([slot]) => !!s[slot] && s[slot] !== 'none');
+/** A full set of a material (the pieces it comes in) */
+const armorSet = (m: string): MobState => Object.fromEntries(ARMOR_SLOTS.filter(([slot]) => slotMaterials(slot).some(([x]) => x === m)).map(([slot]) => [slot, m]));
+const TEX = 'assets/minecraft/textures/';
+/** Trim patterns and materials a version has beyond the listed ones (from its folders) */
+const discoverPatterns = (list: (prefix: string) => string[]): MobValue[] =>
+  JAVA_TRIM_DIRS.patterns
+    .flatMap((d) => patternNames(list(TEX + d), TEX + d))
+    .filter((p) => !(TRIM_PATTERNS as readonly string[]).includes(p))
+    .map((p) => ({ value: p, label: trimLabel(p) }));
+const discoverMaterials = (list: (prefix: string) => string[]): MobValue[] =>
+  JAVA_TRIM_DIRS.palettes
+    .flatMap((d) => materialNames(list(TEX + d), TEX + d))
+    .filter((m) => !TRIM_MATERIALS.some(([x]) => x === m))
+    .map((m) => ({ value: m, label: trimLabel(m) }));
+const FIRST_TRIM_MATERIAL = TRIM_MATERIALS[0][0];
+
 /**
  * Humanoid armour (HumanoidArmorLayer): a model layer per piece (`<model>#helmet`...), the humanoid
  * texture for the helmet, chestplate and boots and the leggings texture for leggings; babies with
  * their own armour models wear the humanoid_baby textures (26.x). Leather is dyed (brown undyed) with
- * an undyed overlay on top.
+ * an undyed overlay on top. A trim (since 1.20; 1.19.4 behind an experiment) goes over each adult piece
+ * on the same model: its pattern recoloured with the trim material's palette, the darker one when the
+ * piece is made of the trim's material (EquipmentLayerRenderer; babies' armour has no trim).
  */
 function armor(model: string, babyModel: string | null) {
+  const ironSet = armorSet('iron');
   const props: MobProp[] = [
     ...ARMOR_SLOTS.map(([slot, label]): MobProp => ({ ...prop(slot, label, ['none', 'None'], ...slotMaterials(slot)), gear: true, group: 'armor', showIf: (s) => adult(s) || !!babyModel })),
     dyeProp((s) => (adult(s) || !!babyModel) && wearsLeather(s), { helmet: 'leather' }),
+    {
+      ...prop('trim', 'Trim', ['none', 'None'], ...TRIM_PATTERNS.map((p): [string, string] => [p, trimLabel(p)])),
+      gear: true,
+      showIf: (s) => adult(s) && wearsArmor(s),
+      with: { ...ironSet, trim_material: FIRST_TRIM_MATERIAL },
+      discover: discoverPatterns,
+    },
+    {
+      ...prop('trim_material', 'Trim material', ...TRIM_MATERIALS),
+      gear: true,
+      showIf: (s) => adult(s) && wearsArmor(s) && !!s.trim && s.trim !== 'none',
+      // (on chainmail, which is no trim material: every material shows its own palette)
+      with: { ...armorSet('chainmail'), trim: TRIM_PATTERNS[0] },
+      palette: true,
+      discover: discoverMaterials,
+    },
   ];
   const layers = (s: MobState): MobLayerRef[] => {
     const isBaby = baby(s);
     if (isBaby && !babyModel) return [];
     const out: MobLayerRef[] = [];
+    const trims: MobLayerRef[] = [];
+    const trim = !isBaby && s.trim && s.trim !== 'none' ? s.trim : null;
+    const trimMaterial = s.trim_material || FIRST_TRIM_MATERIAL;
     for (const [slot, label] of ARMOR_SLOTS) {
       const m = s[slot];
       if (!m || m === 'none' || !slotMaterials(slot).some(([x]) => x === m)) continue;
@@ -202,11 +253,26 @@ function armor(model: string, babyModel: string | null) {
         const overlay = [`equipment/${dir}/leather_overlay`, ...(isBaby ? [] : [`/models/armor/leather_layer_${legs ? 2 : 1}_overlay`])];
         out.push(gearLayer(layer, overlay, `${texLabel} overlay`, slot, [slot, label]));
       }
+      if (trim) {
+        // the darker palette when the piece is of the trim's material, where the version has one
+        const values = m === trimMaterial ? [...javaTrimPalette(`${trimMaterial}_darker`), ...javaTrimPalette(trimMaterial)] : javaTrimPalette(trimMaterial);
+        trims.push({
+          ...gearLayer(layer, javaTrimPattern(trim, legs).map((t) => `/${t}`), legs ? 'Leggings trim' : 'Trim', 'trim', ['trim', 'Trim']),
+          palette: { key: JAVA_TRIM_KEY.map((t) => `/${t}`), values: values.map((t) => `/${t}`) },
+        });
+      }
     }
-    return out;
+    // (after every piece, so the parts list ends with the trim; each still draws over its own piece)
+    return [...out, ...trims];
   };
-  // a full set of each material (the turtle shell on its own)
-  const states: MobState[] = ARMOR_MATERIALS.map(([m]) => Object.fromEntries(ARMOR_SLOTS.filter(([slot]) => slotMaterials(slot).some(([x]) => x === m)).map(([slot]) => [slot, m])));
+  // a full set of each material (the turtle shell on its own); each trim pattern on iron; each
+  // material's palette on iron (gold for iron's own) and each darker palette on its own material
+  const states: MobState[] = ARMOR_MATERIALS.map(([m]) => armorSet(m));
+  for (const p of TRIM_PATTERNS) states.push({ ...ironSet, trim: p, trim_material: FIRST_TRIM_MATERIAL });
+  for (const [m] of TRIM_MATERIALS) {
+    states.push({ ...armorSet(m === 'iron' ? 'gold' : 'iron'), trim: TRIM_PATTERNS[0], trim_material: m });
+    if (ARMOR_MATERIALS.some(([a]) => a === m)) states.push({ ...armorSet(m), trim: TRIM_PATTERNS[0], trim_material: m });
+  }
   return { props, layers, states };
 }
 
@@ -300,8 +366,8 @@ interface Gear {
 }
 const asGear = (g: { prop: MobProp; layers(s: MobState): MobLayerRef[]; states: MobState[] }): Gear => ({ props: [g.prop], layers: g.layers, states: g.states });
 
-/** Humanoid armour opens on the armour stand (and baby armour on the zombie) */
-const ARMOR_HOME = [...ARMOR_SLOTS.map(([slot]) => slot), 'dye'];
+/** Humanoid armour and its trims open on the armour stand (and baby armour on the zombie) */
+const ARMOR_HOME = [...ARMOR_SLOTS.map(([slot]) => slot), 'dye', 'trim'];
 
 /** A mob with things to wear: its gear choices after its own, gear layers over its body. */
 function wearing(spec: JavaMobSpec, gear: Gear[], home?: string[]): JavaMobSpec {

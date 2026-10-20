@@ -57,7 +57,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       'Pixel editor: pencil, eraser, fill, eyedropper, line, shapes, noise, selection, mirror painting, undo and redo',
       'Paint straight onto the 3D block model: each face paints the texture it shows, including multi-texture blocks, stairs, slabs and chests',
       'Edit mob textures on 3D mob models (over 80 mobs, Java and Bedrock) with variants and part toggles',
-      'Saddles, horse and wolf armour, llama carpets and humanoid armour shown and painted on the mobs that wear them',
+      'Saddles, horse and wolf armour, llama carpets, and humanoid armour with trims, shown and painted on the mobs that wear them',
       'Upload your own PNGs, auto-resized to the texture (16x up to 512x)',
       'Edit animated textures frame by frame',
       'One-click whole-pack effects such as Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon and Smooth HD',

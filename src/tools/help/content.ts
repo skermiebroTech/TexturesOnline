@@ -360,6 +360,18 @@ export const FAQ: FaqItem[] = [
         strong('Used by'),
         ' lists every mob that wears it. Older versions use the armour and saddle textures they had.',
       ),
+      el(
+        'p',
+        null,
+        strong('Armour trims: '),
+        'with humanoid armour on, pick a ',
+        strong('Trim'),
+        ' pattern and a ',
+        strong('Material'),
+        ' under Wearing (Java 1.20 and newer, and Bedrock). The game colours the grey pattern with the material’s palette, and uses a darker palette when the trim matches the armour, like an iron trim on iron armour. Paint the trim on the model or open its pattern: the eight greys take the trim’s colour and any other colour stays as you paint it. Edit a material’s palette to recolour that material on every trim, and hide ',
+        strong('Trim'),
+        ' under Parts to reach the armour underneath.',
+      ),
     ],
   },
   {

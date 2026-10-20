@@ -2,8 +2,10 @@
 // shows its mob, painting the creeper's face on the 3D model (one undo step, the texture's history),
 // the hover names the body part, hiding / soloing body parts, the "Used by" chip, a phone tap, things
 // mobs wear (a saddle on the pig painted on its own texture, iron armour on the zombie with the
-// chestplate hidden to paint the body, armour opening on the armour stand), and the Bedrock creeper
-// drawn from Bedrock's own geometry and a Bedrock horse in armour.
+// chestplate hidden to paint the body, armour opening on the armour stand, a trim on the zombie's
+// armour coloured by its palette, painted, hidden and recoloured by painting the palette, a trim
+// pattern opening on the armour stand), and the Bedrock creeper drawn from Bedrock's own geometry, a
+// Bedrock horse in armour and a Bedrock trim.
 // Usage: NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs [baseUrl] [--no-bedrock] [--shots <dir>]
 const fs = require('node:fs');
 const path = require('node:path');
@@ -306,6 +308,112 @@ const partChips = (page) =>
       await page.waitForTimeout(250);
     }
     await page.click('.tx-pv-partsection .tx-pv-parts-all');
+    await page.waitForTimeout(400);
+
+    // ---------------------------------------------------------------- armour trims
+    const stage = () => page.locator('.tx-stage3d .tx-pv-hero .preview-stage canvas').first().screenshot();
+    const zombieTex = async () => page.evaluate(() => window.__tx.preview.current().state);
+    check('a trim pattern is offered with armour on', await page.isVisible('.tx-pv-state[data-prop="trim"] select'));
+    check('no trim material before a pattern is picked', !(await page.isVisible('.tx-pv-state[data-prop="trim_material"]')));
+    const patterns = await page.evaluate(() => [...document.querySelectorAll('.tx-pv-state[data-prop="trim"] option')].map((o) => o.value));
+    check('every 26.3 trim pattern is offered', patterns.length === 19 && patterns[0] === 'none' && ['sentry', 'bolt', 'flow', 'wayfinder'].every((p) => patterns.includes(p)), patterns.join(','));
+    const plain = await stage();
+    await page.selectOption('.tx-pv-state[data-prop="trim"] select', 'sentry');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.trim === 'sentry', null, { timeout: 10000 });
+    await page.waitForSelector('.tx-pv-state[data-prop="trim_material"] select', { timeout: 10000 });
+    const mats = await page.evaluate(() => [...document.querySelectorAll('.tx-pv-state[data-prop="trim_material"] option')].map((o) => o.value));
+    check('every 26.3 trim material is offered', mats.length === 11 && ['amethyst', 'resin', 'netherite'].every((m) => mats.includes(m)), mats.join(','));
+    await page.selectOption('.tx-pv-state[data-prop="trim_material"] select', 'gold');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.trim_material === 'gold', null, { timeout: 10000 });
+    await page.waitForTimeout(900);
+    const TRIM = 'assets/minecraft/textures/trims/entity/humanoid/sentry.png';
+    const T = 'assets/minecraft/textures/';
+    let shown = await shownTextures();
+    check('the trim draws its pattern with the gold palette', shown.includes(TRIM) && shown.includes(`${T}palettes/trim/gold.png`) && shown.includes(`${T}palettes/trim_base.png`), shown.join(', '));
+    const gold = await stage();
+    check('the trim changes the render', !gold.equals(plain));
+    st = await partChips(page);
+    check('the trim is a part of its own', st.some((c) => c.name === 'gear:trim' && c.label === 'Trim' && c.on), st.map((c) => c.label).join(', '));
+    await page.selectOption('.tx-pv-state[data-prop="trim_material"] select', 'iron');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.trim_material === 'iron', null, { timeout: 10000 });
+    await page.waitForTimeout(900);
+    shown = await shownTextures();
+    check('an iron trim on iron armour takes the darker palette', shown.includes(`${T}palettes/trim/iron_darker.png`) && !shown.includes(`${T}palettes/trim/iron.png`), shown.join(', '));
+    check('another material recolours the trim', !(await stage()).equals(gold));
+    if (shotsDir) await page.screenshot({ path: path.join(shotsDir, 'mobs-zombie-trim.png') });
+    await page.selectOption('.tx-pv-state[data-prop="trim_material"] select', 'gold');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.trim_material === 'gold', null, { timeout: 10000 });
+    await page.waitForTimeout(600);
+    // paint the trim on the model: its grey pattern takes the paint
+    await page.evaluate((p) => window.__tx.open(p), TRIM);
+    await page.waitForFunction((p) => window.__tx.canvas.current()?.key === p && !!window.__tx.canvas.canvas(), TRIM, { timeout: 30000 });
+    await page.waitForTimeout(600);
+    const zt = await zombieTex();
+    check('opening the trim pattern keeps the trimmed zombie', zt.trim === 'sentry' && zt.chestplate === 'iron' && (await current()).id === 'zombie', JSON.stringify(zt));
+    check('the trim note shows the greys and their colours', (await page.isVisible('.tx-pv-trimnote')) && (await page.locator('.tx-pv-trimnote .tx-pv-trimkeys > span').count()) === 8);
+    await setTool(page, 'pencil');
+    await setColor(page, [40, 220, 255, 255]);
+    const trimHit = await shownTexel(page, TRIM, 64, 32, [0, 0, 64, 32]);
+    check('a trim texel is on screen', !!trimHit, JSON.stringify(trimHit));
+    if (trimHit) {
+      await page.mouse.move(trimHit.pt.x, trimHit.pt.y);
+      await page.waitForTimeout(250);
+      const hint = await page.evaluate(() => document.querySelector('.tx-pv-hint:not(.is-idle)')?.textContent ?? null);
+      check('hovering the trim names it', /Trim/.test(hint ?? ''), hint?.trim());
+      const beforePaint = await stage();
+      await page.mouse.down();
+      await page.mouse.up();
+      await page.waitForTimeout(500);
+      check('a click paints the trim pattern as picked', eq(await pixel(page, trimHit.u, trimHit.v), [40, 220, 255, 255]) && (await isEdited(page, TRIM)), JSON.stringify(await pixel(page, trimHit.u, trimHit.v)));
+      check('the armour under the trim is untouched', !(await isEdited(page, IRON)));
+      check('the painted trim shows on the model', !(await stage()).equals(beforePaint));
+      if (shotsDir) await page.screenshot({ path: path.join(shotsDir, 'mobs-zombie-trim-painted.png') });
+      await page.keyboard.press('Control+z');
+      await page.waitForTimeout(300);
+      check('undo restores the trim', !(await isEdited(page, TRIM)));
+    }
+    // hide the trim to reach the armour under it
+    await page.click('.tx-pv-partsection .tx-pv-part[data-part="gear:trim"]');
+    await page.waitForTimeout(600);
+    check('hiding the trim takes it off the model', !!trimHit && !(await texelPoint(page, TRIM, trimHit.u, trimHit.v, 64, 32, 5)));
+    check('the armour stays when the trim is hidden', !!(await texelPoint(page, IRON, 12, 12, 64, 32, 10)));
+    await page.click('.tx-pv-partsection .tx-pv-parts-all');
+    await page.waitForTimeout(400);
+    // a palette: painting it recolours the trim live
+    const GOLD = `${T}palettes/trim/gold.png`;
+    await page.evaluate((p) => window.__tx.open(p), GOLD);
+    await page.waitForFunction((p) => window.__tx.canvas.current()?.key === p && !!window.__tx.canvas.canvas(), GOLD, { timeout: 30000 });
+    await page.waitForTimeout(700);
+    check('opening the gold palette keeps the gold-trimmed zombie', (await current()).id === 'zombie' && (await zombieTex()).trim_material === 'gold');
+    const beforePal = await stage();
+    await page.evaluate(() => {
+      const c = window.__tx.canvas.canvas();
+      c.beginStroke();
+      c.setPixels([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0]], [255, 0, 0, 255]);
+      c.endStroke();
+    });
+    await page.waitForTimeout(800);
+    check('painting the palette recolours the trim on the model', (await isEdited(page, GOLD)) && !(await stage()).equals(beforePal));
+    await page.keyboard.press('Control+z');
+    await page.waitForTimeout(300);
+    // a trim pattern opened on its own shows on the armour stand in iron armour with that trim
+    await page.evaluate(() => window.__tx.showMob('creeper'));
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'creeper', null, { timeout: 30000 });
+    const WILD = `${T}trims/entity/humanoid/wild.png`;
+    await page.evaluate((p) => window.__tx.open(p), WILD);
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'armor_stand', null, { timeout: 30000 }).catch(() => undefined);
+    const ws = await current();
+    check('opening a trim pattern shows the armour stand in iron armour with it', ws?.id === 'armor_stand' && ws.state.chestplate === 'iron' && ws.state.trim === 'wild', JSON.stringify(ws));
+    const usedTrim = await page.evaluate(() => [...document.querySelectorAll('.tx-usedby-chip')].map((b) => b.dataset.id));
+    check('"Used by" on a trim pattern lists its wearers, the armour stand first', usedTrim[0] === 'armor_stand' && usedTrim.includes('zombie'), usedTrim.join(', '));
+    if (shotsDir) await page.screenshot({ path: path.join(shotsDir, 'mobs-stand-trim.png') });
+    await page.evaluate(() => window.__tx.showMob('zombie'));
+    await page.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'zombie', null, { timeout: 30000 });
+    await page.waitForSelector('.tx-pv-state[data-prop="armor"] select', { timeout: 30000 });
+    await page.selectOption('.tx-pv-state[data-prop="armor"] select', 'iron');
+    await page.waitForFunction(() => window.__tx.preview.current()?.state.chestplate === 'iron', null, { timeout: 10000 });
+    await page.waitForTimeout(400);
+
     // a piece off, then the leather dye
     await page.click('.tx-pv-piece[data-piece="boots"]');
     await page.waitForFunction(() => window.__tx.preview.current()?.state.boots === 'none', null, { timeout: 10000 });
@@ -399,6 +507,29 @@ const partChips = (page) =>
       const hpt = await shownTexel(bp, HA, 64, 64, [0, 0, 64, 64]);
       check('Bedrock: the horse armour is on screen', !!hpt);
       if (shotsDir) await bp.screenshot({ path: path.join(shotsDir, 'mobs-bedrock-horse.png') });
+      // a trim on the zombie's diamond armour, from Bedrock's trim textures and palettes
+      await bp.evaluate(() => window.__tx.showMob('zombie'));
+      await bp.waitForFunction(() => window.__tx.preview.current()?.entry.id === 'zombie' && window.__tx.models.lib.ready(window.__tx.preview.current().entry), null, { timeout: 30000 });
+      await bp.waitForSelector('.tx-pv-state[data-prop="armor"] select', { timeout: 30000 });
+      await bp.selectOption('.tx-pv-state[data-prop="armor"] select', 'diamond');
+      await bp.waitForSelector('.tx-pv-state[data-prop="trim"] select', { timeout: 10000 });
+      await bp.selectOption('.tx-pv-state[data-prop="trim"] select', 'eye');
+      await bp.waitForSelector('.tx-pv-state[data-prop="trim_material"] select', { timeout: 10000 });
+      await bp.selectOption('.tx-pv-state[data-prop="trim_material"] select', 'diamond');
+      await bp.waitForFunction(() => window.__tx.preview.current()?.state.trim_material === 'diamond', null, { timeout: 10000 });
+      await bp.waitForTimeout(800);
+      const btrim = await bp.evaluate(() => {
+        const c = window.__tx.preview.current();
+        const v = window.__tx.models.lib.resolve(c.entry, c.state);
+        return { textures: v.textures.filter((t) => t.faces > 0).map((t) => t.path), parts: v.parts.map((p) => p.label) };
+      });
+      check(
+        'Bedrock: a diamond trim on diamond armour, darker, a part of its own',
+        btrim.textures.includes('textures/trims/eye.png') && btrim.textures.includes('textures/trims/color_palettes/diamond_darker.png') && btrim.parts.includes('Trim'),
+        btrim.textures.join(', '),
+      );
+      check('Bedrock: the trim is on screen', !!(await bp.evaluate(() => window.__tx.preview.facePoint('textures/trims/eye.png'))));
+      if (shotsDir) await bp.screenshot({ path: path.join(shotsDir, 'mobs-bedrock-trim.png') });
       if (shotsDir) await bp.screenshot({ path: path.join(shotsDir, 'mobs-bedrock.png') });
       await bctx.close();
     }

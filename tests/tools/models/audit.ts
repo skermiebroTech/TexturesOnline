@@ -3,7 +3,8 @@
  * ones that fall back to a flat texture sheet, have no geometry, reference missing textures in any
  * state, or are only approximated; plus how items are drawn.
  * With --mobs, every mob in each of its looks: parts, textures, UVs and texture sizes against the files,
- * and everything it can wear (saddles, armour, carpets, harnesses) shown in the look that wears it.
+ * and everything it can wear (saddles, armour, carpets, harnesses) shown in the look that wears it;
+ * armour trims: every pattern and material over each piece, palettes and the darker rule.
  * Usage: TO_FIXTURES=<dir> npx tsx tests/tools/models/audit.ts [26.3|1.20.1|...|bedrock] [--states] [--items] [--mobs] [--no-java]
  * Bedrock takes its built-in shapes from the 26.3 jar's block models (--no-java: without them).
  */
@@ -135,8 +136,16 @@ if (withMobs) {
       const st = { ...lib.defaultState(e), ...t.states[0] };
       const v = lib.resolve(e, st);
       wornChecked++;
-      const qs = v.quads.filter((q) => q.texture === t.path);
+      // (a trim palette shows through the patterns it colours)
+      const palette = v.quads.filter((q) => q.palette?.key === t.path || q.palette?.values === t.path);
+      const qs = palette.length ? palette : v.quads.filter((q) => q.texture === t.path);
       if (!qs.length) issues.push(`${e.id}: worn ${t.path} doesn't show in ${JSON.stringify(st)}`);
+      else if (palette.length) {
+        const key = sizeOf(palette[0].palette!.key);
+        const s = sizeOf(t.path);
+        if (key && s && key[0] * key[1] !== s[0] * s[1]) issues.push(`${e.id}: trim palette ${t.path} has ${s[0] * s[1]} colours, the key ${key[0] * key[1]}`);
+        continue;
+      }
       else if (!/saddled/.test(t.path) && !qs.every((q) => v.parts?.[q.part ?? -1]?.name.startsWith('gear:'))) issues.push(`${e.id}: worn ${t.path} isn't a part of its own`);
       const want = v.texSizes?.get(t.path);
       const s = sizeOf(t.path);
@@ -149,6 +158,51 @@ if (withMobs) {
       .map((p) => `${p.name}(${p.values.length - 1})`);
     rows.push(`${e.id.padEnd(22)} ${String(parts).padStart(3)} parts ${String(quads).padStart(4)} faces ${String(states.length).padStart(3)} looks  ${[...textures].map((t) => t.replace(/^.*textures\/entity\//, '')).join(', ')}${gear.length ? `  | wears ${gear.join(' ')}` : ''}`);
   }
+  // armour trims: every pattern and material on every mob wearing humanoid armour, a full set of each
+  // armour material: a trim over each piece, coloured by a palette as long as the key, darker on its
+  // own material where the version has a darker palette
+  const trimRows: string[] = [];
+  let trimLooks = 0;
+  for (const e of mobs) {
+    const props = lib.properties(e);
+    const patterns = props.find((p) => p.name === 'trim')?.values.filter((v) => v.value !== 'none') ?? [];
+    const mats = props.find((p) => p.name === 'trim_material')?.values ?? [];
+    if (!patterns.length) continue;
+    const armours = (props.find((p) => p.name === 'chestplate')?.values ?? []).filter((v) => v.value !== 'none');
+    const base = lib.defaultState(e);
+    let darker = 0;
+    for (const pat of patterns)
+      for (const m of mats)
+        for (const a of armours) {
+          if (pat !== patterns[0] && a.value !== 'iron') continue;
+          const set = Object.fromEntries(['helmet', 'chestplate', 'leggings', 'boots'].map((s) => [s, a.value]));
+          const st = { ...base, ...set, trim: pat.value, trim_material: m.value };
+          const v = lib.resolve(e, st);
+          trimLooks++;
+          const trims = v.quads.filter((q) => q.palette);
+          const pieces = new Set(trims.map((q) => q.texture));
+          if (!trims.length) issues.push(`${e.id} ${JSON.stringify(st)}: no trim`);
+          else if (pieces.size !== 2) issues.push(`${e.id} ${JSON.stringify(st)}: trim textures ${[...pieces].join(', ')}`);
+          const values = new Set(trims.map((q) => q.palette!.values));
+          for (const p of values) {
+            const isDarker = /_darker\.png$/.test(p);
+            if (isDarker) darker++;
+            if (isDarker !== (a.value === m.value && assets.hasFile(p.replace(/(\w+)\.png$/, `${m.value}_darker.png`)))) issues.push(`${e.id} ${JSON.stringify(st)}: palette ${p}`);
+            const s = sizeOf(p);
+            const k = sizeOf(trims[0].palette!.key);
+            if (s && k && s[0] * s[1] !== k[0] * k[1]) issues.push(`${e.id}: ${p} has ${s[0] * s[1]} colours, the key ${k[0] * k[1]}`);
+          }
+          for (const p of pieces) {
+            const want = v.texSizes?.get(p!);
+            const s = sizeOf(p!);
+            if (want && s && s[0] * want[1] !== s[1] * want[0]) issues.push(`${e.id}: trim ${p} is ${s.join('x')}, the model maps ${want.join('x')}`);
+          }
+          const off = trims.filter((q) => q.uvs.some((u) => u[0] < -1e-6 || u[1] < -1e-6 || u[0] > 16 + 1e-6 || u[1] > 16 + 1e-6)).length;
+          if (off) issues.push(`${e.id} ${JSON.stringify(st)}: ${off} trim faces map off the texture`);
+        }
+    trimRows.push(`${e.id.padEnd(22)} ${patterns.length} patterns × ${mats.length} materials, ${darker} darker palettes`);
+  }
+  if (trimRows.length) console.log(`\ntrims: ${trimLooks} trimmed looks checked\n  ${trimRows.join('\n  ')}`);
   console.log(`\nmobs: ${mobs.length}, ${looks} looks and ${wornChecked} worn textures checked`);
   console.log(`  ${rows.join('\n  ')}`);
   console.log(`\nmob issues (${issues.length}):${issues.length ? `\n  ${[...new Set(issues)].join('\n  ')}` : ''}`);
