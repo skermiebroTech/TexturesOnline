@@ -197,18 +197,25 @@ try {
     server = await startPagesServer({ dist: deploy('cafe'), port, base: '/' });
     await page.evaluate(() => (window.__stay = 1));
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-    await page.waitForFunction(async () => {
-      const reg = await navigator.serviceWorker.getRegistration();
-      return !reg.installing && !reg.waiting;
-    }, null, { timeout: 30000 }).catch(() => {});
+    // (waitForFunction can't wait on an async check: it would take the returned promise as true)
+    for (const until = Date.now() + 30000; Date.now() < until; await page.waitForTimeout(250)) {
+      const settled = await page.evaluate(async () => {
+        const reg = await navigator.serviceWorker.getRegistration();
+        return !reg.installing && !reg.waiting;
+      });
+      if (settled) break;
+    }
     await page.waitForTimeout(1500);
     const quiet = await page.evaluate(() => ({ toast: [...document.querySelectorAll('.toast')].some((t) => /new version/i.test(t.textContent)), stay: window.__stay }));
     const third = await workerVersion(page);
     check(!quiet.toast && quiet.stay === 1 && third.version !== after.version, 'a worker for the build the page runs takes over silently', JSON.stringify({ quiet, third }));
     // The worker deletes old caches once it activates, which waits for the old worker's background
-    // refreshes (at most BACKGROUND_MS, 10 s, on a stalled connection).
-    await page.waitForFunction(async () => (await caches.keys()).filter((n) => n.startsWith('tpm-precache-')).length <= 2, null, { timeout: 20000, polling: 250 }).catch(() => {});
-    const caches2 = await page.evaluate(() => caches.keys());
+    // refreshes (at most BACKGROUND_MS, 10 s, on a stalled connection) and can take a while on a busy machine.
+    let caches2 = [];
+    for (const until = Date.now() + 30000; Date.now() < until; await page.waitForTimeout(250)) {
+      caches2 = await page.evaluate(() => caches.keys());
+      if (caches2.filter((n) => n.startsWith('tpm-precache-')).length <= 2) break;
+    }
     check(caches2.filter((n) => n.startsWith('tpm-precache-')).length === 2, 'old precaches are cleaned up (two kept)', caches2.join(' '));
 
     // ---- files shared to the app (Web Share Target) go to the right tool

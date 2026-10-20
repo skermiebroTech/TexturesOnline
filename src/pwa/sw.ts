@@ -101,11 +101,11 @@ sw.addEventListener('fetch', (event) => {
     case 'navigate':
       return event.respondWith(navigate(event));
     case 'asset':
-      return event.respondWith(cacheFirst(req));
+      return event.respondWith(cacheFirst(event));
     case 'static':
       return event.respondWith(staleWhileRevalidate(event));
     case 'data':
-      return event.respondWith(networkFirst(req));
+      return event.respondWith(networkFirst(event));
     case 'share':
       return event.respondWith(receiveShare(req));
     default:
@@ -187,11 +187,14 @@ async function offlinePage(url: string): Promise<Response> {
   return new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 }
 
-async function cacheFirst(req: Request): Promise<Response> {
+// Copies are stored after the response is handed over, never before: waiting for a large body to
+// be cached while the page waits for the same body can stall both.
+async function cacheFirst(event: FetchEvent): Promise<Response> {
+  const req = event.request;
   const hit = (await caches.match(req.url)) ?? (await fromPrecache(req.url));
   if (hit) return hit;
   const res = await fetch(req);
-  if (cacheable(res)) await remember(RUNTIME_CACHE, MAX_RUNTIME, req.url, res.clone()).catch(() => undefined);
+  if (cacheable(res)) background(event, remember(RUNTIME_CACHE, MAX_RUNTIME, req.url, res.clone()));
   return res;
 }
 
@@ -209,10 +212,11 @@ async function staleWhileRevalidate(event: FetchEvent): Promise<Response> {
   return refresh;
 }
 
-async function networkFirst(req: Request): Promise<Response> {
+async function networkFirst(event: FetchEvent): Promise<Response> {
+  const req = event.request;
   try {
     const res = await fetch(req);
-    if (cacheable(res)) await remember(RUNTIME_CACHE, MAX_RUNTIME, req.url, res.clone()).catch(() => undefined);
+    if (cacheable(res)) background(event, remember(RUNTIME_CACHE, MAX_RUNTIME, req.url, res.clone()));
     return res;
   } catch (err) {
     const hit = (await caches.match(req.url, { cacheName: RUNTIME_CACHE })) ?? (await fromPrecache(req.url));
