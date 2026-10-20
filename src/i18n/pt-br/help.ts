@@ -331,6 +331,28 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'models',
+      q: 'Posso mudar a forma de blocos e itens, como uma espada 3D?',
+      a: [
+        p(
+          'Sim, em packs do Java (Minecraft 1.8 ou mais novo). Mostre um bloco ou item na prévia e toque em ',
+          strong('Edit shape'),
+          '. O editor de modelos abre o modelo que o jogo usa, montado a partir dos modelos pais. Adicione, copie e apague cubos, digite posição e tamanho ou arraste as setas e as alças em 3D, com encaixe na grade de 16 × 16 ou mais fina, e gire um cubo em um eixo (em passos de 22,5° antes do Minecraft 1.21.6). Em ',
+          strong('Faces'),
+          ', dê a cada face uma textura do seu pack, ou uma nova para pintar depois, e arraste a parte da textura que ela mostra; defina também a rotação, quando ela some e se ela é tingida. ',
+          strong('Display'),
+          ' define como o modelo aparece no inventário, em primeira e terceira pessoa, no chão, na moldura e na cabeça, cada um com prévia. Toda mudança pode ser desfeita.',
+        ),
+        p(
+          'Para começar, use o modelo do jogo, um vazio, um cubo inteiro, uma laje, uma cruz como as flores ou, nos itens, ',
+          strong('3D item from sprite'),
+          ', que transforma a imagem plana em cubos de 1 pixel de espessura, juntados no menor número possível. A partir do 1.21.4, ',
+          strong('Flat in the inventory'),
+          ' mantém o ícone plano no inventário e mostra o modelo 3D na mão. O pack recebe o arquivo do modelo e só ganha uma definição de item ou um estado de bloco quando o jogo precisa; a exportação confere os modelos para a sua versão, e os arquivos de modelo dos packs que você abre são mantidos e podem ser editados. Pacotes de recursos do Bedrock não mudam formas (isso exige um complemento), mas você pode baixar um modelo como geometria do Bedrock para começar um.',
+        ),
+      ],
+    },
+    {
       id: 'sounds',
       q: 'Posso mudar os sons do meu pack?',
       a: [

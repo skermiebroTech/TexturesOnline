@@ -380,6 +380,32 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'models',
+    q: 'Can I change the shape of blocks and items, like a 3D sword?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes, in Java packs (Minecraft 1.8 and newer). Show a block or item in the preview and press ',
+        strong('Edit shape'),
+        '. The model editor opens the model the game uses, worked out from its parent models. Add, copy and delete cubes, type their position and size or drag the arrows and knobs in 3D, snapping to the 16 × 16 grid or finer, and turn a cube on one axis (in steps of 22.5° before Minecraft 1.21.6). Under ',
+        strong('Faces'),
+        ' give each face a texture from your pack, or a new one you paint later, and drag the part of the texture it shows; set its rotation, when it is hidden and whether it is tinted. ',
+        strong('Display'),
+        ' sets how the model sits in the inventory, in first and third person, on the ground, in an item frame and on a head, each with a preview. Every change can be undone.',
+      ),
+      el(
+        'p',
+        null,
+        'To start, take the game’s model, an empty one, a full cube, a slab, a cross like flowers or, for items, ',
+        strong('3D item from sprite'),
+        ', which turns the flat picture into 1-pixel-deep cubes joined into as few as possible. From 1.21.4, ',
+        strong('Flat in the inventory'),
+        ' keeps the flat icon in the inventory and shows the 3D model in hand. The pack gets the model file, plus an item definition or blockstate only when the game needs one; export checks the models against your version, and model files in packs you open are kept and can be edited. Bedrock resource packs can’t change shapes (that needs an add-on), but you can download a model as Bedrock geometry to start one.',
+      ),
+    ],
+  },
+  {
     id: 'sounds',
     q: 'Can I change sounds in my pack?',
     a: [

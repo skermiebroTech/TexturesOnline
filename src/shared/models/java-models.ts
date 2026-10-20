@@ -79,6 +79,17 @@ export interface ResolvedModel {
   ambientOcclusion: boolean;
   /** Models of the chain that don't exist */
   missing: string[];
+  /** Display transforms per slot ('gui', 'thirdperson_righthand'...), each from the nearest model that sets it */
+  display?: Record<string, DisplayTransform>;
+  /** "gui_light" of the nearest model that sets it (the game's default is 'side') */
+  guiLight?: 'side' | 'front';
+}
+
+/** How a model is posed in one display slot (degrees, 1/16 block units, scale). */
+export interface DisplayTransform {
+  rotation: Vec3;
+  translation: Vec3;
+  scale: Vec3;
 }
 
 export interface Variant {
@@ -154,7 +165,17 @@ function uv4(v: unknown): UV4 | undefined {
   return Array.isArray(v) && v.length >= 4 && v.slice(0, 4).every((n) => typeof n === 'number' && Number.isFinite(n)) ? [v[0], v[1], v[2], v[3]] : undefined;
 }
 
-function parseElements(v: unknown): JavaElement[] | null {
+/** A display slot as the game reads it (missing parts take their defaults). */
+export function parseDisplayTransform(v: unknown): DisplayTransform | null {
+  if (!isObj(v)) return null;
+  return { rotation: vec3(v.rotation) ?? [0, 0, 0], translation: vec3(v.translation) ?? [0, 0, 0], scale: vec3(v.scale) ?? [1, 1, 1] };
+}
+
+export function isIdentityTransform(d: DisplayTransform): boolean {
+  return d.rotation.every((v) => v === 0) && d.translation.every((v) => v === 0) && d.scale.every((v) => v === 1);
+}
+
+export function parseElements(v: unknown): JavaElement[] | null {
   if (!Array.isArray(v)) return null;
   const out: JavaElement[] = [];
   for (const e of v) {
@@ -214,6 +235,8 @@ export class JavaModelSet {
     let elements: JavaElement[] | null = null;
     let builtin: ResolvedModel['builtin'] = null;
     let ao: boolean | undefined;
+    let guiLight: 'side' | 'front' | undefined;
+    const display: Record<string, DisplayTransform> = {};
     let cur: string | null = id;
     const seen = new Set<string>();
     while (cur && !seen.has(cur) && chain.length < 32) {
@@ -245,10 +268,18 @@ export class JavaModelSet {
       }
       if (!elements && Array.isArray(j.elements)) elements = parseElements(j.elements);
       if (ao === undefined && typeof j.ambientocclusion === 'boolean') ao = j.ambientocclusion;
+      if (guiLight === undefined && (j.gui_light === 'side' || j.gui_light === 'front')) guiLight = j.gui_light;
+      if (isObj(j.display))
+        for (const [slot, t] of Object.entries(j.display)) {
+          if (slot in display) continue;
+          const d = parseDisplayTransform(t);
+          // the game skips a slot that does nothing and asks the parent (ItemTransform.NO_TRANSFORM)
+          if (d && !isIdentityTransform(d)) display[slot] = d;
+        }
       cur = typeof j.parent === 'string' ? modelId(j.parent) : null;
     }
     // Item models (layer0...) end at builtin/generated even when a later file has elements.
-    const res: ResolvedModel = { id, chain, textures, translucent: [...translucent], elements, builtin: elements ? null : builtin, ambientOcclusion: ao ?? true, missing };
+    const res: ResolvedModel = { id, chain, textures, translucent: [...translucent], elements, builtin: elements ? null : builtin, ambientOcclusion: ao ?? true, missing, display, guiLight };
     this.cache.set(id, res);
     return res;
   }
@@ -800,6 +831,7 @@ function whenLabel(when: unknown): string {
   if (Array.isArray(when) && when.length) {
     const s = when.map((w) => String(w));
     if (s.includes('12-24') || s.includes('12-25')) return 'Christmas';
+    if (s.includes('gui')) return 'In the inventory';
     return prettyWord(s[0]);
   }
   return '';

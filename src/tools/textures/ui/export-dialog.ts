@@ -102,8 +102,10 @@ export function openExportDialog(store: TexStore): void {
     const row = (ic: Parameters<typeof icon>[0], label: string, value: Node | string) =>
       h('div', { class: 'tx-exp-row' }, icon(ic), h('span', { class: 'tx-exp-k' }, label), h('span', { class: 'tx-exp-v' }, value));
     const sounds = editedSoundStems(project).size;
+    const shapes = java ? Object.keys(project.customModels ?? {}).length : 0;
     const rows = [
       row('pencil', 'Edited textures', String(edited)),
+      shapes ? row('shapes', 'Custom models', String(shapes)) : null,
       sounds ? row('music', 'Replaced sounds', String(sounds)) : null,
       row('sparkles', 'Effects', fx.length ? (preset ? `${preset.label} (${fx.length} effect${fx.length === 1 ? '' : 's'})` : fx.map((l) => getEffect(l.type)!.label).slice(0, 3).join(', ') + (fx.length > 3 ? ` +${fx.length - 3}` : '')) : 'None'),
       row(java ? 'laptop' : 'gamepad', 'Made for', target),

@@ -67,7 +67,17 @@ function stem(path: string, prefix: string, ext = '.json'): string {
 const camel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 
 export class JavaBackend implements EditionBackend {
-  readonly models: JavaModelSet;
+  models: JavaModelSet;
+  /** A pack's own model, blockstate and item files, read before the game's (null: the game's only) */
+  private overlay: JsonGet | null = null;
+  /** Parsed JSON by pack path: the pack's file when it has one, else the game's */
+  readonly json: JsonGet = (path) => {
+    if (this.overlay) {
+      const v = this.overlay(path);
+      if (v !== undefined) return v;
+    }
+    return this.src.json(path);
+  };
   private readonly states = new Map<string, Blockstate | null>();
   private readonly blockList: string[];
   private readonly synthetic = new Map<string, Synthetic>();
@@ -80,7 +90,7 @@ export class JavaBackend implements EditionBackend {
   readonly entitySource: EntityTextureSource;
 
   constructor(private readonly src: JavaSource) {
-    this.models = new JavaModelSet(src.json);
+    this.models = new JavaModelSet(this.json);
     this.flattened = src.hasFile(`${MC}textures/block/stone.png`) || !src.hasFile(`${MC}textures/blocks/stone.png`);
     this.entitySource = {
       edition: 'java',
@@ -135,6 +145,24 @@ export class JavaBackend implements EditionBackend {
     this.itemList = this.computeItems();
   }
 
+  /** The game's own file (no pack files over it). */
+  vanillaJson(path: string): unknown {
+    return this.src.json(path);
+  }
+
+  /**
+   * Reads a pack's own model / blockstate / item files before the game's (null: back to the game's).
+   * Blocks and items keep their lists; their shapes and textures are worked out again.
+   */
+  setOverlay(get: JsonGet | null): void {
+    this.overlay = get;
+    this.models = new JavaModelSet(this.json);
+    this.states.clear();
+    this.optionsCache.clear();
+    this.entityCache.clear();
+    this.propsCache.clear();
+  }
+
   // ------------------------------------------------------------------ names
 
   blockIds(): string[] {
@@ -169,7 +197,7 @@ export class JavaBackend implements EditionBackend {
   // ------------------------------------------------------------------ blocks
 
   blockstate(id: string): Blockstate | null {
-    if (!this.states.has(id)) this.states.set(id, parseBlockstate(this.src.json(blockstatePath(id))));
+    if (!this.states.has(id)) this.states.set(id, parseBlockstate(this.json(blockstatePath(id))));
     return this.states.get(id) ?? null;
   }
 
@@ -445,9 +473,9 @@ export class JavaBackend implements EditionBackend {
   private options(id: string): ItemOption[] | string[] {
     let o = this.optionsCache.get(id);
     if (!o) {
-      if (this.modern) o = itemOptions(this.src.json(itemDefinitionPath(id)));
+      if (this.modern) o = itemOptions(this.json(itemDefinitionPath(id)));
       else {
-        const json = this.src.json(`${MC}models/item/${id}.json`);
+        const json = this.json(`${MC}models/item/${id}.json`);
         o = [`minecraft:item/${id}`, ...legacyOverrideModels(json)].filter((m, i, a) => a.indexOf(m) === i);
       }
       this.optionsCache.set(id, o);

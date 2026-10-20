@@ -17,6 +17,7 @@ import type { ModelTextureImage } from '../../../shared/models/model-mesh';
 import { sampleColormap } from '../../../shared/preview/preview-textures';
 import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, getFrame, makeEntry, readAnimInfo, type AnimInfo } from './meta';
+import { parseJsonLoose } from '../project';
 import type { TexStore } from './store';
 
 export interface LiveTexture {
@@ -38,8 +39,17 @@ type Icon = HTMLCanvasElement | ImageData;
 
 const ICON_SIZE = 96;
 
+/** Pack files the model library reads before the game's (Java models, blockstates, item definitions). */
+const PACK_MODEL_FILE = /^assets\/[^/]+\/(models|blockstates|items)\/.+\.json$/;
+
 export class ModelService {
-  readonly events = new Emitter<{ progress: Progress; ready: void; failed: string; usage: void }>();
+  readonly events = new Emitter<{ progress: Progress; ready: void; failed: string; usage: void; models: { kind: 'block' | 'item'; id: string }[] }>();
+  /** Parsed model / blockstate / item files of the pack (Java), read over the game's */
+  private packFiles = new Map<string, unknown>();
+  /** Bumped when an entry's model changes, so its icon is drawn again */
+  private modelStamps = new Map<string, number>();
+  private offModels: (() => void) | null = null;
+  private usageTimer: ReturnType<typeof setTimeout> | null = null;
   lib: ModelLibrary | null = null;
   error: string | null = null;
   private loading: Promise<ModelLibrary | null> | null = null;
@@ -62,7 +72,8 @@ export class ModelService {
         onProgress: (p) => this.events.emit('progress', p),
         prefetch: (groups, opts) => prefetchJavaGroups(this.store.assets, groups, opts),
       }).then(
-        (lib) => {
+        async (lib) => {
+          await this.readPackFiles(lib);
           this.lib = lib;
           this.events.emit('ready');
           // Which blocks use which texture: built in slices so the editor stays responsive.
@@ -81,6 +92,53 @@ export class ModelService {
       );
     }
     return this.loading;
+  }
+
+  /** Reads the pack's own model files and has the library use them (Java packs that have any). */
+  private async readPackFiles(lib: ModelLibrary): Promise<void> {
+    if (this.store.project.edition !== 'java') return;
+    const paths = Object.keys(this.store.project.extraFiles).filter((p) => PACK_MODEL_FILE.test(p));
+    await Promise.all(paths.map((p) => this.readPackFile(p)));
+    this.applyPackFiles(lib);
+    this.offModels ??= this.store.events.on('models', ({ paths: changed, entries }) => void this.onModelFiles(changed, entries));
+  }
+
+  private async readPackFile(path: string): Promise<void> {
+    const blob = this.store.project.extraFiles[path];
+    if (!blob) {
+      this.packFiles.delete(path);
+      return;
+    }
+    try {
+      const text = await blob.text();
+      this.packFiles.set(path, parseJsonLoose(text) ?? undefined);
+    } catch {
+      this.packFiles.delete(path);
+    }
+  }
+
+  private applyPackFiles(lib: ModelLibrary): void {
+    if (!this.packFiles.size) lib.setPackFiles(null);
+    else lib.setPackFiles((path) => this.packFiles.get(path));
+    this.viewPaths.clear();
+  }
+
+  private async onModelFiles(paths: string[], entries: { kind: 'block' | 'item'; id: string }[]): Promise<void> {
+    await Promise.all(paths.filter((p) => PACK_MODEL_FILE.test(p)).map((p) => this.readPackFile(p)));
+    const lib = this.lib;
+    if (!lib || this.disposed) return;
+    this.applyPackFiles(lib);
+    // a block's item usually shows the same model
+    for (const e of entries) for (const k of ['block', 'item']) this.modelStamps.set(`${k}:${e.id}`, (this.modelStamps.get(`${k}:${e.id}`) ?? 0) + 1);
+    this.events.emit('models', entries);
+    // which blocks use which texture: worked out again once the edits settle
+    if (this.usageTimer) clearTimeout(this.usageTimer);
+    this.usageTimer = setTimeout(() => {
+      this.usageTimer = null;
+      void lib.rebuildUsage().then(() => {
+        if (!this.disposed) this.events.emit('usage');
+      });
+    }, 3000);
   }
 
   /** Loads what an entry needs to be drawn (a mob's geometry). */
@@ -293,7 +351,7 @@ export class ModelService {
   /** Cache key of an entry's icon: changes when any of its textures or the effects change. */
   iconKey(entry: ModelEntry, fx: boolean): string {
     const stamps = this.pathsOf(entry).map((p) => this.store.stamp(p)).join('.');
-    return `${entry.kind}:${entry.id}|${stamps}|${fx ? this.effectsKey : ''}`;
+    return `${entry.kind}:${entry.id}|${stamps}|${this.modelStamps.get(`${entry.kind}:${entry.id}`) ?? 0}|${fx ? this.effectsKey : ''}`;
   }
 
   peekIcon(entry: ModelEntry, fx: boolean): Icon | null {
@@ -349,6 +407,10 @@ export class ModelService {
 
   dispose(): void {
     this.disposed = true;
+    this.offModels?.();
+    if (this.usageTimer) clearTimeout(this.usageTimer);
+    // the library is shared by every pack of this game version: back to the game's own models
+    if (this.packFiles.size) this.lib?.setPackFiles(null);
     void this.iconRenderer?.then((r) => r?.dispose());
     this.iconCache.clear();
   }

@@ -151,6 +151,34 @@ export interface TexturePackProject extends ProjectBase {
    * files keeps it); this only holds what's needed to keep editing it.
    */
   sounds?: Record<string, SoundEdit>;
+  /**
+   * Java: block and item models made in the model editor, by the pack path of the model they replace.
+   * The files themselves (model, item definition, blockstate) are stored in extraFiles; this only holds
+   * what's needed to keep editing them or put the pack's own files back.
+   */
+  customModels?: Record<string, CustomModel>;
+}
+
+/** A block or item model changed in the model editor (Java). */
+export interface CustomModel {
+  kind: 'block' | 'item';
+  /** Block or item id */
+  id: string;
+  /** Model id whose shape is replaced, e.g. 'minecraft:item/diamond_sword' */
+  model: string;
+  /** Model id the shape is saved as (model, or another one, e.g. item/<id>_3d) */
+  saved: string;
+  /** Which look of the item (index of its options) */
+  option?: number;
+  /** 1.21.4+: the inventory, ground and item frames keep the old model */
+  flatGui?: boolean;
+  /** The blockstate is rewritten so every random variant of the model uses the shape */
+  everyVariant?: boolean;
+  /** Files the editor wrote */
+  files: string[];
+  /** The pack's own copies of those files before the editor wrote them (null: there was none) */
+  originals: Record<string, Blob | null>;
+  updatedAt: number;
 }
 
 /** An edited sound file: the user's own audio, trimmed and levelled, saved as Ogg Vorbis. */
