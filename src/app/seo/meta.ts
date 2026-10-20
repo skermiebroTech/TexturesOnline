@@ -220,6 +220,28 @@ export const GUIDES: GuideMeta[] = [
     icon: 'gamepad',
     accent: 'accent-blue',
   }),
+  guide({
+    slug: 'convert-java-to-bedrock-texture-pack',
+    blurb: 'Turn a Java pack into a Bedrock .mcpack, or back, in a few clicks.',
+    title: 'How to Convert a Java Texture Pack to Bedrock (and Back)',
+    h1: 'How to convert a Java texture pack to Bedrock',
+    description:
+      'Convert a Minecraft Java texture pack to a Bedrock .mcpack (or Bedrock to Java) for free: what converts, what does not, and how to install the result.',
+    label: 'Convert Java to Bedrock',
+    icon: 'repeat',
+    accent: 'accent-blue',
+  }),
+  guide({
+    slug: 'merge-texture-packs',
+    blurb: 'Combine several packs into one, with the pack order you choose.',
+    title: 'How to Merge Minecraft Texture Packs (Java & Bedrock)',
+    h1: 'How to merge Minecraft texture packs',
+    description:
+      'Combine several Minecraft texture packs into one for a server, a Realm or sharing: which pack wins, what gets merged, and doing it online or by hand.',
+    label: 'Merge texture packs',
+    icon: 'git-merge',
+    accent: 'accent-green',
+  }),
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */

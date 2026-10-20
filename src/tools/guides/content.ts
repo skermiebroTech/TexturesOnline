@@ -108,6 +108,22 @@ const VANILLA_SHADER_STEPS: Child[] = [
   ['Export the ', code('.zip'), ' and install it like any resource pack: ', uiPath('Options…', 'Resource Packs…', 'Open Pack Folder'), '.'],
 ];
 
+const CONVERT_STEPS: Child[] = [
+  ['Open the ', link('/texture-pack-converter', 'Texture Pack Converter'), ' and choose your pack: a Java ', code('.zip'), ', a Bedrock ', code('.mcpack'), ' or PNG textures.'],
+  ['Pick what to convert it to: ', strong('Bedrock Edition'), ', or ', strong('Java Edition'), ' and a version.'],
+  ['Click ', strong('Convert'), '. Your browser loads the target edition’s texture list and converts every texture it can.'],
+  'Read the report: how many textures were converted, and which were skipped and why.',
+  ['Download the converted pack, or open it in the editor to repaint the skipped textures first.'],
+];
+
+const MERGE_STEPS: Child[] = [
+  ['Open ', link('/merge-texture-packs', 'Merge Texture Packs'), ' and add two to eight Java ', code('.zip'), ' or Bedrock ', code('.mcpack'), ' packs.'],
+  'Put them in order by dragging, or with the arrow buttons. The pack at the top wins wherever two packs change the same file.',
+  'Name the merged pack and pick its icon. For Java, pick the version you play.',
+  ['Click ', strong('Merge'), ' and check the list of conflicts.'],
+  'Download the merged pack, or open it in the editor to keep working on it.',
+];
+
 const VV_STEPS: Child[] = [
   ['Make a pack with the ', link('/shaders', 'Shader Maker'), ' (choose ', strong('Bedrock Vibrant Visuals'), ') and export the ', code('.mcpack'), '.'],
   'Open the file. Minecraft imports it automatically.',
@@ -178,6 +194,7 @@ export const GUIDE_CONTENT: Guide[] = [
             'Animated textures, such as water, lava and sea lanterns, can be edited frame by frame.',
           ]),
           figure(SHOTS.editor),
+          figure(SHOTS.paint3d),
         ],
       },
       {
@@ -1211,8 +1228,183 @@ export const GUIDE_CONTENT: Guide[] = [
       { id: 'missing', q: 'Why are some textures missing after converting?', a: [p('Each edition has textures the other does not, and some are split or combined differently (for example chests, paintings and the GUI). Those need repainting for the other edition.')] },
       { id: 'which', q: 'Which edition am I playing?', a: [p('If you play on a console, phone or tablet, or got Minecraft from the Microsoft Store as “Minecraft for Windows”, it is Bedrock. Java runs on Windows, macOS and Linux from the Minecraft Launcher.')] },
     ],
-    related: ['make-a-texture-pack', 'install-resource-packs', 'minecraft-pack-format-versions'],
+    related: ['convert-java-to-bedrock-texture-pack', 'make-a-texture-pack', 'install-resource-packs'],
     cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'image' },
+  },
+  // ------------------------------------------------------------ convert java to bedrock
+  {
+    meta: meta('convert-java-to-bedrock-texture-pack'),
+    image: SHOTS.convertResult,
+    intro: [
+      p(
+        'A Java texture pack does not work on Bedrock, and renaming the ',
+        code('.zip'),
+        ' to ',
+        code('.mcpack'),
+        ' does not help: the two editions use different folders, file names and description files. To convert a pack, every texture has to be moved to Bedrock’s folder, renamed to Bedrock’s file name and given a ',
+        code('manifest.json'),
+        '. The free ',
+        link('/texture-pack-converter', 'Texture Pack Converter'),
+        ' does this in your browser in a few seconds, and works the other way too.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['Open the ', link('/texture-pack-converter', 'Texture Pack Converter'), ' and choose your Java ', code('.zip'), '.'],
+        ['Pick ', strong('Bedrock Edition'), ' and click ', strong('Convert to Bedrock'), '.'],
+        ['Download the ', code('.mcpack'), ' and open it: Minecraft imports it.'],
+      ],
+    },
+    howto: { name: 'How to convert a Java texture pack to Bedrock', steps: CONVERT_STEPS },
+    sections: [
+      { id: 'steps', title: 'Step by step', body: [steps(CONVERT_STEPS), figure(SHOTS.convertPack), figure(SHOTS.convertResult)] },
+      {
+        id: 'what',
+        title: 'What converts, and what does not',
+        body: [
+          p('The converter knows which Java texture plays the same part as which Bedrock texture, worked out from the game files of both editions. Most textures have the same picture on both, so they can be copied as they are.'),
+          table(
+            ['Converts', 'Does not convert'],
+            [
+              ['Most block and item textures (around four in five)', 'Textures that exist in only one edition'],
+              ['Many mob and environment textures (sun, moon, clouds)', 'Textures laid out differently: chests, many mob skins, banners, the menus and particles'],
+              ['Animated textures: .png.mcmeta becomes a flipbook entry', 'Models, sounds, fonts, splash texts and shaders'],
+              ['The pack icon, name and description', 'OptiFine extras such as connected textures and custom item textures'],
+            ],
+          ),
+          p('Anything skipped is listed in the report with the reason, so you know exactly what to repaint. Open the converted pack in the ', link('/textures', 'Texture Pack Maker'), ' to fix those textures on their 3D models before you download it.'),
+          callout('tip', 'Same pack, two editions', 'Keep your Java pack as the original and convert it again after each change. Before importing the new version on Bedrock, remove the old one under Settings › Storage so you do not end up with two copies.'),
+        ],
+      },
+      {
+        id: 'bedrock-to-java',
+        title: 'Convert a Bedrock pack to Java',
+        body: [
+          p(
+            'Choose a Bedrock ',
+            code('.mcpack'),
+            ' (or ',
+            code('.mcaddon'),
+            ') and pick ',
+            strong('Java Edition'),
+            ' and the version you play. Textures go to Java’s folders and names, ',
+            code('.tga'),
+            ' images become PNG, flipbook animations become ',
+            code('.png.mcmeta'),
+            ' files and the pack gets the right ',
+            code('pack.mcmeta'),
+            ' for that version.',
+          ),
+        ],
+      },
+      {
+        id: 'old-java',
+        title: 'Update an old Java pack to a new version',
+        body: [
+          p(
+            'The same converter updates Java packs between versions. Many textures were renamed over the years, most of all in 1.13, when ',
+            code('textures/blocks'),
+            ' became ',
+            code('textures/block'),
+            ' and hundreds of files got new names. Choose the old pack, pick ',
+            strong('Java'),
+            ' and your version, and every renamed texture moves to its new name. Texture names inside the pack’s own models are updated too.',
+          ),
+          p('It works backwards as well, for example to make a 26.3 pack for 1.8.9.'),
+        ],
+      },
+      {
+        id: 'install',
+        title: 'Install the converted pack',
+        body: [
+          ul([
+            ['Bedrock: open the ', code('.mcpack'), ' (double-click on Windows, Open with Minecraft on phones), then activate it under ', uiPath('Settings', 'Global Resources'), '.'],
+            ['Java: put the ', code('.zip'), ' in the ', code('resourcepacks'), ' folder and move it to Selected.'],
+          ]),
+          p('More detail in ', link('/guides/install-resource-packs', 'How to install texture packs'), '. If something looks wrong, see ', link('/guides/texture-pack-not-working', 'Texture pack not working'), '.'),
+        ],
+      },
+    ],
+    faq: [
+      { id: 'free', q: 'Is the converter free?', a: [p('Yes, with no account and no limits. The pack is converted in your browser and never uploaded.')] },
+      { id: 'look', q: 'Will the pack look the same on Bedrock?', a: [p('Converted textures look the same. Textures that are skipped fall back to Bedrock’s own, and Bedrock’s lighting and Vibrant Visuals can make colours look a little different.')] },
+      { id: 'shaders', q: 'Can I convert a Java shader pack to Bedrock?', a: [p('No. Bedrock does not load custom shader code. Use a ', link('/guides/bedrock-vibrant-visuals-settings', 'Vibrant Visuals'), ' pack instead, which you can make with the ', link('/shaders', 'Shader Maker'), '.')] },
+      { id: 'png', q: 'Can I turn PNG files into an .mcpack?', a: [p('Yes. Choose a PNG, or a zip of PNGs, named like the game’s textures (for example ', code('stone.png'), '), and convert it to Bedrock.')] },
+      { id: 'console', q: 'Can I use the converted pack on a console?', a: [p('Consoles cannot import files. Add the pack to a world on a PC or phone and join that world, or use a Realm or server that has it.')] },
+    ],
+    related: ['java-vs-bedrock-packs', 'install-resource-packs', 'texture-pack-not-working'],
+    cta: { label: 'Open the Texture Pack Converter', to: '/texture-pack-converter', icon: 'repeat' },
+  },
+
+  // ------------------------------------------------------------ merge packs
+  {
+    meta: meta('merge-texture-packs'),
+    image: SHOTS.mergeResult,
+    intro: [
+      p(
+        'Minecraft can already stack texture packs: turn several on, and the one higher in the list wins wherever two change the same texture. Merging builds one pack from several, with that same order baked in. It is handy for a server or a Realm that takes a single pack, for sharing your favourite combination, or for keeping your pack list short. The free ',
+        link('/merge-texture-packs', 'Merge Texture Packs'),
+        ' tool does it in your browser.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['Open ', link('/merge-texture-packs', 'Merge Texture Packs'), ' and add two to eight packs of the same edition.'],
+        'Drag them into order: the top pack wins every conflict.',
+        'Click Merge, check the list of conflicts, then download the pack.',
+      ],
+    },
+    howto: { name: 'How to merge Minecraft texture packs', steps: MERGE_STEPS },
+    sections: [
+      { id: 'steps', title: 'Step by step', body: [steps(MERGE_STEPS), figure(SHOTS.mergeSettings), figure(SHOTS.mergeResult)] },
+      {
+        id: 'wins',
+        title: 'Which pack wins?',
+        body: [
+          p('The same rule Minecraft uses: for every file, the pack highest in the list wins. A texture and its animation file always travel together, so a lower pack’s animation is never attached to a higher pack’s picture.'),
+          p('Some files are combined instead of replaced, so nothing useful is lost:'),
+          ul([
+            [strong('Java: '), 'language files (key by key), ', code('sounds.json'), ' (sound by sound), texture atlases and fonts.'],
+            [strong('Bedrock: '), code('terrain_texture.json'), ', ', code('item_texture.json'), ', ', code('flipbook_textures.json'), ', ', code('blocks.json'), ', sound definitions and language files.'],
+          ]),
+          p('The result lists every conflict, such as “block/stone.png from Pack A, overriding Pack B”, and how many files each pack added.'),
+        ],
+      },
+      {
+        id: 'versions',
+        title: 'Packs for different versions',
+        body: [
+          p(
+            'Java packs made for different versions can be merged: pick the version you play and older packs are renamed to its texture names first (the same renames the ',
+            link('/texture-pack-converter', 'converter'),
+            ' uses), so a 1.12 pack and a 26.3 pack fit together. Java and Bedrock packs cannot be merged directly: convert one of them first.',
+          ),
+        ],
+      },
+      {
+        id: 'by-hand',
+        title: 'Merging packs by hand',
+        body: [
+          steps([
+            'Unzip every pack into its own folder.',
+            'Make a new folder and copy in the lowest-priority pack first, then each higher pack on top, replacing files when asked.',
+            ['Merge the files that should be combined (', code('sounds.json'), ', language files, atlases) by hand, or the last copy wins.'],
+            ['Keep one ', code('pack.mcmeta'), ' (Java) or write a new ', code('manifest.json'), ' with new IDs (Bedrock), then zip the contents.'],
+          ]),
+          p('The tool does all of this, including the combined files and the right pack format, so manual merging is only worth it for unusual packs.'),
+        ],
+      },
+    ],
+    faq: [
+      { id: 'how-many', q: 'How many packs can I merge?', a: [p('Two to eight at a time. To combine more, merge the result again with the next packs.')] },
+      { id: 'shaders', q: 'Can I merge shader packs?', a: [p('No. Iris and OptiFine shader packs only run one at a time. Vanilla shader resource packs can be merged like any resource pack, but two packs that change the same shader file will not combine their effects.')] },
+      { id: 'server', q: 'Can I use a merged pack as a server resource pack?', a: [p('Yes. Upload the merged ', code('.zip'), ' wherever you host server packs and set it in ', code('server.properties'), ' like any other pack.')] },
+      { id: 'upload', q: 'Are my packs uploaded?', a: [p('No. The packs are merged in your browser and stay on your device.')] },
+    ],
+    related: ['install-resource-packs', 'texture-pack-not-working', 'convert-java-to-bedrock-texture-pack'],
+    cta: { label: 'Open Merge Texture Packs', to: '/merge-texture-packs', icon: 'git-merge' },
   },
 ];
 

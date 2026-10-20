@@ -174,7 +174,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         ],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
+    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
     guides: ['make-a-texture-pack', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: 'Start a texture pack',
   },
@@ -249,7 +249,8 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         a: [el('p', null, 'No. The conversion happens in your browser, so the pack stays on your device.')],
       },
     ],
-    guides: ['java-vs-bedrock-packs', 'install-resource-packs', 'texture-pack-not-working'],
+    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.convertPack), figure(SHOTS.convertResult))],
+    guides: ['convert-java-to-bedrock-texture-pack', 'java-vs-bedrock-packs', 'install-resource-packs', 'texture-pack-not-working'],
     cta: 'Convert a pack',
   },
   merge: {
@@ -371,7 +372,8 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         ],
       },
     ],
-    guides: ['install-resource-packs', 'texture-pack-not-working', 'minecraft-pack-format-versions'],
+    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.mergeSettings), figure(SHOTS.mergeResult))],
+    guides: ['merge-texture-packs', 'install-resource-packs', 'texture-pack-not-working', 'minecraft-pack-format-versions'],
     cta: 'Merge packs',
   },
   skins: {

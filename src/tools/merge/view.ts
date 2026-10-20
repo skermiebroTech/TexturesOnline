@@ -725,7 +725,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       h(
         'div',
         { class: 'cv-summary' },
-        h('div', { class: 'cv-stats' }, stat(report.files, report.files === 1 ? 'file' : 'files', 'ok'), stat(report.textures, report.textures === 1 ? 'texture' : 'textures', 'muted'), stat(report.conflicts.length, report.conflicts.length === 1 ? 'conflict' : 'conflicts', report.conflicts.length ? 'warn' : 'muted'), stat(report.merged.length, 'merged files', 'muted')),
+        h('div', { class: 'cv-stats' }, stat(report.files, report.files === 1 ? 'file' : 'files', 'ok'), stat(report.textures, report.textures === 1 ? 'texture' : 'textures', 'muted'), stat(report.conflicts.length, report.conflicts.length === 1 ? 'conflict' : 'conflicts', report.conflicts.length ? 'warn' : 'muted'), stat(report.merged.length, report.merged.length === 1 ? 'merged file' : 'merged files', 'muted')),
       ),
       h('div', { class: 'mg-contrib-box' }, h('h3', { class: 'mg-sub' }, 'Files from each pack'), contrib, legend),
       h('div', { class: 'cv-actions' }, dlBtn, openBtn, againBtn),

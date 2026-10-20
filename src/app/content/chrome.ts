@@ -74,7 +74,7 @@ export function skipLink(): ElNode {
 }
 
 /** Guides shown in the footer (the most useful few). */
-const FOOTER_GUIDES = ['make-a-texture-pack', 'install-resource-packs', 'minecraft-pack-format-versions', 'make-a-skin', 'make-shaders-without-mods'];
+const FOOTER_GUIDES = ['make-a-texture-pack', 'install-resource-packs', 'minecraft-pack-format-versions', 'convert-java-to-bedrock-texture-pack', 'make-a-skin', 'make-shaders-without-mods'];
 
 export function footer(year: number): ElNode {
   const guides = FOOTER_GUIDES.map((slug) => GUIDES.find((g) => g.slug === slug)).filter((g) => !!g);
