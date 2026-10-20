@@ -5,7 +5,8 @@ import { zipSync, strToU8 } from 'fflate';
 import { applyEffects, createLayer, layerApplies, EFFECT_PRESETS, type EffectContext } from '../../src/tools/textures/effects';
 import { exportTexturePack, mergePackMcmeta, effectiveCompat } from '../../src/tools/textures/export';
 import { importPack } from '../../src/tools/textures/import';
-import { newTextureProject, setOverride, addEffectLayer, applyPreset, imageDims } from '../../src/tools/textures/project';
+import { newTextureProject, setOverride, addEffectLayer, imageDims } from '../../src/tools/textures/project';
+import { applyPreset } from '../../src/tools/textures/effects';
 import type { EffectLayer } from '../../src/core/types';
 import { bedrockSpec, fakeAssets, img, javaSpec, json, noisy, solid, unzipBlob } from '../tools/texlogic/fixtures';
 

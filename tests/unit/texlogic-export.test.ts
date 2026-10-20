@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { exportTexturePack, adjustMcmeta, mergePackMcmeta, scaleNineSlice } from '../../src/tools/textures/export';
-import { newTextureProject, setOverride, applyPreset, addEffectLayer, imageDims } from '../../src/tools/textures/project';
-import { createLayer } from '../../src/tools/textures/effects';
+import { newTextureProject, setOverride, addEffectLayer, imageDims } from '../../src/tools/textures/project';
+import { applyPreset, createLayer } from '../../src/tools/textures/effects';
 import { decodeImage, isPng } from '../../src/core/image';
 import { isUuid } from '../../src/core/uuid';
 import type { Progress } from '../../src/core/types';

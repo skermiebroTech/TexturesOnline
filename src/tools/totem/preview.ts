@@ -3,7 +3,7 @@
 // Everything is drawn procedurally on a 2D canvas; no game art.
 
 import { h } from '../../ui/dom';
-import { imageDataToCanvas } from '../../core/image';
+import { imageDataToCanvas } from '../../core/pixels';
 import { popFrame } from './totem';
 
 interface Particle {

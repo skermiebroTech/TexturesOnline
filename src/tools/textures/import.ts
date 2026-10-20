@@ -1,5 +1,5 @@
 import type { Edition, GameVersion, PackFormat, TexturePackProject } from '../../core/types';
-import { isPng } from '../../core/image';
+import { isPng } from '../../core/pixels';
 import { isZip, readZip } from '../../core/zip';
 import { isUuid } from '../../core/uuid';
 import { readPackMcmetaRange } from '../../editions/java/packmeta';

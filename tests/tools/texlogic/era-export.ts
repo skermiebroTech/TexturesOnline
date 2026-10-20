@@ -10,7 +10,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { unzipSync } from 'fflate';
 import { loadAssets } from '../../../src/editions/index';
-import { newTextureProject, applyPreset } from '../../../src/tools/textures/project';
+import { newTextureProject } from '../../../src/tools/textures/project';
+import { applyPreset } from '../../../src/tools/textures/effects';
 import { exportTexturePack } from '../../../src/tools/textures/export';
 
 const [dir, ...versions] = process.argv.slice(2);

@@ -3,7 +3,7 @@
 // pack.mcmeta. They become a Java texture project the converter can turn into a .mcpack or a .zip.
 
 import type { TexturePackProject } from '../../core/types';
-import { isPng } from '../../core/image';
+import { isPng } from '../../core/pixels';
 import { isZip, readZip } from '../../core/zip';
 import { JAVA_TEXTURE_ROOT, imageDims, newTextureProject, normalizeResolution } from '../textures/project';
 

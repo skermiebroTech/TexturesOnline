@@ -3,7 +3,7 @@
 
 import type { AssetIndex, Edition, TextureCategory, TextureInfo, TexturePackProject } from '../../../core/types';
 import type { IconName } from '../../../ui/icons';
-import { cropImageData, createImageData } from '../../../core/image';
+import { cropImageData, createImageData } from '../../../core/pixels';
 import { parseLenientJson } from '../../../editions/bedrock/catalog';
 import { textureRoot } from '../project';
 

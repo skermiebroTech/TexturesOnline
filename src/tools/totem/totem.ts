@@ -1,4 +1,4 @@
-// Custom Totem of Undying: turns a player skin into the 16x16 totem item texture and packs it as a
+// Custom Totem of Undying: turns a player skin into the 16x16 totem item texture and packs it (pack.ts) as a
 // Java resource pack (.zip) or a Bedrock resource pack (.mcpack). Pure apart from Blob/zip output:
 // no DOM, so the mapping is unit tested in Node.
 //
@@ -7,16 +7,10 @@
 // texture itself is only read at runtime (from the game files the browser downloads) to keep its
 // gold outline or wings, never stored in this repository.
 
-import type { Edition, SkinModel, TexturePackProject } from '../../core/types';
-import { convertLegacySkin, createImageData, encodePng, resizeNearest } from '../../core/image';
-import { sanitizeFilename } from '../../core/download';
-import { writeZip } from '../../core/zip';
-import { buildPackMcmetaForVersions } from '../../editions/java/packmeta';
-import { buildResourceManifest, bumpPackVersion } from '../../editions/bedrock/manifest';
+import type { Edition, SkinModel } from '../../core/types';
+import { convertLegacySkin, createImageData, resizeNearest } from '../../core/pixels';
 import { compareJavaVersions } from '../convert/paths';
 import { detectSlim, faceRect, type SkinPart } from '../skins/templates';
-import { asciiJson } from '../textures/export';
-import { newBedrockUuids, newTextureProject } from '../textures/project';
 
 export const TOTEM_SIZE = 16;
 /** Totems of Undying were added in Java 1.11 (Bedrock 1.0). */
@@ -362,41 +356,4 @@ export function defaultPackName(skinName: string | null | undefined): string {
     .trim()
     .slice(0, 40);
   return who ? `${who} Totem` : DEFAULT_PACK_NAME;
-}
-
-function png(img: ImageData): Uint8Array<ArrayBuffer> {
-  return encodePng(img);
-}
-
-/** Builds the downloadable pack: Java .zip with pack.mcmeta for the version, or a Bedrock .mcpack. */
-export async function buildTotemPack(totem: ImageData, opts: TotemPackOptions): Promise<TotemPack> {
-  const name = opts.name.trim() || DEFAULT_PACK_NAME;
-  const description = (opts.description ?? totemDescription(null)).trim();
-  const texturePath = opts.path ?? totemTexturePath(opts.edition, opts.version);
-  const files: Record<string, Uint8Array | string> = {};
-  let uuids: TotemPack['uuids'];
-  let packVersion: TotemPack['packVersion'];
-  if (opts.edition === 'java') {
-    if (!javaHasTotem(opts.version)) throw new Error(`Minecraft ${opts.version} has no Totem of Undying: it was added in Java ${FIRST_TOTEM_VERSION}.`);
-    files['pack.mcmeta'] = asciiJson(await buildPackMcmetaForVersions(description, opts.version));
-    files['pack.png'] = png(totemIcon(totem, JAVA_ICON_SIZE));
-  } else {
-    uuids = opts.uuids ?? newBedrockUuids();
-    packVersion = bumpPackVersion(opts.packVersion);
-    files['manifest.json'] = buildResourceManifest({ name, description, uuids, version: packVersion });
-    files['pack_icon.png'] = png(totemIcon(totem, BEDROCK_ICON_SIZE));
-  }
-  files[texturePath] = png(totem);
-  const blob = await writeZip(files, { mimeType: opts.edition === 'bedrock' ? 'application/octet-stream' : 'application/zip' });
-  const base = sanitizeFilename(name, 'Custom Totem').replace(/\.(zip|mcpack)$/i, '');
-  return { blob, filename: `${base}.${opts.edition === 'java' ? 'zip' : 'mcpack'}`, files: Object.keys(files), texturePath, uuids, packVersion };
-}
-
-/** A texture pack project holding the totem, to keep editing it in the texture tool. */
-export function totemProject(totem: ImageData, opts: { name: string; description?: string; edition: Edition; version: string; path?: string }): TexturePackProject {
-  const project = newTextureProject({ name: opts.name.trim() || DEFAULT_PACK_NAME, edition: opts.edition, version: opts.version, description: opts.description });
-  const path = opts.path ?? totemTexturePath(opts.edition, opts.version);
-  project.overrides[path] = new Blob([png(totem)], { type: 'image/png' });
-  project.icon = new Blob([png(totemIcon(totem, opts.edition === 'java' ? JAVA_ICON_SIZE : BEDROCK_ICON_SIZE))], { type: 'image/png' });
-  return project;
 }

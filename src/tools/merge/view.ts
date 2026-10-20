@@ -17,17 +17,20 @@ import { versionPicker } from '../../ui/version-picker';
 import { saveProject } from '../../core/storage';
 import { saveBlob } from '../../core/download';
 import { friendlyError, isAbortError } from '../../core/net';
-import { imageDataToCanvas, cropImageData } from '../../core/image';
-import { loadAssets } from '../../editions/index';
+import { imageDataToCanvas, cropImageData } from '../../core/pixels';
+import { loadAssets } from '../../editions/versions';
 import { siteFooter } from '../../app/footer';
 import { proceduralTexture, toImageData, type ProceduralTextureName } from '../../shared/preview/procedural-textures';
-import { importPack } from '../textures/import';
-import { exportTexturePack, renderIsoCube } from '../textures/export';
+import { renderIsoCube } from '../textures/iso-cube';
 import { packFileName } from '../textures/project';
 import { plainText } from '../textures/ui/mc-text';
 import { compareJavaVersions } from '../convert/paths';
 import { loadConvertMaps } from '../convert/data';
 import { DEFAULT_MERGED_NAME, MAX_PACKS, MIN_PACKS, defaultMergeVersion, displayPath, editionOf, joinNames, mergeDescription, mergePacks, type MergeReport } from './merge';
+
+// The pack reader and the exporter (zip, image codecs) load when a pack is opened or downloaded.
+const packReader = () => import('../textures/import');
+const exporter = () => import('../textures/export');
 
 interface Entry {
   id: string;
@@ -144,6 +147,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
         const label = busy.querySelector('.mg-busy-label');
         if (label) label.textContent = take.length > 1 ? `Reading pack ${i + 1} of ${take.length}…` : 'Reading pack…';
         try {
+          const { importPack } = await packReader();
           const r = await importPack(file);
           if (!alive) return;
           const entry: Entry = { id: uid('mg-pack'), project: r.project, warnings: r.warnings, fileName: file.name, iconUrl: r.project.icon ? URL.createObjectURL(r.project.icon) : null };
@@ -589,7 +593,7 @@ export default async function view(root: HTMLElement, _ctx: RouteContext): Promi
       dlBox.hidden = false;
       dlBar.set({ label: `Getting the ${edition === 'java' ? `Java ${report.version}` : 'Bedrock'} game files…`, fraction: null });
       try {
-        const assets = await loadAssets(edition, report.version, { onProgress: (p) => dlBar.set(p) });
+        const [assets, { exportTexturePack }] = await Promise.all([loadAssets(edition, report.version, { onProgress: (p) => dlBar.set(p) }), exporter()]);
         const r = await withFairYield(() => exportTexturePack(project, assets, { onProgress: (p) => dlBar.set(p) }));
         await saveProject(project).catch(() => undefined);
         if (!alive) return;

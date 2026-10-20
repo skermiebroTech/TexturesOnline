@@ -8,7 +8,7 @@
 import type { Edition, ProgressFn, TexturePackProject } from '../../core/types';
 import { abortError } from '../../core/net';
 import { stringifyPretty } from '../../editions/java/packmeta';
-import { DEFAULT_JAVA_VERSION } from '../../editions/index';
+import { DEFAULT_JAVA_VERSION } from '../../editions/versions';
 import { BEDROCK_TEXTURE_ROOT, JAVA_TEXTURE_ROOT, extOf, newTextureProject, parseBedrockVersion, parseJsonLoose } from '../textures/project';
 import { compareJavaVersions, renameChain, rewriteModelTextures, type JavaRenames, type RenameChain } from '../convert/paths';
 

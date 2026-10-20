@@ -1,6 +1,7 @@
 // Where skins come from: uploaded PNGs, Java usernames and the default skins in the game files.
 
-import { convertLegacySkin, decodeImage, resizeNearest } from '../../../core/image';
+import { convertLegacySkin, resizeNearest } from '../../../core/pixels';
+import { decodeImage } from '../../../core/image-lazy';
 import type { AssetIndex, SkinModel } from '../../../core/types';
 import { detectSlim } from '../templates';
 

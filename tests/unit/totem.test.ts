@@ -10,7 +10,6 @@ import {
   imageColors,
   popFrame,
   STYLES,
-  buildTotemPack,
   defaultPackName,
   javaHasTotem,
   javaTotemPath,
@@ -18,10 +17,10 @@ import {
   renderFigure,
   sampleIndex,
   totemIcon,
-  totemProject,
   totemShape,
   totemTexturePath,
 } from '../../src/tools/totem/totem';
+import { buildTotemPack, totemProject } from '../../src/tools/totem/pack';
 import { json, unzipBlob } from '../tools/texlogic/fixtures';
 
 type RGBA = [number, number, number, number];
