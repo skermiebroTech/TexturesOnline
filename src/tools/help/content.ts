@@ -171,7 +171,7 @@ export const SECTIONS: HelpSection[] = [
           ],
         },
       ]),
-      callout('info', 'Playing 1.7.10 or older?', 'Those versions only understand the old 64×32 layout. Use the ', strong('Legacy 64×32'), ' export option.'),
+      callout('info', 'Playing 1.7.10 or older?', 'Those versions only understand the old 64×32 layout. Use the ', strong('Old Java skin (64×32)'), ' export option.'),
     ],
   },
   {

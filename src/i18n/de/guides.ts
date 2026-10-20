@@ -817,10 +817,10 @@ const makeASkin: GuideText = {
         ]),
         h3('So erstellst du einen im Skin Maker'),
         steps([
-          ['Stell auf dem Startbildschirm ', strong('Size'), ' auf ', strong('HD 128×128'), ' und wähle dann einen Startpunkt. Vorlagen und Start-Skins werden auf 128×128 verdoppelt, und ein hochgeladenes PNG mit 128×128 bleibt HD.'],
-          ['Du malst schon an einem Skin mit 64×64? Stell im Editor ', strong('Size'), ' auf ', strong('HD 128'), ' und bestätige mit ', strong('Make HD'), '. Jedes Pixel wird zu einem 2×2-Block, der Skin sieht also gleich aus, bis du feinere Details malst. Mit ', strong('Size'), ' › ', strong('64×64'), ' und ', strong('Reduce to 64×64'), ' geht es zurück.'],
-          ['Exportiere ', strong('Bedrock skin (.png)'), ' für den Import im Ankleidezimmer oder ein ', strong('Bedrock skin pack (.mcpack)'), '. Beide behalten 128×128.'],
-          ['Für Java lädt ', strong('Java skin (.png)'), ' eine Kopie mit 64×64 herunter, bei der jeder 2×2-Block zu einem Pixel wird; dein HD-Skin bleibt, wie er ist. Du nutzt eine HD-Skin-Mod? Dann wähle stattdessen ', strong('128×128 for mods'), '.'],
+          ['Stell auf dem Startbildschirm ', strong('Größe'), ' auf ', strong('HD 128×128'), ' und wähle dann einen Startpunkt. Vorlagen und Start-Skins werden auf 128×128 verdoppelt, und ein hochgeladenes PNG mit 128×128 bleibt HD.'],
+          ['Du malst schon an einem Skin mit 64×64? Stell im Editor ', strong('Größe'), ' auf ', strong('HD 128'), ' und bestätige mit ', strong('Zu HD machen'), '. Jedes Pixel wird zu einem 2×2-Block, der Skin sieht also gleich aus, bis du feinere Details malst. Mit ', strong('Größe'), ' › ', strong('64×64'), ' und ', strong('Auf 64×64 verkleinern'), ' geht es zurück.'],
+          ['Exportiere ', strong('Bedrock-Skin (.png)'), ' für den Import im Ankleidezimmer oder ein ', strong('Bedrock-Skinpaket (.mcpack)'), '. Beide behalten 128×128.'],
+          ['Für Java lädt ', strong('Java skin (.png)'), ' eine Kopie mit 64×64 herunter, bei der jeder 2×2-Block zu einem Pixel wird; dein HD-Skin bleibt, wie er ist. Du nutzt eine HD-Skin-Mod? Dann wähle stattdessen ', strong('128×128 für Mods'), '.'],
         ]),
         callout(
           'warn',
@@ -884,7 +884,7 @@ const makeASkin: GuideText = {
       a: [
         p(
           'Ja, für die Bedrock Edition. Stell im Skin Maker vor dem Start ',
-          strong('Size'),
+          strong('Größe'),
           ' auf ',
           strong('HD 128×128'),
           ' oder stell einen vorhandenen Skin auf ',
@@ -1371,7 +1371,7 @@ const SKIN_PACK_STEPS: Child[] = [
   ['Öffne den ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), ' und starte einen Skin: eine leere oder farbcodierte Vorlage, ein PNG, das du schon hast, den Skin eines Java-Spielers per Benutzername oder einen der Standard-Skins. Wähle breite (4 Pixel) oder schmale (3 Pixel) Arme.'],
   'Bemale ihn auf der 64×64-Vorlage oder direkt auf dem 3D-Modell. Jeder Skin wird als eigenes Projekt auf deinem Gerät gespeichert, und sein Name ist der Name, den Spieler im Spiel sehen.',
   'Erstelle die anderen Skins für das Paket auf dieselbe Weise.',
-  ['Öffne einen davon, wähle ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', gib dem Paket einen Namen, hake die anderen Skins an und drücke ', strong('Download pack'), '.'],
+  ['Öffne einen davon, wähle ', strong('Export'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen, hake die anderen Skins an und drücke ', strong('Paket herunterladen'), '.'],
   ['Öffne das ', code('.mcpack'), ' unter Windows, Android, auf dem iPhone oder iPad. Minecraft importiert es.'],
   ['Geh in Minecraft zu ', uiPath('Ankleidezimmer', 'Klassische Skins'), ', such dein Paket, wähle einen Skin und tippe auf ', strong('Anlegen'), '.'],
 ];
@@ -1396,7 +1396,7 @@ const bedrockSkinPack: GuideText = {
     title: 'Die Kurzfassung',
     items: [
       ['Male jeden Skin im ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), ' oder lade ihn hoch, mit breiten oder schmalen Armen.'],
-      ['Wähle ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
+      ['Wähle ', strong('Export'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
       ['Öffne das ', code('.mcpack'), ' und leg einen Skin unter ', uiPath('Ankleidezimmer', 'Klassische Skins'), ' an.'],
     ],
   },
