@@ -87,3 +87,51 @@ export const PVP_EXAMPLE_FILES: PvpExample[] = [
     },
   },
 ];
+
+/**
+ * The diamond sword's model file as "Smaller swords" (size Smaller) writes it for Java 1.8.9: the game's
+ * file with the "firstperson" slot shrunk and moved down; third person stays as the game has it.
+ */
+export const PVP_SWORD_189 = `{
+  "parent": "builtin/generated",
+  "textures": {
+    "layer0": "items/diamond_sword"
+  },
+  "display": {
+    "thirdperson": {
+      "rotation": [0, 90, -35],
+      "translation": [0, 1.25, -3.5],
+      "scale": [0.85, 0.85, 0.85]
+    },
+    "firstperson": {
+      "rotation": [0, -135, 25],
+      "translation": [0, 2.6, 2],
+      "scale": [1.105, 1.105, 1.105]
+    }
+  }
+}
+`;
+
+/**
+ * The same for Java 1.9 and newer (here 26.3): the sword takes its hand poses from item/handheld, so
+ * the file gets both first-person slots, worked out from handheld's.
+ */
+export const PVP_SWORD_LATEST = `{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "minecraft:item/diamond_sword"
+  },
+  "display": {
+    "firstperson_righthand": {
+      "rotation": [0, -90, 25],
+      "translation": [1.13, 1.8, 1.13],
+      "scale": [0.442, 0.442, 0.442]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 90, -25],
+      "translation": [1.13, 1.8, 1.13],
+      "scale": [0.442, 0.442, 0.442]
+    }
+  }
+}
+`;

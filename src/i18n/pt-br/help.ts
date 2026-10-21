@@ -355,6 +355,17 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'pvp',
+      q: 'Posso fazer um pack de PvP ou de FPS?',
+      a: [
+        p(
+          'Sim. Ao criar um pack, escolha ', strong('Pack de PvP / FPS'), ': o editor liga o fogo baixo, o vidro e os painéis transparentes, sem borda de abóbora, uma mira menor, espadas menores e um escudo mais baixo, conforme a sua versão tiver. A aba ', strong('PvP'), ' tem um interruptor para cada coisa, com opções como a altura do fogo, cinco miras ou uma desenhada por você e o tamanho da espada, além de opções de FPS: texturas 8× e sem animações. Cada ajuste grava arquivos normais do pack para a sua versão (do Java 1.6.1 ao 26.3, com os nomes de arquivo do 1.8.9) e pode ser desligado ou desfeito. No Bedrock funcionam o vidro transparente, a abóbora, a mira e as texturas 8×; lá um pack não consegue mudar o fogo nem os itens na mão. Zoom, contador de FPS ou tirar a névoa precisam de mods. Passo a passo: ',
+          link('/guides/make-a-pvp-texture-pack', 'Como fazer um texture pack de PvP'),
+          '.',
+        ),
+      ],
+    },
+    {
       id: 'sounds',
       q: 'Posso mudar os sons do meu pack?',
       a: [

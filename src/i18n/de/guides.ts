@@ -9,6 +9,7 @@ import { SHOTS } from './shots';
 import { UI_DE } from './ui';
 import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from '../../tools/guides/skin-pack-files';
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
+import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -129,6 +130,7 @@ const makeATexturePack: GuideText = {
           link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'),
           '.',
         ),
+        p('Ein Pack für PvP oder mehr FPS? Wähle beim Erstellen ', strong('PvP-/FPS-Pack'), ', dann schaltet der Editor niedriges Feuer, klares Glas, ein saubereres Fadenkreuz und kleinere Schwerter für dich ein. ', link('/guides/make-a-pvp-texture-pack', 'PvP-Texture-Pack erstellen'), '.'),
         ul([
           'Fang mit Blöcken an, die du ständig siehst: Gras, Erde, Stein, Stämme und Bretter.',
           'Gras, Laub, Ranken und Wasser sind in Grau gespeichert und werden vom Spiel je nach Biom eingefärbt. Halte sie hellgrau.',
@@ -1854,6 +1856,267 @@ const make3dItems: GuideText = {
   ctaLabel: 'Texture Pack Maker öffnen',
 };
 
+// ---------------------------------------------------------------- PvP pack
+
+const PVP_STEPS: Child[] = [
+  ['Öffne den ', link('/textures', 'Texture Pack Maker'), ', gib deinem Pack einen Namen und wähle ', strong('PvP-/FPS-Pack'), '. Schalte ', strong('Auch ein FPS-Pack'), ' ein, wenn du 8×-Texturen und keine Animationen willst.'],
+  ['Wähle Java oder Bedrock und die Version, die du spielst, zum Beispiel Java 1.8.9 für 1.8-PvP-Server, und drücke ', strong('PvP-Pack erstellen'), '.'],
+  ['Der Editor lädt die Texturen dieser Version und schaltet die PvP-Vorlage ein: niedriges Feuer, klares Glas, kein Kürbis-Rand, ein saubereres Fadenkreuz, kleinere Schwerter und einen tieferen Schild, soweit es sie in der Version gibt.'],
+  ['Ändere im Tab ', strong('PvP'), ', was du willst: die Feuerhöhe, die Form des Fadenkreuzes, die Schwertgröße, die Höhe des Schilds. Jede Änderung lässt sich über ihre Meldung rückgängig machen.'],
+  'Optional: Male alles andere, etwa klarere Wollfarben oder eine kürzere Schwerttextur.',
+  ['Drücke ', strong('Exportieren'), ', leg das Pack in Minecraft und wähle es über deinen anderen Packs aus.'],
+];
+
+const pvpLabel = (l: string) => l;
+
+const pvpPack: GuideText = {
+  image: SHOTS.pvpTweaks,
+  intro: [
+    p(
+      'Ein PvP-Texture-Pack ändert, was dir im Kampf im Weg ist: das Feuer, das den halben Bildschirm verdeckt, wenn du brennst, Glas, durch das du nicht siehst, die dunkle Kürbis-Sicht, ein großes Fadenkreuz und ein Schwert, das den Spieler verdeckt, den du triffst. FPS-Packs gehen weiter und machen Texturen kleiner und unbewegt, damit schwächere Computer mitkommen. Das alles sind normale Dateien eines Ressourcenpakets, ganz ohne Mods. Der ',
+      link('/textures', 'Texture Pack Maker'),
+      ' erstellt sie im Browser mit je einem Schalter, für Java 1.8.9 (die Version, auf der viele PvP-Server aufbauen) bis ',
+      LATEST,
+      ' und zum Teil für Bedrock.',
+    ),
+  ],
+  quick: {
+    title: 'Die Kurzfassung',
+    items: [
+      ['Wähle im Texture Pack Maker ', strong('PvP-/FPS-Pack'), ' und deine Minecraft-Version, dann ', strong('PvP-Pack erstellen'), '.'],
+      ['Wähle im Tab ', strong('PvP'), ' Feuerhöhe, Fadenkreuz, Schwertgröße und die FPS-Optionen, die du willst.'],
+      ['Exportiere das Pack und wähle es in Minecraft über deinen anderen Packs aus.'],
+    ],
+  },
+  howto: { name: 'PvP-Texture-Pack mit dem Texture Pack Maker erstellen', steps: PVP_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Was ein PvP-Pack ändert',
+      body: [
+        p('Die meisten PvP- und FPS-Packs, vom Bedwars-Pack bis zum „FPS-Boost“-Pack, bestehen aus denselben wenigen Änderungen. Jede davon ist ein Schalter im Tab „PvP“ des Editors:'),
+        table(
+          ['Änderung', 'Was sie macht', 'Java', 'Bedrock'],
+          [
+            ['Niedriges Feuer', 'Die Flammen auf dem Bildschirm sitzen tiefer, wenn du brennst.', 'Jede Version', 'Nein'],
+            ['Klares Glas', 'Glas, gefärbtes Glas und Scheiben sind innen durchsichtig und behalten ihren Rand.', 'Jede Version', 'Ja'],
+            ['Kein Kürbis-Rand', 'Ein geschnitzter Kürbis auf dem Kopf verdunkelt den Bildschirm nicht mehr.', 'Jede Version', 'Ja'],
+            ['Eigenes Fadenkreuz', 'Ein kleineres Fadenkreuz: Punkt, kleines Kreuz, Kreuz mit Lücke, Kreis oder X-Form, oder ein selbst gezeichnetes.', 'Jede Version', 'Ja'],
+            ['Kleinere Schwerter', 'Schwerter oder alle Waffen wirken in der Ego-Ansicht kleiner und tiefer.', 'Ab 1.8', 'Nein'],
+            ['Tieferer Schild', 'Der Schild sitzt in der Ego-Ansicht tiefer, auch beim Blocken.', 'Ab 1.9', 'Nein'],
+            ['8×-Texturen', 'Blöcke (und Items) mit 8 × 8 Pixeln.', 'Jede Version', 'Ja'],
+            ['Keine Animationen', 'Wasser, Lava, Feuer und Portale stehen still.', 'Jede Version', 'Nein'],
+          ],
+        ),
+        p('Jeder Schalter schreibt normale Pack-Dateien, du kannst also weiter darauf malen. Schaltest du einen aus, kommen die Dateien zurück, die er geändert hat, außer denen, die du seitdem bemalt oder bearbeitet hast. Die Tabelle am Ende nennt die genauen Dateien für jede Version.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Ein PvP-Pack Schritt für Schritt',
+      body: [steps(PVP_STEPS), figure(SHOTS.pvpStart), figure(SHOTS.pvpTweaks)],
+    },
+    {
+      id: 'fire',
+      title: 'Niedriges Feuer',
+      body: [
+        p(
+          'Java zeichnet das Feuer auf dem Bildschirm mit einer einzigen Textur: ',
+          code('textures/block/fire_1.png'),
+          ' (vor 1.13 ',
+          code('textures/blocks/fire_layer_1.png'),
+          '). Sie ist ein animierter Streifen mit 32 Bildern, und „Niedriges Feuer“ schiebt die Flammen in jedem Bild um 5, 8 oder 11 von 16 Pixeln nach unten (',
+          strong('Niedrig'),
+          ', ',
+          strong('Niedriger'),
+          ', ',
+          strong('Am niedrigsten'),
+          '), damit der obere Teil des Bildschirms frei bleibt. Die Animation läuft weiter.',
+        ),
+        p(
+          'Feuerblöcke nutzen dieselbe Textur, ein einfaches Low-Fire-Pack lässt also auch Feuer in der Welt abgeschnitten aussehen. Mit ',
+          strong('Feuerblöcke so lassen, wie sie sind'),
+          ' (Java ab 1.8) bekommt das Pack eine Kopie der ursprünglichen Textur, ',
+          code('fire_1_world.png'),
+          ', und die Modelle der Feuerblöcke zeigen darauf. Brennende Spieler und Mobs zeigen weiter die tieferen Flammen.',
+        ),
+      ],
+    },
+    {
+      id: 'glass',
+      title: 'Klares Glas und kein Kürbis-Rand',
+      body: [
+        p(
+          '„Klares Glas“ behält den äußeren Pixelring, einen Pixel bei 16× und zwei bei 32×, und macht alles darin durchsichtig. Das gilt für ',
+          code('glass.png'),
+          ' und die 16 Texturen für gefärbtes Glas (',
+          code('red_stained_glass.png'),
+          ' usw.; vor 1.13 ',
+          code('glass_red.png'),
+          ', mit ',
+          code('glass_silver.png'),
+          ' für Hellgrau). Glasscheiben nutzen dieselben Texturen und werden ebenfalls klar. Wähle ',
+          strong('Leicht getönt'),
+          ', damit gefärbtes Glas eine schwache Farbe behält und Teams sich weiter unterscheiden lassen.',
+        ),
+        p('„Kein Kürbis-Rand“ ersetzt ', code('textures/misc/pumpkinblur.png'), ', das Bild, das das Spiel über deine Sicht legt, solange du einen geschnitzten Kürbis trägst, durch ein völlig durchsichtiges in derselben Größe. In Bedrock heißt die Datei ebenfalls ', code('textures/misc/pumpkinblur.png'), '.'),
+      ],
+    },
+    {
+      id: 'crosshair',
+      title: 'Eigenes Fadenkreuz',
+      body: [
+        p('Wo das Fadenkreuz liegt, hängt von der Version ab:'),
+        ul([
+          [strong('Java 1.20.1 und älter sowie Bedrock: '), 'das 16 × 16 große Feld oben links in ', code('textures/gui/icons.png'), ', einem Bogen, auf dem auch Herzen, Hunger und Rüstung liegen. Nur dieses Feld ändert sich.'],
+          [strong('Java 1.20.2 und neuer: '), 'eine eigene Datei mit 15 × 15 Pixeln, ', code('textures/gui/sprites/hud/crosshair.png'), '.'],
+        ]),
+        p(
+          'Wähle eine von fünf Formen, die für den Editor gezeichnet sind, oder drücke ',
+          strong('Selbst zeichnen'),
+          ': Der Editor öffnet die Textur des Fadenkreuzes und wählt auf einem Bogen gleich das richtige Feld aus. Java zeichnet das Fadenkreuz invertiert über den Hintergrund, male es also weiß oder grau; andere Farben kommen verändert heraus. Das Spiel setzt den mittleren Pixel (7, 7) in die Bildschirmmitte.',
+        ),
+        figure(SHOTS.pvpCrosshair),
+      ],
+    },
+    {
+      id: 'swords',
+      title: 'Kleinere Schwerter und ein tieferer Schild',
+      body: [
+        p(
+          'Wie ein Item in deiner Hand sitzt, steht im Teil ',
+          code('display'),
+          ' seiner Modelldatei: eine Drehung, eine Position und eine Größe für jeden Ort, an dem es gezeigt wird. „Kleinere Schwerter“ ändert nur die Ego-Ansicht, auf 80, 65 oder 50 % der Größe und etwas tiefer, damit der Griff nah an der Hand bleibt. Andere Spieler, die Third-Person-Ansicht und das Inventar zeigen weiter das normale Schwert. ',
+          strong('Alle Waffen'),
+          ' macht dasselbe für Äxte, den Streitkolben und Speere, soweit es sie in deiner Version gibt.',
+        ),
+        p('Java 1.8 hat einen Eintrag, ', code('firstperson'), ', in der eigenen Datei jedes Schwerts. So sieht das Diamantschwert mit ', strong('Kleiner'), ' aus:'),
+        pre(PVP_SWORD_189.trimEnd()),
+        p(
+          'Ab 1.9 gibt es zwei Einträge, ',
+          code('firstperson_righthand'),
+          ' und ',
+          code('firstperson_lefthand'),
+          ', und Schwerter übernehmen sie von ',
+          code('item/handheld'),
+          '. Die Datei behält ihr Eltern-Modell, das Schwert bleibt also ein flaches Item, und bekommt beide Einträge:',
+        ),
+        pre(PVP_SWORD_LATEST.trimEnd()),
+        p(
+          '„Tieferer Schild“ setzt den Schild in ',
+          code('models/item/shield.json'),
+          ' und ',
+          code('shield_blocking.json'),
+          ' um 3 oder 6 Pixel tiefer (Java ab 1.9; auch ab 1.21.4 liest das Spiel die Haltung des Schilds aus diesen Dateien). Hast du im ',
+          link('/guides/make-3d-items-texture-pack', 'Modell-Editor'),
+          ' ein eigenes Schwert- oder Schildmodell gebaut, ändern sich nur seine Einträge für die Ego-Ansicht, und deine Form bleibt.',
+        ),
+      ],
+    },
+    {
+      id: 'fps',
+      title: 'FPS-Boost: 8×-Texturen und keine Animationen',
+      body: [
+        p(
+          strong('8×-Texturen'),
+          ' verkleinert Blocktexturen und auf Wunsch Items beim Exportieren auf 8 × 8 Pixel. Blätter, Glas und Pflanzen behalten harte Kanten. ',
+          strong('Keine Animationen'),
+          ' behält nur das erste Bild animierter Texturen und streicht die Animation aus der ',
+          code('.mcmeta'),
+          '-Datei, sodass das Spiel sie nicht mehr in jedem Tick aktualisiert (Java; Kompass und Uhr funktionieren weiter). Beides sind Effektebenen, die auch im Tab „Effekte“ stehen; deine eigenen Texturen bleiben unverändert.',
+        ),
+        callout(
+          'info',
+          'Wie viel schneller?',
+          'Kleinere, unbewegte Texturen brauchen weniger Grafikspeicher und weniger Arbeit pro Bild. Das hilft am meisten auf älteren Computern und mit integrierter Grafik. Die größten FPS-Gewinne bringen die Sichtweite, Partikel und Mods wie Sodium oder OptiFine, und die kann ein Texture Pack nicht ändern.',
+        ),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Welche Dateien ins Pack kommen',
+      body: [
+        table(
+          ['', ...PVP_EXAMPLE_FILES.map((e) => pvpLabel(e.label))],
+          [
+            ['Niedriges Feuer', ...PVP_EXAMPLE_FILES.map((e) => (e.files.lowFire ? code(e.files.lowFire) : '—'))],
+            ['Klares Glas', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.glass))],
+            ['Kein Kürbis-Rand', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.pumpkin))],
+            ['Fadenkreuz', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.crosshair))],
+            ['Kleinere Schwerter', ...PVP_EXAMPLE_FILES.map((e) => (e.files.sword ? code(e.files.sword) : '—'))],
+            ['Tieferer Schild', ...PVP_EXAMPLE_FILES.map((e) => (e.files.shield ? code(e.files.shield) : '—'))],
+          ],
+        ),
+        p('Das Glas steht für jede Glastextur daneben, das Schwert für jedes Schwert. Der Editor findet die Pfade für die Version deines Packs selbst.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Klares Glas, kein Kürbis-Rand, das Fadenkreuz und 8×-Texturen funktionieren in einem Bedrock-Pack. Die anderen sind dort ausgeschaltet, mit dem Grund:'),
+        ul([
+          [strong('Niedriges Feuer: '), 'Bedrock zeichnet das Feuer auf dem Bildschirm auf eigene Weise, die ein Texture Pack nicht zuverlässig tiefer setzen kann.'],
+          [strong('Schwerter und Schild: '), 'Bedrock legt die Haltung von Items in Attachable-Dateien fest, wie Add-ons, und die erstellt der Editor nicht.'],
+          [strong('Keine Animationen: '), 'Bedrock spielt animierte Texturen nach einer Bildliste in ', code('flipbook_textures.json'), ' ab, die ein Pack nicht entfernen kann.'],
+        ]),
+        figure(SHOTS.pvpBedrock),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Installieren und testen',
+      body: [
+        steps([
+          ['Drücke ', strong('Exportieren'), ' und lade die ', code('.zip'), ' (Java) oder das ', code('.mcpack'), ' (Bedrock) herunter.'],
+          ['Java: Öffne ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), ', leg die Zip hinein und schiebe das Pack in ', strong('Ausgewählt'), ' ganz nach oben. Bedrock: Öffne das .mcpack und aktiviere das Pack unter ', uiPath('Einstellungen', 'Globale Ressourcen'), '.'],
+          'Zünde dich an, schau durch Glas, setz einen Kürbis auf und halte Schwert und Schild, um jede Änderung zu prüfen.',
+        ]),
+        p(
+          'Nicht wie erwartet? Ein anderes Pack darüber ersetzt vielleicht dieselben Dateien. Mehr Hilfe: ',
+          link('/guides/install-resource-packs', 'Ressourcenpakete installieren'),
+          ' und ',
+          link('/guides/texture-pack-not-working', 'Texture Pack funktioniert nicht'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'allowed',
+      q: 'Sind PvP-Texture-Packs auf Servern erlaubt?',
+      a: [p('Ein Texture Pack ändert nur, wie das Spiel aussieht, und die Änderungen hier (tieferes Feuer, klares Glas, ein kleineres Schwert) erlauben die meisten Server. Packs, die zeigen, was du sonst nicht sehen könntest, etwa Erze durch Stein, sind meist verboten. Jeder Server hat eigene Regeln, also lies sie nach.')],
+    },
+    {
+      id: 'fps',
+      q: 'Bringt ein FPS-Pack wirklich mehr FPS?',
+      a: [p('Etwas, vor allem auf schwächeren Computern: 8×-Texturen brauchen weniger Grafikspeicher, und unbewegte Texturen sparen in jedem Tick Arbeit. Auf einem schnellen PC ist der Unterschied klein. Sichtweite, Partikel und Mods wie Sodium oder OptiFine machen viel mehr aus.')],
+    },
+    {
+      id: 'version',
+      q: 'Für welche Version sollte ich mein PvP-Pack erstellen?',
+      a: [p('Für die Version, die du spielst. Viele PvP-Server laufen auf 1.8.9, und ein 1.8.9-Pack hat andere Dateinamen als ein neues. Um ein Pack in mehreren Versionen zu nutzen, stell im Tab ', strong('Pack'), ' einen Bereich ein: Das Spiel zeigt es dann als kompatibel an, aber Dateien wirken nur dort, wo die Namen passen.')],
+    },
+    {
+      id: 'short',
+      q: 'Kann ich statt eines kleinen ein kurzes Schwert machen?',
+      a: [p('Ja: Male eine kürzere Klinge auf die Textur des Schwerts, wie es viele 1.8.9-Packs tun. Das ändert das Schwert überall, auch im Inventar und in den Händen anderer Spieler. „Kleinere Schwerter“ ändert nur, wie groß es in deiner eigenen Hand wirkt. Du kannst beides machen.')],
+    },
+    {
+      id: 'crosshair',
+      q: 'Warum hat mein farbiges Fadenkreuz die falsche Farbe?',
+      a: [p('Java zeichnet das Fadenkreuz invertiert über den Hintergrund: Ein weißes Fadenkreuz wirkt vor hellem Himmel dunkel und vor dunklem Boden hell. Farben mischen sich genauso mit dem Hintergrund. Nimm Weiß oder Grau.')],
+    },
+    {
+      id: 'mods',
+      q: 'Kann ein Texture Pack Zoom, eine FPS-Anzeige oder „kein Nebel“ hinzufügen?',
+      a: [p('Nein. Zoom, FPS- und Tastenanzeigen, Dauersprinten, kein Nebel und Bewegungsunschärfe brauchen eine Mod (OptiFine, Sodium und andere), einen PvP-Client oder die Einstellungen des Spiels. Ein Pack ändert nur Texturen, Modelle, Sounds und ähnliche Dateien.')],
+    },
+  ],
+  ctaLabel: 'PvP-Pack erstellen',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -1867,4 +2130,5 @@ export const GUIDES: Record<string, GuideText> = {
   'merge-texture-packs': mergePacks,
   'make-a-bedrock-skin-pack': bedrockSkinPack,
   'make-3d-items-texture-pack': make3dItems,
+  'make-a-pvp-texture-pack': pvpPack,
 };

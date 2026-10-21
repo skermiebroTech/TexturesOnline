@@ -39,7 +39,7 @@ import {
   withCrosshair,
   CROSSHAIRS,
 } from '../../src/tools/textures/pvp/tweaks';
-import { PVP_EXAMPLE_FILES } from '../../src/tools/guides/pvp-files';
+import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../src/tools/guides/pvp-files';
 import { fakeAssets, javaSpec, unzipBlob, json, text } from '../tools/texlogic/fixtures';
 
 const J = 'assets/minecraft/textures/';
@@ -495,6 +495,18 @@ test('Bedrock: clear glass, no pumpkin blur, the crosshair in icons.png and 8× 
   assert.equal(icons.data[3], 0);
   assert.equal(icons.data[(7 * 256 + 7) * 4 + 3], 255);
   await assert.rejects(pvp.set('swords', true), /isn't available/);
+});
+
+test('the guide’s sword files are what the tweak writes', async () => {
+  const latest = new TexStore(newTextureProject({ name: 'PvP', edition: 'java', version: '26.3' }), syntheticJava());
+  await createPvpEngine(latest).set('swords', true);
+  assert.equal(await latest.project.extraFiles['assets/minecraft/models/item/diamond_sword.json'].text(), PVP_SWORD_LATEST);
+  // 1.8.9: the sword's own file has its hand poses
+  const old = PVP_SWORD_189.replace('"translation": [0, 2.6, 2]', '"translation": [0, 4, 2]').replace(/1\.105/g, '1.7');
+  const assets189 = fakeAssets('java', '1.8.9', { 'assets/minecraft/models/item/diamond_sword.json': old, [`${J}items/diamond_sword.png`]: createImageData(16, 16) });
+  const s189 = new TexStore(newTextureProject({ name: 'PvP', edition: 'java', version: '1.8.9' }), assets189);
+  await createPvpEngine(s189).set('swords', true);
+  assert.equal(await s189.project.extraFiles['assets/minecraft/models/item/diamond_sword.json'].text(), PVP_SWORD_189);
 });
 
 test('undoing an older change leaves later changes to other tweaks alone', async () => {

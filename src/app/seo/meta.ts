@@ -194,6 +194,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-green',
   }),
   guide({
+    slug: 'make-a-pvp-texture-pack',
+    blurb: 'Low fire, clear glass, smaller swords, a crosshair and FPS textures.',
+    title: 'How to Make a PvP Texture Pack (Java & Bedrock)',
+    h1: 'How to make a PvP texture pack for Minecraft',
+    description:
+      'Make a Minecraft PvP texture pack for free: low fire, clear glass, smaller swords, a custom crosshair and 8× FPS textures, with files for 1.8.9 to 26.3.',
+    label: 'Make a PvP pack',
+    icon: 'sword',
+    accent: 'accent-green',
+  }),
+  guide({
     slug: 'install-resource-packs',
     blurb: 'Java resource packs, Bedrock .mcpack files and shader packs, plus fixes.',
     title: 'How to Install a Minecraft Texture Pack (Java & Bedrock)',

@@ -9,6 +9,7 @@ import { SHOTS } from './shots';
 import { UI_ES } from './ui';
 import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from '../../tools/guides/skin-pack-files';
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
+import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -130,6 +131,7 @@ const makeATexturePack: GuideText = {
           link('/guides/make-3d-items-texture-pack', 'Cómo hacer ítems 3D'),
           '.',
         ),
+        p('¿Un pack para PvP o para más FPS? Elige ', strong('Pack PvP / FPS'), ' al crearlo y el editor activa por ti el fuego bajo, el cristal transparente, una mira más limpia y espadas más pequeñas. ', link('/guides/make-a-pvp-texture-pack', 'Cómo hacer un texture pack PvP'), '.'),
         ul([
           'Empieza por los bloques que ves todo el rato: hierba, tierra, piedra, troncos y tablones.',
           'La hierba, las hojas, las enredaderas y el agua se guardan en gris y el juego los colorea según el bioma. Mantenlos en gris claro.',
@@ -1855,6 +1857,267 @@ const make3dItems: GuideText = {
   ctaLabel: 'Abrir Texture Pack Maker',
 };
 
+// ---------------------------------------------------------------- PvP pack
+
+const PVP_STEPS: Child[] = [
+  ['Abre el ', link('/textures', 'Texture Pack Maker'), ', ponle nombre a tu pack y elige ', strong('Pack PvP / FPS'), '. Activa ', strong('También un pack de FPS'), ' si quieres texturas 8× y sin animaciones.'],
+  ['Elige Java o Bedrock y la versión a la que juegas, por ejemplo Java 1.8.9 para servidores PvP de 1.8, y pulsa ', strong('Crear pack PvP'), '.'],
+  ['El editor carga las texturas de esa versión y activa el preset PvP: fuego bajo, cristal transparente, sin borde de calabaza, una mira más limpia, espadas más pequeñas y un escudo más bajo, si la versión los tiene.'],
+  ['En la pestaña ', strong('PvP'), ', cambia lo que quieras: la altura del fuego, el diseño de la mira, el tamaño de la espada, la altura del escudo. Cada cambio se puede deshacer desde su mensaje.'],
+  'Opcional: pinta cualquier otra cosa, como colores de lana más claros o una espada más corta.',
+  ['Pulsa ', strong('Exportar'), ', pon el pack en Minecraft y selecciónalo por encima de tus otros packs.'],
+];
+
+const pvpLabel = (l: string) => l;
+
+const pvpPack: GuideText = {
+  image: SHOTS.pvpTweaks,
+  intro: [
+    p(
+      'Un texture pack PvP cambia lo que te estorba en una pelea: el fuego que tapa media pantalla cuando ardes, el cristal a través del que no ves, la vista oscura de la calabaza, una mira grande y una espada que tapa al jugador al que golpeas. Los packs de FPS van más allá y hacen las texturas más pequeñas y quietas para que los ordenadores menos potentes aguanten. Todo son archivos normales de un paquete de recursos, sin mods. El ',
+      link('/textures', 'Texture Pack Maker'),
+      ' los crea en tu navegador con un interruptor para cada cosa, para Java 1.8.9 (la versión en la que se basan muchos servidores PvP) hasta ',
+      LATEST,
+      ', y en parte para Bedrock.',
+    ),
+  ],
+  quick: {
+    title: 'En resumen',
+    items: [
+      ['En el Texture Pack Maker, elige ', strong('Pack PvP / FPS'), ' y la versión de Minecraft a la que juegas, y luego ', strong('Crear pack PvP'), '.'],
+      ['En la pestaña ', strong('PvP'), ', elige la altura del fuego, la mira, el tamaño de la espada y las opciones de FPS que quieras.'],
+      ['Exporta el pack y selecciónalo en Minecraft por encima de tus otros packs.'],
+    ],
+  },
+  howto: { name: 'Cómo hacer un texture pack PvP con Texture Pack Maker', steps: PVP_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Qué cambia un pack PvP',
+      body: [
+        p('La mayoría de los packs PvP y de FPS, de los packs de Bedwars a los de “FPS boost”, mezclan los mismos pocos cambios. Cada uno es un interruptor en la pestaña PvP del editor:'),
+        table(
+          ['Cambio', 'Qué hace', 'Java', 'Bedrock'],
+          [
+            ['Fuego bajo', 'Las llamas de tu pantalla quedan más abajo cuando ardes.', 'Todas las versiones', 'No'],
+            ['Cristal transparente', 'El cristal, el cristal tintado y los paneles se ven a través por dentro y mantienen el borde.', 'Todas las versiones', 'Sí'],
+            ['Sin borde de calabaza', 'Llevar una calabaza tallada ya no oscurece la pantalla.', 'Todas las versiones', 'Sí'],
+            ['Mira personalizada', 'Una mira más pequeña: un punto, una cruz pequeña, una cruz con hueco, un círculo o un aspa, o una dibujada por ti.', 'Todas las versiones', 'Sí'],
+            ['Espadas más pequeñas', 'Las espadas, o todas las armas, se ven más pequeñas y bajas en primera persona.', '1.8 o posterior', 'No'],
+            ['Escudo más bajo', 'El escudo queda más abajo en primera persona, también al bloquear.', '1.9 o posterior', 'No'],
+            ['Texturas 8×', 'Bloques (y objetos) a 8 × 8 píxeles.', 'Todas las versiones', 'Sí'],
+            ['Sin animaciones', 'El agua, la lava, el fuego y los portales se quedan quietos.', 'Todas las versiones', 'No'],
+          ],
+        ),
+        p('Cada interruptor escribe archivos normales del pack, así que puedes seguir pintando encima. Al desactivar uno vuelven los archivos que cambió, salvo los que hayas pintado o editado después. La tabla del final da los archivos exactos de cada versión.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Un pack PvP paso a paso',
+      body: [steps(PVP_STEPS), figure(SHOTS.pvpStart), figure(SHOTS.pvpTweaks)],
+    },
+    {
+      id: 'fire',
+      title: 'Fuego bajo',
+      body: [
+        p(
+          'Java dibuja el fuego de la pantalla con una sola textura: ',
+          code('textures/block/fire_1.png'),
+          ' (',
+          code('textures/blocks/fire_layer_1.png'),
+          ' antes de 1.13). Es una tira animada de 32 fotogramas, y el fuego bajo mueve las llamas de cada fotograma 5, 8 u 11 píxeles de 16 hacia abajo (',
+          strong('Bajo'),
+          ', ',
+          strong('Más bajo'),
+          ', ',
+          strong('Mínimo'),
+          '), para que la parte de arriba de la pantalla quede libre. La animación sigue.',
+        ),
+        p(
+          'Los bloques de fuego usan la misma textura, así que un pack de fuego bajo sencillo también deja cortado el fuego del mundo. Con ',
+          strong('Dejar los bloques de fuego como están'),
+          ' (Java 1.8 o posterior), el pack recibe una copia de la textura original, ',
+          code('fire_1_world.png'),
+          ', y los modelos de los bloques de fuego pasan a usarla. Los jugadores y mobs que arden siguen mostrando las llamas bajas.',
+        ),
+      ],
+    },
+    {
+      id: 'glass',
+      title: 'Cristal transparente y sin borde de calabaza',
+      body: [
+        p(
+          'El cristal transparente mantiene el anillo exterior de píxeles, uno a 16× y dos a 32×, y deja transparente todo lo de dentro. Eso afecta a ',
+          code('glass.png'),
+          ' y a las 16 texturas de cristal tintado (',
+          code('red_stained_glass.png'),
+          ', etc.; antes de 1.13 ',
+          code('glass_red.png'),
+          ', con ',
+          code('glass_silver.png'),
+          ' para el gris claro). Los paneles de cristal usan las mismas texturas, así que también quedan transparentes. Elige ',
+          strong('Tinte suave'),
+          ' para que el cristal tintado conserve un color tenue y los equipos se sigan distinguiendo.',
+        ),
+        p('Sin borde de calabaza cambia ', code('textures/misc/pumpkinblur.png'), ', la imagen que el juego pone sobre tu vista mientras llevas una calabaza tallada, por una totalmente transparente del mismo tamaño. En Bedrock el archivo es también ', code('textures/misc/pumpkinblur.png'), '.'),
+      ],
+    },
+    {
+      id: 'crosshair',
+      title: 'Mira personalizada',
+      body: [
+        p('Dónde está la mira depende de la versión:'),
+        ul([
+          [strong('Java 1.20.1 y anteriores, y Bedrock: '), 'el cuadrado de 16 × 16 de arriba a la izquierda de ', code('textures/gui/icons.png'), ', una hoja que también tiene los corazones, el hambre y la armadura. Solo cambia ese cuadrado.'],
+          [strong('Java 1.20.2 y posteriores: '), 'su propio archivo de 15 × 15, ', code('textures/gui/sprites/hud/crosshair.png'), '.'],
+        ]),
+        p(
+          'Elige uno de los cinco diseños, dibujados para el editor, o pulsa ',
+          strong('Dibujar la tuya'),
+          ': el editor abre la textura de la mira y, si es una hoja, te selecciona el cuadrado de la mira. Java dibuja la mira invertida sobre lo que hay detrás, así que píntala en blanco o gris; los demás colores salen cambiados. El juego centra el píxel del medio, (7, 7).',
+        ),
+        figure(SHOTS.pvpCrosshair),
+      ],
+    },
+    {
+      id: 'swords',
+      title: 'Espadas más pequeñas y un escudo más bajo',
+      body: [
+        p(
+          'Cómo se ve un objeto en tu mano lo decide la parte ',
+          code('display'),
+          ' de su archivo de modelo: una rotación, una posición y un tamaño para cada lugar donde se muestra. Las espadas más pequeñas solo cambian la primera persona, al 80, 65 o 50 % del tamaño y un poco más abajo, para que la empuñadura siga cerca de la mano. Los demás jugadores, la tercera persona y el inventario siguen mostrando la espada normal. ',
+          strong('Todas las armas'),
+          ' hace lo mismo con las hachas, la maza y las lanzas, si tu versión las tiene.',
+        ),
+        p('Java 1.8 tiene una sola entrada, ', code('firstperson'), ', en el archivo de cada espada. Así queda la espada de diamante con ', strong('Más pequeño'), ':'),
+        pre(PVP_SWORD_189.trimEnd()),
+        p(
+          'Desde 1.9 hay dos entradas, ',
+          code('firstperson_righthand'),
+          ' y ',
+          code('firstperson_lefthand'),
+          ', y las espadas las toman de ',
+          code('item/handheld'),
+          '. El archivo mantiene su modelo padre, así que la espada sigue siendo un objeto plano, y recibe las dos entradas:',
+        ),
+        pre(PVP_SWORD_LATEST.trimEnd()),
+        p(
+          'El escudo más bajo baja el escudo 3 o 6 píxeles en ',
+          code('models/item/shield.json'),
+          ' y ',
+          code('shield_blocking.json'),
+          ' (Java 1.9 o posterior; desde 1.21.4 el juego sigue leyendo de estos archivos cómo se sostiene el escudo). Si hiciste tu propio modelo de espada o escudo en el ',
+          link('/guides/make-3d-items-texture-pack', 'editor de modelos'),
+          ', solo cambian sus entradas de primera persona y tu forma se mantiene.',
+        ),
+      ],
+    },
+    {
+      id: 'fps',
+      title: 'Más FPS: texturas 8× y sin animaciones',
+      body: [
+        p(
+          strong('Texturas 8×'),
+          ' reduce las texturas de bloques, y si quieres las de objetos, a 8 × 8 píxeles al exportar. Las hojas, el cristal y las plantas mantienen los bordes nítidos. ',
+          strong('Sin animaciones'),
+          ' deja solo el primer fotograma de las texturas animadas y quita la animación del archivo ',
+          code('.mcmeta'),
+          ', así el juego deja de actualizarlas en cada tick (Java; las brújulas y los relojes siguen funcionando). Las dos son capas de efectos, que también aparecen en la pestaña Efectos, así que tus propias texturas no cambian.',
+        ),
+        callout(
+          'info',
+          '¿Cuánto más rápido?',
+          'Las texturas más pequeñas y quietas usan menos memoria de vídeo y menos trabajo por fotograma, lo que ayuda sobre todo en ordenadores antiguos y gráficos integrados. Las mayores mejoras de FPS vienen de la distancia de renderizado, las partículas y mods como Sodium u OptiFine, que un texture pack no puede cambiar.',
+        ),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Qué archivos van en el pack',
+      body: [
+        table(
+          ['', ...PVP_EXAMPLE_FILES.map((e) => pvpLabel(e.label))],
+          [
+            ['Fuego bajo', ...PVP_EXAMPLE_FILES.map((e) => (e.files.lowFire ? code(e.files.lowFire) : '—'))],
+            ['Cristal transparente', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.glass))],
+            ['Sin borde de calabaza', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.pumpkin))],
+            ['Mira', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.crosshair))],
+            ['Espadas más pequeñas', ...PVP_EXAMPLE_FILES.map((e) => (e.files.sword ? code(e.files.sword) : '—'))],
+            ['Escudo más bajo', ...PVP_EXAMPLE_FILES.map((e) => (e.files.shield ? code(e.files.shield) : '—'))],
+          ],
+        ),
+        p('El cristal representa a todas las texturas de cristal que hay a su lado, y la espada a todas las espadas. El editor calcula las rutas para la versión de tu pack, así que no tienes que hacerlo tú.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('El cristal transparente, sin borde de calabaza, la mira y las texturas 8× funcionan en un pack de Bedrock. Los demás aparecen desactivados allí, con el motivo:'),
+        ul([
+          [strong('Fuego bajo: '), 'Bedrock dibuja el fuego de tu pantalla a su manera, y un texture pack no puede bajarlo de forma fiable.'],
+          [strong('Espadas y escudo: '), 'Bedrock coloca los objetos en la mano con archivos attachable, como los add-ons, y el editor no los crea.'],
+          [strong('Sin animaciones: '), 'Bedrock anima las texturas con una lista de fotogramas en ', code('flipbook_textures.json'), ' que un pack no puede quitar.'],
+        ]),
+        figure(SHOTS.pvpBedrock),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Instalar y probar',
+      body: [
+        steps([
+          ['Pulsa ', strong('Exportar'), ' y descarga el ', code('.zip'), ' (Java) o el ', code('.mcpack'), ' (Bedrock).'],
+          ['Java: abre ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), ', suelta el zip dentro y mueve el pack arriba del todo en ', strong('Seleccionados'), '. Bedrock: abre el .mcpack y activa el pack en ', uiPath('Ajustes', 'Recursos globales'), '.'],
+          'Préndete fuego, mira a través del cristal, ponte una calabaza y sujeta una espada y un escudo para comprobar cada cambio.',
+        ]),
+        p(
+          '¿No sale lo que esperabas? Puede que otro pack por encima del tuyo cambie los mismos archivos. Más ayuda: ',
+          link('/guides/install-resource-packs', 'Cómo instalar paquetes de recursos'),
+          ' y ',
+          link('/guides/texture-pack-not-working', 'El texture pack no funciona'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'allowed',
+      q: '¿Se permiten los texture packs PvP en los servidores?',
+      a: [p('Un texture pack solo cambia cómo se ve el juego, y estos cambios (fuego más bajo, cristal transparente, una espada más pequeña) son de los que permiten la mayoría de los servidores. Los packs que muestran lo que no podrías ver, como menas a través de la piedra, suelen estar prohibidos. Cada servidor tiene sus reglas, así que revísalas.')],
+    },
+    {
+      id: 'fps',
+      q: '¿Un pack de FPS da de verdad más FPS?',
+      a: [p('Algo, sobre todo en ordenadores menos potentes: las texturas 8× usan menos memoria de vídeo y las texturas quietas ahorran trabajo en cada tick. En un PC rápido la diferencia es pequeña. La distancia de renderizado, las partículas y mods como Sodium u OptiFine importan mucho más.')],
+    },
+    {
+      id: 'version',
+      q: '¿Para qué versión hago mi pack PvP?',
+      a: [p('Para la versión a la que juegas. Muchos servidores PvP usan la 1.8.9, y un pack de 1.8.9 tiene otros nombres de archivo que uno moderno. Para usar un pack en varias versiones, elige un rango en la pestaña ', strong('Pack'), ': el juego lo muestra como compatible, pero los archivos solo funcionan donde coinciden los nombres.')],
+    },
+    {
+      id: 'short',
+      q: '¿Puedo hacer una espada corta en vez de pequeña?',
+      a: [p('Sí: pinta una hoja más corta en la textura de la espada, como hacen muchos packs de 1.8.9. Eso cambia la espada en todas partes, también en el inventario y en las manos de otros jugadores. Espadas más pequeñas solo cambia lo grande que se ve en tu propia mano. Puedes hacer las dos cosas.')],
+    },
+    {
+      id: 'crosshair',
+      q: '¿Por qué mi mira de color sale de otro color?',
+      a: [p('Java dibuja la mira invertida sobre lo que hay detrás: una mira blanca se ve oscura sobre un cielo claro y clara sobre suelo oscuro. Los colores se mezclan con el fondo de la misma forma. Usa blanco o gris.')],
+    },
+    {
+      id: 'mods',
+      q: '¿Puede un texture pack añadir zoom, un contador de FPS o quitar la niebla?',
+      a: [p('No. El zoom, los contadores de FPS y de teclas, correr siempre, quitar la niebla y el desenfoque de movimiento necesitan un mod (OptiFine, Sodium y otros), un cliente PvP o los ajustes del propio juego. Un pack solo cambia texturas, modelos, sonidos y archivos parecidos.')],
+    },
+  ],
+  ctaLabel: 'Hacer un pack PvP',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -1868,4 +2131,5 @@ export const GUIDES: Record<string, GuideText> = {
   'merge-texture-packs': mergePacks,
   'make-a-bedrock-skin-pack': bedrockSkinPack,
   'make-3d-items-texture-pack': make3dItems,
+  'make-a-pvp-texture-pack': pvpPack,
 };

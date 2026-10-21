@@ -157,5 +157,12 @@ export const META_JA: MetaTranslation = {
       label: '3Dアイテムを作る',
       blurb: '平らなアイテムを3Dモデルにし、ブロックの形を変える。ファイルの中身も解説。',
     },
+    'make-a-pvp-texture-pack': {
+      title: 'PvPテクスチャパックの作り方（Java版・統合版）',
+      h1: 'Minecraft PvPテクスチャパックの作り方',
+      description: 'MinecraftのPvPテクスチャパックを無料で作る方法。低い炎、透明なガラス、小さい剣、好きな照準、FPS向けの8×テクスチャ。1.8.9〜26.3のファイルに対応。',
+      label: 'PvPパックを作る',
+      blurb: '低い炎、透明なガラス、小さい剣、照準、FPS向けテクスチャ。',
+    },
   },
 };

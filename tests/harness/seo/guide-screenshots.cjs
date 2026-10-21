@@ -1,6 +1,6 @@
 // Renders the screenshots used by the SEO guide pages (public/screenshots/guides/*.jpg, 1280x800
-// viewport, dark theme; the model editor shots in the light theme) by driving the real app: texture
-// pack maker, model editor, skin editor and shader maker.
+// viewport, dark theme; the model editor and PvP shots in the light theme) by driving the real app: texture
+// pack maker, model editor, PvP tab, skin editor and shader maker.
 //
 // Game files are served offline from local fixtures through route interception:
 //   TO_FIXTURES  folder with client-26.3.jar, manifest.json and v263.json (required)
@@ -602,6 +602,128 @@ async function modelsFlow(browser, base, fx, jar) {
   await ctx.close();
 }
 
+// ------------------------------------------------------------------------------------- PvP packs
+const PVP_SHOTS = ['pvp-start', 'pvp-tweaks', 'pvp-crosshair', 'pvp-bedrock'];
+
+/** Java 1.8.9's version JSON and client jar from $TO_FIXTURES/research-cache, when there (else the network). */
+async function route189(context, fx) {
+  const vj = path.join(fx, 'research-cache', 'version-json', '1.8.9.json');
+  const jarPath = path.join(fx, 'research-cache', 'jars', '1.8.9.jar');
+  if (!fs.existsSync(vj) || !fs.existsSync(jarPath)) return;
+  const sha1 = JSON.parse(fs.readFileSync(vj, 'utf8')).downloads.client.sha1;
+  const size = fs.statSync(jarPath).size;
+  const fd = fs.openSync(jarPath, 'r');
+  const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range, content-length, accept-ranges' };
+  await context.route(/^https:\/\/piston-meta\.mojang\.com\/v1\/packages\/[0-9a-f]+\/1\.8\.9\.json$/, (r) => r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: fs.readFileSync(vj) }));
+  await context.route(new RegExp(`^https://(launcher|piston-data)\\.mojang\\.com/v1/objects/${sha1}/client\\.jar$`), (r) => {
+    const m = /bytes=(\d+)-(\d+)?/.exec(r.request().headers()['range'] || '');
+    if (!m) return r.fulfill({ status: 200, headers: { ...cors, 'content-length': String(size) }, body: fs.readFileSync(jarPath) });
+    const start = Number(m[1]);
+    const end = Math.min(size - 1, m[2] ? Number(m[2]) : size - 1);
+    const buf = Buffer.alloc(end - start + 1);
+    fs.readSync(fd, buf, 0, buf.length, start);
+    return r.fulfill({ status: 206, headers: { ...cors, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': String(buf.length), 'accept-ranges': 'bytes' }, body: buf });
+  });
+}
+
+/** Scrolls the PvP tab so a tweak's card sits near the top. */
+async function pvpScrollTo(page, id) {
+  await page.evaluate((i) => {
+    const card = document.querySelector(`.pvp-tweak[data-tweak="${i}"]`);
+    const body = card?.closest('.tx-side-body');
+    if (card && body) body.scrollTop += card.getBoundingClientRect().top - body.getBoundingClientRect().top - 12;
+  }, id);
+  await page.waitForTimeout(300);
+}
+
+/** PvP packs (light theme): the start option, the PvP tab on Java 1.8.9 with the fire open, "Draw your own" crosshair, and Bedrock. */
+async function pvpFlow(browser, base, fx, jar) {
+  const ctx = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 1, colorScheme: 'light', reducedMotion: 'reduce' });
+  await ctx.addInitScript(() => localStorage.setItem('to-theme', 'light'));
+  await routeMojang(ctx, fx, jar);
+  await route189(ctx, fx);
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => console.log('  pageerror', e.message));
+  await hideToastsOnLoad(page);
+
+  // 1. start screen: PvP / FPS pack for Java 1.8.9
+  await page.goto(`${base}textures/?start=pvp`);
+  await page.waitForSelector('.tx-new .tx-start-opt[data-start="pvp"][aria-checked="true"]');
+  await page.fill('.tx-name-field input', 'Bedwars PvP');
+  await page.click('.tx-new .vp-trigger');
+  await page.fill('.vp-pop input[type=search]', '1.8.9');
+  await page.click('.vp-item:has(.vp-item-name:text-is("1.8.9"))');
+  await page.waitForFunction(() => /1\.8\.9/.test(document.querySelector('.tx-new .vp-trigger')?.textContent ?? ''));
+  await page.click('.tx-start-fps .switch');
+  await page.evaluate(() => document.activeElement?.blur());
+  await waitIdle(page);
+  if (want('pvp-start')) {
+    // a taller window, cropped to 1280×800 below the sticky header (same 1280px layout)
+    await page.setViewportSize({ width: VIEW.width, height: 1100 });
+    const top = await page.evaluate(() => {
+      const r = document.querySelector('.tx-new').getBoundingClientRect();
+      window.scrollTo(0, r.top + window.scrollY - 100);
+      return document.querySelector('.tx-new').getBoundingClientRect().top;
+    });
+    await page.waitForTimeout(300);
+    await shot(page, 'pvp-start', { x: 0, y: Math.round(top - 22), width: VIEW.width, height: VIEW.height });
+    await page.setViewportSize(VIEW);
+  }
+
+  // 2. the editor: the preset is on, the overlay fire texture open
+  await page.click('.tx-create-btn');
+  await page.waitForURL(/textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
+  await txWaitEditor(page);
+  await page.waitForFunction(() => document.querySelector('.pvp-tweak.is-on') && !window.__tx.store.project.pvp?.pending, null, { timeout: 120000 });
+  await page.evaluate(() => window.__tx.open('assets/minecraft/textures/blocks/fire_layer_1.png'));
+  await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('fire_layer_1.png'), null, { timeout: 30000 });
+  await pvpScrollTo(page, 'lowFire');
+  await waitIdle(page, 1500);
+  if (want('pvp-tweaks')) await shot(page, 'pvp-tweaks');
+
+  // 3. "Draw your own" crosshair: icons.png with the crosshair square selected
+  await page.click('.pvp-tweak[data-tweak="crosshair"] .pvp-draw button');
+  await page.waitForFunction(() => !!window.__tx.canvas.canvas()?.getSelection(), null, { timeout: 30000 });
+  // zoom in on the top-left corner of the sheet, where the crosshair is
+  const corner = await page.evaluate(() => {
+    const pc = window.__tx.canvas.canvas();
+    const r = pc.element.querySelector('canvas').getBoundingClientRect();
+    const [x, y] = pc.getView().toScreen(8, 8);
+    return [r.left + x, r.top + y];
+  });
+  await page.mouse.move(corner[0], corner[1]);
+  for (let i = 0; i < 8; i++) {
+    await page.mouse.wheel(0, -240);
+    await page.waitForTimeout(120);
+  }
+  // your own design: a grey diamond around the centre pixel (grey and white show best in game)
+  await txStrokes(page, [170, 170, 170, 255], [
+    [[7, 3], [8, 4], [9, 5], [10, 6], [11, 7], [10, 8], [9, 9], [8, 10], [7, 11], [6, 10], [5, 9], [4, 8], [3, 7], [4, 6], [5, 5], [6, 4], [7, 3]],
+  ]);
+  await pvpScrollTo(page, 'crosshair');
+  await waitIdle(page, 1200);
+  if (want('pvp-crosshair')) await shot(page, 'pvp-crosshair');
+
+  // 4. Bedrock: the tweaks a Bedrock pack can't have are off, with the reason
+  if (want('pvp-bedrock')) {
+    await page.goto(`${base}textures/?start=pvp`);
+    await page.waitForSelector('.tx-new .tx-start-opt[data-start="pvp"][aria-checked="true"]');
+    await page.fill('.tx-name-field input', 'Bedrock PvP');
+    await page.click('.tx-new .segmented-item[data-value="bedrock"]');
+    await page.waitForFunction(() => /Bedrock/.test(document.querySelector('.tx-new .vp-trigger')?.textContent ?? ''));
+    await page.click('.tx-create-btn');
+    await page.waitForURL(/textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
+    await txWaitEditor(page);
+    await page.waitForFunction(() => document.querySelector('.pvp-tweak.is-on') && !window.__tx.store.project.pvp?.pending, null, { timeout: 180000 });
+    await page.evaluate(() => window.__tx.open('textures/blocks/glass_red.png'));
+    await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('glass_red.png'), null, { timeout: 30000 });
+    await pvpScrollTo(page, 'lowFire');
+    await waitIdle(page, 1500);
+    await shot(page, 'pvp-bedrock');
+  }
+  await ctx.close();
+}
+
 // The helpers are shared with tests/harness/seo/store-screenshots.cjs.
 module.exports = { fixtures, routeMojang, startDevServer, waitIdle, hideToastsOnLoad, txWaitEditor, txStrokes, skOpenStarter, skApi, skRename, skColor, skStroke, waitPreview };
 
@@ -621,6 +743,7 @@ if (require.main === module) (async () => {
     if (want('shader-iris')) await shaderShot(browser, base, fx, jar, 'iris', 'cinematic', 'Cinematic Glow', 'shader-iris', { time: 'sunset', scroll: 'half' });
     if (want('bedrock-vibrant-visuals')) await shaderShot(browser, base, fx, jar, 'bedrock-vibrant', 'vivid', 'Bright Vibrant', 'bedrock-vibrant-visuals', { scroll: 'half' });
     if (MODEL_SHOTS.some(want)) await modelsFlow(browser, base, fx, jar);
+    if (PVP_SHOTS.some(want)) await pvpFlow(browser, base, fx, jar);
   } finally {
     await browser.close();
     await server?.stop();

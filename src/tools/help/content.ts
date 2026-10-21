@@ -408,6 +408,19 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'pvp',
+    q: 'Can I make a PvP or FPS pack?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes. When you create a pack, pick ', strong('PvP / FPS pack'), ': the editor switches on low fire, clear glass and panes, no pumpkin blur, a smaller crosshair, smaller swords and a lower shield, as far as your version has them. The ', strong('PvP'), ' tab has a switch for each, with choices such as the fire height, five crosshair designs or your own drawing, and the sword size, plus FPS options: 8× textures and no animations. Every tweak writes normal pack files for your version (from Java 1.6.1 to 26.3, the 1.8.9 file names included) and can be switched off or undone. On Bedrock, clear glass, the pumpkin view, the crosshair and 8× textures work; low fire and held items can’t be changed by a pack there. Zoom, an FPS counter or no fog need mods. Step by step: ',
+        link('/guides/make-a-pvp-texture-pack', 'How to make a PvP texture pack'),
+        '.',
+      ),
+    ],
+  },
+  {
     id: 'sounds',
     q: 'Can I change sounds in my pack?',
     a: [
