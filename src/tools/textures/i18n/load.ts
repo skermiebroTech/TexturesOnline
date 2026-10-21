@@ -18,4 +18,5 @@ export const loadTexturesText = textLoader<TexturesLanguage>({
   es: () => import('./es'),
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
+  ru: () => import('./ru'),
 });

@@ -132,7 +132,7 @@ function prose(msg: string): string {
   return s.replace(/\S*[./_\\0-9]\S*/g, ' ');
 }
 
-/** Words that give English away (not words of German, Spanish or Portuguese; letters around them are any script's). */
+/** Words that give English away (not words of German, Spanish, Portuguese or Russian; letters around them are any script's). */
 const ENGLISH_WORDS = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|which|when|there)(?!\p{L})/iu;
 
 test('every editor section is translated into every language, once', async () => {
@@ -156,7 +156,11 @@ test('translations have the same keys and parameters as English, valid plurals, 
   const { english, files } = await loaded;
   const problems: string[] = [];
   for (const f of files) {
-    const categories = new Set(new Intl.PluralRules(LOCALE_INFO[f.locale].lang).resolvedOptions().pluralCategories);
+    const rules = new Intl.PluralRules(LOCALE_INFO[f.locale].lang);
+    const categories = new Set(rules.resolvedOptions().pluralCategories);
+    // Forms that counts of things actually use (Russian: one 1, 21…; few 2–4, 22–24…; many 0, 5–20…).
+    // A plural that tells forms apart must give each of them; `other` alone (Japanese) is fine.
+    const countForms = [...new Set(Array.from({ length: 1001 }, (_, n) => rules.select(n)))];
     for (const [id, tr] of Object.entries(f.sections)) {
       const en = english.get(id);
       if (!en) continue;
@@ -176,6 +180,7 @@ test('translations have the same keys and parameters as English, valid plurals, 
         for (const [param, keys] of pluralBranches(text)) {
           if (!keys.includes('other')) problems.push(`${where}: plural {${param}} has no "other" form`);
           for (const key of keys) if (!/^=\d+$/.test(key) && !categories.has(key as Intl.LDMLPluralRule)) problems.push(`${where}: plural form "${key}" doesn't exist in ${f.locale}`);
+          if (keys.some((k) => k !== 'other' && !/^=\d+$/.test(k))) for (const form of countForms) if (!keys.includes(form)) problems.push(`${where}: plural {${param}} has no "${form}" form`);
         }
         // Every parameter filled with a few values: nothing may stay in braces.
         for (const n of [0, 1, 2, 5, 1234]) {
@@ -204,6 +209,7 @@ test('translations contain no English left untranslated', async () => {
         const words = prose(text).match(/[A-Za-z]{2,}/g) ?? [];
         // Identical single-word labels (OK, Zoom, Shader) are fine; identical phrases are not.
         if (text === source && (prose(source).match(/[A-Za-z]{2,}/g) ?? []).length >= 2) problems.push(`${f.locale} ${key} is the English text: "${text}"`);
+        else if (f.locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) problems.push(`ru ${key} has no Russian: "${text}"`);
         else if (f.locale !== 'ja' && ENGLISH_WORDS.test(prose(text))) problems.push(`${f.locale} ${key} looks English: "${text}"`);
         else if (f.locale === 'ja' && words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text)) problems.push(`ja ${key} has no Japanese: "${text}"`);
       }
@@ -225,6 +231,13 @@ test('formatting: numbers, plurals and lists per language', () => {
   assert.equal(fmt('{count, plural, one {# Datei} other {# Dateien}}', { count: 1234 }, 'de'), '1.234 Dateien');
   assert.equal(fmt('{count, plural, =0 {none} one {# file} other {# files}}', { count: 0 }, 'en'), 'none');
   assert.equal(fmt('ファイル{count}個', { count: 2 }, 'ja'), 'ファイル2個');
+  const ru = '{count, plural, one {# файл} few {# файла} many {# файлов} other {# файла}}';
+  assert.equal(fmt(ru, { count: 1 }, 'ru'), '1 файл');
+  assert.equal(fmt(ru, { count: 3 }, 'ru'), '3 файла');
+  assert.equal(fmt(ru, { count: 11 }, 'ru'), '11 файлов');
+  assert.equal(fmt(ru, { count: 21 }, 'ru'), '21 файл');
+  assert.equal(fmt(ru, { count: 0 }, 'ru'), '0 файлов');
+  assert.equal(fmt(ru, { count: 1234 }, 'ru'), '1\u00a0234 файла');
   assert.equal(fmt('{m, select, slim {slim arms} other {classic arms}}', { m: 'slim' }, 'en'), 'slim arms');
   assert.equal(fmt('{m, select, slim {slim arms} other {classic arms}}', { m: 'classic' }, 'en'), 'classic arms');
   assert.equal(fmt('{a, plural, one {{name} is} other {{name} are}} here', { a: 2, name: 'X and Y' }, 'en'), 'X and Y are here');

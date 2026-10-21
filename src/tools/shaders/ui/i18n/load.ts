@@ -19,4 +19,5 @@ export const loadShadersEditorText = textLoader<ShadersEditorLanguage>({
   es: () => import('./es'),
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
+  ru: () => import('./ru'),
 });

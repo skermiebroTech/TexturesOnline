@@ -13,4 +13,5 @@ export const loadKitText = textLoader<KitLanguage>({
   es: () => import('./es'),
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
+  ru: () => import('./ru'),
 });

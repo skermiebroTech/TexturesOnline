@@ -8,7 +8,8 @@ Texel is a Modified Version (SIL OFL 1.1, see public/fonts/OFL.txt) of two fonts
 Output grid: UPM 1024, 1 font pixel = 128 units (8 px/em) -> pixel-perfect at font sizes that are multiples of 8 px
 (x devicePixelRatio). Advance = ink width + 1 px, space = 4 px (bold 5 px). The line box is exactly 1 em
 (ascender 7 px, descender 1 px), so baselines land on whole pixels. Bold fallback glyphs are over-printed 1 px to
-the right (Monocraft-Bold is not on the pixel grid).
+the right (Monocraft-Bold is not on the pixel grid); a Cyrillic glyph with 1 px gaps between strokes (ш, ж, Ф) first
+gets those gap columns doubled, so the over-print keeps them open.
 
 Setup:  python3 -m venv .venv && .venv/bin/pip install fonttools brotli skia-pathops
 Sources (pinned):
@@ -29,6 +30,7 @@ from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
+from fontTools.pens.pointInsidePen import PointInsidePen
 import pathops   # pip install skia-pathops  (overlap removal + TrueType contour direction)
 
 PX = 128          # font units per pixel in the output
@@ -59,6 +61,43 @@ def pix_glyph(gs, name, t, embolden=False):
 
 def bounds(gs, name):
     bp = BoundsPen(gs); gs[name].draw(bp); return bp.bounds
+
+def raster(gs, name, b, src_px):
+    """The glyph's pixels (rows top to bottom, 1 = ink) and the pixel row of its top edge."""
+    top, bottom, width = round(b[3] / src_px), round(b[1] / src_px), round((b[2] - b[0]) / src_px)
+    rows = []
+    for y in range(top - 1, bottom - 1, -1):
+        row = []
+        for x in range(width):
+            pen = PointInsidePen(gs, (b[0] + (x + 0.5) * src_px, (y + 0.5) * src_px))
+            gs[name].draw(pen)
+            row.append(1 if pen.getResult() else 0)
+        rows.append(row)
+    return rows, top
+
+def bold_gaps(rows):
+    """Columns that are a 1-pixel gap between two strokes in at least two rows (ш, ж, Ф, Щ...): the
+    over-print bold would fill them and turn the letter into a block."""
+    return [c for c in range(1, len(rows[0]) - 1) if sum(1 for r in rows if r[c - 1] and not r[c] and r[c + 1]) >= 2]
+
+def widened_bold_glyph(rows, top, gaps):
+    """Bold for a glyph with such gaps: each gap column doubled, then the usual 1 px over-print, so a 1 px gap stays."""
+    rows = [list(r) for r in rows]
+    for c in sorted(gaps, reverse=True):
+        for r in rows: r.insert(c, r[c])
+    paths = []
+    for dx in (0, 1):
+        p = pathops.Path(); pen = p.getPen()
+        for i, r in enumerate(rows):
+            y = top - 1 - i
+            for x, v in enumerate(r):
+                if not v: continue
+                x0, y0 = (x + dx) * PX, y * PX
+                pen.moveTo((x0, y0)); pen.lineTo((x0, y0 + PX)); pen.lineTo((x0 + PX, y0 + PX)); pen.lineTo((x0 + PX, y0)); pen.closePath()
+        paths.append(p)
+    tt = TTGlyphPen(None)
+    pathops.union(paths, tt, clockwise=True)
+    return tt.glyph(), len(rows[0])
 
 glyphs, advances, cmap, order = {}, {}, {}, [".notdef"]
 # .notdef: hollow 5x7 box
@@ -96,6 +135,13 @@ for u, g in sorted(mcmap.items()):
     if b is None:
         add(u, TTGlyphPen(None).glyph(), space_adv if u in (0x2002, 0x2004, 0x2005, 0x2009, 0x202F, 0x205F) else int(M["hmtx"][g][0] / mpx) * PX); continue
     s = PX / mpx
+    if bold and 0x0400 <= u <= 0x04FF:   # Cyrillic (other blocks keep the plain over-print)
+        rows, top = raster(mgs, g, b, mpx)
+        gaps = bold_gaps(rows)
+        if gaps:
+            glyph, width = widened_bold_glyph(rows, top, gaps)
+            add(u, glyph, (width + 2) * PX)
+            continue
     ink_px = round((b[2] - b[0]) / mpx) + (1 if bold else 0)
     add(u, pix_glyph(mgs, g, (s, 0, 0, s, -b[0] * s, 0), embolden=bold), (ink_px + 1) * PX)
 

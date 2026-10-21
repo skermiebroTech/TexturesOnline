@@ -111,6 +111,21 @@ export const APP_TEXT: Partial<Record<Locale, Partial<AppText>>> = {
     cantOpen: 'Texture Pack Makerは「{name}」を開けません。.zip、.mcpack、.mcaddonのパック、または.pngのスキンやテクスチャを選んでください。',
     privacy: 'プライバシー',
   },
+  ru: {
+    installApp: 'Установить приложение',
+    installTitle: 'Установить Texture Pack Maker',
+    installWhy: 'Открывай его с экрана «Домой» или рабочего стола, как любое другое приложение. Работает и без интернета.',
+    installIos: ['Нажми кнопку «Поделиться» на панели Safari.', 'Выбери «На экран „Домой“».', 'Нажми «Добавить».'],
+    installMacSafari: ['В строке меню Safari выбери Файл › Добавить в Dock.', 'Нажми «Добавить».'],
+    gotIt: 'Понятно',
+    installed: 'Texture Pack Maker установлен. Он появится среди других твоих приложений.',
+    exportHint: 'Совет: установи Texture Pack Maker как приложение, чтобы открывать его с рабочего стола или экрана «Домой», даже без интернета.',
+    install: 'Установить',
+    updateReady: 'Готова новая версия Texture Pack Maker.',
+    reload: 'Обновить',
+    cantOpen: 'Texture Pack Maker не может открыть «{name}». Выбери пак .zip, .mcpack или .mcaddon либо скин или текстуру .png.',
+    privacy: 'Конфиденциальность',
+  },
 };
 
 export function appText(locale: Locale = 'en'): AppText {
