@@ -85,6 +85,8 @@ export const tv = defineText('textures.pvp', {
     title: 'Needs a mod, not a pack',
     text: 'Zoom, an FPS counter, keystrokes, toggle sprint, no fog, motion blur and big FPS gains (fewer chunks, entities and particles drawn) come from mods such as OptiFine or Sodium, PvP clients or the game’s Video Settings. A texture pack can’t change them.',
   },
+  stale: 'Made for {version}: this version may name the files differently. Write them again for this version.',
+  update: 'Update',
   guide: 'How to make a PvP texture pack',
 });
 

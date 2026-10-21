@@ -2535,6 +2535,9 @@
   color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
+  /* long words ("conservados") in the narrow stat boxes */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 .tx-danger {
   display: flex;

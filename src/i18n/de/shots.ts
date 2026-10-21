@@ -108,7 +108,7 @@ export const SHOTS = localShots({
     caption: 'Wähle „PvP-/FPS-Pack“ und die Version, die du spielst.',
   },
   pvpTweaks: {
-    alt: 'Der Textur-Editor eines PvP-Packs für Java 1.8.9: fire_layer_1 im Pixel-Editor mit den Flammen in der unteren Hälfte des Bildes, und der Tab „PvP“ mit eingeschaltetem „Niedriges Feuer“, Höhe „Niedriger“ und „Feuerblöcke so lassen, wie sie sind“.',
+    alt: 'Der Textur-Editor eines PvP-Packs für Java 1.8.9: fire_layer_1 im Pixel-Editor mit den Flammen in der unteren Hälfte des Bildes, und der Tab „PvP“ mit eingeschaltetem „Niedriges Feuer“, Höhe „Tiefer“ und „Feuerblöcke so lassen, wie sie sind“.',
     caption: 'Der Tab „PvP“: Jede Option ist ein Schalter, mit ihren Einstellungen und den Dateien, die sie ändert.',
   },
   pvpCrosshair: {

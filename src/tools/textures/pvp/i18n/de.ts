@@ -39,9 +39,9 @@ const DE: PvpLanguage = {
     },
     options: {
       height: 'Höhe',
-      low: 'Niedrig',
-      lower: 'Niedriger',
-      lowest: 'Am niedrigsten',
+      low: 'Tief',
+      lower: 'Tiefer',
+      lowest: 'Ganz tief',
       keepBlocks: 'Feuerblöcke so lassen, wie sie sind',
       keepBlocksHint: 'Feuerblöcke bekommen eine Kopie der alten Textur, daher sitzt nur das Feuer auf dem Bildschirm und an brennenden Spielern tiefer.',
       glass: 'Innen',
@@ -79,6 +79,8 @@ const DE: PvpLanguage = {
       title: 'Braucht eine Mod, kein Pack',
       text: 'Zoom, eine FPS-Anzeige, Tastenanzeigen, Dauersprinten, kein Nebel, Bewegungsunschärfe und große FPS-Gewinne (weniger Chunks, Kreaturen und Partikel) kommen von Mods wie OptiFine oder Sodium, PvP-Clients oder den Grafikeinstellungen des Spiels. Ein Texture Pack kann sie nicht ändern.',
     },
+    stale: 'Für {version} erstellt: Diese Version kann die Dateien anders benennen. Schreib sie für diese Version neu.',
+    update: 'Aktualisieren',
     guide: 'So erstellst du ein PvP-Texture-Pack',
   },
 };

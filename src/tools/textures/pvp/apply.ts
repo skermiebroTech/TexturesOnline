@@ -133,6 +133,8 @@ class Transaction {
 export interface PvpEngine {
   /** Whether a tweak is on in this pack */
   isOn(id: PvpTweakId): boolean;
+  /** The game version a tweak's files were written for, when the pack has moved to another one since */
+  madeFor(id: PvpTweakId): string | null;
   /** The tweak's choices (stored ones, else the defaults) */
   options<K extends PvpTweakId>(id: K): PvpOptions[K];
   /** Switches a tweak on (again, with new choices) or off. Resolves with what changed and an undo. */
@@ -318,7 +320,7 @@ export function createPvpEngine(store: TexStore): PvpEngine {
       project.effects = [...project.effects.filter((l) => l.type !== effect), { ...layer, id: newLayerId() }];
       return;
     }
-    const rec: PvpApplied = { options: { ...(opts as Record<string, string | boolean>) }, textures: [], files: [], displays: [], appliedAt: Date.now() };
+    const rec: PvpApplied = { options: { ...(opts as Record<string, string | boolean>) }, textures: [], files: [], displays: [], appliedAt: Date.now(), version };
     switch (id) {
       case 'lowFire': {
         const o = opts as PvpOptions['lowFire'];
@@ -391,6 +393,10 @@ export function createPvpEngine(store: TexStore): PvpEngine {
 
   return {
     isOn,
+    madeFor(id) {
+      const v = project.pvp?.tweaks[id]?.version;
+      return v && v !== version ? v : null;
+    },
     options,
     set(id, on, opts) {
       return run(async (tx) => {

@@ -222,6 +222,16 @@ export function createPvpPanel(opts: PvpPanelOptions): PvpPanel {
     sw.addEventListener('click', () => void change(id, !engine.isOn(id)));
     const files = reason ? [] : changes(id);
     const shown = files.slice(0, 2).map(short);
+    const madeFor = on ? engine.madeFor(id) : null;
+    const stale = madeFor
+      ? h(
+          'div',
+          { class: 'pvp-stale' },
+          icon('warning-diamond', { size: 16 }),
+          h('span', null, fmt(tv.stale, { version: madeFor })),
+          button({ label: tv.update, icon: 'refresh', size: 'sm', variant: 'secondary', onClick: () => void change(id, true) }),
+        )
+      : null;
     const meta = reason
       ? h('p', { class: 'pvp-reason' }, icon('circle-info', { size: 16 }), h('span', null, tv.unsupported[reason]))
       : h(
@@ -241,6 +251,7 @@ export function createPvpPanel(opts: PvpPanelOptions): PvpPanel {
         sw,
       ),
       h('p', { class: 'pvp-desc' }, t.text),
+      stale,
       on && optionsOf(id).length ? h('div', { class: 'pvp-body' }, optionsOf(id)) : null,
       meta,
     );

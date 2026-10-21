@@ -79,6 +79,8 @@ const ES: PvpLanguage = {
       title: 'Necesita un mod, no un pack',
       text: 'El zoom, un contador de FPS, las teclas en pantalla, correr siempre, quitar la niebla, el desenfoque de movimiento y las grandes mejoras de FPS (menos chunks, entidades y partículas) vienen de mods como OptiFine o Sodium, de clientes PvP o de los ajustes de vídeo del juego. Un texture pack no puede cambiarlos.',
     },
+    stale: 'Hecho para {version}: esta versión puede llamar de otra forma a los archivos. Vuelve a escribirlos para esta versión.',
+    update: 'Actualizar',
     guide: 'Cómo hacer un texture pack PvP',
   },
 };

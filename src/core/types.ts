@@ -178,6 +178,8 @@ export interface PvpApplied {
   /** Model files whose display slots it changed: what each slot was in the file before (null: not in it) */
   displays: { path: string; before: Blob | null; prev: Record<string, unknown>; slots: Record<string, unknown>; text: string }[];
   appliedAt: number;
+  /** The game version the files were written for */
+  version?: string;
 }
 
 /** A block or item model changed in the model editor (Java). */

@@ -99,9 +99,20 @@
   min-width: 0;
 }
 .pvp-opt .segmented {
-  align-self: flex-start;
-  max-width: 100%;
+  display: flex;
   flex-wrap: wrap;
+  align-self: stretch;
+}
+/* choices share the card's width; long names (Am niedrigsten) wrap instead of spilling out */
+.pvp-opt .segmented-item {
+  flex: 1 1 auto;
+  /* never narrower than its longest word */
+  min-width: auto;
+  height: auto;
+  min-height: 28px;
+  padding: 2px 6px 4px;
+  white-space: normal;
+  text-align: center;
 }
 .pvp-keep {
   padding-top: 2px;
@@ -196,4 +207,24 @@
 }
 .pvp-guide {
   align-self: flex-start;
+}
+.pvp-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pvp-stale > .icon {
+  flex: none;
+  color: var(--gold-2);
+}
+.pvp-stale > span {
+  flex: 1 1 160px;
+  min-width: 0;
 }

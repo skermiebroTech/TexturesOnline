@@ -524,3 +524,18 @@ test('undoing an older change leaves later changes to other tweaks alone', async
   assert.equal(p.overrides[`${J}misc/pumpkinblur.png`], undefined);
   assert.equal(pvp.isOn('lowRes'), true, 'the FPS layer added later stays');
 });
+
+test('a tweak made for another version is flagged, and switching it on again rewrites it', async () => {
+  const assets = syntheticJava();
+  const p = newTextureProject({ name: 'PvP', edition: 'java', version: '26.3' });
+  await createPvpEngine(new TexStore(p, assets)).set('noPumpkin', true);
+  assert.equal(createPvpEngine(new TexStore(p, assets)).madeFor('noPumpkin'), null);
+  // the Pack tab moved the pack to another version (the editor reloads with that version's files)
+  p.pvp!.tweaks.noPumpkin.version = '1.20.1';
+  const store = new TexStore(p, assets);
+  const pvp = createPvpEngine(store);
+  assert.equal(pvp.madeFor('noPumpkin'), '1.20.1');
+  await pvp.set('noPumpkin', true);
+  assert.equal(pvp.madeFor('noPumpkin'), null);
+  assert.ok(store.isEdited(`${J}misc/pumpkinblur.png`));
+});
