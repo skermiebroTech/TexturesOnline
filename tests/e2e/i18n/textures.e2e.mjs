@@ -356,6 +356,16 @@ try {
           await page.click('.me-back');
           await page.waitForSelector('.tx-main', { state: 'visible' });
 
+          // ------------------------------------------------ PvP tab, its preset switched on
+          await show(page, phone, 'pvp');
+          await page.waitForSelector('.pvp-tweak', { state: 'visible', timeout: 60000 });
+          await inspect(page, `tex-${L}-17b-pvp`, lang);
+          await page.click('.pvp-preset-btn');
+          await page.waitForFunction(() => document.querySelectorAll('.pvp-tweak.is-on').length >= 5 && !document.querySelector('.pvp-tweak.is-busy'), null, { timeout: 60000 });
+          await inspect(page, `tex-${L}-17c-pvp-on`, lang, { wait: 400 });
+          await page.evaluate(() => document.querySelector('.pvp-tweak[data-tweak="crosshair"]')?.scrollIntoView({ block: 'start' }));
+          await inspect(page, `tex-${L}-17d-pvp-crosshair`, lang);
+
           // ------------------------------------------------ pack settings
           await show(page, phone, 'pack');
           await inspect(page, `tex-${L}-18-pack`, lang);

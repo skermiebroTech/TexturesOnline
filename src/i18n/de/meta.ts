@@ -156,5 +156,12 @@ export const META_DE: MetaTranslation = {
       label: '3D-Items erstellen',
       blurb: 'Flache Items zu 3D-Modellen machen und Blockformen ändern, Datei für Datei.',
     },
+    'make-a-pvp-texture-pack': {
+      title: 'PvP-Texture-Pack für Minecraft erstellen (Java & Bedrock)',
+      h1: 'PvP-Texture-Pack für Minecraft erstellen',
+      description: 'Minecraft-PvP-Texture-Pack gratis erstellen: niedriges Feuer, klares Glas, kleinere Schwerter, eigenes Fadenkreuz und 8×-FPS-Texturen, für 1.8.9 bis 26.3.',
+      label: 'PvP-Pack erstellen',
+      blurb: 'Niedriges Feuer, klares Glas, kleinere Schwerter, Fadenkreuz und FPS-Texturen.',
+    },
   },
 };

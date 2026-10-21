@@ -33,6 +33,7 @@ export const ALL: AllText = {
     animation: { title: 'Animierte Texturen', desc: 'Bearbeite jedes Bild von Wasser, Lava, Feuer oder Portalen und spiel die Animation wie im Spiel ab.' },
     sounds: { title: 'Sound-Editor', desc: 'Ersetze jeden Spielsound durch eigenes Audio oder eine Aufnahme, dann kürze und passe ihn an.' },
     models: { title: '3D-Items und Blockformen', desc: 'Ändere die Form von Blöcken und Items oder mach aus einem flachen Item ein 3D-Modell.' },
+    pvp: { title: 'PvP- und FPS-Packs', desc: 'Niedriges Feuer, klares Glas, eigenes Fadenkreuz, kleinere Schwerter und 8×-Texturen, je ein Schalter.' },
     openPack: { title: 'Jedes Pack öffnen', desc: 'Fang bei null an oder öffne eine vorhandene .zip oder ein .mcpack und arbeite daran weiter.' },
     versions: { title: `Jede Java-Version von 1.6.1 bis ${LATEST}`, desc: 'Jede Version bekommt ihre eigenen Texturen und das passende Pack-Format.' },
     editions: { title: 'Java und Bedrock', desc: 'Erstelle Packs für beide Editionen und erfahre, worin sie sich unterscheiden.' },

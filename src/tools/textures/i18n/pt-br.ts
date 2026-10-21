@@ -32,6 +32,15 @@ const PT: TexturesLanguage = {
       descriptionPlaceholder: 'Feito com o Texture Pack Maker',
       button: 'Criar pack',
       defaultName: 'Meu texture pack',
+      startWith: 'Começar com',
+      blank: 'Texturas originais',
+      blankHint: 'Todas as texturas como no jogo',
+      pvp: 'Pack de PvP / FPS',
+      pvpHint: 'Fogo baixo, vidro transparente, mira limpa, espadas menores',
+      fps: 'Também um pack de FPS',
+      fpsHint: 'Texturas de blocos em 8 × 8 e sem animações (Java), para computadores mais fracos.',
+      pvpButton: 'Criar pack de PvP',
+      pvpName: 'Meu pack de PvP',
       failed: 'Não foi possível criar o pack',
     },
     open: {
@@ -224,6 +233,14 @@ const PT: TexturesLanguage = {
         label: 'Ampliação HD suave',
         description: 'Dobra ou quadruplica a resolução com um filtro de suavização para pixel art (Scale2x/Scale3x).',
       },
+      downscale: {
+        label: 'Resolução menor',
+        description: 'Reduz as texturas para 8 ou 4 pixels por bloco: um visual mais limpo e menos memória de vídeo (packs de FPS).',
+      },
+      stillFrames: {
+        label: 'Sem animações',
+        description: 'Java: mantém só o primeiro quadro das texturas animadas, então água, lava, fogo e portais ficam parados.',
+      },
       dither: {
         label: 'Pontilhado',
         description: 'Pontilhado ordenado retrô com menos níveis de cor.',
@@ -276,6 +293,7 @@ const PT: TexturesLanguage = {
       palette: 'Paleta',
       matchBy: 'Ajustar por',
       dither: 'Pontilhado',
+      resolution: 'Resolução',
     },
     hints: {
       coolDown: 'Valores negativos esfriam as texturas',

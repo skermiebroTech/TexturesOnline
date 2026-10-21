@@ -6,7 +6,7 @@ import { isUuid } from '../../core/uuid';
 import { buildPackMcmeta, buildPackMcmetaForVersions, describePackForGame, getJavaPackFormat, stringifyPretty } from '../../editions/java/packmeta';
 import { comparePackFormats, packFormatFromVersionJson } from '../../editions/java/packformats';
 import { DEFAULT_MIN_ENGINE, buildResourceManifest, bumpPackVersion } from '../../editions/bedrock/manifest';
-import { applyEffects, effectsApply, hasActiveEffects, type EffectContext } from './effects';
+import { applyEffects, effectsApply, hasActiveEffects, layerApplies, type EffectContext } from './effects';
 import { categoryForPath, extOf, imageDims, newBedrockUuids, packFileName, parseBedrockVersion, parseJsonLoose } from './project';
 import { prepareSoundExport } from './sounds/pack';
 import { renderIsoCube } from './iso-cube';
@@ -128,7 +128,8 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     warnings.push(packText.export.unchanged);
   }
 
-  const out = new Map<string, Uint8Array>();
+  /** Written files; null: a file the pack has that must not go into the zip (a still texture's animation .mcmeta) */
+  const out = new Map<string, Uint8Array | null>();
   const failedVanilla: string[] = [];
   const failedOverrides: string[] = [];
   const unreadable: string[] = [];
@@ -187,7 +188,11 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   progress(packText.export.packInfo, 0.9);
   files[edition === 'java' ? 'pack.png' : 'pack_icon.png'] = icon;
   for (const [path, bytes] of extra) if (!RESERVED[edition].has(path)) files[path] = bytes;
-  for (const path of [...out.keys()].sort()) files[path] = out.get(path)!;
+  for (const path of [...out.keys()].sort()) {
+    const bytes = out.get(path)!;
+    if (bytes) files[path] = bytes;
+    else delete files[path];
+  }
   check(signal);
 
   // --- zip ---
@@ -204,7 +209,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   // ------------------------------------------------------------------------------------------
 
   /** Files to write for one texture (the image plus metadata that must travel with it), or null to skip. */
-  async function processTexture(path: string, isOverride: boolean): Promise<[string, Uint8Array][] | null> {
+  async function processTexture(path: string, isOverride: boolean): Promise<[string, Uint8Array | null][] | null> {
     const info = index.get(path);
     const category = info?.category ?? categoryForPath(path, edition);
     const ext = extOf(path);
@@ -216,6 +221,8 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     const ctx: EffectContext = { path, category, animated };
     const applies = isImage && effectsApply(layers, ctx);
     const nineSlice = edition === 'bedrock' && isNineSliceCandidate(path);
+    // "No animations" keeps one frame: its animation section goes (a one-frame animation still ticks in game)
+    const still = !!anim && layers.some((l) => l.type === 'stillFrames' && layerApplies(l, ctx));
 
     if (!isOverride) {
       const input = await assets.readImage(path);
@@ -223,7 +230,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
       setFrames(ctx, anim, inDims, 1);
       const result = applyEffects(input, layers, ctx);
       if (result === input || sameImage(result, input)) return null;
-      return [[path, encodeFor(ext, result)], ...(await metadataFor(path, { w: result.width, h: result.height }, inDims, inDims, inDims, anim, mcmeta))];
+      return [[path, encodeFor(ext, result)], ...(await metadataFor(path, { w: result.width, h: result.height }, inDims, inDims, inDims, anim, mcmeta, still))];
     }
 
     const srcBytes = new Uint8Array(await overrides.get(path)!.arrayBuffer());
@@ -242,7 +249,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     setFrames(ctx, anim, inDims, inDims.w / ref.w);
     const result = applyEffects(input, layers, ctx);
     const bytes = result === input ? srcBytes : encodeFor(ext, result);
-    return [[path, bytes], ...(await metadataFor(path, { w: result.width, h: result.height }, ref, vanillaDims, inDims, anim, mcmeta))];
+    return [[path, bytes], ...(await metadataFor(path, { w: result.width, h: result.height }, ref, vanillaDims, inDims, anim, mcmeta, still))];
   }
 
   async function findMcmeta(path: string): Promise<McmetaSource | null> {
@@ -262,9 +269,12 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
    * `ref` = size the .mcmeta values refer to, `vanilla` = size of the vanilla texture,
    * `stored` = size of the image as the project stores it (what the pack's own sidecar files describe).
    */
-  async function metadataFor(path: string, dims: Dims, ref: Dims, vanilla: Dims | null, stored: Dims, anim: AnimationInfo | null, mcmeta: McmetaSource | null): Promise<[string, Uint8Array][]> {
-    const files: [string, Uint8Array][] = [];
-    if (edition === 'java' && mcmeta) {
+  async function metadataFor(path: string, dims: Dims, ref: Dims, vanilla: Dims | null, stored: Dims, anim: AnimationInfo | null, mcmeta: McmetaSource | null, still = false): Promise<[string, Uint8Array | null][]> {
+    const files: [string, Uint8Array | null][] = [];
+    if (edition === 'java' && mcmeta && still && anim && isOneFrame(mcmeta.text, dims)) {
+      const rest = withoutAnimation(mcmeta.text);
+      files.push([`${path}.mcmeta`, rest === null ? null : encodeText(rest)]);
+    } else if (edition === 'java' && mcmeta) {
       const adjusted = adjustMcmeta(mcmeta.text, anim, dims, dims.w / ref.w);
       if (adjusted !== null) files.push([`${path}.mcmeta`, encodeText(adjusted)]);
       else if (!mcmeta.fromPack) files.push([`${path}.mcmeta`, encodeText(mcmeta.text)]);
@@ -578,6 +588,24 @@ export function adjustMcmeta(text: string, anim: AnimationInfo | null, dims: Dim
     }
   }
   return changed ? stringifyPretty(json) : null;
+}
+
+/** The image holds a single animation frame (as Java computes frames). */
+function isOneFrame(text: string, dims: Dims): boolean {
+  const anim = parseAnimation(text);
+  if (!anim) return false;
+  let { fw, fh } = frameSize(anim, dims, 1);
+  // sizes that don't divide the image: the game falls back to square frames
+  if (dims.w % fw !== 0 || dims.h % fh !== 0) fw = fh = Math.min(dims.w, dims.h);
+  return Math.floor(dims.w / fw) * Math.floor(dims.h / fh) <= 1;
+}
+
+/** A .mcmeta without its animation section, or null when nothing else is left in it. */
+export function withoutAnimation(text: string): string | null {
+  const json = parseJsonLoose(text) as Record<string, unknown> | null;
+  if (!json || typeof json !== 'object' || Array.isArray(json)) return null;
+  delete json.animation;
+  return Object.keys(json).length ? stringifyPretty(json) : null;
 }
 
 function isNineSliceCandidate(path: string): boolean {

@@ -103,4 +103,20 @@ export const SHOTS = localShots({
     alt: 'Das Modell des Steinblocks als Treppenstufe: ein Würfel von 16×8×16 wie eine Stufe und ein zweiter Würfel von 16×8×8 auf seiner einen Hälfte, im Tab „Cube“ mit Position und Größe.',
     caption: 'Stein als Treppenstufe: der Startpunkt „Slab“ und ein weiterer Würfel.',
   },
+  pvpStart: {
+    alt: 'Das Formular „Neues Texture Pack“ mit „PvP-/FPS-Pack“ unter „Start mit“, eingeschaltetem „Auch ein FPS-Pack“, Java Edition, Version Java 1.8.9 und der Schaltfläche „PvP-Pack erstellen“.',
+    caption: 'Wähle „PvP-/FPS-Pack“ und die Version, die du spielst.',
+  },
+  pvpTweaks: {
+    alt: 'Der Textur-Editor eines PvP-Packs für Java 1.8.9: fire_layer_1 im Pixel-Editor mit den Flammen in der unteren Hälfte des Bildes, und der Tab „PvP“ mit eingeschaltetem „Niedriges Feuer“, Höhe „Tiefer“ und „Feuerblöcke so lassen, wie sie sind“.',
+    caption: 'Der Tab „PvP“: Jede Option ist ein Schalter, mit ihren Einstellungen und den Dateien, die sie ändert.',
+  },
+  pvpCrosshair: {
+    alt: 'icons.png vergrößert, das Fadenkreuz-Feld 16×16 oben links ausgewählt, mit einer grauen Raute darin neben Herzen und Rüstungssymbolen, und die Karte „Eigenes Fadenkreuz“ mit fünf Formen und „Selbst zeichnen“.',
+    caption: '„Selbst zeichnen“: Bis Java 1.20.1 ist das Fadenkreuz die linke obere Ecke von icons.png.',
+  },
+  pvpBedrock: {
+    alt: 'Ein Bedrock-PvP-Pack: die Textur von rotem Glas, innen durchsichtig und mit Rand, und der Tab „PvP“ mit ausgeschaltetem „Niedriges Feuer“ samt Grund, darunter eingeschaltetes „Klares Glas“.',
+    caption: 'In Bedrock sind die Optionen, die ein Pack nicht machen kann, ausgeschaltet, mit dem Grund.',
+  },
 });

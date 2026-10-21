@@ -18,6 +18,7 @@ import { ui } from '../../i18n/ui';
 import { contentOf, hasContent } from '../../i18n/content';
 import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from './skin-pack-files';
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from './model-files';
+import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from './pvp-files';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -161,6 +162,15 @@ const MODEL_STEPS: Child[] = [
   ['Press ', strong('Done'), ', export the pack as a ', code('.zip'), ', put it in your ', code('resourcepacks'), ' folder and test it in game.'],
 ];
 
+const PVP_STEPS: Child[] = [
+  ['Open the ', link('/textures', 'Texture Pack Maker'), ', name your pack and pick ', strong('PvP / FPS pack'), '. Turn on ', strong('Also an FPS pack'), ' for 8× textures and no animations.'],
+  ['Choose Java or Bedrock and the version you play, for example Java 1.8.9 for 1.8 PvP servers, then press ', strong('Create PvP pack'), '.'],
+  ['The editor loads that version’s textures and switches on the PvP preset: low fire, clear glass, no pumpkin blur, a cleaner crosshair, smaller swords and a lower shield, where the version has them.'],
+  ['In the ', strong('PvP'), ' tab, change what you like: the fire height, the crosshair design, the sword size, the shield height. Every change can be undone from its message.'],
+  'Optional: paint anything else, such as clearer wool colours or a shorter sword texture.',
+  ['Press ', strong('Export'), ', put the pack in Minecraft and select it above your other packs.'],
+];
+
 export const GUIDE_CONTENT: Guide[] = [
   // ------------------------------------------------------------ make a texture pack
   {
@@ -225,6 +235,7 @@ export const GUIDE_CONTENT: Guide[] = [
             link('/guides/make-3d-items-texture-pack', 'How to make 3D items'),
             '.',
           ),
+          p('Making a pack for PvP or more FPS? Pick ', strong('PvP / FPS pack'), ' when you create it, and the editor switches on low fire, clear glass, a cleaner crosshair and smaller swords for you. ', link('/guides/make-a-pvp-texture-pack', 'How to make a PvP texture pack'), '.'),
           ul([
             'Start with blocks you see all the time: grass, dirt, stone, logs and planks.',
             'Grass, leaves, vines and water are stored in grey and coloured by the game per biome. Keep them light grey.',
@@ -2008,6 +2019,257 @@ export const GUIDE_CONTENT: Guide[] = [
     ],
     related: ['make-a-texture-pack', 'texture-pack-not-working', 'install-resource-packs'],
     cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'shapes' },
+  },
+
+  // ------------------------------------------------------------ PvP pack
+  {
+    meta: meta('make-a-pvp-texture-pack'),
+    image: SHOTS.pvpTweaks,
+    intro: [
+      p(
+        'A PvP texture pack changes the things that get in your way in a fight: the fire that covers half the screen while you burn, glass you cannot see through, the dark pumpkin view, a big crosshair and a sword that hides the player you are hitting. FPS packs go further and make textures smaller and still, so weaker computers keep up. All of this is ordinary resource pack files, no mods needed. The ',
+        link('/textures', 'Texture Pack Maker'),
+        ' makes them in your browser with one switch each, for Java 1.8.9 (the version many PvP servers are built around) up to ',
+        LATEST,
+        ', and partly for Bedrock.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['In the Texture Pack Maker, pick ', strong('PvP / FPS pack'), ' and the Minecraft version you play, then ', strong('Create PvP pack'), '.'],
+        ['In the ', strong('PvP'), ' tab, choose the fire height, crosshair, sword size and the FPS options you want.'],
+        ['Export the pack and select it in Minecraft above your other packs.'],
+      ],
+    },
+    howto: { name: 'How to make a PvP texture pack with Texture Pack Maker', steps: PVP_STEPS },
+    sections: [
+      {
+        id: 'what',
+        title: 'What a PvP pack changes',
+        body: [
+          p('Most PvP and FPS packs, from Bedwars packs to “FPS boost” packs, are a mix of the same few changes. Each one below is a switch in the editor’s PvP tab:'),
+          table(
+            ['Change', 'What it does', 'Java', 'Bedrock'],
+            [
+              ['Low fire', 'The flames on your screen while you burn sit lower.', 'Every version', 'No'],
+              ['Clear glass', 'Glass, stained glass and panes are see-through inside and keep their border.', 'Every version', 'Yes'],
+              ['No pumpkin blur', 'A carved pumpkin on your head no longer darkens the screen.', 'Every version', 'Yes'],
+              ['Custom crosshair', 'A smaller crosshair: a dot, a small cross, a cross with a gap, a circle or an X, or one you draw.', 'Every version', 'Yes'],
+              ['Smaller swords', 'Swords, or every weapon, look smaller and lower in first person.', '1.8 and newer', 'No'],
+              ['Lower shield', 'The shield sits lower in first person, also while blocking.', '1.9 and newer', 'No'],
+              ['8× textures', 'Blocks (and items) at 8 × 8 pixels.', 'Every version', 'Yes'],
+              ['No animations', 'Water, lava, fire and portals stand still.', 'Every version', 'No'],
+            ],
+          ),
+          p('Each switch writes normal pack files, so you can still paint over them. Switching one off puts back the files it changed, apart from any you painted or edited since. The table at the end lists the exact files for each version.'),
+        ],
+      },
+      {
+        id: 'steps',
+        title: 'Make a PvP pack step by step',
+        body: [steps(PVP_STEPS), figure(SHOTS.pvpStart), figure(SHOTS.pvpTweaks)],
+      },
+      {
+        id: 'fire',
+        title: 'Low fire',
+        body: [
+          p(
+            'Java draws the burning overlay with one texture: ',
+            code('textures/block/fire_1.png'),
+            ' (',
+            code('textures/blocks/fire_layer_1.png'),
+            ' before 1.13). It is an animated strip of 32 frames, and Low fire moves the flames in every frame down by 5, 8 or 11 pixels of 16 (',
+            strong('Low'),
+            ', ',
+            strong('Lower'),
+            ', ',
+            strong('Lowest'),
+            '), so the top of your screen stays clear. The animation keeps playing.',
+          ),
+          p(
+            'Fire blocks use the same texture, so a plain low fire pack also makes fire in the world look cut off. With ',
+            strong('Keep fire blocks as they are'),
+            ' (Java 1.8 and newer), the pack gets a copy of the original texture, ',
+            code('fire_1_world.png'),
+            ', and the fire block models are pointed at it. Players and mobs on fire still show the lower flames.',
+          ),
+        ],
+      },
+      {
+        id: 'glass',
+        title: 'Clear glass and no pumpkin blur',
+        body: [
+          p(
+            'Clear glass keeps the outer ring of pixels, one pixel at 16× and two at 32×, and makes everything inside it clear. That covers ',
+            code('glass.png'),
+            ' and the 16 stained glass textures (',
+            code('red_stained_glass.png'),
+            ' and so on; before 1.13 ',
+            code('glass_red.png'),
+            ', with ',
+            code('glass_silver.png'),
+            ' for light grey). Glass panes use the same textures, so they turn clear too. Pick ',
+            strong('Light tint'),
+            ' to keep a faint colour in stained glass, so teams can still tell the colours apart.',
+          ),
+          p('No pumpkin blur replaces ', code('textures/misc/pumpkinblur.png'), ', the picture the game lays over your view while you wear a carved pumpkin, with a fully clear one of the same size. On Bedrock the file is ', code('textures/misc/pumpkinblur.png'), ' too.'),
+        ],
+      },
+      {
+        id: 'crosshair',
+        title: 'Custom crosshair',
+        body: [
+          p('Where the crosshair lives depends on the version:'),
+          ul([
+            [strong('Java 1.20.1 and older, and Bedrock: '), 'the top-left 16 × 16 square of ', code('textures/gui/icons.png'), ', a sheet that also holds the hearts, hunger and armour icons. Only that square changes.'],
+            [strong('Java 1.20.2 and newer: '), 'its own 15 × 15 file, ', code('textures/gui/sprites/hud/crosshair.png'), '.'],
+          ]),
+          p(
+            'Pick one of five designs, drawn for the editor, or press ',
+            strong('Draw your own'),
+            ': the editor opens the crosshair texture and, on a sheet, selects the crosshair square for you. Java draws the crosshair inverted over what is behind it, so paint it white or grey; other colours come out changed. The game centres it on the middle pixel, (7, 7).',
+          ),
+          figure(SHOTS.pvpCrosshair),
+        ],
+      },
+      {
+        id: 'swords',
+        title: 'Smaller swords and a lower shield',
+        body: [
+          p(
+            'How an item sits in your hand comes from the ',
+            code('display'),
+            ' part of its model file: a rotation, a position and a size for each place it is shown. Smaller swords sets only the first-person slots, to 80, 65 or 50 % of the size and a little lower, so the grip stays near your hand. Other players, third person and the inventory still show the normal sword. ',
+            strong('All weapons'),
+            ' does the same for axes, the mace and spears, where your version has them.',
+          ),
+          p('Java 1.8 has one slot, ', code('firstperson'), ', in each sword’s own file. This is the diamond sword at ', strong('Smaller'), ':'),
+          pre(PVP_SWORD_189.trimEnd()),
+          p(
+            'From 1.9 there are two slots, ',
+            code('firstperson_righthand'),
+            ' and ',
+            code('firstperson_lefthand'),
+            ', and swords borrow them from ',
+            code('item/handheld'),
+            '. The file keeps its parent, so the sword stays a flat item, and gets both slots:',
+          ),
+          pre(PVP_SWORD_LATEST.trimEnd()),
+          p(
+            'Lower shield moves the shield down by 3 or 6 pixels in ',
+            code('models/item/shield.json'),
+            ' and ',
+            code('shield_blocking.json'),
+            ' (Java 1.9 and newer; from 1.21.4 the game still reads the shield’s hand pose from these files). If you made your own sword or shield model in the ',
+            link('/guides/make-3d-items-texture-pack', 'model editor'),
+            ', only its first-person slots change and your shape stays.',
+          ),
+        ],
+      },
+      {
+        id: 'fps',
+        title: 'FPS boost: 8× textures and no animations',
+        body: [
+          p(
+            strong('8× textures'),
+            ' shrinks block textures, and items if you like, to 8 × 8 pixels when you export. Leaves, glass and plants keep hard edges. ',
+            strong('No animations'),
+            ' keeps only the first frame of animated textures and drops their animation from the ',
+            code('.mcmeta'),
+            ' file, so the game no longer updates them every tick (Java; compasses and clocks keep working). Both are effect layers, listed in the Effects tab too, so your own textures are not changed.',
+          ),
+          callout(
+            'info',
+            'How much faster?',
+            'Smaller and still textures use less video memory and less work per frame, which helps most on older computers and integrated graphics. The biggest FPS gains come from render distance, particles and mods such as Sodium or OptiFine, which a texture pack cannot change.',
+          ),
+        ],
+      },
+      {
+        id: 'files',
+        title: 'Which files go in the pack',
+        body: [
+          table(
+            ['', ...PVP_EXAMPLE_FILES.map((e) => e.label)],
+            [
+              ['Low fire', ...PVP_EXAMPLE_FILES.map((e) => (e.files.lowFire ? code(e.files.lowFire) : '—'))],
+              ['Clear glass', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.glass))],
+              ['No pumpkin blur', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.pumpkin))],
+              ['Crosshair', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.crosshair))],
+              ['Smaller swords', ...PVP_EXAMPLE_FILES.map((e) => (e.files.sword ? code(e.files.sword) : '—'))],
+              ['Lower shield', ...PVP_EXAMPLE_FILES.map((e) => (e.files.shield ? code(e.files.shield) : '—'))],
+            ],
+          ),
+          p('Glass stands for every glass texture next to it, and the sword for every sword. The editor works out the paths for the version of your pack, so you do not have to.'),
+        ],
+      },
+      {
+        id: 'bedrock',
+        title: 'Bedrock Edition',
+        body: [
+          p('Clear glass, no pumpkin blur, the crosshair and 8× textures work in a Bedrock pack. The others are switched off there, with the reason:'),
+          ul([
+            [strong('Low fire: '), 'Bedrock draws the fire on your screen in its own way, which a texture pack cannot lower reliably.'],
+            [strong('Swords and shield: '), 'Bedrock poses held items with attachable files, as add-ons do, which the editor does not make.'],
+            [strong('No animations: '), 'Bedrock plays animated textures from a frame list in ', code('flipbook_textures.json'), ' that a pack cannot take away.'],
+          ]),
+          figure(SHOTS.pvpBedrock),
+        ],
+      },
+      {
+        id: 'install',
+        title: 'Install and test it',
+        body: [
+          steps([
+            ['Press ', strong('Export'), ' and download the ', code('.zip'), ' (Java) or ', code('.mcpack'), ' (Bedrock).'],
+            ['Java: open ', uiPath('Options…', 'Resource Packs…', 'Open Pack Folder'), ', drop the zip in and move the pack to the top of ', strong('Selected'), '. Bedrock: open the .mcpack and turn the pack on under ', uiPath('Settings', 'Global Resources'), '.'],
+            'Set yourself on fire, look through glass, wear a pumpkin and hold a sword and shield to check every change.',
+          ]),
+          p(
+            'Not what you expected? Another pack above yours may replace the same files. More help: ',
+            link('/guides/install-resource-packs', 'How to install resource packs'),
+            ' and ',
+            link('/guides/texture-pack-not-working', 'Texture pack not working'),
+            '.',
+          ),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'allowed',
+        q: 'Are PvP texture packs allowed on servers?',
+        a: [p('A texture pack only changes how the game looks, and the changes here (lower fire, clear glass, a smaller sword) are the kind most servers allow. Packs that show things you could not see otherwise, such as ores through stone, are usually banned. Each server has its own rules, so check them.')],
+      },
+      {
+        id: 'fps',
+        q: 'Does an FPS pack really give more FPS?',
+        a: [p('Some, mostly on weaker computers: 8× textures use less video memory and still textures save work every tick. On a fast PC the difference is small. Render distance, particles and mods like Sodium or OptiFine matter much more.')],
+      },
+      {
+        id: 'version',
+        q: 'Which version should I make my PvP pack for?',
+        a: [p('The version you play. Many PvP servers run on 1.8.9, and a 1.8.9 pack has different file names from a modern one. To use one pack in several versions, set a range in the ', strong('Pack'), ' tab: the game lists it as compatible, but files only work where the names match.')],
+      },
+      {
+        id: 'short',
+        q: 'Can I make a short sword instead of a small one?',
+        a: [p('Yes: paint a shorter blade on the sword’s texture, as many 1.8.9 packs do. That changes the sword everywhere, also in the inventory and in other players’ hands. Smaller swords changes only how big it looks in your own hand. You can do both.')],
+      },
+      {
+        id: 'crosshair',
+        q: 'Why is my coloured crosshair the wrong colour?',
+        a: [p('Java draws the crosshair inverted over what is behind it, so a white crosshair shows dark on bright sky and light on dark ground. Colours mix with the background the same way. Use white or grey.')],
+      },
+      {
+        id: 'mods',
+        q: 'Can a texture pack add zoom, an FPS counter or remove fog?',
+        a: [p('No. Zoom, FPS and key displays, toggle sprint, removing fog and motion blur need a mod (OptiFine, Sodium and others), a PvP client or the game’s own settings. A pack only changes textures, models, sounds and similar files.')],
+      },
+    ],
+    related: ['make-a-texture-pack', 'make-3d-items-texture-pack', 'install-resource-packs'],
+    cta: { label: 'Make a PvP pack', to: '/textures?start=pvp', icon: 'sword' },
   },
 ];
 

@@ -157,6 +157,29 @@ export interface TexturePackProject extends ProjectBase {
    * what's needed to keep editing them or put the pack's own files back.
    */
   customModels?: Record<string, CustomModel>;
+  /** PvP / FPS tweaks switched on in the editor, with what each one changed (to put it back) */
+  pvp?: PvpState;
+}
+
+/** The PvP tweaks of a texture pack (src/tools/textures/pvp). */
+export interface PvpState {
+  tweaks: Record<string, PvpApplied>;
+  /** A new PvP pack: the editor applies the preset once the game files are loaded */
+  pending?: { fps: boolean };
+}
+
+/** One PvP tweak as applied: its choices and every file it wrote, with the pack's copy from before. */
+export interface PvpApplied {
+  options: Record<string, string | boolean>;
+  /** Textures it painted: hash of the pixels it wrote (a texture painted since is left alone) */
+  textures: { path: string; before: Blob | null; hash: string }[];
+  /** Whole files it wrote (models, .mcmeta): the text it wrote */
+  files: { path: string; before: Blob | null; text: string }[];
+  /** Model files whose display slots it changed: what each slot was in the file before (null: not in it) */
+  displays: { path: string; before: Blob | null; prev: Record<string, unknown>; slots: Record<string, unknown>; text: string }[];
+  appliedAt: number;
+  /** The game version the files were written for */
+  version?: string;
 }
 
 /** A block or item model changed in the model editor (Java). */

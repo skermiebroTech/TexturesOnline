@@ -32,6 +32,15 @@ const ES: TexturesLanguage = {
       descriptionPlaceholder: 'Hecho con Texture Pack Maker',
       button: 'Crear pack',
       defaultName: 'Mi texture pack',
+      startWith: 'Empezar con',
+      blank: 'Texturas originales',
+      blankHint: 'Todas las texturas como en el juego',
+      pvp: 'Pack PvP / FPS',
+      pvpHint: 'Fuego bajo, cristal transparente, mira limpia, espadas más pequeñas',
+      fps: 'También un pack de FPS',
+      fpsHint: 'Texturas de bloques de 8 × 8 y sin animaciones (Java), para ordenadores menos potentes.',
+      pvpButton: 'Crear pack PvP',
+      pvpName: 'Mi pack PvP',
       failed: 'No se pudo crear el pack',
     },
     open: {
@@ -224,6 +233,14 @@ const ES: TexturesLanguage = {
         label: 'Ampliación HD suave',
         description: 'Duplica o cuadruplica la resolución con un filtro de suavizado para pixel art (Scale2x/Scale3x).',
       },
+      downscale: {
+        label: 'Menor resolución',
+        description: 'Reduce las texturas a 8 o 4 píxeles por bloque: un aspecto más limpio y menos memoria de vídeo (packs de FPS).',
+      },
+      stillFrames: {
+        label: 'Sin animaciones',
+        description: 'Java: deja solo el primer fotograma de las texturas animadas, así el agua, la lava, el fuego y los portales se quedan quietos.',
+      },
       dither: {
         label: 'Tramado',
         description: 'Tramado ordenado retro con menos pasos de color.',
@@ -276,6 +293,7 @@ const ES: TexturesLanguage = {
       palette: 'Paleta',
       matchBy: 'Ajustar por',
       dither: 'Tramado',
+      resolution: 'Resolución',
     },
     hints: {
       coolDown: 'Los valores negativos enfrían las texturas',

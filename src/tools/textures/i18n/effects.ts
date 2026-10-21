@@ -24,6 +24,8 @@ export const fx = defineText('textures.effects', {
     blur: { label: 'Soft blur', description: 'Soften textures. Block textures blur seamlessly across tile edges.' },
     pixelate: { label: 'Pixelate', description: 'Lower the resolution into bigger pixels, keeping the size and transparency.' },
     upscale: { label: 'Smooth HD upscale', description: 'Double or quadruple the resolution with a pixel-art smoothing filter (Scale2x/Scale3x).' },
+    downscale: { label: 'Lower resolution', description: 'Shrink textures to 8 or 4 pixels per block: a cleaner look and less video memory (FPS packs).' },
+    stillFrames: { label: 'No animations', description: 'Java: keep only the first frame of animated textures, so water, lava, fire and portals stand still.' },
     dither: { label: 'Dither', description: 'Retro ordered dithering with fewer colour steps.' },
     glow: { label: 'Glow', description: 'Bright parts shine and bloom, with an optional halo around items.' },
     flip: { label: 'Flip', description: 'Mirror textures horizontally and/or vertically (each animation frame separately).' },
@@ -62,6 +64,7 @@ export const fx = defineText('textures.effects', {
     palette: 'Palette',
     matchBy: 'Match by',
     dither: 'Dither',
+    resolution: 'Resolution',
   },
   /** Explanations under settings */
   hints: {

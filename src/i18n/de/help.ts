@@ -362,6 +362,17 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'pvp',
+      q: 'Kann ich ein PvP- oder FPS-Pack erstellen?',
+      a: [
+        p(
+          'Ja. Wähle beim Erstellen eines Packs ', strong('PvP-/FPS-Pack'), ': Der Editor schaltet niedriges Feuer, klares Glas und klare Scheiben, keinen Kürbis-Rand, ein kleineres Fadenkreuz, kleinere Schwerter und einen tieferen Schild ein, soweit deine Version sie hat. Im Tab ', strong('PvP'), ' gibt es für alles einen Schalter, mit Optionen wie der Feuerhöhe, fünf Fadenkreuzen oder einem selbst gezeichneten und der Schwertgröße, dazu FPS-Optionen: 8×-Texturen und keine Animationen. Jede Option schreibt normale Pack-Dateien für deine Version (von Java 1.6.1 bis 26.3, mit den Dateinamen von 1.8.9) und lässt sich ausschalten oder rückgängig machen. In Bedrock gehen klares Glas, der Kürbis-Rand, das Fadenkreuz und 8×-Texturen; das Feuer und gehaltene Items kann ein Pack dort nicht ändern. Zoom, eine FPS-Anzeige oder kein Nebel brauchen Mods. Schritt für Schritt: ',
+          link('/guides/make-a-pvp-texture-pack', 'PvP-Texture-Pack erstellen'),
+          '.',
+        ),
+      ],
+    },
+    {
       id: 'sounds',
       q: 'Kann ich Sounds in meinem Pack ändern?',
       a: [

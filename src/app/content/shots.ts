@@ -187,6 +187,34 @@ export const SHOTS = {
     'The stone block’s model reshaped into a step: a 16×8×16 slab cube and a second cube, 16×8×8, placed on top of half of it, with the Cube tab showing its position and size.',
     'Stone reshaped into a step: the Slab start point plus one more cube.',
   ),
+  pvpStart: shot(
+    'pvp-start',
+    1280,
+    800,
+    'The New texture pack form with PvP / FPS pack chosen under Start with, Also an FPS pack switched on, Java edition and version Java 1.8.9, and the button Create PvP pack.',
+    'Pick PvP / FPS pack and the version you play.',
+  ),
+  pvpTweaks: shot(
+    'pvp-tweaks',
+    1280,
+    800,
+    'The texture editor for a Java 1.8.9 PvP pack: fire_layer_1 open in the pixel editor with the flames moved down to the lower half of the frame, and the PvP tab with Low fire switched on, its height set to Lower and Keep fire blocks as they are on.',
+    'The PvP tab: every tweak is a switch, with its choices and the files it changes.',
+  ),
+  pvpCrosshair: shot(
+    'pvp-crosshair',
+    1280,
+    800,
+    'icons.png zoomed in, its top-left 16×16 crosshair square selected with a grey diamond crosshair painted in it, next to the hearts and armour icons, and the Custom crosshair card with five designs and a Draw your own button.',
+    'Draw your own: up to Java 1.20.1 the crosshair is the top-left corner of icons.png.',
+  ),
+  pvpBedrock: shot(
+    'pvp-bedrock',
+    1280,
+    800,
+    'A Bedrock PvP pack: the red stained glass texture open, clear inside with its border kept, and the PvP tab with Low fire switched off and the reason Bedrock can’t have it, above Clear glass switched on.',
+    'On Bedrock the tweaks a pack can’t make are switched off, with the reason.',
+  ),
 } satisfies Record<string, Shot>;
 
 export type ShotKey = keyof typeof SHOTS;

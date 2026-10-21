@@ -32,6 +32,15 @@ const DE: TexturesLanguage = {
       descriptionPlaceholder: 'Erstellt mit Texture Pack Maker',
       button: 'Pack erstellen',
       defaultName: 'Mein Texture Pack',
+      startWith: 'Start mit',
+      blank: 'Originaltexturen',
+      blankHint: 'Alle Texturen so wie im Spiel',
+      pvp: 'PvP-/FPS-Pack',
+      pvpHint: 'Niedriges Feuer, klares Glas, sauberes Fadenkreuz, kleinere Schwerter',
+      fps: 'Auch ein FPS-Pack',
+      fpsHint: 'Blocktexturen mit 8 × 8 Pixeln und keine Animationen (Java), für schwächere Computer.',
+      pvpButton: 'PvP-Pack erstellen',
+      pvpName: 'Mein PvP-Pack',
       failed: 'Das Pack konnte nicht erstellt werden',
     },
     open: {
@@ -224,6 +233,14 @@ const DE: TexturesLanguage = {
         label: 'Glattes HD-Hochskalieren',
         description: 'Verdoppelt oder vervierfacht die Auflösung mit einem Glättungsfilter für Pixel-Art (Scale2x/Scale3x).',
       },
+      downscale: {
+        label: 'Niedrigere Auflösung',
+        description: 'Verkleinert Texturen auf 8 oder 4 Pixel pro Block: klarerer Look und weniger Grafikspeicher (FPS-Packs).',
+      },
+      stillFrames: {
+        label: 'Keine Animationen',
+        description: 'Java: Von animierten Texturen bleibt nur das erste Bild, Wasser, Lava, Feuer und Portale stehen still.',
+      },
       dither: {
         label: 'Dithering',
         description: 'Geordnetes Retro-Dithering mit weniger Farbstufen.',
@@ -276,6 +293,7 @@ const DE: TexturesLanguage = {
       palette: 'Palette',
       matchBy: 'Zuordnen nach',
       dither: 'Dithering',
+      resolution: 'Auflösung',
     },
     hints: {
       coolDown: 'Negative Werte kühlen die Texturen ab',

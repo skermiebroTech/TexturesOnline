@@ -1,0 +1,230 @@
+/* PvP / FPS tab of the texture pack editor (loaded with ./panel.ts). */
+.pvp {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.pvp-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pvp-preset-btn {
+  width: 100%;
+}
+.pvp-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.pvp-loading {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+}
+.pvp-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pvp-tweak {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  transition:
+    border-color var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease),
+    opacity var(--dur-1) var(--ease);
+}
+.pvp-tweak.is-on {
+  border-color: color-mix(in srgb, var(--tool-accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--tool-accent-soft) 60%, var(--surface-2));
+}
+.pvp-tweak.is-busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.pvp-tweak.is-unavailable .pvp-head,
+.pvp-tweak.is-unavailable .pvp-desc {
+  opacity: 0.62;
+}
+.pvp-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pvp-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.pvp-tweak.is-on .pvp-icon {
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+}
+.pvp-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  font-weight: 700;
+  color: var(--text);
+}
+.pvp-desc {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pvp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 2px solid var(--border);
+}
+.pvp-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.pvp-opt .segmented {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: stretch;
+}
+/* choices share the card's width; long names (Am niedrigsten) wrap instead of spilling out */
+.pvp-opt .segmented-item {
+  flex: 1 1 auto;
+  /* never narrower than its longest word */
+  min-width: auto;
+  height: auto;
+  min-height: 28px;
+  padding: 2px 6px 4px;
+  white-space: normal;
+  text-align: center;
+}
+.pvp-keep {
+  padding-top: 2px;
+}
+.pvp-designs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pvp-design {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  /* the game shows the crosshair over the world: a dark sky-and-ground backdrop */
+  background: linear-gradient(180deg, #5f7f9f 0 50%, #4d6b3a 50% 100%);
+  transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.pvp-design canvas {
+  width: 30px;
+  height: 30px;
+}
+.pvp-design:hover {
+  border-color: var(--text-3);
+}
+.pvp-design[aria-checked='true'] {
+  border-color: var(--tool-accent);
+  box-shadow: 0 0 0 2px var(--tool-accent-glow);
+}
+.pvp-draw {
+  display: flex;
+}
+.pvp-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pvp-meta > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+.pvp-meta dt {
+  flex: none;
+  color: var(--text-3);
+}
+.pvp-meta dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-2);
+}
+.pvp-meta code {
+  overflow-wrap: anywhere;
+  padding: 0 4px;
+  border-radius: var(--r-xs);
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 18px;
+}
+.pvp-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pvp-reason > .icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--text-3);
+}
+.pvp-mods p {
+  margin: 0;
+}
+.pvp-mods > .icon {
+  flex: none;
+  margin-top: 1px;
+}
+.pvp-guide {
+  align-self: flex-start;
+}
+.pvp-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pvp-stale > .icon {
+  flex: none;
+  color: var(--gold-2);
+}
+.pvp-stale > span {
+  flex: 1 1 160px;
+  min-width: 0;
+}

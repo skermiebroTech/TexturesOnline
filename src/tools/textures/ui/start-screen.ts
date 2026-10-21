@@ -3,7 +3,7 @@
 import type { Edition, TexturePackProject } from '../../../core/types';
 import { h, timeAgo } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
-import { badge, button, emptyState, openMenu, segmented, spinner, textInput } from '../../../ui/components';
+import { badge, button, emptyState, openMenu, segmented, spinner, textInput, toggle } from '../../../ui/components';
 import { dropzone } from '../../../ui/dropzone';
 import { openModal, confirmDialog, promptDialog } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
@@ -125,6 +125,9 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   let resolution = 16;
   let name = '';
   let description = '';
+  /** 'pvp': the editor switches the PvP preset on when the pack opens (?start=pvp preselects it) */
+  let start: 'blank' | 'pvp' = ctx.query.get('start') === 'pvp' ? 'pvp' : 'blank';
+  let fps = false;
   let alive = true;
 
   // ---------------------------------------------------------------- new pack form
@@ -192,6 +195,43 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   };
   paintRes();
 
+  // ---- what the pack starts with
+  const startCards = h('div', { class: 'tx-starts', role: 'radiogroup', 'aria-label': t.create.startWith });
+  const fpsField = toggle({ label: t.create.fps, description: t.create.fpsHint, value: fps, onChange: (v) => (fps = v) });
+  fpsField.classList.add('tx-start-fps');
+  const paintStart = () => {
+    const opts: ['blank' | 'pvp', 'image' | 'sword', string, string][] = [
+      ['blank', 'image', t.create.blank, t.create.blankHint],
+      ['pvp', 'sword', t.create.pvp, t.create.pvpHint],
+    ];
+    startCards.replaceChildren(
+      ...opts.map(([v, ic, title, hint]) => {
+        const on = v === start;
+        const b = h(
+          'button',
+          { type: 'button', class: 'tx-start-opt', role: 'radio', 'aria-checked': String(on), tabIndex: on ? 0 : -1, dataset: { start: v } },
+          h('span', { class: 'tx-start-opt-icon' }, icon(ic)),
+          h('span', { class: 'tx-start-opt-text' }, h('strong', null, title), h('span', { class: 'faint small' }, hint)),
+        );
+        const pick = (next: 'blank' | 'pvp') => {
+          start = next;
+          paintStart();
+          (startCards.querySelector('[aria-checked="true"]') as HTMLElement | null)?.focus();
+        };
+        b.addEventListener('click', () => pick(v));
+        b.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            pick(start === 'blank' ? 'pvp' : 'blank');
+          }
+        });
+        return b;
+      }),
+    );
+    fpsField.hidden = start !== 'pvp';
+    createBtn.querySelector('.btn-label')!.textContent = start === 'pvp' ? t.create.pvpButton : t.create.button;
+  };
+
   const descField = textInput({ label: t.create.description, value: '', placeholder: t.create.descriptionPlaceholder, multiline: true, maxLength: 200, onInput: (v) => (description = v) });
   const createBtn = button({ label: t.create.button, icon: 'arrow-right', variant: 'primary', size: 'lg', class: 'tx-create-btn', onClick: () => void create() });
 
@@ -199,7 +239,9 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     if (createBtn.disabled) return;
     createBtn.disabled = true;
     try {
-      const p = newTextureProject({ name: name.trim() || t.create.defaultName, edition, version: version || (edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest'), resolution, description: description.trim() || t.create.descriptionPlaceholder });
+      const p = newTextureProject({ name: name.trim() || (start === 'pvp' ? t.create.pvpName : t.create.defaultName), edition, version: version || (edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest'), resolution, description: description.trim() || t.create.descriptionPlaceholder });
+      // the PvP tweaks need the game's files: the editor switches them on when it has them
+      if (start === 'pvp') p.pvp = { tweaks: {}, pending: { fps } };
       await saveProject(p);
       navigate(`/textures/${p.id}`);
     } catch (err) {
@@ -218,6 +260,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       'div',
       { class: 'tx-new-body' },
       nameField,
+      field(t.create.startWith, startCards, fpsField),
       field(t.create.edition, editionSeg, editionHint),
       picker,
       field(t.create.resolution, resChips, resText),
@@ -225,6 +268,8 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       createBtn,
     ),
   );
+
+  paintStart();
 
   // ---------------------------------------------------------------- open existing
   const busy = h('div', { class: 'tx-open-busy', hidden: true }, spinner(32), h('span', null, t.open.opening));

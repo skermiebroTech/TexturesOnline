@@ -104,4 +104,20 @@ export const SHOTS = localShots({
     alt: 'O modelo do bloco de pedra transformado em degrau: um cubo de 16×8×16 como uma laje e um segundo cubo de 16×8×8 em cima de uma das metades, com posição e tamanho na aba “Cube”.',
     caption: 'Pedra transformada em degrau: o ponto de partida “Slab” e mais um cubo.',
   },
+  pvpStart: {
+    alt: 'O formulário Novo texture pack com Pack de PvP / FPS escolhido em Começar com, Também um pack de FPS ligado, edição Java, versão Java 1.8.9 e o botão Criar pack de PvP.',
+    caption: 'Escolha Pack de PvP / FPS e a versão que você joga.',
+  },
+  pvpTweaks: {
+    alt: 'O editor de texturas de um pack de PvP para Java 1.8.9: fire_layer_1 aberto no editor de pixels com as chamas na metade de baixo do quadro, e a aba PvP com Fogo baixo ligado, a altura em Mais baixo e Deixar os blocos de fogo como estão ligado.',
+    caption: 'A aba PvP: cada ajuste é um interruptor, com as opções e os arquivos que ele muda.',
+  },
+  pvpCrosshair: {
+    alt: 'icons.png ampliado, com o quadrado de 16×16 da mira no canto superior esquerdo selecionado e um losango cinza pintado dentro, ao lado dos corações e da armadura, e o cartão Mira personalizada com cinco desenhos e Desenhar a sua.',
+    caption: 'Desenhar a sua: até o Java 1.20.1 a mira é o canto superior esquerdo do icons.png.',
+  },
+  pvpBedrock: {
+    alt: 'Um pack de PvP do Bedrock: a textura do vidro vermelho, transparente por dentro e com a borda, e a aba PvP com Fogo baixo desligado e o motivo, acima de Vidro transparente ligado.',
+    caption: 'No Bedrock, os ajustes que um pack não consegue fazer ficam desligados, com o motivo.',
+  },
 });

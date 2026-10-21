@@ -32,6 +32,15 @@ const JA: TexturesLanguage = {
       descriptionPlaceholder: 'Texture Pack Makerで作成',
       button: 'パックを作る',
       defaultName: 'マイテクスチャパック',
+      startWith: 'はじめ方',
+      blank: 'バニラのテクスチャ',
+      blankHint: 'すべてのテクスチャがゲームのまま',
+      pvp: 'PvP／FPSパック',
+      pvpHint: '低い炎、透明なガラス、すっきりした照準、小さい剣',
+      fps: 'FPSパックにもする',
+      fpsHint: 'ブロックのテクスチャを8 × 8にし、アニメーションをなくします（Java版）。性能の低いPC向けです。',
+      pvpButton: 'PvPパックを作る',
+      pvpName: 'マイPvPパック',
       failed: 'パックを作れませんでした',
     },
     open: {
@@ -224,6 +233,14 @@ const JA: TexturesLanguage = {
         label: 'なめらかHD拡大',
         description: 'ドット絵用のなめらかフィルター（Scale2x/Scale3x）で解像度を2倍か4倍にします。',
       },
+      downscale: {
+        label: '解像度を下げる',
+        description: 'テクスチャを1ブロックあたり8または4ピクセルに縮小します。見た目がすっきりし、ビデオメモリも減ります（FPSパック向け）。',
+      },
+      stillFrames: {
+        label: 'アニメーションなし',
+        description: 'Java版：アニメーションするテクスチャを最初のコマだけにし、水・溶岩・炎・ポータルを止めます。',
+      },
       dither: {
         label: 'ディザリング',
         description: '色の段階を減らしたレトロな規則的ディザリングです。',
@@ -276,6 +293,7 @@ const JA: TexturesLanguage = {
       palette: 'パレット',
       matchBy: '合わせ方',
       dither: 'ディザリング',
+      resolution: '解像度',
     },
     hints: {
       coolDown: 'マイナスの値でテクスチャが涼しい色合いになります',

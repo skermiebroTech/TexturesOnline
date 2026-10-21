@@ -45,7 +45,7 @@ export const GOOGLE_SITE_VERIFICATION = '';
 export const BING_SITE_VERIFICATION = '';
 
 /** When the guides and facts on the public pages were last checked. */
-export const CONTENT_UPDATED = '2026-10-20';
+export const CONTENT_UPDATED = '2026-10-21';
 
 /** Absolute URL of a site path: '/' -> SITE_URL, '/help' -> SITE_URL + 'help/', 'og-image.png' -> file URL. */
 export function absoluteUrl(path: string): string {

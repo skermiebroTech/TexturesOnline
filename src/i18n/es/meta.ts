@@ -156,5 +156,12 @@ export const META_ES: MetaTranslation = {
       label: 'Hacer ítems 3D',
       blurb: 'Convierte ítems planos en modelos 3D y cambia la forma de bloques, archivo a archivo.',
     },
+    'make-a-pvp-texture-pack': {
+      title: 'Cómo hacer un texture pack PvP (Java y Bedrock)',
+      h1: 'Cómo hacer un texture pack PvP para Minecraft',
+      description: 'Haz gratis un texture pack PvP de Minecraft: fuego bajo, cristal transparente, espadas más pequeñas, mira propia y texturas 8× para FPS, de 1.8.9 a 26.3.',
+      label: 'Hacer un pack PvP',
+      blurb: 'Fuego bajo, cristal transparente, espadas pequeñas, mira y texturas para FPS.',
+    },
   },
 };

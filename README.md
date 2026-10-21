@@ -37,6 +37,13 @@ repository keeps its original name, `TexturesOnline`).
   item definition (1.21.4+, e.g. a 3D model in hand with the flat icon in the inventory) or a blockstate only
   when the game needs one; models in opened packs load into the editor. Bedrock shows a note instead (shapes
   need an add-on) and models can be downloaded as Bedrock geometry.
+- PvP / FPS packs: start a pack as a PvP / FPS pack, or use the PvP tab, for low fire (the screen overlay's
+  `fire_1` / 1.8's `fire_layer_1` lowered, fire blocks kept on a copy), clear glass and panes, no pumpkin blur,
+  a custom crosshair (`gui/icons.png` before 1.20.2 and on Bedrock, `gui/sprites/hud/crosshair.png` after; five
+  designs or your own), smaller swords and weapons and a lower shield in first person (display transforms in the
+  item models, merged with models made in the model editor; Java 1.8+ / 1.9+), and FPS options: 8× textures and
+  no animations (Java). Each tweak writes the right files for the pack's version, can be switched off (files
+  painted since are kept) or undone; tweaks a version or Bedrock can't have are shown off with the reason.
 - Sounds: browse the game's sound events by category, play them, and replace any sound with your own file
   (MP3, WAV, OGG, M4A...) or a microphone recording, trimmed on its waveform and levelled. Replacements are
   saved as Ogg Vorbis (Java: `assets/minecraft/sounds/`; Bedrock: `sounds/` plus `sound_definitions.json`

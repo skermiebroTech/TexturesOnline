@@ -1321,6 +1321,103 @@ const flipEffect: EffectDef = {
   },
 };
 
+/** One frame shrunk to `ow` × `oh` by averaging the pixels each new pixel covers (cut-out art keeps hard edges). */
+function shrinkFrame(f: ImageData, ow: number, oh: number, all: boolean): ImageData {
+  const { width: w, height: h, data: s } = f;
+  const out = makeImage(ow, oh);
+  const d = out.data;
+  // Textures whose alpha is only 0 or 255 (leaves, glass, plants) stay cut out
+  let binary = !all;
+  for (let i = 3; binary && i < s.length; i += 4) if (s[i] !== 0 && s[i] !== 255) binary = false;
+  for (let y = 0; y < oh; y++) {
+    const y0 = Math.floor((y * h) / oh);
+    const y1 = Math.max(y0 + 1, Math.floor(((y + 1) * h) / oh));
+    for (let x = 0; x < ow; x++) {
+      const x0 = Math.floor((x * w) / ow);
+      const x1 = Math.max(x0 + 1, Math.floor(((x + 1) * w) / ow));
+      let r = 0, g = 0, b = 0, a = 0, wt = 0, n = 0, opaque = 0;
+      for (let yy = y0; yy < y1; yy++) {
+        for (let xx = x0; xx < x1; xx++) {
+          const i = (yy * w + xx) * 4;
+          const k = all ? 1 : s[i + 3] / 255;
+          r += s[i] * k;
+          g += s[i + 1] * k;
+          b += s[i + 2] * k;
+          wt += k;
+          a += s[i + 3];
+          n++;
+          if (s[i + 3] > 0) opaque++;
+        }
+      }
+      const o = (y * ow + x) * 4;
+      if (wt > 0) {
+        d[o] = r / wt;
+        d[o + 1] = g / wt;
+        d[o + 2] = b / wt;
+      } else {
+        const i = (y0 * w + x0) * 4;
+        d[o] = s[i];
+        d[o + 1] = s[i + 1];
+        d[o + 2] = s[i + 2];
+      }
+      d[o + 3] = binary ? (opaque * 2 >= n ? 255 : 0) : a / n;
+    }
+  }
+  return out;
+}
+
+/** Pixels per block face the "Lower resolution" effect can shrink textures to. */
+export const LOW_RESOLUTIONS = ['8', '4'] as const;
+
+const downscaleEffect: EffectDef = {
+  type: 'downscale',
+  get label() {
+    return fx.effects.downscale.label;
+  },
+  icon: 'grid-2x2-2',
+  kind: 'resize',
+  defaultCategories: ['block', 'item'],
+  get description() {
+    return fx.effects.downscale.description;
+  },
+  params: [choice('size', 'resolution', '8', [['8', '8×'], ['4', '4×']])],
+  apply(img, p, ctx) {
+    const size = Math.round(num(p.size, 8)) === 4 ? 4 : 8;
+    const all = alphaIsData(ctx);
+    return perFrame(img, ctx, (f) => {
+      // tile art: the frame's width is its pixels per block face
+      if (f.width <= size) return f;
+      const ow = size;
+      const oh = Math.max(1, Math.round((f.height * size) / f.width));
+      return shrinkFrame(f, ow, oh, all);
+    });
+  },
+};
+
+/** Java items whose animation frames are picked by the game's code (needle positions), not played. */
+const CODE_FRAMES = /\/items?\/(compass|clock|recovery_compass)\.png$/;
+
+const stillFramesEffect: EffectDef = {
+  type: 'stillFrames',
+  get label() {
+    return fx.effects.stillFrames.label;
+  },
+  icon: 'pause',
+  kind: 'resize',
+  defaultCategories: ['block', 'item'],
+  get description() {
+    return fx.effects.stillFrames.description;
+  },
+  params: [],
+  apply(img, _p, ctx) {
+    // Java only: Bedrock plays frame lists from flipbook_textures.json that a pack can't take away
+    if (!ctx.path.startsWith('assets/') || ctx.animated === false || CODE_FRAMES.test(ctx.path)) return img;
+    const { fw, fh } = frameGrid(img, ctx);
+    if (fw === img.width && fh === img.height) return img;
+    return crop(img, 0, 0, fw, fh);
+  },
+};
+
 const gradientMapEffect: EffectDef = {
   type: 'gradientMap',
   get label() {
@@ -1458,6 +1555,8 @@ export const EFFECTS: EffectDef[] = [
   pixelateEffect,
   ditherEffect,
   upscaleEffect,
+  downscaleEffect,
+  stillFramesEffect,
   flipEffect,
 ];
 
