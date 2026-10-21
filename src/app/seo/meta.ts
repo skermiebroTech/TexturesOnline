@@ -8,6 +8,7 @@ import { META_DE } from '../../i18n/de/meta';
 import { META_ES } from '../../i18n/es/meta';
 import { META_PT_BR } from '../../i18n/pt-br/meta';
 import { META_JA } from '../../i18n/ja/meta';
+import { META_RU } from '../../i18n/ru/meta';
 
 export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'privacy' | 'all' | 'guides' | 'guide';
 export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
@@ -333,7 +334,7 @@ export interface MetaTranslation {
   guides: Partial<Record<string, GuidePageText>>;
 }
 
-export const META_TRANSLATIONS: Record<TranslatedLocale, MetaTranslation> = { de: META_DE, es: META_ES, 'pt-br': META_PT_BR, ja: META_JA };
+export const META_TRANSLATIONS: Record<TranslatedLocale, MetaTranslation> = { de: META_DE, es: META_ES, 'pt-br': META_PT_BR, ja: META_JA, ru: META_RU };
 
 const trimSlash = (p: string) => (p.length > 1 ? p.replace(/\/+$/, '') : p);
 

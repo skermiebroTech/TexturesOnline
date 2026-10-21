@@ -1,0 +1,528 @@
+// Russian help page (see HelpText in src/tools/help/content.ts). Menu names are the ones the Russian
+// game shows (Java: assets/minecraft/lang/ru_ru.json, Bedrock: texts/ru_RU.lang, Iris: its ru_ru.json).
+// Buttons of the site's own editors are quoted in English for now.
+
+import { el, type Child } from '../../app/markup';
+import { callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { REPO_URL } from '../../app/site';
+import { F, LATEST, maxFormat, minFormat } from '../../app/content/facts';
+import type { HelpText } from '../../tools/help/content';
+import { UI_RU } from './ui';
+import { BEDROCK, JAVA, LAUNCHER, OPTIFINE, IRIS } from './game-ui';
+
+const p = (...c: Child[]) => el('p', null, ...c);
+const FOLDER = UI_RU.folderTable;
+
+const JAVA_PACK_STEPS: Child[] = [
+  ['Экспортируй пак из редактора текстурпаков. Получится файл вроде ', code('My Pack.zip'), '.'],
+  ['Запусти Minecraft Java Edition и открой ', uiPath(JAVA.options, JAVA.packs), '.'],
+  ['Нажми ', uiPath(JAVA.openFolder), '. Откроется папка ', code('resourcepacks'), '.'],
+  ['Положи ', code('.zip'), ` в эту папку. Можно и просто перетащить файл в окно «${JAVA.packsScreen}».`],
+  ['Наведи курсор на свой пак в списке ', strong(JAVA.available), ' и нажми на стрелку, чтобы перенести его в ', strong(JAVA.selected), '. Паки выше в списке побеждают. Нажми ', strong(JAVA.done), '.'],
+];
+
+const BEDROCK_PACK_STEPS: Child[] = [
+  ['Экспортируй пак. Получится файл вроде ', code('My Pack.mcpack'), '.'],
+  ['Дважды щёлкни по файлу. Откроется Minecraft и покажет ', el('em', null, BEDROCK.importStarted), ', а затем ', el('em', null, BEDROCK.imported), '.'],
+  ['Открой ', uiPath(BEDROCK.settings, BEDROCK.globalResources, BEDROCK.myPacks), ', выбери свой пак и нажми ', strong(BEDROCK.activate), '.'],
+  'Используешь несколько паков? Подними свой наверх, чтобы он побеждал.',
+];
+
+const JAVA_SKIN_STEPS: Child[] = [
+  ['Открой лаунчер Minecraft и выбери ', uiPath('Minecraft: Java Edition', LAUNCHER.skins), '.'],
+  ['Нажми ', strong(LAUNCHER.newSkin), ' (карточка с +).'],
+  ['Дай скину имя и выбери модель игрока: ', strong(LAUNCHER.classic), ' или ', strong(LAUNCHER.slim), '.'],
+  ['Нажми ', strong(LAUNCHER.browse), ', выбери свой PNG и нажми ', strong(LAUNCHER.saveAndUse), '.'],
+];
+
+const BEDROCK_SKIN_STEPS: Child[] = [
+  ['Экспортируй скин как ', strong('Bedrock skin pack'), '. Получится файл ', code('.mcpack'), '.'],
+  'Открой файл (двойным щелчком на Windows, через «Открыть в Minecraft» на телефоне или планшете), чтобы импортировать его.',
+  ['В Minecraft открой ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), '. Твой набор будет среди импортированных наборов.'],
+  ['Выбери свой скин и нажми ', strong(BEDROCK.equip), '.'],
+];
+
+const IRIS_STEPS: Child[] = [
+  ['Скачай Iris Installer с ', ext('https://www.irisshaders.dev/', 'irisshaders.dev'), '. Он сразу ставит Fabric Loader, Iris и Sodium для твоей версии.'],
+  ['Открой лаунчер Minecraft, выбери новый профиль ', strong('Iris & Sodium'), ' и один раз запусти игру.'],
+  ['Экспортируй шейдерпак из конструктора шейдеров (это ', code('.zip'), ' — не распаковывай его).'],
+  ['В игре открой ', uiPath(JAVA.options, JAVA.video, IRIS.shaderPacks), ' и нажми ', strong(IRIS.openFolder), '. Положи туда zip.'],
+  ['Выбери свой пак и нажми ', strong(IRIS.apply), '. Кнопка ', strong(IRIS.settings), ' позволяет тонко настроить параметры прямо в игре.'],
+];
+
+const VANILLA_SHADER_STEPS: Child[] = [
+  ['Экспортируй с целью ', strong('Vanilla Java'), '. Получится ресурспак ', code('.zip'), '.'],
+  ['Установи его как текстурпак: ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', положи туда zip.'],
+  `Перенеси пак в «${JAVA.selected}» и нажми «${JAVA.done}». Новый вид включится сразу.`,
+];
+
+const VIBRANT_STEPS: Child[] = [
+  ['Экспортируй пак (', code('.mcpack'), ') и открой файл, чтобы импортировать его.'],
+  ['Открой ', uiPath(BEDROCK.settings, BEDROCK.globalResources, BEDROCK.myPacks), ' и активируй пак.'],
+  ['Открой ', uiPath(BEDROCK.settings, BEDROCK.video), ' и поставь ', strong(BEDROCK.graphicsMode), ' на ', strong(BEDROCK.vibrantVisuals), ' (Vibrant Visuals).'],
+];
+
+export const HELP: HelpText = {
+  sections: {
+    'java-packs': {
+      title: 'Текстурпаки в Java',
+      short: 'Паки Java',
+      howto: { name: 'Как установить текстурпак (набор ресурсов) в Minecraft Java Edition', steps: JAVA_PACK_STEPS },
+      body: [
+        el('p', { class: 'guide-intro' }, 'В Java Edition текстурпаки называются ', el('em', null, 'наборами ресурсов'), ' (игроки говорят «ресурспаки»). При экспорте получается файл ', code('.zip'), ' — не распаковывай его.'),
+        steps(JAVA_PACK_STEPS),
+        callout(
+          'info',
+          '«Предназначен для более старой (или новой) версии Minecraft»?',
+          'Пак пишется под версию, выбранную в редакторе. Если играешь в другую версию, поменяй целевую версию или диапазон совместимости на вкладке ',
+          strong('Pack'),
+          ' и экспортируй снова. Паки, где меняются только текстуры, обычно всё равно работают — можно нажать ',
+          strong('Да'),
+          ', чтобы всё равно его загрузить.',
+        ),
+        el('h3', { class: 'guide-sub' }, 'Где находится папка'),
+        folderTable('resourcepacks', FOLDER),
+      ],
+    },
+    'bedrock-packs': {
+      title: 'Текстурпаки в Bedrock',
+      short: 'Паки Bedrock',
+      howto: { name: 'Как установить текстурпак Bedrock (.mcpack) на Windows', steps: BEDROCK_PACK_STEPS },
+      body: [
+        el('p', { class: 'guide-intro' }, 'Паки Bedrock экспортируются в файлы ', code('.mcpack'), '. Стоит открыть такой файл, и Minecraft сам его импортирует.'),
+        tabbed(
+          'bedrock-packs',
+          [
+            { value: 'windows', label: 'Windows', icon: 'monitor', content: [steps(BEDROCK_PACK_STEPS)] },
+            {
+              value: 'mobile',
+              label: 'Android и iOS',
+              icon: 'smartphone',
+              content: [
+                steps([
+                  ['Скачай ', code('.mcpack'), ' на телефон или планшет.'],
+                  [strong('Android: '), 'открой файл из «Загрузок» или приложения «Файлы» и выбери ', strong('Minecraft'), '. ', strong('iPhone / iPad: '), 'в приложении «Файлы» нажми на файл, затем ', uiPath('Поделиться', 'Minecraft'), '.'],
+                  ['Minecraft импортирует пак. Затем открой ', uiPath(BEDROCK.settings, BEDROCK.globalResources), ' и активируй его.'],
+                ]),
+              ],
+            },
+            {
+              value: 'console',
+              label: 'Консоли',
+              icon: 'gamepad',
+              content: [
+                el(
+                  'p',
+                  { class: 'muted' },
+                  'Xbox, PlayStation и Switch не умеют импортировать файлы .mcpack. Добавь пак в мир на ПК или телефоне и зайди в этот мир или играй на Realm или сервере, где этот пак уже есть.',
+                ),
+              ],
+            },
+          ],
+          UI_RU.platform,
+        ),
+        callout('tip', 'Только для одного мира?', `Вместо «${BEDROCK.globalResources}» открой `, uiPath(BEDROCK.editWorld, BEDROCK.packs), ' и активируй пак там.'),
+        callout(
+          'info',
+          'Обновление уже импортированного пака',
+          'Каждый экспорт сохраняет тот же ID пака и повышает номер версии, поэтому повторный импорт заменяет старую копию, а не добавляет дубликат.',
+        ),
+      ],
+    },
+    'java-skins': {
+      title: 'Скины в Java',
+      short: 'Скины Java',
+      howto: { name: 'Как сменить скин в Minecraft Java Edition', steps: JAVA_SKIN_STEPS },
+      body: [
+        el('p', { class: 'guide-intro' }, 'Экспортируй скин как ', code('.png'), '. Запомни, для какой модели нарисован скин: ', strong(LAUNCHER.classic), ' (руки шириной 4 пикселя) или ', strong(LAUNCHER.slim), ' (руки шириной 3 пикселя).'),
+        tabbed(
+          'java-skins',
+          [
+            { value: 'launcher', label: 'Лаунчер Minecraft', icon: 'monitor', content: [steps(JAVA_SKIN_STEPS)] },
+            {
+              value: 'web',
+              label: 'minecraft.net',
+              icon: 'globe',
+              content: [
+                steps([
+                  ['Войди на ', ext('https://www.minecraft.net/', 'minecraft.net'), ' и открой свой профиль.'],
+                  ['В разделе скина выбери модель ', strong(LAUNCHER.classic), ' или ', strong(LAUNCHER.slim), '.'],
+                  ['Загрузи свой PNG и подтверди. Скин появится в игре, когда ты в следующий раз зайдёшь в мир или на сервер.'],
+                ]),
+              ],
+            },
+          ],
+          UI_RU.platform,
+        ),
+        callout('info', 'Играешь в 1.7.10 или старше?', 'Эти версии понимают только старую разметку 64×32. Выбери при экспорте вариант ', strong('Old Java skin (64×32)'), '.'),
+      ],
+    },
+    'bedrock-skins': {
+      title: 'Скины в Bedrock',
+      short: 'Скины Bedrock',
+      howto: { name: 'Как установить набор скинов Bedrock (.mcpack)', steps: BEDROCK_SKIN_STEPS },
+      body: [
+        tabbed(
+          'bedrock-skins',
+          [
+            { value: 'pack', label: 'Набор скинов (.mcpack)', icon: 'package', content: [steps(BEDROCK_SKIN_STEPS)] },
+            {
+              value: 'png',
+              label: 'Один PNG',
+              icon: 'image',
+              content: [
+                steps([
+                  ['Экспортируй скин как ', code('.png'), '.'],
+                  ['Открой ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ' и в разделе ', strong(BEDROCK.ownedSkins), ' выбери пустую ячейку ', strong(BEDROCK.import), '.'],
+                  ['Выбери свой PNG, а затем модель с обычными или тонкими руками.'],
+                ]),
+              ],
+            },
+          ],
+          UI_RU.platform,
+        ),
+        callout(
+          'warn',
+          'Друзья видят стандартный скин?',
+          'Игроки, у которых включён параметр ',
+          strong(BEDROCK.trustedSkins),
+          ', видят чужие скины стандартными. Это их собственная настройка. На консолях импортировать файлы скинов нельзя.',
+        ),
+      ],
+    },
+    iris: {
+      title: 'Шейдеры с Iris или OptiFine',
+      short: 'Iris / OptiFine',
+      howto: { name: 'Как установить шейдерпак через Iris', steps: IRIS_STEPS },
+      body: [
+        el('p', { class: 'guide-intro' }, 'Классическим шейдерпакам нужен шейдерный мод. ', strong('Iris'), ' — самый простой и быстрый вариант; OptiFine тоже подойдёт.'),
+        tabbed(
+          'iris',
+          [
+            { value: 'iris', label: 'Iris (рекомендуем)', icon: 'sparkles', content: [steps(IRIS_STEPS)] },
+            {
+              value: 'optifine',
+              label: 'OptiFine',
+              icon: 'gear',
+              content: [
+                steps([
+                  ['Установи OptiFine для своей версии Minecraft с ', ext('https://optifine.net/', 'optifine.net'), ' и один раз запусти игру с профилем OptiFine.'],
+                  ['Открой ', uiPath(JAVA.options, JAVA.video, OPTIFINE.shaders), ' и нажми ', strong(OPTIFINE.folder), '.'],
+                  'Положи экспортированный zip в эту папку и выбери его в списке.',
+                ]),
+              ],
+            },
+          ],
+          UI_RU.platform,
+        ),
+        el('h3', { class: 'guide-sub' }, 'Папка шейдерпаков'),
+        folderTable('shaderpacks', FOLDER),
+      ],
+    },
+    'vanilla-shaders': {
+      title: 'Ванильные шейдеры (без модов)',
+      short: 'Ванильные шейдеры',
+      howto: { name: 'Как установить ванильный шейдерпак (без модов) в Minecraft Java', steps: VANILLA_SHADER_STEPS },
+      body: [
+        el('p', { class: 'guide-intro' }, 'Они работают в обычной игре, потому что это ', strong('набор ресурсов'), ', который заменяет часть собственных файлов шейдеров Minecraft.'),
+        steps(VANILLA_SHADER_STEPS),
+        callout(
+          'warn',
+          'Сделан для одной конкретной версии',
+          'Mojang часто меняет файлы шейдеров, поэтому ванильный шейдерпак работает только в той версии, для которой сделан. После обновления Minecraft открой свой проект, выбери новую версию и экспортируй снова.',
+        ),
+      ],
+    },
+    'vibrant-visuals': {
+      title: 'Vibrant Visuals в Bedrock',
+      short: 'Vibrant Visuals',
+      howto: { name: 'Как включить набор Vibrant Visuals в Minecraft Bedrock', steps: VIBRANT_STEPS },
+      body: [
+        el('p', { class: 'guide-intro' }, '«Шейдеры» в Bedrock — это наборы настроек для Vibrant Visuals (в русской версии игры — «Яркие визуальные эффекты»): свет, небо, цветокоррекция, вода и туман.'),
+        steps(VIBRANT_STEPS),
+        callout(
+          'warn',
+          'Не получается выбрать Vibrant Visuals?',
+          'Minecraft разрешает этот режим, только если его поддерживают все активные паки. Классические текстурпаки (в том числе сделанные в редакторе текстурпаков) его отключают, поэтому деактивируй другие паки, пока пользуешься этим. Некоторые серверы тоже его отключают.',
+        ),
+        callout(
+          'info',
+          'Нужно поддерживаемое устройство',
+          'Vibrant Visuals работает на ПК с Windows и DirectX 12, на Xbox и PlayStation (на Xbox One и PS4 он сначала выключен), на iPhone и iPad с чипом A12 или новее и на многих современных устройствах Android. На первой Nintendo Switch, Chromebook и планшетах Fire его нет. Параметр ',
+          strong('Customize classic fog'),
+          ' работает и в остальных графических режимах.',
+        ),
+      ],
+    },
+    folders: {
+      title: 'Где найти папку Minecraft',
+      short: 'Папки',
+      body: [
+        el('p', { class: 'guide-intro' }, 'Быстрее всего — кнопкой ', strong(JAVA.openFolder), ' в самом Minecraft. Если нужен путь:'),
+        el(
+          'table',
+          { class: 'paths-table' },
+          el('thead', null, el('tr', null, el('th', { scope: 'col' }, 'Что'), el('th', { scope: 'col' }, 'Где'))),
+          el(
+            'tbody',
+            null,
+            el('tr', null, el('th', { scope: 'row' }, 'Java на Windows'), el('td', null, code('%APPDATA%\\.minecraft'))),
+            el('tr', null, el('th', { scope: 'row' }, 'Java на macOS'), el('td', null, code('~/Library/Application Support/minecraft'))),
+            el('tr', null, el('th', { scope: 'row' }, 'Java на Linux'), el('td', null, code('~/.minecraft'))),
+            el('tr', null, el('th', { scope: 'row' }, 'Файлы игры (.jar)'), el('td', null, code('.minecraft/versions/<version>/<version>.jar'))),
+            el('tr', null, el('th', { scope: 'row' }, 'Bedrock на Windows'), el('td', null, code('%APPDATA%\\Minecraft Bedrock\\users\\shared\\games\\com.mojang'))),
+          ),
+        ),
+        el('p', { class: 'muted small' }, 'На Windows вставь путь в адресную строку Проводника или в окно «Выполнить» (Win + R).'),
+      ],
+    },
+  },
+  faq: [
+    {
+      id: 'vanilla-source',
+      q: 'Откуда берутся ванильные текстуры?',
+      a: [
+        p(
+          'Когда ты начинаешь проект для Java, браузер скачивает официальный файл игры этой версии напрямую с серверов Mojang и оставляет на устройстве только текстуры, модели и шейдеры. Текстуры Bedrock берутся из официального репозитория Mojang ',
+          ext('https://github.com/Mojang/bedrock-samples', 'bedrock-samples'),
+          ' на GitHub.',
+        ),
+        p('В самом Texture Pack Maker ничего от Mojang не хранится — это статический сайт без собственных серверов.'),
+      ],
+    },
+    {
+      id: 'paint-3d',
+      q: 'Можно ли рисовать на 3D-модели, а не на плоской текстуре?',
+      a: [
+        p(
+          'Да. В редакторе текстур воспользуйся переключателем ',
+          strong('2D / 3D'),
+          ' над холстом (или нажми D). Каждая грань закрашивает именно тот пиксель, который показывает, — включая повёрнутые грани, наложения вроде бокового слоя дёрна, включённые и выключенные состояния, сундуки и кровати. Работают карандаш, ластик, заливка, пипетка (или Alt + щелчок), размер кисти и зеркало, а у каждой текстуры своя история отмены. Перетаскивание правой кнопкой или двумя пальцами вращает модель, колёсико или щипок масштабирует, а клавиши F, B, L, R и T переключают на нужную сторону.',
+        ),
+      ],
+    },
+    {
+      id: 'mobs',
+      q: 'Можно ли редактировать текстуры мобов?',
+      a: [
+        p(
+          'Да. Выбери ',
+          strong('Mobs'),
+          ' в списке текстур (Blocks · Items · Mobs · All) или открой любую текстуру из папки entity. Моб появится в 3D и раскрашивается как блок. Параметры рядом с ним (вариант, возраст, цвет шерсти, профессия и так далее) открывают каждую текстуру, которую он использует; наложения вроде шерсти овцы, светящихся глаз и одежды крестьян рисуются на своих текстурах. В списке Parts щёлкни по части, чтобы скрыть её и раскрасить то, что под ней, двойной щелчок оставляет только эту часть, а Show all возвращает всё обратно. Мобы Bedrock используют собственные модели Bedrock, а маски окраски, спрятанные в их прозрачных пикселях, сохраняются.',
+        ),
+      ],
+    },
+    {
+      id: 'gear',
+      q: 'Можно ли редактировать сёдла, броню и конскую броню?',
+      a: [
+        p(
+          'Да. У мобов, которые что-то носят, в параметрах есть группа ',
+          strong('Wearing'),
+          ': надень седло на свинью, лавомерку, лошадь, верблюда или наутилуса; одень зомби, скелетов, пиглинов и стойку для брони в броню (выбери материал для всего комплекта, затем включай и выключай отдельные части, а кожу перекрашивай через ',
+          strong('Dye'),
+          '); дай лошадям, волкам и наутилусам их броню, ламам — ковёр, а счастливому гасту — упряжь. Каждая надетая вещь рисуется на своей текстуре и отдельно указана в ',
+          strong('Parts'),
+          ', так что её можно скрыть и раскрасить моба под ней. Если открыть текстуру брони, седла или ковра, она будет показана надетой, а ',
+          strong('Used by'),
+          ' перечисляет всех мобов, которые её носят. В старых версиях используются те текстуры брони и сёдел, которые были в них.',
+        ),
+        p(
+          strong('Отделка брони: '),
+          'надев на гуманоида броню, выбери узор в ',
+          strong('Trim'),
+          ' и ',
+          strong('Material'),
+          ' в группе Wearing (Java 1.20 и новее, а также Bedrock). Игра окрашивает серый узор палитрой материала и берёт палитру потемнее, если отделка совпадает с бронёй, — например, железная отделка на железной броне. Рисуй отделку на модели или открой её узор: восемь оттенков серого принимают цвет отделки, а любые другие цвета остаются такими, какими ты их рисуешь. Измени палитру материала, чтобы перекрасить этот материал на всех отделках, и скрой ',
+          strong('Trim'),
+          ' в Parts, чтобы добраться до брони под ней.',
+        ),
+      ],
+    },
+    {
+      id: 'models',
+      q: 'Можно ли менять форму блоков и предметов, например сделать 3D-меч?',
+      a: [
+        p(
+          'Да, в паках для Java (Minecraft 1.8 и новее). Открой блок или предмет в превью и нажми ',
+          strong('Edit shape'),
+          '. Редактор моделей откроет модель, которую использует игра, собранную из её родительских моделей. Добавляй, копируй и удаляй кубы, вводи их позицию и размер или тяни стрелки и ручки в 3D, с привязкой к сетке 16 × 16 или мельче, и поворачивай куб по одной оси (до Minecraft 1.21.6 — с шагом 22,5°). В ',
+          strong('Faces'),
+          ' дай каждой грани текстуру из своего пака или новую, которую нарисуешь позже, и перетащи нужную часть текстуры; задай поворот, когда грань скрывается и окрашивается ли она. ',
+          strong('Display'),
+          ' задаёт, как модель выглядит в инвентаре, от первого и третьего лица, на земле, в рамке и на голове, с превью для каждого случая. Любое изменение можно отменить.',
+        ),
+        p(
+          'Для начала возьми модель из игры, пустую модель, полный куб, плиту, крест, как у цветов, или, для предметов, ',
+          strong('3D item from sprite'),
+          ': плоская картинка превращается в кубы глубиной в 1 пиксель, объединённые в как можно меньшее число. С 1.21.4 вариант ',
+          strong('Flat in the inventory'),
+          ' оставляет в инвентаре плоскую иконку, а в руке показывает 3D-модель. Пак получает файл модели, а определение предмета или blockstate — только когда они нужны игре; при экспорте модели проверяются на совместимость с твоей версией, а файлы моделей в открытых паках сохраняются и доступны для правки. В Bedrock для новых форм блоков нужен аддон, а для 3D-предметов в руке — файлы attachable, которые редактор не делает; можно скачать модель как геометрию Bedrock и начать с неё. Пошагово: ',
+          link('/guides/make-3d-items-texture-pack', 'как сделать 3D-предметы'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'sounds',
+      q: 'Можно ли менять звуки в паке?',
+      a: [
+        p(
+          'Да. В редакторе текстурпаков нажми на ноту в конце переключателя Blocks · Items · Mobs · All. Найди звук по названию или категории и нажми воспроизведение, чтобы послушать. Открой его и нажми ',
+          strong('Replace'),
+          ', чтобы заменить файл своим аудио (MP3, WAV, OGG, M4A и другие форматы) или записью с микрофона. Перетаскивай ручки на волне, чтобы обрезать звук, настрой громкость или нажми ',
+          strong('Normalise'),
+          ', а Reset вернёт звук игры. Заменённые звуки сохраняются в Ogg Vorbis и экспортируются вместе с паком: в паках Java они лежат в ',
+          code('assets/minecraft/sounds'),
+          ', в паках Bedrock — в ',
+          code('sounds/'),
+          ' с подходящими записями в ',
+          code('sound_definitions.json'),
+          '.',
+        ),
+        p(
+          'Доступ к микрофону запрашивается только после нажатия Start; если он заблокирован, разреши микрофон для этого сайта через значок в адресной строке. Записи никогда не покидают твоё устройство. Большинство звуков лучше оставлять моно, чтобы они звучали оттуда, где что-то происходит в мире, а стерео использовать для музыки и звуков меню. Собственные звуки Java проигрываются прямо с серверов Mojang, которые не дают веб-страницам читать аудио, поэтому их можно слушать, но обрезать получится только загруженные или записанные тобой звуки. Редактирование звуков работает в Java 1.7.10 и новее и в Bedrock.',
+        ),
+      ],
+    },
+    {
+      id: 'hd-skins',
+      q: 'Можно ли сделать HD-скин 128×128?',
+      a: [
+        p(
+          'Да, для Bedrock Edition. В HD-скине вдвое больше пикселей по каждой стороне, чем в обычном (128×128 вместо 64×64), поэтому лицо, тени и узоры могут быть тоньше. Начиная скин, выбери ',
+          strong('HD 128×128'),
+          ' в ',
+          strong('Size'),
+          ' или переключи готовый скин через ',
+          strong('Size'),
+          ' › ',
+          strong('HD 128'),
+          ' в редакторе: каждый пиксель удваивается, поэтому скин выглядит так же, пока ты не добавишь деталей. Экспортируй ',
+          strong('Bedrock skin (.png)'),
+          ', чтобы импортировать его в гардеробной, или ',
+          strong('Bedrock skin pack (.mcpack)'),
+          '. В одном наборе скинов могут быть и обычные, и HD-скины.',
+        ),
+        p(
+          'Java Edition без модов принимает только скины 64×64, поэтому экспорт для Java делает копию 64×64 (каждый блок 2×2 становится одним пикселем) и сохраняет HD-оригинал. С модом для HD-скинов, например CustomSkinLoader, выбери ',
+          strong('128×128 for mods'),
+          '. На консолях импортировать файлы скинов нельзя, а размеры больше 128×128 не поддерживаются. HD-скины подходят и для своего тотема.',
+        ),
+      ],
+    },
+    {
+      id: 'upload',
+      q: 'Что-нибудь загружается на сервер?',
+      a: [p('Нет. Твои проекты, картинки и экспортированные паки никогда не покидают устройство. Приложение только скачивает: файлы игры у Mojang, список версий и скины, которые ты ищешь по нику.')],
+    },
+    {
+      id: 'offline',
+      q: 'Работает ли это офлайн?',
+      a: [
+        p(
+          'Да, после первой загрузки. Приложение и все уже открытые версии остаются на этом устройстве, так что можно редактировать без интернета. Для версии, которая ещё не открывалась, нужно подключение — или выбери ',
+          strong('Use my own .jar'),
+          ' и укажи её в папке ',
+          code('.minecraft/versions'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'storage',
+      q: 'Где сохраняются мои проекты?',
+      a: [p('В хранилище браузера на этом устройстве. Они остаются там, пока ты их не удалишь или не очистишь данные сайта. Чтобы сделать резервную копию или перенести проект на другой компьютер, экспортируй его и открой файл там через ', strong('Open a pack'), '.')],
+    },
+    {
+      id: 'versions',
+      q: 'Какие версии Minecraft поддерживаются?',
+      a: [p(`По умолчанию выбрана Java ${LATEST}, и работает любая версия Java вплоть до 1.6.1 (когда появились наборы ресурсов), а если включить — ещё и снапшоты. Для Bedrock доступны последний релиз, последняя превью-версия и более старые версии.`)],
+    },
+    {
+      id: 'pack-format',
+      q: `Какой формат набора ресурсов у Minecraft Java ${LATEST}?`,
+      a: [
+        p(
+          `Java ${LATEST} использует формат набора ресурсов ${F(LATEST)}. Пак только для ${LATEST} указывает `,
+          code(`"min_format": ${minFormat(LATEST)}`),
+          ' и ',
+          code(`"max_format": ${maxFormat(LATEST)}`),
+          ' в своём ',
+          code('pack.mcmeta'),
+          '. Texture Pack Maker пишет эти поля за тебя. Смотри ',
+          link('/guides/minecraft-pack-format-versions', 'формат каждой версии Java'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'java-vs-bedrock',
+      q: 'Чем отличаются паки Java и Bedrock?',
+      a: [
+        p(
+          'Пак Java — это ',
+          code('.zip'),
+          ' с файлом ',
+          code('pack.mcmeta'),
+          ' и PNG-текстурами в ',
+          code('assets/minecraft/textures/'),
+          '. Пак Bedrock — это ',
+          code('.mcpack'),
+          ' с файлом ',
+          code('manifest.json'),
+          ' и текстурами в ',
+          code('textures/'),
+          ' (PNG или TGA). Ни одно издание не загружает паки другого. ',
+          link('/guides/java-vs-bedrock-packs', 'Полное сравнение'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'no-mods',
+      q: 'Можно ли сделать шейдеры без модов?',
+      a: [
+        p(
+          'Да. В Java 1.17 и новее ресурспак может менять собственные шейдеры Minecraft (цвет, виньетка, туман, а в 26.3 — ещё и bloom). В Bedrock набор Vibrant Visuals меняет встроенные свет, небо, туман и воду. Настоящим теням и отражениям в Java по-прежнему нужен Iris или OptiFine. ',
+          link('/guides/make-shaders-without-mods', 'Как это работает'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'phone',
+      q: 'Можно ли пользоваться им на телефоне или планшете?',
+      a: [p('Да. Все инструменты работают с сенсорным экраном, включая масштаб двумя пальцами в пиксельных редакторах. Для детальной пиксельной графики удобнее экран побольше.')],
+    },
+    {
+      id: 'official',
+      q: 'Это бесплатно? Это официальный сайт?',
+      a: [p('Это бесплатно, а код открыт под лицензией MIT.'), p('Texture Pack Maker не является официальным продуктом Minecraft, не одобрен компаниями Mojang и Microsoft и не связан с ними.')],
+    },
+    {
+      id: 'bug',
+      q: 'Что-то пошло не так. Как об этом сообщить?',
+      a: [p('Создай, пожалуйста, issue на ', ext(`${REPO_URL}/issues`, 'GitHub'), ' и укажи браузер, версию игры и что именно происходило. Скриншоты очень помогают.')],
+    },
+  ],
+  quick: { 'java-packs': 'Установить текстурпак', 'java-skins': 'Сменить скин', iris: 'Подключить шейдеры', faq: 'Вопросы' },
+  toc: {
+    title: 'На этой странице',
+    textures: 'Текстурпаки',
+    skins: 'Скины',
+    shaders: 'Шейдеры',
+    more: 'Ещё',
+    irisOptifine: 'Iris / OptiFine',
+    vanilla: 'Ванильные (без модов)',
+    vibrant: 'Vibrant Visuals',
+    folders: 'Папки',
+    faq: 'Вопросы и ответы',
+    allGuides: 'Все гайды',
+  },
+  bothEditions: 'Java и Bedrock',
+  eyebrow: 'Установка и помощь',
+  title: 'Как установить текстурпаки, скины и шейдеры',
+  lead: 'Как перенести свои работы в Minecraft: пошаговые инструкции для Java и Bedrock на ПК, Mac, телефоне и консоли, плюс ответы на частые вопросы.',
+  faqTitle: 'Частые вопросы',
+};

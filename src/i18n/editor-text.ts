@@ -34,7 +34,8 @@ export type Translation<T> = { -readonly [K in keyof T]: T[K] extends string ? s
 /** A language file: translations of sections, by section id. */
 export type LanguageFile = Record<string, TextTree>;
 
-export type LanguageFiles<F extends object = LanguageFile> = Record<TranslatedLocale, () => Promise<{ default: F }>>;
+/** A loader's language files. A language without one (still being translated) shows English. */
+export type LanguageFiles<F extends object = LanguageFile> = Partial<Record<TranslatedLocale, () => Promise<{ default: F }>>>;
 
 export type Params = Record<string, string | number>;
 
@@ -120,7 +121,9 @@ export function textLoader<F extends object>(files: LanguageFiles<F>): (locale: 
     let p = pending.get(locale);
     if (!p) {
       const l = locale as TranslatedLocale;
-      p = files[l]()
+      const file = files[l];
+      if (!file) return Promise.resolve();
+      p = file()
         .then((m) => {
           registerTranslations(l, m.default as unknown as LanguageFile);
           done.add(l);

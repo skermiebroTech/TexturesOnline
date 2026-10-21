@@ -1,0 +1,93 @@
+// Russian interface texts (see src/i18n/ui.ts).
+
+import type { UiText } from '../ui';
+
+/** Month names in the genitive, as dates are written: «12 октября 2026 г.» */
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+export const UI_RU: UiText = {
+  nav: { home: 'Главная', textures: 'Текстуры', convert: 'Конвертер', skins: 'Скины', shaders: 'Шейдеры', help: 'Помощь', all: 'Всё' },
+  mainNav: 'Главное меню',
+  skipLink: 'Перейти к содержанию',
+  brandHome: 'Texture Pack Maker — главная страница',
+  githubLabel: 'Texture Pack Maker на GitHub',
+  githubTooltip: 'Исходный код на GitHub',
+  themeToLight: 'Включить светлую тему',
+  themeToDark: 'Включить тёмную тему',
+  openMenu: 'Открыть меню',
+  closeMenu: 'Закрыть меню',
+  menu: 'Меню',
+  notAffiliatedShort: 'Не связан с Mojang и Microsoft',
+  footer: {
+    label: 'Подвал сайта',
+    tagline: 'Бесплатные инструменты с открытым кодом для авторов контента Minecraft. Всё работает прямо в браузере.',
+    make: 'Создать',
+    guides: 'Гайды',
+    learn: 'Справка',
+    textures: 'Редактор текстурпаков',
+    converter: 'Конвертер паков',
+    merge: 'Объединение паков',
+    skins: 'Редактор скинов',
+    skinpack: 'Наборы скинов',
+    totem: 'Свой тотем',
+    shaders: 'Конструктор шейдеров',
+    allGuides: 'Все гайды',
+    everything: 'Всё, что есть на сайте',
+    installGuide: 'Как установить',
+    faq: 'Вопросы и ответы',
+    about: 'О проекте',
+    notOfficial: 'Не является официальным продуктом Minecraft. Не одобрен компаниями Mojang и Microsoft и не связан с ними.',
+    licence: 'Лицензия MIT',
+    uiFont: 'Шрифт: Texel',
+  },
+  language: 'Язык',
+  breadcrumb: 'Навигационная цепочка',
+  home: 'Главная',
+  guides: 'Гайды',
+  onThisPage: 'На этой странице',
+  questions: 'Частые вопросы',
+  relatedGuides: 'Похожие гайды',
+  guide: 'Гайд',
+  updated: 'Обновлено',
+  date: (iso) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return `${d} ${MONTHS[m - 1]} ${y} г.`;
+  },
+  platform: 'Платформа',
+  folderTable: { system: 'Система', folder: 'Папка' },
+  toolIntro: {
+    whatYouCanDo: 'Что здесь можно сделать',
+    questions: 'Частые вопросы',
+    guides: 'Гайды',
+    noscript: 'Редактору нужен JavaScript. Включи его, чтобы начать; гайды на этой странице работают и без него.',
+  },
+  englishOnly: 'Ещё гайды (на английском)',
+  loading: 'Загрузка…',
+  notFound: {
+    title: 'Эта страница куда-то ушла',
+    text: (path) => `По адресу «${path}» ничего нет. Возможно, страницу перенесли или в ссылке опечатка.`,
+    goHome: 'На главную',
+    help: 'Помощь',
+    pageTitle: 'Страница не найдена — Texture Pack Maker',
+  },
+  loadError: {
+    title: 'Не удалось открыть страницу',
+    offline: 'Ты не в сети, а эта часть приложения ещё не сохранена на этом устройстве. Подключись к интернету и попробуй снова.',
+    newVersion: 'Похоже, вышла новая версия Texture Pack Maker. Обычно помогает перезагрузить страницу.',
+    generic: 'При открытии страницы что-то пошло не так. Твои проекты в безопасности — попробуй перезагрузить страницу.',
+    reload: 'Перезагрузить',
+    details: 'Технические подробности',
+    pageTitle: 'Что-то пошло не так — Texture Pack Maker',
+  },
+  recent: {
+    eyebrow: 'Твои проекты',
+    title: 'Продолжи работу с того же места',
+    note: 'Проекты хранятся только в этом браузере. Экспортируй их, чтобы сохранить копию.',
+    showAll: (n) => (n ? `Показать все (${n})` : 'Показать все'),
+    showFewer: 'Свернуть',
+    open: 'Открыть',
+    rename: 'Переименовать',
+    delete: 'Удалить',
+  },
+  ogImageAlt: 'Главная страница Texture Pack Maker: создание текстурпаков, скинов и шейдеров для Minecraft Java и Bedrock',
+};

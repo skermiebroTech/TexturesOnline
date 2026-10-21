@@ -208,7 +208,7 @@ export const ALL_EN: AllText = {
     presets: { title: 'Presets and live preview', desc: 'Start from a look such as Cinematic or Noir and see every change straight away.' },
     packEditor: { title: 'Edit a shader pack', desc: 'Open an existing shader pack, change its options or files and download it again.' },
     app: { title: 'Install it as an app', desc: 'Add it to your home screen or desktop and use it offline.' },
-    languages: { title: 'In five languages', desc: 'English, German, Spanish, Portuguese and Japanese, editors included.' },
+    languages: { title: 'In six languages', desc: 'English, German, Spanish, Portuguese, Japanese and Russian, editors included.' },
     privacy: { title: 'Nothing is uploaded', desc: 'No accounts, ads or tracking. Your work stays on your device.' },
     openSource: { title: 'Open source', desc: 'The code is public on GitHub, where you can report problems and suggest ideas.' },
     installGuide: { title: 'Install guide', desc: 'Install texture packs, skins and shaders on Java and Bedrock, on any device.' },

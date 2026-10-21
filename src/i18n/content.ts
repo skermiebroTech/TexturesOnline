@@ -14,7 +14,7 @@
 // The build and the unit tests register every language at once (src/i18n/all-content.ts); the
 // running app loads only the language it shows (loadContent).
 
-import type { Locale, TranslatedLocale } from './locales';
+import { LOCALE_INFO, type Locale, type TranslatedLocale } from './locales';
 import type { HomeText } from '../tools/home/content';
 import type { ToolIntroText, IntroTool } from '../app/content/tools';
 import type { HelpText } from '../tools/help/content';
@@ -57,13 +57,25 @@ const LOADERS: Record<TranslatedLocale, () => Promise<{ CONTENT: LocaleContent }
   es: () => import('./es/content'),
   'pt-br': () => import('./pt-br/content'),
   ja: () => import('./ja/content'),
+  ru: () => import('./ru/content'),
 };
+
+/**
+ * Fetches the pixel font's extension files for a language written with them (Cyrillic), so a page
+ * reached in the app does not show its text in the fallback font first (prerendered pages preload
+ * them). Gives up after a moment: the text then simply swaps to the pixel font when it arrives.
+ */
+function loadExtendedFont(locale: Locale): Promise<unknown> {
+  if (!LOCALE_INFO[locale].extendedFont || typeof document === 'undefined' || !document.fonts) return Promise.resolve();
+  const fonts = Promise.all(['16px Texel', 'bold 16px Texel'].map((f) => document.fonts.load(f, 'Ж'))).catch(() => undefined);
+  return Promise.race([fonts, new Promise((r) => setTimeout(r, 1000))]);
+}
 
 /** Makes sure a language's content is available (the app calls this before rendering a page). */
 export async function loadContent(locale: Locale): Promise<void> {
   if (hasContent(locale)) return;
   const l = locale as TranslatedLocale;
-  const mod = await LOADERS[l]();
+  const [mod] = await Promise.all([LOADERS[l](), loadExtendedFont(l)]);
   registerContent(l, mod.CONTENT);
 }
 
@@ -73,4 +85,5 @@ export const CONTENT_MODULES: Record<TranslatedLocale, string> = {
   es: 'src/i18n/es/content.ts',
   'pt-br': 'src/i18n/pt-br/content.ts',
   ja: 'src/i18n/ja/content.ts',
+  ru: 'src/i18n/ru/content.ts',
 };

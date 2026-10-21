@@ -420,8 +420,17 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .help-section-head {
+    flex-wrap: wrap;
     padding: 14px 16px;
-    gap: 12px;
+    gap: 8px 12px;
+  }
+  /* The edition badge goes on its own line under the title, so long titles (German, Russian)
+     keep the whole width next to the icon. */
+  .help-section-head h2 {
+    flex: 1 1 calc(100% - 48px);
+  }
+  .help-section-head .badge {
+    margin-left: 48px;
   }
   .help-section-head h2 {
     font-size: var(--fs-md);

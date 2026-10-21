@@ -5,7 +5,7 @@
 // meta.ts and content.ts) and register those in src/i18n/ui.ts, src/app/seo/meta.ts and
 // src/i18n/content.ts (which also explains how a page gets translated).
 
-export const LOCALES = ['en', 'de', 'es', 'pt-br', 'ja'] as const;
+export const LOCALES = ['en', 'de', 'es', 'pt-br', 'ja', 'ru'] as const;
 export type Locale = (typeof LOCALES)[number];
 export type TranslatedLocale = Exclude<Locale, 'en'>;
 
@@ -22,6 +22,11 @@ export interface LocaleInfo {
   name: string;
   /** English name (aria labels and tests) */
   englishName: string;
+  /**
+   * Its letters live in the pixel font's extension files (texel-*-ext.woff2: Cyrillic, Greek, more
+   * Latin), so its pages preload those too instead of showing fallback text first.
+   */
+  extendedFont?: boolean;
 }
 
 export const LOCALE_INFO: Record<Locale, LocaleInfo> = {
@@ -30,6 +35,7 @@ export const LOCALE_INFO: Record<Locale, LocaleInfo> = {
   es: { code: 'es', lang: 'es', ogLocale: 'es_ES', name: 'Español', englishName: 'Spanish' },
   'pt-br': { code: 'pt-br', lang: 'pt-BR', ogLocale: 'pt_BR', name: 'Português (Brasil)', englishName: 'Portuguese (Brazil)' },
   ja: { code: 'ja', lang: 'ja', ogLocale: 'ja_JP', name: '日本語', englishName: 'Japanese' },
+  ru: { code: 'ru', lang: 'ru', ogLocale: 'ru_RU', name: 'Русский', englishName: 'Russian', extendedFont: true },
 };
 
 export function isLocale(s: string): s is Locale {
