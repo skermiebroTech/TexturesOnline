@@ -37,6 +37,9 @@ export interface SiteFile {
 export const ROBOTS_PUBLIC = 'index,follow,max-image-preview:large';
 export const ROBOTS_PRIVATE = 'noindex,follow';
 
+/** The pixel font's extension files (Cyrillic, Greek, more Latin), preloaded on pages in a language written with them. */
+export const EXTENDED_FONTS = ['fonts/texel-regular-ext.woff2', 'fonts/texel-bold-ext.woff2'];
+
 /** Hosts the editors download game files from (preconnected on tool pages). */
 export const PRECONNECT_HOSTS = ['https://piston-meta.mojang.com', 'https://piston-data.mojang.com', 'https://raw.githubusercontent.com'];
 
@@ -176,7 +179,9 @@ function pageAssets(input: SiteBuildInput, page: PrerenderPage, prefix: string):
   const lateCss = boot.css.filter((f) => !already.has(f) && !css.includes(f));
   const js = [...new Set([...styles.js, ...boot.js])].filter((f) => !already.has(f));
   const images = input.assetFile ? (page.preloadImages ?? []).map((src) => input.assetFile!(src)) : [];
+  const fonts = LOCALE_INFO[page.locale].extendedFont ? EXTENDED_FONTS : [];
   return [
+    ...fonts.map((f) => `<link rel="preload" href="${prefix}${f}" as="font" type="font/woff2" crossorigin>`),
     ...css.map((f) => `<link rel="stylesheet" crossorigin href="${prefix}${f}">`),
     ...lateCss.map((f) => `<link rel="preload" as="style" crossorigin href="${prefix}${f}">`),
     ...js.map((f) => `<link rel="modulepreload" crossorigin href="${prefix}${f}">`),

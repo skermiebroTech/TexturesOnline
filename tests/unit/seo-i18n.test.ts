@@ -3,7 +3,7 @@
 // app data, and no English text is left behind.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSite, type SiteFile } from '../../src/app/seo/build';
+import { EXTENDED_FONTS, buildSite, type SiteFile } from '../../src/app/seo/build';
 import { prerenderPages, pagesIn, type PrerenderPage } from '../../src/app/seo/pages';
 import { GUIDES, PUBLIC_PAGES, META_TRANSLATIONS, TOOL_META, guideMeta, localizedPath, metaRoute, pageLocales, pageMeta, publicPageMeta, allPublicPages } from '../../src/app/seo/meta';
 import { absoluteUrl, SITE_URL } from '../../src/app/site';
@@ -46,6 +46,9 @@ const fileOf = (url: string) => {
 const htmlOf = (p: PrerenderPage) => byName.get(fileOf(absoluteUrl(p.meta.path)))!;
 const decode = (s: string) => s.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 const translated = pages.filter((p) => p.locale !== 'en');
+
+/** Text of a language written in another script must contain it (titles, descriptions, labels). */
+const SCRIPTS: Partial<Record<Locale, RegExp>> = { ru: /[А-Яа-яЁё]/, ja: /[぀-ヿ一-鿿]/ };
 
 /** The pages phase 1 promises in every language. */
 const REQUIRED_ROUTES = [
@@ -108,8 +111,22 @@ test('translated titles and descriptions are unique, sized and not English', () 
         seen.add(v);
       }
       if (m.kind === 'guide') assert.notEqual((m as typeof en & { h1: string }).h1, (en as typeof en & { h1: string }).h1, `${m.path} h1`);
+      // Languages in another script: the English heuristic below cannot see untranslated text there.
+      const script = SCRIPTS[l];
+      if (script) for (const v of [m.title, m.description, m.label]) assert.match(v, script, `${m.path} is written in ${LOCALE_INFO[l].englishName}: ${v}`);
     }
   }
+});
+
+test('pages in a language written with the pixel font\'s extension files preload them', () => {
+  for (const p of pages) {
+    const html = htmlOf(p);
+    for (const f of EXTENDED_FONTS) {
+      const preloaded = new RegExp(`<link rel="preload" href="(?:\\./|(?:\\.\\./)+)${f.replace(/[.]/g, '\\.')}" as="font" type="font/woff2" crossorigin>`).test(html);
+      assert.equal(preloaded, !!LOCALE_INFO[p.locale].extendedFont, `${p.meta.path} ${f}`);
+    }
+  }
+  assert.ok(LOCALE_INFO.ru.extendedFont, 'Russian (Cyrillic) needs the extension files');
 });
 
 test('html lang, og:locale, canonical and JSON-LD inLanguage follow the page language', () => {
@@ -277,7 +294,7 @@ test('facts on translated pages come from the app data', () => {
 
 // ---------------------------------------------------------------- untranslated English
 
-/** English words that do not occur in German, Spanish, Portuguese or Japanese prose. */
+/** English words that do not occur in German, Spanish, Portuguese, Japanese or Russian prose. */
 const ENGLISH = new Set(['the', 'and', 'with', 'your', 'you', 'this', 'that', 'from', 'which', 'what', 'how', 'when', 'into', 'are', 'can', 'not', 'it', 'its', 'of', 'to', 'is', 'for', 'or', 'on', 'be', 'by', 'if', 'at', 'then', 'there', 'they', 'their', 'have', 'has', 'does', 'only', 'every', 'each', 'more', 'than', 'after', 'before', 'about', 'one', 'two', 'make', 'made', 'open', 'click', 'choose', 'pick']);
 /** Names the editors show in English (quoted as they appear), product names and file names. */
 const ALLOWED = [

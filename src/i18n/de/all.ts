@@ -48,7 +48,7 @@ export const ALL: AllText = {
     presets: { title: 'Presets und Live-Vorschau', desc: 'Starte mit einem Look wie Kino oder Noir und sieh jede Änderung sofort.' },
     packEditor: { title: 'Ein Shaderpack bearbeiten', desc: 'Öffne ein vorhandenes Shaderpack, ändere seine Optionen oder Dateien und lade es wieder herunter.' },
     app: { title: 'Als App installieren', desc: 'Leg es auf deinen Startbildschirm oder Desktop und nutze es offline.' },
-    languages: { title: 'In fünf Sprachen', desc: 'Englisch, Deutsch, Spanisch, Portugiesisch und Japanisch, die Editoren eingeschlossen.' },
+    languages: { title: 'In sechs Sprachen', desc: 'Englisch, Deutsch, Spanisch, Portugiesisch, Japanisch und Russisch, die Editoren eingeschlossen.' },
     privacy: { title: 'Nichts wird hochgeladen', desc: 'Keine Konten, keine Werbung, kein Tracking. Deine Arbeit bleibt auf deinem Gerät.' },
     openSource: { title: 'Open Source', desc: 'Der Code ist öffentlich auf GitHub, wo du Probleme melden und Ideen vorschlagen kannst.' },
     installGuide: { title: 'Installationsanleitung', desc: 'Installiere Texture Packs, Skins und Shader in Java und Bedrock, auf jedem Gerät.' },

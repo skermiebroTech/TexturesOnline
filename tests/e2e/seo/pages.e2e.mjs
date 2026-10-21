@@ -52,6 +52,7 @@ const LANGS = [
   { code: 'es', lang: 'es', help: 'Ayuda', name: 'Español' },
   { code: 'pt-br', lang: 'pt-BR', help: 'Ajuda', name: 'Português (Brasil)' },
   { code: 'ja', lang: 'ja', help: 'ヘルプ', name: '日本語' },
+  { code: 'ru', lang: 'ru', help: 'Помощь', name: 'Русский' },
 ];
 const LOCALIZED = LANGS.flatMap((l) => [
   { lang: l, path: `${l.code}/`, tool: 'home', ready: '.home .hero-title' },
@@ -234,6 +235,47 @@ try {
     await page.waitForSelector('.home .hero-title');
     const font = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
     check(/Texel/.test(font) && /Hiragino Sans|Noto Sans JP/.test(font), 'Japanese pages fall back to Japanese fonts', font);
+    // Russian: Cyrillic is in the pixel font's extension files, which Russian pages preload
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${base}ru/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.home .hero-title');
+    const preloads = await page.$$eval('link[rel="preload"][as="font"]', (ls) => ls.map((l) => new URL(l.href).pathname.split('/').pop()));
+    check(['texel-regular-ext.woff2', 'texel-bold-ext.woff2'].every((f) => preloads.includes(f)), 'Russian pages preload the Cyrillic font files', preloads.join(' '));
+    const cyrillic = await page.evaluate(async () => {
+      await document.fonts.ready;
+      return document.fonts.check('16px Texel', 'Ж') && document.fonts.check('bold 16px Texel', 'Ж');
+    });
+    check(cyrillic, 'Cyrillic regular and bold come from the pixel font');
+    // the language switcher fits six languages on a phone, in the footer and the menu drawer
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.waitForTimeout(300);
+    const fit = await page.evaluate(() => {
+      const sw = document.querySelector('.site-footer .lang-switch');
+      return { page: document.documentElement.scrollWidth, sw: sw ? sw.scrollWidth - sw.clientWidth : -1, links: document.querySelectorAll('.site-footer .lang-switch a').length };
+    });
+    check(fit.page <= 390 && fit.sw === 0 && fit.links === 6, 'six languages fit the footer switcher at 390 px', JSON.stringify(fit));
+    await page.click('.menu-btn');
+    await page.waitForSelector('.nav-drawer .drawer-langs a[hreflang="ru"]');
+    const drawer = await page.evaluate(() => {
+      const d = document.querySelector('.nav-drawer .drawer-langs');
+      const r = d.getBoundingClientRect();
+      const out = [...d.querySelectorAll('a')].filter((a) => {
+        const b = a.getBoundingClientRect();
+        return b.left < r.left - 1 || b.right > r.right + 1;
+      }).length;
+      return { links: d.querySelectorAll('a').length, out, overflow: d.scrollWidth - d.clientWidth };
+    });
+    check(drawer.links === 6 && drawer.out === 0 && drawer.overflow <= 0, 'six languages fit the menu drawer at 390 px', JSON.stringify(drawer));
+    await page.keyboard.press('Escape');
+    // switching to Russian inside the app keeps the page and loads the Cyrillic font
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${base}guides/make-a-skin/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.guide-page h1');
+    await page.evaluate(() => (window.__stay = 1));
+    await page.click('.site-footer .lang-switch a[hreflang="ru"]');
+    await page.waitForFunction(() => document.documentElement.lang === 'ru' && document.querySelector('.guide-page h1'));
+    check(page.url() === `${base}ru/guides/make-a-skin/` && (await page.evaluate(() => window.__stay)) === 1 && (await page.locator('.mainnav a[data-tool="help"]').innerText()).trim() === 'Помощь', 'switcher -> Russian guide without a reload', page.url());
+    check(await page.evaluate(() => document.fonts.check('bold 16px Texel', 'Ж')), 'Cyrillic font is ready after switching to Russian in the app');
     check(errors.length === 0, 'no console errors while switching languages', errors.join('\n'));
     await ctx.close();
   }
@@ -340,7 +382,7 @@ try {
       check(r.status() === 200, `${f} is served`);
     }
     const sitemap = await (await page.request.get(server.url + 'sitemap.xml')).text();
-    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('/ja/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
+    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('hreflang="ru"') && sitemap.includes('/ja/guides/make-a-skin/') && sitemap.includes('/ru/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
     await ctx.close();
   }
 } finally {

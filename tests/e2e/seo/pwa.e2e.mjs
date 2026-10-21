@@ -110,6 +110,7 @@ async function offlineRoutes(label, page, base) {
     { path: 'de/', ready: READY.home, lang: 'de', note: 'German home (never visited: app shell)' },
     { path: 'de/help/', ready: READY.help, lang: 'de', note: 'German help (never visited)' },
     { path: 'ja/guides/make-a-skin/', ready: READY.guide, lang: 'ja', note: 'Japanese guide (never visited)' },
+    { path: 'ru/guides/make-a-texture-pack/', ready: READY.guide, lang: 'ru', note: 'Russian guide (never visited)' },
     { path: 'skins/', ready: '[data-tool-intro="skins"]', lang: 'en', note: 'skin tool (never visited)' },
     { path: 'privacy/', ready: READY.privacy, lang: 'en', note: 'privacy page (never visited)' },
     { path: 'help', ready: READY.help, lang: 'en', note: 'folder path without its slash' },

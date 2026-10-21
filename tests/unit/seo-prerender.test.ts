@@ -12,6 +12,7 @@ import { renderHtml, renderMarkdown, renderText, el, ic } from '../../src/app/ma
 import { formatGroups, BEDROCK_MIN_ENGINE } from '../../src/tools/guides/content';
 import { DEFAULT_MIN_ENGINE } from '../../src/editions/bedrock/manifest';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../src/editions/java/packformats';
+import { splitLocale } from '../../src/i18n/locales';
 
 const TEMPLATE = `<!doctype html>
 <html lang="en" class="no-js" data-theme="dark">
@@ -250,8 +251,8 @@ test('pages the app takes over as they are name the page and year they were buil
     const html = byName.get(pageFileName(p.meta.path))!;
     const view = one(html, /<main id="main"[^>]*>(<div class="view[^"]*"[^>]*>)/);
     if (p.boot === 'keep') {
-      const [, rest = '/'] = /^\/(?:de|es|pt-br|ja)(?=\/|$)(.*)$/.exec(p.meta.path) ?? [null, p.meta.path];
-      assert.ok(view.includes(` data-prerendered="${p.locale}:${rest || '/'}" data-year="2026"`), `${p.meta.path}: ${view}`);
+      const { path: rest } = splitLocale(p.meta.path);
+      assert.ok(view.includes(` data-prerendered="${p.locale}:${rest}" data-year="2026"`), `${p.meta.path}: ${view}`);
     } else assert.ok(!view.includes('data-prerendered'), p.meta.path);
   }
 });
