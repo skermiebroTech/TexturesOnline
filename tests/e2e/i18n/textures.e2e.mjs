@@ -1,4 +1,4 @@
-// The texture pack maker in German, Japanese, Spanish and Portuguese, in Chromium. Each language
+// The texture pack maker in German, Japanese, Spanish, Portuguese and Russian, in Chromium. Each language
 // starts a pack and goes through the library (blocks, all textures, mobs, sounds), the pixel editor,
 // the effects, painting on the 3D model, a mob, the sound editor, the model editor, the pack
 // settings, the keyboard shortcuts and the export dialog. Every state is checked for English left in
@@ -23,7 +23,7 @@ const baseArg = argv.find((a) => /^https?:/.test(a));
 const opt = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : null);
 const shotsDir = opt('--shots');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
-const LANGS = (opt('--langs') ?? 'de,ja,es,pt-br').split(',');
+const LANGS = (opt('--langs') ?? 'de,ja,es,pt-br,ru').split(',');
 const WIDTHS = (opt('--widths') ?? '1280,390').split(',').map(Number);
 
 let failures = 0;
@@ -143,7 +143,7 @@ function cutLabels(gameNames) {
 // ------------------------------------------------------------------ English detection
 const KEEP = [
   'Texture Pack Maker', 'Texture Packs', 'Texture Pack', 'Texture pack', 'Minecraft Java Edition', 'Minecraft', 'Java', 'Bedrock', 'Mojang', 'Ogg Vorbis', 'Scale2x', 'Scale3x', 'Game Boy', 'PICO-8',
-  'Pixelwelt', 'Bloco', 'Kachel', 'Celular', 'PNG', 'JPG', 'GIF', 'WebP', 'TGA', 'MP3', 'WAV', 'OGG', 'M4A', 'JSON', 'UV', 'HD', 'GUI', 'FMOD', 'FSB5', 'Creeper', 'Sprite', 'Noir', 'Cartoon',
+  'Pixelwelt', 'Bloco', 'Kachel', 'Celular', 'Кубомир', 'PNG', 'JPG', 'GIF', 'WebP', 'TGA', 'MP3', 'WAV', 'OGG', 'M4A', 'JSON', 'UV', 'HD', 'GUI', 'FMOD', 'FSB5', 'Creeper', 'Sprite', 'Noir', 'Cartoon',
   'Ctrl', 'Shift', 'Alt', 'Esc', 'Enter', 'Delete', 'Chrome', 'Edge', 'Firefox', 'Safari', 'https', 'kHz', 'Mob', 'Mobs', 'Pack', 'Packs', 'Add-on',
 ];
 const ENGLISH = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|choose|drop|download|convert|merge|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo|search|show|hide)(?!\p{L})/iu;
@@ -157,20 +157,23 @@ function english(texts, locale) {
     s = s.replace(/[“"«「][^”"»」]*[”"»」]/g, ' ').replace(/\S*[./_\\0-9:#×§]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
     if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
+    // Russian: two Latin words and no Cyrillic is English (or another language) left over.
+    else if (locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) found.push(text);
   }
   return found;
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
 /** A few words each language's editor shows, to be sure the page is in that language. */
 const EXPECT = {
   de: { create: 'Pack erstellen', export: 'Exportieren', effects: 'Effekte' },
   es: { create: 'Crear pack', export: 'Exportar', effects: 'Efectos' },
   'pt-br': { create: 'Criar pack', export: 'Exportar', effects: 'Efeitos' },
   ja: { create: 'パックを作る', export: '書き出す', effects: '効果' },
+  ru: { create: 'Создать пак', export: 'Экспорт', effects: 'Эффекты' },
 };
-const PACK_NAME = { de: 'Pixelwelt', es: 'Celular', 'pt-br': 'Bloco', ja: 'Kachel' };
+const PACK_NAME = { de: 'Pixelwelt', es: 'Celular', 'pt-br': 'Bloco', ja: 'Kachel', ru: 'Кубомир' };
 
 const fx = fixturesDir();
 if (!fx) {

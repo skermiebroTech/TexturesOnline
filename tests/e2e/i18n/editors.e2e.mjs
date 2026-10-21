@@ -1,10 +1,10 @@
 // The translated editors in Chromium: the converter in German, the merger in Japanese and
-// Portuguese, the totem maker in Spanish. Each is driven through its main states (pack opened,
+// Portuguese, the totem maker in Spanish, and all three in Russian. Each is driven through its main states (pack opened,
 // version list, conversion or merge report, skin chosen, pixel editor) and every state is checked
 // for English left in the visible text and labels, for content wider than the screen or clipped
 // labels, and for console errors, at 1280 and 390 px wide in the dark and the light theme.
 //
-// Usage: NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/e2e/i18n/editors.e2e.mjs [baseUrl] [--shots <dir>]
+// Usage: NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/e2e/i18n/editors.e2e.mjs [baseUrl] [--shots <dir>] [--langs de,ru]
 // Without TO_FIXTURES the steps that need Java 26.3 game files (the conversion, the vanilla totem
 // outline) are skipped; the rest needs no network. Test packs and skins are made on the fly.
 import { createRequire } from 'node:module';
@@ -18,6 +18,8 @@ const { ROOT, startVite, launch, routeMojang, fixturesDir } = require('../textur
 const argv = process.argv.slice(2);
 const baseArg = argv.find((a) => /^https?:/.test(a));
 const shotsDir = argv.includes('--shots') ? argv[argv.indexOf('--shots') + 1] : null;
+/** --langs de,ru: run some languages only */
+const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,pt-br,es,ru').split(',');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 const tmp = mkdtempSync(join(tmpdir(), 'i18n-editors-'));
 const J = 'assets/minecraft/textures/';
@@ -185,12 +187,14 @@ function english(texts, locale) {
     s = s.replace(/\S*[./_\\0-9:#×]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
     if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
+    // Russian: two Latin words and no Cyrillic is English (or another language) left over.
+    else if (locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) found.push(text);
   }
   return found;
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
 
 const files = await makeFiles();
 const server = baseArg ? null : await startVite();
@@ -247,7 +251,7 @@ try {
       await routeMojang(ctx, fx);
 
       // ---------------------------------------------------------- German converter
-      {
+      if (LANGS.includes('de')) {
         const { page, errors } = await openPage(ctx, 'de/texture-pack-converter/', '.cv-dz');
         check(`de converter ${tag}: page is German`, (await page.getAttribute('html', 'lang')) === LANG.de && /umwandeln/.test(await page.textContent('.cv-hero h1')));
         check(`de converter ${tag}: step titles translated`, (await page.textContent('.cv-step h2')).trim() === 'Pack wählen');
@@ -276,7 +280,7 @@ try {
       }
 
       // ---------------------------------------------------------- Japanese merger
-      {
+      if (LANGS.includes('ja')) {
         const { page, errors } = await openPage(ctx, 'ja/merge-texture-packs/', '.mg-dz');
         check(`ja merge ${tag}: page is Japanese`, (await page.getAttribute('html', 'lang')) === LANG.ja && /結合/.test(await page.textContent('.cv-hero h1')));
         await inspect(page, `ja-merge-1-start-${tag}`, 'ja');
@@ -295,7 +299,7 @@ try {
       }
 
       // ---------------------------------------------------------- Portuguese merger and converter
-      {
+      if (LANGS.includes('pt-br')) {
         const { page, errors } = await openPage(ctx, 'pt-br/merge-texture-packs/', '.mg-dz');
         await page.setInputFiles('.mg-dz input[type=file]', [files.modern, files.bedrock]);
         await page.waitForSelector('.mg-hint.is-alert a');
@@ -317,7 +321,7 @@ try {
       }
 
       // ---------------------------------------------------------- Spanish totem maker
-      {
+      if (LANGS.includes('es')) {
         const { page, errors } = await openPage(ctx, 'es/totem-maker/', '.tt-tabs');
         check(`es totem ${tag}: page is Spanish`, (await page.getAttribute('html', 'lang')) === LANG.es && /tótems/.test(await page.textContent('.cv-hero h1')));
         await inspect(page, `es-totem-1-start-${tag}`, 'es');
@@ -340,6 +344,95 @@ try {
         await page.click('.tt-ed-modal .modal-footer .btn-secondary');
         await page.waitForSelector('.tt-ed-modal', { state: 'detached' });
         check(`es totem ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
+        await page.close();
+      }
+      // ---------------------------------------------------------- Russian converter, merger and totem maker
+      if (LANGS.includes('ru')) {
+        const c = await openPage(ctx, 'ru/texture-pack-converter/', '.cv-dz');
+        check(`ru converter ${tag}: page is Russian`, (await c.page.getAttribute('html', 'lang')) === LANG.ru && (await c.page.textContent('.cv-step h2')).trim() === 'Выбери пак', (await c.page.textContent('.cv-step h2')).trim());
+        await inspect(c.page, `ru-convert-1-start-${tag}`, 'ru');
+        await c.page.setInputFiles('.cv-dz input[type=file]', files.legacy);
+        await c.page.waitForSelector('.cv-pack:not([hidden]) .cv-pack-name');
+        check(`ru converter ${tag}: pack summary in Russian (plural form for 4)`, /4 текстуры/.test(await c.page.textContent('.cv-pack-info')), (await c.page.textContent('.cv-pack-info')).trim());
+        await c.page.click('.cv-ed[data-value="java"]');
+        await c.page.waitForFunction(() => /Текстуры, переименованные между Java/.test(document.querySelector('.cv-hint')?.textContent ?? ''));
+        await c.page.$$eval('.cv-pack details', (ds) => ds.forEach((d) => (d.open = true)));
+        await inspect(c.page, `ru-convert-2-pack-${tag}`, 'ru');
+        await c.page.click('.cv-version .vp-trigger');
+        await c.page.waitForSelector('.vp-pop .vp-item, .vp-pop .vp-status', { timeout: 60000 });
+        check(`ru converter ${tag}: version search in Russian`, (await c.page.getAttribute('.vp-pop input[type=search]', 'placeholder')) === 'Поиск версий, напр. 1.20');
+        await inspect(c.page, `ru-convert-3-versions-${tag}`, 'ru');
+        await c.page.keyboard.press('Escape');
+        await c.page.click('.cv-ed[data-value="bedrock"]');
+        await inspect(c.page, `ru-convert-4-bedrock-${tag}`, 'ru');
+        if (fx) {
+          await c.page.click('.cv-ed[data-value="java"]');
+          await c.page.click('.cv-go');
+          await c.page.waitForSelector('.cv-result .cv-dl-btn, .cv-result .cv-res-icon.is-error', { timeout: 300000 });
+          const head = (await c.page.textContent('.cv-res-titles h2')).trim();
+          check(`ru converter ${tag}: report headline in Russian`, /Конвертировано \d+ из 4 текстур|Все текстуры конвертированы: 4/.test(head), head);
+          await c.page.$$eval('.cv-result details', (ds) => ds.forEach((d) => (d.open = true)));
+          await inspect(c.page, `ru-convert-5-report-${tag}`, 'ru');
+        }
+        check(`ru converter ${tag}: no console errors`, c.errors.length === 0, c.errors.slice(0, 3).join(' | '));
+        await c.page.close();
+
+        const l = await openPage(ctx, 'ru/texture-pack-converter/', '.cv-dz');
+        await l.page.setInputFiles('.cv-dz input[type=file]', files.loose);
+        await l.page.waitForSelector('.cv-pack:not([hidden]) .cv-pack-name');
+        await l.page.$$eval('.cv-pack details', (ds) => ds.forEach((d) => (d.open = true)));
+        check(`ru converter ${tag}: loose PNG notes in Russian`, /изображение не совпало/.test(await l.page.textContent('.cv-pack')), (await l.page.textContent('.cv-pack')).trim().slice(0, 160));
+        await inspect(l.page, `ru-convert-6-loose-${tag}`, 'ru');
+        check(`ru converter loose ${tag}: no console errors`, l.errors.length === 0, l.errors.slice(0, 3).join(' | '));
+        await l.page.close();
+
+        const m = await openPage(ctx, 'ru/merge-texture-packs/', '.mg-dz');
+        await inspect(m.page, `ru-merge-1-start-${tag}`, 'ru');
+        await m.page.setInputFiles('.mg-dz input[type=file]', [files.modern, files.modern2, files.legacy]);
+        await m.page.waitForFunction(() => document.querySelectorAll('.mg-list .mg-row').length === 3 && !document.querySelector('.mg-dz.is-busy'), null, { timeout: 60000 });
+        check(`ru merge ${tag}: merge button counts in Russian`, /Объединить 3 пака/.test(await m.page.textContent('.mg-go')), (await m.page.textContent('.mg-go')).trim());
+        await inspect(m.page, `ru-merge-2-packs-${tag}`, 'ru');
+        await m.page.click('.mg-go');
+        await m.page.waitForSelector('.mg-result .mg-dl-btn, .mg-result .cv-res-icon.is-error', { timeout: 120000 });
+        const head = (await m.page.textContent('.mg-result h2')).trim();
+        check(`ru merge ${tag}: report in Russian`, /3 пака объединены в «/.test(head), head);
+        await m.page.$$eval('.mg-result details', (ds) => ds.forEach((d) => (d.open = true)));
+        await inspect(m.page, `ru-merge-3-report-${tag}`, 'ru');
+        check(`ru merge ${tag}: no console errors`, m.errors.length === 0, m.errors.slice(0, 3).join(' | '));
+        await m.page.close();
+
+        const x = await openPage(ctx, 'ru/merge-texture-packs/', '.mg-dz');
+        await x.page.setInputFiles('.mg-dz input[type=file]', [files.modern, files.bedrock]);
+        await x.page.waitForSelector('.mg-hint.is-alert a');
+        const hint = await x.page.textContent('.mg-hint');
+        check(`ru merge ${tag}: mixed editions explained in Russian, with the converter link`, /нельзя объединить/.test(hint) && (await x.page.textContent('.mg-hint a')) === 'Конвертер текстурпаков', hint.trim().slice(0, 160));
+        await inspect(x.page, `ru-merge-4-mixed-${tag}`, 'ru');
+        check(`ru merge mixed ${tag}: no console errors`, x.errors.length === 0, x.errors.slice(0, 3).join(' | '));
+        await x.page.close();
+
+        const { page, errors } = await openPage(ctx, 'ru/totem-maker/', '.tt-tabs');
+        check(`ru totem ${tag}: page is Russian`, (await page.getAttribute('html', 'lang')) === LANG.ru && /Выбери скин/.test(await page.textContent('.tt-step h2, .cv-step h2')));
+        await inspect(page, `ru-totem-1-start-${tag}`, 'ru');
+        await page.click('.tt-tab[data-source="upload"]');
+        await page.setInputFiles('.tt-dz input[type=file]', files.skin);
+        await page.waitForSelector('.tt-chosen:not([hidden]) .tt-chosen-name');
+        await page.waitForSelector('.tt-big-canvas');
+        check(`ru totem ${tag}: style names kept, descriptions in Russian`, /Classic/.test(await page.textContent('.tt-styles')) && /руки раскинуты/.test(await page.textContent('.tt-styles')));
+        await inspect(page, `ru-totem-2-skin-${tag}`, 'ru');
+        if (fx) {
+          await page.locator('.tt-opt-outline .switch').click();
+          await page.waitForSelector('.tt-shape.is-ready', { timeout: 300000 });
+          check(`ru totem ${tag}: vanilla outline status in Russian`, /Подогнано под ванильный тотем Java 26\.3/.test(await page.textContent('.tt-shape')));
+          await inspect(page, `ru-totem-3-outline-${tag}`, 'ru');
+        }
+        check(`ru totem ${tag}: edit button in Russian`, (await page.textContent('.tt-edit-btn')).trim() === 'Править пиксели', (await page.textContent('.tt-edit-btn')).trim());
+        await page.click('.tt-edit-btn');
+        await page.waitForSelector('.tt-ed-modal .pc-canvas');
+        check(`ru totem ${tag}: pixel editor in Russian`, /Пиксели тотема/.test(await page.textContent('.tt-ed-modal')));
+        await inspect(page, `ru-totem-4-editor-${tag}`, 'ru');
+        await page.click('.tt-ed-modal .modal-footer .btn-secondary');
+        await page.waitForSelector('.tt-ed-modal', { state: 'detached' });
+        check(`ru totem ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
         await page.close();
       }
       await ctx.close();

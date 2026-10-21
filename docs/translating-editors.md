@@ -3,7 +3,7 @@
 The public pages (home, help, guides, tool introductions) are translated in `src/i18n/<lang>/`.
 The editors themselves (start screens, panels, dialogs, toasts, tooltips, aria-labels, errors) use
 a separate, lighter system: `src/i18n/editor-text.ts`. Languages: `de` (du), `es` (tú), `pt-br`
-(você), `ja` (です/ます). English is the source of truth and stays byte-identical.
+(você), `ja` (です/ます), `ru` (ты). English is the source of truth and stays byte-identical.
 
 ## Layout
 
@@ -30,7 +30,7 @@ In a folder:
   `defineText('<section id>', { ... })`. Nested objects group keys; leaves are strings. They import
   nothing but `src/i18n/editor-text.ts` (the unit test imports them in Node).
 - **`load.ts`**: the language-file type and its loader.
-- **`de.ts`, `es.ts`, `pt-br.ts`, `ja.ts`**: one language file each, translating every section of
+- **`de.ts`, `es.ts`, `pt-br.ts`, `ja.ts`, `ru.ts`**: one language file each, translating every section of
   the folder, keyed by section id. Optionally `export const SAME_AS_ENGLISH = ['<id>:<key.path>']`
   for text that is rightly identical to English (see Tests).
 
@@ -132,10 +132,14 @@ still share one language file. English pages never load a language file. Check w
 - **Terminology** follows `src/i18n/<lang>/`: de "Texture Pack", "Ressourcenpaket", "Skin",
   "Spieldateien", Java Edition / Bedrock Edition; es "texture pack", "paquete de recursos", "la
   skin"; pt-br "texture pack", "pacote de recursos", "a skin"; ja Java版 / 統合版 (from
-  `kit.edition`), リソースパック, テクスチャパック, スキン. In-game menu paths use the game's own
-  names (de Optionen → Ressourcenpakete, es Opciones → Paquetes de recursos, pt-br Opções → Pacotes
-  de recursos, ja 設定 → リソースパック).
-- **Fit**: German runs ~30 % longer, Japanese needs no spaces but wraps anywhere. Check at 390 px;
+  `kit.edition`), リソースパック, テクスチャパック, スキン; ru "текстурпак" (short "пак"), "набор
+  ресурсов", "скин", "набор скинов", "шейдерпак", Java Edition / Bedrock Edition, and the game's
+  ru_ru names for blocks, items and mobs (Броня, Отделка, Тотем бессмертия, Гардеробная). In-game menu
+  paths use the game's own names (de Optionen → Ressourcenpakete, es Opciones → Paquetes de
+  recursos, pt-br Opções → Pacotes de recursos, ja 設定 → リソースパック, ru Настройки → Наборы
+  ресурсов; Bedrock Настройки → Глобальные ресурсы).
+- **Fit**: German runs ~30 % longer, Russian too (and its pixel-font glyphs are wider), Japanese
+  needs no spaces but wraps anywhere. Check at 390 px;
   prefer shorter wording over smaller buttons; use ` ` to keep "16 × 16" together.
 
 ## Message syntax
@@ -145,8 +149,8 @@ still share one language file. English pages never load a language file. Check w
 - `{name}`: a parameter; numbers get the language's grouping (1,234 / 1.234). Pass a number as a
   string when it must not be grouped (years, HTTP codes, versions).
 - `{count, plural, =0 {none} one {# file} other {# files}}`: categories of `Intl.PluralRules`
-  (`one`/`other` for de, es, pt-br — es and pt-br also have `many` for millions; Japanese only
-  `other`, or just `{count}`), `#` is the formatted number. Branches may hold other parameters.
+  (`one`/`other` for de, es, pt-br — es and pt-br also have `many` for millions; Russian needs
+  `one`/`few`/`many` plus `other` (fractions); Japanese only `other`, or just `{count}`), `#` is the formatted number. Branches may hold other parameters.
 - `{model, select, slim {slim arms} other {classic arms}}`: by a string value.
 
 A translation may drop a parameter English only uses to choose a plural form (Japanese often
@@ -155,7 +159,8 @@ does), but must show every parameter English shows and may not add new ones.
 ## Tests
 
 `tests/unit/i18n-editors.test.ts` finds every `i18n/` folder and checks that each section is
-translated once per language, keys and parameters match, plural forms exist in that language,
+translated once per language, keys and parameters match, plural forms exist in that language (and
+a plural that tells forms apart gives every form whole numbers use, e.g. Russian one/few/many),
 every message formats, and no English is left: an identical phrase (two or more words) or English
 function words in a translation fail unless listed in that file's `SAME_AS_ENGLISH`.
 

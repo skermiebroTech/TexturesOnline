@@ -7,7 +7,7 @@ It is a Modified Version of two fonts by Idrees Hassan, both under the SIL Open 
 [Monocraft](https://github.com/IdreesInc/Monocraft) (extra punctuation, Latin Extended, Greek, Cyrillic, symbols).
 
 Changes: re-gridded to 8 pixels per em (advance = glyph width + 1 pixel), Monocraft glyphs made proportional,
-bold for Monocraft glyphs drawn by over-printing one pixel to the right, metrics set so the line box is exactly 1 em.
+bold for Monocraft glyphs drawn by over-printing one pixel to the right (Cyrillic letters with 1-pixel gaps between strokes, such as ш, ж and Ф, get those gaps doubled first so they stay open), metrics set so the line box is exactly 1 em.
 
 Use font sizes that are multiples of 8px (16, 24, 32, 48, 64) and letter-spacing in whole font pixels
 (multiples of `0.125em`) for perfectly crisp text. Rebuild with `tests/tools/ui/build-font.py`, then split each weight with `tests/tools/ui/split-font.py`: `texel-<weight>.woff2`

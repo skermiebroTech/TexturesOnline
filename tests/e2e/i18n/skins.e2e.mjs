@@ -1,12 +1,13 @@
 // The translated skin editor and skin pack maker in Chromium: German (an HD template skin: start
 // screen, painting, hover names, parts menu, 3D painting, export menu, the Java HD dialog, Reduce to
 // 64×64, the shortcut list), Japanese (a starter skin, the export menu and the skin pack maker),
-// Spanish (/skin-pack-maker: a pack of two skins and its ready dialog) and Portuguese (saved skins,
-// the default skins dialog, the old Java export). Every state is checked for English left in the
+// Spanish (/skin-pack-maker: a pack of two skins and its ready dialog), Portuguese (saved skins,
+// the default skins dialog, the old Java export) and Russian (all of it: the editor, every export
+// dialog, the skin pack maker and the start screen's saved skins, lookup and default skins). Every state is checked for English left in the
 // visible text and labels, content wider than the screen or clipped labels, and console errors, at
 // 1280 and 390 px (the editor also at 360 px) in the dark and the light theme.
 //
-// Usage: NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/e2e/i18n/skins.e2e.mjs [baseUrl] [--shots <dir>]
+// Usage: NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/e2e/i18n/skins.e2e.mjs [baseUrl] [--shots <dir>] [--langs de,ru]
 // Without TO_FIXTURES the default skins step (Java 26.3 game files) is skipped; the rest needs no
 // network. Skin services are blocked: nothing reaches the real player lookup.
 import { createRequire } from 'node:module';
@@ -21,6 +22,8 @@ const baseArg = argv.find((a) => /^https?:/.test(a));
 const shotsDir = argv.includes('--shots') ? argv[argv.indexOf('--shots') + 1] : null;
 /** --only 390-dark: run one width and theme (while fixing something) */
 const only = argv.includes('--only') ? argv[argv.indexOf('--only') + 1] : null;
+/** --langs de,ru: run some languages only */
+const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,es,pt-br,ru').split(',');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 
 let failures = 0;
@@ -116,8 +119,8 @@ function layoutIssues() {
 const KEEP = [
   'Texture Pack Maker', 'Minecraft Launcher', 'Minecraft: Java Edition', 'Minecraft', 'Java Edition', 'Bedrock Edition', 'Java', 'Bedrock', 'Mojang', 'CustomSkinLoader',
   'Steve', 'Alex', 'Notch', 'jeb_', 'Dinnerbone', 'Ninja', 'HD', 'PNG', 'MB', 'px', 'WebGL', 'Ctrl', 'Shift', 'Alt', 'Esc', 'Enter', 'Home', 'Space', 'Creeper',
-  // Skins saved on earlier pages of the run keep their (German or Spanish) names everywhere.
-  'Mein Skin',
+  // Skins saved on earlier pages of the run keep their names (German, Portuguese, Spanish, the test's) everywhere.
+  'Mein Skin', 'Minha skin', 'Mi skin', 'Kubik',
 ];
 const ENGLISH = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|skin pack|choose|drop|download|upload|cancel|loading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo|paint|mirror|layer|outer|base layer|arms|front|back|show|hide|reset|size|brush|colour|tool|tools|done|saved)(?!\p{L})/iu;
 
@@ -129,12 +132,14 @@ function english(texts, locale) {
     s = s.replace(/\S*[./_\\0-9:#×]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
     if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
+    // Russian: two Latin words and no Cyrillic is English (or another language) left over.
+    else if (locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) found.push(text);
   }
   return found;
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
 
 const server = baseArg ? null : await startVite();
 const base = (baseArg || server.url).replace(/\/?$/, '/');
@@ -231,7 +236,7 @@ try {
     await routeMojang(ctx, fx);
 
     // ---------------------------------------------------------- German: HD template skin, the whole editor
-    {
+    if (LANGS.includes('de')) {
       const { page, errors } = await openPage(ctx, 'de/skins/', '.sk-starter-template');
       check(`de skins ${tag}: page is German`, (await page.getAttribute('html', 'lang')) === LANG.de && /Gestalte deinen eigenen Skin/.test(await page.textContent('.sk-hero h1')));
       if (full) await inspect(page, `de-skins-1-start-${tag}`, 'de', { full: true });
@@ -303,7 +308,7 @@ try {
     }
 
     // ---------------------------------------------------------- Japanese: starter skin and the skin pack maker
-    {
+    if (LANGS.includes('ja')) {
       const { page, errors } = await openPage(ctx, 'ja/skins/', '.sk-starter-explorer');
       check(`ja skins ${tag}: page is Japanese`, (await page.getAttribute('html', 'lang')) === LANG.ja && /スキン/.test(await page.textContent('.sk-hero h1')));
       await page.click('.sk-model-pick .segmented-item[data-value="64"]');
@@ -332,7 +337,7 @@ try {
     }
 
     // ---------------------------------------------------------- Spanish: the skin pack maker page
-    {
+    if (LANGS.includes('es')) {
       const { page, errors } = await openPage(ctx, 'es/skin-pack-maker/', '.sk-starter-knight');
       check(`es pack maker ${tag}: page is Spanish`, (await page.getAttribute('html', 'lang')) === LANG.es && /Diseña tu propia skin/.test(await page.textContent('.sk-hero h1')));
       if (full) await inspect(page, `es-pack-1-start-${tag}`, 'es', { full: true });
@@ -358,7 +363,7 @@ try {
     }
 
     // ---------------------------------------------------------- Portuguese: saved skins, defaults, old Java
-    {
+    if (LANGS.includes('pt-br')) {
       const { page, errors } = await openPage(ctx, 'pt-br/skins/', '.sk-recent-grid .sk-recent');
       check(`pt-br skins ${tag}: page is Portuguese`, (await page.getAttribute('html', 'lang')) === LANG['pt-br'] && /Crie sua própria skin/.test(await page.textContent('.sk-hero h1')));
       await page.click('.sk-recent-menu');
@@ -388,6 +393,136 @@ try {
       await inspect(page, `pt-br-skins-4-legacy-${tag}`, 'pt-br', { wait: 400 });
       await closeLayers(page);
       check(`pt-br skins ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
+      await page.close();
+    }
+    // ---------------------------------------------------------- Russian: the whole editor, the exports and the pack maker
+    if (LANGS.includes('ru')) {
+      const { page, errors } = await openPage(ctx, 'ru/skins/', '.sk-starter-template');
+      check(`ru skins ${tag}: page is Russian`, (await page.getAttribute('html', 'lang')) === LANG.ru && /Создай свой скин/.test(await page.textContent('.sk-hero h1')));
+      // A second saved skin first, so the skin pack maker has something to choose from.
+      await page.click('.sk-starter-ninja');
+      await waitEditor(page);
+      await api(page, (e) => e.flush());
+      await page.goto(`${base}ru/skins/`);
+      await page.waitForSelector('.sk-starter-template');
+      if (full) await inspect(page, `ru-skins-1-start-${tag}`, 'ru', { full: true });
+      await page.click('.sk-model-pick .segmented-item[data-value="128"]');
+      check(`ru skins ${tag}: HD note in Russian`, /HD-скин, только для Bedrock/.test(await page.textContent('.sk-size-note')));
+      if (full) await inspect(page, `ru-skins-2-hd-${tag}`, 'ru');
+      await page.click('.sk-starter-template');
+      await waitEditor(page);
+      check(`ru skins ${tag}: the editor stays in Russian`, /^\/ru\/skins\/[\w-]+\/?$/.test(await page.evaluate(() => location.pathname)), await page.evaluate(() => location.pathname));
+      // A Latin name: headless Chromium without a UTF-8 locale saves other file names as "download".
+      await page.fill('.sk-name', 'Kubik');
+      await page.locator('.sk-name').press('Enter');
+      await page.evaluate(() => document.activeElement?.blur());
+      await api(page, (e) => e.flush());
+      await page.keyboard.press('b');
+      const [px, py] = await api(page, (e) => e.imageToClient(90, 44));
+      await page.mouse.click(px, py);
+      await hoverPixel(page, 18, 20);
+      const tip = (await page.textContent('.sk-status-text')) ?? '';
+      check(`ru skins ${tag}: hover names part, face and layer in Russian`, /Голова · Спереди · Основа/.test(tip), tip);
+      await inspect(page, `ru-skins-3-editor-${tag}`, 'ru');
+      await showPanel(page, phone, 'left');
+      await inspect(page, `ru-skins-4-left-${tag}`, 'ru');
+      await page.click('.sk-part[data-part="rightArm"] .sk-part-actions button:last-child');
+      await page.waitForSelector('.popover [role="menuitem"]');
+      const menu = await page.textContent('.popover');
+      check(`ru skins ${tag}: part menu in Russian`, /Залить: правая рука/.test(menu) && /Копировать на: левая рука/.test(menu), menu.slice(0, 160));
+      await inspect(page, `ru-skins-5-parts-${tag}`, 'ru');
+      await closeLayers(page);
+      await showPanel(page, phone, 'center');
+      await page.click('.sk-workspace [data-value="3d"]');
+      await page.waitForTimeout(400);
+      await page.click('.sk-3d-mode [data-value="paint"]');
+      await page.waitForTimeout(700);
+      await inspect(page, `ru-skins-6-paint3d-${tag}`, 'ru', { wait: 400 });
+      await page.click('.sk-workspace [data-value="2d"]');
+      await showPanel(page, phone, 'right');
+      await inspect(page, `ru-skins-7-preview-${tag}`, 'ru', { wait: 400 });
+      await page.click('.sk-size-seg [data-value="64"]');
+      await page.waitForSelector('dialog[open] .sk-export-compare');
+      check(`ru skins ${tag}: reduce dialog in Russian`, /Уменьшить до 64×64/.test(await page.textContent('dialog[open]')));
+      await inspect(page, `ru-skins-8-reduce-${tag}`, 'ru', { wait: 400 });
+      await page.click('dialog[open] .modal-footer .btn-ghost');
+      await page.waitForSelector('dialog[open]', { state: 'detached' }).catch(() => undefined);
+      await showPanel(page, phone, 'center');
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="java"]');
+      const exportMenu = await page.textContent('.sk-export-menu');
+      check(`ru skins ${tag}: export menu in Russian`, /Набор скинов Bedrock \(\.mcpack\)/.test(exportMenu) && /Скин Bedrock \(\.png\)/.test(exportMenu) && /Старый скин Java \(64×32\)/.test(exportMenu), exportMenu.slice(0, 160));
+      await inspect(page, `ru-skins-9-export-menu-${tag}`, 'ru');
+      await page.click('.sk-export-item[data-kind="java"]');
+      await page.waitForSelector('.sk-java-hd-note');
+      const hdDialog = await page.textContent('dialog[open]');
+      check(`ru skins ${tag}: Java HD dialog in Russian`, /128×128 для модов/.test(hdDialog) && /Скачать 64×64/.test(hdDialog), hdDialog.slice(0, 120));
+      await inspect(page, `ru-skins-10-java-hd-${tag}`, 'ru', { wait: 400 });
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.click('dialog[open] .modal-footer .btn-primary')]);
+      check(`ru skins ${tag}: Java download keeps the file name`, /\.png$/.test(dl.suggestedFilename()), dl.suggestedFilename());
+      await page.waitForSelector('dialog[open] .sk-export-done');
+      check(`ru skins ${tag}: ready dialog in Russian`, /Твой скин Java готов/.test(await page.textContent('dialog[open]')));
+      await inspect(page, `ru-skins-11-java-ready-${tag}`, 'ru', { wait: 400 });
+      await closeLayers(page);
+      // Bedrock .png and its Dressing Room steps
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="bedrock-png"]');
+      await page.click('.sk-export-item[data-kind="bedrock-png"]');
+      await page.waitForSelector('dialog[open] .sk-export-done', { timeout: 30000 }).catch(() => undefined);
+      if (await page.$('dialog[open]')) {
+        await inspect(page, `ru-skins-12-bedrock-png-${tag}`, 'ru', { wait: 400 });
+        await closeLayers(page);
+      }
+      // The skin pack maker with this skin and another saved one, and its ready dialog
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="bedrock-pack"]');
+      await page.click('.sk-export-item[data-kind="bedrock-pack"]');
+      await page.waitForSelector('dialog[open] .sk-pack-list .sk-pack-skin:not(.is-current)');
+      const other = await page.$('dialog[open] .sk-pack-skin:not(.is-current) input');
+      if (other) await other.check();
+      check(`ru skins ${tag}: pack maker in Russian`, /Набор скинов/.test(await page.textContent('dialog[open]')) && /Скачать набор/.test(await page.textContent('dialog[open] .modal-footer')));
+      await inspect(page, `ru-skins-13-pack-${tag}`, 'ru', { wait: 400 });
+      const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('dialog[open] .modal-footer .btn-primary')]);
+      check(`ru skins ${tag}: downloads a .mcpack`, /\.mcpack$/.test(dl2.suggestedFilename()), dl2.suggestedFilename());
+      await page.waitForSelector('dialog[open] .sk-export-done');
+      const ready = await page.textContent('dialog[open]');
+      check(`ru skins ${tag}: pack ready dialog in Russian`, /Гардеробная/.test(ready) && /Надеть/.test(ready), ready.slice(0, 160));
+      await inspect(page, `ru-skins-14-pack-ready-${tag}`, 'ru', { wait: 400 });
+      await closeLayers(page);
+      // The old Java export
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="java-legacy"]');
+      await page.click('.sk-export-item[data-kind="java-legacy"]');
+      await page.waitForSelector('dialog[open] .sk-export-compare');
+      check(`ru skins ${tag}: old Java dialog in Russian`, /Экспорт для старых версий Java/.test(await page.textContent('dialog[open]')));
+      await inspect(page, `ru-skins-15-legacy-${tag}`, 'ru', { wait: 400 });
+      await closeLayers(page);
+      if (!phone) {
+        await page.keyboard.press('?');
+        await page.waitForSelector('dialog[open] .shortcuts');
+        await inspect(page, `ru-skins-16-shortcuts-${tag}`, 'ru');
+        await closeLayers(page);
+      }
+      // Back on the start screen: saved skins, the username lookup and the default skins
+      await page.goto(`${base}ru/skins/`);
+      await page.waitForSelector('.sk-recent-grid .sk-recent');
+      await page.click('.sk-recent-menu');
+      await page.waitForSelector('.popover [role="menuitem"]');
+      check(`ru skins ${tag}: saved skin menu in Russian`, /Переименовать/.test(await page.textContent('.popover')));
+      if (full) await inspect(page, `ru-skins-17-saved-${tag}`, 'ru');
+      await closeLayers(page);
+      await page.fill('#sk-username', 'Notch');
+      await page.click('.sk-user-row .btn-primary');
+      await page.waitForSelector('.sk-field-error:not([hidden])', { timeout: 30000 });
+      if (full) await inspect(page, `ru-skins-18-lookup-${tag}`, 'ru');
+      if (fx) {
+        await page.click('.sk-game-actions .btn');
+        await page.waitForSelector('dialog[open] .sk-default', { timeout: 300000 });
+        check(`ru skins ${tag}: default skins in Russian`, /Стандартные скины Minecraft/.test(await page.textContent('dialog[open]')));
+        await inspect(page, `ru-skins-19-defaults-${tag}`, 'ru', { wait: 600 });
+        await closeLayers(page);
+      }
+      check(`ru skins ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
       await page.close();
     }
     await ctx.close();
