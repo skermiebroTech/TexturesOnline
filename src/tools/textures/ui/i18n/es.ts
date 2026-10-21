@@ -24,6 +24,7 @@ const ES: EditorLanguage = {
       sounds: 'Sonidos',
     },
     soundsFailed: 'No se pudieron abrir los sonidos. Revisa tu conexión y vuelve a intentarlo.',
+    pvpFailed: 'No se pudieron abrir los ajustes PvP. Revisa tu conexión y vuelve a intentarlo.',
     packName: 'Nombre del pack',
     renameHint: 'Renombra tu pack',
     save: {
@@ -49,6 +50,7 @@ const ES: EditorLanguage = {
       preview: 'Vista',
       texture: 'Textura',
       effects: 'Efectos',
+      pvp: 'PvP',
       pack: 'Pack',
       paint: 'Pintar',
       edit: 'Editar',

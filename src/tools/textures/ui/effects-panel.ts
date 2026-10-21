@@ -110,12 +110,19 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
 
   // ---------------------------------------------------------------- changes
   let emitTimer: ReturnType<typeof setTimeout> | null = null;
+  /** This panel is telling the others: its own stack is already drawn */
+  let emitting = false;
   const changed = (rerenderStack = true) => {
     store.touch(null);
     if (emitTimer) clearTimeout(emitTimer);
     emitTimer = setTimeout(() => {
       emitTimer = null;
-      store.events.emit('effects');
+      emitting = true;
+      try {
+        store.events.emit('effects');
+      } finally {
+        emitting = false;
+      }
     }, 140);
     if (rerenderStack) renderStack();
     markActivePreset();
@@ -479,6 +486,12 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
   }
 
   const offs = [
+    // another panel changed the stack (the PvP tab's FPS tweaks, an undo)
+    store.events.on('effects', () => {
+      if (emitting || emitTimer) return;
+      renderStack();
+      markActivePreset();
+    }),
     store.events.on('overrides', ({ path }) => {
       if (samples?.some((s) => s.path === path || s.overlayPath === path)) {
         samples = null;

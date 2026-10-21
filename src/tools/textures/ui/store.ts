@@ -152,6 +152,34 @@ export class TexStore {
     this.events.emit('overrides', { path });
   }
 
+  /** Puts a stored copy of a texture back as it was (null: none, the game's own texture shows). */
+  setOverrideBlob(path: string, blob: Blob | null): void {
+    this.pending.delete(path);
+    if (blob) this.project.overrides[path] = blob;
+    else removeOverride(this.project, path);
+    this.bump(path);
+    this.metaDirty = true;
+    this.schedule();
+    // a texture the game doesn't have comes and goes from the list with its copy
+    if (!this.assets.hasFile(path)) this.rebuildEntries();
+    this.events.emit('overrides', { path });
+  }
+
+  /**
+   * Writes (blob) or removes (null) files of the pack other than textures: models, .mcmeta. Model
+   * files are read again by the previews; `entries` are the blocks and items they show.
+   */
+  setExtraFiles(files: Record<string, Blob | null>, entries: { kind: 'block' | 'item'; id: string }[] = []): void {
+    const paths = Object.keys(files);
+    if (!paths.length) return;
+    for (const [path, blob] of Object.entries(files)) {
+      if (blob) this.project.extraFiles[path] = blob;
+      else delete this.project.extraFiles[path];
+    }
+    this.touch();
+    if (paths.some((p) => /\/(models|blockstates|items)\//.test(p))) this.events.emit('models', { paths, entries });
+  }
+
   setIconBlob(blob: Blob | undefined): void {
     this.pendingIcon = null;
     this.project.icon = blob;

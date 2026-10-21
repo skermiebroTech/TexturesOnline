@@ -40,6 +40,16 @@ export const t = defineText('textures', {
     button: 'Create pack',
     /** Name of a new pack when the name field is empty */
     defaultName: 'My Texture Pack',
+    startWith: 'Start with',
+    blank: 'Vanilla textures',
+    blankHint: 'Every texture as it is in the game',
+    pvp: 'PvP / FPS pack',
+    pvpHint: 'Low fire, clear glass, a clean crosshair, smaller swords',
+    fps: 'Also an FPS pack',
+    fpsHint: '8 × 8 block textures and no animations (Java), for weaker computers.',
+    pvpButton: 'Create PvP pack',
+    /** Name of a new PvP pack when the name field is empty */
+    pvpName: 'My PvP Pack',
     failed: "Couldn't create the pack",
   },
   open: {

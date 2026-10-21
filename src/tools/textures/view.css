@@ -135,6 +135,64 @@
 .tx-res-text {
   min-height: 48px;
 }
+.tx-starts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.tx-start-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
+}
+.tx-start-opt:hover {
+  border-color: var(--border-strong);
+}
+.tx-start-opt[aria-checked='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+}
+.tx-start-opt-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.tx-start-opt[aria-checked='true'] .tx-start-opt-icon {
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+}
+.tx-start-opt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tx-start-opt-text strong {
+  font-weight: 700;
+}
+.tx-start-fps {
+  margin-top: 4px;
+}
+@media (max-width: 420px) {
+  .tx-starts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .tx-create-btn {
   width: 100%;
   margin-top: 4px;
@@ -668,10 +726,11 @@
   padding: 0 8px;
 }
 .tx-col-tabs .tab {
-  flex: 1 1 0;
+  flex: 1 1 auto;
+  min-width: 0;
   justify-content: center;
   gap: 6px;
-  padding: 0 6px 2px;
+  padding: 0 4px 2px;
 }
 .tx-col-tabs .tab[data-value='textures'] {
   display: none;
@@ -694,6 +753,7 @@
 }
 .tx-editor[data-side='preview'] .tx-side-body[data-tab='preview'],
 .tx-editor[data-side='effects'] .tx-side-body[data-tab='effects'],
+.tx-editor[data-side='pvp'] .tx-side-body[data-tab='pvp'],
 .tx-editor[data-side='pack'] .tx-side-body[data-tab='pack'] {
   display: block;
 }
@@ -2846,6 +2906,7 @@
   .tx-editor[data-mobile='editor'] .tx-col-center,
   .tx-editor[data-mobile='preview'] .tx-col-right,
   .tx-editor[data-mobile='effects'] .tx-col-right,
+  .tx-editor[data-mobile='pvp'] .tx-col-right,
   .tx-editor[data-mobile='pack'] .tx-col-right {
     display: flex !important;
   }

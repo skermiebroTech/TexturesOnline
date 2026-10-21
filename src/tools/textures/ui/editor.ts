@@ -35,16 +35,18 @@ import type { ModelEditor } from './model-editor/editor';
 import type { BlockState } from '../../../shared/models/index';
 import './sounds-base.css';
 import './model-host.css';
-import { fmt } from '../../../i18n/editor-text';
+import { fmt, textLocale } from '../../../i18n/editor-text';
+import type { PvpPanel } from '../pvp/panel';
+import type { CrosshairTarget } from '../pvp/tweaks';
 import { kit } from '../../../ui/i18n/kit';
 import { te } from './i18n/editor';
 import { versionLabel } from './start-screen';
 
-type Side = 'textures' | 'preview' | 'effects' | 'pack';
+type Side = 'textures' | 'preview' | 'effects' | 'pvp' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'sounds';
 const LIB_KEY = 'to-tex-library-mode';
 const WS_KEY = 'to-tex-workspace';
-type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pack';
+type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pvp' | 'pack';
 
 const PHONE = '(max-width: 760px)';
 const TABLET = '(max-width: 1180px)';
@@ -334,6 +336,53 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     reload: () => navigate(`/textures/${proj.id}`),
   });
 
+  // ---------------------------------------------------------------- PvP / FPS tweaks (loaded on first use)
+  const pvpBody = h('div', { class: 'tx-side-body scroll', dataset: { tab: 'pvp' }, role: 'tabpanel', 'aria-label': te.tabs.pvp }, h('div', { class: 'tx-boot' }, spinner(28)));
+  let pvpPanel: PvpPanel | null = null;
+  let pvpLoad: Promise<PvpPanel | null> | null = null;
+  function ensurePvp(): Promise<PvpPanel | null> {
+    pvpLoad ??= Promise.all([import('../pvp/panel'), import('../pvp/i18n/load').then((m) => m.loadPvpText(textLocale()))])
+      .then(([{ createPvpPanel }]) => {
+        if (life.aborted) return null;
+        pvpPanel = createPvpPanel({
+          store,
+          onTextures: (paths) => {
+            const cur = canvas.current();
+            if (cur && paths.includes(cur.key)) void canvas.open(cur.key);
+          },
+          drawCrosshair: (target) => void drawCrosshair(target),
+        });
+        pvpBody.replaceChildren(pvpPanel.el);
+        notifyVisibility();
+        return pvpPanel;
+      })
+      .catch((err) => {
+        pvpLoad = null;
+        console.error(err);
+        toast(te.pvpFailed, { tone: 'error' });
+        return null;
+      });
+    return pvpLoad;
+  }
+  /** "Draw your own" crosshair: the texture in the pixel editor, a sheet's crosshair square selected. */
+  async function drawCrosshair(target: CrosshairTarget) {
+    if (libMode === 'sounds') setLibMode('textures', true);
+    setWorkspace('2d', true);
+    await canvas.open(target.path, { focus: true });
+    const pc = canvas.canvas();
+    const t = canvas.current();
+    if (!pc || !t || t.key !== target.path) return;
+    const { crosshairCell } = await import('../pvp/tweaks');
+    const { tv } = await import('../pvp/i18n/text');
+    if (target.kind === 'sheet') {
+      const cell = crosshairCell(t.full, 'sheet');
+      pc.setSelection({ x: cell.x, y: cell.y, w: cell.w, h: cell.h });
+    }
+    toast(target.kind === 'sheet' ? tv.draw.sheet : tv.draw.sprite, { tone: 'info', duration: 7000 });
+    if (isPhone()) showMobile('editor');
+  }
+  cleanups.push(() => pvpPanel?.destroy());
+
   // ---------------------------------------------------------------- top bar
   const barIcon = h('canvas', { class: 'tx-bar-icon pixelated', width: 32, height: 32 });
   let iconTimer: ReturnType<typeof setTimeout> | null = null;
@@ -492,6 +541,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       { value: 'textures', label: te.tabs.textures, icon: 'bulletlist' },
       { value: 'preview', label: te.tabs.preview, icon: 'cube' },
       { value: 'effects', label: te.tabs.effects, icon: 'sparkles' },
+      { value: 'pvp', label: te.tabs.pvp, icon: 'sword' },
       { value: 'pack', label: te.tabs.pack, icon: 'settings' },
     ],
     onChange: (v) => setSide(v),
@@ -499,6 +549,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const bodies: Record<Exclude<Side, 'textures'>, HTMLElement> = {
     preview: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'preview' }, role: 'tabpanel', 'aria-label': te.tabs.preview }, preview.el),
     effects: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'effects' }, role: 'tabpanel', 'aria-label': te.tabs.effects }, effects.el),
+    pvp: pvpBody,
     pack: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'pack' }, role: 'tabpanel', 'aria-label': te.packSettings }, pack.el),
   };
 
@@ -507,6 +558,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     { v: 'editor', label: te.tabs.paint, ic: 'pencil' },
     { v: 'preview', label: te.tabs.preview, ic: 'cube' },
     { v: 'effects', label: te.tabs.effects, ic: 'sparkles' },
+    { v: 'pvp', label: te.tabs.pvp, ic: 'sword' },
     { v: 'pack', label: te.tabs.pack, ic: 'settings' },
   ];
   const tabbarButtons = new Map<Mobile, HTMLButtonElement>();
@@ -539,7 +591,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     h('div', { class: 'tx-col-left' }, browser.el, modelBrowser.el, soundLeft),
     h('div', { class: 'tx-col-center' }, canvas.el, soundCenter),
     h('div', { class: 'tx-col-tabs' }, sideTabs),
-    h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pack),
+    h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pvp, bodies.pack),
   );
   shell.replaceChildren(bar, main, modelHost, tabbar);
   sizeName();
@@ -552,6 +604,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     preview.setVisible(vis('preview') || (workspace === '3d' && libMode !== 'sounds' && (!phone || mobile === 'editor')));
     effects.setVisible(vis('effects'));
     pack.setVisible(vis('pack'));
+    if (vis('pvp')) {
+      if (pvpPanel) pvpPanel.setVisible(true);
+      else void ensurePvp();
+    } else pvpPanel?.setVisible(false);
   }
 
   function setSide(v: Side) {
@@ -740,6 +796,14 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   }
   if (last && store.byPath.has(last)) void canvas.open(last);
 
+  // A new PvP pack: its tweaks go on once the game files are here, then the PvP tab shows them.
+  const pending = proj.pvp?.pending;
+  if (pending) {
+    if (isPhone()) showMobile('pvp');
+    else setSide('pvp');
+    void ensurePvp().then((p) => p?.applyPreset(pending.fps));
+  }
+
   if (import.meta.env.DEV) {
     (window as unknown as { __tx?: unknown }).__tx = {
       store,
@@ -757,6 +821,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         return !!e;
       },
       modelEditor: () => modelEditor,
+      pvp: () => ensurePvp(),
       editModel: (kind: 'block' | 'item', id: string, st: BlockState = {}) => {
         const e = kind === 'block' ? models.lib?.block(id) : models.lib?.item(id);
         if (e) void openModelEditor(e, st);
