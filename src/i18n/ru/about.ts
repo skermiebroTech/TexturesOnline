@@ -10,7 +10,7 @@ export const ABOUT: AboutText = {
   differences: [
     {
       title: 'Все версии Java с 1.6.1',
-      text: [`Не только последняя: делай пак для ${LATEST}, 1.21.11, 1.20.1 или 1.8.9 — каждый со своими текстурами и правильным pack.mcmeta.`],
+      text: [`Не только последняя: делай пак для ${LATEST}, 1.21.11, 1.20.1 или 1.8.9 — каждый со своими текстурами и правильным pack.mcmeta.`],
     },
     {
       title: 'Java, Bedrock и конвертер',
@@ -37,7 +37,7 @@ export const ABOUT: AboutText = {
     {
       id: 'who',
       q: 'Кто делает Texture Pack Maker?',
-      a: [el('p', null, `Texture Pack Maker делает ${PUBLISHER.name} — независимый автор. Это фанатский проект, он не связан с Mojang и Microsoft.`)],
+      a: [el('p', null, `Texture Pack Maker делает ${PUBLISHER.name} — независимый автор. Это фанатский проект, он не связан с Mojang и Microsoft.`)],
     },
     {
       id: 'cost',
@@ -51,7 +51,7 @@ export const ABOUT: AboutText = {
         el(
           'p',
           null,
-          'Твой браузер скачивает их у Mojang, когда ты выбираешь версию: текстуры Java — из официальных файлов игры, текстуры Bedrock — из репозитория Mojang ',
+          'Твой браузер скачивает их у Mojang, когда ты выбираешь версию: текстуры Java — из официальных файлов игры, текстуры Bedrock — из репозитория Mojang ',
           ext('https://github.com/Mojang/bedrock-samples', 'bedrock-samples'),
           '. Они хранятся на твоём устройстве и никогда не сохраняются на этом сайте.',
         ),
@@ -65,14 +65,14 @@ export const ABOUT: AboutText = {
   ],
   eyebrow: 'О проекте',
   title: 'О Texture Pack Maker',
-  intro: `Texture Pack Maker — бесплатный сайт с открытым кодом, где можно делать текстурпаки, скины и шейдеры для Minecraft прямо в браузере: для Java Edition (${LATEST} и все версии вплоть до 1.6.1) и Bedrock Edition. Его делает ${PUBLISHER.name}.`,
+  intro: `Texture Pack Maker — бесплатный сайт с открытым кодом, где можно делать текстурпаки, скины и шейдеры для Minecraft прямо в браузере: для Java Edition (${LATEST} и все версии вплоть до 1.6.1) и Bedrock Edition. Его делает ${PUBLISHER.name}.`,
   differentTitle: 'Чем отличается Texture Pack Maker',
   toolsTitle: 'Инструменты',
   tools: [
     [link('/textures', 'Редактор текстурпаков'), ': перерисовывай любой блок, предмет или моба на его 3D-модели, загружай свои картинки, заменяй звуки, меняй стиль всего пака в один клик или открывай готовый пак.'],
     [link('/texture-pack-converter', 'Конвертер текстурпаков'), ': из Java в Bedrock, из Bedrock в Java, между версиями Java или из PNG-текстур в .mcpack.'],
     [link('/merge-texture-packs', 'Объединение текстурпаков'), ': собери до восьми паков в один, в нужном тебе порядке.'],
-    [link('/totem-maker', 'Свой тотем'), ': преврати любой скин в собственный тотем бессмертия — ресурспак для Java или Bedrock.'],
+    [link('/totem-maker', 'Свой тотем'), ': преврати любой скин в собственный тотем бессмертия — ресурспак для Java или Bedrock.'],
     [link('/skins', 'Редактор скинов'), ' и ', link('/skin-pack-maker', 'наборы скинов'), ': рисуй скины в 2D или 3D, с обычными или тонкими руками, и собирай их в набор скинов для Bedrock.'],
     [link('/shaders', 'Конструктор шейдеров'), ': шейдерпаки для Iris и OptiFine, ванильные шейдеры для Java без модов и наборы Vibrant Visuals для Bedrock.'],
     [link('/guides', 'Гайды'), ': как делать, устанавливать и чинить паки, плюс формат пака каждой версии Java.'],
@@ -83,7 +83,7 @@ export const ABOUT: AboutText = {
     code('.zip'),
     ' для Java с правильным ',
     code('pack.mcmeta'),
-    ` (в Java ${LATEST} формат пака — ${F(LATEST)}) или `,
+    ` (в Java ${LATEST} формат пака — ${F(LATEST)}) или `,
     code('.mcpack'),
     ' для Bedrock с файлом ',
     code('manifest.json'),

@@ -41,6 +41,19 @@ body {
   word-break: auto-phrase;
 }
 
+/* Russian pages: some words are longer than a phone is wide at heading sizes
+   («конфиденциальности»). Headings hyphenate only such long words, and break them where the
+   browser has no Russian hyphenation, instead of running off the screen. Words that fit are
+   never broken. Page titles may break anywhere so they can also shrink inside flex layouts. */
+:root:lang(ru) :is(h1, h2, h3, h4) {
+  hyphens: auto;
+  hyphenate-limit-chars: 14 6 6;
+  overflow-wrap: break-word;
+}
+:root:lang(ru) h1 {
+  overflow-wrap: anywhere;
+}
+
 /* Subtle pixel grid + soft glows behind everything */
 body::before {
   content: '';

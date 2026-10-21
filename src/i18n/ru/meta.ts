@@ -8,12 +8,12 @@ import { F, LATEST } from '../../app/content/facts';
 export const META_RU: MetaTranslation = {
   pages: {
     '/': {
-      title: 'Создать текстурпак для Minecraft онлайн — Java и Bedrock',
-      description: `Сделай свой текстур пак для Майнкрафт: перерисуй блоки на 3D-моделях, примени эффекты в один клик и скачай .zip или .mcpack. Бесплатно, Java ${LATEST}.`,
+      title: 'Создать текстурпак для Minecraft онлайн — Java и Bedrock',
+      description: `Сделай свой текстур пак для Майнкрафта: перерисуй блоки на 3D-моделях, примени эффекты в один клик и скачай .zip или .mcpack. Бесплатно, Java ${LATEST}.`,
       label: 'Главная',
     },
     '/textures': {
-      title: 'Редактор текстурпаков Minecraft — создать ресурспак онлайн',
+      title: 'Редактор текстурпаков Minecraft — создать ресурспак онлайн',
       description: 'Меняй любые текстуры Minecraft: рисуй блоки, предметы и мобов на 3D-моделях, загружай PNG или меняй стиль игры в один клик. Экспорт в .zip или .mcpack.',
       label: 'Текстурпаки',
     },
@@ -23,18 +23,18 @@ export const META_RU: MetaTranslation = {
       label: 'Конвертер текстурпаков',
     },
     '/merge-texture-packs': {
-      title: 'Объединить текстурпаки Minecraft онлайн — Java и Bedrock',
+      title: 'Объединить текстурпаки Minecraft онлайн — Java и Bedrock',
       description: 'Собери несколько текстурпаков Minecraft в один .zip или .mcpack. Расставь их по порядку: верхний пак побеждает, как в игре. Бесплатно, в браузере.',
       label: 'Объединение текстурпаков',
     },
     '/totem-maker': {
-      title: 'Свой тотем бессмертия в Minecraft — Java и Bedrock',
+      title: 'Свой тотем бессмертия в Minecraft — Java и Bedrock',
       description: 'Преврати любой скин Minecraft в тотем бессмертия: загрузи PNG или введи ник, выбери стиль и скачай ресурспак .zip для Java или .mcpack для Bedrock.',
       label: 'Свой тотем',
     },
     '/skins': {
-      title: 'Редактор скинов Minecraft — создать скин онлайн бесплатно',
-      description: 'Нарисуй свой скин для Майнкрафт в 2D или 3D, с обычными или тонкими руками. Скачай PNG для Java или набор скинов .mcpack для Bedrock. Бесплатно.',
+      title: 'Редактор скинов Minecraft — создать скин онлайн бесплатно',
+      description: 'Нарисуй свой скин для Майнкрафта в 2D или 3D, с обычными или тонкими руками. Скачай PNG для Java или набор скинов .mcpack для Bedrock. Бесплатно.',
       label: 'Скины',
     },
     '/skin-pack-maker': {
@@ -58,7 +58,7 @@ export const META_RU: MetaTranslation = {
       label: 'О проекте',
     },
     '/privacy': {
-      title: 'Конфиденциальность — Texture Pack Maker',
+      title: 'Конфиденциальность — Texture Pack Maker',
       description: 'В Texture Pack Maker нет аккаунтов, рекламы и слежки. Паки, скины и шейдеры остаются на твоём устройстве, ничего не загружается на сервер.',
       label: 'Конфиденциальность',
     },
@@ -77,7 +77,7 @@ export const META_RU: MetaTranslation = {
     'make-a-texture-pack': {
       title: 'Как сделать текстурпак для Minecraft (Java и Bedrock)',
       h1: 'Как сделать свой текстурпак для Minecraft',
-      description: 'Как бесплатно создать текстур пак для Майнкрафт: выбери версию, перерисуй текстуры и экспортируй .zip с pack.mcmeta (Java) или .mcpack (Bedrock).',
+      description: 'Как бесплатно создать текстур пак для Майнкрафта: выбери версию, перерисуй текстуры и экспортируй .zip с pack.mcmeta (Java) или .mcpack (Bedrock).',
       label: 'Как сделать текстурпак',
       blurb: 'Выбери версию, перерисуй текстуры и экспортируй пак, который загрузит Minecraft.',
     },
@@ -97,7 +97,7 @@ export const META_RU: MetaTranslation = {
     },
     'minecraft-pack-format-versions': {
       title: `Pack format Minecraft ${LATEST} (${F(LATEST)}) и всех версий Java`,
-      h1: `Формат пака (pack format) для каждой версии Minecraft Java: в ${LATEST} — ${F(LATEST)}`,
+      h1: `Формат пака (pack format) для каждой версии Minecraft Java: в ${LATEST} — ${F(LATEST)}`,
       description: `Все версии Minecraft Java от 1.6.1 до ${LATEST} с номером формата набора ресурсов (в ${LATEST} это ${F(LATEST)}) и то, как менялся pack.mcmeta с годами.`,
       label: 'Форматы паков всех версий',
       blurb: `Формат пака для каждой версии Java от 1.6.1 до ${LATEST}.`,
@@ -105,7 +105,7 @@ export const META_RU: MetaTranslation = {
     'make-a-skin': {
       title: 'Как сделать свой скин для Minecraft (Java и Bedrock)',
       h1: 'Как сделать свой скин для Minecraft',
-      description: 'Как бесплатно создать скин для Майнкрафт онлайн: рисуй на шаблоне 64×64 или HD 128×128 в 2D или 3D, выбери обычные или тонкие руки, для Java или Bedrock.',
+      description: 'Как бесплатно создать скин для Майнкрафта онлайн: рисуй на шаблоне 64×64 или HD 128×128 в 2D или 3D, выбери обычные или тонкие руки, для Java или Bedrock.',
       label: 'Как сделать скин',
       blurb: 'Раскрась шаблон 64×64 или HD 128×128 для Java или набора скинов Bedrock.',
     },
@@ -119,7 +119,7 @@ export const META_RU: MetaTranslation = {
     'java-vs-bedrock-packs': {
       title: 'Текстурпаки Java и Bedrock: отличия и конвертация',
       h1: 'Текстурпаки Java и Bedrock: чем отличаются и как перенести',
-      description: 'Работают ли паки Java в Bedrock? Нет: в Java это .zip и pack.mcmeta, в Bedrock — .mcpack и manifest.json. Сравниваем папки, имена, шейдеры и скины.',
+      description: 'Работают ли паки Java в Bedrock? Нет: в Java это .zip и pack.mcmeta, в Bedrock — .mcpack и manifest.json. Сравниваем папки, имена, шейдеры и скины.',
       label: 'Паки Java и Bedrock',
       blurb: 'Файлы, папки, форматы, шейдеры и скины: сравнение бок о бок.',
     },
@@ -135,14 +135,14 @@ export const META_RU: MetaTranslation = {
       h1: 'Как конвертировать текстурпак Java в Bedrock',
       description: 'Как бесплатно превратить текстурпак Java в .mcpack для Bedrock (или Bedrock в Java): что переносится, что нет и как установить готовый пак.',
       label: 'Из Java в Bedrock',
-      blurb: 'Сделай из пака Java файл .mcpack для Bedrock в пару кликов — или наоборот.',
+      blurb: 'Сделай из пака Java файл .mcpack для Bedrock в пару кликов — или наоборот.',
     },
     'merge-texture-packs': {
       title: 'Как объединить текстурпаки Minecraft: пошаговый гайд',
       h1: 'Как объединить текстурпаки Minecraft в один',
       description: 'Как собрать несколько текстурпаков в один для сервера, Realm или друзей: какой пак побеждает, что объединяется и как это сделать онлайн или вручную.',
       label: 'Объединение текстурпаков',
-      blurb: 'Собери несколько паков в один, в том порядке, который выберешь сам.',
+      blurb: 'Собери несколько паков в один, в нужном тебе порядке.',
     },
     'make-a-bedrock-skin-pack': {
       title: 'Как сделать набор скинов для Minecraft Bedrock (.mcpack)',

@@ -160,7 +160,8 @@ test('structured data parses and has the required properties', () => {
         assert.equal(q['@type'], 'Question');
         const answer = String((q.acceptedAnswer as Node).text);
         assert.ok(answer.length > 20);
-        assert.ok(text.includes(String(q.name)), `FAQ question visible: ${q.name}`);
+        // (visible text has its whitespace collapsed, no-break spaces included)
+        assert.ok(text.includes(String(q.name).replace(/\s+/g, ' ')), `FAQ question visible: ${q.name}`);
         assert.ok(text.includes(answer.slice(0, 40)), `FAQ answer visible: ${answer.slice(0, 40)}`);
       }
     }
@@ -171,7 +172,7 @@ test('structured data parses and has the required properties', () => {
       steps.forEach((s, i) => {
         assert.equal(s['@type'], 'HowToStep');
         assert.equal(s.position, i + 1);
-        assert.ok(text.includes(String(s.text)), `HowTo step visible: ${s.text}`);
+        assert.ok(text.includes(String(s.text).replace(/\s+/g, ' ')), `HowTo step visible: ${s.text}`);
       });
     }
     const crumbs = ofType(g, 'BreadcrumbList');
@@ -181,13 +182,13 @@ test('structured data parses and has the required properties', () => {
       items.forEach((it, i) => {
         assert.equal(it.position, i + 1);
         assert.match(String(it.item), /^https:\/\//);
-        assert.ok(text.includes(String(it.name)), `breadcrumb visible: ${it.name}`);
+        assert.ok(text.includes(String(it.name).replace(/\s+/g, ' ')), `breadcrumb visible: ${it.name}`);
       });
       assert.equal(items[items.length - 1].item, absoluteUrl(p.meta.path));
     }
     for (const a of ofType(g, 'TechArticle')) {
       assert.ok(a.headline && a.datePublished && a.dateModified);
-      assert.ok(text.includes(String(a.headline)));
+      assert.ok(text.includes(String(a.headline).replace(/\s+/g, ' ')));
     }
   }
 });
