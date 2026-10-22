@@ -1014,3 +1014,54 @@
     max-width: 240px;
   }
 }
+
+/* An empty model's "start from" card takes the 3D view; its camera views have nothing to show yet
+   (on phones and short touch screens the card sits where they are). */
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  .me-stage:has(> .me-start:not([hidden])) > .me-views {
+    display: none;
+  }
+}
+/* Phones in landscape: the card fills the 3D view under its tools, scrolling if it must */
+@media (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  .me-root {
+    gap: 6px;
+  }
+  .me-stage:has(> .me-start:not([hidden])) > .me-stage-tools {
+    max-width: calc(100% - 16px);
+  }
+  .me-start {
+    top: 56px;
+    bottom: 8px;
+    transform: translateX(-50%);
+    max-height: none;
+    padding: 12px;
+  }
+  .me-start > .faint {
+    display: none;
+  }
+  .me-side-body {
+    padding: 12px;
+  }
+  .me-side-body > .me-cubes {
+    margin: -12px;
+    height: calc(100% + 24px);
+  }
+  /* five tabs in the narrow side column: each as wide as its name (the row scrolls if it must) */
+  .me-side-tabs .tabs {
+    gap: 0;
+  }
+  .me-side-tabs .tab {
+    flex: 1 0 auto;
+    padding: 0 3px 2px;
+  }
+}
+@media (pointer: coarse) {
+  .me-views {
+    gap: 4px;
+  }
+  .me-view-btn {
+    width: 40px;
+    height: 40px;
+  }
+}

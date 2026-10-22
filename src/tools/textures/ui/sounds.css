@@ -483,6 +483,22 @@ code.snd-var-path {
   }
 }
 
+/* Phones: a sound's tags (weight, volume, pitch…) wrap under its title instead of being cut off. */
+@media (max-width: 760px), (pointer: coarse) {
+  .snd-var-title {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    white-space: normal;
+  }
+  .snd-var-title strong {
+    white-space: nowrap;
+  }
+  .snd-var-tags {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+
 /* ========================================================================== Sounds: recorder */
 .snd-rec {
   display: flex;

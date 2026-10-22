@@ -21,6 +21,7 @@ import type { LiveTexture, ModelService } from './models';
 import { paintCanvas } from './thumbs';
 import { fmt, textLocale } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
+import { byPointer } from './media';
 
 export interface PreviewPanel {
   el: HTMLElement;
@@ -52,6 +53,10 @@ export interface PreviewPanel {
   partLabel(part: number | undefined): string | null;
   /** The 3D view (tests) */
   view3d(): BlockPreview | null;
+  /** The block / item on show has an "Edit shape" button */
+  canEditShape(): boolean;
+  /** Opens the model editor for the block / item on show (its "Edit shape" button) */
+  editShape(): void;
   destroy(): void;
 }
 
@@ -228,7 +233,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     'section',
     { class: 'tx-pv-section tx-pv-partsection', hidden: true },
     h('div', { class: 'tx-pv-parthead' }, h('h3', { class: 'section-title' }, icon('human'), te.preview.parts), partsAll),
-    h('p', { class: 'faint small' }, te.preview.partsHint),
+    h('p', { class: 'faint small' }, byPointer(te.preview.partsHint, te.preview.partsHintTouch)),
     partsList,
   );
   const partsBtn = h('button', { type: 'button', class: 'tx-pv-partsbtn', hidden: true, 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, icon('human', { size: 16 }), h('span', null, te.preview.parts));
@@ -422,7 +427,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       { class: 'tx-pv-partspop' },
       h('div', { class: 'tx-pv-parthead' }, h('strong', null, te.preview.bodyPartsTitle), all),
       h('div', { class: 'tx-pv-parts', role: 'group', 'aria-label': te.preview.bodyParts }, partChips()),
-      h('p', { class: 'faint small' }, te.preview.soloHint),
+      h('p', { class: 'faint small' }, byPointer(te.preview.soloHint, te.preview.soloHintTouch)),
     );
     partsBtn.setAttribute('aria-expanded', 'true');
     partsPop = openPopover(partsBtn, content, { placement: 'bottom-start', label: te.preview.bodyPartsTitle, class: 'tx-pv-partspop-wrap', onClose: () => partsBtn.setAttribute('aria-expanded', 'false') });
@@ -588,12 +593,12 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
         ? te.preview.hint.dockedSheet
         : te.preview.hint.docked
       : view.shape === 'special'
-        ? te.preview.hint.sheet
+        ? byPointer(te.preview.hint.sheet, te.preview.hint.sheetTouch)
         : view.shape === 'sprite'
-          ? te.preview.hint.sprite
+          ? byPointer(te.preview.hint.sprite, te.preview.hint.spriteTouch)
           : other
-            ? te.preview.hint.other
-            : te.preview.hint.faces;
+            ? byPointer(te.preview.hint.other, te.preview.hint.otherTouch)
+            : byPointer(te.preview.hint.faces, te.preview.hint.facesTouch);
     texList.replaceChildren(...list.map((t) => textureRow(t)));
     syncRows();
   }
@@ -1105,6 +1110,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   }
 
   return {
+    canEditShape: () => !editShapeBtn.hidden,
+    editShape: () => editShapeBtn.click(),
     el,
     setTexture(t) {
       const changed = t?.key !== tex?.key;
@@ -1170,7 +1177,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       paintHint.classList.toggle('is-locked', !!hint?.locked);
       if (!hint) {
         paintHintDot.style.background = '';
-        paintHintText.textContent = matchMedia('(pointer: coarse)').matches ? te.preview.touchHint : te.preview.mouseHint;
+        paintHintText.textContent = byPointer(te.preview.mouseHint, te.preview.touchHint);
         return;
       }
       const c = hint.color;

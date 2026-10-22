@@ -12,6 +12,7 @@ import { toast } from '../../../ui/toast';
 import { paintCanvas } from './thumbs';
 import { fmt } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
+import { byPointer } from './media';
 
 export type UploadScope = 'full' | 'frame' | 'all-frames';
 
@@ -43,7 +44,7 @@ export function openUploadDialog(opts: UploadOptions): void {
 
   const dz = dropzone({
     accept: ACCEPT,
-    label: te.upload.drop,
+    label: byPointer(te.upload.drop, te.upload.dropTouch),
     hint: te.upload.dropHint,
     icon: 'image',
     onFiles: (files) => void load(files[0]),

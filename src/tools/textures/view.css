@@ -2857,14 +2857,15 @@
     max-width: 28vw;
   }
 }
-@media (max-width: 1180px) and (min-width: 761px) {
+/* (not on touch screens held in landscape, which get the phone layout) */
+@media (max-width: 1180px) and (min-width: 761px) and (min-height: 561px), (max-width: 1180px) and (min-width: 761px) and (pointer: fine) {
   .tx-col-tabs .tab .icon {
     display: none;
   }
 }
 
 /* ========================================================================== Phone */
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
   .tx-editor {
     height: calc(100dvh - var(--topbar-h));
   }
@@ -3041,7 +3042,7 @@
 .tx-optbar.is-scroller.can-right {
   --fade-r: 32px;
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
   .tx-pal-row {
     grid-template-rows: repeat(2, 24px);
     grid-auto-columns: 24px;
@@ -3479,7 +3480,7 @@
 .tx-pv-texrow.is-other .tx-pv-texbtn:hover .tx-pv-texlabel {
   opacity: 1;
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
   .tx-pv.is-model .tx-pv-hero {
     height: 288px;
   }
@@ -3713,7 +3714,7 @@
     height: 272px;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
   .tx-pv-canvasslot {
     height: 300px;
   }
@@ -3835,7 +3836,7 @@
 .tx-pv-partspop p {
   margin: 0;
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
   .tx-pv-partsbtn {
     top: 52px;
     left: 8px;
@@ -3843,5 +3844,426 @@
   }
   .tx-pv-hero.is-docked .tx-pv-partsbtn:not([hidden]) ~ .tx-pv-busy {
     top: 92px;
+  }
+}
+
+/* The palette and the "Used by" chips scroll sideways on phones: fade the side with more. */
+@media (pointer: coarse), (max-width: 760px) {
+  .tx-pal-scroll.is-scroller,
+  .tx-usedby.is-scroller {
+    --fade-l: 0px;
+    --fade-r: 0px;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+  }
+  .tx-pal-scroll.is-scroller.can-left,
+  .tx-usedby.is-scroller.can-left {
+    --fade-l: 32px;
+  }
+  .tx-pal-scroll.is-scroller.can-right,
+  .tx-usedby.is-scroller.can-right {
+    --fade-r: 32px;
+  }
+}
+/* ========================================================================== Touch screens */
+/* Fingers need about 44 px to hit. Where a 44 px control would crowd the layout, a transparent
+   ::after widens what a tap hits rather than what you see. Mouse and trackpad sizes don't change. */
+@media (pointer: coarse) {
+  /* keyboard hints mean nothing without a keyboard */
+  .tx-search-kbd {
+    display: none;
+  }
+  /* fingers pinch to zoom ("Fit" is in the texture's menu) */
+  .tx-optbar .tx-zoom-ctl {
+    display: none;
+  }
+  .tx-name-input {
+    height: 44px;
+    padding-top: 6px;
+  }
+  .tx-save {
+    height: 20px;
+  }
+  .tx-search-input {
+    height: 44px;
+  }
+  .tx-search .tx-search-clear {
+    --ib: 44px;
+    right: 0;
+  }
+  .tx-libbar .segmented .segmented-item {
+    position: relative;
+    height: 40px;
+  }
+  .tx-libbar .segmented-item[data-value='sounds'] {
+    flex: none;
+    min-width: 44px;
+  }
+  .tx-libbar .segmented-item::after,
+  .tx-seg .icon-btn::after,
+  .tx-usedby-chip::after,
+  .tx-usedby-more::after,
+  .tx-pv-part::after,
+  .tx-pv-view-btn::after,
+  .tx-pal::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+  }
+  .tx-seg {
+    gap: 4px;
+  }
+  .tx-seg .icon-btn {
+    --ib: 40px;
+    position: relative;
+  }
+  /* (an ::after sits inside the border: 2 px of border + 2 px more) */
+  .tx-seg .icon-btn::after {
+    inset: -4px;
+  }
+  .tx-pv-shapebtn {
+    --btn-h: 44px;
+  }
+  .tx-usedby-chip,
+  .tx-usedby-more {
+    position: relative;
+    height: 40px;
+  }
+  .tx-usedby-chip::after,
+  .tx-usedby-more::after {
+    inset: -4px -5px;
+  }
+  .tx-pv-part {
+    position: relative;
+    height: 40px;
+  }
+  .tx-pv-part::after {
+    inset: -4px -5px;
+  }
+  /* the camera views lie along the bottom of the 3D view, the painting hint just above them */
+  .tx-pv-views {
+    top: auto;
+    bottom: 8px;
+    flex-direction: row;
+    gap: 4px;
+  }
+  .tx-pv-hero.is-docked .tx-pv-hint {
+    bottom: 64px;
+  }
+  .tx-pv-view-btn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+  }
+  .tx-pv-float .icon-btn,
+  .tx-head-actions .icon-btn,
+  .tx-head-actions .btn.icon-only,
+  .tx-optbar .icon-btn {
+    --ib: 40px;
+  }
+  .tx-head-actions .btn-sm,
+  .tx-optbar .tx-opt-chip {
+    --btn-h: 40px;
+    height: 40px;
+  }
+  .tx-size-val,
+  .tx-zoom-val {
+    height: 40px;
+  }
+  .tx-optbar {
+    min-height: 52px;
+  }
+  /* colours: two bigger swatches, the swap button beside them */
+  .tx-swatches {
+    width: 104px;
+    height: 58px;
+  }
+  .tx-swatch {
+    width: 40px;
+    height: 40px;
+  }
+  .tx-swatch-secondary {
+    left: 20px;
+    top: 18px;
+  }
+  .tx-swap {
+    left: 60px;
+    right: auto;
+    top: 7px;
+    width: 44px;
+    height: 44px;
+  }
+  /* one row of finger-sized swatches, scrolled sideways */
+  .tx-pal-row {
+    grid-template-rows: 36px;
+    grid-auto-columns: 36px;
+    gap: 8px;
+  }
+  .tx-pal {
+    width: 36px;
+    height: 36px;
+    overflow: visible;
+  }
+  .tx-pal > span {
+    border-radius: inherit;
+  }
+  .tx-pal::after {
+    inset: -4px;
+  }
+  .tx-pal:hover {
+    transform: none;
+  }
+  .tx-pal-scroll {
+    gap: 20px;
+    scrollbar-width: none;
+  }
+  .tx-pal-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  /* rows that scroll sideways settle on a whole control, and fade wider at the edge with more */
+  .tx-optbar,
+  .tx-pal-scroll,
+  .tx-usedby,
+  .tx-rail {
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 8px;
+  }
+  .tx-optbar .tx-opt,
+  .tx-optbar .tx-opt-chip,
+  .tx-optgroup-view > *,
+  .tx-pal,
+  .tx-pal-group,
+  .tx-usedby-label,
+  .tx-usedby-chip,
+  .tx-usedby-more,
+  .tx-tool {
+    scroll-snap-align: start;
+  }
+  .tx-rail.is-scroller.can-left,
+  .tx-optbar.is-scroller.can-left,
+  .tx-pal-scroll.is-scroller.can-left,
+  .tx-usedby.is-scroller.can-left {
+    --fade-l: 56px;
+  }
+  .tx-rail.is-scroller.can-right,
+  .tx-optbar.is-scroller.can-right,
+  .tx-pal-scroll.is-scroller.can-right,
+  .tx-usedby.is-scroller.can-right {
+    --fade-r: 56px;
+  }
+}
+@media (pointer: coarse) {
+  @container (max-width: 600px) {
+    .tx-head-actions .btn {
+      width: 40px;
+    }
+  }
+}
+@media (pointer: coarse) and (max-width: 760px) {
+  /* the pack name gets a finger-sized field: the bar grows to the desktop height */
+  .tx-bar {
+    height: 64px;
+  }
+}
+
+/* ========================================================================== Short touch screens */
+/* Phones held in landscape and small phones: the site bar goes while editing (the editor's own bar
+   has the way back), so the canvas gets the height. */
+@media (max-height: 700px) and (pointer: coarse) and (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  body.tx-editing .topbar {
+    display: none;
+  }
+  .tx-editor {
+    height: 100dvh;
+    min-height: 0;
+  }
+  /* the 3D view is short: its idle "how to paint" line gives the room up */
+  .tx-pv-hero.is-docked .tx-pv-hint.is-idle {
+    display: none;
+  }
+}
+
+/* ---- phone in landscape: the phone layout, compact bars, the paint controls beside the canvas ---- */
+@media (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  .tx-bar {
+    height: 48px;
+    padding: 0 max(8px, env(safe-area-inset-right)) 0 max(4px, env(safe-area-inset-left));
+  }
+  .tx-bar-title {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .tx-name-input {
+    max-width: 40vw;
+    padding-top: 0;
+  }
+  .tx-bar-sub .badge {
+    display: inline-flex;
+  }
+  .tx-main {
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(58px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+  .tx-tabbar {
+    padding: 3px max(8px, env(safe-area-inset-right)) max(3px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+  .tx-tabbar-btn {
+    flex-direction: row;
+    gap: 8px;
+    height: 44px;
+  }
+  body.tx-editing .toast-region,
+  body.tx-editing .toast-region[popover] {
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  .tx-modelhost {
+    padding: 6px max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  /* Paint: the canvas (with the tool rail) on the left at full height, the texture's header,
+     options and colours in a column on the right. */
+  .tx-center:not(.is-empty) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 40%, 380px);
+    grid-template-rows: repeat(6, auto) minmax(0, 1fr);
+    align-content: start;
+  }
+  .tx-center:not(.is-empty) > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+  .tx-center:not(.is-empty) > .tx-workspace {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    border-right: 2px solid var(--border);
+  }
+  /* what matters most first: if the column runs out of height, "Used by" goes */
+  .tx-center:not(.is-empty) > .tx-texhead {
+    grid-row: 1;
+  }
+  .tx-center:not(.is-empty) > .tx-optbar {
+    grid-row: 2;
+  }
+  .tx-center:not(.is-empty) > .tx-colordock {
+    grid-row: 3;
+  }
+  .tx-center:not(.is-empty) > .tx-frames {
+    grid-row: 4;
+  }
+  .tx-center:not(.is-empty) > .tx-banner {
+    grid-row: 5;
+  }
+  .tx-center:not(.is-empty) > .tx-usedby {
+    grid-row: 6;
+    border-bottom: 0;
+  }
+  .tx-center:not(.is-empty) > .tx-frames,
+  .tx-center:not(.is-empty) > .tx-optbar,
+  .tx-center:not(.is-empty) > .tx-colordock {
+    border-top: 0;
+    border-bottom: 2px solid var(--border);
+  }
+  .tx-texhead {
+    min-height: 48px;
+    padding: 2px 4px 2px 10px;
+  }
+  /* the name needs the narrow column's room ("Edited" shows in the list) */
+  .tx-head-sub,
+  .tx-head-badges {
+    display: none;
+  }
+  .tx-head-actions .btn-label {
+    display: none;
+  }
+  .tx-head-actions .btn {
+    width: 40px;
+    padding: 0;
+  }
+  .tx-workspace {
+    flex-direction: row;
+  }
+  .tx-rail {
+    flex-direction: column;
+    width: 56px;
+    height: auto;
+    padding: 6px 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-right: 2px solid var(--border);
+    border-bottom: 0;
+  }
+  .tx-rail-sep {
+    width: 24px;
+    height: 2px;
+    margin: 2px 0;
+  }
+  .tx-rail.two-col {
+    grid-template-columns: 40px 40px;
+    width: 92px;
+    padding: 4px 5px;
+  }
+  /* the options wrap in the side column instead of scrolling */
+  .tx-optbar {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    justify-content: flex-start;
+    overflow: visible;
+    padding: 4px 6px;
+  }
+  .tx-optgroup {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    row-gap: 2px;
+    min-width: 0;
+  }
+  .tx-optgroup-view {
+    margin-left: 0;
+  }
+  .tx-colordock {
+    padding: 6px 8px;
+  }
+
+  /* Textures / Sounds tab: search and filters on the left, the list beside them at full height */
+  .tx-browser:not([hidden]) {
+    display: grid;
+    grid-template-columns: clamp(280px, 38%, 360px) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+  }
+  .tx-browser:not([hidden]) > * {
+    grid-column: 1;
+    min-width: 0;
+  }
+  .tx-browser:not([hidden]) > .tx-grid-wrap {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    border-left: 2px solid var(--border);
+  }
+  .tx-browser:not([hidden]) > .tx-browser-status {
+    grid-row: 4;
+    align-self: end;
+    border-radius: 0 0 0 6px;
+  }
+  .tx-browser:not([hidden]) > .tx-browser-bar {
+    border-bottom: 0;
+  }
+
+  /* Preview / Texture tab: a hero that fits the height */
+  .tx-pv.is-model .tx-pv-hero,
+  .tx-pv-hero {
+    height: min(288px, calc(100dvh - 140px));
+  }
+  .tx-pv-canvasslot {
+    height: min(300px, calc(100dvh - 140px));
+  }
+  /* the painting hint takes the bottom left, beside the camera views */
+  .tx-pv-hero.is-docked .tx-pv-hint {
+    left: 8px;
+    right: auto;
+    bottom: 8px;
+    max-width: calc(100% - 252px);
+    transform: none;
+  }
+  .tx-side-body {
+    padding: 10px 12px;
   }
 }

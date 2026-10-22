@@ -11,6 +11,7 @@ import { friendlyError, isAbortError } from '../../../core/net';
 import type { SoundEvent, SoundVariant } from '../sounds/catalog';
 import { fmt, num, textLocale } from '../../../i18n/editor-text';
 import { ts } from './i18n/sounds';
+import { byPointer } from './media';
 import { clampParams, normaliseGain, peakOf, soundRange, type RenderParams } from '../sounds/render';
 import type { Samples } from '../sounds/audio';
 import { SOUND_CATEGORY_ICONS } from './sound-browser';
@@ -91,7 +92,7 @@ export function createSoundPanel(opts: SoundPanelOptions): SoundPanelApi {
     emptyState({
       icon: 'music',
       title: ts.panel.pickTitle,
-      text: ts.panel.pickText,
+      text: byPointer(ts.panel.pickText, ts.panel.pickTextTouch),
       action: button({ label: ts.panel.browse, icon: 'bulletlist', size: 'sm', class: 'snd-empty-browse', onClick: () => opts.onBrowse() }),
     }),
   );

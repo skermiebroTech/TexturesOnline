@@ -107,6 +107,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/paint3d.e2e.cjs   # painting te
 NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs      # mob models: painting, body parts, saddles, armour and trims, Bedrock
 NODE_PATH=$(npm root -g) node tests/e2e/textures/sounds.e2e.cjs    # sounds: list, play, upload / record, trim, export as Ogg Vorbis
 NODE_PATH=$(npm root -g) node tests/e2e/textures/models.e2e.cjs    # model editor: block and 3D item models, display, export, phone layout
+NODE_PATH=$(npm root -g) node tests/e2e/textures/phone.e2e.cjs     # phones with touch, portrait and landscape: Paint tab, finger painting, pinch, tap targets
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

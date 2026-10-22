@@ -9,6 +9,7 @@ import { friendlyError } from '../../../core/net';
 import { SOUND_CATEGORY_ORDER, searchSoundEvents, type SoundCategory, type SoundEvent } from '../sounds/catalog';
 import { fmt, num } from '../../../i18n/editor-text';
 import { ts } from './i18n/sounds';
+import { isTouch } from './media';
 import type { SoundState } from './sound-store';
 
 export const SOUND_CATEGORY_ICONS: Record<SoundCategory, IconName> = {
@@ -305,7 +306,7 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
       r.setAttribute('aria-selected', String(items[i]?.id === selected));
     }
     const e = document.activeElement === list ? items[active] : undefined;
-    status.replaceChildren(...(e ? [h('strong', null, e.name), h('span', null, e.id)] : [h('span', null, sounds.status === 'ready' ? ts.browser.spacePlays : '')]));
+    status.replaceChildren(...(e ? [h('strong', null, e.name), h('span', null, e.id)] : [h('span', null, sounds.status === 'ready' && !isTouch() ? ts.browser.spacePlays : '')]));
   }
 
   function reveal(i: number) {

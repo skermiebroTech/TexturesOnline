@@ -218,6 +218,8 @@ export const te = defineText('textures.editor', {
     openFailed: "This texture couldn't be opened.",
     /** Toast after a change that Ctrl+Z can undo: "Replaced Stone — press Ctrl+Z to undo" */
     undoHint: '{action} — press Ctrl+Z to undo',
+    /** undoHint on touch screens (the undo button is the arrow in the top bar) */
+    undoHintTouch: '{action} — the undo arrow at the top takes it back',
     undo: 'Undo',
     uploadFirst: 'Open a texture first, then upload an image for it.',
     replaced: 'Replaced {name}',
@@ -286,11 +288,15 @@ export const te = defineText('textures.editor', {
     showAll: 'Show all',
     parts: 'Parts',
     partsHint: 'Hide a part to reach what it covers. Double-click to show only that part.',
+    /** partsHint on touch screens */
+    partsHintTouch: 'Hide a part to reach what it covers. Double-tap to show only that part.',
     partsButton: 'Show or hide body parts',
     /** Parts button with some hidden: "Parts · 4 of 6" */
     partsShown: 'Parts · {shown} of {total}',
     bodyPartsTitle: 'Body parts',
     soloHint: 'Double-click a part to show only it.',
+    /** soloHint on touch screens */
+    soloHintTouch: 'Double-tap a part to show only it.',
     editShape: 'Edit shape',
     custom: 'Custom',
     editShapeHint: 'Change the cubes this model is made of',
@@ -315,6 +321,11 @@ export const te = defineText('textures.editor', {
       sprite: 'Click a layer to paint it.',
       other: 'Click a face or a texture to paint it. Dimmed: other states.',
       faces: 'Click a face or a texture to paint it.',
+      /** The same four hints on touch screens */
+      sheetTouch: 'Tap the texture sheet to paint it.',
+      spriteTouch: 'Tap a layer to paint it.',
+      otherTouch: 'Tap a face or a texture to paint it. Dimmed: other states.',
+      facesTouch: 'Tap a face or a texture to paint it.',
     },
     missing: 'Missing',
     edited: 'Edited',
@@ -474,6 +485,8 @@ export const te = defineText('textures.editor', {
     insertCode: 'Insert a formatting code',
     codesTitle: 'Colours & styles (§ codes)',
     codesHint: 'Click a colour or style to add it at the cursor. §r goes back to normal.',
+    /** codesHint on touch screens */
+    codesHintTouch: 'Tap a colour or style to add it at the cursor. §r goes back to normal.',
     /** Minecraft's § formatting codes (colour names as the game's wiki names them) */
     codes: {
       '0': 'Black',
@@ -618,6 +631,8 @@ export const te = defineText('textures.editor', {
   // ------------------------------------------------------------------ upload-dialog.ts
   upload: {
     drop: 'Drop an image here or click to choose',
+    /** drop on touch screens */
+    dropTouch: 'Tap to choose an image',
     dropHint: 'PNG, JPG, GIF, WebP or TGA — any size, it gets resized for you',
     resizeStyle: 'Resize style',
     sharp: 'Sharp pixels',

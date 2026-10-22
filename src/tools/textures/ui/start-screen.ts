@@ -27,6 +27,7 @@ import { paintCanvas } from './thumbs';
 import { fmt, fmtNodes } from '../../../i18n/editor-text';
 import { kit } from '../../../ui/i18n/kit';
 import { t } from '../i18n/start';
+import { byPointer } from './media';
 
 const START_RES = [16, 32, 64, 128];
 
@@ -275,7 +276,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const busy = h('div', { class: 'tx-open-busy', hidden: true }, spinner(32), h('span', null, t.open.opening));
   const dz = dropzone({
     accept: '.zip,.mcpack,.mcaddon',
-    label: t.open.drop,
+    label: byPointer(t.open.drop, t.open.dropTouch),
     hint: t.open.dropHint,
     icon: 'folder',
     onFiles: (files) => void openFile(files[0]),

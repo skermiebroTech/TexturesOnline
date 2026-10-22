@@ -248,7 +248,8 @@ try {
           await page.waitForURL(/\/textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
           await page.waitForFunction(() => !!window.__tx && document.querySelector('.tx-main'), null, { timeout: 180000 });
           if (phone) await show(page, phone, 'textures');
-          await page.waitForFunction(() => document.querySelectorAll('.tx-mb-tile').length > 10, null, { timeout: 120000 });
+          // the list is showing (a phone's list, with finger-sized controls above it, has room for about ten)
+          await page.waitForFunction(() => document.querySelectorAll('.tx-mb-tile').length > 6, null, { timeout: 120000 });
           check(`${L}: export button translated`, ((await page.getAttribute('.tx-export-btn', 'aria-label')) ?? (await page.textContent('.tx-export-btn'))).includes(EXPECT[lang].export));
           await inspect(page, `tex-${L}-02-blocks`, lang);
           await page.evaluate(() => window.__tx.setLibraryMode('textures'));

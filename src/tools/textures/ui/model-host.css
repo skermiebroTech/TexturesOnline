@@ -33,7 +33,7 @@
 .tx-pv-shapebadge[hidden] {
   display: none;
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
   .tx-modelhost {
     padding: 8px;
   }

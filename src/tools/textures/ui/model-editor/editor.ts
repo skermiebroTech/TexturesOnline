@@ -73,6 +73,7 @@ import { openTexturePicker } from './texture-picker';
 import './model-editor.css';
 import { fmt } from '../../../../i18n/editor-text';
 import { tm } from '../i18n/model-editor';
+import { byPointer } from '../media';
 import { tr } from '../i18n/model-rules';
 
 export interface ModelEditorOptions {
@@ -663,7 +664,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       'div',
       { class: 'me-empty' },
       icon('box', { size: 32 }),
-      h('p', null, doc.elements.length ? tm.pickCube : tm.noCubes),
+      h('p', null, doc.elements.length ? byPointer(tm.pickCube, tm.pickCubeTouch) : tm.noCubes),
       button({ label: tm.addCube, icon: 'plus', variant: 'secondary', size: 'sm', onClick: () => addCube() }),
     );
 
