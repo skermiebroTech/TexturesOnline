@@ -184,8 +184,8 @@ capabilities (`runFullTrust`, `packageManagement`) are expected for PWAs and can
 > Visuals packs with presets, sliders and a live preview.
 >
 > MADE FOR WINDOWS
-> Open .zip, .mcpack and .mcaddon packs and skin PNGs straight from File Explorer with "Open with",
-> jump to a tool from the taskbar menu, and keep working offline.
+> Open .zip, .mcpack and .mcaddon packs, skin PNGs and project files straight from File Explorer with
+> "Open with", jump to a tool from the taskbar menu, and keep working offline.
 >
 > PRIVATE BY DESIGN
 > No account, no ads, no tracking. Your projects are saved on your device and nothing you make is
@@ -207,10 +207,11 @@ capabilities (`runFullTrust`, `packageManagement`) are expected for PWAs and can
 8. Bedrock skin pack maker
 9. Custom Totem of Undying maker
 10. Shader maker for Iris, OptiFine, vanilla Java and Bedrock Vibrant Visuals
-11. Opens .zip, .mcpack, .mcaddon and skin .png files from File Explorer
+11. Opens .zip, .mcpack, .mcaddon, skin .png and .tpmproject project files from File Explorer
 12. Works offline after the first use
 13. No account, no ads, nothing uploaded
 14. Free and open source (MIT licence)
+15. Project files and one-file backups to move your work to another device
 
 **Screenshots** (Desktop; 1920x1080 PNG; upload in this order; captions are optional, up to 200
 characters):

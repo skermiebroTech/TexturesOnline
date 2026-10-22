@@ -279,6 +279,28 @@
 .cm-download-png {
   justify-content: space-between;
 }
+/* The project file row under the two downloads */
+.cm-download-file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 2px dashed var(--border);
+  border-radius: var(--r-md);
+}
+.cm-download-file-text {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.cm-download-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
 .cm-pack-fields {
   display: grid;
   gap: 10px;

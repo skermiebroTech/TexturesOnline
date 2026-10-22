@@ -73,7 +73,27 @@ export interface UiText {
   loading: string;
   notFound: { title: string; text(path: string): string; goHome: string; help: string; pageTitle: string };
   loadError: { title: string; offline: string; newVersion: string; generic: string; reload: string; details: string; pageTitle: string };
-  recent: { eyebrow: string; title: string; note: string; showAll(n: number): string; showFewer: string; open: string; rename: string; delete: string };
+  recent: {
+    eyebrow: string;
+    title: string;
+    note: string;
+    showAll(n: number): string;
+    showFewer: string;
+    open: string;
+    rename: string;
+    delete: string;
+    /** Downloads every project as one backup file */
+    backUp: string;
+    /** Opens a backup or project file */
+    restore: string;
+    restoreTip: string;
+    /** Project menu: downloads it as a .tpmproject file */
+    saveFile: string;
+    /** Shown once (until dismissed or a backup is made): the work lives only in this browser */
+    reminder: string;
+    reminderAction: string;
+    dismiss: string;
+  };
   /** Alt text of the site's default link-preview image (the home page) */
   ogImageAlt: string;
 }
@@ -161,12 +181,19 @@ export const UI_EN: UiText = {
   recent: {
     eyebrow: 'Your projects',
     title: 'Continue where you left off',
-    note: 'Projects are saved in this browser only. Export them to keep a copy.',
+    note: 'Projects are saved in this browser only. Back them up to keep a copy or to move them to another device.',
     showAll: (n) => (n ? `Show all ${n}` : 'Show all'),
     showFewer: 'Show fewer',
     open: 'Open',
     rename: 'Rename',
     delete: 'Delete',
+    backUp: 'Back up all',
+    restore: 'Restore',
+    restoreTip: 'Open a backup or a project file',
+    saveFile: 'Save project file',
+    reminder: 'Your projects are only in this browser. Clearing site data, or switching browser or device, leaves them behind. A backup keeps them safe.',
+    reminderAction: 'Back up now',
+    dismiss: 'Dismiss',
   },
   ogImageAlt: OG_IMAGE.alt,
 };

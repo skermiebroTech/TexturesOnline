@@ -68,6 +68,9 @@
 .pe-open-drop {
   min-height: 176px;
 }
+.pe-open-project {
+  align-self: center;
+}
 .pe-open-note {
   display: flex;
   align-items: flex-start;

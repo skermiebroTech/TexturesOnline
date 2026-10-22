@@ -274,6 +274,13 @@ const DE: SharedLanguage = {
     badAnswer: 'Die Skin-Server haben geantwortet, aber keinen brauchbaren Skin geschickt. Versuch es in einer Minute noch einmal.',
     unreachable: 'Die Skin-Server sind nicht erreichbar. Prüf deine Internetverbindung und versuch es noch einmal.',
   },
+  'shared.projects': {
+    open: 'Projektdatei öffnen',
+    openHint: 'Eine hier gespeicherte .tpmproject-Datei oder Sicherung öffnet sich genau so, wie du sie verlassen hast.',
+    save: 'Projektdatei speichern',
+    fileTitle: 'Projektdatei',
+    saveTip: 'Eine .tpmproject-Datei, um eine Kopie zu behalten oder auf einem anderen Gerät weiterzuarbeiten',
+  },
 };
 
 /** Rightly the same as in English ('Texture Pack' is the German name of the thing). */

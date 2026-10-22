@@ -184,8 +184,9 @@ export async function getProject<T extends Project = Project>(id: string): Promi
   return get<T>(PROJECT_PREFIX + id, b.idb);
 }
 
-export async function saveProject(p: Project): Promise<void> {
-  p.updatedAt = Date.now();
+/** Stores a project. `keepTime` keeps its updatedAt (a project restored from a file or backup). */
+export async function saveProject(p: Project, opts: { keepTime?: boolean } = {}): Promise<void> {
+  if (!opts.keepTime || !p.updatedAt) p.updatedAt = Date.now();
   if (!p.createdAt) p.createdAt = p.updatedAt;
   const b = await projectsDb();
   if ('mem' in b) {

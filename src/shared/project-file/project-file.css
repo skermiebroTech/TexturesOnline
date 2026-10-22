@@ -1,0 +1,201 @@
+/* Project file dialogs: the backup summary and the restore list (src/shared/project-file/ui.ts). */
+
+.pf-backup,
+.pf-restore {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.pf-backup > p,
+.pf-restore > p {
+  margin: 0;
+}
+.pf-subtitle[hidden] {
+  display: none;
+}
+.pf-subtitle {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+}
+.pf-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pf-note .icon {
+  flex: none;
+  margin-top: 4px;
+}
+
+.pf-type-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+}
+
+/* ---- backup: what is in it */
+.pf-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pf-summary li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: 6px 10px 6px 6px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.pf-summary .pf-summary-loading,
+.pf-summary .pf-summary-empty {
+  grid-column: 1 / -1;
+  justify-content: center;
+  min-height: 48px;
+}
+
+/* ---- restore: choose what to bring back */
+.pf-existing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid color-mix(in srgb, var(--gold) 40%, var(--border));
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--gold) 6%, var(--surface));
+}
+.pf-existing[hidden] {
+  display: none;
+}
+/* "Skip" and "Keep both" differ in length: each item as wide as its label */
+.pf-existing .segmented-item {
+  flex: 1 0 auto;
+}
+.pf-existing-label {
+  flex: 1 1 auto;
+  color: var(--text-2);
+}
+.pf-list-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.pf-list-head .pf-subtitle {
+  flex: 0 1 auto;
+}
+.pf-list-head .pf-all {
+  margin-left: auto;
+}
+.pf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(360px, 44vh);
+  margin: 0 -4px;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pf-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: 6px 12px 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease),
+    opacity var(--dur-1) var(--ease);
+}
+.pf-row:hover {
+  border-color: color-mix(in srgb, var(--tool-accent) 45%, var(--border));
+}
+.pf-row:has(.pf-check:checked) {
+  border-color: color-mix(in srgb, var(--tool-accent) 60%, var(--border));
+  background: color-mix(in srgb, var(--tool-accent) 7%, var(--surface));
+}
+.pf-row:has(.pf-check:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+.pf-row.is-off {
+  cursor: default;
+  opacity: 0.62;
+}
+.pf-row.is-off:hover {
+  border-color: var(--border);
+}
+.pf-check {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--tool-accent);
+  cursor: inherit;
+}
+.pf-check:focus-visible {
+  outline: none;
+}
+.pf-row-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+.pf-row-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.pf-row-name {
+  min-width: 0;
+  font-weight: 700;
+}
+.pf-row-meta,
+.pf-row-note {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pf-row-note {
+  color: var(--text-2);
+}
+.pf-row-tag {
+  display: flex;
+  flex: none;
+}
+.pf-row-tag[hidden],
+.pf-row-note[hidden] {
+  display: none;
+}
+@media (max-width: 480px) {
+  .pf-row {
+    gap: var(--sp-2);
+    padding-inline: 8px;
+  }
+  .pf-row .pf-type-icon {
+    display: none;
+  }
+}

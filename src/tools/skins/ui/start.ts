@@ -23,6 +23,9 @@ import { drawFigure } from './figure';
 import { fetchSkinByUsername, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from './sources';
 import { fmt } from '../../../i18n/editor-text';
 import { t } from '../i18n/text';
+import { projectsText } from '../../../shared/i18n/projects';
+import { onProjectsChanged } from '../../../shared/project-file/handoff';
+import { openProjectButton, saveProjectFile } from '../../../shared/project-file/entry';
 
 const MODEL_KEY = 'to-skins-new-model';
 const SIZE_KEY = 'to-skins-new-size';
@@ -268,6 +271,7 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
               void renderRecent(list, section, urls);
             },
           },
+          { label: projectsText.save, icon: 'save', onClick: () => void saveProjectFile({ id: p.id }) },
           {
             label: t.recent.delete,
             icon: 'trash',
@@ -484,7 +488,8 @@ export function mountStart(root: HTMLElement): () => void {
   const imports = h(
     'div',
     { class: 'sk-imports' },
-    importCard('upload', t.bring.uploadTitle, t.bring.uploadText, upload),
+    // a skin or skin pack saved as a .tpmproject (or a backup) opens here too
+    importCard('upload', t.bring.uploadTitle, t.bring.uploadText, upload, openProjectButton({ class: 'sk-open-project' })),
     importCard(
       'user',
       t.bring.userTitle,
@@ -519,6 +524,7 @@ export function mountStart(root: HTMLElement): () => void {
     recentList,
   );
   void renderRecent(recentList, recentSection, urls);
+  const offProjects = onProjectsChanged(() => void renderRecent(recentList, recentSection, urls));
 
   const page = h(
     'div',
@@ -543,6 +549,7 @@ export function mountStart(root: HTMLElement): () => void {
 
   return () => {
     ctrl.abort();
+    offProjects();
     urls.forEach((u) => URL.revokeObjectURL(u));
   };
 }

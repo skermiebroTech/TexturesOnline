@@ -12,7 +12,8 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | Folder | Sections | Loaded by |
 | --- | --- | --- |
 | `src/ui/i18n/` | `kit` (buttons, dialogs, toasts, colour picker, format helpers) | the router, before every page |
-| `src/shared/i18n/` | `shared.pickers`, `shared.errors`, `shared.files`, `shared.packs`, `shared.canvas`, `shared.skins` | the router, before every tool page |
+| `src/shared/i18n/` | `shared.pickers`, `shared.errors`, `shared.files`, `shared.packs`, `shared.canvas`, `shared.skins`, `shared.projects` | the router, before every tool page |
+| `src/shared/project-file/i18n/` | `shared.projectFile` (saving and opening project files, the backup and restore dialogs) | `src/shared/project-file/ui.ts`, when it is first used |
 | `src/tools/convert/i18n/` | `convert`, `convert.engine` | `convert/view.ts` |
 | `src/tools/merge/i18n/` | `merge` | `merge/view.ts` |
 | `src/tools/totem/i18n/` | `totem` | `totem/view.ts` |

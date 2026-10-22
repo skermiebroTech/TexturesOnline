@@ -20,6 +20,19 @@ import { homePage, homeText, homeTools, type ToolKey } from './content';
 import { loadContent } from '../../i18n/content';
 import { ui, type UiText } from '../../i18n/ui';
 import type { Locale } from '../../i18n/locales';
+import { BACKED_UP, lastBackupAt, onProjectsChanged } from '../../shared/project-file/handoff';
+import { openBackupDialog, pickProjectFile, saveProjectFile } from '../../shared/project-file/entry';
+
+/** localStorage: the reminder that projects live only in this browser was dismissed */
+const REMINDER_KEY = 'to-backup-reminder-dismissed';
+
+function reminderDismissed(): boolean {
+  try {
+    return localStorage.getItem(REMINDER_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
 
 /** Starts the live preview inside a (prerendered) tool card. */
 function toolPreview(card: HTMLElement, key: ToolKey): Showcase {
@@ -113,6 +126,24 @@ function projectThumb(p: Project, urls: string[]): HTMLElement {
 function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void } {
   const urls: string[] = [];
   const grid = h('div', { class: 'recent-grid' });
+  // Once, until it is dismissed or a backup is made: the work lives only in this browser.
+  const dismissBtn = h('button', { type: 'button', class: 'icon-btn sm recent-reminder-close', 'aria-label': t.dismiss }, icon('close'));
+  const reminder = h(
+    'div',
+    { class: 'recent-reminder', role: 'note', hidden: true },
+    icon('warning-diamond'),
+    h('p', null, t.reminder),
+    button({ label: t.reminderAction, icon: 'archive', variant: 'primary', size: 'sm', onClick: () => openBackupDialog() }),
+    dismissBtn,
+  );
+  dismissBtn.addEventListener('click', () => {
+    reminder.hidden = true;
+    try {
+      localStorage.setItem(REMINDER_KEY, String(Date.now()));
+    } catch {
+      /* private mode */
+    }
+  });
   const moreBtn = button({ label: t.showAll(0), variant: 'ghost', size: 'sm', iconEnd: 'chevron-down' });
   const el = h(
     'section',
@@ -123,8 +154,19 @@ function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void 
       h('div', { class: 'stack', style: { '--gap': '8px' } }, h('span', { class: 'eyebrow' }, icon('clock'), t.eyebrow), h('h2', { id: 'recent-title' }, t.title)),
       moreBtn,
     ),
+    reminder,
     grid,
-    h('p', { class: 'recent-note faint small' }, icon('lock', { size: 24 }), t.note),
+    h(
+      'div',
+      { class: 'recent-foot' },
+      h('p', { class: 'recent-note faint small' }, icon('lock', { size: 24 }), t.note),
+      h(
+        'div',
+        { class: 'recent-actions' },
+        button({ label: t.restore, icon: 'upload', variant: 'ghost', size: 'sm', title: t.restoreTip, class: 'recent-restore', onClick: () => pickProjectFile() }),
+        button({ label: t.backUp, icon: 'archive', variant: 'secondary', size: 'sm', class: 'recent-backup', onClick: () => openBackupDialog() }),
+      ),
+    ),
   );
 
   let projects: Project[] = [];
@@ -136,6 +178,7 @@ function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void 
     urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
     if (destroyed) return; // the list finished loading after the user left the page
     el.hidden = projects.length === 0;
+    reminder.hidden = !projects.length || reminderDismissed() || lastBackupAt() > 0;
     moreBtn.hidden = projects.length <= LIMIT;
     moreBtn.querySelector('.btn-label')!.textContent = expanded ? t.showFewer : t.showAll(projects.length);
     const shown = expanded ? projects : projects.slice(0, LIMIT);
@@ -149,6 +192,7 @@ function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void 
           openMenu(menuBtn, [
             { label: t.open, icon: 'external-link', onClick: () => navigate(`/${info.route}/${encodeURIComponent(p.id)}`) },
             { label: t.rename, icon: 'pen-square', onClick: () => void rename(p) },
+            { label: t.saveFile, icon: 'save', onClick: () => void saveProjectFile({ id: p.id }) },
             { label: t.delete, icon: 'trash', danger: true, onClick: () => void remove(p) },
           ]);
         });
@@ -227,10 +271,15 @@ function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void 
     render();
   });
   void load();
+  const offProjects = onProjectsChanged(() => void load());
+  const onBackedUp = () => (reminder.hidden = true);
+  window.addEventListener(BACKED_UP, onBackedUp);
   return {
     el,
     destroy: () => {
       destroyed = true;
+      offProjects();
+      window.removeEventListener(BACKED_UP, onBackedUp);
       urls.splice(0).forEach((u) => URL.revokeObjectURL(u));
     },
   };

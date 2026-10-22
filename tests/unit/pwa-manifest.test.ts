@@ -161,7 +161,7 @@ test('shortcuts: texture pack, converter, skins and shaders, each a real route w
 
 test('file handlers open packs and skins in the app', () => {
   const exts = manifest.file_handlers.flatMap((f) => Object.values(f.accept).flat());
-  for (const e of ['.zip', '.mcpack', '.mcaddon', '.png']) assert.ok(exts.includes(e), e);
+  for (const e of ['.zip', '.mcpack', '.mcaddon', '.png', '.tpmproject', '.tpmbackup']) assert.ok(exts.includes(e), e);
   for (const f of manifest.file_handlers) {
     assert.ok(at(f.action).href.startsWith(SITE) && resolveRoute(at(f.action).pathname), `${f.action} is an app route`);
     assert.ok(f.name.length > 0);
@@ -179,7 +179,7 @@ test('share target posts files to the route the service worker answers', () => {
   assert.equal(s.enctype, 'multipart/form-data');
   assert.equal(at(s.action).href, SITE + SHARE_TARGET_PATH);
   assert.equal(s.params.files[0].name, 'files');
-  for (const e of ['.zip', '.mcpack', '.png']) assert.ok(s.params.files[0].accept.includes(e), e);
+  for (const e of ['.zip', '.mcpack', '.png', '.tpmproject', '.tpmbackup']) assert.ok(s.params.files[0].accept.includes(e), e);
 });
 
 test("PWABuilder's required and recommended manifest members are all present", () => {

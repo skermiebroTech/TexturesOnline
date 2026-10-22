@@ -53,3 +53,44 @@ export function clearSavedCape(): void {
     /* private mode */
   }
 }
+
+/** localStorage key of the cape maker's settings (cape/view.ts) */
+export const CAPE_PREFS_KEY = 'to-cape-maker-prefs';
+
+/** The settings that belong to the cape rather than to the browser (they travel with project files). */
+export interface CapeSettings {
+  wear?: 'cape' | 'elytra';
+  edition?: 'java' | 'bedrock';
+  javaVersion?: string;
+  /** Bedrock elytra pack: kept so importing it again replaces the pack */
+  uuids?: { header: string; module: string };
+  packVersion?: [number, number, number];
+}
+
+const SETTINGS: (keyof CapeSettings)[] = ['wear', 'edition', 'javaVersion', 'uuids', 'packVersion'];
+
+/** The cape's settings out of the stored preferences (absent ones stay out). */
+export function readCapeSettings(): CapeSettings {
+  try {
+    const p = JSON.parse(localStorage.getItem(CAPE_PREFS_KEY) ?? '{}') as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const k of SETTINGS) if (p[k] !== undefined) out[k] = p[k];
+    return out as CapeSettings;
+  } catch {
+    return {};
+  }
+}
+
+/** Writes the cape's settings into the stored preferences (the page checks them when it reads them). */
+export function writeCapeSettings(s: CapeSettings): void {
+  try {
+    const p = JSON.parse(localStorage.getItem(CAPE_PREFS_KEY) ?? '{}') as Record<string, unknown>;
+    for (const k of SETTINGS) {
+      if (s[k] !== undefined) p[k] = s[k];
+      else if (k === 'uuids' || k === 'packVersion') delete p[k];
+    }
+    localStorage.setItem(CAPE_PREFS_KEY, JSON.stringify(p));
+  } catch {
+    /* private mode */
+  }
+}

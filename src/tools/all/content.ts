@@ -53,6 +53,7 @@ export type AllCardId =
   | 'app'
   | 'languages'
   | 'privacy'
+  | 'backup'
   | 'openSource'
   | 'installGuide'
   | 'faq'
@@ -155,6 +156,7 @@ const SECTIONS: Section[] = [
       { id: 'app', icon: 'download', to: '/help?s=offline' },
       { id: 'languages', icon: 'globe', to: '/about' },
       { id: 'privacy', icon: 'lock', to: '/privacy' },
+      { id: 'backup', icon: 'archive', to: '/help?s=backup' },
       { id: 'openSource', icon: 'github', to: REPO_URL, external: true },
     ],
   },
@@ -225,6 +227,7 @@ export const ALL_EN: AllText = {
     app: { title: 'Install it as an app', desc: 'Add it to your home screen or desktop and use it offline.' },
     languages: { title: 'In six languages', desc: 'English, German, Spanish, Portuguese, Japanese and Russian, editors included.' },
     privacy: { title: 'Nothing is uploaded', desc: 'No accounts, ads or tracking. Your work stays on your device.' },
+    backup: { title: 'Back up your projects', desc: 'Save one project or all of them as a file, and open it in another browser or on another device.' },
     openSource: { title: 'Open source', desc: 'The code is public on GitHub, where you can report problems and suggest ideas.' },
     installGuide: { title: 'Install guide', desc: 'Install texture packs, skins and shaders on Java and Bedrock, on any device.' },
     faq: { title: 'Questions and answers', desc: 'Short answers to the most common questions.' },

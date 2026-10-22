@@ -180,3 +180,15 @@ export function breadcrumbs(items: Crumb[], label = 'Breadcrumb'): ElNode {
     ),
   );
 }
+
+/**
+ * The help page's "Back up all projects" and "Open a backup" buttons (help.ts wires them to the
+ * backup dialogs; the static page has them inert). Left out of the Markdown copy.
+ */
+export const backupButtons = (backUp: string, open: string): ElNode =>
+  el(
+    'div',
+    { class: 'help-backup-actions', 'data-md': 'skip' },
+    el('button', { type: 'button', class: 'btn btn-primary', 'data-backup': 'all' }, ic('archive'), el('span', { class: 'btn-label' }, backUp)),
+    el('button', { type: 'button', class: 'btn btn-secondary', 'data-backup': 'open' }, ic('upload'), el('span', { class: 'btn-label' }, open)),
+  );

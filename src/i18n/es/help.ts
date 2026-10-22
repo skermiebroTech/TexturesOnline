@@ -2,7 +2,7 @@
 // (Spain) game shows (Java: assets/minecraft/lang/es_es.json, Bedrock: texts/es_ES.lang).
 
 import { el, type Child } from '../../app/markup';
-import { callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { backupButtons, callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
 import { REPO_URL } from '../../app/site';
 import { F, LATEST, maxFormat, minFormat } from '../../app/content/facts';
 import type { HelpText } from '../../tools/help/content';
@@ -266,6 +266,27 @@ export const HELP: HelpText = {
         el('p', { class: 'muted small' }, 'En Windows, pega la ruta en la barra de direcciones del Explorador de archivos o en la ventana Ejecutar (Win + R).'),
       ],
     },
+    backup: {
+      title: 'Haz copias de seguridad y lleva tus proyectos contigo',
+      short: 'Copias de seguridad',
+      body: [
+        el('p', { class: 'guide-intro' }, 'Tus proyectos solo se guardan en este navegador. Si borras los datos del sitio o cambias de navegador o de dispositivo, se quedan atrás, así que guarda una copia en un archivo.'),
+        backupButtons('Copia de seguridad de todo', 'Abrir una copia de seguridad'),
+        el(
+          'ul',
+          { class: 'guide-list' },
+          el('li', null, strong('Archivo de proyecto'), ' (', code('.tpmproject'), '): un proyecto con todo lo necesario para seguir editándolo, como texturas, sonidos y modelos editados, efectos, la versión y la edición, las skins de un pack de skins, los ajustes del shader y los caracteres de la fuente. Guárdalo en el editor con ', strong('Guardar archivo de proyecto'), ' o desde el menú de un proyecto.'),
+          el('li', null, strong('Copia de seguridad'), ' (', code('.tpmbackup'), '): todos los texture packs, skins y shaders de este navegador, además de tu capa y tu fuente, en un solo archivo.'),
+        ),
+        el('h3', { class: 'guide-sub' }, 'Ábrelos en otro navegador o dispositivo'),
+        steps([
+          'Abre Texture Pack Maker allí (o la app instalada).',
+          ['Suelta el archivo en cualquier zona de ', strong('Abrir'), ' de un editor, o usa ', strong('Abrir un archivo de proyecto'), '. Un proyecto se abre en su editor como proyecto nuevo, así que no se reemplaza nada de lo que ya tienes.'],
+          ['Con una copia de seguridad, elige qué restaurar. Los proyectos que ya están se omiten, o se conservan junto a los tuyos con ', strong('Conservar ambos'), '.'],
+        ]),
+        callout('info', 'No es lo mismo que exportar', 'Un .zip o .mcpack exportado es para el juego. Un archivo de proyecto guarda también el estado del editor, para que sigas justo donde lo dejaste. Ninguno incluye los archivos del propio juego: se vuelven a descargar de Mojang.'),
+      ],
+    },
   },
   faq: [
     {
@@ -417,7 +438,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: '¿Dónde se guardan mis proyectos?',
-      a: [p('En el almacenamiento de tu navegador en este dispositivo. Se quedan ahí hasta que los borres o borres los datos de esta web. Para hacer una copia de seguridad o pasar un proyecto a otro ordenador, expórtalo y abre el archivo allí con ', strong('Abrir un pack'), '.')],
+      a: [p('En el almacenamiento de tu navegador en este dispositivo. Se quedan ahí hasta que los borres o borres los datos de esta web. Para guardar una copia o pasarlos a otro ordenador, guarda un archivo de proyecto (', code('.tpmproject'), ') o una copia de seguridad de todos tus proyectos (', code('.tpmbackup'), ') y ábrelo allí. ', link('/help?s=backup', 'Cómo hacer y restaurar copias de seguridad'), '.')],
     },
     {
       id: 'versions',
@@ -502,6 +523,7 @@ export const HELP: HelpText = {
     vanilla: 'Vanilla (sin mods)',
     vibrant: 'Visuales vibrantes',
     folders: 'Carpetas',
+    backup: 'Copias de seguridad',
     faq: 'Preguntas frecuentes',
     allGuides: 'Todas las guías',
   },

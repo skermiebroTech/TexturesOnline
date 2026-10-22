@@ -42,6 +42,8 @@ import { kit } from '../../../ui/i18n/kit';
 import { te } from './i18n/editor';
 import { versionLabel } from './start-screen';
 import { PHONE_MQ, TABLET_MQ } from './media';
+import { projectsText } from '../../../shared/i18n/projects';
+import { saveProjectFile } from '../../../shared/project-file/entry';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pvp' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'sounds';
@@ -452,6 +454,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const redoBtn = iconButton('redo', te.redo, () => (modelEditor ? modelEditor.redo() : canvas.redo()), { disabled: true });
   const helpBtn = iconButton('keyboard', te.shortcutsButton, () => showShortcuts());
   helpBtn.classList.add('tx-keys-btn');
+  // a .tpmproject file of the whole project (src/shared/project-file/)
+  const fileBtn = iconButton('save', projectsText.save, () => void saveProjectFile({ id: proj.id, flush: () => store.flush() }), { class: 'tx-file-btn' });
   const exportBtn = button({ label: te.exportButton, icon: 'download', variant: 'primary', class: 'tx-export-btn', onClick: () => openExportDialog(store) });
   function paintHistory() {
     undoBtn.disabled = modelEditor ? !modelEditor.canUndo() : !canvas.canUndo();
@@ -533,7 +537,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     h('div', { class: 'tx-bar-iconbox checker' }, barIcon),
     h('div', { class: 'tx-bar-title' }, nameInput, measurer, h('span', { class: 'tx-bar-sub' }, badge(versionText(proj), proj.edition === 'java' ? 'green' : 'blue'), saveEl)),
     h('span', { class: 'grow' }),
-    h('div', { class: 'tx-bar-actions' }, undoBtn, redoBtn, h('span', { class: 'toolbar-sep' }), helpBtn, exportBtn),
+    h('div', { class: 'tx-bar-actions' }, undoBtn, redoBtn, h('span', { class: 'toolbar-sep' }), helpBtn, fileBtn, exportBtn),
   );
   tooltip(bar.querySelector('.tx-back') as HTMLElement, te.allPacks);
   paintBarIcon();

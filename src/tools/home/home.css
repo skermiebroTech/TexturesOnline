@@ -455,11 +455,54 @@
   top: 8px;
   right: 8px;
 }
+.recent-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-top: 16px;
+}
 .recent-note {
   display: flex;
+  flex: 1 1 320px;
   align-items: center;
   gap: 8px;
-  margin-top: 16px;
+  margin: 0;
+}
+.recent-note .icon {
+  flex: none;
+}
+.recent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.recent-reminder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+  padding: 10px 8px 10px 16px;
+  border: 2px solid color-mix(in srgb, var(--gold) 45%, var(--border));
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--gold) 7%, var(--surface));
+}
+.recent-reminder[hidden] {
+  display: none;
+}
+.recent-reminder > .icon {
+  flex: none;
+  color: var(--gold);
+}
+.recent-reminder p {
+  flex: 1 1 260px;
+  margin: 0;
+  color: var(--text-2);
+}
+.recent-reminder-close {
+  flex: none;
 }
 
 /* ---------- How it works ---------- */

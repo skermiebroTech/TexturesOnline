@@ -274,6 +274,13 @@ const JA: SharedLanguage = {
     badAnswer: 'スキンのサーバーから応答はありましたが、使えるスキンが届きませんでした。1分ほどしてから、もう一度お試しください。',
     unreachable: 'スキンのサーバーに接続できませんでした。インターネット接続を確認して、もう一度お試しください。',
   },
+  'shared.projects': {
+    open: 'プロジェクトファイルを開く',
+    openHint: 'このサイトで保存した.tpmprojectやバックアップは、保存したときのまま開けます。',
+    save: 'プロジェクトファイルを保存',
+    fileTitle: 'プロジェクトファイル',
+    saveTip: 'コピーを残したり、別のデバイスで続きを編集したりするための.tpmprojectファイル',
+  },
 };
 
 export default JA;

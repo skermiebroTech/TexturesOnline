@@ -5,7 +5,7 @@
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../../app/markup';
-import { breadcrumbs, callout, code, ext, faqList, folderTable, link, steps, strong, tabbed, uiPath, type FaqItem } from '../../app/content/blocks';
+import { backupButtons, breadcrumbs, callout, code, ext, faqList, folderTable, link, steps, strong, tabbed, uiPath, type FaqItem } from '../../app/content/blocks';
 import { REPO_URL, SITE_NAME } from '../../app/site';
 import { F, LATEST, maxFormat, minFormat } from '../../app/content/facts';
 import { HELP_META, pageMeta } from '../../app/seo/meta';
@@ -13,7 +13,7 @@ import type { Locale } from '../../i18n/locales';
 import { ui } from '../../i18n/ui';
 import { contentOf } from '../../i18n/content';
 
-export type HelpSectionId = 'java-packs' | 'bedrock-packs' | 'java-skins' | 'bedrock-skins' | 'iris' | 'vanilla-shaders' | 'vibrant-visuals' | 'folders';
+export type HelpSectionId = 'java-packs' | 'bedrock-packs' | 'java-skins' | 'bedrock-skins' | 'iris' | 'vanilla-shaders' | 'vibrant-visuals' | 'folders' | 'backup';
 
 export interface HelpSection {
   id: HelpSectionId;
@@ -305,6 +305,43 @@ export const SECTIONS: HelpSection[] = [
       el('p', { class: 'muted small' }, 'On Windows, paste the path into the File Explorer address bar or the Run box (Win + R).'),
     ],
   },
+  {
+    id: 'backup',
+    title: 'Back up and move your projects',
+    short: 'Backups',
+    icon: 'archive',
+    accent: 'accent-gold',
+    body: [
+      el('p', { class: 'guide-intro' }, 'Your projects are saved in this browser only. Clearing the site’s data, or switching browser or device, leaves them behind, so keep a copy as a file.'),
+      backupButtons('Back up all projects', 'Open a backup'),
+      el(
+        'ul',
+        { class: 'guide-list' },
+        el(
+          'li',
+          null,
+          strong('Project file'),
+          ' (',
+          code('.tpmproject'),
+          '): one project with everything needed to keep editing it, such as edited textures, sounds and models, effects, the version and edition, the skins of a skin pack, shader settings and font glyphs. Save it in the editor with ',
+          strong('Save project file'),
+          ', or from a project’s menu.',
+        ),
+        el('li', null, strong('Backup'), ' (', code('.tpmbackup'), '): every texture pack, skin and shader in this browser, plus your cape and your font, in one file.'),
+      ),
+      el('h3', { class: 'guide-sub' }, 'Open them in another browser or on another device'),
+      steps([
+        'Open Texture Pack Maker there (or the installed app).',
+        ['Drop the file on any ', strong('Open'), ' area of an editor, or use ', strong('Open a project file'), '. A project opens in its editor as a new project, so nothing you already have is replaced.'],
+        ['For a backup, choose what to restore. Projects that are already there are skipped, or kept next to yours with ', strong('Keep both'), '.'],
+      ]),
+      callout(
+        'info',
+        'Not the same as exporting',
+        'An exported .zip or .mcpack is for the game. A project file also keeps the editor’s state, so you carry on exactly where you stopped. Neither holds the game’s own files: those download again from Mojang.',
+      ),
+    ],
+  },
 ];
 
 export const FAQ: FaqItem[] = [
@@ -569,8 +606,12 @@ export const FAQ: FaqItem[] = [
       el(
         'p',
         null,
-        "In your browser's storage on this device. They stay until you delete them or clear this site's data. To back up a project or move it to another computer, export it and open the file there with ",
-        strong('Open a pack'),
+        "In your browser's storage on this device. They stay until you delete them or clear this site's data. To keep a copy or move them to another computer, save a project file (",
+        code('.tpmproject'),
+        ') or a backup of every project (',
+        code('.tpmbackup'),
+        ') and open it there. ',
+        link('/help?s=backup', 'How to back up and restore'),
         '.',
       ),
     ],
@@ -694,6 +735,8 @@ export interface HelpText {
     vanilla: string;
     vibrant: string;
     folders: string;
+    /** The backups section */
+    backup: string;
     faq: string;
     allGuides: string;
   };
@@ -719,6 +762,7 @@ export const HELP_EN: HelpText = {
     vanilla: 'Vanilla (no mods)',
     vibrant: 'Vibrant Visuals',
     folders: 'Folders',
+    backup: 'Backups',
     faq: 'FAQ',
     allGuides: 'All guides',
   },
@@ -769,6 +813,7 @@ export function helpPage(locale: Locale = 'en'): ElNode[] {
       { class: 'toc-group' },
       el('span', { class: 'toc-label' }, t.toc.more),
       tocItem('folders', t.toc.folders, 'folder', 'accent-gold', false),
+      tocItem('backup', t.toc.backup, 'archive', 'accent-gold', false),
       tocItem('faq', t.toc.faq, 'circle-question', 'accent-gold', false),
       el('a', { class: ['toc-link', 'accent-gold'], to: '/guides' }, ic('book-open'), el('span', null, t.toc.allGuides)),
     ),

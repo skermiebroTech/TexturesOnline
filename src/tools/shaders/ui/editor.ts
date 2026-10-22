@@ -37,6 +37,8 @@ import { et } from './i18n/editor';
 import { t } from '../i18n/text';
 import { kit } from '../../../ui/i18n/kit';
 import { fmt, textLocale } from '../../../i18n/editor-text';
+import { projectsText } from '../../../shared/i18n/projects';
+import { saveProjectFile } from '../../../shared/project-file/entry';
 
 /** A step name inside an English sentence is lowercased ("Undo reset lighting"); other languages keep it as written. */
 const inSentence = (s: string) => (textLocale() === 'en' ? s.toLowerCase() : s);
@@ -289,6 +291,8 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   const redoBtn = iconButton('redo', et.redo, () => redo());
   const keysBtn = iconButton('keyboard', et.shortcuts, () => showShortcuts());
   keysBtn.classList.add('sh-keys-btn');
+  // the project (an imported pack with its files and edits) as a .tpmproject file
+  const fileBtn = iconButton('save', projectsText.save, () => void saveProjectFile({ id: project.id, flush: () => { scheduleSave.flush(); return saveNow(); } }), { class: 'sh-file-btn' });
   const renameBtn = iconButton('pencil', et.rename, () => void rename(), { size: 'sm' });
   const exportBtn = button({ label: et.export, icon: 'download', variant: 'primary', class: 'sh-bar-export', onClick: () => doExport() });
   tooltip(exportBtn, fmt(et.exportTip, { ext: target.fileExt }));
@@ -299,7 +303,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
     back,
     h('div', { class: 'sh-bar-title' }, h('span', { class: 'sh-bar-icon' }, icon(target.icon)), h('div', { class: 'sh-bar-names' }, header, h('span', { class: 'sh-bar-sub' }, target.shortName)), renameBtn),
     saveEl,
-    h('div', { class: 'sh-bar-actions' }, undoBtn, redoBtn, keysBtn, exportBtn),
+    h('div', { class: 'sh-bar-actions' }, undoBtn, redoBtn, keysBtn, fileBtn, exportBtn),
   );
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite' });
 

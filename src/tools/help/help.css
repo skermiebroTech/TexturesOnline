@@ -184,6 +184,17 @@
 .guide-intro {
   color: var(--text-2);
 }
+/* The backups section's two buttons */
+.help-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  .help-backup-actions > .btn {
+    flex: 1 1 100%;
+  }
+}
 .help-section-body strong,
 .help-section-body em {
   color: var(--text);

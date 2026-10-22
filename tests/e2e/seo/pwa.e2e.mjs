@@ -147,7 +147,7 @@ try {
     const res = await page.request.get(`${base}site.webmanifest`);
     check(res.status() === 200 && /application\/manifest\+json/.test(res.headers()['content-type'] ?? ''), 'manifest is served as application/manifest+json', res.headers()['content-type']);
     const manifest = await res.json();
-    check(manifest.file_handlers?.length === 2 && JSON.stringify(manifest.file_handlers).includes('.mcpack'), 'manifest has file handlers for packs and skins');
+    check(manifest.file_handlers?.length === 3 && JSON.stringify(manifest.file_handlers).includes('.mcpack') && JSON.stringify(manifest.file_handlers).includes('.tpmproject'), 'manifest has file handlers for packs, skins and project files');
 
     await page.goto(base, { waitUntil: 'load' });
     await page.waitForSelector(READY.home);

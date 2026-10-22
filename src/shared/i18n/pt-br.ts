@@ -274,6 +274,13 @@ const PT_BR: SharedLanguage = {
     badAnswer: 'Os servidores de skins responderam, mas não mandaram uma skin válida. Tente de novo daqui a um minuto.',
     unreachable: 'Não foi possível acessar os servidores de skins. Verifique sua conexão com a internet e tente de novo.',
   },
+  'shared.projects': {
+    open: 'Abrir arquivo de projeto',
+    openHint: 'Um .tpmproject ou backup salvo neste site abre exatamente como você deixou.',
+    save: 'Salvar arquivo de projeto',
+    fileTitle: 'Arquivo de projeto',
+    saveTip: 'Um arquivo .tpmproject para guardar uma cópia ou continuar editando em outro dispositivo',
+  },
 };
 
 export default PT_BR;

@@ -59,6 +59,16 @@
       "accept": { "image/png": [".png"] },
       "icons": [{ "src": "icons/shortcut-skins.png", "sizes": "96x96", "type": "image/png" }],
       "launch_type": "single-client"
+    },
+    {
+      "action": "./",
+      "name": "Texture Pack Maker project or backup",
+      "accept": {
+        "application/vnd.texturepackmaker.project": [".tpmproject"],
+        "application/vnd.texturepackmaker.backup": [".tpmbackup"]
+      },
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }],
+      "launch_type": "single-client"
     }
   ],
   "share_target": {
@@ -71,7 +81,7 @@
       "files": [
         {
           "name": "files",
-          "accept": [".zip", ".mcpack", ".mcaddon", ".png", "application/zip", "application/octet-stream", "image/png"]
+          "accept": [".zip", ".mcpack", ".mcaddon", ".png", ".tpmproject", ".tpmbackup", "application/zip", "application/octet-stream", "image/png"]
         }
       ]
     }

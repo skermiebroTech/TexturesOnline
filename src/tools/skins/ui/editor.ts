@@ -48,6 +48,8 @@ import { setOuterSeeThrough, setPartVisible } from './preview-extras';
 import { createPaint3d, drawPixelOutline, maxBrushFor } from './paint3d';
 import { fmt } from '../../../i18n/editor-text';
 import { editorText as t, type SkinEditorText } from '../i18n/editor';
+import { projectsText } from '../../../shared/i18n/projects';
+import { saveProjectFile } from '../../../shared/project-file/entry';
 import { t as startText } from '../i18n/text';
 import { poseText } from '../i18n/pose';
 
@@ -381,7 +383,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
         .catch(() => undefined)
         .then(() => navigate(`/totem-maker?skin=${encodeURIComponent(id)}`)),
   };
-  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [totemExtra], { hd: scale === 2 })));
+  // the skin (and the skins in its Bedrock pack) as a .tpmproject file
+  const fileExtra = { title: projectsText.save, sub: projectsText.saveTip, icon: 'save' as const, onPick: () => void saveProjectFile({ id, flush: flushSave }) };
+  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [fileExtra, totemExtra], { hd: scale === 2 })));
   const backBtn = iconButton('arrow-left', t.bar.allSkins, () => navigate('/skins'));
 
   const bar = h(

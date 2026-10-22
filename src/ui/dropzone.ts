@@ -5,6 +5,7 @@ import { icon, type IconName } from './icons';
 import { describeAccept, fileMatchesAccept } from './format';
 import { pickers } from '../shared/i18n/pickers';
 import { fmt } from '../i18n/editor-text';
+import { isProjectFileName } from '../shared/project-file/handoff';
 
 export { fileMatchesAccept } from './format';
 
@@ -46,6 +47,13 @@ export function dropzone(opts: {
   const deliver = (list: FileList | File[] | null) => {
     const files = Array.from(list ?? []);
     if (!files.length) return;
+    // A project file or backup opens wherever it is dropped: in its own tool, or the restore dialog.
+    const project = files.find((f) => isProjectFileName(f.name));
+    if (project) {
+      el.setError(null);
+      void import('../shared/project-file/entry').then((m) => m.openProjectFile(project));
+      return;
+    }
     const ok = files.filter((f) => fileMatchesAccept(f, opts.accept));
     const picked = opts.multiple ? ok : ok.slice(0, 1);
     if (!ok.length) {

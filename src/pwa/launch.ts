@@ -1,6 +1,7 @@
 // Files opened with the installed app (File Handling API: double-click a .mcpack, "Open with"),
 // files shared to it (Web Share Target) and app shortcuts are routed to the right tool: the file is
-// handed to that tool's own drop zone, exactly as if it had been dropped there.
+// handed to that tool's own drop zone, exactly as if it had been dropped there. Project files and
+// backups (.tpmproject, .tpmbackup) say which tool they belong to and open there directly.
 // Loaded only when the app was launched with files, or by the share target.
 
 import { unzipSync } from 'fflate';
@@ -10,6 +11,7 @@ import { fileMatchesAccept } from '../ui/format';
 import { toast } from '../ui/toast';
 import { PACK_EXT, PNG_EXT, planLaunch, pngSize, type LaunchFileFacts } from './route-file';
 import { appText } from './text';
+import { isProjectFileName } from '../shared/project-file/handoff';
 
 /** Same names as src/pwa/sw-logic.ts (not imported: that module is bundled into the worker alone). */
 const SHARE_CACHE = 'tpm-share';
@@ -73,6 +75,12 @@ function cantOpen(name: string): void {
 /** Opens files in the tool that fits them. */
 export async function openFiles(files: File[]): Promise<void> {
   if (!files.length) return;
+  // A project file or backup knows its own tool (it opens there, or offers what to restore).
+  const project = files.find((f) => isProjectFileName(f.name));
+  if (project) {
+    const { openProjectFile } = await import('../shared/project-file/ui');
+    return openProjectFile(project);
+  }
   const facts = await Promise.all(files.map(factsOf));
   const plan = planLaunch(facts);
   if (!plan) return cantOpen(files[0].name);

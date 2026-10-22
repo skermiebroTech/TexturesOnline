@@ -34,8 +34,8 @@ import {
   cloneFont,
   cpLabel,
   emptyMask,
-  flipMask,
   fromDraft,
+  flipMask,
   glyphAdvance,
   glyphsFor,
   groupOf,
@@ -60,6 +60,11 @@ import { glyphCanvas, glyphThumb, type DrawTool } from './editor';
 import { SCENES, makeScene, missingChars, textStrip, type PreviewFont, type SceneId, type SceneText } from './render';
 import { fitSize, fontHasChar, loadFontFace, rasterGlyph, type RasterOptions } from './raster';
 import { readFontFile, type FontFileInfo } from './sfnt';
+import { readDraft, writeDraft } from './draft';
+import { projectsText } from '../../shared/i18n/projects';
+import { registerOpener, takePending } from '../../shared/project-file/handoff';
+import { openProjectButton, saveProjectFile } from '../../shared/project-file/entry';
+import type { ProjectItem } from '../../shared/project-file/format';
 
 // The importer (zip reader) and the pack builder (zip writer, PNG encoder) load when they are used.
 const importer = () => import('./import');
@@ -76,28 +81,10 @@ const SOURCES: { id: Source; label: () => string; icon: IconName }[] = [
 ];
 
 const SCENE_ICONS: Record<SceneId, IconName> = { chat: 'message-text', sign: 'road-sign', book: 'book-open', title: 'monitor', tooltip: 'card-text' };
-const DRAFT_KEY = 'to-font-maker-draft';
 const DEVICE_FONTS = ['sans-serif', 'serif', 'monospace'] as const;
 type DeviceFont = (typeof DEVICE_FONTS)[number];
 
 const charText = (cp: number) => String.fromCodePoint(cp);
-
-function readDraft(): FontDoc | null {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? fromDraft(JSON.parse(raw)) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeDraft(doc: FontDoc): void {
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(toDraft(doc)));
-  } catch {
-    /* storage full or blocked: the font stays on the page */
-  }
-}
 
 interface LoadedFont {
   family: string;
@@ -415,7 +402,8 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const packDz = dropzone({ accept: '.zip,.mcpack,application/zip', label: t.start.packDrop, hint: t.start.packHint, icon: 'package', onFiles: ([f]) => void openPack(f) });
   packDz.classList.add('fm-dz', 'fm-pack-dz');
   const packNotes = h('div', { class: 'fm-import-notes', hidden: true });
-  const packPanel = h('div', { class: 'fm-pack' }, packDz, packNotes);
+  // a font saved as a .tpmproject (or a backup) opens from here too
+  const packPanel = h('div', { class: 'fm-pack' }, packDz, openProjectButton({ class: 'fm-open-project' }), packNotes);
   async function openPack(file: File | undefined) {
     if (!file) return;
     packDz.setError(null);
@@ -957,8 +945,9 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   const hint = h('div', { class: 'cv-hint fm-hint', role: 'status' });
   const dlBtn = button({ label: t.download.download, icon: 'download', variant: 'primary', size: 'lg', class: 'fm-dl-btn', onClick: () => void download() });
   const addBtnPack = button({ label: t.download.addToPack, icon: 'image', variant: 'secondary', size: 'lg', class: 'fm-project-btn', onClick: () => void chooseProject() });
+  const fileBtn = button({ label: projectsText.save, icon: 'save', variant: 'ghost', class: 'fm-file-btn pf-wrap-btn', title: projectsText.saveTip, onClick: () => void saveFontFile() });
   const installBox = h('div', { class: 'cv-install fm-install', hidden: true });
-  const step3 = stepCard(3, t.download.title, t.download.text, 'package', h('div', { class: 'cv-step-body' }, editionGroup, pickerWrap, nameField, hint, h('div', { class: 'cv-actions fm-dl-actions' }, dlBtn, addBtnPack), installBox));
+  const step3 = stepCard(3, t.download.title, t.download.text, 'package', h('div', { class: 'cv-step-body' }, editionGroup, pickerWrap, nameField, hint, h('div', { class: 'cv-actions fm-dl-actions' }, dlBtn, addBtnPack), fileBtn, installBox));
 
   function chooseEdition(e: Edition) {
     if (e === edition) return;
@@ -1094,6 +1083,53 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     }
   }
 
+  // ---------------------------------------------------------------- project files
+  async function saveFontFile(): Promise<boolean> {
+    const { fontItem } = await import('../../shared/project-file/records');
+    const ttf = doc.ttf ? { bytes: doc.ttf.bytes, file: doc.ttf.file, size: doc.ttf.size, oversample: doc.ttf.oversample, shift: doc.ttf.shift, chars: [...doc.ttf.chars] } : null;
+    const item = fontItem({ draft: toDraft(doc), name: docName, ttf, settings: { edition, javaVersion, packName, uuids: bedrock.uuids, packVersion: bedrock.packVersion } });
+    if (!item) {
+      toast(t.download.empty, { tone: 'info' });
+      return false;
+    }
+    return saveProjectFile({ tool: 'fonts', item });
+  }
+
+  /** A font from a project file (asks first when it would replace the user's own font). */
+  async function openFontItem(item: ProjectItem): Promise<void> {
+    const { readFontItem } = await import('../../shared/project-file/records');
+    let f: Awaited<ReturnType<typeof readFontItem>>;
+    let next: FontDoc | null;
+    try {
+      f = await readFontItem(item);
+      next = fromDraft(f.draft);
+    } catch {
+      next = null;
+    }
+    if (!next) {
+      toast(t.import.failed, { tone: 'error' });
+      return;
+    }
+    if (f!.ttf) next.ttf = { ...f!.ttf, chars: new Set(f!.ttf.chars) };
+    if (!(await confirmReplace()) || !alive) return;
+    const name = f!.name || t.start.current;
+    replaceDoc(next, name);
+    const st = f!.settings;
+    if (st.javaVersion) {
+      javaVersion = st.javaVersion;
+      vPicker.setValue('java', st.javaVersion);
+    }
+    if (st.packName !== undefined) {
+      packName = st.packName;
+      nameField.setValue(packName);
+    }
+    bedrock.uuids = st.uuids;
+    bedrock.packVersion = st.packVersion;
+    if (st.edition && st.edition !== edition) chooseEdition(st.edition);
+    else targetChanged();
+    toast(fmt(t.start.packLoaded, { name, count: next.glyphs.size }), { tone: 'success' });
+  }
+
   // ---------------------------------------------------------------- page
   const heroFont = starterFont('classic', 8);
   const heroGlyph = heroFont.glyphs.get(0x41)!;
@@ -1123,12 +1159,16 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   targetChanged();
   chooseGroup('basic');
   paintChosen();
-  if (restored && restored.glyphs.size) toast(t.start.restored, { tone: 'info' });
+  const offOpener = registerOpener('font', openFontItem);
+  const pendingFont = takePending('font');
+  if (pendingFont) void openFontItem(pendingFont);
+  else if (restored && restored.glyphs.size) toast(t.start.restored, { tone: 'info' });
   resizeObs = new ResizeObserver(() => (stageGui() !== lastGui ? paintPreview() : fitStage()));
   resizeObs.observe(stage);
 
   return () => {
     alive = false;
+    offOpener();
     ctrl.abort();
     cancelAnimationFrame(raf);
     clearTimeout(draftTimer);
