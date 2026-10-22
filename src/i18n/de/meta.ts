@@ -25,6 +25,11 @@ export const META_DE: MetaTranslation = {
       description: 'Mehrere Minecraft Texture Packs zu einer .zip oder einem .mcpack kombinieren. Reihenfolge festlegen, das oberste Pack gewinnt – wie im Spiel. Kostenlos.',
       label: 'Texture Packs zusammenführen',
     },
+    '/pack-doctor': {
+      title: 'Kaputtes Minecraft Texture Pack reparieren – Pack Doctor',
+      description: 'Texture Pack funktioniert nicht? Pack Doctor prüft dein Java- oder Bedrock-Pack, erklärt jedes Problem und repariert es per Klick. Kostenlos.',
+      label: 'Pack Doctor',
+    },
     '/totem-maker': {
       title: 'Eigenes Minecraft Totem erstellen – Java & Bedrock',
       description: 'Mach aus jedem Minecraft-Skin ein Totem der Unsterblichkeit: PNG hochladen oder Namen eingeben, Stil wählen, als Java-.zip oder Bedrock-.mcpack laden.',

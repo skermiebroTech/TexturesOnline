@@ -56,6 +56,7 @@ const REQUIRED_ROUTES = [
   '/textures',
   '/texture-pack-converter',
   '/merge-texture-packs',
+  '/pack-doctor',
   '/skins',
   '/skin-pack-maker',
   '/shaders',

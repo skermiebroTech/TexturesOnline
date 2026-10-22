@@ -19,6 +19,7 @@ export type AllCardId =
   | 'textures'
   | 'convert'
   | 'merge'
+  | 'doctor'
   | 'totem'
   | 'skins'
   | 'skinpack'
@@ -89,6 +90,7 @@ const SECTIONS: Section[] = [
       { id: 'textures', icon: 'image', to: '/textures' },
       { id: 'convert', icon: 'repeat', to: '/texture-pack-converter' },
       { id: 'merge', icon: 'git-merge', to: '/merge-texture-packs' },
+      { id: 'doctor', icon: 'potion', to: '/pack-doctor' },
       { id: 'totem', icon: 'heart', to: '/totem-maker' },
       { id: 'skins', icon: 'human', to: '/skins' },
       { id: 'skinpack', icon: 'package', to: '/skin-pack-maker' },
@@ -183,6 +185,7 @@ export const ALL_EN: AllText = {
     textures: { title: 'Texture pack maker', desc: 'Repaint any block, item or mob and download a ready .zip for Java or .mcpack for Bedrock.' },
     convert: { title: 'Texture pack converter', desc: 'Turn a Java pack into a Bedrock pack or back, or update an old Java pack to a newer version.' },
     merge: { title: 'Merge texture packs', desc: 'Combine several packs into one, with the top pack winning where they overlap, just like in the game.' },
+    doctor: { title: 'Pack Doctor', desc: 'Find out why a pack doesn’t work in the game, and fix it in one click.' },
     totem: { title: 'Custom totem maker', desc: 'Turn your own skin, or any player’s, into a Totem of Undying pack.' },
     skins: { title: 'Skin editor', desc: 'Paint a Minecraft skin in 2D or right on the 3D model, then download it for Java or Bedrock.' },
     skinpack: { title: 'Skin pack maker', desc: 'Put several skins into one Bedrock .mcpack you can install with a tap.' },

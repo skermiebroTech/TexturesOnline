@@ -42,7 +42,7 @@ export type ViewModule = {
   hydratable?: boolean;
 };
 
-export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all' | 'kit';
+export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'doctor' | 'totem' | 'skins' | 'shaders' | 'help' | 'all' | 'kit';
 
 export interface RouteDef {
   pattern: string;
@@ -66,6 +66,7 @@ const shaders = () => import('../tools/shaders/view');
 const guides = () => import('../tools/guides/guides');
 const converter = () => import('../tools/convert/view');
 const merger = () => import('../tools/merge/view');
+const packDoctor = () => import('../tools/doctor/view');
 const totemMaker = () => import('../tools/totem/view');
 
 export const ROUTES: RouteDef[] = [
@@ -74,6 +75,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/textures/:id', load: textures, title: `Texture packs — ${APP}`, tool: 'textures' },
   { pattern: '/texture-pack-converter', load: converter, title: TOOL_META.converter.title, tool: 'convert' },
   { pattern: '/merge-texture-packs', load: merger, title: TOOL_META.merge.title, tool: 'merge' },
+  { pattern: '/pack-doctor', load: packDoctor, title: TOOL_META.doctor.title, tool: 'doctor' },
   { pattern: '/totem-maker', load: totemMaker, title: TOOL_META.totem.title, tool: 'totem' },
   { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
   { pattern: '/skin-pack-maker', load: skins, title: TOOL_META.skinpack.title, tool: 'skins' },

@@ -292,6 +292,19 @@
 .callout-tip > .icon {
   color: var(--green);
 }
+.callout-cta {
+  border-color: color-mix(in srgb, var(--green) 45%, var(--border));
+  background: color-mix(in srgb, var(--green) 8%, var(--bg-elev));
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+}
+.callout-cta .btn {
+  margin-top: 12px;
+  max-width: 100%;
+}
+.callout-cta .btn-label {
+  white-space: normal;
+}
 
 .guide-tabs {
   display: flex;

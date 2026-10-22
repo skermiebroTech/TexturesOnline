@@ -2,7 +2,7 @@
 // (src/app/content/facts.ts), menu names from the Spanish (Spain) game files.
 
 import { el, type Child, type ElNode } from '../../app/markup';
-import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, toolCallout, uiPath } from '../../app/content/blocks';
 import { F, LATEST, MIN_ENGINE, NEXT_SNAPSHOT, formatGroups, formatParts, maxFormat, mcmetaFor, mcmetaLegacy, mcmetaRange, minFormat } from '../../app/content/facts';
 import type { GuideText, GuidesIndexText } from '../../tools/guides/content';
 import { SHOTS } from './shots';
@@ -345,6 +345,7 @@ const notWorking: GuideText = {
       code('manifest.json'),
       ' en Bedrock) o está en otro sitio, el pack se hizo para otra versión del juego, o una textura no está exactamente en la ruta que busca Minecraft. Busca abajo lo que ves y aplica la solución.',
     ),
+    toolCallout('Deja que Pack Doctor encuentre el problema', ['Suelta el pack en ', link('/pack-doctor', 'Pack Doctor'), ': revisa cada archivo con las reglas de la versión en la que juegas, explica cada problema que encuentra, arregla los seguros con un clic y te da el pack arreglado.'], { to: '/pack-doctor', label: 'Revisar mi pack', icon: 'potion' }),
   ],
   quick: {
     title: 'Revisa esto primero',
@@ -520,7 +521,7 @@ const notWorking: GuideText = {
       a: [p('Los servidores pueden enviar su propio paquete de recursos, que queda por encima del tuyo. Puedes rechazarlo en los ajustes del servidor en la pantalla de multijugador, aunque algunos servidores lo exigen.')],
     },
   ],
-  ctaLabel: 'Abrir Texture Pack Maker',
+  ctaLabel: 'Arreglar mi pack con Pack Doctor',
 };
 
 const install: GuideText = {

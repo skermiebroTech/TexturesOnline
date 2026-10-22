@@ -2,7 +2,7 @@
 // (src/app/content/facts.ts), menu names from the Japanese game files.
 
 import { el, type Child, type ElNode } from '../../app/markup';
-import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, toolCallout, uiPath } from '../../app/content/blocks';
 import { F, LATEST, MIN_ENGINE, NEXT_SNAPSHOT, formatGroups, formatParts, maxFormat, mcmetaFor, mcmetaLegacy, mcmetaRange, minFormat } from '../../app/content/facts';
 import type { GuideText, GuidesIndexText } from '../../tools/guides/content';
 import { SHOTS } from './shots';
@@ -346,6 +346,7 @@ const notWorking: GuideText = {
       code('manifest.json'),
       '）がない、または場所が違う。パックが別のバージョン向けに作られている。テクスチャがMinecraftの探すパスにぴったり置かれていない。下から今の症状を探して、直し方を試してください。',
     ),
+    toolCallout('原因はパックドクターにおまかせ', [link('/pack-doctor', 'パックドクター'), 'にパックをドロップしてください。プレイしているバージョンのルールですべてのファイルをチェックし、見つけた問題をひとつずつ説明して、安全なものはワンクリックで修復し、修復したパックを渡します。'], { to: '/pack-doctor', label: 'パックをチェック', icon: 'potion' }),
   ],
   quick: {
     title: 'まずはここを確認',
@@ -521,7 +522,7 @@ const notWorking: GuideText = {
       a: [p('サーバーは独自のリソースパックを送ることができ、それはあなたのパックより上に来ます。マルチプレイ画面のサーバー設定で断れますが、必須にしているサーバーもあります。')],
     },
   ],
-  ctaLabel: 'Texture Pack Makerを開く',
+  ctaLabel: 'パックドクターでパックを修復',
 };
 
 const install: GuideText = {

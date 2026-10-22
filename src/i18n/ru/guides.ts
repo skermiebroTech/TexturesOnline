@@ -3,7 +3,7 @@
 // site's own editors are quoted in English for now.
 
 import { el, type Child, type ElNode } from '../../app/markup';
-import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, toolCallout, uiPath } from '../../app/content/blocks';
 import { F, LATEST, MIN_ENGINE, NEXT_SNAPSHOT, formatGroups, formatParts, maxFormat, mcmetaFor, mcmetaLegacy, mcmetaRange, minFormat } from '../../app/content/facts';
 import type { GuideText, GuidesIndexText } from '../../tools/guides/content';
 import { SHOTS } from './shots';
@@ -394,6 +394,7 @@ const notWorking: GuideText = {
       code('manifest.json'),
       ' в Bedrock) отсутствует или лежит не там, пак сделан для другой версии игры или текстура лежит не точно по тому пути, где её ищет Minecraft. Найди ниже то, что видишь у себя, и примени решение.',
     ),
+    toolCallout('Пусть Доктор паков найдёт проблему', ['Перетащи пак в ', link('/pack-doctor', 'Доктор паков'), ': он проверит каждый файл по правилам версии, в которую ты играешь, объяснит каждую найденную проблему, исправит безопасные в один клик и отдаст тебе исправленный пак.'], { to: '/pack-doctor', label: 'Проверить мой пак', icon: 'potion' }),
   ],
   quick: {
     title: 'Сначала проверь это',
@@ -569,7 +570,7 @@ const notWorking: GuideText = {
       a: [p('Серверы могут присылать свой ресурспак, и он встаёт выше твоего. Его можно отклонить в настройках сервера на экране сетевой игры, но некоторые серверы его требуют.')],
     },
   ],
-  ctaLabel: 'Открыть редактор текстурпаков',
+  ctaLabel: 'Починить пак в Докторе паков',
 };
 
 const install: GuideText = {

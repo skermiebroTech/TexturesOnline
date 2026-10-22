@@ -21,6 +21,7 @@ export const ALL: AllText = {
     textures: { title: 'Criador de texture packs', desc: 'Repinte qualquer bloco, item ou mob e baixe um .zip pronto para Java ou um .mcpack para Bedrock.' },
     convert: { title: 'Conversor de texture pack', desc: 'Transforme um pack de Java em um de Bedrock ou o contrário, ou atualize um pack antigo de Java para uma versão mais nova.' },
     merge: { title: 'Juntar texture packs', desc: 'Junte vários packs em um; onde eles coincidem, vale o de cima, como no jogo.' },
+    doctor: { title: 'Pack Doctor', desc: 'Descubra por que um pack não funciona no jogo e conserte com um clique.' },
     totem: { title: 'Criador de totens', desc: 'Transforme sua própria skin, ou a de qualquer jogador, em um pack de Totem da Imortalidade.' },
     skins: { title: 'Editor de skins', desc: 'Pinte uma skin de Minecraft em 2D ou direto no modelo 3D e baixe para Java ou Bedrock.' },
     skinpack: { title: 'Criador de pacote de skins', desc: 'Coloque várias skins em um .mcpack do Bedrock que instala com um toque.' },

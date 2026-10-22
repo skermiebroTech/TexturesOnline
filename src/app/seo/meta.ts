@@ -11,7 +11,7 @@ import { META_JA } from '../../i18n/ja/meta';
 import { META_RU } from '../../i18n/ru/meta';
 
 export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'privacy' | 'all' | 'guides' | 'guide';
-export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
+export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'doctor' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
 
 export interface PageMeta {
   /** Page path without trailing slash, including the language folder ('/', '/textures', '/de/guides/make-a-skin') */
@@ -53,7 +53,7 @@ export const HOME_META: PageMeta = {
   label: 'Home',
 };
 
-export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'totem' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
+export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'doctor' | 'totem' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
   textures: {
     path: '/textures',
     kind: 'tool',
@@ -80,6 +80,15 @@ export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'totem' | 's
     description:
       'Combine several Minecraft texture packs into one .zip or .mcpack. Put them in order and the top pack wins, as in the game. Free, in your browser.',
     label: 'Merge texture packs',
+  },
+  doctor: {
+    path: '/pack-doctor',
+    kind: 'tool',
+    tool: 'doctor',
+    title: 'Fix a Broken Minecraft Texture Pack — Free Pack Doctor',
+    description:
+      'Texture pack not working? Pack Doctor checks your Java or Bedrock pack, explains each problem and fixes it in one click, then gives you the fixed pack.',
+    label: 'Pack Doctor',
   },
   totem: {
     path: '/totem-maker',
@@ -318,7 +327,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, ALL_META, GUIDES_META, ...GUIDES, PRIVACY_META];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.doctor, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, ALL_META, GUIDES_META, ...GUIDES, PRIVACY_META];
 
 // ---------------------------------------------------------------- translations
 
