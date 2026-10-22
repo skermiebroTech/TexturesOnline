@@ -7,6 +7,7 @@ import { buildJavaTextureList, javaGroupOf, JAVA_TEXTURE_ROOT, refineAnimated } 
 import { getClientJarInfo, type ClientJarInfo } from './versions';
 import { KNOWN_RELEASES, KNOWN_RELEASE_FORMATS } from './packformats';
 import { fileText } from '../../shared/i18n/files';
+import { isStandIn, realAssetObject } from './asset-objects';
 import { fmt } from '../../i18n/editor-text';
 
 /*
@@ -146,14 +147,21 @@ class JavaAssets implements AssetIndex {
 
   async readFile(path: string): Promise<Uint8Array> {
     const hit = this.files.get(path);
-    if (hit) return hit.slice();
+    if (hit) return this.realBytes(path, hit);
     if (!this.nameSet.has(path)) throw new Error(fmt(fileText.java.notInVersion, { path, version: this.version }));
     const group = javaGroupOf(path);
     if (!group) throw new Error(fmt(fileText.java.notAvailable, { path }));
     await this.ensureGroup(group);
     const bytes = this.files.get(path);
     if (!bytes) throw new Error(fmt(fileText.java.notLoaded, { path }));
-    return bytes.slice();
+    return this.realBytes(path, bytes);
+  }
+
+  /** The jar's 1 × 1 stand-ins (the panorama, 1.15+) are swapped for the real pictures when they can be had. */
+  private async realBytes(path: string, bytes: Uint8Array): Promise<Uint8Array> {
+    if (!isStandIn(path, bytes)) return bytes.slice();
+    const real = await realAssetObject(this.version, path);
+    return (real ?? bytes).slice();
   }
 
   async readText(path: string): Promise<string> {

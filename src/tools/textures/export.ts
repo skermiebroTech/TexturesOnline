@@ -5,6 +5,7 @@ import { abortError, isAbortError } from '../../core/net';
 import { isUuid } from '../../core/uuid';
 import { buildPackMcmeta, buildPackMcmetaForVersions, describePackForGame, getJavaPackFormat, stringifyPretty } from '../../editions/java/packmeta';
 import { comparePackFormats, packFormatFromVersionJson } from '../../editions/java/packformats';
+import { isStandInImage } from '../../editions/java/asset-objects';
 import { DEFAULT_MIN_ENGINE, buildResourceManifest, bumpPackVersion } from '../../editions/bedrock/manifest';
 import { applyEffects, effectsApply, hasActiveEffects, layerApplies, type EffectContext } from './effects';
 import { categoryForPath, extOf, imageDims, newBedrockUuids, packFileName, parseBedrockVersion, parseJsonLoose } from './project';
@@ -226,6 +227,8 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
 
     if (!isOverride) {
       const input = await assets.readImage(path);
+      // the jar's 1 × 1 stand-in of a picture the game keeps elsewhere (offline): leave the game's own
+      if (edition === 'java' && isStandInImage(path, input)) return null;
       const inDims = { w: input.width, h: input.height };
       setFrames(ctx, anim, inDims, 1);
       const result = applyEffects(input, layers, ctx);

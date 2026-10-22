@@ -282,7 +282,9 @@ try {
     await page.click('.site-footer .lang-switch a[hreflang="ru"]');
     await page.waitForFunction(() => document.documentElement.lang === 'ru' && document.querySelector('.guide-page h1'));
     check(page.url() === `${base}ru/guides/make-a-skin/` && (await page.evaluate(() => window.__stay)) === 1 && (await page.locator('.mainnav a[data-tool="help"]').innerText()).trim() === 'Помощь', 'switcher -> Russian guide without a reload', page.url());
-    check(await page.evaluate(() => document.fonts.check('bold 16px Texel', 'Ж')), 'Cyrillic font is ready after switching to Russian in the app');
+    // the app waits for the font up to a second, then lets the text swap to it when it arrives
+    const fontReady = await page.waitForFunction(() => document.fonts.check('bold 16px Texel', 'Ж'), null, { timeout: 5000 }).then(() => true, () => false);
+    check(fontReady, 'Cyrillic font is ready after switching to Russian in the app');
     check(errors.length === 0, 'no console errors while switching languages', errors.join('\n'));
     await ctx.close();
   }

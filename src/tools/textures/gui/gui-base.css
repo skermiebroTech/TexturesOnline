@@ -1,0 +1,59 @@
+/* GUI mode hooks that must exist before the GUI code loads: the switch's window button and the
+   column hosts. The rest of the GUI section is styled in gui.css (loaded with it). */
+
+/* six choices in the narrow left column: a little less room around each */
+.tx-libbar .segmented {
+  gap: 1px;
+}
+.tx-libbar .segmented .segmented-item {
+  padding: 0 2px 2px;
+}
+.tx-libbar .segmented .segmented-item[data-value='gui'],
+.tx-libbar .segmented .segmented-item[data-value='sounds'] {
+  flex: 0 0 auto;
+  padding: 0 2px 2px;
+}
+.tx-libbar .segmented-item[data-value='gui'] .icon {
+  --icon-size: 20px;
+}
+@media (pointer: coarse) {
+  /* every choice takes a 44 px tap (with the ::after that widens it past the 2 px gap) */
+  .tx-libbar .segmented {
+    gap: 2px;
+  }
+  .tx-libbar .segmented .segmented-item {
+    min-width: 42px;
+  }
+  .tx-libbar .segmented .segmented-item[data-value='gui'],
+  .tx-libbar .segmented .segmented-item[data-value='sounds'] {
+    flex: none;
+    min-width: 42px;
+  }
+}
+
+.gui-host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+.gui-host > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.gui-pv-host[hidden] {
+  display: none;
+}
+
+/* The GUI is flat: no 2D / 3D switch. With the splash texts open, they take the centre. */
+.tx-editor[data-lib='gui'] .tx-ws-switch {
+  display: none !important;
+}
+.tx-editor[data-lib='gui'][data-gui='splash'] .tx-col-center > :not(.gui-host-center) {
+  display: none !important;
+}
+/* The Preview tab shows the GUI preview in GUI mode */
+.tx-editor[data-lib='gui'] .tx-side-body[data-tab='preview'] > :not(.gui-pv-host) {
+  display: none !important;
+}

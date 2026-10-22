@@ -34,17 +34,20 @@ import type { SoundsMode } from './sounds-mode';
 import type { ModelEditor } from './model-editor/editor';
 import type { BlockState } from '../../../shared/models/index';
 import './sounds-base.css';
+import '../gui/gui-base.css';
 import './model-host.css';
 import { fmt, textLocale } from '../../../i18n/editor-text';
 import type { PvpPanel } from '../pvp/panel';
 import type { CrosshairTarget } from '../pvp/tweaks';
+import type { GuiMode } from '../gui/gui-mode';
+import type { GuiPiece } from '../gui/catalog';
 import { kit } from '../../../ui/i18n/kit';
 import { te } from './i18n/editor';
 import { versionLabel } from './start-screen';
 import { PHONE_MQ, TABLET_MQ } from './media';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pvp' | 'pack';
-type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'sounds';
+type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'gui' | 'sounds';
 const LIB_KEY = 'to-tex-library-mode';
 const WS_KEY = 'to-tex-workspace';
 type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pvp' | 'pack';
@@ -113,7 +116,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   let libMode: LibMode = 'blocks';
   try {
     const saved = localStorage.getItem(LIB_KEY);
-    if (saved === 'blocks' || saved === 'items' || saved === 'mobs' || saved === 'textures' || saved === 'sounds') libMode = saved;
+    if (saved === 'blocks' || saved === 'items' || saved === 'mobs' || saved === 'textures' || saved === 'gui' || saved === 'sounds') libMode = saved;
   } catch {
     /* storage blocked */
   }
@@ -128,6 +131,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         { value: 'items', label: te.lib.items },
         { value: 'mobs', label: te.lib.mobs },
         { value: 'textures', label: te.lib.all },
+        { value: 'gui', label: '', icon: 'layout' },
         { value: 'sounds', label: '', icon: 'music' },
       ],
       onChange: (v) => setLibMode(v, true),
@@ -136,6 +140,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const all = sw.querySelector<HTMLElement>('[data-value="textures"]');
     all?.setAttribute('title', te.lib.allTextures);
     all?.setAttribute('aria-label', te.lib.allTextures);
+    // GUI is a window icon next to the note
+    const gui = sw.querySelector<HTMLElement>('[data-value="gui"]');
+    gui?.setAttribute('title', te.lib.gui);
+    gui?.setAttribute('aria-label', te.lib.gui);
     // Sounds is a note icon at the end of the switch
     const snd = sw.querySelector<HTMLElement>('[data-value="sounds"]');
     snd?.setAttribute('title', te.lib.sounds);
@@ -160,6 +168,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       browser.setSelected(t && t.key !== ICON_KEY ? t.key : null, true);
       usedBy.setPath(t && t.key !== ICON_KEY ? t.key : null);
       paint3d.textureChanged();
+      guiMode?.textureOpened(t && t.key !== ICON_KEY ? t.key : null);
     },
     onHistory: () => paintHistory(),
     onBrowse: () => showMobile('textures', true),
@@ -208,6 +217,11 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   let workspace: Workspace = '2d';
   /** 2D: the pixel editor in the centre. 3D: the model in the centre, painted directly; the pixel editor in the side panel. */
   function setWorkspace(ws: Workspace, user = false) {
+    // the GUI is flat: GUI mode keeps the pixel editor
+    if (ws === '3d' && libMode === 'gui') {
+      canvas.setWorkspace(workspace);
+      return;
+    }
     if (ws === workspace) return;
     workspace = ws;
     shell.dataset.workspace = ws;
@@ -273,15 +287,102 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       }
     }
     const isSounds = v === 'sounds';
-    const models3d = v !== 'textures' && !isSounds;
+    const isGui = v === 'gui';
+    const models3d = v !== 'textures' && !isSounds && !isGui;
     browser.el.hidden = v !== 'textures';
     modelBrowser.el.hidden = !models3d;
     if (models3d) {
       modelBrowser.setKind(v === 'blocks' ? 'block' : v === 'items' ? 'item' : 'entity');
       modelBrowser.activate();
     }
+    shell.dataset.lib = isSounds ? 'sounds' : isGui ? 'gui' : '';
     setSoundsShown(isSounds, user);
-    if (user && !isSounds) requestAnimationFrame(() => (models3d ? modelBrowser.focusSearch() : browser.focusSearch()));
+    setGuiShown(isGui, user);
+    if (user && !isSounds && !isGui) requestAnimationFrame(() => (models3d ? modelBrowser.focusSearch() : browser.focusSearch()));
+  }
+
+  // ---------------------------------------------------------------- GUI (loaded on first use)
+  const guiLeft = h('div', { class: 'gui-host', hidden: true }, h('div', { class: 'snd-host-loading' }, spinner(28)));
+  const guiCenter = h('div', { class: 'gui-host gui-host-center', hidden: true });
+  const guiPreview = h('div', { class: 'gui-pv-host', hidden: true });
+  let guiMode: GuiMode | null = null;
+  let guiLoad: Promise<GuiMode | null> | null = null;
+  function ensureGui(): Promise<GuiMode | null> {
+    guiLoad ??= Promise.all([import('../gui/gui-mode'), import('../gui/i18n/load').then((m) => m.loadGuiText(textLocale()))])
+      .then(([{ createGuiMode }]) => {
+        if (life.aborted) return null;
+        guiMode = createGuiMode({
+          store,
+          top: makeSwitch(),
+          openPiece: (piece, how) => void openGuiPiece(piece, how),
+          openTexture: (path) => {
+            guiMode?.hideSplashes();
+            void canvas.open(path);
+            if (isPhone()) showMobile('editor');
+          },
+          onCentre: (splashes) => {
+            shell.dataset.gui = splashes ? 'splash' : '';
+            guiCenter.hidden = !splashes;
+            paintTabbar();
+            if (splashes && isPhone()) showMobile('editor');
+            notifyVisibility();
+          },
+          onBrowse: () => showMobile('textures', true),
+        });
+        guiLeft.replaceChildren(guiMode.libraryEl);
+        guiCenter.replaceChildren(guiMode.splashEl);
+        guiPreview.replaceChildren(guiMode.previewEl);
+        const cur = canvas.current();
+        guiMode.textureOpened(cur && cur.key !== ICON_KEY ? cur.key : null);
+        return guiMode;
+      })
+      .catch((err) => {
+        guiLoad = null;
+        console.error(err);
+        toast(te.guiFailed, { tone: 'error' });
+        return null;
+      });
+    return guiLoad;
+  }
+  function setGuiShown(on: boolean, user: boolean) {
+    guiLeft.hidden = !on;
+    guiPreview.hidden = !on;
+    guiCenter.hidden = !on || !guiMode?.splashesShown();
+    if (!on) {
+      guiMode?.deactivate();
+      notifyVisibility();
+      return;
+    }
+    // the GUI is flat: the pixel editor in the centre
+    if (workspace === '3d') setWorkspace('2d');
+    notifyVisibility();
+    void ensureGui().then((m) => {
+      if (!m || libMode !== 'gui') return;
+      m.activate();
+      notifyVisibility();
+      // something to look at straight away: the hotbar
+      const first = m.cat.piece('hotbar.bar') ?? m.cat.piece('hotbar.slot1');
+      if (user && first && !canvas.current() && !m.splashesShown()) void openGuiPiece(first, 'keyboard');
+      if (user && !isPhone()) requestAnimationFrame(() => m.focusSearch());
+    });
+  }
+  /** Opens a GUI piece in the pixel editor, its area of an atlas selected and zoomed to. */
+  async function openGuiPiece(piece: GuiPiece, how: 'pointer' | 'keyboard' | 'preview') {
+    guiMode?.hideSplashes();
+    if (workspace === '3d') setWorkspace('2d');
+    if (canvas.current()?.key !== piece.path) await canvas.open(piece.path);
+    const pc = canvas.canvas();
+    const t = canvas.current();
+    if (pc && t && t.key === piece.path) {
+      if (piece.region) {
+        const { pieceRect } = await import('../gui/catalog');
+        const r = pieceRect(piece, t.full);
+        pc.setSelection(r);
+        requestAnimationFrame(() => requestAnimationFrame(() => pc.zoomToRect(r)));
+      } else if (pc.getSelection()) pc.deselect();
+    }
+    guiMode?.textureOpened(piece.path);
+    if (isPhone() && how !== 'keyboard') showMobile('editor');
   }
 
   // ---------------------------------------------------------------- sounds (loaded on first use)
@@ -314,7 +415,6 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     return soundsLoad;
   }
   function setSoundsShown(on: boolean, user: boolean) {
-    shell.dataset.lib = on ? 'sounds' : '';
     soundLeft.hidden = !on;
     soundCenter.hidden = !on;
     paintTabbar();
@@ -552,7 +652,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     onChange: (v) => setSide(v),
   });
   const bodies: Record<Exclude<Side, 'textures'>, HTMLElement> = {
-    preview: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'preview' }, role: 'tabpanel', 'aria-label': te.tabs.preview }, preview.el),
+    preview: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'preview' }, role: 'tabpanel', 'aria-label': te.tabs.preview }, preview.el, guiPreview),
     effects: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'effects' }, role: 'tabpanel', 'aria-label': te.tabs.effects }, effects.el),
     pvp: pvpBody,
     pack: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'pack' }, role: 'tabpanel', 'aria-label': te.packSettings }, pack.el),
@@ -586,15 +686,17 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const ed = tabbarButtons.get('editor');
     const label = ed?.querySelector('span:not(.icon)');
     const ic = ed?.querySelector<HTMLElement>('.icon');
-    if (label) label.textContent = sounds ? te.tabs.edit : te.tabs.paint;
-    if (ic) setIcon(ic, sounds ? 'volume-2' : 'pencil');
+    // the splash texts are edited, not painted
+    const splashes = libMode === 'gui' && !!guiMode?.splashesShown();
+    if (label) label.textContent = sounds || splashes ? te.tabs.edit : te.tabs.paint;
+    if (ic) setIcon(ic, sounds ? 'volume-2' : splashes ? 'notes' : 'pencil');
   }
 
   const main = h(
     'div',
     { class: 'tx-main' },
-    h('div', { class: 'tx-col-left' }, browser.el, modelBrowser.el, soundLeft),
-    h('div', { class: 'tx-col-center' }, canvas.el, soundCenter),
+    h('div', { class: 'tx-col-left' }, browser.el, modelBrowser.el, guiLeft, soundLeft),
+    h('div', { class: 'tx-col-center' }, canvas.el, guiCenter, soundCenter),
     h('div', { class: 'tx-col-tabs' }, sideTabs),
     h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pvp, bodies.pack),
   );
@@ -606,7 +708,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const phone = isPhone();
     const vis = (t: Side) => (phone ? mobile === t : side === t);
     // In the 3D workspace the model is in the centre, which is on screen unless a phone shows another tab.
-    preview.setVisible(vis('preview') || (workspace === '3d' && libMode !== 'sounds' && (!phone || mobile === 'editor')));
+    // In GUI mode the Preview tab shows the GUI preview instead.
+    const gui = libMode === 'gui';
+    preview.setVisible(!gui && (vis('preview') || (workspace === '3d' && libMode !== 'sounds' && (!phone || mobile === 'editor'))));
+    guiMode?.setPreviewVisible(gui && vis('preview'));
     effects.setVisible(vis('effects'));
     pack.setVisible(vis('pack'));
     if (vis('pvp')) {
@@ -633,7 +738,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     if (isTablet() && v === 'textures') setSide('textures');
     if (focusSearch) requestAnimationFrame(() => focusSearch_());
   }
-  const focusSearch_ = () => (libMode === 'sounds' ? soundsMode?.focusSearch() : libMode === 'textures' ? browser.focusSearch() : modelBrowser.focusSearch());
+  const focusSearch_ = () =>
+    libMode === 'sounds' ? soundsMode?.focusSearch() : libMode === 'gui' ? guiMode?.focusSearch() : libMode === 'textures' ? browser.focusSearch() : modelBrowser.focusSearch();
 
   setSide(side);
   showMobile('editor');
@@ -649,7 +755,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     () => clearTimeout(libTimer),
     // Versions without block models (Java before 1.8) start in All textures.
     models.events.on('ready', () => {
-      if (models.lib && !models.lib.available && libMode !== 'textures' && libMode !== 'sounds') setLibMode('textures');
+      if (models.lib && !models.lib.available && libMode !== 'textures' && libMode !== 'sounds' && libMode !== 'gui') setLibMode('textures');
     }),
   );
   const mqs = [matchMedia(PHONE), matchMedia(TABLET)];
@@ -761,7 +867,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     } else if (libMode === 'sounds') {
       return;
     } else if (e.key === 'd' || e.key === 'D') {
-      if (e.shiftKey || !canvas.current()) return;
+      if (e.shiftKey || !canvas.current() || libMode === 'gui') return;
       e.preventDefault();
       setWorkspace(workspace === '3d' ? '2d' : '3d', true);
     } else if (e.key === ',' || e.key === '.') {
@@ -827,6 +933,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       },
       modelEditor: () => modelEditor,
       pvp: () => ensurePvp(),
+      gui: () => ensureGui(),
+      guiMode: () => guiMode,
       editModel: (kind: 'block' | 'item', id: string, st: BlockState = {}) => {
         const e = kind === 'block' ? models.lib?.block(id) : models.lib?.item(id);
         if (e) void openModelEditor(e, st);
@@ -853,6 +961,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     browser.destroy();
     modelBrowser.destroy();
     soundsMode?.destroy();
+    guiMode?.destroy();
     usedBy.destroy();
     paint3d.destroy();
     canvas.destroy();

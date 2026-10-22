@@ -12,6 +12,7 @@ import { formatPackFormat } from '../../../ui/format';
 import { timeAgo } from '../../../ui/dom';
 import { decodeImage, fitToSize, encodePng, createImageData } from '../../../core/image';
 import { deleteProject } from '../../../core/storage';
+import { saveBlob } from '../../../core/download';
 import { navigate } from '../../../core/router';
 import { bedrockDisplayVersion, bumpPackVersion, getJavaPackFormat } from '../../../editions/index';
 import { buildPackMcmetaForVersions, describePackForGame } from '../../../editions/java/packmeta';
@@ -127,13 +128,24 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   const paintIconBtn = button({ label: te.pack.paint, icon: 'brush', size: 'sm', onClick: () => opts.paintIcon() });
   const resetIconBtn = button({ label: te.pack.automatic, icon: 'reset', size: 'sm', variant: 'ghost', onClick: () => store.setIconBlob(undefined) });
   tooltip(fromTexBtn, te.pack.fromTextureHint);
+  // A Java server's server-icon.png (64 × 64) isn't part of a resource pack: the pack icon, downloaded as one.
+  const serverIconBtn = button({ label: te.pack.serverIcon, icon: 'download', size: 'sm', variant: 'ghost', class: 'tx-server-icon-btn', onClick: () => void downloadServerIcon() });
+  tooltip(serverIconBtn, te.pack.serverIconHint);
+  serverIconBtn.hidden = !java;
   const iconBlock = h(
     'div',
     { class: 'tx-icon-row' },
     h('div', { class: 'tx-icon-box checker' }, iconCanvas),
-    h('div', { class: 'stack', style: { '--gap': '8px' } }, iconNote, h('div', { class: 'row wrap', style: { '--gap': '6px' } }, fromTexBtn, uploadIconBtn, paintIconBtn, resetIconBtn)),
+    h('div', { class: 'stack', style: { '--gap': '8px' } }, iconNote, h('div', { class: 'row wrap', style: { '--gap': '6px' } }, fromTexBtn, uploadIconBtn, paintIconBtn, resetIconBtn, serverIconBtn)),
     iconInput,
   );
+
+  async function downloadServerIcon() {
+    const { img } = await packIconImage(store);
+    // whole-number steps stay crisp; anything else is smoothed
+    const crisp = img.width === img.height && (img.width <= 64 ? 64 % img.width === 0 : img.width % 64 === 0);
+    saveBlob(new Blob([encodePng(fitToSize(img, 64, 64, crisp ? 'nearest' : 'smooth', 'contain'))], { type: 'image/png' }), 'server-icon.png');
+  }
 
   let iconToken = 0;
   const paintIcon = async () => {

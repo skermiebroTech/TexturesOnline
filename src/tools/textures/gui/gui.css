@@ -1,0 +1,535 @@
+/* GUI section of the texture pack editor (loaded with ./gui-mode.ts): the GUI library, the live
+   GUI preview and the splash text editor. */
+
+/* ========================================================================== Library */
+.gui-lib-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px 16px;
+}
+.gui-lib-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.gui-lib-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--bg-elev);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.gui-lib-note > .icon {
+  margin-top: 4px;
+  color: var(--blue);
+}
+.gui-lib-empty {
+  padding: 24px 12px;
+}
+.gui-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gui-sec-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -12px;
+  padding: 6px 12px;
+  background: var(--surface);
+  box-shadow: 0 2px 0 var(--border);
+  color: var(--text);
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  font-weight: 700;
+}
+.gui-sec-title > .icon {
+  color: var(--tool-accent);
+}
+.gui-part {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gui-part-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: 700;
+}
+.gui-part-name.is-quiet {
+  min-height: 0;
+}
+.gui-part-piece {
+  color: var(--text-3);
+  font-weight: 400;
+}
+.gui-part-edited {
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+  font-weight: 400;
+}
+.gui-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gui-tile {
+  --checker-size: 8px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease);
+}
+/* the crosshair is white: the game draws it inverted over the world */
+.gui-tile.is-dark {
+  background: #3b3f47;
+}
+.gui-tile:hover {
+  border-color: var(--border-strong);
+}
+.gui-tile[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  box-shadow: 0 0 0 2px var(--tool-accent-soft);
+}
+.gui-tile:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.gui-tile-img {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+}
+.gui-tile-edit {
+  display: none;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--tool-accent);
+  color: var(--on-accent, #fff);
+}
+.gui-tile-edit .icon {
+  --icon-size: 12px;
+}
+.gui-tile.is-edited .gui-tile-edit {
+  display: grid;
+}
+.gui-splash-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 10px 6px 6px;
+  border: 2px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.gui-splash-row:hover {
+  background: var(--surface-3);
+}
+.gui-splash-row[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+}
+.gui-splash-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-xs);
+  background: #3b3b3b;
+  color: #ffff55;
+}
+.gui-splash-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gui-splash-name {
+  font-weight: 700;
+}
+.gui-splash-count {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.gui-splash-go {
+  flex: none;
+  color: var(--text-3);
+}
+
+/* ========================================================================== Preview */
+.gui-pv {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gui-pv-screens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.gui-pv-screen {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 2px 10px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  cursor: pointer;
+}
+.gui-pv-screen:hover {
+  color: var(--text);
+  background: var(--surface-3);
+}
+.gui-pv-screen[aria-checked='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.gui-pv-screen[aria-checked='true'] .icon {
+  color: var(--tool-accent);
+}
+.gui-pv-screen:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.gui-pv-opts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+.gui-pv-opts > .field {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.gui-pv-opts > .toggle,
+.gui-pv-opts > .field-toggle {
+  flex: 1 1 100%;
+}
+.gui-pv-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: #10131a;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35);
+  touch-action: manipulation;
+}
+.gui-pv-stage.is-big {
+  aspect-ratio: auto;
+  height: min(72vh, 820px);
+}
+.gui-pv-canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.gui-pv-tag {
+  position: absolute;
+  z-index: 2;
+  max-width: calc(100% - 8px);
+  padding: 2px 8px;
+  border: 2px solid #2a0d5c;
+  border-radius: var(--r-xs);
+  background: rgba(16, 0, 16, 0.92);
+  color: #fff;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.gui-pv-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.gui-pv-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1 1 160px;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.gui-pv-hint .icon {
+  flex: none;
+  margin-top: 4px;
+}
+.gui-pv-scale {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.gui-pv-bigger {
+  margin-left: auto;
+}
+.gui-pv-big {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gui-pv-modal {
+  --modal-w: min(1180px, calc(100vw - 32px));
+}
+
+/* ========================================================================== Splash texts */
+.gui-sp {
+  overflow: hidden;
+}
+.gui-sp-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--border);
+}
+.gui-sp-back {
+  display: none;
+}
+.gui-sp-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: #3b3b3b;
+  color: #ffff55;
+}
+.gui-sp-titles {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gui-sp-title {
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  font-weight: 700;
+}
+.gui-sp-file {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gui-sp .tx-count-pill {
+  flex: none;
+}
+.gui-sp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+}
+.gui-sp-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+}
+.gui-sp-start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gui-sp-game {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gui-sp-game .tx-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gui-sp-readonly,
+.gui-sp-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+.gui-sp-readonly li,
+.gui-sp-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 2px 4px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+.gui-sp-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-2);
+}
+.gui-sp-addrow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.gui-sp-new {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  padding: 6px 12px;
+  line-height: 24px;
+  resize: none;
+  overflow: hidden;
+}
+.gui-sp-hint {
+  margin-top: -10px;
+}
+.gui-sp-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.gui-sp-tools .tx-h {
+  flex: 1 1 auto;
+}
+.gui-sp-search {
+  flex: 0 1 240px;
+  min-width: 0;
+}
+.gui-sp-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 36px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.gui-sp-field:hover {
+  border-color: var(--border);
+}
+.gui-sp-field:focus {
+  border-color: var(--tool-accent);
+  background: var(--surface);
+}
+.gui-sp-long {
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--gold, #c99a2e);
+}
+.gui-sp-none {
+  padding: 12px;
+}
+.gui-sp-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.gui-sp-foot .faint {
+  overflow-wrap: anywhere;
+}
+
+/* phones and tablets: back to the list from the splash texts */
+@media (max-width: 1180px) {
+  .gui-sp-back {
+    display: inline-grid;
+  }
+}
+
+/* ========================================================================== Touch */
+@media (pointer: coarse) {
+  .gui-tile {
+    min-height: 52px;
+  }
+  .gui-pv-screen {
+    min-height: 44px;
+    padding: 2px 12px;
+  }
+  .gui-sp-row .icon-btn,
+  .gui-sp-readonly .icon-btn,
+  .gui-sp-head .icon-btn {
+    --ib: 44px;
+  }
+  .gui-sp-field {
+    height: 44px;
+  }
+  .gui-sp-new {
+    height: 44px;
+    min-height: 44px;
+    padding-top: 8px;
+  }
+  .gui-sp-search {
+    height: 44px;
+  }
+}
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  .gui-sp-body {
+    padding: 12px;
+  }
+  .gui-sp-search {
+    flex: 1 1 100%;
+  }
+}

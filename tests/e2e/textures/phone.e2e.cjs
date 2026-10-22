@@ -243,7 +243,7 @@ async function checkEdges(page, tag, where) {
       await page.locator('.tx-mb .tx-search-input:visible').fill('oak log');
       await page.waitForSelector('.tx-mb .tx-tile[data-id="oak_log"]:visible', { timeout: 30000 });
       await shot(page, `${P.tag}-library`);
-      await checkTargets(page, tag, 'library switch (Blocks / Items / Mobs / All / Sounds)', '.tx-libbar .segmented-item');
+      await checkTargets(page, tag, 'library switch (Blocks / Items / Mobs / All / GUI / Sounds)', '.tx-libbar .segmented-item');
       await checkTargets(page, tag, 'grid / list buttons', '.tx-mb .tx-seg .icon-btn');
       await checkTargets(page, tag, '"Clear search"', '.tx-mb .tx-search-clear');
       check(`${tag}: no "/" keyboard hint in the search field`, !(await page.locator('.tx-search-kbd:visible').count()));

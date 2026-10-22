@@ -67,6 +67,11 @@ export const PRIVACY: PrivacyText = {
           ext('https://github.com/Mojang/bedrock-samples', 'bedrock-samples'),
           ' de Mojang a través de GitHub y jsDelivr, y la lista de versiones de Java viene de jsDelivr.',
         ],
+        [
+          'La lista de sonidos del juego y las imágenes de la pantalla de título, que la descarga de Java no incluye, vienen del repositorio ',
+          ext('https://github.com/misode/mcmeta', 'misode/mcmeta'),
+          ' a través de GitHub y jsDelivr.',
+        ],
         ['Si buscas la skin de un jugador por su nombre, ese nombre se envía a playerdb.co (o mc-heads.net) para encontrar la skin, que luego se carga desde textures.minecraft.net.'],
         ['Estos servicios reciben los datos normales de una petición, como tu dirección IP, igual que cualquier sitio web, y tienen sus propias políticas de privacidad. Nada de lo que creaste se les envía.'],
       ],

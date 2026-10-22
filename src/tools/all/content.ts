@@ -35,6 +35,7 @@ export type AllCardId =
   | 'sounds'
   | 'models'
   | 'pvp'
+  | 'gui'
   | 'openPack'
   | 'versions'
   | 'editions'
@@ -116,6 +117,7 @@ const SECTIONS: Section[] = [
       { id: 'sounds', icon: 'music', to: '/help?s=sounds' },
       { id: 'models', icon: 'shapes', to: '/guides/make-3d-items-texture-pack' },
       { id: 'pvp', icon: 'sword', to: '/guides/make-a-pvp-texture-pack' },
+      { id: 'gui', icon: 'layout', to: '/textures' },
       { id: 'openPack', icon: 'folder', to: '/guides/make-a-texture-pack' },
       { id: 'versions', icon: 'clock', to: '/guides/minecraft-pack-format-versions' },
       { id: 'editions', icon: 'gamepad', to: '/guides/java-vs-bedrock-packs' },
@@ -207,6 +209,7 @@ export const ALL_EN: AllText = {
     sounds: { title: 'Sound editor', desc: 'Replace any game sound with your own audio or a recording, then trim and adjust it.' },
     models: { title: '3D items and block shapes', desc: 'Change the shape of blocks and items, or turn a flat item into a 3D model.' },
     pvp: { title: 'PvP and FPS packs', desc: 'Low fire, clear glass, a custom crosshair, smaller swords and 8× textures, one switch each.' },
+    gui: { title: 'GUI and menus', desc: 'Hotbar, hearts, inventory, buttons, the title screen, splash texts and the glint, with a live in-game preview.' },
     openPack: { title: 'Open any pack', desc: 'Start from scratch or open an existing .zip or .mcpack and keep working on it.' },
     versions: { title: `Every Java version from 1.6.1 to ${LATEST}`, desc: 'Each version gets its own textures and the right pack format.' },
     editions: { title: 'Java and Bedrock', desc: 'Make packs for either edition and learn how the two differ.' },

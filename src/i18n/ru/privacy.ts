@@ -68,6 +68,11 @@ export const PRIVACY: PrivacyText = {
           ext('https://github.com/Mojang/bedrock-samples', 'bedrock-samples'),
           ' через GitHub и jsDelivr, а список версий Java — с jsDelivr.',
         ],
+        [
+          'Список звуков игры и картинки титульного экрана, которых нет в загрузке Java, берутся из репозитория ',
+          ext('https://github.com/misode/mcmeta', 'misode/mcmeta'),
+          ' через GitHub и jsDelivr.',
+        ],
         ['Если ты ищешь скин игрока по нику, этот ник отправляется на playerdb.co (или mc-heads.net), чтобы найти скин, который затем загружается с textures.minecraft.net.'],
         ['Эти сервисы получают обычные данные запроса, например твой IP-адрес, как и любой сайт, и у них свои политики конфиденциальности. То, что ты создаёшь, им не отправляется.'],
       ],

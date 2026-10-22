@@ -683,7 +683,7 @@
 .tx-main {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 304px minmax(0, 1fr) 368px;
+  grid-template-columns: 312px minmax(0, 1fr) 368px;
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     'left center tabs'

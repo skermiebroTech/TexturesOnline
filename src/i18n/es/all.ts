@@ -37,6 +37,7 @@ export const ALL: AllText = {
     sounds: { title: 'Editor de sonidos', desc: 'Cambia cualquier sonido del juego por tu propio audio o una grabación y luego recórtalo y ajústalo.' },
     models: { title: 'Ítems 3D y formas de bloques', desc: 'Cambia la forma de bloques e ítems, o convierte un ítem plano en un modelo 3D.' },
     pvp: { title: 'Packs PvP y de FPS', desc: 'Fuego bajo, cristal transparente, mira personalizada, espadas más pequeñas y texturas 8×, cada cosa con un interruptor.' },
+    gui: { title: 'GUI y menús', desc: 'Barra rápida, corazones, inventario, botones, pantalla de título, textos de bienvenida y brillo, con vista previa en directo.' },
     openPack: { title: 'Abre cualquier pack', desc: 'Empieza desde cero o abre un .zip o .mcpack que ya tengas y sigue trabajando en él.' },
     versions: { title: `Todas las versiones de Java de 1.6.1 a ${LATEST}`, desc: 'Cada versión tiene sus propias texturas y el formato de pack correcto.' },
     editions: { title: 'Java y Bedrock', desc: 'Crea packs para cualquiera de las dos ediciones y aprende en qué se diferencian.' },

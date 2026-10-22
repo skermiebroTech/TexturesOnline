@@ -81,6 +81,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       'Upload your own PNGs, auto-resized to the texture (16x up to 512x)',
       'Edit animated textures frame by frame',
       'PvP and FPS packs: low fire, clear glass, a custom crosshair, smaller swords and 8× textures in one click',
+      'GUI editor: the hotbar, hearts, hunger, armour, the inventory and containers, buttons, menu backgrounds, the title screen panorama, splash texts and the enchantment glint, with a live in-game preview',
       'One-click whole-pack effects such as Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon and Smooth HD',
       'Open an existing .zip or .mcpack pack and keep editing',
       '3D block preview, pack icon, description and Java compatibility range',
@@ -93,6 +94,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       ['Mobs in 3D: over 80 mobs, from creepers to villagers, show on their own models and paint like blocks. Hide a body part to reach what it covers, switch variants, ages or wool colours, and dress mobs in saddles and armour to paint those too.'],
       ['Change shapes (Java): edit a block’s or item’s model cube by cube, with its textures, UVs and the way it sits in hand, or turn a flat item into a 3D one. The model files go into the pack for your version. ', link('/guides/make-3d-items-texture-pack', 'How to make 3D items'), '.'],
       ['PvP and FPS packs: low fire, clear glass, no pumpkin blur, a custom crosshair, smaller swords and a lower shield, plus 8× textures and no animations, each one switch that writes the right files for your version. ', link('/guides/make-a-pvp-texture-pack', 'How to make a PvP pack'), '.'],
+      ['Restyle the interface: the hotbar, hearts in every state, hunger, armour, air, the experience bar, the crosshair, the inventory, chests, furnace and crafting table, buttons and menu backgrounds, in the pixel editor, with a live preview of the HUD, the inventory, the title screen with its turning panorama and buttons, and enchanted items. Edit the title screen’s splash texts too. Older Java versions keep the HUD in two big pictures: picking a heart selects just its area.'],
       ['Upload your own PNGs (auto-resized to the texture, 16x up to 512x) and edit animated textures frame by frame.'],
       ['Change sounds: play any game sound, then replace it with your own file or a microphone recording, trimmed on its waveform. Sounds are saved as Ogg Vorbis, the format Minecraft plays.'],
       ['One-click whole-pack effects such as Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon and Smooth HD, stacked without changing your own edits.'],
@@ -153,6 +155,11 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         id: 'hd',
         q: 'Can I make an HD texture pack?',
         a: [el('p', null, 'Yes. Pick a resolution from 16× (the vanilla look) up to 512× when you create the pack. Uploaded images are resized to fit, and the one-click Smooth HD effect upscales every texture at once.')],
+      },
+      {
+        id: 'gui',
+        q: 'Can I change the hotbar, hearts, menus and the title screen?',
+        a: [el('p', null, 'Yes. Choose the GUI button above the texture list: it lists the HUD, the inventory and containers, buttons, menu backgrounds, the panorama, the splash texts and the enchantment glint of your version, and the Preview tab shows them in place as you paint. Java before 1.20.2 keeps the HUD and buttons in gui/icons.png and gui/widgets.png; the editor selects the right area for you.')],
       },
       {
         id: 'devices',

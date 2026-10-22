@@ -868,6 +868,22 @@ export class PixelCanvas {
     this.afterViewChange(changed);
   }
 
+  /** Zooms in on an area of the image (e.g. one sprite of an atlas) so it fills most of the view, centred. */
+  zoomToRect(r: Rect): void {
+    const cw = this.canvas.width;
+    const ch = this.canvas.height;
+    if (!this.viewReady || !cw || !ch || r.w < 1 || r.h < 1) return;
+    const ds = this.snapDs(Math.min(cw / r.w, ch / r.h) * 0.6);
+    const changed = ds !== this.ds;
+    this.ds = ds;
+    this.zoomAcc = ds;
+    this.ox = Math.round(cw / 2 - (r.x + r.w / 2) * ds);
+    this.oy = Math.round(ch / 2 - (r.y + r.h / 2) * ds);
+    this.autoFit = false;
+    this.clampOffsets();
+    this.afterViewChange(changed);
+  }
+
   /** Sets the zoom in CSS pixels per image pixel (snapped so pixels stay crisp), keeping the view centre. */
   setZoom(scale: number): void {
     if (!(scale > 0)) return;

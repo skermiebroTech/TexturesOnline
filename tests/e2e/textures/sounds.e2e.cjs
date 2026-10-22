@@ -295,7 +295,7 @@ async function shots(page, name) {
       const items = [...bar.querySelectorAll('.segmented-item')];
       return { labels: items.map((b) => b.getAttribute('aria-label') || b.textContent.trim()), fits: items.every((b) => b.scrollWidth <= b.clientWidth + 1), width: bar.clientWidth };
     });
-    check('the library switch has Sounds after All, and every label fits', sw.labels.join('|') === 'Blocks|Items|Mobs|All textures|Sounds' && sw.fits, `${sw.labels.join(', ')} in ${sw.width}px`);
+    check('the library switch has GUI and Sounds after All, and every label fits', sw.labels.join('|') === 'Blocks|Items|Mobs|All textures|GUI and menus|Sounds' && sw.fits, `${sw.labels.join(', ')} in ${sw.width}px`);
     await openSounds(page);
     const rows = await page.evaluate(() => document.querySelectorAll('.snd-row').length);
     check('Sounds lists the game’s sound events', rows === Object.keys(SOUNDS_JSON).length, `${rows} rows`);
