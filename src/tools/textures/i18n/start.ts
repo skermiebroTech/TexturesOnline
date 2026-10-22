@@ -57,6 +57,8 @@ export const t = defineText('textures', {
     text: 'Keep editing a pack you made here or anywhere else.',
     opening: 'Opening pack…',
     drop: 'Drop a pack here or click to browse',
+    /** drop on touch screens */
+    dropTouch: 'Tap to choose a pack',
     dropHint: '.zip for Java · .mcpack or .mcaddon for Bedrock',
     convert: 'Convert a pack',
     convertHint: 'Java to Bedrock, Bedrock to Java, or another Java version',

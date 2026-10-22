@@ -48,6 +48,7 @@ const PT: TexturesLanguage = {
       text: 'Continue editando um pack feito aqui ou em qualquer outro lugar.',
       opening: 'Abrindo o pack…',
       drop: 'Solte um pack aqui ou clique para procurar',
+      dropTouch: 'Toque para escolher um pack',
       dropHint: '.zip para Java · .mcpack ou .mcaddon para Bedrock',
       convert: 'Converter um pack',
       convertHint: 'Java para Bedrock, Bedrock para Java ou outra versão do Java',

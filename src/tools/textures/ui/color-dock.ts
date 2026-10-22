@@ -10,9 +10,12 @@ import { parseHex } from '../../../ui/color';
 import { extractPalette, rgbaHex, type RGBA } from './meta';
 import { fmt } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
+import { isLandscapePhone } from './media';
 
 export interface ColorDock {
   el: HTMLElement;
+  /** The palette's horizontal scroller */
+  scroller: HTMLElement;
   setPalette(img: ImageData | null): void;
   /** Sync swatches with the canvas settings */
   sync(): void;
@@ -37,7 +40,8 @@ export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock 
   const palGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, te.canvas.inTexture), palRow);
   const recentGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, te.canvas.recent), recentRow);
 
-  const el = h('div', { class: 'tx-colordock' }, swatches, h('div', { class: 'tx-pal-scroll' }, palGroup, recentGroup));
+  const scroller = h('div', { class: 'tx-pal-scroll' }, palGroup, recentGroup);
+  const el = h('div', { class: 'tx-colordock' }, swatches, scroller);
 
   const chip = (c: RGBA) => {
     const b = h(
@@ -108,7 +112,8 @@ export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock 
         return null;
       },
     });
-    pop = openPopover(anchor, picker, { placement: 'top-start', focus: true, label: which === 'primary' ? te.canvas.main : te.canvas.second, onClose: () => renderRecent() });
+    // (a phone held in landscape has no room above or below the colours: the picker goes beside them)
+    pop = openPopover(anchor, picker, { placement: isLandscapePhone() ? 'right-start' : 'top-start', focus: true, label: which === 'primary' ? te.canvas.main : te.canvas.second, onClose: () => renderRecent() });
     pop.el.dataset.which = which;
   };
   primary.addEventListener('click', () => openPicker('primary'));
@@ -124,6 +129,7 @@ export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock 
   let lastUsed = '';
   return {
     el,
+    scroller,
     setPalette(img) {
       palette = img ? extractPalette(img, 32) : [];
       renderPalette();

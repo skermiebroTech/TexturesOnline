@@ -138,6 +138,10 @@ still share one language file. English pages never load a language file. Check w
   paths use the game's own names (de Optionen → Ressourcenpakete, es Opciones → Paquetes de
   recursos, pt-br Opções → Pacotes de recursos, ja 設定 → リソースパック, ru Настройки → Наборы
   ресурсов; Bedrock Настройки → Глобальные ресурсы).
+- **Touch screens**: a hint that says "Click", "Double-click" or names a key gets a twin ending in
+  `Touch` (`partsHint` / `partsHintTouch`) with "Tap" / "Double-tap" and no keyboard. The code picks
+  one when the text is shown (`byPointer(mouse, touch)` in `textures/ui/media.ts`, by
+  `(pointer: coarse)`); translate both.
 - **Fit**: German runs ~30 % longer, Russian too (and its pixel-font glyphs are wider), Japanese
   needs no spaces but wraps anywhere. Check at 390 px;
   prefer shorter wording over smaller buttons; use ` ` to keep "16 × 16" together.

@@ -1531,6 +1531,14 @@ input[type='number']::-webkit-outer-spin-button {
   flex: none;
   text-align: right;
 }
+/* Room for all seven characters (#5bd35b) in the 288 px picker */
+.cp-row {
+  gap: 6px;
+}
+.cp-hex {
+  padding-left: 6px;
+  padding-right: 4px;
+}
 .cp-swatches {
   display: grid;
   grid-template-columns: repeat(8, 1fr);

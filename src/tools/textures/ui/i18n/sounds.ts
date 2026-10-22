@@ -63,6 +63,8 @@ export const ts = defineText('textures.sounds', {
     more: 'More actions',
     pickTitle: 'Pick a sound',
     pickText: 'Choose a sound on the left to hear it, then replace it with your own file or a recording. Press Space in the list to play.',
+    /** pickText on touch screens (phones show the list on its own tab) */
+    pickTextTouch: 'Choose a sound in the list to hear it, then replace it with your own file or a recording.',
     browse: 'Browse sounds',
     /** Which files a recording replaces: "sound 2", "its sound", "all 4 sounds" */
     allSounds: 'all {count} sounds',

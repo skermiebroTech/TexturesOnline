@@ -43,6 +43,8 @@ export const tm = defineText('textures.modelEditor', {
   tabs: { cubes: 'Cubes', cube: 'Cube', faces: 'Faces', display: 'Display', model: 'Model' },
   // cube tab
   pickCube: 'Pick a cube in the list or click it in the 3D view.',
+  /** pickCube on touch screens */
+  pickCubeTouch: 'Pick a cube in the list or tap it in the 3D view.',
   noCubes: 'This model has no cubes yet.',
   addCube: 'Add a cube',
   cubeName: 'Cube name',

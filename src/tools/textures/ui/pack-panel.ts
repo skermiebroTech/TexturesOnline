@@ -28,6 +28,7 @@ import { fmt, joinList, num } from '../../../i18n/editor-text';
 import { kit } from '../../../ui/i18n/kit';
 import { t as ts } from '../i18n/start';
 import { te } from './i18n/editor';
+import { byPointer } from './media';
 
 export { resolutionSentence };
 
@@ -115,7 +116,7 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
       return b;
     }),
   );
-  const codesWrap = h('details', { class: 'tx-codes-wrap' }, h('summary', null, icon('palette', { size: 16 }), te.pack.codesTitle), h('p', { class: 'faint small' }, te.pack.codesHint), codeRow);
+  const codesWrap = h('details', { class: 'tx-codes-wrap' }, h('summary', null, icon('palette', { size: 16 }), te.pack.codesTitle), h('p', { class: 'faint small' }, byPointer(te.pack.codesHint, te.pack.codesHintTouch)), codeRow);
 
   // ---- icon ----
   const iconCanvas = h('canvas', { class: 'tx-icon-pv pixelated', width: 64, height: 64 });

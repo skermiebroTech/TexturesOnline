@@ -48,6 +48,7 @@ const RU: TexturesLanguage = {
       text: 'Продолжи работу над паком, сделанным здесь или где-то ещё.',
       opening: 'Открытие пака…',
       drop: 'Перетащи пак сюда или нажми, чтобы выбрать',
+      dropTouch: 'Коснись, чтобы выбрать пак',
       dropHint: '.zip для Java · .mcpack или .mcaddon для Bedrock',
       convert: 'Конвертировать пак',
       convertHint: 'Java в Bedrock, Bedrock в Java или в другую версию Java',

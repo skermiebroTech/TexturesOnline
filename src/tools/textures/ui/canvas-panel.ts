@@ -8,7 +8,7 @@ import { cloneImageData, decodeImage, encodePng } from '../../../core/image';
 import { saveBlob } from '../../../core/download';
 import { h, isTypingTarget } from '../../../ui/dom';
 import { icon, setIcon, type IconName } from '../../../ui/icons';
-import { badge, button, iconButton, openMenu, segmented, spinner, tooltip } from '../../../ui/components';
+import { badge, button, iconButton, openMenu, segmented, spinner, tooltip, type MenuItem } from '../../../ui/components';
 import { toast } from '../../../ui/toast';
 import { confirmDialog } from '../../../ui/modal';
 import { scaleForResolution } from '../project';
@@ -38,6 +38,8 @@ import type { EditorText } from './i18n/editor';
 import { autoPackIcon } from './icon';
 import { fmt, fmtNodes } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
+import { byPointer } from './media';
+import { scrollFade } from './scroll-fade';
 
 export interface OpenTexture {
   key: string;
@@ -105,6 +107,8 @@ export interface CanvasPanelOptions {
   onSettings?(): void;
   /** The pointer moved over another texel of the pixel editor (null = off it) */
   onCanvasHover?(p: { x: number; y: number } | null): void;
+  /** More entries for the texture's menu (⋮), read when it opens */
+  menuItems?(): MenuItem[];
 }
 
 type RailTool = keyof EditorText['canvas']['tools'] & Tool;
@@ -190,6 +194,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       { label: te.canvas.copyName, icon: 'copy', onClick: () => void navigator.clipboard?.writeText(t.entry?.id ?? t.name).then(() => toast(te.canvas.copied, { tone: 'success', duration: 1600 })) },
       { label: te.canvas.fit, icon: 'expand', onClick: () => pc?.zoomToFit() },
       { label: ws === '3d' ? te.canvas.paint2d : te.canvas.paint3d, icon: ws === '3d' ? 'grid' : 'cube', onClick: () => opts.onWorkspace?.(ws === '3d' ? '2d' : '3d') },
+      ...(opts.menuItems?.() ?? []),
     ]);
   }, { size: 'sm' });
   const actions = h('div', { class: 'tx-head-actions' }, compareBtn, uploadBtn, resetBtn, moreBtn);
@@ -324,6 +329,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   zoomVal.addEventListener('click', () => pc?.zoomToFit());
   // Grid, tiling and zoom belong to the flat view: the 3D workspace hides them.
   for (const b of [gridBtn, tiledBtn, zoomOut, zoomVal, zoomIn]) b.classList.add('tx-2d-only');
+  // (touch screens pinch to zoom: they hide these, and "Fit" is in the texture's menu)
+  for (const b of [zoomOut, zoomVal, zoomIn]) b.classList.add('tx-zoom-ctl');
   const viewOpts = h(
     'div',
     { class: 'tx-optgroup tx-optgroup-view' },
@@ -333,7 +340,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     flipH,
     flipV,
     rotate,
-    h('span', { class: 'toolbar-sep tx-2d-only' }),
+    h('span', { class: 'toolbar-sep tx-2d-only tx-zoom-ctl' }),
     zoomOut,
     zoomVal,
     zoomIn,
@@ -356,23 +363,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   railRo.observe(workspace);
   offs.push(() => railRo.disconnect());
 
-  // Horizontal scrollers (the rail on phones, the options bar): fade the side with more to show.
-  const fades = (sc: HTMLElement) => {
-    const paint = () => {
-      const max = sc.scrollWidth - sc.clientWidth;
-      const on = max > 2 && getComputedStyle(sc).flexDirection !== 'column';
-      sc.classList.toggle('is-scroller', on);
-      sc.classList.toggle('can-left', on && sc.scrollLeft > 2);
-      sc.classList.toggle('can-right', on && sc.scrollLeft < max - 2);
-    };
-    sc.addEventListener('scroll', paint, { passive: true });
-    const ro = new ResizeObserver(paint);
-    ro.observe(sc);
-    offs.push(() => ro.disconnect());
-    return paint;
-  };
-  const paintRailFade = fades(rail);
-  const paintOptFade = fades(optbar);
+  // Horizontal scrollers (the rail on phones, the options bar, the palette, the "Used by" chips):
+  // fade the side with more to show.
+  const scrollers = [rail, optbar, dock.scroller, ...(opts.belowHeader ? [opts.belowHeader] : [])].map((sc) => scrollFade(sc));
+  offs.push(() => scrollers.forEach((f) => f.destroy()));
   const el = h(
     'section',
     { class: 'panel tx-center is-empty', 'aria-label': te.canvas.label },
@@ -478,8 +472,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     channelSeg.setValue(s.channelMode);
     dock.sync();
     requestAnimationFrame(() => {
-      paintRailFade();
-      paintOptFade();
+      scrollers.forEach((f) => f.paint());
     });
     opts.onSettings?.();
   }
@@ -805,7 +798,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (cur && cur.key === path && viaHistory && pc && !cur.anim && pc.width === next.width && pc.height === next.height) {
       pc.setImage(next, { resetHistory: false, resetView: false });
       onChange(pc.getImage());
-      toast(fmt(te.canvas.undoHint, { action: label }), { tone: 'success' });
+      toast(fmt(byPointer(te.canvas.undoHint, te.canvas.undoHintTouch), { action: label }), { tone: 'success' });
       return;
     }
     store.setImage(path, next);

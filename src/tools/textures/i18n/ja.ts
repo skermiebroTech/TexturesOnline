@@ -48,6 +48,7 @@ const JA: TexturesLanguage = {
       text: 'ここやほかの場所で作ったパックの続きを編集できます。',
       opening: 'パックを開いています…',
       drop: 'ここにパックをドロップするか、クリックして選択',
+      dropTouch: 'タップしてパックを選択',
       dropHint: 'Java版は.zip・統合版は.mcpackか.mcaddon',
       convert: 'パックを変換',
       convertHint: 'Java版から統合版、統合版からJava版、またはJava版の別バージョンへ',

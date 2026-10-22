@@ -118,7 +118,18 @@ function layoutIssues() {
       if ((r.right > vw + 1 || r.left < -1) && !scroller(el)) issues.push(`outside the screen: ${describe(el)} (${Math.round(r.left)}–${Math.round(r.right)} of ${vw})`);
       const ownText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
       if (!ownText || el.classList.contains('truncate') || cs.textOverflow === 'ellipsis') continue;
-      if (el.scrollWidth > el.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') issues.push(`spills out: ${describe(el)} (${el.scrollWidth} > ${el.clientWidth})`);
+      if (el.scrollWidth <= el.clientWidth + 1 || cs.overflowX === 'auto' || cs.overflowX === 'scroll') continue;
+      // On touch screens a transparent ::after widens what a tap hits past the control, which
+      // scrollWidth counts: then measure the content itself against the control's inside.
+      if (getComputedStyle(el, '::after').position === 'absolute') {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const c = range.getBoundingClientRect();
+        const inLeft = r.left + parseFloat(cs.borderLeftWidth);
+        const inRight = r.right - parseFloat(cs.borderRightWidth);
+        if (c.left >= inLeft - 1 && c.right <= inRight + 1) continue;
+      }
+      issues.push(`spills out: ${describe(el)} (${el.scrollWidth} > ${el.clientWidth})`);
     }
   }
   return [...new Set(issues)];
@@ -248,7 +259,8 @@ try {
           await page.waitForURL(/\/textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
           await page.waitForFunction(() => !!window.__tx && document.querySelector('.tx-main'), null, { timeout: 180000 });
           if (phone) await show(page, phone, 'textures');
-          await page.waitForFunction(() => document.querySelectorAll('.tx-mb-tile').length > 10, null, { timeout: 120000 });
+          // the list is showing (a phone's list, with finger-sized controls above it, has room for about ten)
+          await page.waitForFunction(() => document.querySelectorAll('.tx-mb-tile').length > 6, null, { timeout: 120000 });
           check(`${L}: export button translated`, ((await page.getAttribute('.tx-export-btn', 'aria-label')) ?? (await page.textContent('.tx-export-btn'))).includes(EXPECT[lang].export));
           await inspect(page, `tex-${L}-02-blocks`, lang);
           await page.evaluate(() => window.__tx.setLibraryMode('textures'));

@@ -41,6 +41,7 @@ import type { CrosshairTarget } from '../pvp/tweaks';
 import { kit } from '../../../ui/i18n/kit';
 import { te } from './i18n/editor';
 import { versionLabel } from './start-screen';
+import { PHONE_MQ, TABLET_MQ } from './media';
 
 type Side = 'textures' | 'preview' | 'effects' | 'pvp' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'sounds';
@@ -48,8 +49,8 @@ const LIB_KEY = 'to-tex-library-mode';
 const WS_KEY = 'to-tex-workspace';
 type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pvp' | 'pack';
 
-const PHONE = '(max-width: 760px)';
-const TABLET = '(max-width: 1180px)';
+const PHONE = PHONE_MQ;
+const TABLET = TABLET_MQ;
 
 const versionText = (p: TexturePackProject): string => versionLabel(p);
 
@@ -166,6 +167,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     onFrame: () => paint3d.textureChanged(),
     onSettings: () => paint3d.sync(),
     onCanvasHover: (p) => paint3d.canvasHover(p),
+    // Phones show the preview on its own tab: its "Edit shape" is in the texture's menu too.
+    menuItems: () => (isPhone() && preview.canEditShape() ? [{ label: te.preview.editShape, icon: 'shapes', onClick: () => preview.editShape() }] : []),
   });
   const browser = createBrowser({
     store,
@@ -253,7 +256,9 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       else void models.prepare(e).then((ok) => ok && preview.current()?.entry === e && openMain());
     }
     if (how === 'keyboard') return;
-    if (isPhone()) showMobile('preview');
+    // Phones: a block or mob picked in the list opens on the Paint tab (Preview is one tap away);
+    // a "Used by" chip, tapped on the Paint tab, shows that model.
+    if (isPhone()) showMobile(how === 'chip' ? 'preview' : 'editor');
     else if (!isTablet() || how !== 'enter') setSide('preview');
   }
 
