@@ -29,6 +29,7 @@ export const UI_JA: UiText = {
     skinpack: 'スキンパック作成',
     cape: 'マント作成',
     totem: 'トーテム作成',
+    fonts: 'フォント作成',
     shaders: 'シェーダー作成',
     allGuides: 'すべてのガイド',
     everything: 'すべての機能',

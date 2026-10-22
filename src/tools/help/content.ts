@@ -421,6 +421,25 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'fonts',
+    q: 'Can I change Minecraft’s font?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes, with the ',
+        link('/font-maker', 'font maker'),
+        ': draw your letters pixel by pixel, start from a built-in style, or turn a TTF, OTF or WOFF font into pixels, and check them in chat, on signs and in books. Java 1.13 and newer get a ',
+        code('font/default.json'),
+        ' that replaces only the characters you drew (a TrueType file can go in too); Java 1.6.1 to 1.12.2 get ',
+        code('textures/font/ascii.png'),
+        '; Bedrock gets ',
+        code('font/default8.png'),
+        ' and glyph pages. If the text still looks normal in Java, turn off Force Unicode Font in Options › Language.',
+      ),
+    ],
+  },
+  {
     id: 'sounds',
     q: 'Can I change sounds in my pack?',
     a: [

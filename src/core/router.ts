@@ -42,7 +42,7 @@ export type ViewModule = {
   hydratable?: boolean;
 };
 
-export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'doctor' | 'totem' | 'skins' | 'shaders' | 'help' | 'all' | 'kit';
+export type ToolId = 'home' | 'textures' | 'convert' | 'merge' | 'doctor' | 'totem' | 'fonts' | 'skins' | 'shaders' | 'help' | 'all' | 'kit';
 
 export interface RouteDef {
   pattern: string;
@@ -69,6 +69,7 @@ const merger = () => import('../tools/merge/view');
 const packDoctor = () => import('../tools/doctor/view');
 const totemMaker = () => import('../tools/totem/view');
 const capeMaker = () => import('../tools/skins/cape/view');
+const fontMaker = () => import('../tools/fonts/view');
 
 export const ROUTES: RouteDef[] = [
   { pattern: '/', load: () => import('../tools/home/home'), title: HOME_META.title, tool: 'home' },
@@ -78,6 +79,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/merge-texture-packs', load: merger, title: TOOL_META.merge.title, tool: 'merge' },
   { pattern: '/pack-doctor', load: packDoctor, title: TOOL_META.doctor.title, tool: 'doctor' },
   { pattern: '/totem-maker', load: totemMaker, title: TOOL_META.totem.title, tool: 'totem' },
+  { pattern: '/font-maker', load: fontMaker, title: TOOL_META.fonts.title, tool: 'fonts' },
   { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
   { pattern: '/skin-pack-maker', load: skins, title: TOOL_META.skinpack.title, tool: 'skins' },
   { pattern: '/skins/:id', load: skins, title: `Skin editor — ${APP}`, tool: 'skins' },

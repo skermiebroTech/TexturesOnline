@@ -31,6 +31,7 @@ export const UI_DE: UiText = {
     skinpack: 'Skinpaket-Ersteller',
     cape: 'Umhang-Ersteller',
     totem: 'Totem-Ersteller',
+    fonts: 'Schriftart-Ersteller',
     shaders: 'Shader-Ersteller',
     allGuides: 'Alle Anleitungen',
     everything: 'Alles auf einen Blick',

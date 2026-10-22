@@ -32,6 +32,7 @@ export const UI_RU: UiText = {
     skinpack: 'Наборы скинов',
     cape: 'Редактор плащей',
     totem: 'Свой тотем',
+    fonts: 'Свой шрифт',
     shaders: 'Конструктор шейдеров',
     allGuides: 'Все гайды',
     everything: 'Всё, что есть на сайте',

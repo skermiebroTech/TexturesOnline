@@ -36,6 +36,11 @@ export const META_JA: MetaTranslation = {
       description: '好きなスキンからオリジナルの不死のトーテムを作成。PNGを読み込むかユーザー名を入力し、スタイルを選んでJava版の.zipか統合版の.mcpackをダウンロード。無料。',
       label: 'トーテム作成',
     },
+    '/font-maker': {
+      title: 'マイクラ フォント作成｜オリジナル文字のリソースパック',
+      description: 'Minecraftのフォントを自作。ピクセルで文字を描くかTTF/OTFを変換し、チャット・看板・本で確認して、Java版の.zipか統合版の.mcpackをダウンロード。無料。',
+      label: 'フォント作成',
+    },
     '/skins': {
       title: 'マイクラ スキンエディター＆スキンパック作成',
       description: 'Minecraftのスキンを2Dや3Dで描いて作成。クラシック/スリムの腕に対応し、Java版用PNGや統合版のスキンパック（.mcpack）で書き出せます。無料。',

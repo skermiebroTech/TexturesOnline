@@ -36,6 +36,11 @@ export const META_PT_BR: MetaTranslation = {
       description: 'Transforme qualquer skin de Minecraft em um totem da imortalidade: envie um PNG ou digite um nome, escolha o estilo e baixe um .zip do Java ou um .mcpack.',
       label: 'Criador de totens',
     },
+    '/font-maker': {
+      title: 'Criador de fontes do Minecraft – Pacote de fonte grátis',
+      description: 'Crie uma fonte própria para o Minecraft: desenhe letras em pixels ou converta uma TTF/OTF, teste no chat, em placas e livros, e baixe .zip ou .mcpack.',
+      label: 'Criador de fontes',
+    },
     '/skins': {
       title: 'Editor de skin de Minecraft e criador de pacote de skins',
       description: 'Pinte uma skin de Minecraft em 2D ou 3D, com braços clássicos ou finos, e exporte um PNG para Java ou um pacote de skins do Bedrock (.mcpack). Grátis.',

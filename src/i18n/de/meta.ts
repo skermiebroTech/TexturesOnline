@@ -35,6 +35,11 @@ export const META_DE: MetaTranslation = {
       description: 'Mach aus jedem Minecraft-Skin ein Totem der Unsterblichkeit: PNG hochladen oder Namen eingeben, Stil wählen, als Java-.zip oder Bedrock-.mcpack laden.',
       label: 'Totem-Ersteller',
     },
+    '/font-maker': {
+      title: 'Minecraft Schriftart erstellen – eigene Schrift als Pack',
+      description: 'Eigene Minecraft-Schrift: Pixelbuchstaben zeichnen oder TTF/OTF umwandeln, im Chat, auf Schildern und in Büchern testen, als .zip oder .mcpack laden.',
+      label: 'Schriftart-Ersteller',
+    },
     '/skins': {
       title: 'Minecraft Skin Editor & eigenes Skinpaket erstellen',
       description: 'Male deinen eigenen Minecraft-Skin in 2D oder 3D, mit breiten oder schmalen Armen. Export als PNG für Java oder als Bedrock-Skinpaket (.mcpack). Kostenlos.',

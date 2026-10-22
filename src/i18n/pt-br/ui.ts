@@ -31,6 +31,7 @@ export const UI_PT_BR: UiText = {
     skinpack: 'Criador de pacotes de skins',
     cape: 'Criador de capas',
     totem: 'Criador de totens',
+    fonts: 'Criador de fontes',
     shaders: 'Criador de shaders',
     allGuides: 'Todos os guias',
     everything: 'Tudo no site',

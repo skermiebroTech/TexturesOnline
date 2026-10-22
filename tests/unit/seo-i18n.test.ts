@@ -73,6 +73,7 @@ const REQUIRED_ROUTES = [
   '/guides/make-shaders-without-mods',
   '/guides/minecraft-pack-format-versions',
   '/totem-maker',
+  '/font-maker',
   '/guides/bedrock-vibrant-visuals-settings',
   '/guides/convert-java-to-bedrock-texture-pack',
   '/guides/merge-texture-packs',

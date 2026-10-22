@@ -9,7 +9,7 @@ export const ALL: AllText = {
   lead: 'Jedes Tool, jede Funktion, jede Anleitung und jede Hilfeseite an einem Ort. Wähl eine Karte, um direkt dorthin zu springen. Alles ist kostenlos und läuft in deinem Browser.',
   jumpLabel: 'Springe zu',
   sections: {
-    tools: { title: 'Tools', lead: 'Neun kostenlose Tools für Minecraft Java und Bedrock.' },
+    tools: { title: 'Tools', lead: 'Zehn kostenlose Tools für Minecraft Java und Bedrock.' },
     textures: { title: 'Texture Packs', lead: 'Was du im Texture-Pack-Editor machen kannst.' },
     skins: { title: 'Skins', lead: 'Erstelle einen Skin, einen HD-Skin oder ein ganzes Bedrock-Skinpaket.' },
     shaders: { title: 'Shader', lead: 'Erstelle Shader für Iris und OptiFine, Vanilla-Java oder Bedrock.' },
@@ -23,6 +23,7 @@ export const ALL: AllText = {
     merge: { title: 'Texture Packs zusammenführen', desc: 'Kombiniere mehrere Packs zu einem. Wo sie sich überschneiden, gewinnt das oberste – wie im Spiel.' },
     doctor: { title: 'Pack Doctor', desc: 'Finde heraus, warum ein Pack im Spiel nicht funktioniert, und repariere es mit einem Klick.' },
     totem: { title: 'Totem-Ersteller', desc: 'Mach aus deinem eigenen Skin oder dem eines anderen Spielers ein Totem der Unsterblichkeit.' },
+    fonts: { title: 'Schriftart-Ersteller', desc: 'Zeichne deine eigene Pixelschrift oder wandle eine Schriftdatei um und ändere die Buchstaben in Chat, Schildern und Büchern.' },
     skins: { title: 'Skin-Editor', desc: 'Male einen Minecraft-Skin in 2D oder direkt auf dem 3D-Modell und lade ihn für Java oder Bedrock herunter.' },
     skinpack: { title: 'Skinpaket-Ersteller', desc: 'Pack mehrere Skins in ein Bedrock-.mcpack, das sich mit einem Tippen installieren lässt.' },
     cape: { title: 'Umhang-Ersteller', desc: 'Bemale Umhang und Elytren auf der 64×32-Vorlage in 3D und lade das PNG oder ein Elytren-Texture-Pack.' },

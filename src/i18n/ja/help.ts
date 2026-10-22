@@ -355,6 +355,15 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'fonts',
+      q: 'Minecraft のフォントを変えられますか？',
+      a: [
+        p(
+          'はい、', link('/font-maker', 'フォント作成'), 'で変えられます。文字を 1 ピクセルずつ描くか、組み込みのスタイルから始めるか、TTF・OTF・WOFF フォントをピクセルに変換して、チャット・看板・本で確かめます。Java版 1.13 以降には描いた文字だけを置き換える ', code('font/default.json'), ' が入り（TrueType ファイルも入れられます）、Java版 1.6.1〜1.12.2 には ', code('textures/font/ascii.png'), '、統合版には ', code('font/default8.png'), ' とグリフページが入ります。Java版で文字が変わらないときは、設定 › 言語設定の「Unicodeフォントを強制する」をオフにしてください。',
+        ),
+      ],
+    },
+    {
       id: 'sounds',
       q: 'パックのサウンドを変えられますか？',
       a: [

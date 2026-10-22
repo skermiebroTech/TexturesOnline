@@ -53,6 +53,7 @@ body[data-route='convert'] .topbar,
 body[data-route='merge'] .topbar,
 body[data-route='doctor'] .topbar,
 body[data-route='totem'] .topbar,
+body[data-route='fonts'] .topbar,
 body[data-route='skins'] .topbar,
 body[data-route='shaders'] .topbar {
   border-bottom-color: var(--border);

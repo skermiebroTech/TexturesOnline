@@ -185,7 +185,7 @@ export const HOME: HomeText = {
   why: {
     eyebrow: 'Was anders ist',
     title: 'Warum Texture Pack Maker?',
-    lead: ['Kostenlos, Open Source und privat, mit jeder Java-Version seit 1.6.1, Bedrock und neun Tools an einem Ort. ', link('/about', 'Über das Projekt'), '.'],
+    lead: ['Kostenlos, Open Source und privat, mit jeder Java-Version seit 1.6.1, Bedrock und zehn Tools an einem Ort. ', link('/about', 'Über das Projekt'), '.'],
   },
   how: {
     eyebrow: 'So funktioniert’s',

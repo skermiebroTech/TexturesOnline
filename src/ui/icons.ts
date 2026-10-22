@@ -159,6 +159,10 @@ import micSvg from 'pixelarticons/svg/mic.svg?raw';
 import stopSvg from 'pixelarticons/svg/stop.svg?raw';
 import volume2Svg from 'pixelarticons/svg/volume-2.svg?raw';
 import volumeXSvg from 'pixelarticons/svg/volume-x.svg?raw';
+import textStartASvg from 'pixelarticons/svg/text-start-a.svg?raw';
+import messageTextSvg from 'pixelarticons/svg/message-text.svg?raw';
+import roadSignSvg from 'pixelarticons/svg/road-sign.svg?raw';
+import cardTextSvg from 'pixelarticons/svg/card-text.svg?raw';
 
 const PIXELARTICONS = {
   'pencil': pencilSvg,
@@ -319,6 +323,10 @@ const PIXELARTICONS = {
   'stop': stopSvg,
   'volume-2': volume2Svg,
   'volume-x': volumeXSvg,
+  'text-start-a': textStartASvg,
+  'message-text': messageTextSvg,
+  'road-sign': roadSignSvg,
+  'card-text': cardTextSvg,
 } as const;
 
 /** Custom glyphs: 12x12 bitmaps, each cell is 2x2 SVG units on the 24x24 icon grid. */

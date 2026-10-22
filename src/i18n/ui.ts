@@ -39,6 +39,7 @@ export interface UiText {
     skinpack: string;
     cape: string;
     totem: string;
+    fonts: string;
     shaders: string;
     allGuides: string;
     /** Link to the page listing every tool, feature and guide */
@@ -106,6 +107,7 @@ export const UI_EN: UiText = {
     skinpack: 'Skin pack maker',
     cape: 'Cape maker',
     totem: 'Totem maker',
+    fonts: 'Font maker',
     shaders: 'Shader maker',
     allGuides: 'All guides',
     everything: 'Everything on the site',

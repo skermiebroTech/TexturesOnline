@@ -365,6 +365,15 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'fonts',
+      q: '¿Puedo cambiar la fuente de Minecraft?',
+      a: [
+        p(
+          'Sí, con el ', link('/font-maker', 'creador de fuentes'), ': dibuja tus letras píxel a píxel, empieza con un estilo incluido o convierte una fuente TTF, OTF o WOFF en píxeles, y pruébalas en el chat, en carteles y en libros. Java 1.13 y posteriores reciben un ', code('font/default.json'), ' que reemplaza solo los caracteres que dibujaste (también puede ir un archivo TrueType); Java 1.6.1 a 1.12.2 reciben ', code('textures/font/ascii.png'), '; Bedrock recibe ', code('font/default8.png'), ' y páginas de glifos. Si en Java el texto sigue igual, desactiva Fuente Unicode en Opciones › Idioma.',
+        ),
+      ],
+    },
+    {
       id: 'sounds',
       q: '¿Puedo cambiar los sonidos de mi pack?',
       a: [
