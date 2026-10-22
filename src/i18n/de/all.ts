@@ -21,6 +21,7 @@ export const ALL: AllText = {
     textures: { title: 'Texture-Pack-Editor', desc: 'Male jeden Block, jedes Item und jeden Mob neu und lade eine fertige .zip für Java oder ein .mcpack für Bedrock herunter.' },
     convert: { title: 'Texture-Pack-Konverter', desc: 'Mach aus einem Java-Pack ein Bedrock-Pack oder umgekehrt, oder bring ein altes Java-Pack auf eine neuere Version.' },
     merge: { title: 'Texture Packs zusammenführen', desc: 'Kombiniere mehrere Packs zu einem. Wo sie sich überschneiden, gewinnt das oberste – wie im Spiel.' },
+    doctor: { title: 'Pack Doctor', desc: 'Finde heraus, warum ein Pack im Spiel nicht funktioniert, und repariere es mit einem Klick.' },
     totem: { title: 'Totem-Ersteller', desc: 'Mach aus deinem eigenen Skin oder dem eines anderen Spielers ein Totem der Unsterblichkeit.' },
     skins: { title: 'Skin-Editor', desc: 'Male einen Minecraft-Skin in 2D oder direkt auf dem 3D-Modell und lade ihn für Java oder Bedrock herunter.' },
     skinpack: { title: 'Skinpaket-Ersteller', desc: 'Pack mehrere Skins in ein Bedrock-.mcpack, das sich mit einem Tippen installieren lässt.' },

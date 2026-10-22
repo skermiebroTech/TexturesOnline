@@ -31,6 +31,7 @@ const PAGES = [
   { path: 'textures/', tool: 'textures', ready: '[data-tool-intro="textures"].is-below' },
   { path: 'texture-pack-converter/', tool: 'convert', ready: '[data-tool-intro="converter"].is-below' },
   { path: 'merge-texture-packs/', tool: 'merge', ready: '[data-tool-intro="merge"].is-below' },
+  { path: 'pack-doctor/', tool: 'doctor', ready: '[data-tool-intro="doctor"].is-below' },
   { path: 'totem-maker/', tool: 'totem', ready: '[data-tool-intro="totem"].is-below' },
   { path: 'skins/', tool: 'skins', ready: '[data-tool-intro="skins"].is-below' },
   { path: 'skin-pack-maker/', tool: 'skins', ready: '[data-tool-intro="skinpack"].is-below' },

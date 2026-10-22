@@ -41,7 +41,7 @@ export interface PrerenderPage {
   /** The same page in every language it exists in (this one included) */
   alternates: { locale: Locale; url: string }[];
   /** <html data-tool> and <body data-route> */
-  tool: 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
+  tool: 'home' | 'textures' | 'convert' | 'merge' | 'doctor' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
   /** Highlighted main-nav link */
   nav: NavTool;
   /** Classes of the view element (same as the router + view add at runtime) */
@@ -73,6 +73,7 @@ export const SCREENSHOTS: Record<IntroTool | 'home', Screenshot> = {
   textures: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker texture tool: one-click styles and a new pack for Java 26.3 or Bedrock' },
   converter: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker texture pack converter: Java to Bedrock, Bedrock to Java and Java version updates' },
   merge: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker pack merger: several Java or Bedrock texture packs combined into one, top pack first' },
+  doctor: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker Pack Doctor: a broken texture pack checked, every problem explained and fixed' },
   totem: { path: 'screenshots/skins.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker totem maker: a player skin turned into a custom Totem of Undying resource pack' },
   skinpack: { path: 'screenshots/guides/skin-pack-export.jpg', width: 1078, height: 674, caption: 'Texture Pack Maker skin pack maker: three skins, classic and slim, bundled into one Bedrock .mcpack' },
   skins: { path: 'screenshots/skins.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker skin editor: starter skins, classic or slim arms' },
@@ -85,6 +86,7 @@ const TOOL_ROUTE_MODULE: Record<IntroTool, string> = {
   skinpack: 'src/tools/skins/view.ts',
   converter: 'src/tools/convert/view.ts',
   merge: 'src/tools/merge/view.ts',
+  doctor: 'src/tools/doctor/view.ts',
   totem: 'src/tools/totem/view.ts',
   shaders: 'src/tools/shaders/view.ts',
 };
@@ -167,7 +169,7 @@ function toolEntry(tool: IntroTool, locale: Locale): PrerenderPage | null {
   const intro = toolIntroIn(tool, locale);
   const url = absoluteUrl(meta.path);
   const crumbs = crumbsFor(locale, { label: meta.label });
-  const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'skinpack' | 'converter' | 'merge' | 'totem'>);
+  const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'skinpack' | 'converter' | 'merge' | 'doctor' | 'totem'>);
   const startImage = TOOL_START_IMAGE[tool];
   return {
     ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts']),
@@ -355,7 +357,7 @@ function hasText(locale: Locale, pick: (c: ReturnType<typeof contentOf>) => unkn
 
 /** Every page of one language, in sitemap order (pages it has no translation for are left out). */
 export function pagesIn(locale: Locale): PrerenderPage[] {
-  const tools: IntroTool[] = ['textures', 'converter', 'merge', 'totem', 'skins', 'skinpack', 'shaders'];
+  const tools: IntroTool[] = ['textures', 'converter', 'merge', 'doctor', 'totem', 'skins', 'skinpack', 'shaders'];
   return [homeEntry(locale), ...tools.map((t) => toolEntry(t, locale)), helpEntry(locale), aboutEntry(locale), allEntry(locale), guidesIndexEntry(locale), ...GUIDES.map((g) => guideEntry(g.slug, locale)), privacyEntry(locale)].filter(
     (p): p is PrerenderPage => !!p,
   );

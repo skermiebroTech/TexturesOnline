@@ -26,6 +26,11 @@ export const META_JA: MetaTranslation = {
       description: '複数のMinecraftテクスチャパックを1つの.zip/.mcpackにまとめます。ゲームと同じく、並べた順で上のパックが優先。ブラウザで無料で使えます。',
       label: 'テクスチャパックを結合',
     },
+    '/pack-doctor': {
+      title: '動かないマイクラのテクスチャパックを修復｜パックドクター',
+      description: 'テクスチャパックが動かない？パックドクターがJava版・統合版のパックをチェックし、問題をひとつずつ説明してワンクリックで修復します。無料です。',
+      label: 'パックドクター',
+    },
     '/totem-maker': {
       title: 'マイクラ 不死のトーテム作成｜Java版・統合版',
       description: '好きなスキンからオリジナルの不死のトーテムを作成。PNGを読み込むかユーザー名を入力し、スタイルを選んでJava版の.zipか統合版の.mcpackをダウンロード。無料。',

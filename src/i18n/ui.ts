@@ -33,6 +33,8 @@ export interface UiText {
     textures: string;
     converter: string;
     merge: string;
+    /** Pack Doctor (fixes broken packs) */
+    doctor: string;
     skins: string;
     skinpack: string;
     totem: string;
@@ -63,7 +65,7 @@ export interface UiText {
   /** aria-label of platform tabs */
   platform: string;
   folderTable: { system: string; folder: string };
-  toolIntro: { whatYouCanDo: string; questions: string; guides: string; noscript: string };
+  toolIntro: { whatYouCanDo: string; questions: string; guides: string; noscript: string; related: string };
   /** Shown on translated pages that link to guides only available in English */
   englishOnly: string;
   loading: string;
@@ -98,6 +100,7 @@ export const UI_EN: UiText = {
     textures: 'Texture pack editor',
     converter: 'Pack converter',
     merge: 'Merge packs',
+    doctor: 'Fix a broken pack',
     skins: 'Skin editor',
     skinpack: 'Skin pack maker',
     totem: 'Totem maker',
@@ -131,6 +134,7 @@ export const UI_EN: UiText = {
     questions: 'Questions',
     guides: 'Guides',
     noscript: 'The editor needs JavaScript. Turn it on to start making; the guides on this page work without it.',
+    related: 'Related tools',
   },
   englishOnly: 'More guides in English',
   loading: 'Loading…',

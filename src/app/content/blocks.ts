@@ -36,6 +36,15 @@ export const callout = (tone: 'info' | 'warn' | 'tip', title: string, ...text: C
     el('div', null, el('div', { class: 'callout-title' }, title), el('p', null, ...text)),
   );
 
+/** A callout that sends the reader to one of the site's tools, with a button (a guide's call to action). */
+export const toolCallout = (title: string, text: Child[], button: { to: string; label: string; icon: IconName }): ElNode =>
+  el(
+    'aside',
+    { class: ['callout', 'callout-tip', 'callout-cta'] },
+    ic(button.icon),
+    el('div', null, el('div', { class: 'callout-title' }, title), el('p', null, ...text), el('a', { class: 'btn btn-primary', to: button.to }, ic(button.icon), el('span', { class: 'btn-label' }, button.label))),
+  );
+
 /** Link to another website (opens in a new tab). */
 export const ext = (href: string, label: string): ElNode => el('a', { href, target: '_blank', rel: 'noopener noreferrer' }, label);
 

@@ -7,7 +7,7 @@
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, type Child, type ElNode } from '../../app/markup';
-import { breadcrumbs, callout, code, ext, faqList, figure, folderTable, link, steps, strong, tabbed, uiPath, type FaqItem, type Shot } from '../../app/content/blocks';
+import { breadcrumbs, callout, code, ext, faqList, figure, folderTable, link, steps, strong, tabbed, toolCallout, uiPath, type FaqItem, type Shot } from '../../app/content/blocks';
 import { SHOTS } from '../../app/content/shots';
 import { guideCards } from '../../app/content/guide-cards';
 import { GUIDES, GUIDES_META, guideMeta, guidesIn, pageMeta, type GuideMeta } from '../../app/seo/meta';
@@ -461,6 +461,11 @@ export const GUIDE_CONTENT: Guide[] = [
         code('manifest.json'),
         ' on Bedrock) is missing or in the wrong place, the pack was made for a different game version, or a texture is not at exactly the path Minecraft looks for. Find what you see below and apply the fix.',
       ),
+      toolCallout(
+        'Let Pack Doctor find the problem',
+        ['Drop the pack into ', link('/pack-doctor', 'Pack Doctor'), ': it checks every file against the version you play, explains each problem it finds and fixes the safe ones in one click, then gives you the fixed pack.'],
+        { to: '/pack-doctor', label: 'Check my pack', icon: 'potion' },
+      ),
     ],
     quick: {
       title: 'Check these first',
@@ -637,7 +642,7 @@ export const GUIDE_CONTENT: Guide[] = [
       },
     ],
     related: ['install-resource-packs', 'make-a-texture-pack', 'minecraft-pack-format-versions'],
-    cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'image' },
+    cta: { label: 'Fix my pack with Pack Doctor', to: '/pack-doctor', icon: 'potion' },
   },
 
   // ------------------------------------------------------------ install

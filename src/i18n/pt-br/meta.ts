@@ -26,6 +26,11 @@ export const META_PT_BR: MetaTranslation = {
       description: 'Junte vários texture packs de Minecraft em um único .zip ou .mcpack. Coloque em ordem e o pack de cima vence, como no jogo. Grátis, no seu navegador.',
       label: 'Juntar texture packs',
     },
+    '/pack-doctor': {
+      title: 'Consertar texture pack de Minecraft quebrado – Pack Doctor',
+      description: 'Texture pack não funciona? O Pack Doctor verifica seu pack do Java ou Bedrock, explica cada problema e conserta com um clique. Grátis.',
+      label: 'Pack Doctor',
+    },
     '/totem-maker': {
       title: 'Criador de totem da imortalidade personalizado – Minecraft',
       description: 'Transforme qualquer skin de Minecraft em um totem da imortalidade: envie um PNG ou digite um nome, escolha o estilo e baixe um .zip do Java ou um .mcpack.',

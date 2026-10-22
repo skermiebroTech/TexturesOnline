@@ -2,7 +2,7 @@
 // (src/app/content/facts.ts), menu names from the German game files.
 
 import { el, type Child, type ElNode } from '../../app/markup';
-import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { callout, code, ext, figure, folderTable, link, steps, strong, tabbed, toolCallout, uiPath } from '../../app/content/blocks';
 import { F, LATEST, MIN_ENGINE, NEXT_SNAPSHOT, formatGroups, formatParts, maxFormat, mcmetaFor, mcmetaLegacy, mcmetaRange, minFormat } from '../../app/content/facts';
 import type { GuideText, GuidesIndexText } from '../../tools/guides/content';
 import { SHOTS } from './shots';
@@ -344,6 +344,7 @@ const notWorking: GuideText = {
       code('manifest.json'),
       ' in Bedrock) fehlt oder liegt an der falschen Stelle, das Pack wurde für eine andere Spielversion gemacht, oder eine Textur liegt nicht genau unter dem Pfad, den Minecraft erwartet. Such unten heraus, was du siehst, und wende die Lösung an.',
     ),
+    toolCallout('Lass Pack Doctor das Problem finden', ['Zieh das Pack in ', link('/pack-doctor', 'Pack Doctor'), ': Es prüft jede Datei nach den Regeln der Version, die du spielst, erklärt jedes gefundene Problem, repariert die sicheren mit einem Klick und gibt dir das reparierte Pack.'], { to: '/pack-doctor', label: 'Mein Pack prüfen', icon: 'potion' }),
   ],
   quick: {
     title: 'Prüf zuerst das',
@@ -519,7 +520,7 @@ const notWorking: GuideText = {
       a: [p('Server können ein eigenes Ressourcenpaket schicken, das über deinem liegt. Du kannst es in den Servereinstellungen im Mehrspieler-Menü ablehnen, manche Server verlangen es aber.')],
     },
   ],
-  ctaLabel: 'Texture Pack Maker öffnen',
+  ctaLabel: 'Mein Pack mit Pack Doctor reparieren',
 };
 
 const install: GuideText = {
