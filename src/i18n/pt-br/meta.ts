@@ -46,6 +46,11 @@ export const META_PT_BR: MetaTranslation = {
       description: 'Crie seu pacote de skins de Minecraft online: pinte ou envie skins, misture braços clássicos e finos e baixe um .mcpack do Bedrock pronto para o jogo.',
       label: 'Criador de pacote de skins',
     },
+    '/cape-maker': {
+      title: 'Criador de capas de Minecraft – faça capa e élitros',
+      description: 'Crie uma capa de Minecraft e os élitros no modelo de 64×32 com prévia 3D. Baixe o PNG ou um texture pack de élitros. Grátis e sem cadastro.',
+      label: 'Criador de capas',
+    },
     '/shaders': {
       title: 'Criar shaders de Minecraft: Iris, OptiFine e sem mods',
       description: 'Crie shader packs para Iris ou OptiFine, shaders vanilla sem mods para Java ou pacotes de Visuais Vibrantes para Bedrock, com presets e prévia 3D ao vivo.',

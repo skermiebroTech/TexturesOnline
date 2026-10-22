@@ -49,6 +49,7 @@ import { createPaint3d, drawPixelOutline, maxBrushFor } from './paint3d';
 import { fmt } from '../../../i18n/editor-text';
 import { editorText as t, type SkinEditorText } from '../i18n/editor';
 import { t as startText } from '../i18n/text';
+import { poseText } from '../i18n/pose';
 
 // ---------------------------------------------------------------------------------------------
 // Preferences (per browser)
@@ -697,6 +698,8 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   });
   sizeSeg.classList.add('sk-size-seg');
   tooltip(sizeSeg, t.right.sizeTip);
+  // The pose maker (its own dialog and 3D view) loads when it is opened.
+  const poseBtn = button({ label: poseText.open, icon: 'human-arms-up', size: 'sm', variant: 'secondary', class: 'sk-pose-open', title: poseText.openTip, onClick: () => void openPose() });
   const viewControls = h(
     'div',
     { class: 'sk-3d-controls' },
@@ -704,6 +707,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, t.right.size), sizeSeg),
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, t.right.show), h('div', { class: 'sk-chips' }, layerChip(t.right.base, 'base3d'), layerChip(t.right.outer, 'outer3d'))),
     h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, t.right.backdrop), h('div', { class: 'sk-backdrops' }, backdropBtns)),
+    h('div', { class: 'sk-ctl' }, h('span', { class: 'sk-ctl-label' }, poseText.row), h('div', null, poseBtn)),
   );
   const camTools = h('div', { class: 'sk-tools-group' }, rotateBtn, resetCamBtn, shotBtn);
   const rightTitle = h('h2', null, t.right.preview);
@@ -1662,6 +1666,16 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       toast(t.right.pictureSaved, { tone: 'success' });
     } catch (err) {
       toast(err instanceof Error ? err.message : t.right.pictureFailed, { tone: 'error' });
+    }
+  }
+
+  async function openPose() {
+    try {
+      const { openPoseStudio } = await import('./pose-studio');
+      if (destroyed) return;
+      openPoseStudio({ image: pc.getImage(), model, name: nameInput.value.trim() || startText.defaultName });
+    } catch {
+      toast(t.right.loadFailed, { tone: 'error' });
     }
   }
 

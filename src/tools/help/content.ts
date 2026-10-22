@@ -477,6 +477,47 @@ export const FAQ: FaqItem[] = [
     ],
   },
   {
+    id: 'poses',
+    q: 'Can I pose my skin and save a picture?',
+    a: [
+      el(
+        'p',
+        null,
+        'Yes. In the skin editor, press ',
+        strong('Pose & picture'),
+        ' under the 3D preview. Pick one of twelve poses (standing, walking, running, waving, sitting, crouching, flying, T-pose, victory, dab, fighting, pointing), or open ',
+        strong('Adjust'),
+        ' and move the head, body, each arm and leg with sliders; every part has its own reset. Under ',
+        strong('Scene'),
+        ' choose a camera angle, zoom, a background (or ',
+        strong('Transparent'),
+        ') and a cape or elytra from the ',
+        link('/cape-maker', 'cape maker'),
+        '. ',
+        strong('Save picture'),
+        ' makes a PNG at 1×, 2× or 4× size. Drag the model to turn the camera, and scroll or pinch to zoom.',
+      ),
+    ],
+  },
+  {
+    id: 'capes',
+    q: 'Can I make a custom cape?',
+    a: [
+      el(
+        'p',
+        null,
+        'You can design one in the ',
+        link('/cape-maker', 'cape maker'),
+        ': paint the 64×32 cape texture with a 3D preview and download the PNG. Where it shows is up to the game. Java Edition only shows official capes from Mojang, so a custom cape needs a mod or client with its own cape service, and only players with the same mod see it. In Bedrock, capes are Character Creator items, and Mojang’s own pack checker reports a cape in any skin pack that isn’t Mojang’s as an error, so the skin pack maker leaves capes out.',
+      ),
+      el(
+        'p',
+        null,
+        'What works without mods is the elytra: the cape maker also downloads an elytra texture pack (Java 1.9 and newer, or Bedrock) that shows your design on the elytra for everyone using the pack. Players who wear a cape show the cape’s design on their elytra instead.',
+      ),
+    ],
+  },
+  {
     id: 'upload',
     q: 'Is anything uploaded?',
     a: [

@@ -27,6 +27,7 @@ export const UI_JA: UiText = {
     doctor: '壊れたパックを修復',
     skins: 'スキンエディター',
     skinpack: 'スキンパック作成',
+    cape: 'マント作成',
     totem: 'トーテム作成',
     shaders: 'シェーダー作成',
     allGuides: 'すべてのガイド',

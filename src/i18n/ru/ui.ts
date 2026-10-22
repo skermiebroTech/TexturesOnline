@@ -30,6 +30,7 @@ export const UI_RU: UiText = {
     doctor: 'Починить сломанный пак',
     skins: 'Редактор скинов',
     skinpack: 'Наборы скинов',
+    cape: 'Редактор плащей',
     totem: 'Свой тотем',
     shaders: 'Конструктор шейдеров',
     allGuides: 'Все гайды',

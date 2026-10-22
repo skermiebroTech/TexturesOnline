@@ -3,7 +3,8 @@
 // 64×64, the shortcut list), Japanese (a starter skin, the export menu and the skin pack maker),
 // Spanish (/skin-pack-maker: a pack of two skins and its ready dialog), Portuguese (saved skins,
 // the default skins dialog, the old Java export) and Russian (all of it: the editor, every export
-// dialog, the skin pack maker and the start screen's saved skins, lookup and default skins). Every state is checked for English left in the
+// dialog, the skin pack maker and the start screen's saved skins, lookup and default skins), and in
+// every language the cape maker (/cape-maker) and the pose maker's three tabs and saved picture. Every state is checked for English left in the
 // visible text and labels, content wider than the screen or clipped labels, and console errors, at
 // 1280 and 390 px (the editor also at 360 px) in the dark and the light theme.
 //
@@ -11,7 +12,7 @@
 // Without TO_FIXTURES the default skins step (Java 26.3 game files) is skipped; the rest needs no
 // network. Skin services are blocked: nothing reaches the real player lookup.
 import { createRequire } from 'node:module';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
@@ -140,6 +141,14 @@ function english(texts, locale) {
 
 // ------------------------------------------------------------------ run
 const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
+/** Headings of the cape maker and the pose maker in each language. */
+const CAPE_POSE = {
+  de: { cape: 'Mach deinen eigenen Minecraft-Umhang', pose: 'Posen-Editor' },
+  es: { cape: 'Haz tu propia capa de Minecraft', pose: 'Creador de poses' },
+  'pt-br': { cape: 'Faça a sua própria capa de Minecraft', pose: 'Criador de poses' },
+  ja: { cape: 'Minecraftのマントを自分で作ろう', pose: 'ポーズメーカー' },
+  ru: { cape: 'Создай свой плащ для Minecraft', pose: 'Редактор поз' },
+};
 
 const server = baseArg ? null : await startVite();
 const base = (baseArg || server.url).replace(/\/?$/, '/');
@@ -524,6 +533,50 @@ try {
       }
       check(`ru skins ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
       await page.close();
+    }
+    // ---------------------------------------------------------- every language: the cape maker and the pose maker
+    if (full) {
+      for (const l of LANGS) {
+        const want = CAPE_POSE[l];
+        const { page, errors } = await openPage(ctx, `${l}/cape-maker/`, '.cm .pc-root');
+        await page.waitForFunction(() => document.querySelector('.cm')?.__capeMaker?.ready(), null, { timeout: 30000 });
+        check(`${l} cape ${tag}: page in its language`, (await page.getAttribute('html', 'lang')) === LANG[l] && (await page.textContent('.cm-hero h1')).trim() === want.cape, await page.textContent('.cm-hero h1'));
+        await inspect(page, `${l}-cape-1-editor-${tag}`, l, { wait: 600 });
+        await page.click('.cm-design[data-design="stars"]');
+        await page.click('.cm-3d-top [data-value="elytra"]');
+        await page.waitForSelector('.toast');
+        await inspect(page, `${l}-cape-2-design-${tag}`, l, { wait: 300 });
+        await page.locator('.cm-download').scrollIntoViewIfNeeded();
+        await page.click('.cm-pack-fields [data-value="bedrock"]');
+        await inspect(page, `${l}-cape-3-download-${tag}`, l, { wait: 300 });
+        await page.locator('.cm-where').scrollIntoViewIfNeeded();
+        await inspect(page, `${l}-cape-4-where-${tag}`, l, { wait: 200 });
+        const [dl] = await Promise.all([page.waitForEvent('download'), page.click('.cm-pack-btn')]);
+        // (Headless Chromium without a UTF-8 locale names non-ASCII downloads "download": check the bytes.)
+        check(`${l} cape ${tag}: Bedrock elytra pack downloads`, readFileSync(await dl.path()).subarray(0, 2).toString('latin1') === 'PK', dl.suggestedFilename());
+        // The pose maker of the skin editor, wearing that cape.
+        await page.goto(`${base}${l}/skins/`);
+        await page.waitForSelector('.sk-starter-knight');
+        await page.click('.sk-starter-knight');
+        await waitEditor(page);
+        await showPanel(page, phone, 'right');
+        await page.click('.sk-pose-open');
+        await page.waitForSelector('dialog[open] .sk-pose-view canvas', { timeout: 30000 });
+        check(`${l} pose ${tag}: dialog in its language`, (await page.textContent('dialog[open] .modal-title, dialog[open] h2')).trim() === want.pose, await page.textContent('dialog[open] h2'));
+        for (const tab of ['poses', 'adjust', 'scene']) {
+          await page.click(`.sk-pose-tabs [data-value="${tab}"]`);
+          if (tab === 'poses') await page.click('.sk-pose-preset[data-pose="flying"]');
+          if (tab === 'adjust') await page.click('.sk-pose-parts [data-part="leftArm"]');
+          if (tab === 'scene') await page.click('.sk-pose-bg[data-id="transparent"]');
+          await inspect(page, `${l}-pose-${tab}-${tag}`, l, { wait: 400 });
+        }
+        const [pic] = await Promise.all([page.waitForEvent('download'), page.click('.sk-pose-save')]);
+        check(`${l} pose ${tag}: Save picture downloads a PNG`, readFileSync(await pic.path()).subarray(1, 4).toString('latin1') === 'PNG', pic.suggestedFilename());
+        const saved = (await page.textContent('.toast')).replace(/\s+/g, ' ').trim();
+        check(`${l} pose ${tag}: saved toast in its language`, english([saved], l).length === 0 && saved.includes(`-pose.png`), saved);
+        check(`${l} cape and pose ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
+        await page.close();
+      }
     }
     await ctx.close();
   }

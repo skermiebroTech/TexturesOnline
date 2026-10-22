@@ -29,6 +29,7 @@ export const UI_PT_BR: UiText = {
     doctor: 'Consertar um pack quebrado',
     skins: 'Editor de skins',
     skinpack: 'Criador de pacotes de skins',
+    cape: 'Criador de capas',
     totem: 'Criador de totens',
     shaders: 'Criador de shaders',
     allGuides: 'Todos os guias',

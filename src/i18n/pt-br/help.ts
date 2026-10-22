@@ -382,6 +382,21 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'poses',
+      q: 'Posso fazer uma pose com a minha skin e salvar uma imagem?',
+      a: [
+        p('Sim. No editor de skins, clique em ', strong('Pose e imagem'), ' abaixo da prévia 3D. Escolha uma de doze poses (em pé, andando, correndo, acenando, sentado, agachado, voando, pose em T, vitória, dab, luta, apontando) ou abra ', strong('Ajustar'), ' e mova a cabeça, o corpo e cada braço e perna com controles deslizantes; cada parte pode ser redefinida sozinha. Em ', strong('Cena'), ' escolha um ângulo de câmera, o zoom, um fundo (ou ', strong('Transparente'), ') e uma capa ou élitros do ', link('/cape-maker', 'criador de capas'), '. ', strong('Salvar imagem'), ' cria um PNG em 1×, 2× ou 4×. Arraste o boneco para girar a câmera e role ou faça pinça para dar zoom.'),
+      ],
+    },
+    {
+      id: 'capes',
+      q: 'Posso fazer uma capa própria?',
+      a: [
+        p('Você pode criar uma no ', link('/cape-maker', 'criador de capas'), ': pinte a textura de capa de 64×32 com prévia 3D e baixe o PNG. Onde ela aparece depende do jogo. O Java Edition só mostra capas oficiais da Mojang, então uma capa própria precisa de um mod ou cliente com um serviço de capas próprio, e só jogadores com o mesmo mod a veem. No Bedrock, capas são itens do Criador de personagem, e o próprio verificador de pacotes da Mojang aponta como erro uma capa em qualquer pacote de skins que não seja da Mojang, por isso o criador de pacotes de skins deixa as capas de fora.'),
+        p('O que funciona sem mods são os élitros: o criador de capas também baixa um texture pack de élitros (Java 1.9 ou mais novo, ou Bedrock) que mostra o seu design para quem usar o pack. Jogadores que usam capa mostram o design da capa nos élitros.'),
+      ],
+    },
+    {
       id: 'upload',
       q: 'Alguma coisa é enviada?',
       a: [p('Não. Seus projetos, imagens e packs exportados nunca saem do seu dispositivo. O app só baixa coisas: arquivos do jogo da Mojang, a lista de versões e as skins que você procura pelo nome de usuário.')],

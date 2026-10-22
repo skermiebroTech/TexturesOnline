@@ -47,6 +47,11 @@ export const META_RU: MetaTranslation = {
       description: 'Собери свой набор скинов для Minecraft Bedrock онлайн: нарисуй или загрузи скины, смешай обычные и тонкие руки и скачай готовый .mcpack. Бесплатно.',
       label: 'Наборы скинов',
     },
+    '/cape-maker': {
+      title: 'Создать плащ Minecraft — редактор плащей и элитр',
+      description: 'Нарисуй свой плащ и элитры Minecraft на шаблоне 64×32 с 3D-просмотром и скачай PNG или текстурпак с элитрами. Бесплатно и без регистрации.',
+      label: 'Редактор плащей',
+    },
     '/shaders': {
       title: 'Создать шейдеры для Minecraft: Iris, OptiFine и без модов',
       description: 'Собери шейдерпак для Iris или OptiFine, ванильные шейдеры без модов для Java или набор Vibrant Visuals для Bedrock: пресеты, ползунки и 3D-превью.',

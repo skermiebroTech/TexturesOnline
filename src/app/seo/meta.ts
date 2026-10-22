@@ -53,7 +53,7 @@ export const HOME_META: PageMeta = {
   label: 'Home',
 };
 
-export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'doctor' | 'totem' | 'skins' | 'skinpack' | 'shaders', PageMeta> = {
+export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'doctor' | 'totem' | 'skins' | 'skinpack' | 'cape' | 'shaders', PageMeta> = {
   textures: {
     path: '/textures',
     kind: 'tool',
@@ -116,6 +116,15 @@ export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'doctor' | '
     description:
       'Make a custom Minecraft skin pack online: paint or upload skins, mix classic and slim arms, and download one Bedrock .mcpack that opens in the game. Free.',
     label: 'Skin pack maker',
+  },
+  cape: {
+    path: '/cape-maker',
+    kind: 'tool',
+    tool: 'skins',
+    title: 'Minecraft Cape Maker — Design a Custom Cape & Elytra',
+    description:
+      'Paint a custom Minecraft cape and elytra on the 64×32 template with a live 3D preview, then download the PNG or an elytra texture pack. Free, no sign-up.',
+    label: 'Cape maker',
   },
   shaders: {
     path: '/shaders',
@@ -327,7 +336,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.doctor, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.shaders, HELP_META, ABOUT_META, ALL_META, GUIDES_META, ...GUIDES, PRIVACY_META];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.doctor, TOOL_META.totem, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.cape, TOOL_META.shaders, HELP_META, ABOUT_META, ALL_META, GUIDES_META, ...GUIDES, PRIVACY_META];
 
 // ---------------------------------------------------------------- translations
 

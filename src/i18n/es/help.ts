@@ -381,6 +381,21 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'poses',
+      q: '¿Puedo poner mi skin en pose y guardar una imagen?',
+      a: [
+        p('Sí. En el editor de skins, pulsa ', strong('Pose e imagen'), ' debajo de la vista previa 3D. Elige una de doce poses (de pie, andando, corriendo, saludando, sentado, agachado, volando, pose en T, victoria, dab, pelea, señalando) o abre ', strong('Ajustar'), ' y mueve la cabeza, el cuerpo y cada brazo y pierna con deslizadores; cada parte se restablece por separado. En ', strong('Escena'), ' elige un ángulo de cámara, el zoom, un fondo (o ', strong('Transparente'), ') y una capa o unos élitros del ', link('/cape-maker', 'creador de capas'), '. ', strong('Guardar imagen'), ' crea un PNG a 1×, 2× o 4×. Arrastra el modelo para girar la cámara y usa la rueda o pellizca para hacer zoom.'),
+      ],
+    },
+    {
+      id: 'capes',
+      q: '¿Puedo hacer una capa propia?',
+      a: [
+        p('Puedes diseñarla en el ', link('/cape-maker', 'creador de capas'), ': pinta la textura de capa de 64×32 con vista previa 3D y descarga el PNG. Dónde se ve depende del juego. Java Edition solo muestra capas oficiales de Mojang, así que una capa propia necesita un mod o cliente con su propio servicio de capas, y solo la ven los jugadores con el mismo mod. En Bedrock, las capas son objetos del Creador de personajes, y el propio verificador de packs de Mojang marca como error una capa en cualquier pack de skins que no sea de Mojang, así que el creador de packs de skins deja fuera las capas.'),
+        p('Lo que funciona sin mods son los élitros: el creador de capas también descarga un texture pack de élitros (Java 1.9 o posterior, o Bedrock) que muestra tu diseño a quien use el pack. Los jugadores que llevan capa muestran en sus élitros el diseño de la capa.'),
+      ],
+    },
+    {
       id: 'upload',
       q: '¿Se sube algo?',
       a: [p('No. Tus proyectos, imágenes y packs exportados nunca salen de tu dispositivo. La app solo descarga cosas: archivos del juego de Mojang, la lista de versiones y las skins que buscas por nombre de usuario.')],

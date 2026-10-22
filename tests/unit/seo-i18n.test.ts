@@ -59,6 +59,7 @@ const REQUIRED_ROUTES = [
   '/pack-doctor',
   '/skins',
   '/skin-pack-maker',
+  '/cape-maker',
   '/shaders',
   '/help',
   '/about',

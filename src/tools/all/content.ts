@@ -23,6 +23,7 @@ export type AllCardId =
   | 'totem'
   | 'skins'
   | 'skinpack'
+  | 'cape'
   | 'shaders'
   | 'pixel'
   | 'paint3d'
@@ -39,6 +40,7 @@ export type AllCardId =
   | 'skinEditor'
   | 'hdSkins'
   | 'arms'
+  | 'poses'
   | 'username'
   | 'bedrockSkinPack'
   | 'installSkins'
@@ -94,6 +96,7 @@ const SECTIONS: Section[] = [
       { id: 'totem', icon: 'heart', to: '/totem-maker' },
       { id: 'skins', icon: 'human', to: '/skins' },
       { id: 'skinpack', icon: 'package', to: '/skin-pack-maker' },
+      { id: 'cape', icon: 'bookmark', to: '/cape-maker' },
       { id: 'shaders', icon: 'sparkles', to: '/shaders' },
     ],
   },
@@ -124,6 +127,7 @@ const SECTIONS: Section[] = [
       { id: 'skinEditor', icon: 'brush', to: '/skins' },
       { id: 'hdSkins', icon: 'zoom-in', to: '/help?s=hd-skins' },
       { id: 'arms', icon: 'human-arms-up', to: '/guides/make-a-skin' },
+      { id: 'poses', icon: 'camera', to: '/help?s=poses' },
       { id: 'username', icon: 'search', to: '/skins' },
       { id: 'bedrockSkinPack', icon: 'package', to: '/guides/make-a-bedrock-skin-pack' },
       { id: 'installSkins', icon: 'shirt', to: '/help?s=java-skins' },
@@ -173,7 +177,7 @@ export const ALL_EN: AllText = {
   lead: 'Every tool, feature, guide and help page in one place. Pick a card to go straight to it. Everything is free and runs in your browser.',
   jumpLabel: 'Jump to',
   sections: {
-    tools: { title: 'Tools', lead: 'Seven free tools for Minecraft Java and Bedrock.' },
+    tools: { title: 'Tools', lead: 'Nine free tools for Minecraft Java and Bedrock.' },
     textures: { title: 'Texture packs', lead: 'What you can do in the texture pack maker.' },
     skins: { title: 'Skins', lead: 'Make a skin, an HD skin or a whole Bedrock skin pack.' },
     shaders: { title: 'Shaders', lead: 'Make shaders for Iris and OptiFine, vanilla Java or Bedrock.' },
@@ -189,6 +193,7 @@ export const ALL_EN: AllText = {
     totem: { title: 'Custom totem maker', desc: 'Turn your own skin, or any player’s, into a Totem of Undying pack.' },
     skins: { title: 'Skin editor', desc: 'Paint a Minecraft skin in 2D or right on the 3D model, then download it for Java or Bedrock.' },
     skinpack: { title: 'Skin pack maker', desc: 'Put several skins into one Bedrock .mcpack you can install with a tap.' },
+    cape: { title: 'Cape maker', desc: 'Paint a cape and elytra on the 64×32 template in 3D, then get the PNG or an elytra texture pack.' },
     shaders: { title: 'Shader maker', desc: 'Design your own shaders with sliders and a live preview, with or without mods.' },
     pixel: { title: 'Pixel editor', desc: 'Pencil, fill, lines, shapes, selection and mirror, with undo, at 16× up to 512× resolution.' },
     paint3d: { title: 'Paint in 3D', desc: 'Paint straight onto a block’s 3D model and watch every face it uses change at once.' },
@@ -205,6 +210,7 @@ export const ALL_EN: AllText = {
     skinEditor: { title: 'Paint on 2D or 3D', desc: 'Use the skin template or paint the 3D model, with layers, mirror and part locks.' },
     hdSkins: { title: 'HD 128×128 skins', desc: 'Twice the detail for Bedrock, with a 64×64 copy made for Java.' },
     arms: { title: 'Classic and slim arms', desc: 'Pick 4-pixel or 3-pixel arms and switch a skin between them.' },
+    poses: { title: 'Poses and pictures', desc: 'Pose your skin, pick a camera and background, and save a PNG up to 4× size.' },
     username: { title: 'Start from a player’s skin', desc: 'Load any Java player’s skin by username, or upload a PNG, and edit it.' },
     bedrockSkinPack: { title: 'Bedrock skin packs', desc: 'How a skin pack is built and how to install it on PC and phones.' },
     installSkins: { title: 'Use your skin in the game', desc: 'Step by step for the Minecraft Launcher and the Bedrock Dressing Room.' },

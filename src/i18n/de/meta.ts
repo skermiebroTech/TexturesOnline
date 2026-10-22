@@ -45,6 +45,11 @@ export const META_DE: MetaTranslation = {
       description: 'Eigenes Minecraft-Skinpaket online erstellen: Skins malen oder hochladen, breite und schmale Arme mischen und ein Bedrock-.mcpack herunterladen. Kostenlos.',
       label: 'Skinpaket-Ersteller',
     },
+    '/cape-maker': {
+      title: 'Minecraft Umhang erstellen – Cape Maker mit Elytren',
+      description: 'Gestalte deinen eigenen Minecraft-Umhang und die Elytren auf der 64×32-Vorlage mit 3D-Vorschau. Download als PNG oder Elytren-Texture-Pack. Kostenlos.',
+      label: 'Umhang-Ersteller',
+    },
     '/shaders': {
       title: 'Minecraft Shader erstellen – Iris, OptiFine & ohne Mods',
       description: 'Shaderpakete für Iris oder OptiFine, Vanilla-Shader ohne Mods für Java oder Vibrant-Visuals-Pakete für Bedrock bauen, mit Presets, Reglern und 3D-Vorschau.',
