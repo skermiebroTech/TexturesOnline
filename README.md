@@ -44,6 +44,20 @@ repository keeps its original name, `TexturesOnline`).
   item models, merged with models made in the model editor; Java 1.8+ / 1.9+), and FPS options: 8× textures and
   no animations (Java). Each tweak writes the right files for the pack's version, can be switched off (files
   painted since are kept) or undone; tweaks a version or Bedrock can't have are shown off with the reason.
+- GUI and menus (the window button above the texture list): the HUD (hotbar, selection, off-hand slots,
+  crosshair, hearts in every state, hunger, armour, air, experience bar), the inventory, chests, furnace and
+  crafting table, buttons (normal, pointed at, greyed out), menu backgrounds, the title screen (panorama, logo,
+  splash texts) and the enchantment glint, named as the game names them and painted in the pixel editor. Java
+  before 1.20.2 keeps the HUD and buttons in `gui/icons.png` / `gui/widgets.png`: a piece opens its atlas with
+  its area selected and zoomed to; 1.20.2+ opens the single sprite in `gui/sprites/**`; Bedrock uses
+  `textures/ui/**`. A live preview draws the pack's own pictures (items in the slots, the game's font) as the
+  game lays them out, at a whole GUI scale: the HUD over a little world, the inventory and containers, the title
+  screen with its turning panorama cube, splash and buttons, a menu, and enchanted items with the animated glint.
+  It follows the open texture, updates as you paint, names the part under the pointer and opens it on a click.
+  Splash texts are edited as a list (Java `texts/splashes.txt`, Bedrock `splashes.json`). From 1.15 the client
+  jar only has 1 × 1 stand-ins for the panorama; the real pictures are read from misode/mcmeta's copy of the
+  version's assets and cached like other game files. The Pack tab also downloads the pack icon as a 64 × 64
+  `server-icon.png` for a Java server (not part of the pack).
 - Sounds: browse the game's sound events by category, play them, and replace any sound with your own file
   (MP3, WAV, OGG, M4A...) or a microphone recording, trimmed on its waveform and levelled. Replacements are
   saved as Ogg Vorbis (Java: `assets/minecraft/sounds/`; Bedrock: `sounds/` plus `sound_definitions.json`
@@ -108,6 +122,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/mobs.e2e.cjs      # mob models:
 NODE_PATH=$(npm root -g) node tests/e2e/textures/sounds.e2e.cjs    # sounds: list, play, upload / record, trim, export as Ogg Vorbis
 NODE_PATH=$(npm root -g) node tests/e2e/textures/models.e2e.cjs    # model editor: block and 3D item models, display, export, phone layout
 NODE_PATH=$(npm root -g) node tests/e2e/textures/phone.e2e.cjs     # phones with touch, portrait and landscape: Paint tab, finger painting, pinch, tap targets
+NODE_PATH=$(npm root -g) node tests/e2e/textures/gui.e2e.cjs       # GUI and menus: library, atlas areas, live preview screens, splash texts, exports
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs
