@@ -41,11 +41,12 @@ function afterFirstPaint(fn: () => void): void {
 }
 
 // The texture, skin and shader start screens get the same introduction as their prerendered pages.
-const INTRO_ROUTES: Record<string, 'textures' | 'converter' | 'merge' | 'totem' | 'skins' | 'skinpack' | 'shaders'> = {
+const INTRO_ROUTES: Record<string, 'textures' | 'converter' | 'merge' | 'totem' | 'fonts' | 'skins' | 'skinpack' | 'shaders'> = {
   '/textures': 'textures',
   '/texture-pack-converter': 'converter',
   '/merge-texture-packs': 'merge',
   '/totem-maker': 'totem',
+  '/font-maker': 'fonts',
   '/skins': 'skins',
   '/skin-pack-maker': 'skinpack',
   '/shaders': 'shaders',

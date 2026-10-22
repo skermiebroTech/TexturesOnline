@@ -265,7 +265,7 @@ export const HOME_EN: HomeText = {
   why: {
     eyebrow: 'Why it’s different',
     title: `Why ${SITE_NAME}?`,
-    lead: ['Free, open source and private, with every Java version since 1.6.1, Bedrock and seven tools in one place. ', link('/about', 'About the project'), '.'],
+    lead: ['Free, open source and private, with every Java version since 1.6.1, Bedrock and eight tools in one place. ', link('/about', 'About the project'), '.'],
   },
   how: {
     eyebrow: 'How it works',

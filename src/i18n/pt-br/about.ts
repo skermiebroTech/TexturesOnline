@@ -73,6 +73,7 @@ export const ABOUT: AboutText = {
     [link('/texture-pack-converter', 'Conversor de texture pack'), ': Java para Bedrock, Bedrock para Java, entre versões do Java ou de texturas PNG para um .mcpack.'],
     [link('/merge-texture-packs', 'Juntar texture packs'), ': junte até oito packs em um só, na ordem que você escolher.'],
     [link('/totem-maker', 'Criador de totens'), ': transforme qualquer skin em um totem da imortalidade personalizado, como pacote de recursos para Java ou Bedrock.'],
+    [link('/font-maker', 'Criador de fontes'), ': desenhe uma fonte de pixels ou converta um arquivo de fonte, veja no chat, em placas e em livros, e baixe como pacote de recursos.'],
     [link('/skins', 'Editor de skins'), ' e ', link('/skin-pack-maker', 'criador de pacote de skins'), ': pinte skins em 2D ou 3D com braços clássicos ou finos e junte tudo em um pacote de skins do Bedrock.'],
     [link('/shaders', 'Criador de shaders'), ': shader packs para Iris e OptiFine, shaders vanilla do Java que não precisam de mods e pacotes de Visuais Vibrantes para o Bedrock.'],
     [link('/guides', 'Guias'), ': como criar, instalar e consertar packs, e o pack format de cada versão do Java.'],

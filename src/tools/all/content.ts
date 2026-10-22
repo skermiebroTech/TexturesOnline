@@ -20,6 +20,7 @@ export type AllCardId =
   | 'convert'
   | 'merge'
   | 'totem'
+  | 'fonts'
   | 'skins'
   | 'skinpack'
   | 'shaders'
@@ -90,6 +91,7 @@ const SECTIONS: Section[] = [
       { id: 'convert', icon: 'repeat', to: '/texture-pack-converter' },
       { id: 'merge', icon: 'git-merge', to: '/merge-texture-packs' },
       { id: 'totem', icon: 'heart', to: '/totem-maker' },
+      { id: 'fonts', icon: 'text-start-a', to: '/font-maker' },
       { id: 'skins', icon: 'human', to: '/skins' },
       { id: 'skinpack', icon: 'package', to: '/skin-pack-maker' },
       { id: 'shaders', icon: 'sparkles', to: '/shaders' },
@@ -171,7 +173,7 @@ export const ALL_EN: AllText = {
   lead: 'Every tool, feature, guide and help page in one place. Pick a card to go straight to it. Everything is free and runs in your browser.',
   jumpLabel: 'Jump to',
   sections: {
-    tools: { title: 'Tools', lead: 'Seven free tools for Minecraft Java and Bedrock.' },
+    tools: { title: 'Tools', lead: 'Eight free tools for Minecraft Java and Bedrock.' },
     textures: { title: 'Texture packs', lead: 'What you can do in the texture pack maker.' },
     skins: { title: 'Skins', lead: 'Make a skin, an HD skin or a whole Bedrock skin pack.' },
     shaders: { title: 'Shaders', lead: 'Make shaders for Iris and OptiFine, vanilla Java or Bedrock.' },
@@ -184,6 +186,7 @@ export const ALL_EN: AllText = {
     convert: { title: 'Texture pack converter', desc: 'Turn a Java pack into a Bedrock pack or back, or update an old Java pack to a newer version.' },
     merge: { title: 'Merge texture packs', desc: 'Combine several packs into one, with the top pack winning where they overlap, just like in the game.' },
     totem: { title: 'Custom totem maker', desc: 'Turn your own skin, or any player’s, into a Totem of Undying pack.' },
+    fonts: { title: 'Font maker', desc: 'Draw your own pixel font or convert a font file, then change the letters of chat, signs and books.' },
     skins: { title: 'Skin editor', desc: 'Paint a Minecraft skin in 2D or right on the 3D model, then download it for Java or Bedrock.' },
     skinpack: { title: 'Skin pack maker', desc: 'Put several skins into one Bedrock .mcpack you can install with a tap.' },
     shaders: { title: 'Shader maker', desc: 'Design your own shaders with sliders and a live preview, with or without mods.' },

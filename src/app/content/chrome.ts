@@ -10,8 +10,8 @@ import { LOCALES, LOCALE_INFO, prefixPath, type Locale } from '../../i18n/locale
 import { ui, type UiText } from '../../i18n/ui';
 import { appText } from '../../pwa/text';
 
-/** 'merge' and 'totem' have no menu item of their own (the menu is full); their pages highlight none. */
-export type NavTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'skins' | 'shaders' | 'help' | 'all';
+/** 'merge', 'totem' and 'fonts' have no menu item of their own (the menu is full); their pages highlight none. */
+export type NavTool = 'home' | 'textures' | 'convert' | 'merge' | 'totem' | 'fonts' | 'skins' | 'shaders' | 'help' | 'all';
 
 export interface NavItem {
   path: string;
@@ -143,6 +143,7 @@ export function footer(year: number, locale: Locale = 'en', route = '/'): ElNode
           el('a', { to: '/skins' }, f.skins),
           el('a', { to: '/skin-pack-maker' }, f.skinpack),
           el('a', { to: '/totem-maker' }, f.totem),
+          el('a', { to: '/font-maker' }, f.fonts),
           el('a', { to: '/shaders' }, f.shaders),
         ),
         el(

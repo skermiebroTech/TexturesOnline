@@ -373,6 +373,15 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'fonts',
+      q: 'Kann ich die Schrift von Minecraft ändern?',
+      a: [
+        p(
+          'Ja, mit dem ', link('/font-maker', 'Schriftart-Ersteller'), ': Zeichne deine Buchstaben Pixel für Pixel, starte mit einem eingebauten Stil oder wandle eine TTF-, OTF- oder WOFF-Schrift in Pixel um und prüfe sie im Chat, auf Schildern und in Büchern. Java ab 1.13 bekommt eine ', code('font/default.json'), ', die nur die gezeichneten Zeichen ersetzt (auch eine TrueType-Datei kann dazu); Java 1.6.1 bis 1.12.2 bekommt ', code('textures/font/ascii.png'), '; Bedrock bekommt ', code('font/default8.png'), ' und Glyphenseiten. Sieht der Text in Java noch normal aus, schalte unter Optionen › Sprache die Unicode-Schriftart aus.',
+        ),
+      ],
+    },
+    {
       id: 'sounds',
       q: 'Kann ich Sounds in meinem Pack ändern?',
       a: [

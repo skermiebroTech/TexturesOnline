@@ -9,7 +9,7 @@ export const ALL: AllText = {
   lead: 'Cada herramienta, función, guía y página de ayuda en un solo lugar. Elige una tarjeta para ir directo. Todo es gratis y funciona en tu navegador.',
   jumpLabel: 'Ir a',
   sections: {
-    tools: { title: 'Herramientas', lead: 'Siete herramientas gratis para Minecraft Java y Bedrock.' },
+    tools: { title: 'Herramientas', lead: 'Ocho herramientas gratis para Minecraft Java y Bedrock.' },
     textures: { title: 'Texture packs', lead: 'Lo que puedes hacer en el creador de texture packs.' },
     skins: { title: 'Skins', lead: 'Crea una skin, una skin HD o un pack de skins de Bedrock completo.' },
     shaders: { title: 'Shaders', lead: 'Crea shaders para Iris y OptiFine, Java vanilla o Bedrock.' },
@@ -22,6 +22,7 @@ export const ALL: AllText = {
     convert: { title: 'Convertidor de texture packs', desc: 'Convierte un pack de Java en uno de Bedrock o al revés, o actualiza un pack antiguo de Java a una versión más nueva.' },
     merge: { title: 'Combinar texture packs', desc: 'Junta varios packs en uno; donde coinciden, gana el de arriba, como en el juego.' },
     totem: { title: 'Creador de tótems', desc: 'Convierte tu propia skin, o la de cualquier jugador, en un pack de Tótem de la inmortalidad.' },
+    fonts: { title: 'Creador de fuentes', desc: 'Dibuja tu propia fuente de píxeles o convierte un archivo de fuente y cambia las letras del chat, los carteles y los libros.' },
     skins: { title: 'Editor de skins', desc: 'Pinta una skin de Minecraft en 2D o directamente sobre el modelo 3D y descárgala para Java o Bedrock.' },
     skinpack: { title: 'Creador de packs de skins', desc: 'Reúne varias skins en un .mcpack de Bedrock que se instala con un toque.' },
     shaders: { title: 'Creador de shaders', desc: 'Diseña tus propios shaders con controles deslizantes y vista previa en vivo, con o sin mods.' },

@@ -19,7 +19,7 @@ interface Difference {
 }
 
 type Six<T> = [T, T, T, T, T, T];
-type Seven<T> = [T, T, T, T, T, T, T];
+type Eight<T> = [T, T, T, T, T, T, T, T];
 
 /** Every text on the About page (and the differences on the home page). */
 export interface AboutText {
@@ -31,7 +31,7 @@ export interface AboutText {
   differentTitle: string;
   toolsTitle: string;
   /** One list item per tool, links included */
-  tools: Seven<Child[]>;
+  tools: Eight<Child[]>;
   howTitle: string;
   how: Child[];
   makerTitle: string;
@@ -109,6 +109,7 @@ export const ABOUT_EN: AboutText = {
     [link('/texture-pack-converter', 'Texture pack converter'), ': Java to Bedrock, Bedrock to Java, between Java versions, or PNG textures to an .mcpack.'],
     [link('/merge-texture-packs', 'Merge texture packs'), ': combine up to eight packs into one, in the order you choose.'],
     [link('/totem-maker', 'Totem maker'), ': turn any skin into a custom Totem of Undying resource pack for Java or Bedrock.'],
+    [link('/font-maker', 'Font maker'), ': draw a pixel font or convert a font file, preview it in chat, signs and books, and download it as a resource pack.'],
     [link('/skins', 'Skin editor'), ' and ', link('/skin-pack-maker', 'skin pack maker'), ': paint skins in 2D or 3D with classic or slim arms, and bundle them into a Bedrock skin pack.'],
     [link('/shaders', 'Shader maker'), ': Iris and OptiFine shader packs, vanilla Java shaders that need no mods, and Bedrock Vibrant Visuals packs.'],
     [link('/guides', 'Guides'), ': making, installing and fixing packs, and the pack format of every Java version.'],
