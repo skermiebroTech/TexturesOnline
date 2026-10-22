@@ -2,7 +2,7 @@
 // game shows (Java: assets/minecraft/lang/de_de.json, Bedrock: texts/de_DE.lang).
 
 import { el, type Child } from '../../app/markup';
-import { callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { backupButtons, callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
 import { REPO_URL } from '../../app/site';
 import { F, LATEST, maxFormat, minFormat } from '../../app/content/facts';
 import type { HelpText } from '../../tools/help/content';
@@ -274,6 +274,27 @@ export const HELP: HelpText = {
         el('p', { class: 'muted small' }, 'Unter Windows fügst du den Pfad in die Adressleiste des Datei-Explorers oder ins Ausführen-Fenster (Win + R) ein.'),
       ],
     },
+    backup: {
+      title: 'Projekte sichern und mitnehmen',
+      short: 'Sicherungen',
+      body: [
+        el('p', { class: 'guide-intro' }, 'Deine Projekte werden nur in diesem Browser gespeichert. Wenn du die Websitedaten löschst oder Browser oder Gerät wechselst, bleiben sie zurück. Behalte deshalb eine Kopie als Datei.'),
+        backupButtons('Alle Projekte sichern', 'Sicherung öffnen'),
+        el(
+          'ul',
+          { class: 'guide-list' },
+          el('li', null, strong('Projektdatei'), ' (', code('.tpmproject'), '): ein Projekt mit allem, was du zum Weiterarbeiten brauchst, zum Beispiel bearbeitete Texturen, Sounds und Modelle, Effekte, Version und Edition, die Skins eines Skin-Packs, Shader-Einstellungen und Schriftzeichen. Speichere sie im Editor mit ', strong('Projektdatei speichern'), ' oder über das Menü eines Projekts.'),
+          el('li', null, strong('Sicherung'), ' (', code('.tpmbackup'), '): alle Texture Packs, Skins und Shader in diesem Browser, dazu dein Umhang und deine Schriftart, in einer Datei.'),
+        ),
+        el('h3', { class: 'guide-sub' }, 'In einem anderen Browser oder auf einem anderen Gerät öffnen'),
+        steps([
+          'Öffne dort Texture Pack Maker (oder die installierte App).',
+          ['Zieh die Datei auf einen ', strong('Öffnen'), '-Bereich eines Editors oder nutze ', strong('Projektdatei öffnen'), '. Ein Projekt öffnet sich in seinem Editor als neues Projekt, nichts Vorhandenes wird ersetzt.'],
+          ['Bei einer Sicherung wählst du, was wiederhergestellt wird. Projekte, die schon da sind, werden übersprungen oder mit ', strong('Beide behalten'), ' neben deinen behalten.'],
+        ]),
+        callout('info', 'Nicht dasselbe wie Exportieren', 'Eine exportierte .zip oder .mcpack ist für das Spiel. Eine Projektdatei hält auch den Zustand des Editors fest, sodass du genau dort weitermachst, wo du aufgehört hast. Die Spieldateien selbst sind in keiner davon: Sie kommen wieder von Mojang.'),
+      ],
+    },
   },
   faq: [
     {
@@ -433,7 +454,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: 'Wo werden meine Projekte gespeichert?',
-      a: [p('Im Speicher deines Browsers auf diesem Gerät. Sie bleiben, bis du sie löschst oder die Daten dieser Website entfernst. Um ein Projekt zu sichern oder auf einen anderen Computer mitzunehmen, exportiere es und öffne die Datei dort mit ', strong('Pack öffnen'), '.')],
+      a: [p('Im Speicher deines Browsers auf diesem Gerät. Sie bleiben, bis du sie löschst oder die Daten dieser Website entfernst. Um eine Kopie zu behalten oder sie auf einen anderen Computer mitzunehmen, speichere eine Projektdatei (', code('.tpmproject'), ') oder eine Sicherung aller Projekte (', code('.tpmbackup'), ') und öffne sie dort. ', link('/help?s=backup', 'So sicherst du Projekte und stellst sie wieder her'), '.')],
     },
     {
       id: 'versions',
@@ -518,6 +539,7 @@ export const HELP: HelpText = {
     vanilla: 'Vanilla (ohne Mods)',
     vibrant: 'Vibrant Visuals',
     folders: 'Ordner',
+    backup: 'Sicherungen',
     faq: 'FAQ',
     allGuides: 'Alle Anleitungen',
   },

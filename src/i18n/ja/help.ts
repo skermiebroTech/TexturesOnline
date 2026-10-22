@@ -2,7 +2,7 @@
 // Japanese game shows (Java: assets/minecraft/lang/ja_jp.json, Bedrock: texts/ja_JP.lang).
 
 import { el, type Child } from '../../app/markup';
-import { callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { backupButtons, callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
 import { REPO_URL } from '../../app/site';
 import { F, LATEST, maxFormat, minFormat } from '../../app/content/facts';
 import type { HelpText } from '../../tools/help/content';
@@ -256,6 +256,27 @@ export const HELP: HelpText = {
         el('p', { class: 'muted small' }, 'Windowsでは、エクスプローラーのアドレスバーか「ファイル名を指定して実行」（Win + R）にパスを貼り付けます。'),
       ],
     },
+    backup: {
+      title: 'プロジェクトのバックアップと移行',
+      short: 'バックアップ',
+      body: [
+        el('p', { class: 'guide-intro' }, 'プロジェクトはこのブラウザにだけ保存されます。サイトのデータを消したり、ブラウザや端末を変えたりすると引き継がれないので、ファイルとしてコピーを残しておきましょう。'),
+        backupButtons('すべてのプロジェクトをバックアップ', 'バックアップを開く'),
+        el(
+          'ul',
+          { class: 'guide-list' },
+          el('li', null, strong('プロジェクトファイル'), '（', code('.tpmproject'), '）：編集を続けるのに必要なものをすべて含む1つのプロジェクトです。編集したテクスチャ・サウンド・モデル、エフェクト、バージョンとエディション、スキンパックのスキン、シェーダーの設定、フォントの文字などが入ります。エディターの', strong('プロジェクトファイルを保存'), 'か、プロジェクトのメニューから保存できます。'),
+          el('li', null, strong('バックアップ'), '（', code('.tpmbackup'), '）：このブラウザにあるすべてのテクスチャパック・スキン・シェーダーに、マントとフォントを加えた1つのファイルです。'),
+        ),
+        el('h3', { class: 'guide-sub' }, '別のブラウザや端末で開く'),
+        steps([
+          'そちらでTexture Pack Makerを開きます（インストールしたアプリでもかまいません）。',
+          ['エディターの', strong('開く'), 'エリアにファイルをドロップするか、', strong('プロジェクトファイルを開く'), 'を使います。プロジェクトは新しいプロジェクトとしてエディターで開くので、今あるものが置き換わることはありません。'],
+          ['バックアップの場合は、復元するものを選びます。すでにあるプロジェクトはスキップするか、', strong('両方残す'), 'で今あるものの隣に残せます。'],
+        ]),
+        callout('info', 'エクスポートとは違います', 'エクスポートした.zipや.mcpackはゲーム用です。プロジェクトファイルはエディターの状態も保存するので、やめたところからそのまま続けられます。どちらにもゲーム本体のファイルは含まれず、必要なときにMojangからもう一度ダウンロードされます。'),
+      ],
+    },
   },
   faq: [
     {
@@ -407,7 +428,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: 'プロジェクトはどこに保存されますか？',
-      a: [p('この端末のブラウザのストレージです。削除するか、このサイトのデータを消すまで残ります。バックアップや別のパソコンへの移動には、書き出したファイルを移動先で', strong('パックを開く'), 'から開いてください。')],
+      a: [p('この端末のブラウザのストレージです。削除するか、このサイトのデータを消すまで残ります。コピーを残したり別のパソコンへ移したりするには、プロジェクトファイル（', code('.tpmproject'), '）か、すべてのプロジェクトのバックアップ（', code('.tpmbackup'), '）を保存して、移動先で開いてください。', link('/help?s=backup', 'バックアップと復元のしかた'), '。')],
     },
     {
       id: 'versions',
@@ -492,6 +513,7 @@ export const HELP: HelpText = {
     vanilla: 'バニラ（MODなし）',
     vibrant: 'バイブラントビジュアルズ',
     folders: 'フォルダー',
+    backup: 'バックアップ',
     faq: 'よくある質問',
     allGuides: 'すべてのガイド',
   },

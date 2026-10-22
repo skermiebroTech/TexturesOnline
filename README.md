@@ -97,6 +97,23 @@ HTTP range requests so only the textures are fetched from the client jar) or, fo
 official [bedrock-samples](https://github.com/Mojang/bedrock-samples) repository. Files are cached in
 IndexedDB on your device. Your projects are saved locally too — nothing is uploaded anywhere.
 
+### Project files and backups
+
+Because projects live only in the browser, every editor can save a **project file** (`.tpmproject`): the
+texture pack, skin (with the skins of its Bedrock pack), shader project (an imported shader pack with its
+files and edits), cape or font, with everything needed to keep editing it. **Back up all** on the home page
+(or **Help → Backups**) writes every project, the cape and the font into one `.tpmbackup`. Opening either
+one (an editor's **Open a project file**, a drop on any drop zone, or a double-click in the installed app)
+adds the project to this browser in its own editor and never replaces one; a backup asks what to restore
+and skips projects that are already there (or keeps both).
+
+A project file is a zip: `manifest.json` (`format: "texture-pack-maker"`, a format `version`, the `tool` it
+opens in, the app's build date and the list of projects with their ids) and one folder per project with an
+`item.json` (the stored record) and its files next to it, under their own paths (edited textures as PNG at
+their pack path, sounds as Ogg). Game files are never in it: they download again from Mojang. Files from a
+newer format version are refused with a message; older ones are migrated (`MIGRATIONS` in
+`src/shared/project-file/format.ts`).
+
 ## Development
 
 Requires Node.js 20.19+ (22 recommended).
@@ -130,6 +147,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/seo/pages.e2e.mjs   # public pages, rout
 NODE_PATH=$(npm root -g) node tests/e2e/seo/pwa.e2e.mjs     # installable app: manifest, offline start, updates, share target
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/import.e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/preview-textures.e2e.cjs
+NODE_PATH=$(npm root -g) node tests/e2e/projects/project-files.e2e.cjs  # project files in every editor, backup and restore
 ```
 
 The Bedrock texture catalogue (file paths only) is generated with `node scripts/bedrock-index.mjs`.
@@ -140,7 +158,7 @@ The Bedrock texture catalogue (file paths only) is generated with `node scripts/
 src/core/       shared types, storage (IndexedDB), zip, PNG/TGA, networking, router
 src/editions/   Java (versions, jar range reader, pack.mcmeta) and Bedrock (versions, catalogue, manifests)
 src/ui/         design system components; src/styles/ tokens and global CSS
-src/shared/     pixel editor engine and the 3D/WebGL previews
+src/shared/     pixel editor engine, the 3D/WebGL previews, project files and backups (project-file/)
 src/tools/      the pages: home, textures, skins, shaders (iris / vanilla / bedrock generators), help, guides
 src/app/        shell (top bar, footer), site constants, head tags, page content trees, SEO generation (seo/)
 tests/          unit tests, end-to-end suites and test harnesses
@@ -163,7 +181,7 @@ The site lives at **https://texturepackmaker.com** (`public/CNAME`). To finish t
    plus a `CNAME` from `www` to `skermiebrotech.github.io`. Verifying the domain for the account
    (account Settings → Pages) protects it from takeovers.
 3. Projects are stored per website address (IndexedDB), so work saved on the old github.io address stays
-   there: export it there and open the file on the new domain with **Open a pack**.
+   there: make a backup there (**Back up all** on the home page) and open it on the new domain.
 
 The build works at any address: asset links are relative and the router works out the site root at runtime,
 so the old project URL keeps working until the redirect is in place. To move to another domain, change

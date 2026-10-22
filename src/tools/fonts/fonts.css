@@ -219,6 +219,12 @@
   pointer-events: none;
   opacity: 0.5;
 }
+.fm-open-project {
+  align-self: center;
+}
+.fm-file-btn {
+  align-self: flex-start;
+}
 .fm-file,
 .fm-pack,
 .fm-game,

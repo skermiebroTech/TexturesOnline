@@ -56,6 +56,7 @@ export const ALL: AllText = {
     app: { title: 'Als App installieren', desc: 'Leg es auf deinen Startbildschirm oder Desktop und nutze es offline.' },
     languages: { title: 'In sechs Sprachen', desc: 'Englisch, Deutsch, Spanisch, Portugiesisch, Japanisch und Russisch, die Editoren eingeschlossen.' },
     privacy: { title: 'Nichts wird hochgeladen', desc: 'Keine Konten, keine Werbung, kein Tracking. Deine Arbeit bleibt auf deinem Gerät.' },
+    backup: { title: 'Projekte sichern', desc: 'Speichere ein Projekt oder alle als Datei und öffne sie in einem anderen Browser oder auf einem anderen Gerät.' },
     openSource: { title: 'Open Source', desc: 'Der Code ist öffentlich auf GitHub, wo du Probleme melden und Ideen vorschlagen kannst.' },
     installGuide: { title: 'Installationsanleitung', desc: 'Installiere Texture Packs, Skins und Shader in Java und Bedrock, auf jedem Gerät.' },
     faq: { title: 'Fragen und Antworten', desc: 'Kurze Antworten auf die häufigsten Fragen.' },

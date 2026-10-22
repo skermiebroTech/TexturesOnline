@@ -9,6 +9,8 @@ import { PACK_ACCEPT } from './accept';
 import '../packedit/packedit.css';
 import { t } from '../i18n/text';
 import { fmt } from '../../../i18n/editor-text';
+import { isProjectFileName } from '../../../shared/project-file/handoff';
+import { openProjectButton, openProjectFile } from '../../../shared/project-file/entry';
 
 export function openPackFile(file: File): void {
   void import('./import-flow')
@@ -53,7 +55,7 @@ export function openPackSection(): HTMLElement {
           kinds.map((k) => h('li', null, icon(k.icon), h('span', null, h('span', { class: 'pe-open-kind' }, k.text), h('span', { class: 'faint small' }, k.sub)))),
         ),
       ),
-      h('div', { class: 'pe-open-zone' }, dz, h('p', { class: 'pe-open-note faint small' }, icon('info'), h('span', null, t.openPack.license))),
+      h('div', { class: 'pe-open-zone' }, dz, openProjectButton({ class: 'pe-open-project' }), h('p', { class: 'pe-open-note faint small' }, icon('info'), h('span', null, t.openPack.license))),
     ),
   );
 }
@@ -92,6 +94,12 @@ export function enablePageDrop(target: HTMLElement): () => void {
     if ((e.target as HTMLElement | null)?.closest?.('.pe-open-drop')) return;
     e.preventDefault();
     const files = Array.from(e.dataTransfer?.files ?? []);
+    // a project file or backup saved from this site
+    const project = files.find((f) => isProjectFileName(f.name));
+    if (project) {
+      openProjectFile(project);
+      return;
+    }
     const file = files.find((f) => fileMatchesAccept(f, PACK_ACCEPT));
     if (!file) {
       if (files.length) toast(fmt(t.openPack.notPack, { name: files[0].name }), { tone: 'warn' });

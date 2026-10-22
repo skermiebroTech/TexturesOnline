@@ -28,6 +28,9 @@ import { fmt, fmtNodes } from '../../../i18n/editor-text';
 import { kit } from '../../../ui/i18n/kit';
 import { t } from '../i18n/start';
 import { byPointer } from './media';
+import { projectsText } from '../../../shared/i18n/projects';
+import { onProjectsChanged } from '../../../shared/project-file/handoff';
+import { openProjectButton, saveProjectFile } from '../../../shared/project-file/entry';
 
 const START_RES = [16, 32, 64, 128];
 
@@ -286,7 +289,8 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     'section',
     { class: 'card tx-open', 'aria-labelledby': 'tx-open-title' },
     h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('folder')), h('div', null, h('h2', { id: 'tx-open-title' }, t.open.title), h('p', { class: 'muted' }, t.open.text))),
-    h('div', { class: 'tx-open-body' }, dz, busy),
+    // a .tpmproject saved from any editor, or a backup (dropped on the zone, either opens too)
+    h('div', { class: 'tx-open-body' }, dz, busy, openProjectButton({ class: 'tx-open-project' })),
     h(
       'a',
       { class: 'tx-convert-link', href: routeHref('/texture-pack-converter') },
@@ -410,6 +414,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
             { label: t.recent.open, icon: 'pencil', onClick: () => navigate(`/textures/${p.id}`) },
             { label: t.recent.rename, icon: 'pen-square', onClick: () => void rename(p) },
             { label: t.recent.duplicate, icon: 'copy', onClick: () => void duplicate(p) },
+            { label: projectsText.save, icon: 'save', onClick: () => void saveProjectFile({ id: p.id }) },
             { label: t.recent.delete, icon: 'trash', danger: true, onClick: () => void remove(p) },
           ]);
         });
@@ -523,9 +528,11 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   );
   root.appendChild(page);
   void renderRecent();
+  const offProjects = onProjectsChanged(() => void renderRecent());
 
   return () => {
     alive = false;
+    offProjects();
     urls.forEach((u) => URL.revokeObjectURL(u));
   };
 }

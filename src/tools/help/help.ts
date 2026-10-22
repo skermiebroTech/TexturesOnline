@@ -100,6 +100,14 @@ export default async function help(root: HTMLElement, ctx: ViewContext): Promise
   };
   root.addEventListener('click', onClick);
 
+  // The backups section: every project as one file, or open a backup (the dialogs load on use).
+  const onBackup = (e: MouseEvent) => {
+    const b = (e.target as Element | null)?.closest?.<HTMLElement>('[data-backup]');
+    if (!b) return;
+    void import('../../shared/project-file/entry').then((m) => (b.dataset.backup === 'all' ? m.openBackupDialog() : m.pickProjectFile()));
+  };
+  root.addEventListener('click', onBackup);
+
   const initial = ctx.query.get('s');
   setActive(initial && HELP_SECTION_IDS.includes(initial) ? initial : HELP_SECTION_IDS[0]);
   if (isRestoringScroll()) {
@@ -114,5 +122,6 @@ export default async function help(root: HTMLElement, ctx: ViewContext): Promise
     io?.disconnect();
     unwire();
     root.removeEventListener('click', onClick);
+    root.removeEventListener('click', onBackup);
   };
 }

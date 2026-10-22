@@ -3,7 +3,7 @@
 // texts/pt_BR.lang).
 
 import { el, type Child } from '../../app/markup';
-import { callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
+import { backupButtons, callout, code, ext, folderTable, link, steps, strong, tabbed, uiPath } from '../../app/content/blocks';
 import { REPO_URL } from '../../app/site';
 import { F, LATEST, maxFormat, minFormat } from '../../app/content/facts';
 import type { HelpText } from '../../tools/help/content';
@@ -267,6 +267,27 @@ export const HELP: HelpText = {
         el('p', { class: 'muted small' }, 'No Windows, cole o caminho na barra de endereço do Explorador de Arquivos ou na janela Executar (Win + R).'),
       ],
     },
+    backup: {
+      title: 'Faça backup e leve seus projetos',
+      short: 'Cópias de segurança',
+      body: [
+        el('p', { class: 'guide-intro' }, 'Seus projetos ficam salvos só neste navegador. Se você limpar os dados do site ou trocar de navegador ou dispositivo, eles ficam para trás, então guarde uma cópia em um arquivo.'),
+        backupButtons('Fazer backup de tudo', 'Abrir um backup'),
+        el(
+          'ul',
+          { class: 'guide-list' },
+          el('li', null, strong('Arquivo de projeto'), ' (', code('.tpmproject'), '): um projeto com tudo o que é preciso para continuar editando, como texturas, sons e modelos editados, efeitos, a versão e a edição, as skins de um pacote de skins, as configurações do shader e os caracteres da fonte. Salve no editor com ', strong('Salvar arquivo de projeto'), ' ou pelo menu de um projeto.'),
+          el('li', null, strong('Backup'), ' (', code('.tpmbackup'), '): todos os texture packs, skins e shaders deste navegador, mais a sua capa e a sua fonte, em um só arquivo.'),
+        ),
+        el('h3', { class: 'guide-sub' }, 'Abra em outro navegador ou dispositivo'),
+        steps([
+          'Abra o Texture Pack Maker lá (ou o app instalado).',
+          ['Solte o arquivo em qualquer área de ', strong('Abrir'), ' de um editor, ou use ', strong('Abrir um arquivo de projeto'), '. Um projeto abre no editor dele como um projeto novo, então nada do que você já tem é substituído.'],
+          ['Em um backup, escolha o que restaurar. Projetos que já estão lá são pulados, ou mantidos ao lado dos seus com ', strong('Manter os dois'), '.'],
+        ]),
+        callout('info', 'Não é o mesmo que exportar', 'Um .zip ou .mcpack exportado é para o jogo. Um arquivo de projeto também guarda o estado do editor, para você continuar exatamente de onde parou. Nenhum deles traz os arquivos do próprio jogo: eles são baixados de novo da Mojang.'),
+      ],
+    },
   },
   faq: [
     {
@@ -418,7 +439,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: 'Onde meus projetos ficam salvos?',
-      a: [p('No armazenamento do seu navegador neste dispositivo. Eles ficam lá até você apagar ou limpar os dados deste site. Para fazer backup de um projeto ou levá-lo para outro computador, exporte e abra o arquivo lá com ', strong('Abrir um pack'), '.')],
+      a: [p('No armazenamento do seu navegador neste dispositivo. Eles ficam lá até você apagar ou limpar os dados deste site. Para guardar uma cópia ou levá-los para outro computador, salve um arquivo de projeto (', code('.tpmproject'), ') ou um backup de todos os projetos (', code('.tpmbackup'), ') e abra lá. ', link('/help?s=backup', 'Como fazer e restaurar backups'), '.')],
     },
     {
       id: 'versions',
@@ -503,6 +524,7 @@ export const HELP: HelpText = {
     vanilla: 'Vanilla (sem mods)',
     vibrant: 'Visuais Vibrantes',
     folders: 'Pastas',
+    backup: 'Cópias de segurança',
     faq: 'Perguntas frequentes',
     allGuides: 'Todos os guias',
   },

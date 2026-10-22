@@ -182,6 +182,8 @@ function pagesLikePreview(): Plugin {
 
 export default defineConfig({
   base: './',
+  // The build date, written into project files' manifests (src/shared/project-file/format.ts).
+  define: { __APP_BUILD__: JSON.stringify(new Date().toISOString().slice(0, 10)) },
   plugins: [prerender(), serviceWorker(), pagesLikePreview()],
   build: {
     target: 'es2022',

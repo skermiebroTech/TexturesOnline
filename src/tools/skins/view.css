@@ -333,6 +333,10 @@
   opacity: 0.6;
   pointer-events: none;
 }
+.sk-open-project {
+  align-self: center;
+  margin-top: -4px;
+}
 .sk-user-row {
   display: flex;
   gap: 8px;

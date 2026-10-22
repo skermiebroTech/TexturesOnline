@@ -29,6 +29,8 @@ import { pt } from './i18n/text';
 import { t } from '../i18n/text';
 import { it } from '../i18n/import';
 import { fmt } from '../../../i18n/editor-text';
+import { projectsText } from '../../../shared/i18n/projects';
+import { saveProjectFile } from '../../../shared/project-file/entry';
 
 type Pane = 'options' | 'files' | 'pack';
 
@@ -278,6 +280,8 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
   const redoBtn = iconButton('redo', pt.redo, () => redo());
   const keysBtn = iconButton('keyboard', pt.shortcuts, () => showShortcuts());
   keysBtn.classList.add('sh-keys-btn');
+  // the project (an imported pack with its files and edits) as a .tpmproject file
+  const fileBtn = iconButton('save', projectsText.save, () => void saveProjectFile({ id: project.id, flush: () => { scheduleSave.flush(); return saveNow(); } }), { class: 'sh-file-btn' });
   const exportBtn = button({ label: pt.export, icon: 'download', variant: 'primary', class: 'sh-bar-export', onClick: () => doExport() });
   tooltip(exportBtn, fmt(pt.exportTip, { file: exportFileName(project) }));
   const back = h('a', { class: 'btn btn-ghost btn-sm sh-back', href: href('/shaders'), 'aria-label': pt.allProjects }, icon('arrow-left'), h('span', { class: 'btn-label' }, pt.back));
@@ -309,7 +313,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
     ),
     saveEl,
     paneTabs,
-    h('div', { class: 'sh-bar-actions' }, ...(isIris ? [undoBtn, redoBtn] : []), keysBtn, exportBtn),
+    h('div', { class: 'sh-bar-actions' }, ...(isIris ? [undoBtn, redoBtn] : []), keysBtn, fileBtn, exportBtn),
   );
 
   // ------------------------------------------------------------------ side panel (pack info, changes, export)

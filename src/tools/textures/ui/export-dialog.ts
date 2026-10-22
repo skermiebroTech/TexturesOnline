@@ -21,6 +21,8 @@ import { matchingPreset } from './effects-panel';
 import { fmt, fmtNodes } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
 import { versionLabel } from './start-screen';
+import { projectsText } from '../../../shared/i18n/projects';
+import { saveProjectFile } from '../../../shared/project-file/entry';
 
 /**
  * export.ts yields with scheduler.yield(), and Chrome runs those continuations ahead of every other
@@ -124,6 +126,8 @@ export function openExportDialog(store: TexStore): void {
     }
     body.replaceChildren(packHead(), h('div', { class: 'tx-exp-rows' }, rows), ...notes);
     footer.replaceChildren(
+      // the whole project as a .tpmproject file (to keep editing it), next to the pack for the game
+      button({ label: projectsText.save, icon: 'save', variant: 'ghost', class: 'tx-exp-file-btn', title: projectsText.saveTip, onClick: () => void saveProjectFile({ id: project.id, flush: () => store.flush() }) }),
       button({ label: te.export.cancel, variant: 'secondary', onClick: () => modal.close() }),
       button({ label: fmt(te.export.exportButton, { ext: java ? '.zip' : '.mcpack' }), icon: 'download', variant: 'primary', onClick: () => void run() }),
     );

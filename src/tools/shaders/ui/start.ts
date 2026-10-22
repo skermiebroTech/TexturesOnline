@@ -23,6 +23,9 @@ import bedrockShowcase from './showcase/bedrock-vibrant.webp';
 import { t as tx } from '../i18n/text';
 import { kit } from '../../../ui/i18n/kit';
 import { fmt, fmtNodes } from '../../../i18n/editor-text';
+import { projectsText } from '../../../shared/i18n/projects';
+import { onProjectsChanged } from '../../../shared/project-file/handoff';
+import { saveProjectFile } from '../../../shared/project-file/entry';
 
 /** Pictures rendered with the live preview (tests/harness/shaders-view/render-showcase.cjs). */
 const SHOWCASE: Record<ShaderTarget, string> = {
@@ -146,6 +149,7 @@ export function mountStart(root: HTMLElement): () => void {
         { label: tx.recent.open, icon: 'arrow-right', onClick: () => navigate(`/shaders/${p.id}`) },
         { label: tx.recent.rename, icon: 'pencil', onClick: () => void rename(p) },
         { label: tx.recent.duplicate, icon: 'copy', onClick: () => void duplicate(p) },
+        { label: projectsText.save, icon: 'save', onClick: () => void saveProjectFile({ id: p.id }) },
         { label: tx.recent.delete, icon: 'trash', danger: true, onClick: () => void remove(p) },
       ]);
     }, { size: 'sm' });
@@ -252,10 +256,12 @@ export function mountStart(root: HTMLElement): () => void {
   root.appendChild(page);
   void renderRecent();
   const stopDrop = enablePageDrop(root);
+  const offProjects = onProjectsChanged(() => void renderRecent());
 
   return () => {
     destroyed = true;
     stopDrop();
+    offProjects();
     for (const u of urls.splice(0)) URL.revokeObjectURL(u);
   };
 }

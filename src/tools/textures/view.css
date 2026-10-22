@@ -204,6 +204,14 @@
 .tx-open-dz {
   min-height: 176px;
 }
+.tx-open-project {
+  display: flex;
+  margin: 12px auto 0;
+}
+/* "Save project file" in the export dialog (the bar's button is hidden on phones) */
+.tx-export-foot .tx-exp-file-btn {
+  margin-right: auto;
+}
 .tx-open-dz.is-busy {
   pointer-events: none;
   opacity: 0.4;
@@ -2886,7 +2894,8 @@
     display: none;
   }
   .tx-bar-actions .toolbar-sep,
-  .tx-bar-actions .tx-keys-btn {
+  .tx-bar-actions .tx-keys-btn,
+  .tx-bar-actions .tx-file-btn {
     display: none;
   }
   .tx-export-btn {

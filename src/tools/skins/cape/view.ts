@@ -52,7 +52,11 @@ import {
   type CapeDesignId,
   type CapeRegion,
 } from './cape';
-import { readSavedCape, writeSavedCape } from './store';
+import { CAPE_PREFS_KEY, readSavedCape, writeSavedCape } from './store';
+import { projectsText } from '../../../shared/i18n/projects';
+import { registerOpener, takePending } from '../../../shared/project-file/handoff';
+import { pickProjectFile, saveProjectFile } from '../../../shared/project-file/entry';
+import type { ProjectItem } from '../../../shared/project-file/format';
 
 const packBuilder = () => import('./pack');
 
@@ -91,7 +95,7 @@ interface Prefs {
   packVersion?: [number, number, number];
 }
 
-const PREFS_KEY = 'to-cape-maker-prefs';
+const PREFS_KEY = CAPE_PREFS_KEY;
 const DEFAULT_PREFS: Prefs = {
   wear: 'cape',
   animation: 'idle',
@@ -402,6 +406,9 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   });
   const packNote = h('p', { class: 'sk-note cm-pack-note' });
   const packBtn = button({ label: t.download.downloadPack, icon: 'package', variant: 'secondary', class: 'cm-pack-btn', onClick: () => void downloadPack() });
+  // The cape as a .tpmproject file (with its pack settings), and opening one
+  const fileBtn = button({ label: projectsText.save, icon: 'save', variant: 'secondary', class: 'cm-file-btn pf-wrap-btn', onClick: () => void saveCapeFile() });
+  const openFileBtn = button({ label: projectsText.open, icon: 'archive', variant: 'ghost', class: 'cm-open-file-btn pf-wrap-btn', onClick: () => pickProjectFile() });
   const versionWrap = h('div', { class: 'cm-version' }, vPicker);
   const downloadCard = h(
     'section',
@@ -424,6 +431,12 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
         packNote,
         packBtn,
       ),
+    ),
+    h(
+      'div',
+      { class: 'cm-download-file' },
+      h('div', { class: 'cm-download-head cm-download-file-text' }, h('span', { class: 'sk-import-icon' }, icon('archive')), h('div', null, h('h3', null, projectsText.fileTitle), h('p', { class: 'muted small' }, projectsText.saveTip))),
+      h('div', { class: 'cm-download-file-actions' }, fileBtn, openFileBtn),
     ),
   );
 
@@ -860,6 +873,59 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       syncPackUi();
     }
   }
+
+  // =============================================================================================
+  // Project files
+
+  async function saveCapeFile(): Promise<boolean> {
+    const [{ encodePng }, { capeItem }] = await Promise.all([loadImageCodecs(), import('../../../shared/project-file/records')]);
+    const { wear, edition, javaVersion, uuids, packVersion } = prefs;
+    const item = capeItem({ png: encodePng(pc.getImage()), name: capeName, t: Date.now() }, { wear, edition, javaVersion, uuids, packVersion });
+    return !!item && (await saveProjectFile({ tool: 'cape', item }));
+  }
+
+  /** A cape from a project file: asks first when it would replace a cape of the user's. */
+  async function openCapeItem(item: ProjectItem): Promise<void> {
+    const ui = await import('../../../shared/project-file/ui');
+    let img: ImageData;
+    let cape: Awaited<ReturnType<typeof ui.readCapeItem>>;
+    try {
+      cape = await ui.readCapeItem(item);
+      img = normalizeCapeImage(await decodeImage(cape.png, 'png')).image;
+    } catch {
+      toast(t.designs.unreadable, { tone: 'error' });
+      return;
+    }
+    if (destroyed) return;
+    const now = pc.getImage();
+    const same = (a: ImageData, b: ImageData) => a.data.length === b.data.length && a.data.every((v, i) => v === b.data[i]);
+    if (!isBlankCape(now) && !same(now, createCapeDesign('plain')) && !same(now, img)) {
+      if (!(await ui.confirmReplaceCape(cape.name, () => saveCapeFile())) || destroyed) return;
+    }
+    applyOp(fmt(t.designs.opened, { file: cape.name }), () => img);
+    nameInput.value = cape.name.slice(0, 40);
+    nameChanged();
+    const st = cape.settings;
+    if (st.wear && st.wear !== prefs.wear) {
+      set('wear', st.wear);
+      wearSeg.setValue(st.wear);
+      pushCape();
+    }
+    if (st.edition) {
+      set('edition', st.edition);
+      editionSeg.setValue(st.edition);
+    }
+    if (st.javaVersion) {
+      set('javaVersion', st.javaVersion);
+      vPicker.setValue('java', st.javaVersion);
+    }
+    set('uuids', st.uuids);
+    set('packVersion', st.packVersion);
+    syncPackUi();
+  }
+  disposers.push(registerOpener('cape', openCapeItem));
+  const pendingCape = takePending('cape');
+  if (pendingCape) void openCapeItem(pendingCape);
 
   // ---- keyboard: Ctrl+S saves (the canvas has its own tool keys)
   const onKey = (e: KeyboardEvent) => {

@@ -1,0 +1,14 @@
+/* "Open a project file" (./entry.ts) and the tools' "Save project file" buttons: a long translation
+   wraps instead of widening the card on a phone. */
+.pf-open-btn,
+.pf-wrap-btn {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--btn-h);
+  white-space: normal;
+  text-align: center;
+}
+.pf-open-btn > .icon,
+.pf-wrap-btn > .icon {
+  flex: none;
+}
