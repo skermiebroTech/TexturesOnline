@@ -1,7 +1,8 @@
 // The texture pack maker in German, Japanese, Spanish, Portuguese and Russian, in Chromium. Each language
 // starts a pack and goes through the library (blocks, all textures, mobs, sounds), the pixel editor,
 // the effects, painting on the 3D model, a mob, the sound editor, the GUI section (library, preview
-// screens, splash texts), the model editor, the pack settings, the keyboard shortcuts and the export
+// screens, splash texts), the model editor, the PvP tab, the Material tab (quick materials, a part,
+// "Use on similar textures"), the pack settings, the keyboard shortcuts and the export
 // dialog. Every state is checked for English left in
 // the visible text and labels, for content wider than the screen or clipped labels, and for console
 // errors, at 1280 and 390 px wide in the dark and the light theme.
@@ -400,6 +401,25 @@ try {
           await inspect(page, `tex-${L}-17c-pvp-on`, lang, { wait: 400 });
           await page.evaluate(() => document.querySelector('.pvp-tweak[data-tweak="crosshair"]')?.scrollIntoView({ block: 'start' }));
           await inspect(page, `tex-${L}-17d-pvp-crosshair`, lang);
+
+          // ------------------------------------------------ Material tab: quick materials, a part, similar textures
+          await page.evaluate(() => window.__tx.open('assets/minecraft/textures/block/diamond_ore.png'));
+          await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('/diamond_ore.png'), null, { timeout: 30000 });
+          await show(page, phone, 'material');
+          await page.waitForSelector('.pbr-presets', { state: 'visible', timeout: 60000 });
+          await inspect(page, `tex-${L}-17e-material`, lang, { wait: 600 });
+          await page.click('.pbr-preset[data-preset="glowSpots"]');
+          await page.click('.pbr-part[data-part="0"]');
+          await page.selectOption('.pbr-where .pbr-kind select', 'colour');
+          await page.evaluate(() => document.querySelector('.pbr-where')?.scrollIntoView({ block: 'start' }));
+          await inspect(page, `tex-${L}-17f-material-part`, lang, { wait: 400 });
+          await page.evaluate(() => document.querySelector('.pbr-actions')?.scrollIntoView({ block: 'end' }));
+          await inspect(page, `tex-${L}-17g-material-bumps`, lang);
+          await page.click('.pbr-similar-btn');
+          await page.waitForSelector('.pbr-sim-modal .pbr-sim-row');
+          await page.click('.pbr-sim-row[data-kind="suffix"] .switch');
+          await inspect(page, `tex-${L}-17h-material-similar`, lang);
+          await closeDialog(page);
 
           // ------------------------------------------------ pack settings
           await show(page, phone, 'pack');

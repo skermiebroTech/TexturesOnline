@@ -159,6 +159,69 @@ export interface TexturePackProject extends ProjectBase {
   customModels?: Record<string, CustomModel>;
   /** PvP / FPS tweaks switched on in the editor, with what each one changed (to put it back) */
   pvp?: PvpState;
+  /**
+   * PBR materials made in the Material tab, by the pack path of the colour texture they belong to.
+   * Their maps (Java labPBR _n / _s, Bedrock texture sets) are made from these on export.
+   */
+  pbr?: Record<string, PbrMaterial>;
+}
+
+/** Metal, glow (emissive), roughness and light through (subsurface), 0-255 each (Bedrock's MERS order). */
+export type PbrValues = [number, number, number, number];
+
+/** Which pixels of a texture a part of a material covers (src/tools/textures/pbr). */
+export type PbrWhere =
+  /** Pixels at least this colourful / bright, or at most this bright (0-100) */
+  | { kind: 'colourful' | 'bright' | 'dark'; amount: number }
+  /** Pixels close to one of these colours (0xRRGGBB), within `tolerance` (0-100) */
+  | { kind: 'colour'; colours: number[]; tolerance: number }
+  /** A rectangle [x, y, w, h] of a texture that was `size` [w, h] big (scaled with the texture) */
+  | { kind: 'area'; rect: [number, number, number, number]; size: [number, number] };
+
+/** A part of a texture with its own material values. */
+export interface PbrSpot {
+  where: PbrWhere;
+  values: PbrValues;
+}
+
+/** Bumps made from the colour texture: the brightness is the height. */
+export interface PbrBumps {
+  /** 0-3 (1 = normal) */
+  strength: number;
+  /** Dark parts stick out instead of bright ones */
+  invert: boolean;
+  /** Smoothing radius in pixels, 0-3 */
+  blur: number;
+}
+
+/** A map image of an opened pack or of the game (PNG or TGA bytes) and how its channels are laid out. */
+export interface PbrMapImage {
+  image: Blob;
+  /**
+   * 'mers' / 'mer': Bedrock RGBA = metal, emissive, roughness, subsurface (MER: no subsurface);
+   * 'specular': labPBR _s; 'normal': Bedrock RGB normal (DirectX); 'heightmap': Bedrock grey height;
+   * 'labpbr': labPBR _n (RG normal (DirectX), B ambient occlusion, A height)
+   */
+  layout: 'mers' | 'mer' | 'specular' | 'normal' | 'heightmap' | 'labpbr';
+}
+
+/** The PBR material of one texture: how it shines, glows and how bumpy it looks. */
+export interface PbrMaterial {
+  /** Values of the whole texture (when there is no `map`) */
+  base: PbrValues;
+  /** Parts with their own values, painted over the base in order */
+  spots: PbrSpot[];
+  /** Bumps made from the colours (null: flat, or the pack's own `normal`) */
+  bumps: PbrBumps | null;
+  /** Per-pixel metal / glow / roughness / subsurface from a pack or the game (instead of `base`) */
+  map?: PbrMapImage;
+  /** The pack's own normal or height map (used while `bumps` is null) */
+  normal?: PbrMapImage;
+  /** Quick material last chosen (the Material tab's highlight) */
+  preset?: string;
+  /** Files of an opened pack (pack path -> file), exported as they were until the material changes */
+  original?: Record<string, Blob>;
+  updatedAt: number;
 }
 
 /** The PvP tweaks of a texture pack (src/tools/textures/pvp). */

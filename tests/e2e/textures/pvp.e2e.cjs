@@ -291,7 +291,7 @@ const loadedPvp = (page) =>
       check('390 px: a new PvP pack opens on the PvP tab', (await pp.getAttribute('.tx-editor', 'data-mobile')) === 'pvp');
       check('390 px: PvP panel without sideways scrolling', await noSideScroll(pp));
       const clipped = await pp.$$eval('.tx-tabbar-btn span', (els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
-      check('390 px: the six tab bar labels fit', clipped.length === 0, clipped.join(', '));
+      check('390 px: the tab bar labels fit', clipped.length === 0, clipped.join(', '));
       await shot(pp, 'pvp-263-390-light');
       await pp.emulateMedia({ colorScheme: 'dark' });
       await pp.waitForTimeout(200);

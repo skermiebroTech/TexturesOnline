@@ -10,6 +10,7 @@ import { UI_PT_BR } from './ui';
 import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from '../../tools/guides/skin-pack-files';
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
+import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2120,6 +2121,155 @@ const pvpPack: GuideText = {
   ctaLabel: 'Fazer um pack de PvP',
 };
 
+const PBR_STEPS: Child[] = [
+  ['Abra o ', link('/textures', 'Texture Pack Maker'), ' e crie um pack para Java ou Bedrock, ou abra um que você já tem.'],
+  'Escolha uma textura de bloco ou de item, por exemplo o minério de diamante, e abra a aba Material, ao lado de Prévia.',
+  ['Escolha um material rápido como ', strong('Metal'), ', ', strong('Vidro'), ' ou ', strong('Pontos luminosos'), '. O bloco 3D iluminado mostra o material sob um sol que se move.'],
+  ['Ajuste ', strong('Brilho'), ', ', strong('Metal'), ', ', strong('Luz própria'), ' e ', strong('Luz através'), ' para a textura inteira, ou adicione uma parte (pixels coloridos, claros ou escuros, algumas cores ou uma área que você seleciona) com valores próprios.'],
+  ['Ligue ', strong('Relevo a partir das cores'), ' e escolha a força; depois use ', strong('Usar em texturas parecidas'), ' para dar o mesmo material a todos os minérios, tábuas ou troncos.'],
+  ['Clique em ', strong('Exportar'), '. O Java recebe ', code('_n.png'), ' e ', code('_s.png'), ' ao lado de cada textura; o Bedrock, conjuntos de texturas e a capacidade ', code('pbr'), '.'],
+];
+
+const pbrPack: GuideText = {
+  intro: [
+    p(
+      'Um texture pack PBR dá aos blocos mais do que cores: quanto eles brilham, que partes são de metal, quais emitem luz e quanto relevo eles mostram na luz. Os Visuais Vibrantes do Minecraft Bedrock leem esses mapas de conjuntos de texturas, e no Java os shaders PBR para Iris e OptiFine os leem no formato labPBR. O ',
+      link('/textures', 'Texture Pack Maker'),
+      ' cria os dois no seu navegador a partir das suas texturas, com materiais rápidos como metal, vidro e pontos luminosos de minério.',
+    ),
+  ],
+  quick: {
+    title: 'Resumindo',
+    items: [
+      ['Abra uma textura e a aba ', strong('Material'), '.'],
+      ['Escolha um material rápido e ajuste o brilho, o metal, a luz própria e o relevo no bloco 3D iluminado.'],
+      ['Exporte: o editor grava os arquivos certos para a sua edição ao lado das texturas.'],
+    ],
+  },
+  howto: { name: 'Como fazer um texture pack PBR com o Texture Pack Maker', steps: PBR_STEPS },
+  sections: [
+    {
+      id: 'maps',
+      title: 'O que os mapas fazem',
+      body: [
+        p('Cada pixel de uma textura ganha alguns números a mais. A aba Material os chama pelo que você vê; a tabela mostra onde cada um vai nos arquivos:'),
+        table(
+          ['No editor', 'O que faz', 'Java (labPBR)', 'Bedrock (conjunto de texturas)'],
+          [
+            ['Brilho', 'Superfícies lisas mostram reflexos nítidos; as ásperas ficam foscas.', [code('_s'), ' vermelho: lisura'], ['MER azul: aspereza']],
+            ['Metal', 'Metal reflete o céu na própria cor, como ferro ou ouro.', [code('_s'), ' verde: 230–255'], ['MER vermelho: metalicidade']],
+            ['Luz própria', 'Emite luz, até de noite, como a pedra luminosa ou as gemas dos minérios.', [code('_s'), ' alfa: 0–254'], ['MER verde: emissão']],
+            ['Luz através', 'A luz passa pelas partes finas, como nas folhas.', [code('_s'), ' azul: 65–255'], ['MERS alfa (só Visuais Vibrantes)']],
+            ['Relevo', 'A luz e a sombra mostram saliências e buracos numa face plana.', [code('_n'), ' vermelho e verde, altura no alfa'], ['Um mapa de normais']],
+          ],
+        ),
+        p('Sem material, uma textura fica como sempre. No Java a textura de cor fica onde está e os mapas vão ao lado dela.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Passo a passo',
+      body: [steps(PBR_STEPS)],
+    },
+    {
+      id: 'parts',
+      title: 'Pontos luminosos de minério e outras partes',
+      body: [
+        p(
+          'Uma parte dá valores próprios a alguns pixels. ',
+          strong('Pixels coloridos'),
+          ' encontra as gemas de um minério na pedra cinza, ',
+          strong('Pixels claros'),
+          ' a luz de uma lâmpada, ',
+          strong('Pixels de algumas cores'),
+          ' exatamente as cores em que você clica, e ',
+          strong('Uma área que você seleciona'),
+          ' um retângulo feito com a ferramenta de seleção. Uma imagem pequena mostra quais pixels cada parte cobre.',
+        ),
+        p(
+          strong('Usar em texturas parecidas'),
+          ' copia o material para os outros lados do mesmo bloco e para cada textura cujo nome termina ou começa com a mesma palavra: todas as texturas ',
+          code('*_ore'),
+          ', todas as ',
+          code('oak_*'),
+          ' e assim por diante. Cada uma mantém as próprias cores, então as partes e o relevo seguem os pixels dela.',
+        ),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java: mapas labPBR para shaders',
+      body: [
+        p(
+          'O Java não tem PBR próprio: quem desenha é um shader pack no Iris ou no OptiFine. O editor grava os dois mapas labPBR ao lado de cada textura, por exemplo ',
+          code('assets/minecraft/textures/block/stone_n.png'),
+          ' e ',
+          code('stone_s.png'),
+          ' (',
+          code('textures/blocks/'),
+          ' antes da 1.13), no tamanho com que a textura é exportada. A lisura é perceptual (1 menos a aspereza), o que não é metal recebe um F0 de cerca de 4 %, e um pixel sem luz própria tem alfa 255, para que imagens sem alfa nunca brilhem.',
+        ),
+        p(
+          'Ligue um shader que leia mapas labPBR; nas configurações dele isso costuma se chamar labPBR ou suporte a pacotes de recursos, e o shader decide a força dos reflexos e da luz. Os shaders do ',
+          link('/shaders', 'criador de shaders'),
+          ' deste site ainda não usam esses mapas.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock: conjuntos de texturas para os Visuais Vibrantes',
+      body: [
+        p('O Bedrock lê um conjunto de texturas ao lado da textura de cor. Pontos luminosos e relevo são imagens:'),
+        pre(PBR_TEXTURE_SET.trimEnd()),
+        p('Um valor só para a textura inteira não precisa de imagem:'),
+        pre(PBR_UNIFORM_SET.trimEnd()),
+        p(
+          'A luz através é o quarto canal de ',
+          code('metalness_emissive_roughness_subsurface'),
+          ' (formato 1.21.30, só Visuais Vibrantes) e é gravada como TGA para que o alfa fique como está. Um conjunto de texturas só pode citar imagens do mesmo pack, então o editor também põe a textura de cor, mesmo que você não a tenha pintado. O pack declara a capacidade ',
+          code('pbr'),
+          ', sem a qual os Visuais Vibrantes ficam desligados:',
+        ),
+        pre(PBR_MANIFEST.trimEnd()),
+        p(
+          'O jogo tem conjuntos de texturas próprios para a maioria dos blocos. Com os Visuais Vibrantes, um conjunto do jogo mostraria a textura de cor dele em vez da sua, então cada textura que você muda sem material recebe uma cópia do conjunto do jogo no seu pack. ',
+          link('/guides/bedrock-vibrant-visuals-settings', 'As configurações dos Visuais Vibrantes explicadas'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Abrir um pack com mapas PBR',
+      body: [p('Abra um pack de Java com mapas labPBR ou um de Bedrock com conjuntos de texturas, e os mapas aparecem na aba Material das texturas deles. Eles são exportados exatamente como estavam até você mudar aquele material.')],
+    },
+  ],
+  faq: [
+    {
+      id: 'rtx',
+      q: 'Preciso de uma placa de vídeo RTX?',
+      a: [p('Não. Os Visuais Vibrantes rodam em muitos PCs, consoles e celulares mais novos, e os shaders labPBR rodam na maioria das placas de vídeo que aguentam shaders. O modo de traçado de raios, mais antigo, do Bedrock lê os mesmos conjuntos de texturas, exceto os materiais que deixam a luz passar: esses usam uma camada que só os Visuais Vibrantes leem.')],
+    },
+    {
+      id: 'same',
+      q: 'Por que meu pack fica igual no jogo?',
+      a: [p('Bedrock: coloque o modo gráfico em Visuais Vibrantes e deixe o pack no topo dos recursos globais. Java: ligue um shader com suporte a labPBR e confira a configuração de materiais ou de pacotes de recursos dele. Sem um dos dois, o Minecraft só mostra as cores.')],
+    },
+    {
+      id: 'items',
+      q: 'Os materiais funcionam em itens e mobs?',
+      a: [p('Sim, nos Visuais Vibrantes e na maioria dos shaders labPBR. O editor sempre grava mapas de normais, nunca mapas de altura, porque os Visuais Vibrantes não conseguem usar mapas de altura em itens.')],
+    },
+    {
+      id: 'metal',
+      q: 'Por que o metal deve ser 0 ou 100?',
+      a: [p('Coisas de verdade são de metal ou não, e tanto o labPBR quanto os Visuais Vibrantes tratam cada pixel como uma coisa ou outra. Valores no meio ficam cinzentos e sem graça. Para uma pedra brilhante, aumente o Brilho e deixe o Metal em 0.')],
+    },
+  ],
+  ctaLabel: 'Abrir o Texture Pack Maker',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2134,4 +2284,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-bedrock-skin-pack': bedrockSkinPack,
   'make-3d-items-texture-pack': make3dItems,
   'make-a-pvp-texture-pack': pvpPack,
+  'make-a-pbr-texture-pack': pbrPack,
 };

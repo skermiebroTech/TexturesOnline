@@ -23,6 +23,7 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | `src/tools/shaders/packedit/i18n/` | `shaders.packedit` | `shaders/view.ts` for an editor route |
 | `src/tools/textures/i18n/` | `textures` (start screen), `textures.effects`, `textures.pack` | `textures/view.ts` |
 | `src/tools/textures/ui/i18n/` | `textures.editor`, `textures.sounds`, `textures.modelRules`, `textures.modelEditor` | `textures/view.ts`, with the editor's code |
+| `src/tools/textures/pbr/i18n/` | `textures.pbr` (the Material tab) | the editor, when the tab first opens |
 | `src/shared/models/i18n/` | `shared.models` (texture roles, block states, mob looks and parts, model notes) | `textures/view.ts`, with the editor's code |
 
 In a folder:

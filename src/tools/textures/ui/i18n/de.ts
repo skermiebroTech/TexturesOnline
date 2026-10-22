@@ -27,6 +27,7 @@ const DE: EditorLanguage = {
     soundsFailed: 'Die Sounds konnten nicht geöffnet werden. Prüf deine Verbindung und versuch es noch einmal.',
     guiFailed: 'Der GUI-Bereich konnte nicht geöffnet werden. Prüf deine Verbindung und versuch es noch einmal.',
     pvpFailed: 'Die PvP-Optionen konnten nicht geöffnet werden. Prüfe deine Verbindung und versuche es noch einmal.',
+    pbrFailed: 'Der Tab „Material“ konnte nicht geöffnet werden. Prüf deine Verbindung und versuch es noch einmal.',
     packName: 'Name des Packs',
     renameHint: 'Pack umbenennen',
     save: {
@@ -53,6 +54,7 @@ const DE: EditorLanguage = {
       texture: 'Textur',
       effects: 'Effekte',
       pvp: 'PvP',
+      material: 'Material',
       pack: 'Pack',
       paint: 'Malen',
       edit: 'Editor',

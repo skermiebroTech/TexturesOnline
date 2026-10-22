@@ -180,5 +180,12 @@ export const META_RU: MetaTranslation = {
       label: 'Как сделать PvP-пак',
       blurb: 'Низкий огонь, прозрачное стекло, маленькие мечи, прицел и FPS-текстуры.',
     },
+    'make-a-pbr-texture-pack': {
+      title: 'Как сделать PBR-текстурпак для Vibrant Visuals и шейдеров',
+      h1: 'Как сделать PBR-текстурпак для Vibrant Visuals и шейдеров',
+      description: 'Сделай PBR-текстурпак для Minecraft бесплатно: блеск, металл, свечение и рельеф как наборы текстур Vibrant Visuals и карты labPBR для Iris и OptiFine.',
+      label: 'Сделать PBR-пак',
+      blurb: 'Блеск, металл, свечение и рельеф для Vibrant Visuals и labPBR-шейдеров.',
+    },
   },
 };

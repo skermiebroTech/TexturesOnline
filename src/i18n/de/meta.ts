@@ -178,5 +178,12 @@ export const META_DE: MetaTranslation = {
       label: 'PvP-Pack erstellen',
       blurb: 'Niedriges Feuer, klares Glas, kleinere Schwerter, Fadenkreuz und FPS-Texturen.',
     },
+    'make-a-pbr-texture-pack': {
+      title: 'PBR-Texture-Pack für Vibrant Visuals und Shader erstellen',
+      h1: 'PBR-Texture-Pack für Vibrant Visuals und Shader erstellen',
+      description: 'Minecraft-PBR-Texture-Pack gratis erstellen: Glanz, Metall, Leuchten und Relief als Texture-Sets für Vibrant Visuals und labPBR-Maps für Iris und OptiFine.',
+      label: 'PBR-Pack erstellen',
+      blurb: 'Glanz, Metall, Leuchten und Relief für Vibrant Visuals und labPBR-Shader.',
+    },
   },
 };

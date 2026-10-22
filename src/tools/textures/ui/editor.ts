@@ -10,7 +10,7 @@ import { badge, button, emptyState, iconButton, segmented, spinner, tabs, toolti
 import { assetLoadingPanel } from '../../../ui/version-picker';
 import { openModal, openShortcutsSheet } from '../../../ui/modal';
 import { toast } from '../../../ui/toast';
-import { getProject } from '../../../core/storage';
+import { getProject, saveProject } from '../../../core/storage';
 import { friendlyError, isAbortError } from '../../../core/net';
 import { navigate, href as routeHref } from '../../../core/router';
 import { isAssetsCached, loadAssets } from '../../../editions/index';
@@ -41,16 +41,17 @@ import type { PvpPanel } from '../pvp/panel';
 import type { CrosshairTarget } from '../pvp/tweaks';
 import type { GuiMode } from '../gui/gui-mode';
 import type { GuiPiece } from '../gui/catalog';
+import type { MaterialPanel } from '../pbr/panel';
 import { kit } from '../../../ui/i18n/kit';
 import { te } from './i18n/editor';
 import { versionLabel } from './start-screen';
 import { PHONE_MQ, TABLET_MQ } from './media';
 
-type Side = 'textures' | 'preview' | 'effects' | 'pvp' | 'pack';
+type Side = 'textures' | 'preview' | 'material' | 'effects' | 'pvp' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'gui' | 'sounds';
 const LIB_KEY = 'to-tex-library-mode';
 const WS_KEY = 'to-tex-workspace';
-type Mobile = 'textures' | 'editor' | 'preview' | 'effects' | 'pvp' | 'pack';
+type Mobile = 'textures' | 'editor' | 'preview' | 'material' | 'effects' | 'pvp' | 'pack';
 
 const PHONE = PHONE_MQ;
 const TABLET = TABLET_MQ;
@@ -107,6 +108,17 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const assets = await loadVanilla(proj, shell, loadingView, controller.signal);
   if (!assets || life.aborted) {
     return () => cleanups.forEach((f) => f());
+  }
+
+  // An opened pack's PBR maps and texture sets belong to their textures' materials (the Material tab).
+  if (hasPackPbr(proj)) {
+    try {
+      const { adoptPackPbr } = await import('../pbr/pack');
+      if ((await adoptPackPbr(proj, assets)) > 0) await saveProject(proj);
+    } catch (err) {
+      console.error(err);
+    }
+    if (life.aborted) return () => cleanups.forEach((f) => f());
   }
 
   // ---------------------------------------------------------------- state + panels
@@ -169,6 +181,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       usedBy.setPath(t && t.key !== ICON_KEY ? t.key : null);
       paint3d.textureChanged();
       guiMode?.textureOpened(t && t.key !== ICON_KEY ? t.key : null);
+      materialPanel?.setTexture(t);
     },
     onHistory: () => paintHistory(),
     onBrowse: () => showMobile('textures', true),
@@ -247,6 +260,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       if (label) label.textContent = ws === '3d' ? te.tabs.texture : te.tabs.preview;
       if (ic) setIcon(ic, ws === '3d' ? 'grid' : 'cube');
     }
+    fitTabbar();
     notifyVisibility();
     if (user && isPhone() && mobile !== 'editor') showMobile('editor');
   }
@@ -488,6 +502,30 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   }
   cleanups.push(() => pvpPanel?.destroy());
 
+  // ---------------------------------------------------------------- Material (PBR, loaded on first use)
+  const materialBody = h('div', { class: 'tx-side-body scroll', dataset: { tab: 'material' }, role: 'tabpanel', 'aria-label': te.tabs.material }, h('div', { class: 'tx-boot' }, spinner(28)));
+  let materialPanel: MaterialPanel | null = null;
+  let materialLoad: Promise<MaterialPanel | null> | null = null;
+  function ensureMaterial(): Promise<MaterialPanel | null> {
+    materialLoad ??= Promise.all([import('../pbr/panel'), import('../pbr/i18n/load').then((m) => m.loadPbrText(textLocale()))])
+      .then(([{ createMaterialPanel }]) => {
+        if (life.aborted) return null;
+        materialPanel = createMaterialPanel({ store, selection: () => canvas.canvas()?.getSelection() ?? null });
+        materialPanel.setTexture(canvas.current());
+        materialBody.replaceChildren(materialPanel.el);
+        notifyVisibility();
+        return materialPanel;
+      })
+      .catch((err) => {
+        materialLoad = null;
+        console.error(err);
+        toast(te.pbrFailed, { tone: 'error' });
+        return null;
+      });
+    return materialLoad;
+  }
+  cleanups.push(() => materialPanel?.destroy());
+
   // ---------------------------------------------------------------- top bar
   const barIcon = h('canvas', { class: 'tx-bar-icon pixelated', width: 32, height: 32 });
   let iconTimer: ReturnType<typeof setTimeout> | null = null;
@@ -645,6 +683,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     tabs: [
       { value: 'textures', label: te.tabs.textures, icon: 'bulletlist' },
       { value: 'preview', label: te.tabs.preview, icon: 'cube' },
+      { value: 'material', label: te.tabs.material, icon: 'diamond-gem' },
       { value: 'effects', label: te.tabs.effects, icon: 'sparkles' },
       { value: 'pvp', label: te.tabs.pvp, icon: 'sword' },
       { value: 'pack', label: te.tabs.pack, icon: 'settings' },
@@ -653,6 +692,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   });
   const bodies: Record<Exclude<Side, 'textures'>, HTMLElement> = {
     preview: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'preview' }, role: 'tabpanel', 'aria-label': te.tabs.preview }, preview.el, guiPreview),
+    material: materialBody,
     effects: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'effects' }, role: 'tabpanel', 'aria-label': te.tabs.effects }, effects.el),
     pvp: pvpBody,
     pack: h('div', { class: 'tx-side-body scroll', dataset: { tab: 'pack' }, role: 'tabpanel', 'aria-label': te.packSettings }, pack.el),
@@ -662,6 +702,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     { v: 'textures', label: te.tabs.textures, ic: 'bulletlist' },
     { v: 'editor', label: te.tabs.paint, ic: 'pencil' },
     { v: 'preview', label: te.tabs.preview, ic: 'cube' },
+    { v: 'material', label: te.tabs.material, ic: 'diamond-gem' },
     { v: 'effects', label: te.tabs.effects, ic: 'sparkles' },
     { v: 'pvp', label: te.tabs.pvp, ic: 'sword' },
     { v: 'pack', label: te.tabs.pack, ic: 'settings' },
@@ -690,6 +731,20 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const splashes = libMode === 'gui' && !!guiMode?.splashesShown();
     if (label) label.textContent = sounds || splashes ? te.tabs.edit : te.tabs.paint;
     if (ic) setIcon(ic, sounds ? 'volume-2' : splashes ? 'notes' : 'pencil');
+    fitTabbar();
+  }
+  /**
+   * Seven names don't fit every phone in every language (Russian at 3x): then only the open tab
+   * shows its name, the others their icon (the names stay for screen readers).
+   */
+  function fitTabbar() {
+    if (!tabbar.isConnected || !isPhone()) {
+      tabbar.classList.remove('is-tight');
+      return;
+    }
+    tabbar.classList.remove('is-tight');
+    const tight = [...tabbar.querySelectorAll<HTMLElement>('.tx-tabbar-btn span:not(.icon)')].some((sp) => sp.scrollWidth > sp.clientWidth + 1);
+    tabbar.classList.toggle('is-tight', tight);
   }
 
   const main = h(
@@ -698,10 +753,16 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     h('div', { class: 'tx-col-left' }, browser.el, modelBrowser.el, guiLeft, soundLeft),
     h('div', { class: 'tx-col-center' }, canvas.el, guiCenter, soundCenter),
     h('div', { class: 'tx-col-tabs' }, sideTabs),
-    h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.effects, bodies.pvp, bodies.pack),
+    h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.material, bodies.effects, bodies.pvp, bodies.pack),
   );
   shell.replaceChildren(bar, main, modelHost, tabbar);
   sizeName();
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => fitTabbar());
+    ro.observe(tabbar);
+    cleanups.push(() => ro.disconnect());
+  }
+  void document.fonts?.ready.then(() => fitTabbar());
   void document.fonts?.ready.then(() => sizeName());
 
   function notifyVisibility() {
@@ -718,6 +779,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       if (pvpPanel) pvpPanel.setVisible(true);
       else void ensurePvp();
     } else pvpPanel?.setVisible(false);
+    if (vis('material')) {
+      if (materialPanel) materialPanel.setVisible(true);
+      else void ensureMaterial();
+    } else materialPanel?.setVisible(false);
   }
 
   function setSide(v: Side) {
@@ -933,6 +998,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       },
       modelEditor: () => modelEditor,
       pvp: () => ensurePvp(),
+      material: () => ensureMaterial(),
+      showSide: (v: Side) => (isPhone() ? showMobile(v as Mobile) : setSide(v)),
       gui: () => ensureGui(),
       guiMode: () => guiMode,
       editModel: (kind: 'block' | 'item', id: string, st: BlockState = {}) => {
@@ -1038,4 +1105,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     void attempt();
     return done;
   }
+}
+
+/** The project still has an opened pack's PBR files among its textures (labPBR maps, texture sets). */
+function hasPackPbr(p: TexturePackProject): boolean {
+  if (p.edition === 'java') return Object.keys(p.overrides).some((k) => /_(n|s)\.png$/.test(k));
+  return Object.keys(p.extraFiles).some((k) => k.startsWith('textures/') && k.endsWith('.texture_set.json'));
 }

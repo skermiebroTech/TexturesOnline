@@ -23,6 +23,7 @@ export const te = defineText('textures.editor', {
   soundsFailed: 'Sounds couldn’t be opened. Check your connection and try again.',
   guiFailed: 'The GUI section couldn’t be opened. Check your connection and try again.',
   pvpFailed: 'The PvP tweaks couldn’t be opened. Check your connection and try again.',
+  pbrFailed: 'The Material tab couldn’t be opened. Check your connection and try again.',
   packName: 'Pack name',
   renameHint: 'Rename your pack',
   save: { saved: 'Saved', saving: 'Saving…', error: 'Not saved — retry', savedHint: 'Every change is saved in this browser' },
@@ -37,7 +38,7 @@ export const te = defineText('textures.editor', {
     text: 'On Bedrock, new block shapes need an add-on and 3D held items need attachable files, which the editor doesn’t make; you can download a model as Bedrock geometry to start from.',
     note: 'Painting textures works as usual. To get Bedrock geometry, make the model in a Java pack here, then use “Download as Bedrock geometry” in the model editor.',
   },
-  tabs: { textures: 'Textures', sounds: 'Sounds', preview: 'Preview', texture: 'Texture', effects: 'Effects', pvp: 'PvP', pack: 'Pack', paint: 'Paint', edit: 'Edit' },
+  tabs: { textures: 'Textures', sounds: 'Sounds', preview: 'Preview', texture: 'Texture', effects: 'Effects', pvp: 'PvP', material: 'Material', pack: 'Pack', paint: 'Paint', edit: 'Edit' },
   packSettings: 'Pack settings',
   sections: 'Editor sections',
   shortcuts: {

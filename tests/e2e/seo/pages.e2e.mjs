@@ -48,6 +48,7 @@ const PAGES = [
   { path: 'guides/make-a-bedrock-skin-pack/', tool: 'help', ready: '.guide-page .guide-tabs' },
   { path: 'guides/make-3d-items-texture-pack/', tool: 'help', ready: '.guide-page .guide-code' },
   { path: 'guides/make-a-pvp-texture-pack/', tool: 'help', ready: '.guide-page .guide-code' },
+  { path: 'guides/make-a-pbr-texture-pack/', tool: 'help', ready: '.guide-page .guide-code' },
 ];
 
 // Translated pages: language folder, html lang, the help link's label and a phrase of the page.
@@ -71,6 +72,7 @@ const LOCALIZED = LANGS.flatMap((l) => [
   { lang: l, path: `${l.code}/guides/make-a-bedrock-skin-pack/`, tool: 'help', ready: '.guide-page .guide-tabs' },
   { lang: l, path: `${l.code}/guides/make-3d-items-texture-pack/`, tool: 'help', ready: '.guide-page .guide-code' },
   { lang: l, path: `${l.code}/guides/make-a-pvp-texture-pack/`, tool: 'help', ready: '.guide-page .guide-code' },
+  { lang: l, path: `${l.code}/guides/make-a-pbr-texture-pack/`, tool: 'help', ready: '.guide-page .guide-code' },
 ]);
 
 let failed = 0;

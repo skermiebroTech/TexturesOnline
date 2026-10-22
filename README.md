@@ -58,6 +58,19 @@ repository keeps its original name, `TexturesOnline`).
   jar only has 1 × 1 stand-ins for the panorama; the real pictures are read from misode/mcmeta's copy of the
   version's assets and cached like other game files. The Pack tab also downloads the pack icon as a 64 × 64
   `server-icon.png` for a Java server (not part of the pack).
+- PBR materials (the Material tab): shine, metal, glow, light through (subsurface) and bumps for the open
+  texture, from quick materials (metal, polished / rough stone, wood, glass, glowing, glowing ore spots, water,
+  leaves and plants) and values for the whole texture or parts of it (colourful, bright or dark pixels, picked
+  colours, an area selected in the pixel editor), with bumps (a normal map with height) made from the colours
+  and "Use on similar textures" (the other sides, every `*_ore`, every `oak_*`...). A lit 3D block with a
+  moving sun and a night view shows the result, or each map on its own. Java exports labPBR 1.3 maps next to
+  the textures (`<name>_n.png`: normal X/Y DirectX, AO, height; `<name>_s.png`: perceptual smoothness, F0 /
+  metal, porosity / subsurface, emission), for PBR shaders in Iris or OptiFine. Bedrock exports
+  `<name>.texture_set.json` (MER `1.16.100`, or MERS `1.21.30` as TGA when light passes through), a normal
+  map, the colour texture the set needs in the same pack, the `pbr` capability (min engine 1.21.120) and,
+  for textures changed without a material, the game's own texture set (from bedrock-samples) so the edit
+  still shows with Vibrant Visuals. Bedrock textures start from the game's material. Opened packs keep
+  their `_n` / `_s` maps and texture sets, shown in the tab and exported unchanged until edited.
 - Sounds: browse the game's sound events by category, play them, and replace any sound with your own file
   (MP3, WAV, OGG, M4A...) or a microphone recording, trimmed on its waveform and levelled. Replacements are
   saved as Ogg Vorbis (Java: `assets/minecraft/sounds/`; Bedrock: `sounds/` plus `sound_definitions.json`
@@ -123,6 +136,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/sounds.e2e.cjs    # sounds: lis
 NODE_PATH=$(npm root -g) node tests/e2e/textures/models.e2e.cjs    # model editor: block and 3D item models, display, export, phone layout
 NODE_PATH=$(npm root -g) node tests/e2e/textures/phone.e2e.cjs     # phones with touch, portrait and landscape: Paint tab, finger painting, pinch, tap targets
 NODE_PATH=$(npm root -g) node tests/e2e/textures/gui.e2e.cjs       # GUI and menus: library, atlas areas, live preview screens, splash texts, exports
+NODE_PATH=$(npm root -g) node tests/e2e/textures/pbr.e2e.cjs       # Material tab (PBR): presets, parts, bumps, lit preview, similar textures, labPBR / texture set exports, opened packs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

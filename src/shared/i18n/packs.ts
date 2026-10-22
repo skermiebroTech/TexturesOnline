@@ -35,7 +35,7 @@ export const packText = defineText('shared.packs', {
     oldRange: 'The pack claimed support for very old versions together with new ones, which new versions reject. Its range now starts at Minecraft 1.20.',
     badIds: "The pack's IDs in manifest.json are missing or invalid, so it got new ones. It will install as a separate pack.",
     noManifest: 'The pack has no manifest.json. A new one will be created when you export.',
-    vibrantVisuals: 'This pack has Vibrant Visuals (PBR) data. It is kept, but exported packs switch Vibrant Visuals off so your texture edits show up.',
+    vibrantVisuals: 'This pack has Vibrant Visuals (PBR) texture sets. They are kept, and in the texture pack maker they open in the Material tab.',
     subpacks: 'This pack has sub-packs (in-game options). Their folders are kept as they are; only the main textures are editable.',
     badPackIcon: "The pack icon (pack_icon.png) isn't a valid PNG, so a new icon will be generated.",
     unrecognisedImages: "{count, plural, one {# texture} other {# textures}} couldn't be recognised as images and will be kept as-is but can't be edited.",
@@ -63,6 +63,7 @@ export const packText = defineText('shared.packs', {
     /** End of a file list: "a.png, b.png, c.png and 4 more" */
     andMore: '{list} and {count} more',
     icon: 'Creating pack icon…',
+    materials: 'Adding materials…',
     packInfo: 'Writing pack info…',
     compressing: 'Compressing…',
     done: 'Done',
@@ -72,6 +73,9 @@ export const packText = defineText('shared.packs', {
     incompatible: "{count, plural, one {Minecraft {versions} will list this pack as made for another version (it can still be turned on after a warning). Very old and very new versions can't share one pack; export a separate pack for that version if you need it.} other {Minecraft {versions} will list this pack as made for another version (it can still be turned on after a warning). Very old and very new versions can't share one pack; export a separate pack for those versions if you need it.}}",
     overlaysInactive: 'Overlay folders only work in Minecraft 1.20.2 and newer, so they are kept as files but not active for this version.',
     iconUnreadable: "The pack icon couldn't be read, so a generated icon was used instead.",
+    /** {files} lists up to three texture names */
+    pbrMissingColour: '{count, plural, one {# material was left out because its texture is in neither the pack nor the game: {files}.} other {# materials were left out because their textures are in neither the pack nor the game: {files}.}}',
+    pbrPlainSets: "{count, plural, one {# changed texture gets a plain material for Vibrant Visuals, because the game's material for it couldn't be loaded.} other {# changed textures get a plain material for Vibrant Visuals, because the game's materials for them couldn't be loaded.}}",
   },
 });
 

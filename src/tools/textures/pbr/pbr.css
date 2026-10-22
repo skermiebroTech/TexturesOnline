@@ -1,0 +1,330 @@
+/* Material tab of the texture pack editor (loaded with ./panel.ts). */
+.pbr {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pbr-title {
+  min-height: 24px;
+}
+.pbr-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.pbr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-3);
+}
+.pbr-empty > .icon {
+  color: var(--tool-accent);
+}
+
+/* ---- the lit preview ---- */
+.pbr-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pbr-hero {
+  position: relative;
+  height: 232px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background:
+    radial-gradient(240px 170px at 50% 55%, var(--tool-accent-soft), transparent 70%),
+    linear-gradient(var(--grid-line) 2px, transparent 2px) 0 0 / 16px 16px,
+    linear-gradient(90deg, var(--grid-line) 2px, transparent 2px) 0 0 / 16px 16px,
+    var(--bg-elev);
+  box-shadow: inset 0 0 0 2px var(--border);
+  transition: background-color var(--dur-2) var(--ease);
+}
+.pbr-hero.is-night {
+  background:
+    radial-gradient(240px 170px at 50% 55%, rgba(80, 110, 200, 0.16), transparent 70%),
+    linear-gradient(rgba(255, 255, 255, 0.04) 2px, transparent 2px) 0 0 / 16px 16px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 2px, transparent 2px) 0 0 / 16px 16px,
+    #0b0f1a;
+}
+.pbr-stage {
+  position: absolute;
+  inset: 0;
+}
+.pbr-view-tag {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 0 8px 2px;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  pointer-events: none;
+}
+.pbr-busy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.pbr-maps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.pbr-map {
+  position: relative;
+  aspect-ratio: 1;
+  max-height: 52px;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  --checker-size: 8px;
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.pbr-map:hover {
+  border-color: var(--border-strong, var(--text-3));
+}
+.pbr-map[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  box-shadow: 0 0 0 2px var(--tool-accent-soft);
+}
+.pbr-map-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pbr-caption {
+  min-height: calc(2 * var(--lh-sm));
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.pbr-light {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.pbr-light .slider {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pbr-light-btns {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+/* ---- quick materials ---- */
+.pbr-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+.pbr-preset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px 8px 4px 4px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  text-align: left;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
+}
+.pbr-preset:hover {
+  border-color: var(--border-strong, var(--text-3));
+  color: var(--text);
+}
+.pbr-preset[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.pbr-swatch {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-xs);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.18);
+}
+.pbr-preset-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---- parts and values ---- */
+.pbr-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pbr-part {
+  min-height: 32px;
+  padding: 0 10px 2px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  cursor: pointer;
+}
+.pbr-part[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.pbr-part-add {
+  min-height: 32px;
+}
+.pbr-where {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.pbr-where .field-label {
+  margin: 0;
+}
+.pbr-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -6px;
+}
+.pbr-colour {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: var(--r-xs);
+  cursor: pointer;
+}
+.pbr-colour[aria-pressed='true'] {
+  border-color: var(--text);
+  box-shadow:
+    0 0 0 2px var(--surface-2),
+    0 0 0 4px var(--tool-accent);
+}
+.pbr-area-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.pbr-where-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pbr-mask-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.pbr-mask-frame {
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px var(--border);
+  --checker-size: 8px;
+}
+.pbr-mask {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pbr-part-remove {
+  --btn-fg: var(--red);
+}
+.pbr-values {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- bumps and actions ---- */
+.pbr-bump-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pbr-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 2px solid var(--border);
+}
+.pbr-files {
+  overflow-wrap: anywhere;
+}
+.pbr-remove-btn {
+  --btn-fg: var(--red);
+}
+
+/* ---- "Use on similar textures" ---- */
+.pbr-sim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pbr-sim-row {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.pbr-sim-row .field-desc {
+  overflow-wrap: anywhere;
+}
+
+/* ---- touch screens: finger-sized targets ---- */
+@media (pointer: coarse) {
+  .pbr-preset,
+  .pbr-part,
+  .pbr-part-add {
+    min-height: 44px;
+  }
+  .pbr-colour {
+    width: 40px;
+    height: 40px;
+  }
+  .pbr-map {
+    max-height: none;
+  }
+  .pbr-light-btns .icon-btn {
+    --ib: 44px;
+  }
+}
+/* phones: the preview is a little lower so the controls show sooner */
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  .pbr-hero {
+    height: 208px;
+  }
+}
