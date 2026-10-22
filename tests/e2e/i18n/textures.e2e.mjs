@@ -1,7 +1,8 @@
 // The texture pack maker in German, Japanese, Spanish, Portuguese and Russian, in Chromium. Each language
 // starts a pack and goes through the library (blocks, all textures, mobs, sounds), the pixel editor,
-// the effects, painting on the 3D model, a mob, the sound editor, the model editor, the pack
-// settings, the keyboard shortcuts and the export dialog. Every state is checked for English left in
+// the effects, painting on the 3D model, a mob, the sound editor, the GUI section (library, preview
+// screens, splash texts), the model editor, the pack settings, the keyboard shortcuts and the export
+// dialog. Every state is checked for English left in
 // the visible text and labels, for content wider than the screen or clipped labels, and for console
 // errors, at 1280 and 390 px wide in the dark and the light theme.
 //
@@ -60,7 +61,7 @@ async function routeSounds(ctx) {
  */
 const GAME_NAMES = [
   '.tx-tile', '.tx-tile-name', '.tx-tile-id', '.tx-mb-tile', '.tx-head-title', '.tx-head-sub', '.tx-usedby-chip', '.tx-pv-texname', '.tx-pv-name', '.tx-pv-sub', '.snd-row',
-  '.me-title-name', '.me-title-sub', '.me-tex-name', '.me-tp-name', '.me-tp-tile', '.tx-rc-name',
+  '.me-title-name', '.me-title-sub', '.me-tex-name', '.me-tp-name', '.me-tp-tile', '.tx-rc-name', '.gui-sp-text',
 ];
 
 function collectTexts(gameNames) {
@@ -348,6 +349,28 @@ try {
           await page.waitForSelector('.menu [role="menuitem"]', { timeout: 5000 }).catch(() => undefined);
           await inspect(page, `tex-${L}-15-sound-replace-menu`, lang);
           await page.keyboard.press('Escape');
+
+          // ------------------------------------------------ GUI and menus: library, preview screens, splash texts
+          if (phone) await show(page, phone, 'textures');
+          await page.locator('.tx-libbar .segmented-item[data-value="gui"]:visible').first().click();
+          await page.waitForSelector('.gui-lib .gui-tile', { timeout: 60000 });
+          await page.waitForFunction(() => window.__tx.canvas.current()?.key.includes('/gui/'), null, { timeout: 60000 }).catch(() => undefined);
+          await inspect(page, `tex-${L}-15b-gui-list`, lang, { wait: 600 });
+          await page.locator('.gui-tile[data-piece="hearts.full"]').click();
+          await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('heart/full.png'), null, { timeout: 60000 });
+          if (phone) await inspect(page, `tex-${L}-15c-gui-paint`, lang);
+          await show(page, phone, 'preview');
+          for (const screen of ['hud', 'inventory', 'title', 'menu', 'glint']) {
+            await page.locator(`.gui-pv-screen[data-screen="${screen}"]:visible`).first().click();
+            await inspect(page, `tex-${L}-15d-gui-${screen}`, lang, { wait: 400 });
+          }
+          if (phone) await show(page, phone, 'textures');
+          await page.locator('.gui-splash-row:visible').click();
+          await page.waitForSelector('.gui-sp .gui-sp-edit', { timeout: 30000 });
+          await inspect(page, `tex-${L}-15e-gui-splashes`, lang);
+          await page.click('.gui-sp-edit');
+          await page.waitForSelector('.gui-sp-row');
+          await inspect(page, `tex-${L}-15f-gui-splashes-edit`, lang);
           if (phone) await show(page, phone, 'textures');
           await page.locator('.tx-libbar .segmented-item[data-value="blocks"]:visible').first().click();
 
