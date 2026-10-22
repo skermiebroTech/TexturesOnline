@@ -28,6 +28,7 @@ export const UI_PT_BR: UiText = {
     merge: 'Juntar packs',
     skins: 'Editor de skins',
     skinpack: 'Criador de pacotes de skins',
+    cape: 'Criador de capas',
     totem: 'Criador de totens',
     shaders: 'Criador de shaders',
     allGuides: 'Todos os guias',

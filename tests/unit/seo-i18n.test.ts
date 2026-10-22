@@ -58,6 +58,7 @@ const REQUIRED_ROUTES = [
   '/merge-texture-packs',
   '/skins',
   '/skin-pack-maker',
+  '/cape-maker',
   '/shaders',
   '/help',
   '/about',

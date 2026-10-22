@@ -1,0 +1,250 @@
+/* Pose maker dialog (ui/pose-studio.ts): the 3D view on the left (top on phones), tabs with poses,
+   part sliders and the scene on the right, and the picture size and Save button at the bottom. */
+
+.modal.sk-pose-modal {
+  --modal-w: 1080px;
+  height: min(800px, calc(100dvh - 48px));
+}
+.sk-pose-modal .modal-header {
+  padding-block: 12px;
+}
+.sk-pose-modal .modal-body {
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+  border-top: 2px solid var(--border);
+}
+.sk-pose-modal .modal-body > * + * {
+  margin-top: 0;
+}
+
+.sk-pose {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ---- stage ---- */
+.sk-pose-stage {
+  position: relative;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 50% 42%, var(--tool-accent-soft), transparent 68%),
+    linear-gradient(var(--grid-line) 2px, transparent 2px) 0 0 / 16px 16px,
+    linear-gradient(90deg, var(--grid-line) 2px, transparent 2px) 0 0 / 16px 16px,
+    var(--bg-elev);
+}
+.sk-pose-stage[data-bg='sky'] {
+  background: linear-gradient(#6fb2ff, #b9dcff);
+}
+.sk-pose-stage[data-bg='night'] {
+  background: #11141c;
+}
+.sk-pose-stage[data-bg='paper'] {
+  background: #eef1f6;
+}
+.sk-pose-stage[data-bg='transparent'] {
+  background: conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0) 0 0 / 16px 16px;
+}
+.sk-pose-view {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---- panel ---- */
+.sk-pose-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 2px solid var(--border);
+  background: var(--surface);
+}
+.sk-pose-tabs.segmented {
+  display: flex;
+  margin: 12px 16px 0;
+}
+.sk-pose-tabs .segmented-item {
+  /* As wide as each label needs (German and Russian tab names are long). */
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: center;
+  gap: 4px;
+  padding-inline: 8px;
+}
+.sk-pose-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px 16px;
+  overscroll-behavior: contain;
+}
+.sk-pose-pane[hidden] {
+  display: none;
+}
+.sk-pose-pane > * + * {
+  margin-top: 12px;
+}
+.sk-pose-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.sk-pose-name {
+  margin: 0;
+  color: var(--text);
+}
+.sk-pose-hint {
+  margin: 0;
+}
+
+/* Preset poses: a stick figure and the name. */
+.sk-pose-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+.sk-pose-preset {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 6px 6px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  text-align: center;
+  transition:
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.sk-pose-preset span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.sk-pose-preset:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.sk-pose-preset[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.sk-pose-icon {
+  width: 44px;
+  height: 52px;
+  color: var(--text-3);
+}
+.sk-pose-preset[aria-pressed='true'] .sk-pose-icon,
+.sk-pose-preset:hover .sk-pose-icon {
+  color: var(--tool-accent);
+}
+
+.sk-pose-parts .sk-chip[aria-checked='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.sk-pose-sliders {
+  display: grid;
+  gap: 12px;
+}
+
+/* Scene */
+.sk-pose-block {
+  display: grid;
+  gap: 8px;
+}
+.sk-pose-block + .sk-pose-block {
+  margin-top: 16px;
+}
+.sk-pose-block .section-title {
+  margin: 0;
+}
+.sk-pose-views .sk-chip[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.sk-pose-bgs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.sk-pose-bg[data-id='transparent'] {
+  background: conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0) 0 0 / 8px 8px;
+}
+.sk-pose-bg[data-id='studio'] {
+  background:
+    radial-gradient(circle at 50% 45%, var(--tool-accent-soft), transparent 70%),
+    var(--bg-elev);
+}
+.sk-pose-nocape a {
+  color: var(--tool-accent);
+}
+
+/* Footer: picture size and Save */
+.sk-pose-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border-top: 2px solid var(--border);
+  background: var(--bg-elev);
+}
+.sk-pose-size {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sk-pose-dims {
+  white-space: nowrap;
+}
+.sk-pose-save {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .sk-pose {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(200px, 42%) minmax(0, 1fr);
+  }
+  .sk-pose-panel {
+    border-left: 0;
+    border-top: 2px solid var(--border);
+  }
+}
+@media (max-width: 560px) {
+  .modal.sk-pose-modal {
+    height: 94dvh;
+    max-height: 94dvh;
+  }
+  .sk-pose-modal .modal-header {
+    padding: 8px 8px 8px 16px;
+  }
+  .sk-pose-tabs.segmented {
+    margin: 8px 12px 0;
+  }
+  .sk-pose-pane {
+    padding: 10px 12px 12px;
+  }
+  .sk-pose-foot {
+    padding-inline: 12px;
+  }
+  .sk-pose-presets {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 6px;
+  }
+}

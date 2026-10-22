@@ -41,6 +41,11 @@ export const META_JA: MetaTranslation = {
       description: 'Minecraftのスキンパックをブラウザで作成。スキンを描くか読み込み、クラシックとスリムを混ぜて、統合版でそのまま開ける.mcpackをダウンロード。無料。',
       label: 'スキンパック作成',
     },
+    '/cape-maker': {
+      title: 'Minecraft マント作成ツール – マントとエリトラを自作',
+      description: '64×32のテンプレートにMinecraftのマントとエリトラを描いて3Dで確認。PNGか、エリトラのテクスチャパックとしてダウンロードできます。無料です。',
+      label: 'マント作成',
+    },
     '/shaders': {
       title: 'マイクラ シェーダー作成｜Iris・OptiFine・MODなし',
       description: 'Iris/OptiFine用シェーダーパック、MODなしで動くJava版バニラシェーダー、統合版のバイブラントビジュアルズ用パックを、プリセットと3Dプレビューで作成。',

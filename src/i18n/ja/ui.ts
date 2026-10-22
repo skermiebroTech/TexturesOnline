@@ -26,6 +26,7 @@ export const UI_JA: UiText = {
     merge: 'パックを結合',
     skins: 'スキンエディター',
     skinpack: 'スキンパック作成',
+    cape: 'マント作成',
     totem: 'トーテム作成',
     shaders: 'シェーダー作成',
     allGuides: 'すべてのガイド',

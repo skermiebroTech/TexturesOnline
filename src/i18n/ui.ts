@@ -35,6 +35,7 @@ export interface UiText {
     merge: string;
     skins: string;
     skinpack: string;
+    cape: string;
     totem: string;
     shaders: string;
     allGuides: string;
@@ -100,6 +101,7 @@ export const UI_EN: UiText = {
     merge: 'Merge packs',
     skins: 'Skin editor',
     skinpack: 'Skin pack maker',
+    cape: 'Cape maker',
     totem: 'Totem maker',
     shaders: 'Shader maker',
     allGuides: 'All guides',

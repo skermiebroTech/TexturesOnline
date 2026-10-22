@@ -29,6 +29,7 @@ export const UI_RU: UiText = {
     merge: 'Объединение паков',
     skins: 'Редактор скинов',
     skinpack: 'Наборы скинов',
+    cape: 'Редактор плащей',
     totem: 'Свой тотем',
     shaders: 'Конструктор шейдеров',
     allGuides: 'Все гайды',

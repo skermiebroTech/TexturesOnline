@@ -142,6 +142,7 @@ export function footer(year: number, locale: Locale = 'en', route = '/'): ElNode
           el('a', { to: '/merge-texture-packs' }, f.merge),
           el('a', { to: '/skins' }, f.skins),
           el('a', { to: '/skin-pack-maker' }, f.skinpack),
+          el('a', { to: '/cape-maker' }, f.cape),
           el('a', { to: '/totem-maker' }, f.totem),
           el('a', { to: '/shaders' }, f.shaders),
         ),

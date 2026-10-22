@@ -41,13 +41,14 @@ function afterFirstPaint(fn: () => void): void {
 }
 
 // The texture, skin and shader start screens get the same introduction as their prerendered pages.
-const INTRO_ROUTES: Record<string, 'textures' | 'converter' | 'merge' | 'totem' | 'skins' | 'skinpack' | 'shaders'> = {
+const INTRO_ROUTES: Record<string, 'textures' | 'converter' | 'merge' | 'totem' | 'skins' | 'skinpack' | 'cape' | 'shaders'> = {
   '/textures': 'textures',
   '/texture-pack-converter': 'converter',
   '/merge-texture-packs': 'merge',
   '/totem-maker': 'totem',
   '/skins': 'skins',
   '/skin-pack-maker': 'skinpack',
+  '/cape-maker': 'cape',
   '/shaders': 'shaders',
 };
 // The introduction module is fetched as soon as such a route is visited (prerendered tool pages

@@ -67,6 +67,7 @@ const guides = () => import('../tools/guides/guides');
 const converter = () => import('../tools/convert/view');
 const merger = () => import('../tools/merge/view');
 const totemMaker = () => import('../tools/totem/view');
+const capeMaker = () => import('../tools/skins/cape/view');
 
 export const ROUTES: RouteDef[] = [
   { pattern: '/', load: () => import('../tools/home/home'), title: HOME_META.title, tool: 'home' },
@@ -78,6 +79,7 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
   { pattern: '/skin-pack-maker', load: skins, title: TOOL_META.skinpack.title, tool: 'skins' },
   { pattern: '/skins/:id', load: skins, title: `Skin editor — ${APP}`, tool: 'skins' },
+  { pattern: '/cape-maker', load: capeMaker, title: TOOL_META.cape.title, tool: 'skins' },
   { pattern: '/shaders', load: shaders, title: TOOL_META.shaders.title, tool: 'shaders' },
   { pattern: '/shaders/:id', load: shaders, title: `Shader maker — ${APP}`, tool: 'shaders' },
   { pattern: '/help', load: () => import('../tools/help/help'), title: HELP_META.title, tool: 'help' },

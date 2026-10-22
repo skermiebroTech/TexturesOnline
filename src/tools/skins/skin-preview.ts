@@ -11,12 +11,27 @@ import { isTypingTarget } from '../../ui/dom';
 import { BOX_FACE_ORDER, texelPlace } from './surface';
 import { faceRect, PARTS, scaleOf, type LayerSelection, type SkinFace, type SkinLayer, type SkinPart } from './templates';
 import { editorText } from './i18n/editor';
+import { POSE_JOINTS, type PoseTransforms } from './pose';
 
 export type SkinAnimation = 'idle' | 'walk' | 'run' | 'fly' | 'none';
 export type SkinPartId = 'head' | 'body' | 'rightArm' | 'leftArm' | 'rightLeg' | 'leftLeg' | 'cape';
 export type SkinSource = HTMLCanvasElement | ImageData;
 /** Camera directions for setView ('left' looks at the player's left side). */
 export type SkinView = 'front' | 'back' | 'left' | 'right' | 'top';
+/** What the player wears on the back when a cape texture is loaded. */
+export type BackEquipment = 'cape' | 'elytra';
+
+/**
+ * A camera place around the player: yaw in degrees (0 = in front, 90 = at the player's left side),
+ * pitch in degrees above (+) or below (-) the player, zoom (1 = the whole player, 2 = twice as close)
+ * and the height the camera looks at (scene units, 0 = the middle of the player, 12 = the head).
+ */
+export interface SkinOrbit {
+  yaw: number;
+  pitch: number;
+  zoom: number;
+  focusY: number;
+}
 
 /** Part ids accepted by setHighlight (optionally suffixed with ':inner' / ':outer'). */
 export const SKIN_PARTS: readonly { id: SkinPartId; label: string }[] = [
@@ -77,8 +92,24 @@ export interface SkinOverlay {
 export interface SkinPreview {
   setSkin(src: SkinSource): void;
   setModel(m: SkinModel): void;
-  setCape(src: SkinSource | null): void;
+  /** A 64x32 cape texture (also the elytra's), worn as a cape (default) or as elytra; null removes it. */
+  setCape(src: SkinSource | null, wear?: BackEquipment): void;
   setAnimation(a: SkinAnimation): void;
+  /** Holds a still pose (from pose.ts) instead of the animation; null goes back to the animation. */
+  setPose(pose: PoseTransforms | null): void;
+  /** Moves the camera (missing fields keep their current value); tweens unless reduced motion or `instant`. */
+  setOrbit(o: Partial<SkinOrbit>, instant?: boolean): void;
+  /** Where the camera is now. */
+  getOrbit(): SkinOrbit;
+  /** Calls `fn` whenever the camera moves (drags, wheel, setOrbit). Returns an unsubscribe function. */
+  onCameraChange(fn: () => void): () => void;
+  /**
+   * Renders the current view at `width` x `height` pixels (same shape as the preview for the same
+   * framing) on a transparent background, into a new 2D canvas. Null when it can't render.
+   */
+  renderImage(width: number, height: number): HTMLCanvasElement | null;
+  /** Largest picture side renderImage() can make on this device. */
+  maxImageSize(): number;
   setLayers(v: { inner: boolean; outer: boolean }): void;
   /** CSS colour, or null for a transparent background */
   setBackground(c: string | null): void;
@@ -247,6 +278,11 @@ class SkinPreviewImpl implements SkinPreview {
 
   // What the caller asked for; paint mode overrides these while it is on.
   private wantAnimation: SkinAnimation = 'idle';
+  private pose: PoseTransforms | null = null;
+  /** The parts are in a pose (so leaving it resets them) */
+  private posed = false;
+  private hasCape = false;
+  private wear: BackEquipment = 'cape';
   private wantAutoRotate = false;
   private wantLayers = { inner: true, outer: true };
 
@@ -501,9 +537,11 @@ class SkinPreviewImpl implements SkinPreview {
     this.requestRender();
   }
 
-  setCape(src: SkinSource | null): void {
+  setCape(src: SkinSource | null, wear: BackEquipment = this.wear): void {
     if (this.destroyed) return;
+    this.wear = wear;
     if (!src) {
+      this.hasCape = false;
       this.viewer.loadCape(null);
       this.applyHighlight();
       this.requestRender();
@@ -511,8 +549,27 @@ class SkinPreviewImpl implements SkinPreview {
     }
     const canvas = this.toCanvas(src, 'cape');
     if (!canvas) return;
+    const player = this.viewer.playerObject;
+    const target = this.viewer.capeCanvas;
+    const map = player.cape.map;
+    if (this.hasCape && map && target.width === canvas.width && target.height === canvas.height) {
+      // Fast path while painting: repaint the texture's canvas instead of making a new texture.
+      const ctx = target.getContext('2d', { willReadFrequently: true });
+      if (ctx) {
+        ctx.clearRect(0, 0, target.width, target.height);
+        ctx.drawImage(canvas, 0, 0);
+        map.needsUpdate = true;
+        if (player.backEquipment !== wear) {
+          player.backEquipment = wear;
+          this.applyHighlight();
+        }
+        this.requestRender();
+        return;
+      }
+    }
     try {
-      this.viewer.loadCape(canvas, { backEquipment: 'cape' });
+      this.viewer.loadCape(canvas, { backEquipment: wear });
+      this.hasCape = true;
       this.syncDimmedMaps();
     } catch (err) {
       console.warn('Skin preview: unsupported cape image', err);
@@ -528,12 +585,48 @@ class SkinPreviewImpl implements SkinPreview {
     this.requestRender();
   }
 
-  /** Paint mode holds a still pose; otherwise the requested animation plays. */
+  /** Paint mode holds a still pose, a pose holds itself; otherwise the requested animation plays. */
   private applyAnimation(): void {
-    const a = this.paint ? 'none' : this.wantAnimation;
+    const posing = !!this.pose && !this.paint;
+    const a = this.paint || posing ? 'none' : this.wantAnimation;
     const make = a === 'none' ? null : ANIMATIONS[a];
-    if (!make && this.viewer.animation === null) return;
-    this.viewer.animation = make ? make() : null;
+    // Changing the animation resets every joint (skinview3d).
+    if (make || this.viewer.animation !== null) this.viewer.animation = make ? make() : null;
+    if (posing) this.applyPose(this.pose!);
+    else if (this.posed) {
+      if (!make) this.resetPose();
+      this.posed = false;
+    }
+  }
+
+  private applyPose(t: PoseTransforms): void {
+    const player = this.viewer.playerObject;
+    const set = (o: THREE.Object3D, tr: { position: [number, number, number]; quaternion: [number, number, number, number] }) => {
+      o.position.set(...tr.position);
+      o.quaternion.set(...tr.quaternion);
+    };
+    for (const j of POSE_JOINTS) set(player.skin[j], t.parts[j]);
+    set(player.cape, t.cape);
+    set(player.elytra, t.elytra);
+    player.elytra.leftWing.rotation.set(t.leftWing.x, t.leftWing.y, t.leftWing.z);
+    player.elytra.updateRightWing();
+    set(player, t.player);
+    this.posed = true;
+  }
+
+  private resetPose(): void {
+    const player = this.viewer.playerObject;
+    player.resetJoints();
+    player.position.set(0, 0, 0);
+    player.rotation.set(0, 0, 0);
+  }
+
+  setPose(pose: PoseTransforms | null): void {
+    if (this.destroyed) return;
+    this.pose = pose;
+    this.applyAnimation();
+    this.updatePaused();
+    this.requestRender();
   }
 
   setLayers(v: { inner: boolean; outer: boolean }): void {
@@ -1247,6 +1340,102 @@ class SkinPreviewImpl implements SkinPreview {
     return shot;
   }
 
+  getOrbit(): SkinOrbit {
+    const cam = this.viewer.camera;
+    const target = this.viewer.controls.target;
+    const s = new THREE.Spherical().setFromVector3(cam.position.clone().sub(target));
+    const home = this.homeDistance || s.radius;
+    return { yaw: (s.theta * 180) / Math.PI, pitch: 90 - (s.phi * 180) / Math.PI, zoom: home / Math.max(1e-3, s.radius), focusY: target.y };
+  }
+
+  setOrbit(o: Partial<SkinOrbit>, instant = false): void {
+    if (this.destroyed) return;
+    this.stopTween();
+    const cam = this.viewer.camera;
+    const controls = this.viewer.controls;
+    const target = controls.target;
+    const wrapper = this.viewer.playerWrapper;
+    const from = this.getOrbit();
+    const to: SkinOrbit = { ...from, ...o };
+    to.pitch = Math.max(-85, Math.min(85, to.pitch));
+    const home = this.homeDistance || cam.position.distanceTo(target);
+    const radiusOf = (zoom: number) => Math.min(controls.maxDistance, Math.max(controls.minDistance, home / Math.max(0.05, zoom)));
+    let dYaw = to.yaw - from.yaw;
+    while (dYaw > 180) dYaw -= 360;
+    while (dYaw < -180) dYaw += 360;
+    const r0 = Math.atan2(Math.sin(wrapper.rotation.y), Math.cos(wrapper.rotation.y));
+    const duration = instant || prefersReducedMotion() ? 0 : 360;
+    const t0 = performance.now();
+    const step = () => {
+      this.tweenRaf = 0;
+      if (this.destroyed) return;
+      const t = duration ? Math.min(1, (performance.now() - t0) / duration) : 1;
+      const k = 1 - Math.pow(1 - t, 3);
+      const yaw = ((from.yaw + dYaw * k) * Math.PI) / 180;
+      const pitch = from.pitch + (to.pitch - from.pitch) * k;
+      const zoom = from.zoom + (to.zoom - from.zoom) * k;
+      target.set(0, Math.max(PIVOT_MIN.y, Math.min(PIVOT_MAX.y, from.focusY + (to.focusY - from.focusY) * k)), 0);
+      const s = new THREE.Spherical(radiusOf(zoom), ((90 - pitch) * Math.PI) / 180, yaw);
+      cam.position.copy(target).add(new THREE.Vector3().setFromSpherical(s));
+      cam.lookAt(target);
+      wrapper.rotation.y = r0 * (1 - k);
+      controls.update();
+      this.requestRender();
+      if (t < 1) this.tweenRaf = requestAnimationFrame(step);
+    };
+    step();
+  }
+
+  onCameraChange(fn: () => void): () => void {
+    const listener = () => fn();
+    this.viewer.controls.addEventListener('change', listener);
+    return () => this.viewer.controls.removeEventListener('change', listener);
+  }
+
+  maxImageSize(): number {
+    const gl = this.viewer.renderer.getContext();
+    const max = Math.min(Number(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)) || 4096, Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 4096);
+    return Math.max(256, Math.min(4096, max));
+  }
+
+  renderImage(width: number, height: number): HTMLCanvasElement | null {
+    if (this.destroyed) return null;
+    const w = Math.max(1, Math.round(width));
+    const hgt = Math.max(1, Math.round(height));
+    const pending = this.pendingSkin;
+    if (pending) {
+      this.pendingSkin = null;
+      this.applySkin(pending);
+    }
+    const viewer = this.viewer;
+    const renderer = viewer.renderer;
+    const prev = { w: viewer.width, h: viewer.height, ratio: renderer.getPixelRatio(), background: viewer.background };
+    // Pictures show the skin, not the paint-mode outline.
+    const outlined = this.overlay?.meshes.filter((m) => m.visible) ?? [];
+    for (const m of outlined) m.visible = false;
+    const out = document.createElement('canvas');
+    out.width = w;
+    out.height = hgt;
+    const ctx = out.getContext('2d');
+    try {
+      viewer.background = null;
+      renderer.setPixelRatio(1);
+      viewer.setSize(w, hgt);
+      viewer.render();
+      // Read the drawing buffer in the same task, before the browser presents (and clears) it.
+      ctx?.drawImage(this.stage.canvas, 0, 0, w, hgt);
+    } finally {
+      viewer.background = prev.background;
+      renderer.setPixelRatio(prev.ratio);
+      viewer.setSize(prev.w, prev.h);
+      this.stage.canvas.style.width = '100%';
+      this.stage.canvas.style.height = '100%';
+      for (const m of outlined) m.visible = true;
+      this.renderNow();
+    }
+    return ctx ? out : null;
+  }
+
   focusPart(part: SkinPartId | null): void {
     if (this.destroyed) return;
     this.stopTween();
@@ -1357,6 +1546,20 @@ class UnavailableSkinPreview implements SkinPreview {
   setModel(): void {}
   setCape(): void {}
   setAnimation(): void {}
+  setPose(): void {}
+  setOrbit(): void {}
+  getOrbit(): SkinOrbit {
+    return { yaw: 0, pitch: 0, zoom: 1, focusY: 0 };
+  }
+  onCameraChange(): () => void {
+    return () => undefined;
+  }
+  renderImage(): HTMLCanvasElement | null {
+    return null;
+  }
+  maxImageSize(): number {
+    return 0;
+  }
   setLayers(): void {}
   setBackground(): void {}
   setHighlight(): void {}

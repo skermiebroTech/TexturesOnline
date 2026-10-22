@@ -28,6 +28,7 @@ export const UI_DE: UiText = {
     merge: 'Packs zusammenführen',
     skins: 'Skin-Editor',
     skinpack: 'Skinpaket-Ersteller',
+    cape: 'Umhang-Ersteller',
     totem: 'Totem-Ersteller',
     shaders: 'Shader-Ersteller',
     allGuides: 'Alle Anleitungen',

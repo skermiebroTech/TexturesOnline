@@ -389,6 +389,21 @@ export const HELP: HelpText = {
       ],
     },
     {
+      id: 'poses',
+      q: 'Kann ich meinen Skin in Pose bringen und ein Bild speichern?',
+      a: [
+        p('Ja. Drück im Skin-Editor unter der 3D-Vorschau auf ', strong('Pose & Bild'), '. Wähl eine von zwölf Posen (Stehen, Gehen, Rennen, Winken, Sitzen, Ducken, Fliegen, T-Pose, Jubel, Dab, Kämpfen, Zeigen) oder öffne ', strong('Anpassen'), ' und beweg Kopf, Körper und jeden Arm und jedes Bein mit Reglern; jedes Teil lässt sich einzeln zurücksetzen. Unter ', strong('Szene'), ' wählst du Kamerawinkel, Zoom, Hintergrund (oder ', strong('Durchsichtig'), ') und einen Umhang oder Elytren aus dem ', link('/cape-maker', 'Umhang-Ersteller'), '. ', strong('Bild speichern'), ' erstellt ein PNG in 1×, 2× oder 4× Größe. Zieh am Modell, um die Kamera zu drehen, und scrolle oder zoome mit zwei Fingern.'),
+      ],
+    },
+    {
+      id: 'capes',
+      q: 'Kann ich einen eigenen Umhang erstellen?',
+      a: [
+        p('Gestalten kannst du ihn im ', link('/cape-maker', 'Umhang-Ersteller'), ': Bemale die 64×32-Umhangtextur mit 3D-Vorschau und lade das PNG herunter. Wo er erscheint, entscheidet das Spiel. Die Java Edition zeigt nur offizielle Umhänge von Mojang, ein eigener Umhang braucht also eine Mod oder einen Client mit eigenem Umhang-Dienst, und nur Spieler mit derselben Mod sehen ihn. In Bedrock sind Umhänge Gegenstände des Charakter-Editors, und Mojangs eigene Paketprüfung meldet einen Umhang in jedem Skinpaket, das nicht von Mojang ist, als Fehler. Deshalb lässt der Skinpaket-Ersteller Umhänge weg.'),
+        p('Ohne Mods klappen die Elytren: Der Umhang-Ersteller lädt auch ein Elytren-Texture-Pack herunter (Java 1.9 und neuer oder Bedrock), das dein Design allen zeigt, die das Pack nutzen. Spieler mit Umhang zeigen stattdessen das Design ihres Umhangs auf den Elytren.'),
+      ],
+    },
+    {
       id: 'upload',
       q: 'Wird irgendetwas hochgeladen?',
       a: [p('Nein. Deine Projekte, Bilder und exportierten Packs verlassen nie dein Gerät. Die App lädt nur herunter: Spieldateien von Mojang, die Versionsliste und Skins, die du per Benutzername suchst.')],
