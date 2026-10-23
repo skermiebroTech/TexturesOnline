@@ -193,5 +193,12 @@ export const META_PT_BR: MetaTranslation = {
       label: 'Renomear itens',
       blurb: 'Dê a um item renomeado uma textura própria, como uma espada chamada “Excalibur”.',
     },
+    'make-animated-textures': {
+      title: 'Como fazer texturas animadas no Minecraft (Java e Bedrock)',
+      h1: 'Fazer texturas animadas',
+      description: 'Anime grátis no navegador qualquer bloco ou item do Minecraft: quadros, tempos em ticks, GIFs, arquivos .png.mcmeta do Java e flipbooks do Bedrock.',
+      label: 'Texturas animadas',
+      blurb: 'Anime qualquer bloco ou item: quadros, ticks, GIFs, .mcmeta e flipbooks.',
+    },
   },
 };

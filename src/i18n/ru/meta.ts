@@ -194,5 +194,12 @@ export const META_RU: MetaTranslation = {
       label: 'Переименовать предметы',
       blurb: 'Своя текстура для переименованного предмета, например меча «Excalibur».',
     },
+    'make-animated-textures': {
+      title: 'Как сделать анимированные текстуры для Minecraft',
+      h1: 'Как сделать анимированные текстуры',
+      description: 'Анимируй бесплатно в браузере любой блок или предмет Minecraft: кадры, тайминг в тактах, импорт GIF, файлы .png.mcmeta для Java и flipbook для Bedrock.',
+      label: 'Анимированные текстуры',
+      blurb: 'Анимируй любой блок или предмет: кадры, такты, GIF, .mcmeta и flipbook.',
+    },
   },
 };

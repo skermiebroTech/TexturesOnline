@@ -33,7 +33,7 @@ export const ALL: AllText = {
     mobs: { title: 'Mobs und Kreaturen', desc: 'Male Mobs auf ihren echten 3D-Modellen neu, Körperteil für Körperteil.' },
     gear: { title: 'Sättel, Rüstung und Verzierungen', desc: 'Sieh Sättel, Pferderüstung, Rüstungssets und Rüstungsverzierungen an dem Mob, der sie trägt.' },
     effects: { title: 'Effekte per Klick', desc: 'Gestalte das ganze Pack auf einmal um: Farbe, Kontrast, Umrisse, Pastell, Retro und mehr.' },
-    animation: { title: 'Animierte Texturen', desc: 'Bearbeite jedes Bild von Wasser, Lava, Feuer oder Portalen und spiel die Animation wie im Spiel ab.' },
+    animation: { title: 'Animierte Texturen', desc: 'Animiere jeden Block und jedes Item: Bilder mit Zwiebelschicht malen, Tempo in Ticks einstellen, GIFs importieren oder speichern.' },
     sounds: { title: 'Sound-Editor', desc: 'Ersetze jeden Spielsound durch eigenes Audio oder eine Aufnahme, dann kürze und passe ihn an.' },
     models: { title: '3D-Items und Blockformen', desc: 'Ändere die Form von Blöcken und Items oder mach aus einem flachen Item ein 3D-Modell.' },
     pvp: { title: 'PvP- und FPS-Packs', desc: 'Niedriges Feuer, klares Glas, eigenes Fadenkreuz, kleinere Schwerter und 8×-Texturen, je ein Schalter.' },

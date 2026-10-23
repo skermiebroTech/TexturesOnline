@@ -192,5 +192,12 @@ export const META_ES: MetaTranslation = {
       label: 'Renombrar objetos',
       blurb: 'Dale a un objeto renombrado su propia textura, como una espada llamada «Excalibur».',
     },
+    'make-animated-textures': {
+      title: 'Cómo hacer texturas animadas en Minecraft (Java y Bedrock)',
+      h1: 'Hacer texturas animadas',
+      description: 'Anima gratis en tu navegador cualquier bloque u objeto de Minecraft: fotogramas, tiempos en ticks, GIF, .png.mcmeta de Java y flipbooks de Bedrock.',
+      label: 'Texturas animadas',
+      blurb: 'Anima cualquier bloque u objeto: fotogramas, ticks, GIF, .mcmeta y flipbooks.',
+    },
   },
 };

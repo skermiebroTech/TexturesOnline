@@ -255,6 +255,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-green',
   }),
   guide({
+    slug: 'make-animated-textures',
+    blurb: 'Animate any block or item: frames, ticks, GIFs, .mcmeta files and flipbooks.',
+    title: 'How to Make Animated Textures in Minecraft (Java & Bedrock)',
+    h1: 'Make animated textures',
+    description:
+      'Animate any Minecraft block or item for free in your browser: frames, timing in ticks, GIF import, Java .png.mcmeta files and Bedrock flipbooks.',
+    label: 'Animated textures',
+    icon: 'play',
+    accent: 'accent-green',
+  }),
+  guide({
     slug: 'install-resource-packs',
     blurb: 'Java resource packs, Bedrock .mcpack files and shader packs, plus fixes.',
     title: 'How to Install a Minecraft Texture Pack (Java & Bedrock)',

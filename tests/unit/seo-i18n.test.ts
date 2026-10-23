@@ -82,6 +82,7 @@ const REQUIRED_ROUTES = [
   '/guides/make-a-pvp-texture-pack',
   '/guides/make-a-pbr-texture-pack',
   '/guides/rename-items-texture-pack',
+  '/guides/make-animated-textures',
 ];
 
 /** A public page that exists only in English, if there is one (every page is translated otherwise). */
