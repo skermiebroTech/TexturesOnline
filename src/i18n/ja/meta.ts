@@ -186,5 +186,12 @@ export const META_JA: MetaTranslation = {
       label: 'PBRパックを作る',
       blurb: 'バイブラントビジュアルとlabPBRシェーダー向けの、つや、金属、発光、でこぼこ。',
     },
+    'rename-items-texture-pack': {
+      title: 'Minecraftでアイテムの名前を変えてテクスチャを変える方法',
+      h1: '名前を変えてアイテムのテクスチャを変える',
+      description: '名前を変えたアイテムの見た目が変わるMinecraftのパックを無料で作れます。Java版1.21.5以降はアイテム定義、それより前はOptiFineのCITを書き出します。',
+      label: '名前でテクスチャを変える',
+      blurb: '「Excalibur」という名前の剣など、名前を変えたアイテムに専用のテクスチャを付けます。',
+    },
   },
 };

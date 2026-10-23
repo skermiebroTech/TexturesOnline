@@ -42,6 +42,10 @@ import type { CrosshairTarget } from '../pvp/tweaks';
 import type { GuiMode } from '../gui/gui-mode';
 import type { GuiPiece } from '../gui/catalog';
 import type { MaterialPanel } from '../pbr/panel';
+import { createNamesStrip } from '../names/strip';
+import { adoptPackNames, hasPackNames, itemBaseModel, variantOfTexture } from '../names/pack';
+import { definitionPath, flatModel } from '../names/names';
+import { prettyJson } from '../models/doc';
 import { kit } from '../../../ui/i18n/kit';
 import { te } from './i18n/editor';
 import { versionLabel } from './start-screen';
@@ -122,6 +126,15 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     }
     if (life.aborted) return () => cleanups.forEach((f) => f());
   }
+  // An opened pack's name-based textures (OptiFine CIT files, 1.21.5+ item definitions) become looks.
+  if (hasPackNames(proj)) {
+    try {
+      if ((await adoptPackNames(proj, assets)) > 0) await saveProject(proj);
+    } catch (err) {
+      console.error(err);
+    }
+    if (life.aborted) return () => cleanups.forEach((f) => f());
+  }
 
   // ---------------------------------------------------------------- state + panels
   const store = new TexStore(proj, assets);
@@ -173,7 +186,17 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const isPhone = () => matchMedia(PHONE).matches;
   const isTablet = () => matchMedia(TABLET).matches && !isPhone();
 
-  const usedBy = createUsedBy({ store, models, onPick: (e) => showEntry(e, 'chip') });
+  const namesStrip = createNamesStrip({
+    store,
+    models,
+    openTexture: (path) => {
+      void canvas.open(path);
+      if (isPhone()) showMobile('editor');
+    },
+    openNames: (path, add) => void openNames({ path, add }),
+    onChange: () => usedBy.refresh(),
+  });
+  const usedBy = createUsedBy({ store, models, onPick: (e) => showEntry(e, 'chip'), extra: namesStrip.el });
   const canvas = createCanvasPanel({
     store,
     belowHeader: usedBy.el,
@@ -181,6 +204,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       preview.setTexture(t);
       browser.setSelected(t && t.key !== ICON_KEY ? t.key : null, true);
       usedBy.setPath(t && t.key !== ICON_KEY ? t.key : null);
+      namesStrip.setPath(t && t.key !== ICON_KEY ? t.key : null);
       paint3d.textureChanged();
       guiMode?.textureOpened(t && t.key !== ICON_KEY ? t.key : null);
       materialPanel?.setTexture(t);
@@ -192,7 +216,14 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     onSettings: () => paint3d.sync(),
     onCanvasHover: (p) => paint3d.canvasHover(p),
     // Phones show the preview on its own tab: its "Edit shape" is in the texture's menu too.
-    menuItems: () => (isPhone() && preview.canEditShape() ? [{ label: te.preview.editShape, icon: 'shapes', onClick: () => preview.editShape() }] : []),
+    menuItems: () => {
+      const cur = canvas.current();
+      return [
+        ...(isPhone() && preview.canEditShape() ? [{ label: te.preview.editShape, icon: 'shapes' as const, onClick: () => preview.editShape() }] : []),
+        // an item's picture (or one of its looks'): textures picked by the item's name
+        ...(cur && cur.key !== ICON_KEY && (cur.entry?.category === 'item' || variantOfTexture(proj, cur.key)) ? [{ label: te.names.menu, icon: 'label' as const, onClick: () => void openNames({ path: cur.key }) }] : []),
+      ];
+    },
   });
   const browser = createBrowser({
     store,
@@ -226,6 +257,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       usedBy.setCurrent(e);
     },
     onEditModel: (e, st) => void openModelEditor(e, st),
+    onNames: (e) => void openNames({ item: e.id, path: canvas.current()?.key ?? '' }),
   });
 
   const paint3d = createPaint3d({ store, canvas, preview });
@@ -600,9 +632,46 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     redoBtn.disabled = modelEditor ? !modelEditor.canRedo() : !canvas.canRedo();
   }
 
+  // ---------------------------------------------------------------- name-based textures (loaded on first use)
+  /** The window of an item's name-based textures: for the item whose picture `path` is (or `item`). */
+  async function openNames(o: { path: string; item?: string; add?: boolean }) {
+    try {
+      const { openNamesDialog } = await import('../names/dialog');
+      if (life.aborted) return;
+      await openNamesDialog({
+        store,
+        models,
+        ...o,
+        openTexture: (path) => {
+          if (libMode === 'sounds' || libMode === 'gui') setLibMode('textures', true);
+          void canvas.open(path, { focus: true });
+          if (isPhone()) showMobile('editor');
+        },
+        editShape: (id) => void openLookShape(id),
+        // the look's texture is gone: show the item's
+        onRemoved: (texture, item) => {
+          if (canvas.current()?.key === texture) void canvas.open(item);
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      toast(te.names.failed, { tone: 'error' });
+    }
+  }
+  /** A look's own 3D shape in the model editor (its model file; "put back" makes it flat again). */
+  async function openLookShape(id: string) {
+    const v = proj.nameVariants?.[id];
+    const lib = models.lib ?? (await models.load());
+    const e = v && lib?.item(v.item);
+    if (!v || !e) return;
+    const label = v.names.map((n) => fmt(te.names.quoted, { name: n })).join(', ') || v.match || id;
+    const base = itemBaseModel(v.item, lib!.javaFiles()?.vanilla(definitionPath(v.item)));
+    await openModelEditor(e, {}, { model: v.model, label, flat: () => prettyJson(flatModel(base, v.texture)) });
+  }
+
   // ---------------------------------------------------------------- model editor (loaded on first use)
   const modelHost = h('div', { class: 'tx-modelhost', hidden: true });
-  async function openModelEditor(e: ModelEntry, st: BlockState) {
+  async function openModelEditor(e: ModelEntry, st: BlockState, look?: { model: string; label: string; flat(): string }) {
     if (modelEditor || modelOpening) return;
     if (proj.edition === 'bedrock') {
       bedrockShapeNote();
@@ -621,6 +690,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         thumbs,
         entry: e,
         state: st,
+        look,
         onClose: () => closeModelEditor(),
         paintTexture: (path) => {
           closeModelEditor();
@@ -1027,6 +1097,8 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         return !!e;
       },
       modelEditor: () => modelEditor,
+      names: (path?: string, add = false) => openNames({ path: path ?? canvas.current()?.key ?? '', add }),
+      lookShape: (id: string) => openLookShape(id),
       pvp: () => ensurePvp(),
       material: () => ensureMaterial(),
       showSide: (v: Side) => (isPhone() ? showMobile(v as Mobile) : setSide(v)),
@@ -1060,6 +1132,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     soundsMode?.destroy();
     guiMode?.destroy();
     usedBy.destroy();
+    namesStrip.destroy();
     paint3d.destroy();
     canvas.destroy();
     preview.destroy();

@@ -11,6 +11,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2268,6 +2269,146 @@ const pbrPack: GuideText = {
   ctaLabel: 'Texture Pack Maker öffnen',
 };
 
+const NAMES_STEPS: Child[] = [
+  ['Öffne den ', link('/textures', 'Texture Pack Maker'), ' und erstelle ein Java-Pack, oder öffne eines, das du schon hast.'],
+  ['Öffne die Textur eines Items, zum Beispiel des Diamantschwerts, und wähl in ihrem Menü (⋮) ', strong('Namenstexturen'), ', oder ', strong('Namen'), ' unter der 3D-Vorschau.'],
+  ['Tipp den Namen ein, zum Beispiel ', strong('Excalibur'), '. Füg weitere Namen hinzu, wenn sie dieselbe Textur nutzen sollen.'],
+  ['Klicke auf ', strong('Erstellen und malen'), '. Die neue Textur beginnt als Kopie der Item-Textur, also mal sie einfach um. Mit ', strong('3D-Form'), ' bekommt sie auch ein eigenes Modell.'],
+  ['Klicke auf ', strong('Exportieren'), ', installier das Pack, benenne das Item am Amboss genau so um und nimm es in die Hand.'],
+];
+
+const renameItems: GuideText = {
+  intro: [
+    p(
+      'In Minecraft kannst du jedes Item am Amboss umbenennen. Ein Ressourcenpaket kann einem umbenannten Item eine eigene Textur geben: Ein Diamantschwert namens „Excalibur“ kann golden glänzen, während alle anderen Diamantschwerter bleiben, wie sie sind. Java 1.21.5 und neuer können das ohne Mods; ältere Versionen brauchen OptiFine oder die Mod CIT Resewn. Der ',
+      link('/textures', 'Texture Pack Maker'),
+      ' schreibt die richtigen Dateien für deine Version.',
+    ),
+  ],
+  quick: {
+    title: 'Die Kurzfassung',
+    items: [
+      ['Öffne die Textur eines Items und wähl ', strong('Namenstexturen'), '.'],
+      ['Tipp den Namen ein und mal die neue Textur.'],
+      ['Exportiere und benenne das Item am Amboss genau so um.'],
+    ],
+  },
+  howto: { name: 'Einem umbenannten Item mit dem Texture Pack Maker eine eigene Textur geben', steps: NAMES_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Schritt für Schritt',
+      body: [steps(NAMES_STEPS)],
+    },
+    {
+      id: 'names',
+      title: 'Wann ein Name passt',
+      body: [
+        ul([
+          ['Der Name muss genau gleich sein, auch Groß- und Kleinschreibung: ', strong('Excalibur'), ' und ', strong('excalibur'), ' sind verschiedene Namen. Füg beide hinzu, wenn beide funktionieren sollen.'],
+          'Mehrere Namen können sich eine Textur teilen, und ein Item kann viele Namenstexturen haben.',
+          'Am Amboss gehen Namen mit bis zu 50 Zeichen, ohne Farbcodes. Ein Name, der mit Befehlen gefärbt oder fett gemacht wurde, passt nicht zu einem einfachen Namen.',
+          'Das Item ändert sich in der Hand, im Inventar, auf dem Boden und in Rahmen. Ein Block, den du aus einem umbenannten Item setzt, sieht aus wie immer.',
+        ]),
+      ],
+    },
+    {
+      id: 'vanilla',
+      title: 'Java 1.21.5 und neuer: ohne Mods',
+      body: [
+        p(
+          'Seit 1.21.5 kann eine Item-Definition (',
+          code('assets/minecraft/items/<item>.json'),
+          ') ein Modell nach dem Namen des Items wählen, mit einem ',
+          code('minecraft:select'),
+          ' auf der Eigenschaft ',
+          code('minecraft:component'),
+          ' und der Komponente ',
+          code('minecraft:custom_name'),
+          '. Alles andere zeigt das normale Modell des Items:',
+        ),
+        pre(NAMES_DEFINITION.trimEnd()),
+        p('Das Modell für den Namen ist das eigene Modell des Items mit dem neuen Bild, deshalb hält man das Schwert weiter wie ein Schwert:'),
+        pre(NAMES_MODEL.trimEnd()),
+        p(
+          'Ändert das Pack diese Item-Definition schon, zum Beispiel mit einem 3D-Modell aus dem Modell-Editor, kommen die Namen davor. Java 1.21.4 hat zwar Item-Definitionen, kann den Namen eines Items aber noch nicht lesen, deshalb bekommt es die OptiFine-Dateien unten. ',
+          link('/guides/make-3d-items-texture-pack', 'So funktionieren Item-Definitionen und 3D-Items'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'optifine',
+      title: 'Vor 1.21.5: OptiFine oder CIT Resewn',
+      body: [
+        p(
+          'Ältere Versionen können eine Textur nicht von selbst nach dem Namen wählen. Die Custom Item Textures (CIT) von OptiFine können es, und die Fabric-Mod CIT Resewn auch. Der Editor schreibt für jede Namenstextur eine ',
+          code('.properties'),
+          '-Datei in ',
+          code('assets/minecraft/optifine/cit/'),
+          ':',
+        ),
+        pre(NAMES_CIT.trimEnd()),
+        p(
+          'Ein einzelner Name wird so geschrieben, wie er ist; mehrere werden zu einer ',
+          code('regex:'),
+          '-Regel. Ab 1.20.5 schreibt der Editor ',
+          code('components.custom_name'),
+          ' statt ',
+          code('nbt.display.Name'),
+          '; beide Mods lesen beides. Eine Textur mit 3D-Form nutzt ',
+          code('model='),
+          ' statt ',
+          code('texture='),
+          '. Reicht der Versionsbereich eines Packs von vor 1.21.5 bis danach, bekommt es beide Arten von Dateien.',
+        ),
+        callout('warn', 'Spieler brauchen die Mod', 'Ohne OptiFine oder CIT Resewn zeigt Minecraft vor 1.21.5 die normale Textur, egal wie das Item heißt.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Ressourcenpakete für Bedrock können nicht ändern, wie ein Item je nach Namen aussieht. Die Item-Namen in Molang (etwa ', code('query.is_item_name_any'), ') sind Item-IDs wie ', code('minecraft:diamond_sword'), ', nicht die Namen, die Spieler am Amboss vergeben. Deshalb bietet der Editor für Bedrock-Packs keine Namenstexturen an.'),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Ein Pack öffnen, das welche hat',
+      body: [
+        p(
+          'Öffne ein Java-Pack, und seine Namenstexturen erscheinen unter der Textur des Items und im Fenster: OptiFine-CIT-Regeln für ein Item mit einem Namen und einer Textur oder einem Modell, und Item-Definitionen ab 1.21.5, die ein Modell nach dem Namen wählen. Regeln, die mehr als den Namen prüfen (Schaden, Verzauberungen, mehrere Items), bleiben unverändert im Pack. Eine Regel mit einem OptiFine-Muster wie ',
+          code('ipattern:*sword*'),
+          ' behält es und funktioniert weiter nur mit OptiFine und CIT Resewn.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-working',
+      q: 'Mein umbenanntes Item sieht noch normal aus. Warum?',
+      a: [p('Prüf, ob der Name genau gleich ist, auch Großbuchstaben und Leerzeichen, ob das Pack aktiv ist und über anderen Packs steht und ob du 1.21.5 oder neuer spielst oder in einer älteren Version OptiFine oder CIT Resewn hast. Auch ein Item, das du vor dem Pack umbenannt hast, funktioniert: Der Name wird jedes Mal geprüft, wenn das Item gezeichnet wird.')],
+    },
+    {
+      id: 'case',
+      q: 'Kann ein Name Groß- und Kleinschreibung ignorieren?',
+      a: [p('In Vanilla-Minecraft nicht: Der Name muss genau passen. Füg jede Schreibweise, die du willst, als eigenen Namen hinzu. OptiFine-Packs können Muster nutzen, die Großbuchstaben ignorieren; geöffnete Packs behalten ihre.')],
+    },
+    {
+      id: 'shape',
+      q: 'Kann ein umbenanntes Item 3D sein?',
+      a: [p('Ja. Klicke bei einer Namenstextur auf 3D-Form, um sie im Modell-Editor zu öffnen, und fang mit einem 3D-Item aus deinem neuen Bild an.')],
+    },
+    {
+      id: 'servers',
+      q: 'Sehen andere Spieler das?',
+      a: [p('Wer dein Pack nutzt, sieht es, auch auf Servern. Der Name selbst gehört zum Item, den sehen also alle; nur für die Textur braucht man das Pack.')],
+    },
+  ],
+  ctaLabel: 'Texture Pack Maker öffnen',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2283,4 +2424,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-3d-items-texture-pack': make3dItems,
   'make-a-pvp-texture-pack': pvpPack,
   'make-a-pbr-texture-pack': pbrPack,
+  'rename-items-texture-pack': renameItems,
 };

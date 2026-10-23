@@ -20,6 +20,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from './model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from './pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from './pbr-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from './names-files';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -179,6 +180,14 @@ const PBR_STEPS: Child[] = [
   ['Fine-tune ', strong('Shine'), ', ', strong('Metal'), ', ', strong('Glow'), ' and ', strong('Light through'), ' for the whole texture, or add a part (colourful, bright or dark pixels, some colours or an area you select) with values of its own.'],
   ['Switch on ', strong('Bumps from the colours'), ' and set the strength, then use ', strong('Use on similar textures'), ' to give every ore, plank or log the same material.'],
   ['Press ', strong('Export'), '. Java gets ', code('_n.png'), ' and ', code('_s.png'), ' next to each texture, Bedrock gets texture sets and the ', code('pbr'), ' capability.'],
+];
+
+const NAMES_STEPS: Child[] = [
+  ['Open the ', link('/textures', 'Texture Pack Maker'), ' and make a Java pack, or open one you have.'],
+  ['Open an item’s texture, for example the diamond sword, and choose ', strong('Name-based textures'), ' in its menu (⋮), or ', strong('Names'), ' under the 3D preview.'],
+  ['Type the name, for example ', strong('Excalibur'), '. Add more names if they should share the texture.'],
+  ['Press ', strong('Create and paint'), '. The new texture starts as a copy of the item’s, so paint over it. ', strong('3D shape'), ' gives it a model of its own too.'],
+  ['Press ', strong('Export'), ', install the pack, rename the item in an anvil to exactly that name, and hold it.'],
 ];
 
 export const GUIDE_CONTENT: Guide[] = [
@@ -2429,6 +2438,140 @@ export const GUIDE_CONTENT: Guide[] = [
     ],
     related: ['bedrock-vibrant-visuals-settings', 'make-a-texture-pack', 'install-resource-packs'],
     cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'diamond-gem' },
+  },
+  // ------------------------------------------------------------ name-based textures
+  {
+    meta: meta('rename-items-texture-pack'),
+    intro: [
+      p(
+        'In Minecraft you can rename any item in an anvil. A resource pack can give a renamed item a texture of its own: a diamond sword named “Excalibur” can shine gold while every other diamond sword stays the same. Java 1.21.5 and newer do this without mods; older versions need OptiFine or the CIT Resewn mod. The ',
+        link('/textures', 'Texture Pack Maker'),
+        ' writes the right files for your version.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['Open an item’s texture and choose ', strong('Name-based textures'), '.'],
+        ['Type the name and paint the new texture.'],
+        ['Export, then rename the item in an anvil to exactly that name.'],
+      ],
+    },
+    howto: { name: 'How to give a renamed item its own texture with Texture Pack Maker', steps: NAMES_STEPS },
+    sections: [
+      {
+        id: 'steps',
+        title: 'Make one step by step',
+        body: [steps(NAMES_STEPS)],
+      },
+      {
+        id: 'names',
+        title: 'How names match',
+        body: [
+          ul([
+            ['The name must be exactly the same, capital letters too: ', strong('Excalibur'), ' and ', strong('excalibur'), ' are different names. Add both if you want both to work.'],
+            'Several names can share one texture, and one item can have many name-based textures.',
+            'An anvil takes names up to 50 characters long, without colour codes. A name given colours or bold with commands doesn’t match a plain name.',
+            'It changes the item in the hand, the inventory, on the ground and in item frames. A block placed from a renamed item looks as usual.',
+          ]),
+        ],
+      },
+      {
+        id: 'vanilla',
+        title: 'Java 1.21.5 and newer: no mods',
+        body: [
+          p(
+            'Since 1.21.5 an item definition (',
+            code('assets/minecraft/items/<item>.json'),
+            ') can pick a model by the item’s name with a ',
+            code('minecraft:select'),
+            ' on the ',
+            code('minecraft:component'),
+            ' property and the ',
+            code('minecraft:custom_name'),
+            ' component. Anything else falls back to the item’s normal model:',
+          ),
+          pre(NAMES_DEFINITION.trimEnd()),
+          p('The named model is the item’s own model with the new picture, so the sword is still held like a sword:'),
+          pre(NAMES_MODEL.trimEnd()),
+          p(
+            'If the pack already changes that item definition, for example with a 3D model made in the model editor, the names go in front of it. Java 1.21.4 has item definitions too, but can’t read an item’s name yet, so it gets the OptiFine files below. ',
+            link('/guides/make-3d-items-texture-pack', 'How item definitions and 3D items work'),
+            '.',
+          ),
+        ],
+      },
+      {
+        id: 'optifine',
+        title: 'Before 1.21.5: OptiFine or CIT Resewn',
+        body: [
+          p(
+            'Older versions can’t pick a texture by name on their own. OptiFine’s Custom Item Textures (CIT) can, and so can the CIT Resewn mod for Fabric. The editor writes one ',
+            code('.properties'),
+            ' file per name-based texture in ',
+            code('assets/minecraft/optifine/cit/'),
+            ':',
+          ),
+          pre(NAMES_CIT.trimEnd()),
+          p(
+            'One name is written as it is; several become a ',
+            code('regex:'),
+            ' rule. From 1.20.5 the editor writes ',
+            code('components.custom_name'),
+            ' instead of ',
+            code('nbt.display.Name'),
+            '; both mods read either. A texture with a 3D shape uses ',
+            code('model='),
+            ' instead of ',
+            code('texture='),
+            '. A pack whose version range reaches from before 1.21.5 to after it gets both kinds of files.',
+          ),
+          callout('warn', 'Players need the mod', 'Without OptiFine or CIT Resewn, Minecraft before 1.21.5 shows the normal texture, whatever the item is called.'),
+        ],
+      },
+      {
+        id: 'bedrock',
+        title: 'Bedrock Edition',
+        body: [
+          p('Bedrock resource packs can’t change how an item looks by its name. The game’s item names in Molang (such as ', code('query.is_item_name_any'), ') are item ids like ', code('minecraft:diamond_sword'), ', not the names players give them in an anvil, so the editor doesn’t offer name-based textures for Bedrock packs.'),
+        ],
+      },
+      {
+        id: 'open',
+        title: 'Open a pack that has them',
+        body: [
+          p(
+            'Open a Java pack and its name-based textures show up under the item’s texture and in the window: OptiFine CIT rules for one item with a name and a texture or model, and 1.21.5+ item definitions that pick a model by name. Rules that check more than the name (damage, enchantments, several items) stay in the pack as they are. A rule with an OptiFine pattern such as ',
+            code('ipattern:*sword*'),
+            ' keeps it, and keeps working only with OptiFine and CIT Resewn.',
+          ),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'not-working',
+        q: 'My renamed item still looks normal. Why?',
+        a: [p('Check that the name is exactly the same, capital letters and spaces too, that the pack is turned on and above other packs, and that you play 1.21.5 or newer, or have OptiFine or CIT Resewn on an older version. An item renamed before you added the pack works too: the name is checked every time the item is drawn.')],
+      },
+      {
+        id: 'case',
+        q: 'Can a name ignore capital letters?',
+        a: [p('Not in vanilla Minecraft: the name must match exactly. Add each spelling you want as its own name. OptiFine packs can use patterns that ignore capitals; opened packs keep theirs.')],
+      },
+      {
+        id: 'shape',
+        q: 'Can a renamed item be 3D?',
+        a: [p('Yes. Press 3D shape on a name-based texture to open the model editor for it, and start from a 3D item made from your new picture.')],
+      },
+      {
+        id: 'servers',
+        q: 'Do other players see it?',
+        a: [p('Players who use your pack see it, on servers too. The name itself is part of the item, so everyone sees the name; only the texture needs the pack.')],
+      },
+    ],
+    related: ['make-3d-items-texture-pack', 'make-a-texture-pack', 'install-resource-packs'],
+    cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'label' },
   },
 ];
 

@@ -186,5 +186,12 @@ export const META_PT_BR: MetaTranslation = {
       label: 'Fazer um pack PBR',
       blurb: 'Brilho, metal, luz própria e relevo para Visuais Vibrantes e shaders labPBR.',
     },
+    'rename-items-texture-pack': {
+      title: 'Como mudar a textura de um item renomeando no Minecraft',
+      h1: 'Renomeie itens para mudar a textura deles',
+      description: 'Crie de graça um pacote de Minecraft em que itens renomeados mudam de visual: definições de item para Java 1.21.5+ e CIT do OptiFine para versões antigas.',
+      label: 'Renomear itens',
+      blurb: 'Dê a um item renomeado uma textura própria, como uma espada chamada “Excalibur”.',
+    },
   },
 };

@@ -1,0 +1,287 @@
+/* Name-based textures window of the texture pack editor (loaded with ./dialog.ts). */
+.nm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.nm-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+}
+.nm-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.nm-head-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.nm-head-name {
+  font-size: var(--fs-lg);
+  line-height: var(--lh-lg);
+  color: var(--text);
+}
+.nm-intro {
+  margin: 0;
+  color: var(--text-2);
+}
+.nm-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  color: var(--text);
+}
+.nm-section .icon {
+  color: var(--tool-accent);
+}
+.nm-exact {
+  margin: 0;
+}
+
+/* ---- an inventory slot, drawn the way the game draws one (the same in both themes) ---- */
+.nm-slot {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  background: #8b8b8b;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+}
+.nm-slot canvas {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+/* ---- a renamed item's tooltip: italic name in the purple frame ---- */
+.nm-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 8px;
+  border: 2px solid #100010;
+  border-radius: 2px;
+  background: rgba(16, 0, 16, 0.94);
+  box-shadow: inset 0 0 0 2px #3a0a8c;
+  color: #ffffff;
+  /* renamed items show their name in italics (the UI font has no italic of its own) */
+  font-style: italic;
+  font-synthesis: style;
+  line-height: var(--lh-sm);
+  overflow-wrap: anywhere;
+  text-shadow: 2px 2px 0 #3f3f3f;
+}
+.nm-tip.is-pattern {
+  font-style: normal;
+  color: #ffff55;
+  text-shadow: 2px 2px 0 #3f3f15;
+}
+.nm-tip-rule {
+  flex: none;
+  color: #aaaaaa;
+  font-size: var(--fs-sm);
+  text-shadow: none;
+}
+
+/* ---- the list ---- */
+.nm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nm-none {
+  padding: 8px 0;
+}
+.nm-look {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-elev);
+}
+.nm-look.is-editing {
+  border-color: var(--tool-accent);
+}
+.nm-look-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.nm-tips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+.nm-badge {
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.nm-actions,
+.nm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.nm-remove {
+  margin-left: auto;
+}
+
+/* ---- adding and changing names ---- */
+.nm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--r-md);
+}
+.nm-form .nm-section {
+  margin: 0;
+}
+.nm-form p {
+  margin: 0;
+}
+.nm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.nm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+}
+.nm-chip-x {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.nm-chip-x:hover,
+.nm-chip-x:focus-visible {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.nm-entry .nm-input {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.nm-msg {
+  min-height: 0;
+  margin: 0;
+  color: var(--text-3);
+}
+.nm-msg:empty {
+  display: none;
+}
+.nm-msg.is-error {
+  color: var(--red);
+}
+.nm-add-btn {
+  align-self: flex-start;
+}
+
+/* ---- the pack's own rules ---- */
+.nm-kept {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nm-kept p {
+  margin: 0;
+}
+.nm-kept-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nm-kept-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .nm-look {
+    padding: 8px;
+    gap: 8px;
+  }
+  .nm-slot {
+    width: 40px;
+    height: 40px;
+  }
+  .nm-slot canvas {
+    width: 24px;
+    height: 24px;
+  }
+  /* the look's picture and names on top, its buttons under them across the whole row */
+  .nm-look {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .nm-look-main {
+    display: contents;
+  }
+  .nm-look > .nm-look-main > :not(.nm-tips) {
+    grid-column: 1 / -1;
+  }
+  .nm-actions .btn {
+    flex: 1 1 auto;
+  }
+  .nm-actions .nm-paint {
+    flex-basis: 100%;
+  }
+  .nm-remove {
+    flex: none;
+    margin-left: 0;
+  }
+}
+@media (pointer: coarse) {
+  .nm-chip-x {
+    width: 40px;
+    height: 40px;
+  }
+}

@@ -28,6 +28,18 @@ const ES: EditorLanguage = {
     guiFailed: 'No se pudo abrir la sección de GUI. Comprueba tu conexión y vuelve a intentarlo.',
     pvpFailed: 'No se pudieron abrir los ajustes PvP. Revisa tu conexión y vuelve a intentarlo.',
     pbrFailed: 'No se pudo abrir la pestaña Material. Revisa tu conexión y vuelve a intentarlo.',
+    names: {
+      menu: 'Texturas por nombre',
+      button: 'Nombres',
+      buttonHint: 'Dale a este objeto otra textura cuando lo renombres en un yunque',
+      label: 'Nombres',
+      lookOf: 'Para {item} con el nombre {names}',
+      quoted: '«{name}»',
+      paintLook: 'Pintar la textura de {name}',
+      manage: 'Editar nombres',
+      add: 'Añadir una textura por nombre',
+      failed: 'No se pudieron abrir las texturas por nombre. Revisa tu conexión y vuelve a intentarlo.',
+    },
     packName: 'Nombre del pack',
     renameHint: 'Renombra tu pack',
     save: {

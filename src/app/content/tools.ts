@@ -83,6 +83,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       'PvP and FPS packs: low fire, clear glass, a custom crosshair, smaller swords and 8× textures in one click',
       'GUI editor: the hotbar, hearts, hunger, armour, the inventory and containers, buttons, menu backgrounds, the title screen panorama, splash texts and the enchantment glint, with a live in-game preview',
       'PBR materials: shine, metal, glow, light through and bumps (normal maps made from the colours) for Bedrock Vibrant Visuals and Java labPBR shaders, with a lit 3D preview',
+      'Name-based textures: a renamed item gets its own texture and model, as item definitions for Java 1.21.5+ (no mods) or OptiFine CIT files for older versions',
       'One-click whole-pack effects such as Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon and Smooth HD',
       'Open an existing .zip or .mcpack pack and keep editing',
       '3D block preview, pack icon, description and Java compatibility range',
@@ -97,6 +98,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       ['PvP and FPS packs: low fire, clear glass, no pumpkin blur, a custom crosshair, smaller swords and a lower shield, plus 8× textures and no animations, each one switch that writes the right files for your version. ', link('/guides/make-a-pvp-texture-pack', 'How to make a PvP pack'), '.'],
       ['Restyle the interface: the hotbar, hearts in every state, hunger, armour, air, the experience bar, the crosshair, the inventory, chests, furnace and crafting table, buttons and menu backgrounds, in the pixel editor, with a live preview of the HUD, the inventory, the title screen with its turning panorama and buttons, and enchanted items. Edit the title screen’s splash texts too. Older Java versions keep the HUD in two big pictures: picking a heart selects just its area.'],
       ['PBR materials: in the Material tab, give a texture a quick material (metal, polished or rough stone, wood, glass, glowing, glowing ore spots, water, leaves) or set its shine, metal, glow and light through for the whole texture or parts of it, with bumps made from its colours, on a lit 3D block under a moving sun. Bedrock gets texture sets for Vibrant Visuals; Java gets labPBR ', code('_n'), ' and ', code('_s'), ' maps for PBR shaders in Iris or OptiFine. ', link('/guides/make-a-pbr-texture-pack', 'How to make a PBR pack'), '.'],
+      ['Name-based textures (Java): give an item its own texture when it is renamed in an anvil, like a diamond sword named “Excalibur”. Type one or more names, paint the new texture from a copy of the item’s and give it a 3D shape if you like. Java 1.21.5 and newer need no mods; older versions get OptiFine CIT files. ', link('/guides/rename-items-texture-pack', 'How to rename items to change their texture'), '.'],
       ['Upload your own PNGs (auto-resized to the texture, 16x up to 512x) and edit animated textures frame by frame.'],
       ['Change sounds: play any game sound, then replace it with your own file or a microphone recording, trimmed on its waveform. Sounds are saved as Ogg Vorbis, the format Minecraft plays.'],
       ['One-click whole-pack effects such as Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon and Smooth HD, stacked without changing your own edits.'],
@@ -169,6 +171,11 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         a: [el('p', null, 'Yes. Open a texture and choose the Material tab: pick a quick material such as metal, glass or glowing ore spots, or set shine, metal, glow and bumps yourself. Bedrock packs get texture sets and keep Vibrant Visuals on; Java packs get labPBR _n and _s maps, which PBR shaders for Iris and OptiFine read.')],
       },
       {
+        id: 'names',
+        q: 'Can a renamed item get its own texture?',
+        a: [el('p', null, 'Yes, in Java packs. Open an item’s texture, choose Name-based textures in its menu (or Names under the preview), type the name and paint the new texture. Minecraft 1.21.5 and newer show it without mods when the item is renamed in an anvil to exactly that name; older versions need OptiFine or the CIT Resewn mod. Bedrock resource packs can’t do this.')],
+      },
+      {
         id: 'devices',
         q: 'Can I make a texture pack on a phone, tablet or Chromebook?',
         a: [el('p', null, 'Yes. The editor runs in any modern browser, with touch painting and zoom, and nothing to install. Bedrock players on phones can open the exported ', code('.mcpack'), ' straight in Minecraft.')],
@@ -213,7 +220,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       },
     ],
     extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
-    guides: ['make-a-texture-pack', 'make-3d-items-texture-pack', 'make-a-pvp-texture-pack', 'make-a-pbr-texture-pack', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs', 'minecraft-pack-format-versions'],
+    guides: ['make-a-texture-pack', 'make-3d-items-texture-pack', 'make-a-pvp-texture-pack', 'make-a-pbr-texture-pack', 'rename-items-texture-pack', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs', 'minecraft-pack-format-versions'],
     cta: 'Start a texture pack',
   },
   converter: {

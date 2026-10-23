@@ -244,6 +244,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-green',
   }),
   guide({
+    slug: 'rename-items-texture-pack',
+    blurb: 'Give a renamed item its own texture, like a sword named “Excalibur”.',
+    title: 'How to Change an Item’s Texture by Renaming It in Minecraft',
+    h1: 'Rename items to change their texture',
+    description:
+      'Make a Minecraft pack where renamed items look different: vanilla item definitions for Java 1.21.5+, OptiFine CIT for older versions, free in your browser.',
+    label: 'Rename items',
+    icon: 'label',
+    accent: 'accent-green',
+  }),
+  guide({
     slug: 'install-resource-packs',
     blurb: 'Java resource packs, Bedrock .mcpack files and shader packs, plus fixes.',
     title: 'How to Install a Minecraft Texture Pack (Java & Bedrock)',

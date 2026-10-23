@@ -11,6 +11,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2261,6 +2262,146 @@ const pbrPack: GuideText = {
   ctaLabel: 'Texture Pack Makerを開く',
 };
 
+const NAMES_STEPS: Child[] = [
+  [link('/textures', 'Texture Pack Maker'), 'を開き、Java版のパックを作るか、手持ちのパックを開きます。'],
+  ['ダイヤモンドの剣など、アイテムのテクスチャを開き、メニュー（⋮）の', strong('名前で変わるテクスチャ'), '、または3Dプレビューの下の', strong('名前'), 'を選びます。'],
+  [strong('Excalibur'), 'などの名前を入力します。同じテクスチャを使う名前がほかにもあれば追加します。'],
+  [strong('作って描く'), 'を押します。新しいテクスチャはアイテムのテクスチャのコピーから始まるので、上から描きます。', strong('3Dの形'), 'で専用のモデルも付けられます。'],
+  [strong('書き出す'), 'を押してパックを入れ、金床でアイテムにまったく同じ名前を付けて持ちます。'],
+];
+
+const renameItems: GuideText = {
+  intro: [
+    p(
+      'Minecraftでは、どのアイテムも金床で名前を変えられます。リソースパックを使うと、名前を変えたアイテムに専用のテクスチャを付けられます。「Excalibur」という名前のダイヤモンドの剣だけが金色に輝き、ほかのダイヤモンドの剣はそのまま、ということができます。Java版1.21.5以降ではMODなしで、それより前のバージョンではOptiFineかCIT Resewn MODが必要です。',
+      link('/textures', 'Texture Pack Maker'),
+      'は、あなたのバージョンに合ったファイルを書き出します。',
+    ),
+  ],
+  quick: {
+    title: '短く言うと',
+    items: [
+      ['アイテムのテクスチャを開いて', strong('名前で変わるテクスチャ'), 'を選びます。'],
+      ['名前を入力して、新しいテクスチャを描きます。'],
+      ['書き出して、金床でアイテムにまったく同じ名前を付けます。'],
+    ],
+  },
+  howto: { name: 'Texture Pack Makerで名前を変えたアイテムに専用のテクスチャを付ける方法', steps: NAMES_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: '手順',
+      body: [steps(NAMES_STEPS)],
+    },
+    {
+      id: 'names',
+      title: '名前が一致する条件',
+      body: [
+        ul([
+          ['名前は大文字と小文字まで完全に同じでなければなりません。', strong('Excalibur'), 'と', strong('excalibur'), 'は別の名前です。両方で使いたいときは両方追加します。'],
+          'いくつかの名前で1つのテクスチャを使えます。1つのアイテムに、名前で変わるテクスチャをいくつも付けられます。',
+          '金床で付けられる名前は50文字までで、色コードは使えません。コマンドで色や太字を付けた名前は、普通の名前とは一致しません。',
+          '変わるのは、手に持ったとき、インベントリ、地面、額縁の中のアイテムです。名前を変えたアイテムから置いたブロックは、いつもどおりの見た目です。',
+        ]),
+      ],
+    },
+    {
+      id: 'vanilla',
+      title: 'Java版1.21.5以降：MOD不要',
+      body: [
+        p(
+          '1.21.5からは、アイテム定義（',
+          code('assets/minecraft/items/<アイテム>.json'),
+          '）が、',
+          code('minecraft:component'),
+          'プロパティと',
+          code('minecraft:custom_name'),
+          'コンポーネントの',
+          code('minecraft:select'),
+          'で、アイテムの名前によってモデルを選べます。それ以外の名前では、アイテムの普通のモデルになります。',
+        ),
+        pre(NAMES_DEFINITION.trimEnd()),
+        p('名前用のモデルは、アイテム自身のモデルに新しい絵を付けたものなので、剣は剣として持たれます。'),
+        pre(NAMES_MODEL.trimEnd()),
+        p(
+          'パックがすでにそのアイテム定義を変えているとき（モデルエディターで作った3Dモデルなど）は、名前の判定がその前に入ります。Java版1.21.4にもアイテム定義はありますが、まだアイテムの名前を読めないので、下のOptiFine用ファイルが入ります。',
+          link('/guides/make-3d-items-texture-pack', 'アイテム定義と3Dアイテムのしくみ'),
+          '。',
+        ),
+      ],
+    },
+    {
+      id: 'optifine',
+      title: '1.21.5より前：OptiFineかCIT Resewn',
+      body: [
+        p(
+          '古いバージョンは、それだけでは名前でテクスチャを選べません。OptiFineのカスタムアイテムテクスチャ（CIT）や、Fabric用のCIT Resewn MODならできます。エディターは、名前で変わるテクスチャごとに',
+          code('.properties'),
+          'ファイルを',
+          code('assets/minecraft/optifine/cit/'),
+          'に書き出します。',
+        ),
+        pre(NAMES_CIT.trimEnd()),
+        p(
+          '名前が1つならそのまま書き、複数なら',
+          code('regex:'),
+          'のルールにします。1.20.5からは',
+          code('nbt.display.Name'),
+          'の代わりに',
+          code('components.custom_name'),
+          'を書きます。どちらのMODも両方読めます。3Dの形があるテクスチャは',
+          code('texture='),
+          'の代わりに',
+          code('model='),
+          'を使います。パックの対応範囲が1.21.5より前から後まであるときは、両方の種類のファイルが入ります。',
+        ),
+        callout('warn', 'プレイヤーにはMODが必要です', 'OptiFineもCIT Resewnもないと、1.21.5より前のMinecraftでは、アイテムの名前に関係なく普通のテクスチャになります。'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: '統合版',
+      body: [
+        p('統合版のリソースパックでは、名前でアイテムの見た目を変えられません。Molangのアイテム名（', code('query.is_item_name_any'), 'など）は', code('minecraft:diamond_sword'), 'のようなIDで、プレイヤーが金床で付ける名前ではありません。そのため、エディターは統合版のパックには名前で変わるテクスチャを用意していません。'),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'すでに入っているパックを開く',
+      body: [
+        p(
+          'Java版のパックを開くと、名前で変わるテクスチャがアイテムのテクスチャの下とウィンドウに表示されます。対象は、1つのアイテムに名前とテクスチャかモデルを付けるOptiFineのCITルールと、名前でモデルを選ぶ1.21.5以降のアイテム定義です。名前以外も調べるルール（耐久値、エンチャント、複数のアイテム）は、パックにそのまま残ります。',
+          code('ipattern:*sword*'),
+          'のようなOptiFineのパターンを使うルールはそのまま残り、OptiFineとCIT Resewnでだけ動きます。',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-working',
+      q: '名前を変えたのに、アイテムが普通のままです。なぜですか？',
+      a: [p('名前が大文字・小文字や空白まで同じか、パックがオンでほかのパックより上にあるか、1.21.5以降で遊んでいるか（古いバージョンならOptiFineかCIT Resewnを入れているか）を確かめてください。パックを入れる前に名前を変えたアイテムでも大丈夫です。名前はアイテムを描くたびに調べられます。')],
+    },
+    {
+      id: 'case',
+      q: '大文字と小文字を区別しないようにできますか？',
+      a: [p('MODなしのMinecraftではできません。名前は完全に一致する必要があります。使いたい書き方をそれぞれ別の名前として追加してください。OptiFineのパックは大文字と小文字を区別しないパターンを使えます。開いたパックのパターンはそのまま残ります。')],
+    },
+    {
+      id: 'shape',
+      q: '名前を変えたアイテムを3Dにできますか？',
+      a: [p('はい。名前で変わるテクスチャの「3Dの形」を押すとモデルエディターで開けるので、新しい絵から作る3Dアイテムで始められます。')],
+    },
+    {
+      id: 'servers',
+      q: 'ほかのプレイヤーにも見えますか？',
+      a: [p('あなたのパックを使っている人には、サーバーでも見えます。名前はアイテムの一部なので全員に見えますが、テクスチャを見るにはパックが必要です。')],
+    },
+  ],
+  ctaLabel: 'Texture Pack Makerを開く',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2276,4 +2417,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-3d-items-texture-pack': make3dItems,
   'make-a-pvp-texture-pack': pvpPack,
   'make-a-pbr-texture-pack': pbrPack,
+  'rename-items-texture-pack': renameItems,
 };

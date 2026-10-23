@@ -39,6 +39,7 @@ export const ALL: AllText = {
     pvp: { title: 'PvP- und FPS-Packs', desc: 'Niedriges Feuer, klares Glas, eigenes Fadenkreuz, kleinere Schwerter und 8×-Texturen, je ein Schalter.' },
     gui: { title: 'GUI und Menüs', desc: 'Schnellleiste, Herzen, Inventar, Knöpfe, Titelbildschirm, Splash-Texte und Glanz, mit Live-Vorschau im Spiel.' },
     pbr: { title: 'PBR-Materialien', desc: 'Glanz, Metall, Leuchten und Relief für Vibrant Visuals in Bedrock und labPBR-Shader in Java, auf einem beleuchteten 3D-Block.' },
+    names: { title: 'Namenstexturen', desc: 'Benenne ein Item am Amboss um, und es bekommt eine eigene Textur – etwa ein Schwert namens „Excalibur“.' },
     openPack: { title: 'Jedes Pack öffnen', desc: 'Fang bei null an oder öffne eine vorhandene .zip oder ein .mcpack und arbeite daran weiter.' },
     versions: { title: `Jede Java-Version von 1.6.1 bis ${LATEST}`, desc: 'Jede Version bekommt ihre eigenen Texturen und das passende Pack-Format.' },
     editions: { title: 'Java und Bedrock', desc: 'Erstelle Packs für beide Editionen und erfahre, worin sie sich unterscheiden.' },

@@ -185,5 +185,12 @@ export const META_ES: MetaTranslation = {
       label: 'Hacer un pack PBR',
       blurb: 'Brillo, metal, luz propia y relieve para Visuales vibrantes y shaders labPBR.',
     },
+    'rename-items-texture-pack': {
+      title: 'Cambiar la textura de un objeto al renombrarlo en Minecraft',
+      h1: 'Renombra objetos para cambiar su textura',
+      description: 'Crea gratis un paquete de Minecraft donde los objetos renombrados cambian: definiciones de objeto para Java 1.21.5+ y CIT de OptiFine para las antiguas.',
+      label: 'Renombrar objetos',
+      blurb: 'Dale a un objeto renombrado su propia textura, como una espada llamada «Excalibur».',
+    },
   },
 };

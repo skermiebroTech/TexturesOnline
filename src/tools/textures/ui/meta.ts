@@ -66,12 +66,13 @@ export function makeEntry(t: TextureInfo, custom = false): TextureEntry {
   return { ...t, custom: custom || undefined, pretty, hay: `${t.id.toLowerCase().replace(/[_/]+/g, ' ')} ${t.name.toLowerCase()}` };
 }
 
-/** Vanilla textures plus the pack's own textures that aren't in this version. */
-export function buildEntries(project: TexturePackProject, assets: AssetIndex, categoryForPath: (p: string, e: Edition) => TextureCategory): TextureEntry[] {
+/** Vanilla textures plus the pack's own textures that aren't in this version (saved or `unsaved`). */
+export function buildEntries(project: TexturePackProject, assets: AssetIndex, categoryForPath: (p: string, e: Edition) => TextureCategory, unsaved: Iterable<string> = []): TextureEntry[] {
   const list: TextureEntry[] = assets.textures.map((t) => makeEntry(t));
   const known = new Set(assets.textures.map((t) => t.path));
   const root = textureRoot(project.edition);
-  for (const path of Object.keys(project.overrides)) {
+  // `unsaved`: textures painted but not saved yet (a new one shows in the list straight away)
+  for (const path of new Set([...Object.keys(project.overrides), ...unsaved])) {
     if (known.has(path) || !path.startsWith(root) || !/\.(png|tga)$/i.test(path)) continue;
     const rel = path.slice(root.length);
     const id = rel.replace(/\.(png|tga)$/i, '');
