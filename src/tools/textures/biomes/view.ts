@@ -43,8 +43,8 @@ export interface BiomeView {
   el: HTMLElement;
   /** Shows the view for the open texture; false (and hidden) when it isn't a colour map */
   show(t: OpenTexture | null): boolean;
-  /** The open map was painted: its new pixels */
-  update(full: ImageData): void;
+  /** A texture was painted: its new pixels (the view follows the open map's) */
+  update(path: string, full: ImageData): void;
   destroy(): void;
 }
 
@@ -435,8 +435,8 @@ export function createBiomeView(store: TexStore, models: ModelService): BiomeVie
       }
       return true;
     },
-    update(full) {
-      if (!map) return;
+    update(p, full) {
+      if (!map || p !== path) return;
       img = full;
       sizeNote.hidden = mapIsGameSize(full);
       paintSource();

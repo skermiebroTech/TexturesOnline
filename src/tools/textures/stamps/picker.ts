@@ -139,6 +139,8 @@ export function createStampControls(getCanvas: () => PixelCanvas | null, library
     t = NO_TRANSFORM;
     remember();
     apply();
+    // (a selection would keep the stamp inside it)
+    pc.deselect();
     pc.setTool('stamp');
     return true;
   }

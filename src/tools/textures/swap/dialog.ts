@@ -174,7 +174,9 @@ export function openSwapDialog(o: SwapDialogOptions): void {
     const img = shownFrame();
     const rect = scope === 'selection' ? pc!.getSelection() : null;
     const r = swapImage(img, ps, tolerance, { rect });
-    return { before: img, after: r.image, changed: r.changed };
+    // (the whole texture changes: every frame counts)
+    const changed = scope === 'texture' && t!.anim ? countSwapped(t!.full, ps, tolerance) : r.changed;
+    return { before: img, after: r.image, changed };
   }
 
   function paintRamp(ps: SwapPair[]) {
@@ -371,6 +373,7 @@ export function openSwapDialog(o: SwapDialogOptions): void {
     body,
     width: 560,
     class: 'tx-sw-modal',
+    initialFocus: fromSw.el,
     onClose: () => {
       open = false;
       scanToken++;

@@ -4,7 +4,9 @@
 // screens, splash texts), the model editor, the PvP tab, the Material tab (quick materials, a part,
 // "Use on similar textures"), name-based textures (the window, a new look, its names), the animation
 // maker (the texture menu, frames strip, timing, import and GIF windows, a texture that can't), paint
-// layers (the panel with one and two layers, its menu, the eyedropper's option), the pack
+// layers (the panel with one and two layers, its menu, the eyedropper's option), the stamp tool
+// (its options and list, saving a selection), the colour swap (the window, the whole pack), biome
+// colours (a colour map's view, a biome's notes, the preview's biome picker), the pack
 // settings, the keyboard shortcuts and the export
 // dialog. Every state is checked for English left in
 // the visible text and labels, for content wider than the screen or clipped labels, and for console
@@ -500,6 +502,45 @@ try {
           await inspect(page, `tex-${L}-17x-layers-menu`, lang);
           await page.keyboard.press('Escape');
           await page.click('.tx-pl-close');
+
+          // ------------------------------------------------ the stamp tool, the colour swap, biome colours
+          await show(page, phone, 'editor');
+          await page.evaluate(() => window.__tx.canvas.canvas().setTool('stamp'));
+          await inspect(page, `tex-${L}-17y-stamp`, lang);
+          await page.click('.tx-st-btn');
+          await page.waitForSelector('.tx-st-pop .tx-st-tile');
+          await inspect(page, `tex-${L}-17z-stamps`, lang);
+          await page.keyboard.press('Escape');
+          await page.evaluate(() => {
+            const pc = window.__tx.canvas.canvas();
+            pc.setTool('select');
+            pc.setSelection({ x: 0, y: 0, w: 4, h: 4 });
+          });
+          await page.waitForSelector('.tx-st-savechip:not([hidden])');
+          await inspect(page, `tex-${L}-17za-stamp-save`, lang);
+          await page.evaluate(() => window.__tx.canvas.canvas().deselect());
+          await page.evaluate(() => window.__tx.canvas.canvas().setTool('pencil'));
+          await page.click('.tx-pal-swap');
+          await page.waitForSelector('.tx-sw-modal .tx-sw-swatch');
+          await page.click('.tx-sw-rampbox [role=switch], .tx-sw-rampbox input[type=checkbox]');
+          await inspect(page, `tex-${L}-17zb-swap`, lang);
+          await page.click('.tx-sw-where [data-value="pack"]');
+          await page.waitForSelector('.tx-sw-row, .tx-sw-none', { timeout: 20000 }).catch(() => undefined);
+          await inspect(page, `tex-${L}-17zc-swap-pack`, lang);
+          await closeDialog(page);
+          await page.evaluate(() => window.__tx.open('assets/minecraft/textures/colormap/grass.png'));
+          await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('colormap/grass.png'), null, { timeout: 30000 });
+          await inspect(page, `tex-${L}-17zd-colormap-canvas`, lang);
+          await show(page, phone, 'preview');
+          await page.waitForSelector('.tx-bm:not([hidden]) .tx-bm-chip');
+          await inspect(page, `tex-${L}-17ze-biomes`, lang, { wait: 400 });
+          await page.click('.tx-bm-chip[data-biome="swamp"]');
+          await inspect(page, `tex-${L}-17zf-biomes-swamp`, lang);
+          await page.evaluate(() => window.__tx.open('assets/minecraft/textures/block/grass_block_top.png'));
+          await page.waitForSelector('.tx-pv-biome:not([hidden])', { timeout: 30000 });
+          await inspect(page, `tex-${L}-17zg-preview-biome`, lang, { wait: 400 });
+          await page.evaluate(() => window.__tx.models.setPreviewBiome('plains'));
+          await show(page, phone, 'editor');
           await page.evaluate(() => window.__tx.canvas.canvas().setTool('pencil'));
           await page.evaluate(() => window.__tx.open('assets/minecraft/textures/entity/zombie/zombie.png'));
           await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('/zombie.png'), null, { timeout: 30000 });

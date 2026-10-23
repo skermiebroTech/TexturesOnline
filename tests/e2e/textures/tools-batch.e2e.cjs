@@ -7,8 +7,9 @@
 // and the project file) and places stamps with a tap on a phone; the colour swap replaces a colour
 // in the texture, a whole shade ramp, and across the pack with a list of the textures it changes
 // (one undo / redo for all); the exported zip has it all; light and dark, 1280 and 390 px; no
-// console errors.
-// Usage: NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/e2e/textures/tools-batch.e2e.cjs [baseUrl] [--shots <dir>]
+// console errors. Bedrock (its own maps for birch and spruce leaves and swamps) needs the network
+// (bedrock-samples on GitHub).
+// Usage: NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/e2e/textures/tools-batch.e2e.cjs [baseUrl] [--shots <dir>] [--no-bedrock]
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -17,6 +18,7 @@ const { startVite, launch, routeMojang, fixturesDir, unzip, decodePng } = requir
 const argv = process.argv.slice(2);
 const baseArg = argv.find((a) => /^https?:/.test(a));
 const shotsDir = argv.includes('--shots') ? argv[argv.indexOf('--shots') + 1] : null;
+const doBedrock = !argv.includes('--no-bedrock');
 if (shotsDir) fs.mkdirSync(shotsDir, { recursive: true });
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tx-tb-'));
 const J = 'assets/minecraft/textures/';
@@ -40,9 +42,13 @@ const RED = [255, 0, 0, 255];
 const MAGENTA = [255, 0, 255, 255];
 const CYAN = [0, 255, 255, 255];
 
-async function newPack(page, base, name) {
+async function newPack(page, base, name, bedrock = false) {
   await page.goto(base + 'textures/');
   await page.waitForSelector('.tx-new .tx-start-opt');
+  if (bedrock) {
+    await page.click('.tx-new .segmented-item[data-value="bedrock"]');
+    await page.waitForFunction(() => /Bedrock/.test(document.querySelector('.tx-new .vp-trigger')?.textContent ?? ''));
+  }
   await page.fill('.tx-name-field input', name);
   await page.click('.tx-create-btn');
   await page.waitForURL(/textures\/[0-9a-f-]+\/?$/, { timeout: 15000 });
@@ -147,6 +153,7 @@ const pngPixel = (img, x, y) => Array.from(img.data.slice((y * img.width + x) * 
     const chips = await page.$$eval('.tx-bm-chip', (l) => l.map((b) => b.dataset.biome));
     check('the biomes of 26.3 are listed (cherry grove, mangrove swamp, pale garden, dappled forest)', ['plains', 'desert', 'jungle', 'swamp', 'taiga', 'badlands', 'cherry_grove', 'mangrove_swamp', 'pale_garden', 'dappled_forest'].every((b) => chips.includes(b)), chips.join(','));
     check('plains is picked at first, read at pixel 50, 173', (await page.getAttribute('.tx-bm-chip[data-biome="plains"]', 'aria-pressed')) === 'true' && /#91BD59 · Pixel 50, 173/.test(await page.textContent('.tx-bm-pickedsub')), await page.textContent('.tx-bm-pickedsub'));
+    await page.waitForFunction(() => document.querySelectorAll('.tx-bm-tile canvas').length === 2, null, { timeout: 30000 }).catch(() => undefined);
     check('a grass block and oak leaves coloured for it', (await page.$$('.tx-bm-tile canvas')).length === 2 && /Grass Block/.test(await page.textContent('.tx-bm-blocks')));
     check('the notes say where the map is ignored (swamp noise, dark forests, fixed colours, water)', await page.textContent('.tx-bm-notes').then((t) => /two greens/.test(t) && /Dark forests mix/.test(t) && /Badlands/.test(t) && /Water has no colour map/.test(t)));
     await page.click('.tx-bm-chip[data-biome="swamp"]');
@@ -174,6 +181,7 @@ const pngPixel = (img, x, y) => Array.from(img.data.slice((y * img.width + x) * 
     await openTexture(page, GRASS_TOP);
     await page.waitForSelector('.tx-pv-biome:not([hidden])', { timeout: 20000 });
     check('grass on show: the preview offers a biome', await page.isVisible('.tx-pv-biome select'));
+    check('… and the biome colours view is gone (the 3D view is back)', (await page.isHidden('.tx-bm')) && (await page.isVisible('.tx-pv-hero')));
     await page.selectOption('.tx-pv-biome select', 'swamp');
     await page.waitForSelector('.tx-pv-biome .tx-inline-note:not([hidden])', { timeout: 5000 }).catch(() => undefined);
     check('swamp: the note says the game uses its own greens', /own two greens/.test(await page.textContent('.tx-pv-biome')), await page.textContent('.tx-pv-biome'));
@@ -327,6 +335,33 @@ const pngPixel = (img, x, y) => Array.from(img.data.slice((y * img.width + x) * 
     const packStamps = rec?.data?.project?.stamps;
     check('the project file carries the pack’s stamps', Array.isArray(packStamps) && packStamps.length === 1 && packStamps[0].width === 3, item);
     check('no sideways scrolling at 1280', await noSideScroll(page));
+
+    // ---------------------------------------------------------------- Bedrock: more maps
+    if (doBedrock) {
+      await newPack(page, base, 'E2E Tools Bedrock', true);
+      await openTexture(page, 'textures/colormap/birch.png');
+      await page.waitForSelector('.tx-bm:not([hidden]) .tx-bm-chip', { timeout: 30000 });
+      check('Bedrock: birch.png colours birch leaves', /Birch leaves take their colour/.test(await page.textContent('.tx-bm-text')));
+      await page.waitForFunction(() => /Birch Leaves/.test(document.querySelector('.tx-bm-blocks')?.textContent ?? ''), null, { timeout: 30000 }).catch(() => undefined);
+      check('… shown on birch leaves', /Birch Leaves/.test(await page.textContent('.tx-bm-blocks')));
+      check('… and every biome reads it', (await page.$$('.tx-bm-chipswatch.is-own')).length === 0);
+      await page.evaluate(() => window.__tx.canvas.canvas().zoomToRect({ x: 40, y: 163, w: 20, h: 20 }));
+      await page.waitForTimeout(100);
+      await paintAt(page, 50, 173, RED);
+      const bt = await page.evaluate(async () => {
+        window.__tx.models.resetBiome();
+        return window.__tx.models.biome(false);
+      });
+      check('… and the previews colour birch leaves from the pack’s map', same(bt.birch, [255, 0, 0]), JSON.stringify(bt.birch));
+      await openTexture(page, 'textures/colormap/swamp_grass.png');
+      await page.waitForSelector('.tx-bm:not([hidden]) .tx-bm-chip');
+      const own = await page.$$eval('.tx-bm-chip', (l) => l.filter((b) => !b.querySelector('.is-own')).map((b) => b.dataset.biome));
+      check('Bedrock: only swamps read swamp_grass.png', same(own.sort(), ['mangrove_swamp', 'swamp']), own.join(','));
+      await openTexture(page, 'textures/colormap/foliage.png');
+      await page.waitForSelector('.tx-bm:not([hidden]) .tx-bm-notes li');
+      check('Bedrock: the notes name the swamp maps and the leaf maps', await page.textContent('.tx-bm-notes').then((t) => /swamp_foliage\.png/.test(t) && /evergreen\.png and birch\.png/.test(t)));
+      await shot(page, 'biomes-bedrock-1280-light');
+    }
     await ctx.close();
 
     // ---------------------------------------------------------------- phones

@@ -919,7 +919,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     else tiledSection.hidden = true;
     fxToggle.hidden = !store.effectsActive();
     // a colour map: the biome colours view takes the 3D view's place
-    const mapView = !modelMode && biomeView.show(t);
+    const mapView = biomeView.show(modelMode ? null : t);
     hero.hidden = mapView && !docked;
     if (mapView) {
       controls.hidden = true;
@@ -1132,7 +1132,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     store.events.on('names', () => paintShapeButton()),
     store.events.on('image', ({ path, full }) => {
       if (!tex || path !== tex.key) return;
-      biomeView.update(full);
+      biomeView.update(path, full);
       paintTiled(tex);
       if (entry && view) {
         // (a trim palette recolours the trims using it)
