@@ -59,7 +59,7 @@ import { drawMarkers, mapMarkers, markersOnCanvas, type Marker } from '../biomes
 import { StampLibrary } from '../stamps/library';
 import { createStampControls } from '../stamps/picker';
 import { tw } from '../swap/i18n/text';
-import { afterNextPaint } from '../../../core/yield';
+import { afterNextPaint, yieldToMain } from '../../../core/yield';
 
 export interface OpenTexture {
   key: string;
@@ -1052,6 +1052,9 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     dock.setPalette(paletteSource(frameImg));
     paintHeader();
     opts.onHistory();
+    // the texture is on the canvas: the other panels (preview, list, "Used by") follow in a new task
+    await yieldToMain();
+    if (my !== token) return;
     opts.onOpened(t);
     if (path !== ICON_KEY) {
       try {
