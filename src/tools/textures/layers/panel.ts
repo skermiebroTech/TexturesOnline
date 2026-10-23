@@ -31,6 +31,7 @@ import {
   type PaintLayer,
 } from './stack';
 import { createImageData } from '../../../core/pixels';
+import { thumbContext } from '../ui/thumbs';
 
 export interface LayersPanelOptions {
   /** The open texture's layers; `create`: make them (one layer) when the texture has none yet */
@@ -270,7 +271,7 @@ export function createLayersPanel(opts: LayersPanelOptions): LayersPanel {
     const a = opts.area();
     if (c.width !== a.w) c.width = a.w;
     if (c.height !== a.h) c.height = a.h;
-    const ctx = c.getContext('2d');
+    const ctx = thumbContext(c);
     if (!ctx) return;
     ctx.clearRect(0, 0, a.w, a.h);
     // (only the frame being painted, without copying it out)

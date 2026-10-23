@@ -74,7 +74,8 @@ export class ModelIconRenderer {
     const out = document.createElement('canvas');
     out.width = this.size;
     out.height = this.size;
-    out.getContext('2d')?.drawImage(this.canvas, 0, 0);
+    // kept in memory: icons are copied into list tiles, which draw with the page (no GPU layer each)
+    out.getContext('2d', { willReadFrequently: true })?.drawImage(this.canvas, 0, 0);
     this.mesh.clear();
     return out;
   }

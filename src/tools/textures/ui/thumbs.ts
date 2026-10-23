@@ -142,11 +142,20 @@ export class ThumbService {
   }
 }
 
+/**
+ * A small display canvas's 2D context, kept in memory (willReadFrequently): the browser then draws it
+ * with the page instead of giving each one its own GPU layer, so a list of a hundred thumbnails
+ * doesn't make every frame composite a hundred layers (slow taps on phones).
+ */
+export function thumbContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
+  return canvas.getContext('2d', { willReadFrequently: true });
+}
+
 /** Draws an ImageData into a canvas at its own size (display only). */
 export function paintCanvas(canvas: HTMLCanvasElement, img: ImageData): void {
   if (canvas.width !== img.width) canvas.width = img.width;
   if (canvas.height !== img.height) canvas.height = img.height;
-  const ctx = canvas.getContext('2d');
+  const ctx = thumbContext(canvas);
   if (!ctx) return;
   ctx.clearRect(0, 0, img.width, img.height);
   ctx.putImageData(img, 0, 0);

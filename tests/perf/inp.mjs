@@ -20,6 +20,8 @@
 //   --profile          sample the CPU during each step and list its hottest functions (an unminified
 //                      build, `npx vite build --minify false`, gives readable names)
 //   --only <regex>     report only the steps whose name matches (the others still run)
+//   --trace <regex>    record a DevTools trace of the matching steps and list the main thread's
+//                      rendering work during the slowest interaction (style, layout, paint, commit)
 //   --until <regex>    end each flow after the first step whose name matches
 //   --headed           show the browser
 // With a build that has source maps (`npx vite build --sourcemap`), script positions are mapped back to
@@ -49,6 +51,7 @@ const TOP = Number(opt('top', '25'));
 const RUNS = Number(opt('runs', '1'));
 const JSON_OUT = opt('json', null);
 const PROFILE = flag('profile');
+const TRACE = opt('trace', null) ? new RegExp(opt('trace', ''), 'i') : null;
 const UNTIL = opt('until', null) ? new RegExp(opt('until', ''), 'i') : null;
 const ONLY = opt('only', null) ? new RegExp(opt('only', ''), 'i') : null;
 const ALL_FLOWS = ['home', 'start', 'editor', 'skins', 'shaders', 'converter', 'totem'];
@@ -245,11 +248,13 @@ class Session {
       if (!busy) await this.settle(250, 6000);
       const t0 = await page.evaluate(() => performance.now());
       if (PROFILE) await this.cdp.send('Profiler.start');
+      const tracing = TRACE?.test(name) ? await this.startTrace() : null;
       await fn(page);
       await this.settle(quiet);
       // event entries are queued after the next paint: give them a moment
       await page.waitForTimeout(120);
       const prof = PROFILE ? (await this.cdp.send('Profiler.stop')).profile : null;
+      const trace = tracing ? await tracing() : null;
       const data = await page.evaluate((from) => {
         const r = window.__inp;
         return { events: r.events.filter((e) => e.start >= from - 1), loafs: r.loafs.filter((l) => l.start + l.dur >= from - 1) };
@@ -268,7 +273,30 @@ class Session {
       const longest = data.loafs.reduce((m, l) => (l.blocking > (m?.blocking ?? 0) ? l : m), null);
       const blocker = longest && longest.dur > 200 ? { dur: Math.round(longest.dur), scripts: longest.scripts.sort((a, b) => b.dur - a.dur).slice(0, 2).map((sc) => `${Math.round(sc.dur)} ms ${sc.invoker || sc.type}${sc.fn ? ` → ${sc.fn}` : ''} ${where(sc.url, { char: sc.char })}`) } : null;
       const hot = prof ? hotFunctions(prof) : null;
-      results.push({ flow: this.flow, step: name, run: this.run, ms: worst ? worst.dur : 0, n: inter.length, worst: worst && { target: worst.target, names: [...worst.names], ...att }, blocker, hot });
+      if (trace && worst) {
+        // the trace clock and performance.now() share no origin: line them up on the event dispatches
+        const mainTid = trace.mainTid;
+        const ev = trace.events.filter((e) => e.tid === mainTid && e.ph === 'X');
+        const disp = ev.filter((e) => e.name === 'EventDispatch' && worst.names.has(e.args?.data?.type));
+        const first = disp.sort((a, b) => a.ts - b.ts)[0];
+        if (first) {
+          const off = first.ts / 1000 - worst.ps;
+          const from = (worst.start + off) * 1000;
+          const to = (worst.start + worst.dur + off) * 1000;
+          const sum = new Map();
+          for (const e of ev) {
+            if (e.ts < from || e.ts > to || !/^(UpdateLayoutTree|Layout|PrePaint|Paint|Layerize|Commit|UpdateLayer|HitTest|ParseAuthorStyleSheet|IntersectionObserverController::computeIntersections|Decode Image|GPUTask)$/.test(e.name)) continue;
+            const cur = sum.get(e.name) ?? { ms: 0, n: 0, size: 0 };
+            cur.ms += e.dur / 1000;
+            cur.n++;
+            const a = e.args?.beginData ?? e.args?.data ?? {};
+            cur.size = Math.max(cur.size, e.name === 'Layout' ? a.dirtyObjects ?? 0 : e.args?.elementCount ?? a.elementCount ?? 0);
+            sum.set(e.name, cur);
+          }
+          worst.trace = [...sum.entries()].sort((a, b) => b[1].ms - a[1].ms).map(([k, v]) => `${v.ms.toFixed(0).padStart(4)} ms  ${k} ×${v.n}${v.size ? ` (up to ${v.size} ${k === 'Layout' ? 'objects' : 'elements'})` : ''}`);
+        }
+      }
+      results.push({ flow: this.flow, step: name, run: this.run, ms: worst ? worst.dur : 0, n: inter.length, worst: worst && { target: worst.target, names: [...worst.names], ...att, trace: worst.trace }, blocker, hot });
       process.stdout.write(`  ${worst ? String(Math.round(worst.dur)).padStart(4) : '  <16'} ms  ${this.flow} › ${name}${inter.length > 1 ? `  (${inter.length} interactions)` : ''}${blocker ? `  [long frame after it: ${blocker.dur} ms]` : ''}\n`);
     } catch (err) {
       if (PROFILE) await this.cdp.send('Profiler.stop').catch(() => {});
@@ -276,6 +304,22 @@ class Session {
       results.push({ flow: this.flow, step: name, run: this.run, ms: null, n: 0, error: String(err.message).split('\n')[0] });
     }
     if (UNTIL?.test(name)) throw new Error('--until reached');
+  }
+  /** Starts a DevTools trace; the returned function ends it and gives its events. */
+  async startTrace() {
+    const events = [];
+    const onData = (d) => events.push(...d.value);
+    this.cdp.on('Tracing.dataCollected', onData);
+    await this.cdp.send('Tracing.start', { categories: 'devtools.timeline,disabled-by-default-devtools.timeline', transferMode: 'ReportEvents' });
+    return async () => {
+      const done = new Promise((r) => this.cdp.once('Tracing.tracingComplete', r));
+      await this.cdp.send('Tracing.end');
+      await done;
+      this.cdp.off('Tracing.dataCollected', onData);
+      const count = new Map();
+      for (const e of events) if (e.name === 'UpdateLayoutTree' || e.name === 'Layout') count.set(e.tid, (count.get(e.tid) ?? 0) + 1);
+      return { events, mainTid: [...count.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] };
+    };
   }
   tap(sel) {
     return this.page.locator(sel).filter({ visible: true }).first().tap({ timeout: 8000 });
@@ -438,22 +482,18 @@ async function flowEditor(s, page) {
   await page.locator('.tx-create-btn').tap();
   await editorReady(page);
   await s.throttle();
-  const tab = (v) => s.tap(`.tx-tabbar-btn[data-v="${v}"]`);
-  if (phone) {
-    await s.step('tap quick pick: Grass block (first texture)', () => s.tap('.tx-pick'), { quiet: 800 });
-    await s.step('tab: Textures', () => tab('textures'));
-    await s.step('tap a texture in the list', () => s.tap('.tx-tile:nth-child(3)'), { quiet: 800 });
-    // the list draws its block icons when it shows: a tap right after it
-    await s.step('tab: Textures, then a tile 0.3 s later', async () => {
-      await tab('textures');
-      await page.waitForTimeout(300);
-      await s.tap('.tx-tile:nth-child(5)');
-    }, { quiet: 800 });
-    if ((await page.locator('.tx-editor').getAttribute('data-mobile')) !== 'editor') await s.step('tab: Paint', () => tab('editor'));
-  } else {
-    await s.step('tap quick pick: Grass block (first texture)', () => s.tap('.tx-pick'), { quiet: 800 });
-    await s.step('tap a texture in the list', () => s.tap('.tx-tile:nth-child(3)'), { quiet: 800 });
-  }
+  // phones: the tab bar at the bottom; tablets: the side panel's tabs (the canvas always shows)
+  const tab = (v) => (phone ? s.tap(`.tx-tabbar-btn[data-v="${v}"]`) : s.tap(`.tx-side .tab[data-value="${v}"], [role="tab"][data-value="${v}"]`));
+  await s.step('tap quick pick: Grass block (first texture)', () => s.tap('.tx-pick'), { quiet: 800 });
+  await s.step('tab: Textures', () => tab('textures'));
+  await s.step('tap a texture in the list', () => s.tap('.tx-tile:nth-child(3)'), { quiet: 800 });
+  // the list draws its block icons when it shows: a tap right after it
+  await s.step('tab: Textures, then a tile 0.3 s later', async () => {
+    await tab('textures');
+    await page.waitForTimeout(300);
+    await s.tap('.tx-tile:nth-child(5)');
+  }, { quiet: 800 });
+  if (phone && (await page.locator('.tx-editor').getAttribute('data-mobile')) !== 'editor') await s.step('tab: Paint', () => tab('editor'));
   await page.waitForSelector('.tx-canvas-host canvas');
   await s.step('tool: fill', () => s.tap('.tx-tool[data-tool="fill"]'));
   await s.step('tool: pencil', () => s.tap('.tx-tool[data-tool="pencil"]'));
@@ -523,13 +563,11 @@ async function flowEditor(s, page) {
   await s.step('layers: undo', () => s.tap('button[aria-label^="Undo"]'));
   await s.step('layers: close', () => s.tap('.tx-pl-close'));
   await s.step('grid toggle', () => s.tap('.tx-optgroup-view .icon-btn:nth-child(1)'));
-  if (phone) {
-    for (const v of ['preview', 'material', 'effects', 'pvp', 'pack', 'textures', 'editor']) await s.step(`tab: ${v}`, () => tab(v), { quiet: 600 });
-    await s.step('tab: Effects (again)', () => tab('effects'));
-  }
-  await s.step('effects: tap a preset', () => s.tap('.tx-preset:nth-child(2)'), { quiet: 800 });
-  if (phone) await s.step('tab: Textures after effect', () => tab('textures'), { quiet: 800 });
-  if (phone) await s.step('library: All textures', () => s.tap('.tx-libbar [data-value="textures"]'), { quiet: 800 });
+  for (const v of ['preview', 'material', 'effects', 'pvp', 'pack', 'textures', ...(phone ? ['editor'] : [])]) await s.step(`tab: ${v}`, () => tab(v), { quiet: 600 });
+  await s.step('tab: Effects (again)', () => tab('effects'));
+  await s.step('effects: tap a preset', () => s.tap('.tx-preset-wrap:nth-child(2) .tx-preset'), { quiet: 800 });
+  await s.step('tab: Textures after effect', () => tab('textures'), { quiet: 800 });
+  await s.step('library: All textures', () => s.tap('.tx-libbar [data-value="textures"]'), { quiet: 800 });
   await s.step('library: tap a texture', () => s.tap('.tx-browser .tx-tile:nth-child(5)'), { quiet: 800 });
   if (phone) await s.step('tab: Textures (back)', () => tab('textures'), { quiet: 600 });
   await s.step('library: category menu', () => s.tap('.tx-catpick'));
@@ -684,6 +722,7 @@ for (const r of rows.slice(0, TOP)) {
   );
   for (const sc of w?.scripts ?? []) console.log(`${' '.repeat(26)}${String(sc.dur).padStart(4)} ms${sc.forced ? ` (forced layout ${sc.forced})` : ''}  ${sc.what}  ${sc.at}`);
   if (w && w.render > 30) console.log(`${' '.repeat(26)}${String(w.render).padStart(4)} ms  rendering (style, layout, paint)`);
+  for (const line of w?.trace ?? []) console.log(`${' '.repeat(26)}${line}`);
   if (r.worst.blocker) console.log(`${' '.repeat(26)}long frame in the step: ${r.worst.blocker.dur} ms (${r.worst.blocker.scripts.join('; ')})`);
   if (PROFILE && r.worst.hot) for (const hline of r.worst.hot) console.log(`${' '.repeat(26)}${hline}`);
 }

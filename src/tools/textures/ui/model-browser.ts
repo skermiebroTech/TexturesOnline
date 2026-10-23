@@ -5,7 +5,8 @@ import { h, listen } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { button, emptyState, openPopover, progressBar, spinner, tooltip, type PopoverHandle } from '../../../ui/components';
 import type { ModelCategory, ModelEntry, ModelLibrary } from '../../../shared/models/index';
-import { paintCanvas } from './thumbs';
+import { paintCanvas, thumbContext } from './thumbs';
+import { afterNextPaint } from '../../../core/yield';
 import type { ModelService } from './models';
 import type { TexStore } from './store';
 import { fmt, num } from '../../../i18n/editor-text';
@@ -360,7 +361,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     for (const t of tiles.values()) t.remove();
     tiles.clear();
     if (resetScroll) scroller.scrollTop = 0;
-    layout();
+    leanLayout(layout);
   }
 
   // ---- virtual list ----
@@ -382,7 +383,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     if (img instanceof HTMLCanvasElement) {
       c.width = img.width;
       c.height = img.height;
-      const ctx = c.getContext('2d');
+      const ctx = thumbContext(c);
       ctx?.clearRect(0, 0, c.width, c.height);
       ctx?.drawImage(img, 0, 0);
       c.classList.add('smooth');
@@ -440,7 +441,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   const place = (tile: HTMLElement, i: number) => {
     const r = Math.floor(i / cols);
     const c = i % cols;
-    tile.style.transform = `translate(${PAD + c * (tileW + GAP)}px, ${PAD + r * (rowH + GAP)}px)`;
+    // left / top rather than a transform: a transform per tile splits the page's painting into a
+    // piece per tile, which every frame then has to sort into layers
+    tile.style.left = `${PAD + c * (tileW + GAP)}px`;
+    tile.style.top = `${PAD + r * (rowH + GAP)}px`;
     tile.style.width = `${tileW}px`;
     tile.style.height = `${rowH}px`;
   };
@@ -463,6 +467,27 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
 
   let lastCols = -1;
   let lastW = -1;
+  /**
+   * After a tap that changes the list (category, search, grid / list), only the rows on screen are
+   * built before the next paint; the rows just outside it (for smooth scrolling) follow right after.
+   */
+  let lean = false;
+  let fillPending = false;
+  function leanLayout(run: () => void) {
+    lean = true;
+    try {
+      run();
+    } finally {
+      lean = false;
+    }
+    if (fillPending) return;
+    fillPending = true;
+    void afterNextPaint().then(() => {
+      fillPending = false;
+      layout();
+    });
+  }
+
   function layout() {
     if (!measure()) return;
     const rows = Math.ceil(items.length / cols);
@@ -472,8 +497,9 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     lastW = tileW;
     const top = scroller.scrollTop;
     const vh = scroller.clientHeight || 600;
-    const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - OVERSCAN);
-    const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + OVERSCAN);
+    const over = lean ? 0 : OVERSCAN;
+    const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - over);
+    const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + over);
     const lo = first * cols;
     const hi = Math.min(items.length - 1, (last + 1) * cols - 1);
     for (const [i, t] of tiles) {
@@ -635,8 +661,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     for (const t of tiles.values()) t.remove();
     tiles.clear();
     lastCols = -1;
-    layout();
-    if (active >= 0) reveal(active);
+    leanLayout(() => {
+      layout();
+      if (active >= 0) reveal(active);
+    });
   };
   gridBtn.addEventListener('click', () => setView('grid'));
   listBtn.addEventListener('click', () => setView('list'));

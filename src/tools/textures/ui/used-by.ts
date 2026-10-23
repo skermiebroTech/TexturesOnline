@@ -7,7 +7,7 @@ import { icon } from '../../../ui/icons';
 import { openPopover, tooltip, type PopoverHandle } from '../../../ui/components';
 import type { ModelEntry } from '../../../shared/models/index';
 import type { ModelService } from './models';
-import { paintCanvas } from './thumbs';
+import { paintCanvas, thumbContext } from './thumbs';
 import type { TexStore } from './store';
 import { fmt } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
@@ -44,7 +44,7 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
       if (img instanceof HTMLCanvasElement) {
         canvas.width = img.width;
         canvas.height = img.height;
-        canvas.getContext('2d')?.drawImage(img, 0, 0);
+        thumbContext(canvas)?.drawImage(img, 0, 0);
         canvas.classList.add('smooth');
       } else paintCanvas(canvas, img);
     };
