@@ -192,5 +192,12 @@ export const META_DE: MetaTranslation = {
       label: 'Items umbenennen',
       blurb: 'Gib einem umbenannten Item eine eigene Textur, etwa einem Schwert namens „Excalibur“.',
     },
+    'make-animated-textures': {
+      title: 'Animierte Texturen für Minecraft erstellen (Java & Bedrock)',
+      h1: 'Animierte Texturen erstellen',
+      description: 'Animiere gratis im Browser jeden Minecraft-Block und jedes Item: Bilder, Zeiten in Ticks, GIF-Import, .png.mcmeta für Java und Flipbooks für Bedrock.',
+      label: 'Animierte Texturen',
+      blurb: 'Jeden Block und jedes Item animieren: Bilder, Ticks, GIFs, .mcmeta und Flipbooks.',
+    },
   },
 };

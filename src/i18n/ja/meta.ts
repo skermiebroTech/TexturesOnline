@@ -193,5 +193,12 @@ export const META_JA: MetaTranslation = {
       label: '名前でテクスチャを変える',
       blurb: '「Excalibur」という名前の剣など、名前を変えたアイテムに専用のテクスチャを付けます。',
     },
+    'make-animated-textures': {
+      title: 'Minecraftのアニメーションテクスチャの作り方（Java版・統合版）',
+      h1: 'アニメーションテクスチャを作る',
+      description: 'ブラウザで無料で、Minecraftのブロックやアイテムをアニメーションに。フレーム、tick単位のタイミング、GIFの読み込み、Java版の.png.mcmetaと統合版のフリップブックに対応。',
+      label: 'アニメーションテクスチャ',
+      blurb: 'ブロックやアイテムをアニメーションに：フレーム、tick、GIF、.mcmeta、フリップブック。',
+    },
   },
 };

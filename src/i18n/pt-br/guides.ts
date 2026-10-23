@@ -12,6 +12,7 @@ import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_C
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2411,6 +2412,205 @@ const renameItems: GuideText = {
   ctaLabel: 'Abrir o Texture Pack Maker',
 };
 
+const ANIM_STEPS: Child[] = [
+  ['Abra o ', link('/textures', 'Texture Pack Maker'), ' e crie um pacote, ou abra um que você já tem.'],
+  ['Abra a textura de um bloco ou item e escolha ', strong('Animar'), ' no menu dela (⋮). Ela ganha dois quadros, e uma faixa de quadros aparece embaixo da tela de pintura.'],
+  ['Pinte cada quadro. ', strong('+'), ' adiciona uma cópia do quadro escolhido; o menu ⋯ duplica, copia, cola, move e apaga quadros. Ligue o papel vegetal para ver o quadro anterior bem clarinho enquanto pinta.'],
+  ['O relógio abre os ', strong('Tempos'), ': quantos ticks cada quadro aparece (20 ticks são 1 segundo), tempos para quadros soltos e ', strong('Mesclar quadros'), '. Aperte o play para ver na velocidade do jogo.'],
+  ['Clique em ', strong('Exportar'), '. Pacotes de Java recebem a faixa com o ', code('.png.mcmeta'), ' dela, e pacotes de Bedrock uma entrada em ', code('flipbook_textures.json'), '.'],
+];
+
+const animatedTextures: GuideText = {
+  intro: [
+    p(
+      'Uma textura animada é uma imagem alta com quadros um embaixo do outro, que o jogo mostra um depois do outro. A água, a lava, o fogo e os portais funcionam assim, e um pacote também pode animar outros blocos e itens. O ',
+      link('/textures', 'Texture Pack Maker'),
+      ' transforma qualquer bloco ou item numa animação, toca ela na velocidade do jogo enquanto você pinta, importa GIFs e grava os arquivos de que cada edição precisa: um arquivo ',
+      code('.png.mcmeta'),
+      ' para o Java e uma entrada de flipbook para o Bedrock.',
+    ),
+  ],
+  quick: {
+    title: 'A versão curta',
+    items: [
+      ['Abra uma textura e escolha ', strong('Animar'), ' no menu dela.'],
+      ['Pinte os quadros, adicione mais com ', strong('+'), ' e ajuste a velocidade em ticks.'],
+      ['Exporte: o editor grava os arquivos da animação para a sua edição.'],
+    ],
+  },
+  howto: { name: 'Como fazer uma textura animada com o Texture Pack Maker', steps: ANIM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Passo a passo',
+      body: [steps(ANIM_STEPS)],
+    },
+    {
+      id: 'frames',
+      title: 'Quadros, papel vegetal e a faixa',
+      body: [
+        ul([
+          ['Arraste um quadro para outro lugar com o mouse. No celular ou tablet, use ', strong('Mover para antes'), ' e ', strong('Mover para depois'), ' no menu ⋯.'],
+          ['Depois de clicar num quadro: Alt + setas movem o quadro, Delete apaga, e Ctrl+C e Ctrl+V copiam e colam como um quadro novo, em qualquer animação do pacote. As teclas vírgula e ponto passam pelos quadros enquanto você pinta.'],
+          'O papel vegetal mostra o quadro anterior bem clarinho por cima do que você pinta, para o movimento se encaixar. O menu ⋯ mostra também o próximo.',
+          ['Apagar quadros até sobrar um, ou escolher ', strong('Parar de animar'), ', deixa a textura parada de novo. Dá para desfazer as duas coisas.'],
+        ]),
+      ],
+    },
+    {
+      id: 'ticks',
+      title: 'Tempos em ticks',
+      body: [
+        p('O Minecraft conta o tempo em ticks: 20 ticks são 1 segundo, então um tick é 0,05 segundo. Cada quadro aparece por um número inteiro de ticks:'),
+        table(
+          ['Ticks por quadro', 'Segundos', 'Quadros por segundo'],
+          [
+            ['1', '0,05 s', '20'],
+            ['2', '0,1 s', '10'],
+            ['4', '0,2 s', '5'],
+            ['10', '0,5 s', '2'],
+            ['20', '1 s', '1'],
+          ],
+        ),
+        ul([
+          [strong('Cada quadro aparece por'), ' define a velocidade de todos os quadros. Uma animação nova começa com 4 ticks.'],
+          [strong('Tempo de cada quadro'), ' dá a quadros soltos um tempo próprio, para uma pausa ou um brilho rápido.'],
+          [strong('Mesclar quadros'), ' mistura cada quadro com o próximo, tick a tick, como água correndo. Fica melhor com quadros lentos.'],
+          [strong('Ordem de exibição'), ' toca os quadros em qualquer ordem e quantas vezes você quiser: ', code('1, 2, 3, 2'), ' volta, ', code('1-8'), ' toca um trecho e ', code('3:40'), ' segura o quadro 3 por 40 ticks.'],
+        ]),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java Edition: o arquivo .png.mcmeta',
+      body: [
+        p(
+          'O Java lê uma animação de um arquivo com o nome da textura mais ',
+          code('.mcmeta'),
+          ', ao lado dela: ',
+          code('stone.png'),
+          ' ganha ',
+          code('stone.png.mcmeta'),
+          '. Os quadros vão de cima para baixo, ',
+          code('frametime'),
+          ' é a velocidade em ticks (1 quando falta) e ',
+          code('frames'),
+          ' é a ordem de exibição, com um ',
+          code('time'),
+          ' para quadros que aparecem por mais tempo:',
+        ),
+        pre(ANIM_MCMETA.trimEnd()),
+        p('Quadros que não são quadrados precisam do tamanho deles, a partir da 1.13. O jogo então lê os quadros em linhas, da esquerda para a direita:'),
+        pre(ANIM_MCMETA_WIDE.trimEnd()),
+        table(
+          ['Versão', 'O que a animação pode fazer'],
+          [
+            ['1.6.1 – 1.7.10', ['Velocidade (', code('frametime'), ') e ordem com tempos (', code('frames'), '). Os quadros são quadrados da largura da imagem.']],
+            ['1.8 – 1.12.2', ['Também mesclagem (', code('interpolate'), ').']],
+            ['1.13 e mais novas', ['Quadros de qualquer tamanho (', code('width'), ', ', code('height'), ').']],
+            ['1.21.2 e mais novas', 'A mesclagem também mistura os pixels transparentes. Antes, só as cores se misturam e cada quadro mantém a própria transparência.'],
+          ],
+        ),
+        p(
+          'O editor grava o que a versão mais antiga do seu pacote lê e avisa na exportação quando uma versão da faixa dele não consegue tocar alguma parte. O Java anima as texturas que junta num atlas de texturas: blocos e itens em todas as versões, partículas, pinturas e ícones de efeitos a partir da 1.14, baús, camas, placas, estandartes, escudos e caixas de shulker a partir da 1.15, e os sprites da interface a partir da 1.20.2. Skins de criaturas, armaduras, fontes, mapas de cor e o ícone do pacote são desenhados à parte e ficam parados, então o editor avisa em vez de animar.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition: texturas flipbook',
+      body: [
+        p(
+          'O Bedrock lista as animações em ',
+          code('textures/flipbook_textures.json'),
+          '. Cada entrada nomeia a textura e o bloco de ',
+          code('terrain_texture.json'),
+          ' que a mostra:',
+        ),
+        pre(ANIM_FLIPBOOK.trimEnd()),
+        table(
+          ['Campo', 'O que faz'],
+          [
+            [code('flipbook_texture'), 'O caminho da textura, sem a extensão.'],
+            [code('atlas_tile'), ['O bloco de ', code('terrain_texture.json'), ' que é animado.']],
+            [[code('atlas_index'), ', ', code('atlas_tile_variant')], 'Qual textura de um bloco que tem várias (a partir de 0).'],
+            [code('ticks_per_frame'), 'Ticks de cada quadro (20 ticks = 1 segundo). Uma só velocidade para todos.'],
+            [code('frames'), 'A ordem de exibição. Um quadro que aparece por mais tempo é listado de novo.'],
+            [code('blend_frames'), ['Mistura os quadros; ligado quando falta. O editor grava ', code('false'), ' a menos que você ligue Mesclar quadros.']],
+            [code('replicate'), 'Usado pelo jogo na água e na lava correntes; fica como está.'],
+          ],
+        ),
+        p('Os quadros são quadrados da largura da imagem, de cima para baixo. O editor grava as entradas do jogo junto com as suas, para a água, a lava, o fogo e os outros blocos animados continuarem se mexendo.'),
+        callout(
+          'info',
+          'O Bedrock só anima blocos',
+          'Os pacotes de recursos do Bedrock não têm animações para itens: ',
+          code('item_texture.json'),
+          ' não tem nada parecido com um flipbook. O editor avisa quando você tenta animar um item num pacote de Bedrock. Pacotes de Java podem animar itens.',
+        ),
+      ],
+    },
+    {
+      id: 'gif',
+      title: 'Importar um GIF, salvar como GIF',
+      body: [
+        ul([
+          [strong('Importar GIF ou quadros…'), ' no menu da textura ou no menu ⋯ aceita um GIF animado, uma folha de sprites (quadros do tamanho da textura lado a lado, ou uma faixa de quadrados) ou várias imagens, na ordem dos nomes. Você também pode soltar um GIF na tela de pintura.'],
+          'Cada quadro é redimensionado para o tamanho da textura sem suavizar, então a pixel art continua nítida.',
+          'Os tempos de um GIF são em centésimos de segundo: 5 centésimos são um tick, então os tempos do GIF viram ticks, arredondados. Você também pode manter a velocidade atual.',
+          [strong('Salvar como GIF…'), ' salva a animação para compartilhar, até 16 vezes maior. Quadros mesclados são salvos tick a tick, como o jogo mostra. GIFs não têm pixels semitransparentes: eles viram sólidos ou transparentes.'],
+        ]),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Abrir um pacote com animações',
+      body: [
+        p(
+          'Abra um ',
+          code('.zip'),
+          ' de Java ou um ',
+          code('.mcpack'),
+          ' de Bedrock e as animações dele tocam no editor, prontas para mudar: quadros, velocidade, tempos de cada quadro e mesclagem vêm dos arquivos ',
+          code('.png.mcmeta'),
+          ' ou da lista de flipbooks dele. As animações são salvas com o projeto, então arquivos de projeto e backups também as guardam.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-moving',
+      q: 'Minha animação não se mexe no jogo. Por quê?',
+      a: [
+        p(
+          'No Java, o ',
+          code('.png.mcmeta'),
+          ' tem que ficar ao lado da imagem, com exatamente o nome dela mais ',
+          code('.mcmeta'),
+          ', e a textura tem que ser uma que o jogo anima (blocos, itens e outras texturas de atlas). No Bedrock, só texturas de blocos com uma entrada de flipbook se mexem. Confira se o pacote está ativado e acima de outros pacotes que mudam a mesma textura.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock-items',
+      q: 'Posso animar itens no Bedrock?',
+      a: [p('Não. Os pacotes de recursos do Bedrock só animam texturas de blocos, pelo flipbook_textures.json. Pacotes de Java podem animar itens.')],
+    },
+    {
+      id: 'speed',
+      q: 'Quão rápida uma animação pode ser?',
+      a: [p('O mais rápido é um quadro por tick: 20 quadros por segundo. O editor aceita até 12.000 ticks (10 minutos) para um quadro.')],
+    },
+    {
+      id: 'sizes',
+      q: 'Todos os quadros precisam ter o mesmo tamanho?',
+      a: [p('Sim. Os quadros são recortados de uma só imagem, então têm a mesma largura e a mesma altura. As imagens que você importa são redimensionadas para o tamanho do quadro.')],
+    },
+  ],
+  ctaLabel: 'Abrir o Texture Pack Maker',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2427,4 +2627,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-pvp-texture-pack': pvpPack,
   'make-a-pbr-texture-pack': pbrPack,
   'rename-items-texture-pack': renameItems,
+  'make-animated-textures': animatedTextures,
 };

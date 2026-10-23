@@ -1,11 +1,13 @@
 // Texture metadata helpers for the texture pack editor: category labels, friendly names, search,
 // animation strips, block faces for the 3D preview and palette extraction. Pure apart from AssetIndex reads.
 
-import type { AssetIndex, Edition, TextureCategory, TextureInfo, TexturePackProject } from '../../../core/types';
+import type { AssetIndex, Edition, TextureAnimation, TextureCategory, TextureInfo, TexturePackProject } from '../../../core/types';
 import type { IconName } from '../../../ui/icons';
 import { cropImageData, createImageData } from '../../../core/pixels';
 import { parseLenientJson } from '../../../editions/bedrock/catalog';
 import { textureRoot } from '../project';
+import { FLIPBOOK_PATH, animationFromFlipbook, parseFlipbooks, type FlipbookEntry } from '../anim/pack';
+import { clampTicks, normalizeFrames, playSteps } from '../anim/timing';
 import { t } from '../i18n/start';
 
 export interface TextureEntry extends TextureInfo {
@@ -79,7 +81,9 @@ export function buildEntries(project: TexturePackProject, assets: AssetIndex, ca
     const name = id.slice(id.lastIndexOf('/') + 1);
     list.push(makeEntry({ path, id, name, category: categoryForPath(path, project.edition), ext: /\.tga$/i.test(path) ? 'tga' : 'png' }, true));
   }
-  return list;
+  // textures made animated in the editor
+  const own = project.animations;
+  return own ? list.map((e) => (own[e.path] && !e.animated ? { ...e, animated: true } : e)) : list;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -134,6 +138,12 @@ export interface AnimInfo {
   sequence: { index: number; time: number }[];
   /** A plain strip of frames the game doesn't animate (shown frame by frame for easier painting) */
   still?: boolean;
+  /** Frames blend into the next (Java interpolate, Bedrock blend_frames) */
+  interpolate?: boolean;
+  /** Bedrock flipbook replicate */
+  replicate?: number;
+  /** The timing comes from project.animations (made or changed in the editor) */
+  own?: boolean;
 }
 
 function num(v: unknown): number | undefined {
@@ -177,21 +187,18 @@ export function animLayout(imgW: number, imgH: number, opts: { width?: number; h
   return { frameW: fw, frameH: fh, count, cols, frametime, sequence };
 }
 
-const flipbookCache = new WeakMap<AssetIndex, Promise<Map<string, number>>>();
+const flipbookCache = new WeakMap<AssetIndex, Promise<Map<string, FlipbookEntry>>>();
 
-async function bedrockFlipbooks(assets: AssetIndex): Promise<Map<string, number>> {
+/** The game's flipbook entries by texture (path without extension). */
+async function bedrockFlipbooks(assets: AssetIndex): Promise<Map<string, FlipbookEntry>> {
   let p = flipbookCache.get(assets);
   if (!p) {
     p = (async () => {
-      const map = new Map<string, number>();
-      const path = 'textures/flipbook_textures.json';
+      const map = new Map<string, FlipbookEntry>();
       try {
-        const json = parseLenientJson<unknown>(await assets.readText(path));
-        if (Array.isArray(json)) {
-          for (const e of json) {
-            const tex = (e as { flipbook_texture?: unknown }).flipbook_texture;
-            if (typeof tex === 'string') map.set(tex.replace(/\.(png|tga)$/i, ''), num((e as { ticks_per_frame?: unknown }).ticks_per_frame) ?? 1);
-          }
+        for (const e of parseFlipbooks(await assets.readText(FLIPBOOK_PATH))) {
+          const stem = e.flipbook_texture.replace(/\.(png|tga)$/i, '');
+          if (!map.has(stem)) map.set(stem, e);
         }
       } catch {
         /* no flipbook list: defaults */
@@ -203,16 +210,35 @@ async function bedrockFlipbooks(assets: AssetIndex): Promise<Map<string, number>
   return p;
 }
 
-/** Animation info for a texture, from the pack's own .mcmeta, vanilla's, or Bedrock's flipbook list. */
+/** Frame layout and timing of an animation made in the editor, for an image of its size (null: it doesn't fit). */
+export function animInfoFromRecord(a: TextureAnimation, w: number, h: number): AnimInfo | null {
+  if (a.frameWidth < 1 || a.frameHeight < 1 || w % a.frameWidth || h % a.frameHeight) return null;
+  const cols = w / a.frameWidth;
+  const count = cols * (h / a.frameHeight);
+  return { frameW: a.frameWidth, frameH: a.frameHeight, count, cols, frametime: clampTicks(a.frametime), sequence: playSteps(a, count), interpolate: !!a.interpolate, replicate: a.replicate, own: true };
+}
+
+/**
+ * Animation info for a texture: the editor's own (project.animations), else the pack's .mcmeta or
+ * flipbook entry, else the game's.
+ */
 export async function readAnimInfo(project: TexturePackProject, assets: AssetIndex, entry: TextureEntry, img: ImageData, vanillaWidth: number | null): Promise<AnimInfo | null> {
-  if (!entry.animated && !(project.edition === 'java' && project.extraFiles[entry.path + '.mcmeta'])) return null;
+  const own = project.animations?.[entry.path];
+  if (own) {
+    const info = animInfoFromRecord(own, img.width, img.height);
+    // one frame left (or a size that no longer fits): not animated
+    if (info && info.count > 1) return info;
+    if (info || !entry.animated) return null;
+  }
+  const packFlipbook = project.edition === 'bedrock' ? project.extraFiles[FLIPBOOK_PATH] : undefined;
+  if (!entry.animated && !(project.edition === 'java' && project.extraFiles[entry.path + '.mcmeta']) && !packFlipbook) return null;
   const scale = vanillaWidth ? img.width / vanillaWidth : 1;
   if (project.edition === 'java') {
     const metaPath = entry.path + '.mcmeta';
     let text: string | null = null;
-    const own = project.extraFiles[metaPath];
+    const ownMeta = project.extraFiles[metaPath];
     try {
-      if (own) text = await own.text();
+      if (ownMeta) text = await ownMeta.text();
       else if (assets.hasFile(metaPath)) text = await assets.readText(metaPath);
     } catch {
       text = null;
@@ -222,20 +248,46 @@ export async function readAnimInfo(project: TexturePackProject, assets: AssetInd
       const json = parseLenientJson<{ animation?: Record<string, unknown> }>(text);
       const a = json?.animation;
       if (!a || typeof a !== 'object') return null;
-      return animLayout(img.width, img.height, {
+      const info = animLayout(img.width, img.height, {
         width: num(a.width),
         height: num(a.height),
         frametime: num(a.frametime),
         frames: Array.isArray(a.frames) ? a.frames : undefined,
-      }, own ? 1 : scale);
+      }, ownMeta ? 1 : scale);
+      return info && (a.interpolate === true ? { ...info, interpolate: true } : info);
     } catch {
       return animLayout(img.width, img.height, {});
     }
   }
   const stem = entry.path.replace(/\.(png|tga)$/i, '');
-  const ticks = (await bedrockFlipbooks(assets)).get(stem);
-  if (ticks === undefined && !entry.animated) return null;
-  return animLayout(img.width, img.height, { frametime: ticks ?? 1 });
+  let fb: FlipbookEntry | undefined;
+  if (packFlipbook) {
+    try {
+      fb = parseFlipbooks(await packFlipbook.text()).find((e) => e.flipbook_texture.replace(/\.(png|tga)$/i, '') === stem);
+    } catch {
+      fb = undefined;
+    }
+  }
+  fb ??= (await bedrockFlipbooks(assets)).get(stem);
+  if (!fb && !entry.animated) return null;
+  const info = animLayout(img.width, img.height, { frametime: 1 });
+  if (!info || !fb) return info;
+  const a = animationFromFlipbook(fb, info.frameW, info.count);
+  return { ...info, frametime: a.frametime, sequence: playSteps(a, info.count), interpolate: !!a.interpolate, replicate: a.replicate };
+}
+
+/** An animation record that plays as `info` does (to start editing the timing of one the editor didn't make). */
+export function recordFromInfo(info: AnimInfo): TextureAnimation {
+  const frames = normalizeFrames(info.sequence, info.frametime, info.count);
+  return {
+    frameWidth: info.frameW,
+    frameHeight: info.frameH,
+    frametime: clampTicks(info.frametime),
+    ...(frames ? { frames } : {}),
+    ...(info.interpolate ? { interpolate: true } : {}),
+    ...(info.replicate ? { replicate: info.replicate } : {}),
+    updatedAt: Date.now(),
+  };
 }
 
 /** A tall strip of square frames (e.g. an unused Bedrock water strip): browse it frame by frame. */

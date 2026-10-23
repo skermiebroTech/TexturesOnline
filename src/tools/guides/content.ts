@@ -21,6 +21,7 @@ import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_C
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from './pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from './pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from './names-files';
+import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from './anim-files';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -188,6 +189,14 @@ const NAMES_STEPS: Child[] = [
   ['Type the name, for example ', strong('Excalibur'), '. Add more names if they should share the texture.'],
   ['Press ', strong('Create and paint'), '. The new texture starts as a copy of the item’s, so paint over it. ', strong('3D shape'), ' gives it a model of its own too.'],
   ['Press ', strong('Export'), ', install the pack, rename the item in an anvil to exactly that name, and hold it.'],
+];
+
+const ANIM_STEPS: Child[] = [
+  ['Open the ', link('/textures', 'Texture Pack Maker'), ' and make a pack, or open one you have.'],
+  ['Open a block or item texture and choose ', strong('Make animated'), ' in its menu (⋮). It gets two frames, and a strip of frames appears under the canvas.'],
+  ['Paint each frame. ', strong('+'), ' adds a copy of the selected frame; the ⋯ menu duplicates, copies, pastes, moves and deletes frames. Turn on the onion skin to see the frame before faintly while you paint.'],
+  ['Press the clock for ', strong('Timing'), ': how many ticks each frame shows (20 ticks are 1 second), times for single frames and ', strong('Blend frames'), '. Press play to watch it at game speed.'],
+  ['Press ', strong('Export'), '. Java packs get the strip with its ', code('.png.mcmeta'), ', Bedrock packs a ', code('flipbook_textures.json'), ' entry.'],
 ];
 
 export const GUIDE_CONTENT: Guide[] = [
@@ -2572,6 +2581,201 @@ export const GUIDE_CONTENT: Guide[] = [
     ],
     related: ['make-3d-items-texture-pack', 'make-a-texture-pack', 'install-resource-packs'],
     cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'label' },
+  },
+  // ------------------------------------------------------------ animated textures
+  {
+    meta: meta('make-animated-textures'),
+    intro: [
+      p(
+        'An animated texture is a tall picture of frames, one under the other, that the game shows one after another. Water, lava, fire and portals work this way, and a pack can animate other blocks and items too. The ',
+        link('/textures', 'Texture Pack Maker'),
+        ' turns any block or item into an animation, plays it at game speed while you paint, imports GIFs and writes the files each edition needs: a ',
+        code('.png.mcmeta'),
+        ' file for Java and a flipbook entry for Bedrock.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['Open a texture and choose ', strong('Make animated'), ' in its menu.'],
+        ['Paint the frames, add more with ', strong('+'), ', and set the speed in ticks.'],
+        ['Export: the editor writes the animation files for your edition.'],
+      ],
+    },
+    howto: { name: 'How to make an animated texture with Texture Pack Maker', steps: ANIM_STEPS },
+    sections: [
+      {
+        id: 'steps',
+        title: 'Make one step by step',
+        body: [steps(ANIM_STEPS)],
+      },
+      {
+        id: 'frames',
+        title: 'Frames, onion skin and the strip',
+        body: [
+          ul([
+            ['Drag a frame to a new place with the mouse. On a phone or tablet use ', strong('Move earlier'), ' and ', strong('Move later'), ' in the ⋯ menu.'],
+            ['After clicking a frame: Alt + arrow keys move it, Delete deletes it, and Ctrl+C and Ctrl+V copy it and paste it as a new frame, into any animation of the pack. The comma and full stop keys step through the frames while you paint.'],
+            ['The onion skin shows the frame before faintly over the one you paint, so movement lines up. The ⋯ menu shows the next frame too.'],
+            ['Deleting frames down to one, or ', strong('Stop animating'), ', makes the texture still again. Both can be undone.'],
+          ]),
+        ],
+      },
+      {
+        id: 'ticks',
+        title: 'Timing in ticks',
+        body: [
+          p('Minecraft counts time in ticks: 20 ticks make 1 second, so one tick is 0.05 seconds. Every frame shows for a whole number of ticks:'),
+          table(
+            ['Ticks per frame', 'Seconds', 'Frames a second'],
+            [
+              ['1', '0.05 s', '20'],
+              ['2', '0.1 s', '10'],
+              ['4', '0.2 s', '5'],
+              ['10', '0.5 s', '2'],
+              ['20', '1 s', '1'],
+            ],
+          ),
+          ul([
+            [strong('Each frame shows for'), ' sets the speed of every frame. A new animation starts at 4 ticks.'],
+            [strong('Frame times'), ' give single frames a time of their own, for a pause or a quick flash.'],
+            [strong('Blend frames'), ' fades each frame into the next tick by tick, like flowing water. It looks best with slow frames.'],
+            [strong('Play order'), ' plays frames in any order and as often as you like: ', code('1, 2, 3, 2'), ' bounces back, ', code('1-8'), ' plays a run, and ', code('3:40'), ' holds frame 3 for 40 ticks.'],
+          ]),
+        ],
+      },
+      {
+        id: 'java',
+        title: 'Java Edition: the .png.mcmeta file',
+        body: [
+          p(
+            'Java reads an animation from a file named like the texture plus ',
+            code('.mcmeta'),
+            ', next to it: ',
+            code('stone.png'),
+            ' gets ',
+            code('stone.png.mcmeta'),
+            '. Frames run top to bottom, ',
+            code('frametime'),
+            ' is the speed in ticks (1 when it is left out) and ',
+            code('frames'),
+            ' lists the play order, with a ',
+            code('time'),
+            ' for frames shown longer:',
+          ),
+          pre(ANIM_MCMETA.trimEnd()),
+          p('Frames that aren’t squares need their size, from 1.13 on. The game then reads them in rows, left to right:'),
+          pre(ANIM_MCMETA_WIDE.trimEnd()),
+          table(
+            ['Version', 'What the animation can do'],
+            [
+              ['1.6.1 – 1.7.10', ['Speed (', code('frametime'), ') and play order with times (', code('frames'), '). Frames are squares as wide as the image.']],
+              ['1.8 – 1.12.2', ['Blending (', code('interpolate'), ') too.']],
+              ['1.13 and newer', ['Frames of any size (', code('width'), ', ', code('height'), ').']],
+              ['1.21.2 and newer', 'Blending fades see-through pixels too. Before, only the colours blend and each frame keeps its own transparency.'],
+            ],
+          ),
+          p(
+            'The editor writes what the oldest version of your pack reads and warns you on export when a version in its range can’t play part of it. Java animates the textures it gathers on a texture atlas: blocks and items in every version, particles, paintings and effect icons from 1.14, chests, beds, signs, banners, shields and shulker boxes from 1.15, and the GUI sprites of 1.20.2 and newer. Mob skins, armour, fonts, colour maps and the pack icon are drawn on their own and stay still, so the editor says so instead of animating them.',
+          ),
+        ],
+      },
+      {
+        id: 'bedrock',
+        title: 'Bedrock Edition: flipbook textures',
+        body: [
+          p(
+            'Bedrock lists its animations in ',
+            code('textures/flipbook_textures.json'),
+            '. Each entry names the texture and the block tile from ',
+            code('terrain_texture.json'),
+            ' that shows it:',
+          ),
+          pre(ANIM_FLIPBOOK.trimEnd()),
+          table(
+            ['Field', 'What it does'],
+            [
+              [code('flipbook_texture'), 'The texture’s path, without the file extension.'],
+              [code('atlas_tile'), ['The block tile in ', code('terrain_texture.json'), ' to animate.']],
+              [[code('atlas_index'), ', ', code('atlas_tile_variant')], 'Which texture of a tile with several (from 0).'],
+              [code('ticks_per_frame'), 'Ticks each frame shows (20 ticks = 1 second). One speed for every frame.'],
+              [code('frames'), 'The play order. A frame shown longer is listed again.'],
+              [code('blend_frames'), ['Fades frames into each other; on when left out. The editor writes ', code('false'), ' unless you turn on Blend frames.']],
+              [code('replicate'), 'Used by the game’s flowing water and lava; kept as it is.'],
+            ],
+          ),
+          p(
+            'Frames are squares as wide as the image, top to bottom. The editor writes the game’s own entries along with yours, so water, lava, fire and the other animated blocks keep moving.',
+          ),
+          callout(
+            'info',
+            'Bedrock animates blocks only',
+            'Bedrock resource packs have no animations for items: ',
+            code('item_texture.json'),
+            ' has nothing like a flipbook. The editor says so when you try to animate an item in a Bedrock pack. Java packs can animate items.',
+          ),
+        ],
+      },
+      {
+        id: 'gif',
+        title: 'Import a GIF, save as GIF',
+        body: [
+          ul([
+            [strong('Import GIF or frames…'), ' in the texture’s menu or the ⋯ menu takes an animated GIF, a sprite sheet (frames of the texture’s size side by side, or a strip of squares) or several pictures, in the order of their names. You can also drop a GIF on the canvas.'],
+            'Every frame is resized to the texture’s size without smoothing, so pixel art stays sharp.',
+            'GIF times are in hundredths of a second: 5 hundredths make a tick, so the GIF’s timing turns into ticks, rounded. You can keep the current speed instead.',
+            [strong('Save as GIF…'), ' saves the animation to share, up to 16 times bigger. Blended frames are saved tick by tick, as the game shows them. GIFs have no half-transparent pixels: those become solid or see-through.'],
+          ]),
+        ],
+      },
+      {
+        id: 'open',
+        title: 'Open a pack with animations',
+        body: [
+          p(
+            'Open a Java ',
+            code('.zip'),
+            ' or a Bedrock ',
+            code('.mcpack'),
+            ' and its animations play in the editor, ready to change: frames, speed, frame times and blending come from its ',
+            code('.png.mcmeta'),
+            ' files or its flipbook list. Animations are saved with the project, so project files and backups keep them too.',
+          ),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'not-moving',
+        q: 'My animation doesn’t move in the game. Why?',
+        a: [
+          p(
+            'In Java, the ',
+            code('.png.mcmeta'),
+            ' must sit next to the picture with exactly its name plus ',
+            code('.mcmeta'),
+            ', and the texture must be one the game animates (blocks, items and other atlas textures). In Bedrock, only block textures with a flipbook entry move. Check that the pack is turned on and above other packs that change the same texture.',
+          ),
+        ],
+      },
+      {
+        id: 'bedrock-items',
+        q: 'Can I animate items in Bedrock?',
+        a: [p('No. Bedrock resource packs can only animate block textures, through flipbook_textures.json. Java packs can animate items.')],
+      },
+      {
+        id: 'speed',
+        q: 'How fast can an animation be?',
+        a: [p('The fastest is one frame a tick: 20 frames a second. The editor takes up to 12,000 ticks (10 minutes) for a frame.')],
+      },
+      {
+        id: 'sizes',
+        q: 'Do all frames need the same size?',
+        a: [p('Yes. The frames are cut out of one picture, so they share its width and the frame height. Pictures you import are resized to the frame size.')],
+      },
+    ],
+    related: ['make-a-texture-pack', 'texture-pack-not-working', 'java-vs-bedrock-packs'],
+    cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'play' },
   },
 ];
 

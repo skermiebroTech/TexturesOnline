@@ -12,6 +12,7 @@ import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_C
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2410,6 +2411,205 @@ const renameItems: GuideText = {
   ctaLabel: 'Abrir el Texture Pack Maker',
 };
 
+const ANIM_STEPS: Child[] = [
+  ['Abre el ', link('/textures', 'Texture Pack Maker'), ' y crea un paquete, o abre uno que ya tengas.'],
+  ['Abre la textura de un bloque u objeto y elige ', strong('Animar'), ' en su menú (⋮). Recibe dos fotogramas, y debajo del lienzo aparece una tira de fotogramas.'],
+  ['Pinta cada fotograma. ', strong('+'), ' añade una copia del fotograma elegido; el menú ⋯ duplica, copia, pega, mueve y borra fotogramas. Activa el papel cebolla para ver tenue el fotograma anterior mientras pintas.'],
+  ['El reloj abre los ', strong('Tiempos'), ': cuántos ticks se ve cada fotograma (20 ticks son 1 segundo), tiempos para fotogramas sueltos y ', strong('Fundir fotogramas'), '. Pulsa reproducir para verla a la velocidad del juego.'],
+  ['Pulsa ', strong('Exportar'), '. Los paquetes de Java reciben la tira con su ', code('.png.mcmeta'), ' y los de Bedrock una entrada en ', code('flipbook_textures.json'), '.'],
+];
+
+const animatedTextures: GuideText = {
+  intro: [
+    p(
+      'Una textura animada es una imagen alta con fotogramas uno debajo de otro, que el juego muestra uno tras otro. El agua, la lava, el fuego y los portales funcionan así, y un paquete puede animar también otros bloques y objetos. El ',
+      link('/textures', 'Texture Pack Maker'),
+      ' convierte cualquier bloque u objeto en una animación, la reproduce a la velocidad del juego mientras pintas, importa GIF y escribe los archivos que necesita cada edición: un archivo ',
+      code('.png.mcmeta'),
+      ' para Java y una entrada de flipbook para Bedrock.',
+    ),
+  ],
+  quick: {
+    title: 'La versión corta',
+    items: [
+      ['Abre una textura y elige ', strong('Animar'), ' en su menú.'],
+      ['Pinta los fotogramas, añade más con ', strong('+'), ' y ajusta la velocidad en ticks.'],
+      ['Exporta: el editor escribe los archivos de la animación para tu edición.'],
+    ],
+  },
+  howto: { name: 'Cómo hacer una textura animada con Texture Pack Maker', steps: ANIM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Paso a paso',
+      body: [steps(ANIM_STEPS)],
+    },
+    {
+      id: 'frames',
+      title: 'Fotogramas, papel cebolla y la tira',
+      body: [
+        ul([
+          ['Arrastra un fotograma a otro sitio con el ratón. En el móvil o la tableta usa ', strong('Mover antes'), ' y ', strong('Mover después'), ' en el menú ⋯.'],
+          ['Después de hacer clic en un fotograma: Alt + flechas lo mueven, Supr lo borra, y Ctrl+C y Ctrl+V lo copian y lo pegan como un fotograma nuevo, en cualquier animación del paquete. Las teclas coma y punto pasan de un fotograma a otro mientras pintas.'],
+          'El papel cebolla muestra tenue el fotograma anterior sobre el que pintas, para que el movimiento encaje. El menú ⋯ muestra también el siguiente.',
+          ['Si borras fotogramas hasta dejar uno, o eliges ', strong('Dejar de animar'), ', la textura vuelve a estar quieta. Las dos cosas se pueden deshacer.'],
+        ]),
+      ],
+    },
+    {
+      id: 'ticks',
+      title: 'Los tiempos en ticks',
+      body: [
+        p('Minecraft cuenta el tiempo en ticks: 20 ticks son 1 segundo, así que un tick es 0,05 segundos. Cada fotograma se ve durante un número entero de ticks:'),
+        table(
+          ['Ticks por fotograma', 'Segundos', 'Fotogramas por segundo'],
+          [
+            ['1', '0,05 s', '20'],
+            ['2', '0,1 s', '10'],
+            ['4', '0,2 s', '5'],
+            ['10', '0,5 s', '2'],
+            ['20', '1 s', '1'],
+          ],
+        ),
+        ul([
+          [strong('Cada fotograma se ve durante'), ' ajusta la velocidad de todos los fotogramas. Una animación nueva empieza con 4 ticks.'],
+          [strong('Tiempo de cada fotograma'), ' da a fotogramas sueltos un tiempo propio, para una pausa o un destello rápido.'],
+          [strong('Fundir fotogramas'), ' funde cada fotograma con el siguiente, tick a tick, como el agua que fluye. Queda mejor con fotogramas lentos.'],
+          [strong('Orden de reproducción'), ' reproduce los fotogramas en cualquier orden y tantas veces como quieras: ', code('1, 2, 3, 2'), ' vuelve atrás, ', code('1-8'), ' reproduce un tramo y ', code('3:40'), ' deja el fotograma 3 durante 40 ticks.'],
+        ]),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java Edition: el archivo .png.mcmeta',
+      body: [
+        p(
+          'Java lee una animación de un archivo que se llama como la textura más ',
+          code('.mcmeta'),
+          ', junto a ella: ',
+          code('stone.png'),
+          ' lleva ',
+          code('stone.png.mcmeta'),
+          '. Los fotogramas van de arriba abajo, ',
+          code('frametime'),
+          ' es la velocidad en ticks (1 si falta) y ',
+          code('frames'),
+          ' es el orden de reproducción, con un ',
+          code('time'),
+          ' para los fotogramas que se ven más tiempo:',
+        ),
+        pre(ANIM_MCMETA.trimEnd()),
+        p('Los fotogramas que no son cuadrados necesitan su tamaño, desde la 1.13. El juego los lee entonces en filas, de izquierda a derecha:'),
+        pre(ANIM_MCMETA_WIDE.trimEnd()),
+        table(
+          ['Versión', 'Qué puede hacer la animación'],
+          [
+            ['1.6.1 – 1.7.10', ['Velocidad (', code('frametime'), ') y orden con tiempos (', code('frames'), '). Los fotogramas son cuadrados del ancho de la imagen.']],
+            ['1.8 – 1.12.2', ['También fundido (', code('interpolate'), ').']],
+            ['1.13 y posteriores', ['Fotogramas de cualquier tamaño (', code('width'), ', ', code('height'), ').']],
+            ['1.21.2 y posteriores', 'El fundido también funde los píxeles transparentes. Antes solo se funden los colores y cada fotograma conserva su propia transparencia.'],
+          ],
+        ),
+        p(
+          'El editor escribe lo que lee la versión más antigua de tu paquete y te avisa al exportar si una versión de su rango no puede reproducir una parte. Java anima las texturas que reúne en un atlas de texturas: bloques y objetos en todas las versiones, partículas, cuadros e iconos de efectos desde la 1.14, cofres, camas, carteles, estandartes, escudos y cajas de shulker desde la 1.15, y los sprites de la interfaz desde la 1.20.2. Las skins de criaturas, las armaduras, las fuentes, los mapas de color y el icono del paquete se dibujan aparte y se quedan quietos, así que el editor lo dice en vez de animarlos.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition: texturas flipbook',
+      body: [
+        p(
+          'Bedrock lista sus animaciones en ',
+          code('textures/flipbook_textures.json'),
+          '. Cada entrada nombra la textura y la casilla de bloque de ',
+          code('terrain_texture.json'),
+          ' que la muestra:',
+        ),
+        pre(ANIM_FLIPBOOK.trimEnd()),
+        table(
+          ['Campo', 'Qué hace'],
+          [
+            [code('flipbook_texture'), 'La ruta de la textura, sin la extensión.'],
+            [code('atlas_tile'), ['La casilla de bloque de ', code('terrain_texture.json'), ' que se anima.']],
+            [[code('atlas_index'), ', ', code('atlas_tile_variant')], 'Qué textura de una casilla que tiene varias (desde 0).'],
+            [code('ticks_per_frame'), 'Ticks que se ve cada fotograma (20 ticks = 1 segundo). Una sola velocidad para todos.'],
+            [code('frames'), 'El orden de reproducción. Un fotograma que se ve más tiempo aparece varias veces.'],
+            [code('blend_frames'), ['Funde los fotogramas; activado si falta. El editor escribe ', code('false'), ' salvo que actives Fundir fotogramas.']],
+            [code('replicate'), 'Lo usa el juego para el agua y la lava que fluyen; se conserva tal cual.'],
+          ],
+        ),
+        p('Los fotogramas son cuadrados del ancho de la imagen, de arriba abajo. El editor escribe las entradas del juego junto con las tuyas, para que el agua, la lava, el fuego y los demás bloques animados sigan moviéndose.'),
+        callout(
+          'info',
+          'Bedrock solo anima bloques',
+          'Los paquetes de recursos de Bedrock no tienen animaciones para objetos: ',
+          code('item_texture.json'),
+          ' no tiene nada parecido a un flipbook. El editor te lo dice si intentas animar un objeto en un paquete de Bedrock. Los paquetes de Java sí pueden animar objetos.',
+        ),
+      ],
+    },
+    {
+      id: 'gif',
+      title: 'Importar un GIF, guardar como GIF',
+      body: [
+        ul([
+          [strong('Importar GIF o fotogramas…'), ' en el menú de la textura o en el menú ⋯ acepta un GIF animado, una hoja de sprites (fotogramas del tamaño de la textura uno al lado de otro, o una tira de cuadrados) o varias imágenes, en el orden de sus nombres. También puedes soltar un GIF sobre el lienzo.'],
+          'Cada fotograma se redimensiona al tamaño de la textura sin suavizar, así que el pixel art sigue nítido.',
+          'Los tiempos de un GIF van en centésimas de segundo: 5 centésimas son un tick, así que los tiempos del GIF se convierten en ticks, redondeados. También puedes quedarte con la velocidad actual.',
+          [strong('Guardar como GIF…'), ' guarda la animación para compartirla, hasta 16 veces más grande. Los fotogramas fundidos se guardan tick a tick, como los muestra el juego. Los GIF no tienen píxeles semitransparentes: se vuelven opacos o transparentes.'],
+        ]),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Abrir un paquete con animaciones',
+      body: [
+        p(
+          'Abre un ',
+          code('.zip'),
+          ' de Java o un ',
+          code('.mcpack'),
+          ' de Bedrock y sus animaciones se reproducen en el editor, listas para cambiarlas: los fotogramas, la velocidad, los tiempos de cada fotograma y el fundido salen de sus archivos ',
+          code('.png.mcmeta'),
+          ' o de su lista de flipbooks. Las animaciones se guardan con el proyecto, así que los archivos de proyecto y las copias de seguridad también las conservan.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-moving',
+      q: 'Mi animación no se mueve en el juego. ¿Por qué?',
+      a: [
+        p(
+          'En Java, el ',
+          code('.png.mcmeta'),
+          ' tiene que estar junto a la imagen, con exactamente su nombre más ',
+          code('.mcmeta'),
+          ', y la textura tiene que ser una que el juego anime (bloques, objetos y otras texturas de atlas). En Bedrock solo se mueven las texturas de bloques con una entrada de flipbook. Comprueba que el paquete está activado y por encima de otros paquetes que cambien la misma textura.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock-items',
+      q: '¿Puedo animar objetos en Bedrock?',
+      a: [p('No. Los paquetes de recursos de Bedrock solo pueden animar texturas de bloques, mediante flipbook_textures.json. Los paquetes de Java sí pueden animar objetos.')],
+    },
+    {
+      id: 'speed',
+      q: '¿Qué tan rápida puede ser una animación?',
+      a: [p('Lo más rápido es un fotograma por tick: 20 fotogramas por segundo. El editor admite hasta 12 000 ticks (10 minutos) para un fotograma.')],
+    },
+    {
+      id: 'sizes',
+      q: '¿Todos los fotogramas tienen que ser del mismo tamaño?',
+      a: [p('Sí. Los fotogramas se recortan de una sola imagen, así que comparten su ancho y la misma altura. Las imágenes que importas se redimensionan al tamaño del fotograma.')],
+    },
+  ],
+  ctaLabel: 'Abrir el Texture Pack Maker',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2426,4 +2626,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-pvp-texture-pack': pvpPack,
   'make-a-pbr-texture-pack': pbrPack,
   'rename-items-texture-pack': renameItems,
+  'make-animated-textures': animatedTextures,
 };

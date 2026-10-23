@@ -2,7 +2,8 @@
 // starts a pack and goes through the library (blocks, all textures, mobs, sounds), the pixel editor,
 // the effects, painting on the 3D model, a mob, the sound editor, the GUI section (library, preview
 // screens, splash texts), the model editor, the PvP tab, the Material tab (quick materials, a part,
-// "Use on similar textures"), name-based textures (the window, a new look, its names), the pack
+// "Use on similar textures"), name-based textures (the window, a new look, its names), the animation
+// maker (the texture menu, frames strip, timing, import and GIF windows, a texture that can't), the pack
 // settings, the keyboard shortcuts and the export
 // dialog. Every state is checked for English left in
 // the visible text and labels, for content wider than the screen or clipped labels, and for console
@@ -17,6 +18,7 @@ import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const { startVite, launch, routeMojang, fixturesDir } = require('../textures/lib.cjs');
@@ -444,6 +446,50 @@ try {
           await inspect(page, `tex-${L}-17l-names-list`, lang, { wait: 500 });
           await page.click('.nm-look .nm-names');
           await inspect(page, `tex-${L}-17m-names-edit`, lang);
+          await closeDialog(page);
+
+          // ------------------------------------------------ animation maker: menu, frames strip, timing, import, GIF, a texture that can't
+          await page.evaluate(() => window.__tx.open('assets/minecraft/textures/block/stone.png'));
+          await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('block/stone.png'), null, { timeout: 30000 });
+          if (phone) await show(page, phone, 'editor');
+          await page.click('.tx-head-actions .icon-btn:last-child');
+          await page.waitForSelector('[role=menuitem]:has(.icon[data-icon="play"])');
+          await inspect(page, `tex-${L}-17n-anim-menu`, lang);
+          await page.click('[role=menuitem]:has(.icon[data-icon="play"])');
+          await page.waitForSelector('.tx-frames:not([hidden]) .tx-frame', { timeout: 30000 });
+          await page.click('.tx-frame-add');
+          await page.click('.tx-frames-onion');
+          await inspect(page, `tex-${L}-17o-anim-strip`, lang, { wait: 400 });
+          await page.click('.tx-frames-more');
+          await page.waitForSelector('.menu [role="menuitem"]');
+          await inspect(page, `tex-${L}-17p-anim-frame-menu`, lang);
+          await page.keyboard.press('Escape');
+          await page.click('.tx-frames-timing');
+          await page.waitForSelector('.an-timing-modal .an-times');
+          await page.fill('.an-timing-modal .an-times input[data-i="1"]', '10');
+          await page.click('.an-timing-modal .an-more summary');
+          await page.fill('.an-timing-modal .an-order', '1, 2, 9');
+          await inspect(page, `tex-${L}-17q-anim-timing`, lang);
+          await closeDialog(page);
+          await page.click('.tx-frames-more');
+          await page.click('.menu [role=menuitem]:has(.icon[data-icon="upload"])');
+          await page.waitForSelector('.an-import-modal .dropzone');
+          await inspect(page, `tex-${L}-17r-anim-import`, lang);
+          await page.setInputFiles('.an-import-modal input[type=file]', fileURLToPath(new URL('../../tools/anim/anim-small.gif', import.meta.url)));
+          await page.waitForSelector('.an-import:not([hidden])');
+          await inspect(page, `tex-${L}-17s-anim-import-gif`, lang, { wait: 400 });
+          await closeDialog(page);
+          await page.click('.tx-frames-more');
+          await page.click('.menu [role=menuitem]:has(.icon[data-icon="download"])');
+          await page.waitForSelector('.an-gif-modal');
+          await inspect(page, `tex-${L}-17t-anim-gif`, lang);
+          await closeDialog(page);
+          await page.evaluate(() => window.__tx.open('assets/minecraft/textures/entity/zombie/zombie.png'));
+          await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('/zombie.png'), null, { timeout: 30000 });
+          await page.click('.tx-head-actions .icon-btn:last-child');
+          await page.click('[role=menuitem]:has(.icon[data-icon="play"])');
+          await page.waitForSelector('.tx-cant-modal');
+          await inspect(page, `tex-${L}-17u-anim-cant`, lang);
           await closeDialog(page);
 
           // ------------------------------------------------ pack settings

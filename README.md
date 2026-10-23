@@ -13,7 +13,7 @@ repository keeps its original name, `TexturesOnline`).
 - Browse every vanilla texture of the version you pick, with search and categories.
 - Paint pixels with a full editor: pencil, eraser, fill, eyedropper, line, rectangle, ellipse,
   lighten/darken, noise, selection and move, mirror painting, undo/redo, tiled preview and zoom.
-- Upload your own PNGs (auto-resized to the texture, 16x up to 512x) and edit animated textures frame by frame.
+- Upload your own PNGs (auto-resized to the texture, 16x up to 512x).
 - One-click whole-pack effects (Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon,
   Smooth HD and more), stacked non-destructively and applied on export.
 - Open an existing `.zip` / `.mcpack` pack and keep editing.
@@ -86,6 +86,22 @@ repository keeps its original name, `TexturesOnline`).
   rules for one item by name and 1.21.5+ name cases become looks; rules that check more stay files, and
   OptiFine patterns (`ipattern:`...) are kept and written as CIT. Bedrock resource packs can't pick a look by
   an item's name (Molang's `query.is_item_name_any` takes item ids), so the editor says so instead.
+- Animation maker: make any block or item texture animated (its menu → Make animated) or change the game's
+  animations. The frames strip under the canvas adds, duplicates, deletes and reorders frames (drag with a
+  mouse, the ⋯ menu on touch screens), copies and pastes them (Ctrl+C / Ctrl+V into any animation), shows an
+  onion skin (the frame before, optionally the next) and plays the animation at game speed, blended as the
+  game blends (1.21.2+ fades alpha too, older versions only the colour). Timing in ticks (20 = 1 second):
+  the speed (`frametime`), times for single frames and a typed play order (`frames`), and blending
+  (`interpolate`). An animated GIF, a sprite sheet or several pictures import as frames (nearest neighbour,
+  GIF delays turned into ticks), and the animation saves as a GIF (the GIF reader and writer are our own, in
+  `src/tools/textures/anim/gif.ts`). Java writes the strip and its `.png.mcmeta` for the pack's oldest version
+  (`interpolate` from 1.8, `width` / `height` and frames in rows from 1.13; other sections such as GUI
+  scaling are kept); only textures on an atlas animate (the version's `atlases/*.json` from 1.19.3, the
+  game's rules before), and the editor explains the rest. Bedrock writes `textures/flipbook_textures.json`
+  entries (`ticks_per_frame`, a frame shown longer repeated in `frames`, `blend_frames`, `atlas_index` /
+  `atlas_tile_variant` from `terrain_texture.json`, `replicate` kept) merged with the game's list and the
+  pack's own; Bedrock has no item animations, and the editor says so. Animations are stored in the project
+  (`animations`), so project files carry them; opened packs keep theirs editable.
 - Sounds: browse the game's sound events by category, play them, and replace any sound with your own file
   (MP3, WAV, OGG, M4A...) or a microphone recording, trimmed on its waveform and levelled. Replacements are
   saved as Ogg Vorbis (Java: `assets/minecraft/sounds/`; Bedrock: `sounds/` plus `sound_definitions.json`
@@ -170,6 +186,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/phone.e2e.cjs     # phones with
 NODE_PATH=$(npm root -g) node tests/e2e/textures/gui.e2e.cjs       # GUI and menus: library, atlas areas, live preview screens, splash texts, exports
 NODE_PATH=$(npm root -g) node tests/e2e/textures/pbr.e2e.cjs       # Material tab (PBR): presets, parts, bumps, lit preview, similar textures, labPBR / texture set exports, opened packs
 NODE_PATH=$(npm root -g) node tests/e2e/textures/names.e2e.cjs     # name-based textures: window, names, painting, 3D shape, 26.3 item definitions, 1.21.4 CIT, opened packs, Bedrock note
+NODE_PATH=$(npm root -g) node tests/e2e/textures/animation.e2e.cjs # animation maker: frames, onion skin, timing, GIF import / export, Java .mcmeta, Bedrock flipbooks, opened packs, phone
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

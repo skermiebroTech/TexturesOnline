@@ -210,6 +210,9 @@ const PT_BR: SharedLanguage = {
       namesCit: '{count, plural, one {# textura por nome precisa do OptiFine ou do mod CIT Resewn no Minecraft antes da 1.21.5.} other {# texturas por nome precisam do OptiFine ou do mod CIT Resewn no Minecraft antes da 1.21.5.}}',
       namesPattern: '{count, plural, one {# textura por nome do pacote aberto reconhece os nomes com um padrão do OptiFine ({names}), então só funciona com OptiFine ou CIT Resewn.} other {# texturas por nome do pacote aberto reconhecem os nomes com padrões do OptiFine ({names}), então só funcionam com OptiFine ou CIT Resewn.}}',
       pbrPlainSets: '{count, plural, one {# textura alterada recebe um material simples para os Visuais Vibrantes, porque não foi possível carregar o material do jogo.} other {# texturas alteradas recebem um material simples para os Visuais Vibrantes, porque não foi possível carregar os materiais do jogo.}}',
+      animBlend: '{count, plural, one {# animação mescla os quadros, o que o Minecraft antes da 1.8 não faz: lá ela roda sem mesclar.} other {# animações mesclam os quadros, o que o Minecraft antes da 1.8 não faz: lá elas rodam sem mesclar.}}',
+      animSize: '{count, plural, one {# animação tem quadros que não são quadrados da largura da textura, e o Minecraft antes da 1.13 não consegue reproduzi-la: {files}.} other {# animações têm quadros que não são quadrados da largura da textura, e o Minecraft antes da 1.13 não consegue reproduzi-las: {files}.}}',
+      animUnplaced: '{count, plural, one {# animação ficou de fora porque o Bedrock só anima texturas usadas por blocos: {files}.} other {# animações ficaram de fora porque o Bedrock só anima texturas usadas por blocos: {files}.}}',
     },
   },
   'shared.canvas': {

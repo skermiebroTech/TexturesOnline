@@ -10,7 +10,7 @@ import { h, isTypingTarget } from '../../../ui/dom';
 import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { badge, button, iconButton, openMenu, segmented, spinner, tooltip, type MenuItem } from '../../../ui/components';
 import { toast } from '../../../ui/toast';
-import { confirmDialog } from '../../../ui/modal';
+import { confirmDialog, openModal } from '../../../ui/modal';
 import { scaleForResolution } from '../project';
 import {
   CATEGORY_INFO,
@@ -24,13 +24,21 @@ import {
   opaqueCopy,
   putFrame,
   readAnimInfo,
+  animInfoFromRecord,
+  recordFromInfo,
   stripLayout,
   type AnimInfo,
   type RGBA,
   type TextureEntry,
 } from './meta';
 import { createColorDock } from './color-dock';
-import { createFrameStrip } from './frames';
+import { createFrameStrip, type OnionMode } from './frames';
+import type { TextureAnimation } from '../../../core/types';
+import { addEmptyFrame, addFrames, deleteFrame, duplicateFrame, framesOf, makeAnimated, maxFramesFor, moveFrameTo, replaceFrames, NEW_FRAMETIME, type Animated } from '../anim/editing';
+import { javaAnimRules } from '../anim/pack';
+import { animBlock, type AnimBlock } from '../anim/rules';
+import { ta } from '../anim/i18n/text';
+import { kit } from '../../../ui/i18n/kit';
 import { openUploadDialog, type UploadScope } from './upload-dialog';
 import { ICON_KEY, type TexStore } from './store';
 import { paintCanvas } from './thumbs';
@@ -103,6 +111,8 @@ export interface CanvasPanelOptions {
   onWorkspace?(ws: Workspace): void;
   /** Another animation frame of the open texture is being edited */
   onFrame?(t: OpenTexture): void;
+  /** The open texture's frames or timing changed (made animated, frames added, moved, deleted...) */
+  onAnimation?(t: OpenTexture): void;
   /** Tool, colour, brush, mirror or another setting changed */
   onSettings?(): void;
   /** The pointer moved over another texel of the pixel editor (null = off it) */
@@ -194,6 +204,14 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       { label: te.canvas.copyName, icon: 'copy', onClick: () => void navigator.clipboard?.writeText(t.entry?.id ?? t.name).then(() => toast(te.canvas.copied, { tone: 'success', duration: 1600 })) },
       { label: te.canvas.fit, icon: 'expand', onClick: () => pc?.zoomToFit() },
       { label: ws === '3d' ? te.canvas.paint2d : te.canvas.paint3d, icon: ws === '3d' ? 'grid' : 'cube', onClick: () => opts.onWorkspace?.(ws === '3d' ? '2d' : '3d') },
+      // the animation maker: a still texture can be made animated or get frames from a GIF
+      ...(t.key !== ICON_KEY && (!t.anim || t.anim.still)
+        ? [
+            { label: ta.menu.make, icon: 'play' as const, onClick: () => void anim.make() },
+            { label: ta.menu.import, icon: 'images' as const, onClick: () => void anim.import() },
+          ]
+        : []),
+      ...(t.anim && !t.anim.still ? [{ label: ta.actions.gif, icon: 'download' as const, onClick: () => void anim.gif() }] : []),
       ...(opts.menuItems?.() ?? []),
     ]);
   }, { size: 'sm' });
@@ -348,7 +366,18 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const optbar = h('div', { class: 'tx-optbar', role: 'toolbar', 'aria-label': te.canvas.toolOptions }, toolOpts, viewOpts);
 
   const dock = createColorDock(() => pc);
-  const frames = createFrameStrip((i) => selectFrame(i));
+  const frames = createFrameStrip({
+    select: (i) => selectFrame(i),
+    add: () => anim.edit((a, t) => [duplicateFrame(a, t.frame), t.frame + 1]),
+    // the moved frame is the one selected after it was picked up
+    move: (from, to) => anim.edit((a) => [moveFrameTo(a, from, to), to]),
+    remove: (i) => anim.remove(i),
+    copy: (i) => anim.copy(i),
+    paste: (i) => anim.paste(i),
+    menu: (anchor) => anim.menu(anchor),
+    timing: () => void anim.timing(),
+    onion: () => anim.setOnion(onion === 'off' ? 'prev' : 'off'),
+  });
 
   const workspace = h('div', { class: 'tx-workspace' }, rail, stage);
   // Short screens: wrap the vertical tool rail into two columns instead of scrolling it.
@@ -506,10 +535,47 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   let hover3d: { pixels: readonly number[]; echo?: readonly number[] } | null = null;
   /** Texels a press on the 3D model would paint, outlined on the flat texture */
   function drawHover(ctx: CanvasRenderingContext2D, view: PixelView) {
+    drawOnion(ctx, view);
     if (!hover3d || !pc) return;
     const w = pc.width;
     if (hover3d.echo?.length) outlineTexels(ctx, view, hover3d.echo, w, 0.55);
     outlineTexels(ctx, view, hover3d.pixels, w, 1);
+  }
+
+  // ---------------------------------------------------------------- onion skin
+  const ONION_KEY = 'to-tex-onion';
+  let onion: OnionMode = 'off';
+  try {
+    const v = localStorage.getItem(ONION_KEY);
+    if (v === 'prev' || v === 'both') onion = v;
+  } catch {
+    /* storage blocked */
+  }
+  /** Bumped whenever the open texture's frames change place (cached onion pictures are then stale) */
+  let animVersion = 0;
+  let onionCache: { key: string; prev: HTMLCanvasElement | null; next: HTMLCanvasElement | null } = { key: '', prev: null, next: null };
+  /** The frames before (and after) the one being painted, faintly over it */
+  function drawOnion(ctx: CanvasRenderingContext2D, view: PixelView) {
+    const t = cur;
+    if (onion === 'off' || !t?.anim || t.anim.still || t.anim.count < 2) return;
+    const a = t.anim;
+    const key = `${t.key}|${t.frame}|${animVersion}|${onion}`;
+    if (onionCache.key !== key) {
+      const pic = (i: number) => {
+        const c = document.createElement('canvas');
+        paintCanvas(c, getFrame(t.full, a, (i + a.count) % a.count));
+        return c;
+      };
+      onionCache = { key, prev: pic(t.frame - 1), next: onion === 'both' && a.count > 2 ? pic(t.frame + 1) : null };
+    }
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    for (const [c, alpha] of [[onionCache.next, 0.2], [onionCache.prev, 0.34]] as const) {
+      if (!c) continue;
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(c, view.offsetX, view.offsetY, a.frameW * view.scale, a.frameH * view.scale);
+    }
+    ctx.restore();
   }
 
   let liveRaf = 0;
@@ -660,7 +726,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     // Alpha that is data (tint / dye / glow masks): paint colours by default so the mask survives.
     canvas.setChannelMode(t.alphaData ? 'rgb' : 'rgba');
     paintBanner(t);
-    frames.set(t.full, t.anim, 0);
+    animVersion++;
+    frames.set(t.full, t.anim, 0, stripOpts(t));
     dock.setPalette(paletteSource(frameImg));
     paintHeader();
     opts.onHistory();
@@ -787,7 +854,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     dragDepth = 0;
     stage.classList.remove('dragging');
     const f = e.dataTransfer?.files?.[0];
-    if (f) panel.upload(cur.key, f);
+    // a GIF (or several pictures) brings frames: the animation maker's import
+    const list = [...(e.dataTransfer?.files ?? [])];
+    if (f && (list.length > 1 || /\.gif$/i.test(f.name) || f.type === 'image/gif') && cur.key !== ICON_KEY) void anim.import(list);
+    else if (f) panel.upload(cur.key, f);
   });
 
   // ---------------------------------------------------------------- replace / reset helpers
@@ -818,6 +888,231 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         : undefined,
     });
   }
+
+  // ---------------------------------------------------------------- animation maker
+  /** How the game blends frames for this pack (Java before 1.21.2 keeps the first frame's alpha) */
+  const blendMode = (): 'rgba' | 'rgb' => (project.edition === 'java' ? javaAnimRules(project.version).blend : 'rgba');
+  const stripOpts = (t: OpenTexture) => ({ editable: !!t.anim && !t.anim.still && t.key !== ICON_KEY, blend: blendMode() });
+  /** A frame copied with "Copy frame" (pasted into any animation, resized to its frames) */
+  let frameClip: ImageData | null = null;
+
+  /** The open texture's animation as the editor saves it (from the pack's or the game's timing the first time). */
+  const animatedOf = (t: OpenTexture): Animated | null => (t.anim && !t.anim.still ? { full: t.full, anim: store.animation(t.key) ?? recordFromInfo(t.anim) } : null);
+
+  /**
+   * Puts new frames and timing on the open texture (null animation: it isn't animated any more) and
+   * shows `frame`. `undo`: a toast with Undo, for changes the pixel history can't take back.
+   */
+  function applyAnim(t: OpenTexture, next: { full: ImageData; anim: TextureAnimation | null }, frame: number, undo?: string) {
+    const before = { full: cloneImageData(t.full), anim: store.animation(t.key) ?? null, frame: t.frame, edited: store.isEdited(t.key) };
+    // the frames moved: their undo steps no longer fit
+    for (const k of [...histories.keys()]) if (k.startsWith(`${t.key}#`)) histories.delete(k);
+    store.setImage(t.key, next.full);
+    store.setAnimation(t.key, next.anim);
+    animVersion++;
+    const restore = () => {
+      if (before.edited) store.setImage(t.key, before.full);
+      else store.resetToVanilla(t.key);
+      store.setAnimation(t.key, before.anim);
+      if (cur?.key === t.key) void open(t.key).then(() => cur && cur.anim && selectFrame(Math.min(before.frame, cur.anim.count - 1)));
+    };
+    const toastUndo = () => undo && toast(undo, { tone: 'success', action: { label: te.canvas.undo, onClick: restore } });
+    const info = next.anim ? animInfoFromRecord(next.anim, next.full.width, next.full.height) : null;
+    if (!info || info.count < 2 || !pc || cur !== t) {
+      // not animated any more (or another texture is open): read it again as the game would
+      if (cur === t) void open(t.key).then(() => opts.onAnimation?.(cur!));
+      toastUndo();
+      return;
+    }
+    const sameSize = t.anim?.frameW === info.frameW && t.anim?.frameH === info.frameH;
+    t.full = next.full;
+    t.anim = info;
+    t.frame = Math.max(0, Math.min(info.count - 1, frame));
+    t.upscaled = false;
+    t.base = null;
+    t.baseUpscaled = false;
+    const f = getFrame(t.full, t.anim, t.frame);
+    pc.setImage(f, { resetHistory: true, resetView: !sameSize });
+    frames.set(t.full, t.anim, t.frame, stripOpts(t));
+    dock.setPalette(paletteSource(f));
+    store.events.emit('image', { path: t.key, full: t.full });
+    paintHeader();
+    opts.onHistory();
+    opts.onAnimation?.(t);
+    toastUndo();
+  }
+
+  const cantText = (b: AnimBlock): string => ta.cant[b];
+
+  async function blockOf(t: OpenTexture): Promise<AnimBlock | null> {
+    if (t.key === ICON_KEY) return 'icon';
+    const fw = t.anim ? t.anim.frameW : t.full.width;
+    const fh = t.anim ? t.anim.frameH : t.full.height;
+    try {
+      return await animBlock(t.key, { w: fw, h: fh }, project, store.assets);
+    } catch {
+      return null;
+    }
+  }
+
+  function showCant(b: AnimBlock) {
+    openModal({
+      title: ta.cant.title,
+      body: h('p', { class: 'tx-cant-anim' }, icon(project.edition === 'bedrock' ? 'info' : 'warning'), h('span', null, cantText(b))),
+      width: 460,
+      class: 'tx-cant-modal',
+      actions: [{ label: kit.ok, variant: 'primary' }],
+    });
+  }
+
+  const dialogs = () => import('../anim/dialogs');
+
+  const anim = {
+    /** Makes the open (still) texture animated: two copies of it, or the frames of a strip */
+    async make() {
+      const t = cur;
+      if (!t || (t.anim && !t.anim.still)) return;
+      const b = await blockOf(t);
+      if (b) return showCant(b);
+      if (cur !== t) return;
+      const strip = t.anim?.still ? t.anim : null;
+      const r = makeAnimated(t.full, strip ? strip.frameW : t.full.width, strip ? strip.frameH : t.full.height);
+      const n = r.full.height / r.anim.frameHeight;
+      applyAnim(t, r, strip ? t.frame : 1);
+      toast(fmt(ta.made, { count: n }), { tone: 'success', duration: 5000 });
+    },
+    /** Applies a change to the open animation: `fn` gives its new frames and timing and the frame to show */
+    edit(fn: (a: Animated, t: OpenTexture) => [Animated, number], undo?: string) {
+      const t = cur;
+      const a = t && animatedOf(t);
+      if (!t || !a) return;
+      const [next, frame] = fn(a, t);
+      if (next === a) {
+        if (next.full.height / next.anim.frameHeight >= maxFramesFor(next.anim.frameHeight)) toast(fmt(ta.toasts.tooMany, { max: maxFramesFor(next.anim.frameHeight) }), { tone: 'warn' });
+        return;
+      }
+      applyAnim(t, next, frame, undo);
+    },
+    remove(i: number) {
+      const t = cur;
+      const a = t && animatedOf(t);
+      if (!t || !a) return;
+      const { next, full } = deleteFrame(a, i);
+      if (next) applyAnim(t, next, Math.min(i, next.full.height / next.anim.frameHeight - 1), fmt(ta.toasts.deleted, { n: i + 1 }));
+      else applyAnim(t, { full, anim: null }, 0, fmt(ta.toasts.stillNow, { n: i + 1 }));
+    },
+    copy(i: number) {
+      const t = cur;
+      if (!t?.anim) return;
+      frameClip = cloneImageData(getFrame(t.full, t.anim, i));
+      toast(fmt(ta.toasts.copied, { n: i + 1 }), { tone: 'success', duration: 1600 });
+    },
+    paste(i: number) {
+      if (!frameClip) {
+        toast(ta.toasts.nothingToPaste, { tone: 'info' });
+        return;
+      }
+      const clip = frameClip;
+      anim.edit((a) => [addFrames(a, i + 1, [clip]), i + 1]);
+    },
+    still() {
+      const t = cur;
+      if (!t?.anim) return;
+      applyAnim(t, { full: cloneImageData(getFrame(t.full, t.anim, t.frame)), anim: null }, 0, fmt(ta.toasts.still, { n: t.frame + 1 }));
+    },
+    setOnion(mode: OnionMode) {
+      onion = mode;
+      frames.setOnion(mode);
+      try {
+        localStorage.setItem(ONION_KEY, mode);
+      } catch {
+        /* storage blocked */
+      }
+      pc?.redraw();
+    },
+    menu(anchor: HTMLElement) {
+      const t = cur;
+      if (!t?.anim) return;
+      const n = t.anim.count;
+      const i = t.frame;
+      openMenu(anchor, [
+        { label: ta.actions.duplicate, icon: 'plus', onClick: () => anim.edit((a) => [duplicateFrame(a, i), i + 1]) },
+        { label: ta.actions.empty, icon: 'image-new', onClick: () => anim.edit((a) => [addEmptyFrame(a, i), i + 1]) },
+        { label: byPointer(ta.actions.copyKey, ta.actions.copy), icon: 'copy', onClick: () => anim.copy(i) },
+        { label: byPointer(ta.actions.pasteKey, ta.actions.paste), icon: 'clipboard', disabled: !frameClip, onClick: () => anim.paste(i) },
+        { label: ta.actions.left, icon: 'arrow-left', disabled: i === 0, onClick: () => anim.edit((a) => [moveFrameTo(a, i, i - 1), i - 1]) },
+        { label: ta.actions.right, icon: 'arrow-right', disabled: i === n - 1, onClick: () => anim.edit((a) => [moveFrameTo(a, i, i + 1), i + 1]) },
+        { label: byPointer(ta.actions.deleteKey, ta.actions.delete), icon: 'trash', danger: true, onClick: () => anim.remove(i) },
+        { label: ta.actions.timing, icon: 'clock', onClick: () => void anim.timing() },
+        { label: onion === 'both' ? ta.actions.nextOff : ta.actions.next, icon: 'images', onClick: () => anim.setOnion(onion === 'both' ? 'prev' : 'both') },
+        { label: ta.actions.import, icon: 'upload', onClick: () => void anim.import() },
+        { label: ta.actions.gif, icon: 'download', onClick: () => void anim.gif() },
+        { label: ta.actions.still, icon: 'image', onClick: () => anim.still() },
+      ], { label: ta.strip.more, placement: 'top-end' });
+    },
+    async timing() {
+      const t = cur;
+      const a = t && animatedOf(t);
+      if (!t || !a) return;
+      const { openTimingDialog } = await dialogs();
+      openTimingDialog({
+        anim: a.anim,
+        frames: framesOf(a),
+        edition: project.edition,
+        canBlend: project.edition === 'bedrock' || javaAnimRules(project.version).interpolate,
+        blend: blendMode(),
+        onApply: (next) => {
+          if (cur === t) applyAnim(t, { full: t.full, anim: next }, t.frame, ta.toasts.timing);
+        },
+      });
+    },
+    async import(files?: File[]) {
+      const t = cur;
+      if (!t) return;
+      const a = animatedOf(t);
+      if (!a) {
+        const b = await blockOf(t);
+        if (b) return showCant(b);
+      }
+      const strip = t.anim?.still ? t.anim : null;
+      const fw = a ? a.anim.frameWidth : strip ? strip.frameW : t.full.width;
+      const fh = a ? a.anim.frameHeight : strip ? strip.frameH : t.full.height;
+      const n = a ? a.full.height / a.anim.frameHeight : 0;
+      const { openImportDialog } = await dialogs();
+      openImportDialog({
+        frameW: fw,
+        frameH: fh,
+        animated: !!a,
+        current: t.frame,
+        room: { replace: maxFramesFor(fh), after: Math.max(0, maxFramesFor(fh) - n) },
+        blend: blendMode(),
+        files,
+        onApply: (list, times, mode) => {
+          if (cur !== t) return;
+          const label = fmt(ta.toasts.imported, { count: list.length });
+          if (a && mode === 'after') {
+            const now = animatedOf(t) ?? a;
+            applyAnim(t, addFrames(now, t.frame + 1, list, times ?? []), t.frame + 1, label);
+            return;
+          }
+          const base: Animated = a ?? { full: t.full, anim: { frameWidth: fw, frameHeight: fh, frametime: NEW_FRAMETIME, updatedAt: Date.now() } };
+          const r = replaceFrames(base, list, times ?? undefined);
+          applyAnim(t, r.full.height / fh >= 2 ? r : { full: r.full, anim: null }, 0, label);
+        },
+      });
+    },
+    async gif() {
+      const t = cur;
+      if (!t?.anim || t.anim.still) return;
+      const a = t.anim;
+      const { openGifDialog } = await dialogs();
+      openGifDialog({
+        name: t.entry?.name ?? 'animation',
+        source: { frames: Array.from({ length: a.count }, (_, i) => getFrame(t.full, a, i)), steps: a.sequence, interpolate: !!a.interpolate, blend: blendMode() },
+      });
+    },
+  };
+  frames.setOnion(onion);
 
   const panel: CanvasPanel = {
     el,
@@ -878,6 +1173,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       } catch {
         before = null;
       }
+      // an animation made here goes with its pixels (and comes back with them)
+      const beforeAnim = store.animation(key) ?? null;
       store.resetToVanilla(key);
       if (!hasVanilla) store.rebuildEntries();
       if (cur?.key === key) {
@@ -896,6 +1193,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
               label: te.canvas.undo,
               onClick: () => {
                 store.setImage(key, before!);
+                if (beforeAnim) store.setAnimation(key, beforeAnim);
                 void open(key);
               },
             }
@@ -915,7 +1213,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     stepFrame(d) {
       if (!cur?.anim) return;
       selectFrame((cur.frame + d + cur.anim.count) % cur.anim.count);
-      frames.set(cur.full, cur.anim, cur.frame);
+      frames.set(cur.full, cur.anim, cur.frame, stripOpts(cur));
     },
     focusCanvas: () => pc?.focus(),
     setWorkspace,

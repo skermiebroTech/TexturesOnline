@@ -170,6 +170,34 @@ export interface TexturePackProject extends ProjectBase {
    * OptiFine CIT files (older versions) are written from these on export.
    */
   nameVariants?: Record<string, NameVariant>;
+  /**
+   * Animations made or changed in the editor, by the pack path of their texture (its frames are the
+   * texture's pixels, in overrides). Java .png.mcmeta files and Bedrock flipbook_textures.json
+   * entries are written from these on export; textures without one keep the pack's or the game's.
+   */
+  animations?: Record<string, TextureAnimation>;
+}
+
+/** One step of an animation's play order: a frame, shown for its own number of ticks (else the default). */
+export interface AnimationStep {
+  index: number;
+  time?: number;
+}
+
+/** How a texture's frames play (src/tools/textures/anim). Sizes are in the stored image's pixels. */
+export interface TextureAnimation {
+  /** Size of one frame; frames run left to right, then top to bottom (the game's order) */
+  frameWidth: number;
+  frameHeight: number;
+  /** Game ticks each frame shows (20 ticks = 1 second) */
+  frametime: number;
+  /** Play order with times of their own (Java's "frames"); none = every frame once, in order */
+  frames?: AnimationStep[];
+  /** Blend each frame into the next (Java "interpolate", Bedrock "blend_frames") */
+  interpolate?: boolean;
+  /** Bedrock "replicate", kept from the pack's or the game's flipbook entry */
+  replicate?: number;
+  updatedAt: number;
 }
 
 /** A look an item gets when it has one of some names (src/tools/textures/names). */

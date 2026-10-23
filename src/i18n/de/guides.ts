@@ -12,6 +12,7 @@ import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_C
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2409,6 +2410,205 @@ const renameItems: GuideText = {
   ctaLabel: 'Texture Pack Maker öffnen',
 };
 
+const ANIM_STEPS: Child[] = [
+  ['Öffne den ', link('/textures', 'Texture Pack Maker'), ' und erstelle ein Pack, oder öffne eines, das du schon hast.'],
+  ['Öffne die Textur eines Blocks oder Items und wähl in ihrem Menü (⋮) ', strong('Animieren'), '. Sie bekommt zwei Bilder, und unter der Zeichenfläche erscheint eine Bildleiste.'],
+  ['Mal jedes Bild. ', strong('+'), ' fügt eine Kopie des gewählten Bilds hinzu; das Menü ⋯ dupliziert, kopiert, fügt ein, verschiebt und löscht Bilder. Schalte die Zwiebelschicht ein, um beim Malen das Bild davor blass zu sehen.'],
+  ['Die Uhr öffnet die ', strong('Zeiten'), ': wie viele Ticks jedes Bild bleibt (20 Ticks sind 1 Sekunde), Zeiten für einzelne Bilder und ', strong('Bilder überblenden'), '. Mit Play siehst du alles im Spieltempo.'],
+  ['Klicke auf ', strong('Exportieren'), '. Java-Packs bekommen den Bildstreifen mit seiner ', code('.png.mcmeta'), ', Bedrock-Packs einen Eintrag in ', code('flipbook_textures.json'), '.'],
+];
+
+const animatedTextures: GuideText = {
+  intro: [
+    p(
+      'Eine animierte Textur ist ein hohes Bild aus Einzelbildern untereinander, die das Spiel nacheinander zeigt. Wasser, Lava, Feuer und Portale funktionieren so, und ein Pack kann auch andere Blöcke und Items animieren. Der ',
+      link('/textures', 'Texture Pack Maker'),
+      ' macht aus jedem Block und jedem Item eine Animation, spielt sie beim Malen im Spieltempo ab, importiert GIFs und schreibt die Dateien, die jede Edition braucht: eine ',
+      code('.png.mcmeta'),
+      '-Datei für Java und einen Flipbook-Eintrag für Bedrock.',
+    ),
+  ],
+  quick: {
+    title: 'Die Kurzfassung',
+    items: [
+      ['Öffne eine Textur und wähl in ihrem Menü ', strong('Animieren'), '.'],
+      ['Mal die Bilder, füg mit ', strong('+'), ' weitere hinzu und stell das Tempo in Ticks ein.'],
+      ['Exportiere: Der Editor schreibt die Animationsdateien für deine Edition.'],
+    ],
+  },
+  howto: { name: 'Mit dem Texture Pack Maker eine animierte Textur erstellen', steps: ANIM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Schritt für Schritt',
+      body: [steps(ANIM_STEPS)],
+    },
+    {
+      id: 'frames',
+      title: 'Bilder, Zwiebelschicht und Bildleiste',
+      body: [
+        ul([
+          ['Zieh ein Bild mit der Maus an eine neue Stelle. Auf Handy und Tablet nimmst du ', strong('Nach vorn'), ' und ', strong('Nach hinten'), ' im Menü ⋯.'],
+          ['Nach einem Klick auf ein Bild: Alt + Pfeiltasten verschieben es, Entf löscht es, und Strg+C und Strg+V kopieren es und fügen es als neues Bild ein, in jede Animation des Packs. Mit Komma und Punkt blätterst du beim Malen durch die Bilder.'],
+          'Die Zwiebelschicht zeigt das Bild davor blass über dem, das du malst, damit Bewegungen zusammenpassen. Im Menü ⋯ kommt auch das nächste Bild dazu.',
+          ['Löschst du bis auf ein Bild oder wählst ', strong('Nicht mehr animieren'), ', ist die Textur wieder still. Beides lässt sich rückgängig machen.'],
+        ]),
+      ],
+    },
+    {
+      id: 'ticks',
+      title: 'Zeiten in Ticks',
+      body: [
+        p('Minecraft misst Zeit in Ticks: 20 Ticks sind 1 Sekunde, ein Tick also 0,05 Sekunden. Jedes Bild bleibt eine ganze Zahl von Ticks:'),
+        table(
+          ['Ticks pro Bild', 'Sekunden', 'Bilder pro Sekunde'],
+          [
+            ['1', '0,05 s', '20'],
+            ['2', '0,1 s', '10'],
+            ['4', '0,2 s', '5'],
+            ['10', '0,5 s', '2'],
+            ['20', '1 s', '1'],
+          ],
+        ),
+        ul([
+          [strong('Jedes Bild bleibt'), ' stellt das Tempo aller Bilder ein. Eine neue Animation startet mit 4 Ticks.'],
+          [strong('Zeit pro Bild'), ' gibt einzelnen Bildern eine eigene Zeit, für eine Pause oder einen kurzen Blitz.'],
+          [strong('Bilder überblenden'), ' blendet jedes Bild Tick für Tick ins nächste über, wie fließendes Wasser. Am schönsten bei langsamen Bildern.'],
+          [strong('Reihenfolge'), ' spielt Bilder in beliebiger Folge und so oft du willst: ', code('1, 2, 3, 2'), ' pendelt zurück, ', code('1-8'), ' spielt einen Bereich, und ', code('3:40'), ' hält Bild 3 für 40 Ticks.'],
+        ]),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java Edition: die Datei .png.mcmeta',
+      body: [
+        p(
+          'Java liest eine Animation aus einer Datei, die wie die Textur heißt, mit ',
+          code('.mcmeta'),
+          ' dahinter, direkt daneben: ',
+          code('stone.png'),
+          ' bekommt ',
+          code('stone.png.mcmeta'),
+          '. Die Bilder laufen von oben nach unten, ',
+          code('frametime'),
+          ' ist das Tempo in Ticks (1, wenn es fehlt), und ',
+          code('frames'),
+          ' ist die Reihenfolge, mit einer ',
+          code('time'),
+          ' für Bilder, die länger bleiben:',
+        ),
+        pre(ANIM_MCMETA.trimEnd()),
+        p('Bilder, die keine Quadrate sind, brauchen ab 1.13 ihre Größe. Das Spiel liest sie dann in Reihen, von links nach rechts:'),
+        pre(ANIM_MCMETA_WIDE.trimEnd()),
+        table(
+          ['Version', 'Was die Animation kann'],
+          [
+            ['1.6.1 – 1.7.10', ['Tempo (', code('frametime'), ') und Reihenfolge mit Zeiten (', code('frames'), '). Die Bilder sind Quadrate, so breit wie die Textur.']],
+            ['1.8 – 1.12.2', ['Dazu Überblenden (', code('interpolate'), ').']],
+            ['1.13 und neuer', ['Bilder in jeder Größe (', code('width'), ', ', code('height'), ').']],
+            ['1.21.2 und neuer', 'Überblenden blendet auch durchsichtige Pixel über. Vorher werden nur die Farben überblendet, und jedes Bild behält seine eigene Transparenz.'],
+          ],
+        ),
+        p(
+          'Der Editor schreibt, was die älteste Version deines Packs liest, und warnt beim Export, wenn eine Version in seinem Bereich einen Teil davon nicht abspielen kann. Java animiert die Texturen, die es auf einem Texturatlas sammelt: Blöcke und Items in jeder Version, Partikel, Gemälde und Effekt-Symbole ab 1.14, Truhen, Betten, Schilder, Banner, Schilde und Shulker-Kisten ab 1.15 und die GUI-Sprites ab 1.20.2. Mob-Skins, Rüstungen, Schriften, Farbkarten und das Pack-Symbol werden einzeln gezeichnet und bleiben still, deshalb sagt der Editor das, statt sie zu animieren.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition: Flipbook-Texturen',
+      body: [
+        p(
+          'Bedrock listet seine Animationen in ',
+          code('textures/flipbook_textures.json'),
+          '. Jeder Eintrag nennt die Textur und die Block-Kachel aus ',
+          code('terrain_texture.json'),
+          ', die sie zeigt:',
+        ),
+        pre(ANIM_FLIPBOOK.trimEnd()),
+        table(
+          ['Feld', 'Was es macht'],
+          [
+            [code('flipbook_texture'), 'Der Pfad der Textur, ohne Dateiendung.'],
+            [code('atlas_tile'), ['Die Block-Kachel in ', code('terrain_texture.json'), ', die animiert wird.']],
+            [[code('atlas_index'), ', ', code('atlas_tile_variant')], 'Welche Textur einer Kachel mit mehreren (ab 0).'],
+            [code('ticks_per_frame'), 'Ticks pro Bild (20 Ticks = 1 Sekunde). Ein Tempo für alle Bilder.'],
+            [code('frames'), 'Die Reihenfolge. Ein Bild, das länger bleibt, steht mehrmals darin.'],
+            [code('blend_frames'), ['Blendet Bilder ineinander über; an, wenn es fehlt. Der Editor schreibt ', code('false'), ', außer du schaltest „Bilder überblenden“ ein.']],
+            [code('replicate'), 'Nutzt das Spiel für fließendes Wasser und Lava; bleibt, wie es ist.'],
+          ],
+        ),
+        p('Die Bilder sind Quadrate, so breit wie die Textur, von oben nach unten. Der Editor schreibt die Einträge des Spiels mit deinen zusammen, damit Wasser, Lava, Feuer und die anderen animierten Blöcke weiter laufen.'),
+        callout(
+          'info',
+          'Bedrock animiert nur Blöcke',
+          'Ressourcenpakete für Bedrock haben keine Animationen für Items: ',
+          code('item_texture.json'),
+          ' hat nichts wie ein Flipbook. Der Editor sagt das, wenn du in einem Bedrock-Pack ein Item animieren willst. Java-Packs können Items animieren.',
+        ),
+      ],
+    },
+    {
+      id: 'gif',
+      title: 'GIF importieren, als GIF speichern',
+      body: [
+        ul([
+          [strong('GIF oder Bilder importieren …'), ' im Menü der Textur oder im Menü ⋯ nimmt ein animiertes GIF, ein Spritesheet (Bilder in Texturgröße nebeneinander oder ein Streifen aus Quadraten) oder mehrere Bilder, in der Reihenfolge ihrer Namen. Du kannst ein GIF auch auf die Zeichenfläche ziehen.'],
+          'Jedes Bild wird ohne Glätten auf die Größe der Textur gebracht, damit Pixel-Art scharf bleibt.',
+          'GIF-Zeiten sind Hundertstelsekunden: 5 Hundertstel sind ein Tick, also werden die Zeiten des GIFs gerundet zu Ticks. Du kannst stattdessen das aktuelle Tempo behalten.',
+          [strong('Als GIF speichern …'), ' speichert die Animation zum Teilen, bis zu 16-mal größer. Überblendete Bilder werden Tick für Tick gespeichert, so wie das Spiel sie zeigt. GIFs kennen keine halbdurchsichtigen Pixel: Die werden deckend oder durchsichtig.'],
+        ]),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Ein Pack mit Animationen öffnen',
+      body: [
+        p(
+          'Öffne eine Java-',
+          code('.zip'),
+          ' oder ein Bedrock-',
+          code('.mcpack'),
+          ', und seine Animationen laufen im Editor, bereit zum Ändern: Bilder, Tempo, Zeiten pro Bild und Überblenden kommen aus seinen ',
+          code('.png.mcmeta'),
+          '-Dateien oder seiner Flipbook-Liste. Animationen werden mit dem Projekt gespeichert, Projektdateien und Sicherungen behalten sie also auch.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-moving',
+      q: 'Meine Animation bewegt sich im Spiel nicht. Warum?',
+      a: [
+        p(
+          'In Java muss die ',
+          code('.png.mcmeta'),
+          ' neben dem Bild liegen und genau seinen Namen plus ',
+          code('.mcmeta'),
+          ' tragen, und die Textur muss eine sein, die das Spiel animiert (Blöcke, Items und andere Atlas-Texturen). In Bedrock bewegen sich nur Blocktexturen mit einem Flipbook-Eintrag. Prüf, ob das Pack aktiviert ist und über anderen Packs liegt, die dieselbe Textur ändern.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock-items',
+      q: 'Kann ich in Bedrock Items animieren?',
+      a: [p('Nein. Ressourcenpakete für Bedrock können nur Blocktexturen animieren, über flipbook_textures.json. Java-Packs können Items animieren.')],
+    },
+    {
+      id: 'speed',
+      q: 'Wie schnell kann eine Animation sein?',
+      a: [p('Am schnellsten ist ein Bild pro Tick: 20 Bilder pro Sekunde. Der Editor nimmt bis zu 12.000 Ticks (10 Minuten) für ein Bild.')],
+    },
+    {
+      id: 'sizes',
+      q: 'Müssen alle Bilder gleich groß sein?',
+      a: [p('Ja. Die Bilder werden aus einer Textur ausgeschnitten, teilen also ihre Breite und dieselbe Höhe. Importierte Bilder werden auf die Bildgröße gebracht.')],
+    },
+  ],
+  ctaLabel: 'Texture Pack Maker öffnen',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2425,4 +2625,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-pvp-texture-pack': pvpPack,
   'make-a-pbr-texture-pack': pbrPack,
   'rename-items-texture-pack': renameItems,
+  'make-animated-textures': animatedTextures,
 };

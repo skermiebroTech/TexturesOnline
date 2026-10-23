@@ -1622,6 +1622,145 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
+/* the animation maker: the list and its + button share the room, the tools sit at the end */
+.tx-frames-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tx-frames-track .tx-frames-list {
+  flex: 0 1 auto;
+}
+.tx-frame-add {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+.tx-frame-add:hover {
+  border-color: var(--tool-accent);
+  color: var(--tool-accent);
+}
+.tx-frame-add[hidden],
+.tx-frames-tools[hidden] {
+  display: none;
+}
+.tx-frames-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding-left: 6px;
+  border-left: 2px solid var(--border);
+}
+.tx-frames-onion[aria-pressed='true'] {
+  --btn-bg: var(--tool-accent-soft);
+  color: var(--tool-accent);
+}
+/* previous and next frames: a second dot */
+.tx-frames-onion.is-both::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+}
+.tx-frames-onion {
+  position: relative;
+}
+/* a frame with a time of its own */
+.tx-frame-time {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: 2px;
+  background: var(--tool-accent);
+  color: var(--on-accent, #fff);
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+.tx-frames.is-editable .tx-frame {
+  cursor: grab;
+}
+.tx-frames-list.is-dragging,
+.tx-frames-list.is-dragging .tx-frame {
+  cursor: grabbing;
+}
+.tx-frame.is-dragged {
+  opacity: 0.45;
+}
+.tx-frames-drop {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  margin-left: -1px;
+  background: var(--tool-accent);
+  pointer-events: none;
+}
+.tx-frames-drop[hidden] {
+  display: none;
+}
+/* a narrow canvas column: the frames get a row of their own under the preview and the tools */
+@container (max-width: 760px) {
+  .tx-frames.is-editable {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'lead lead tools tools'
+      'prev track track next';
+    gap: 6px 4px;
+  }
+  .tx-frames.is-editable .tx-frames-lead {
+    grid-area: lead;
+    min-width: 0;
+  }
+  .tx-frames.is-editable .tx-frames-tools {
+    grid-area: tools;
+    justify-self: end;
+    padding-left: 0;
+    border-left: 0;
+  }
+  .tx-frames.is-editable .tx-frames-prev {
+    grid-area: prev;
+  }
+  .tx-frames.is-editable .tx-frames-track {
+    grid-area: track;
+  }
+  .tx-frames.is-editable .tx-frames-next {
+    grid-area: next;
+  }
+}
+.tx-cant-anim {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  color: var(--text-2);
+}
+.tx-cant-anim .icon {
+  flex: none;
+  color: var(--tool-accent);
+}
 
 /* ---- options bar ---- */
 .tx-optbar {
@@ -3067,6 +3206,21 @@
   }
   .tx-frames-meta {
     display: none;
+  }
+  /* phones: frames are tapped or swiped to, so prev / next give their room to the frames */
+  .tx-frames.is-editable .tx-frames-step {
+    display: none;
+  }
+  .tx-frames,
+  .tx-frames.is-editable {
+    display: flex;
+    gap: 6px;
+    padding: 6px 6px 6px 8px;
+  }
+  .tx-frames-tools,
+  .tx-frames.is-editable .tx-frames-tools {
+    padding-left: 4px;
+    border-left: 2px solid var(--border);
   }
   .tx-picks {
     grid-template-columns: repeat(2, minmax(0, 1fr));
