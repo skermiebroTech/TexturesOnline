@@ -19,6 +19,8 @@
 //   --json <file>      also write every step's numbers as JSON (to compare two builds)
 //   --profile          sample the CPU during each step and list its hottest functions (an unminified
 //                      build, `npx vite build --minify false`, gives readable names)
+//   --only <regex>     report only the steps whose name matches (the others still run)
+//   --until <regex>    end each flow after the first step whose name matches
 //   --headed           show the browser
 // With a build that has source maps (`npx vite build --sourcemap`), script positions are mapped back to
 // the source files. Each step's latency is the slowest interaction it caused (a tap's pointerdown,
@@ -47,6 +49,8 @@ const TOP = Number(opt('top', '25'));
 const RUNS = Number(opt('runs', '1'));
 const JSON_OUT = opt('json', null);
 const PROFILE = flag('profile');
+const UNTIL = opt('until', null) ? new RegExp(opt('until', ''), 'i') : null;
+const ONLY = opt('only', null) ? new RegExp(opt('only', ''), 'i') : null;
 const ALL_FLOWS = ['home', 'start', 'editor', 'skins', 'shaders', 'converter', 'totem'];
 const FLOWS = (opt('flows', ALL_FLOWS.join(',')) ?? '').split(',').filter(Boolean);
 const DEVICES = {
@@ -270,6 +274,7 @@ class Session {
       console.log(`  SKIP ${this.flow} › ${name}: ${String(err.message).split('\n')[0]}`);
       results.push({ flow: this.flow, step: name, run: this.run, ms: null, n: 0, error: String(err.message).split('\n')[0] });
     }
+    if (UNTIL?.test(name)) throw new Error('--until reached');
   }
   tap(sel) {
     return this.page.locator(sel).filter({ visible: true }).first().tap({ timeout: 8000 });
@@ -319,22 +324,32 @@ function attribute(worst, entries, loafs) {
   return { inputDelay: Math.round(inputDelay), processing: Math.round(processing), presentation: Math.round(presentation), render: Math.round(render), scripts: scripts.slice(0, 4) };
 }
 
-/** Self time per function in a CPU profile, the top few. */
+/** Self time per function in a CPU profile, the top few, then the app's own functions by total time. */
 function hotFunctions(profile) {
   const self = new Map();
   const byId = new Map(profile.nodes.map((n) => [n.id, n]));
+  const parent = new Map();
+  for (const n of profile.nodes) for (const c of n.children ?? []) parent.set(c, n.id);
+  const keyOf = (cf) => `${cf.functionName || '(anonymous)'} ${cf.url ? where(cf.url, { line: cf.lineNumber, col: cf.columnNumber }) : ''}`;
+  const total = new Map();
   const dt = profile.timeDeltas;
   for (let i = 0; i < profile.samples.length; i++) {
     const n = byId.get(profile.samples[i]);
     const cf = n.callFrame;
     if (['(idle)', '(program)', '(root)'].includes(cf.functionName)) continue;
-    const key = `${cf.functionName || '(anonymous)'} ${cf.url ? where(cf.url, { line: cf.lineNumber, col: cf.columnNumber }) : ''}`;
-    self.set(key, (self.get(key) ?? 0) + (dt[i] ?? 0) / 1000);
+    const ms = (dt[i + 1] ?? dt[i] ?? 0) / 1000;
+    self.set(keyOf(cf), (self.get(keyOf(cf)) ?? 0) + ms);
+    // every app function on the stack, once (recursion counted once)
+    const seen = new Set();
+    for (let id = n.id; id != null; id = parent.get(id)) {
+      const k = keyOf(byId.get(id).callFrame);
+      if (seen.has(k) || !k.includes(' src/')) continue;
+      seen.add(k);
+      total.set(k, (total.get(k) ?? 0) + ms);
+    }
   }
-  return [...self.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([k, v]) => `${v.toFixed(0).padStart(5)} ms  ${k}`);
+  const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
+  return [...top(self, 5).map(([k, v]) => `${v.toFixed(0).padStart(5)} ms  ${k}`), ...top(total, 6).map(([k, v]) => `${v.toFixed(0).padStart(5)} ms  total in ${k}`)];
 }
 
 async function session(flow, run, body) {
@@ -608,6 +623,7 @@ for (const r of results) {
   groups.get(k).push(r);
 }
 const rows = [...groups.entries()]
+  .filter(([k]) => !ONLY || ONLY.test(k))
   .map(([k, rs]) => {
     const ok = rs.filter((r) => r.ms != null);
     const ms = ok.map((r) => r.ms).sort((a, b) => a - b);
@@ -629,7 +645,7 @@ for (const r of rows.slice(0, TOP)) {
   for (const sc of w?.scripts ?? []) console.log(`${' '.repeat(26)}${String(sc.dur).padStart(4)} ms${sc.forced ? ` (forced layout ${sc.forced})` : ''}  ${sc.what}  ${sc.at}`);
   if (w && w.render > 30) console.log(`${' '.repeat(26)}${String(w.render).padStart(4)} ms  rendering (style, layout, paint)`);
   if (r.worst.blocker) console.log(`${' '.repeat(26)}long frame in the step: ${r.worst.blocker.dur} ms (${r.worst.blocker.scripts.join('; ')})`);
-  if (PROFILE && r.worst.hot) for (const hline of r.worst.hot.slice(0, 5)) console.log(`${' '.repeat(26)}${hline}`);
+  if (PROFILE && r.worst.hot) for (const hline of r.worst.hot) console.log(`${' '.repeat(26)}${hline}`);
 }
 const over200 = rows.filter((r) => r.max > 200).length;
 console.log(`\n${all.length} steps measured; p75 ${Math.round(p75)} ms, p98 ${Math.round(p98)} ms, worst ${Math.round(all.at(-1) ?? 0)} ms; ${over200} step(s) over 200 ms.`);

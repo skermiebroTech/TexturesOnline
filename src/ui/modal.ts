@@ -169,10 +169,11 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
   });
 
   const handle = { close };
+  // (the scrollbar is measured before the dialog joins the page: no extra layout for it)
+  setScrollLock(true);
   document.body.appendChild(dlg);
   openCount += 1;
   openHandles.add(handle);
-  setScrollLock(true);
   dlg.showModal();
   syncToastLayer();
 

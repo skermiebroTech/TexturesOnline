@@ -59,6 +59,7 @@ import { drawMarkers, mapMarkers, markersOnCanvas, type Marker } from '../biomes
 import { StampLibrary } from '../stamps/library';
 import { createStampControls } from '../stamps/picker';
 import { tw } from '../swap/i18n/text';
+import { afterNextPaint } from '../../../core/yield';
 
 export interface OpenTexture {
   key: string;
@@ -619,9 +620,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     tiledBtn.setActive(s.tiledPreview);
     channelSeg.setValue(s.channelMode);
     dock.sync();
-    requestAnimationFrame(() => {
-      scrollers.forEach((f) => f.paint());
-    });
+    scrollers.forEach((f) => f.paint());
     opts.onSettings?.();
   }
 
@@ -1013,6 +1012,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     loadingTimer = setTimeout(() => {
       if (my === token) loading.hidden = false;
     }, 160);
+    // The tap's own response (the tab, the picked tile) paints first; decoding the texture and
+    // setting up the editor come after it.
+    await afterNextPaint();
+    if (my !== token) return;
     let t: OpenTexture;
     try {
       t = await load(path);

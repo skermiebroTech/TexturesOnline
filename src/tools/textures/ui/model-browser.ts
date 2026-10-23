@@ -408,6 +408,15 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     else tile.classList.add('failed');
   }
 
+  /**
+   * Draws a shown tile's icon again (it keeps the old one until then). Through the observer, so the
+   * icons of a list that isn't on screen (the phone's Paint tab) wait until it shows.
+   */
+  function reloadIcon(tile: HTMLElement) {
+    io.unobserve(tile);
+    io.observe(tile);
+  }
+
   const tileId = (i: number) => `tx-mb-opt-${i}`;
   function makeTile(i: number): HTMLElement {
     const e = items[i];
@@ -653,7 +662,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     const ids = new Set<string>();
     for (const p of pending) for (const e of models.entriesUsing(p)) if (e.kind === kind) ids.add(e.id);
     pending.clear();
-    for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) void loadIcon(t);
+    for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) reloadIcon(t);
     paintMeta();
     if (editedOnly) refilter(false);
   };
@@ -663,7 +672,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
       refreshTimer ??= setTimeout(refreshIcons, 400);
     }),
     store.events.on('effects', () => {
-      for (const t of tiles.values()) void loadIcon(t);
+      for (const t of tiles.values()) reloadIcon(t);
     }),
     models.events.on('progress', (p) => loadingBar?.set(p)),
     models.events.on('ready', () => {
@@ -675,7 +684,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     models.events.on('failed', () => renderOverlay()),
     models.events.on('models', (changed) => {
       const ids = new Set(changed.map((c) => c.id));
-      for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) void loadIcon(t);
+      for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) reloadIcon(t);
     }),
     models.events.on('usage', () => (editedOnly ? refilter(false) : paintMeta())),
     listen(window, 'resize', () => layout()),

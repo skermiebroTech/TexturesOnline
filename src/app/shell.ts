@@ -39,10 +39,14 @@ function wireThemeButton(b: HTMLButtonElement): HTMLButtonElement {
     b.setAttribute('aria-label', label);
     tooltip(b, label);
   };
+  // The icon spins on each click. The class goes when the spin ends, so the next click only adds it
+  // (restarting a running spin by reading the layout would cost a layout of the whole page).
+  b.addEventListener('animationend', () => b.classList.remove('spin'));
   b.addEventListener('click', () => {
-    b.classList.remove('spin');
-    void b.offsetWidth;
-    b.classList.add('spin');
+    if (b.classList.contains('spin')) {
+      b.classList.remove('spin');
+      requestAnimationFrame(() => requestAnimationFrame(() => b.classList.add('spin')));
+    } else b.classList.add('spin');
     toggleTheme();
   });
   // The drawer and a language change create short-lived copies of this button: drop their listener once detached.
@@ -136,8 +140,9 @@ function openDrawer(onNavigate: () => void): void {
   dlg.addEventListener('click', (e) => {
     if (e.target === dlg) close();
   });
-  document.body.appendChild(dlg);
+  // (the scrollbar is measured before the drawer joins the page: no extra layout for it)
   setScrollLock(true);
+  document.body.appendChild(dlg);
   dlg.showModal();
   syncToastLayer();
   (links.find((a) => a.hasAttribute('aria-current')) ?? links[0])?.focus();

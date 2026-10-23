@@ -6,6 +6,7 @@ import { resizeSmooth } from '../../../core/pixels';
 import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, firstSquare, isBedrockStrip, type TextureEntry } from './meta';
 import type { TexStore } from './store';
+import { nextTask } from '../../../core/yield';
 
 const MAX_THUMB = 128;
 
@@ -88,6 +89,8 @@ export class ThumbService {
     let p = this.inflight.get(key);
     if (!p) {
       p = this.limit(async () => {
+        // a task per thumbnail: a screenful of them (with effects) doesn't hold up a tap
+        await nextTask();
         const src = await this.source(e);
         if (!src) return null;
         let img = src;
