@@ -76,7 +76,6 @@ export function createStampControls(getCanvas: () => PixelCanvas | null, library
   const el = h('div', { class: 'tx-opt tx-st-opts', hidden: true }, btn, rotate, flipH, flipV);
 
   const saveChip = h('button', { type: 'button', class: 'chip tx-opt-chip tx-st-savechip', hidden: true }, icon('sticker', { size: 16 }), h('span', null, ts.save));
-  tooltip(saveChip, ts.saveHint);
   saveChip.addEventListener('click', () => saveSelection());
 
   /** Gives the canvas the picked stamp, turned as it is, and shows it on the button. */

@@ -280,6 +280,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   tooltip(biomeRow.querySelector('.tx-pv-state-label') as HTMLElement, tb.pickerHint);
   const biomeBox = h('div', { class: 'tx-pv-biome', hidden: true }, biomeRow, biomeNote);
   const biomeView = createBiomeView(store, models);
+  let shownMapView = false;
   const body = h('div', { class: 'tx-pv' }, head, hero, biomeView.el, shapeRow, canvasSlot, note, trimNote, statesEl, biomeBox, partsSection, controls, texSection, fxToggle, tiledSection);
   const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, te.preview.loadingModel));
   hero.appendChild(loadingModel);
@@ -920,6 +921,11 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     fxToggle.hidden = !store.effectsActive();
     // a colour map: the biome colours view takes the 3D view's place
     const mapView = biomeView.show(modelMode ? null : t);
+    // (the view and the 3D view are of different lengths: start each at the top)
+    if (mapView !== shownMapView) {
+      shownMapView = mapView;
+      el.closest('.scroll')?.scrollTo({ top: 0 });
+    }
     hero.hidden = mapView && !docked;
     if (mapView) {
       controls.hidden = true;
