@@ -1,10 +1,11 @@
 // Centre panel: the pixel editor for the selected texture with its tool rail, options bar, colour dock,
-// animation frames, compare-with-vanilla, upload / reset, HD upscaling and Bedrock alpha-mask mode.
+// animation frames, paint layers, compare-with-vanilla, upload / reset, HD upscaling and Bedrock
+// alpha-mask mode.
 // In the 3D workspace the stage holds the 3D model instead (painted with the same tools) and the pixel
 // editor moves to the side panel. Each texture keeps its own undo history while you switch between them.
 
 import { PixelCanvas, type PixelHistory, type PixelView, type Tool, type PixelCanvasSettings } from '../../../shared/pixel-canvas';
-import { cloneImageData, decodeImage, encodePng } from '../../../core/image';
+import { cloneImageData, createImageData, decodeImage, encodePng, resizeNearest } from '../../../core/image';
 import { saveBlob } from '../../../core/download';
 import { h, isTypingTarget } from '../../../ui/dom';
 import { icon, setIcon, type IconName } from '../../../ui/icons';
@@ -48,6 +49,10 @@ import { fmt, fmtNodes } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
 import { byPointer } from './media';
 import { scrollFade } from './scroll-fade';
+import { LayerSession, type LayerChange } from '../layers/session';
+import { createLayersPanel } from '../layers/panel';
+import { copyStack, flatten, singleLayer, type Area, type LayerStack } from '../layers/stack';
+import { tl } from '../layers/i18n/text';
 
 export interface OpenTexture {
   key: string;
@@ -64,6 +69,11 @@ export interface OpenTexture {
   /** Pixels when opened, if the texture wasn't edited then: undoing back to them un-edits it */
   base: ImageData | null;
   baseUpscaled: boolean;
+  /**
+   * Paint layers: null while the texture is one plain layer (its pixels; the editor paints `full`
+   * as it always did), else the layers, and `full` is them flattened.
+   */
+  layers: LayerSession | null;
 }
 
 export interface CanvasPanel {
@@ -92,6 +102,10 @@ export interface CanvasPanel {
   live(): void;
   /** Outlines texels on the pixel editor (what a press on the model would paint); null clears */
   showHover(h: { pixels: readonly number[]; echo?: readonly number[] } | null): void;
+  /** The open texture's paint layers (null: one plain layer) */
+  layers(): LayerSession | null;
+  /** Opens or closes the layers panel */
+  showLayers(open: boolean): void;
   destroy(): void;
 }
 
@@ -154,6 +168,8 @@ const SIZE_TOOLS = new Set<Tool>(['pencil', 'eraser', 'line', 'rect', 'ellipse',
 const MAX_HD_PIXELS = 4 * 1024 * 1024;
 /** Undo histories kept for textures you switched away from */
 const KEPT_HISTORIES = 48;
+/** Paint layers kept in memory for textures you switched away from (their undo steps need them) */
+const KEPT_SESSIONS = 6;
 
 function samePixels(a: ImageData, b: ImageData): boolean {
   if (a.width !== b.width || a.height !== b.height) return false;
@@ -177,15 +193,35 @@ const QUICK_PICKS: { pick: keyof EditorText['canvas']['picks']; ids: string[] }[
 export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const { store } = opts;
   const project = store.project;
+  /** Writes of this panel to the store (they take care of the texture's layers themselves) */
+  let ownWrites = 0;
+  const own = <T,>(fn: () => T): T => {
+    ownWrites++;
+    try {
+      return fn();
+    } finally {
+      ownWrites--;
+    }
+  };
+  const write = {
+    setImage: (path: string, full: ImageData, o?: { keepLayers?: boolean }) => own(() => store.setImage(path, full, o)),
+    resetToVanilla: (path: string) => own(() => store.resetToVanilla(path)),
+  };
   let pc: PixelCanvas | null = null;
   let cur: OpenTexture | null = null;
   let token = 0;
   let comparing = false;
   const offs: (() => void)[] = [];
   let ws: Workspace = '2d';
-  /** Undo / redo of textures (and animation frames) switched away from, with their untouched pixels */
-  const histories = new Map<string, { history: PixelHistory; base: ImageData | null; baseUpscaled: boolean }>();
+  /**
+   * Undo / redo of textures (and animation frames) switched away from, with their untouched pixels
+   * and, for layers, the session the steps belong to and the layer they were last on
+   */
+  const histories = new Map<string, { history: PixelHistory; base: ImageData | null; baseUpscaled: boolean; layers: LayerSession | null; image: ImageData | null }>();
   const historyKey = (t: OpenTexture) => `${t.key}#${t.anim ? t.frame : 0}`;
+  /** Paint layers of textures opened this session (their undo steps point at them), by texture path */
+  const sessions = new Map<string, LayerSession>();
+  let offLayers: (() => void) | null = null;
 
   // ---------------------------------------------------------------- header
   const headThumb = h('canvas', { class: 'tx-head-thumb pixelated', 'aria-hidden': 'true' });
@@ -312,7 +348,36 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const ws3d = wsSwitch.querySelector<HTMLElement>('[data-value="3d"]');
   if (ws2d) tooltip(ws2d, te.canvas.paintFlatKey);
   if (ws3d) tooltip(ws3d, te.canvas.paint3dKey);
-  const stage = h('div', { class: 'tx-stage' }, canvasBox, stage3d, wsSwitch, loading, dropHint, emptyEl);
+  const layersUi = createLayersPanel({
+    session: (create) => layerSession(create),
+    gameImage: () => gameLayerImage(),
+    area: () => (cur ? areaOf(cur) : { x: 0, y: 0, w: 1, h: 1 }),
+    animated: () => !!cur?.anim && !cur.anim.still,
+    texture: () => cur?.full ?? null,
+  });
+  const stage = h('div', { class: 'tx-stage' }, canvasBox, stage3d, wsSwitch, layersUi.button, layersUi.el, loading, dropHint, emptyEl);
+  // The open layers panel takes its room from the canvas when there is room to spare (the sheet on
+  // phones, a column beside a wide canvas), so the texture stays in view and can be painted.
+  const placeCanvas = () => {
+    let right = 0;
+    let bottom = 0;
+    // (on phones the panel sits on the tab bar)
+    const bar = document.querySelector<HTMLElement>('.tx-tabbar');
+    const barTop = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().top : innerHeight;
+    layersUi.el.style.setProperty('--tx-pl-bottom', `${Math.max(0, Math.round(innerHeight - barTop))}px`);
+    if (!layersUi.el.hidden && canvasBox.parentElement === stage) {
+      const sr = stage.getBoundingClientRect();
+      const pr = layersUi.el.getBoundingClientRect();
+      if (pr.width >= sr.width - 4) bottom = Math.max(0, Math.min(sr.height - 48, Math.round(sr.bottom - pr.top)));
+      else if (pr.left - sr.left >= 360) right = Math.max(0, Math.round(sr.right - pr.left + 6));
+    }
+    canvasBox.style.right = right ? `${right}px` : '';
+    canvasBox.style.bottom = bottom ? `${bottom}px` : '';
+  };
+  const placeRo = new ResizeObserver(() => placeCanvas());
+  placeRo.observe(stage);
+  placeRo.observe(layersUi.el);
+  offs.push(() => placeRo.disconnect());
 
   // ---------------------------------------------------------------- options bar
   const sizeVal = h('output', { class: 'tx-size-val', 'aria-live': 'polite' }, '1');
@@ -333,7 +398,15 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     strength.style.setProperty('--fill', `${((Number(strength.value) - 2) / 58) * 100}%`);
   });
   const strengthGroup = h('label', { class: 'tx-opt' }, h('span', { class: 'tx-opt-label' }, te.canvas.strength), strength);
-  const toolOpts = h('div', { class: 'tx-optgroup' }, sizeGroup, mirrorGroup, fillAll, filledChip, strengthGroup);
+  // the eyedropper takes what shows, or (with layers) the layer being painted
+  const pickLayerChip = h('button', { type: 'button', class: 'chip tx-opt-chip tx-pick-layer', 'aria-pressed': 'false' }, tl.pickLayer);
+  tooltip(pickLayerChip, tl.pickLayerHint);
+  pickLayerChip.addEventListener('click', () => {
+    if (!pc) return;
+    pc.setPickShown(!pc.pickShown);
+    syncSettings(pc.getSettings());
+  });
+  const toolOpts = h('div', { class: 'tx-optgroup' }, sizeGroup, mirrorGroup, fillAll, filledChip, strengthGroup, pickLayerChip);
 
   const gridBtn = iconButton('grid', te.canvas.grid, () => pc?.setShowGrid(!pc.showGrid), { size: 'sm', active: true });
   const tiledBtn = iconButton('grid-2x2-2', te.canvas.tiled, () => pc?.setTiledPreview(!pc.tiledPreview), { size: 'sm', active: false });
@@ -462,6 +535,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       }),
       pc.on('colorpick', () => dock.sync()),
       pc.on('hover', (p) => opts.onCanvasHover?.(p)),
+      pc.on('blocked', () => blocked()),
     );
     syncSettings(pc.getSettings());
     return pc;
@@ -494,6 +568,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     filledChip.hidden = s.tool !== 'rect' && s.tool !== 'rect-fill';
     filledChip.setAttribute('aria-pressed', String(s.tool === 'rect-fill'));
     strengthGroup.hidden = !['lighten', 'darken', 'noise'].includes(s.tool);
+    pickLayerChip.hidden = s.tool !== 'picker' || !cur?.layers || cur.layers.plain;
+    pickLayerChip.setAttribute('aria-pressed', String(!!pc && !pc.pickShown));
     strength.value = String(Math.round(s.shadeStrength * 100));
     strength.style.setProperty('--fill', `${((Number(strength.value) - 2) / 58) * 100}%`);
     gridBtn.setActive(s.showGrid);
@@ -510,6 +586,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   function onChange(img: ImageData) {
     const t = cur;
     if (!t || !pc) return;
+    // painted on layers: into the active layer (layersChanged() does the rest)
+    if (t.layers) {
+      t.layers.takeCanvas(img);
+      return;
+    }
     if (t.anim) {
       putFrame(t.full, t.anim, t.frame, img);
       frames.update(t.full, t.frame);
@@ -520,16 +601,161 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (t.base && !pc.canUndo() && samePixels(t.full, t.base)) {
       // everything was undone: the texture is untouched again, not an edit that looks like vanilla
       t.upscaled = t.baseUpscaled;
-      if (store.isEdited(t.key)) store.resetToVanilla(t.key);
+      if (store.isEdited(t.key)) write.resetToVanilla(t.key);
     } else {
       t.upscaled = false;
-      store.setImage(t.key, copy);
+      write.setImage(t.key, copy);
     }
     store.events.emit('image', { path: t.key, full: copy });
     if (PAINT_TOOLS.has(pc.tool)) dock.noteUsed(pc.color as RGBA);
     paintHeader();
+    layersUi.paintActive();
     if (paletteTimer) clearTimeout(paletteTimer);
     paletteTimer = setTimeout(() => dock.setPalette(pc ? paletteSource(pc.getImage()) : null), 400);
+  }
+
+  // ---------------------------------------------------------------- paint layers
+  /** The area of the texture the pixel editor shows: the frame being painted, else all of it */
+  const areaOf = (t: OpenTexture): Area => (t.anim ? frameRect(t.anim, t.frame) : { x: 0, y: 0, w: t.full.width, h: t.full.height });
+  /** What the pixel editor shows of the texture, flattened (for the palette) */
+  const shownFrame = (t: OpenTexture): ImageData => getFrame(t.full, t.anim, t.frame);
+
+  /** The open texture's layers; `create` makes them (one layer: its pixels) when it has none yet. */
+  function layerSession(create: boolean): LayerSession | null {
+    const t = cur;
+    if (!t || !pc || t.key === ICON_KEY) return null;
+    if (t.layers || !create) return t.layers;
+    const key = t.key;
+    const s = new LayerSession(singleLayer(cloneImageData(t.full), fmt(tl.layerName, { n: 1 })), () => (cur?.key === key ? areaOf(cur) : { x: 0, y: 0, w: t.full.width, h: t.full.height }));
+    keepSession(key, s);
+    t.layers = s;
+    bindLayers(t);
+    store.setLayers(key, s.stack);
+    return s;
+  }
+
+  /** Connects the open texture's layers to the pixel editor (which shows the active layer already). */
+  function bindLayers(t: OpenTexture) {
+    offLayers?.();
+    offLayers = null;
+    const s = t.layers;
+    if (!s || !pc) return;
+    s.attach(pc);
+    offLayers = s.on((kind, fresh) => layersChanged(t, s, kind, fresh));
+  }
+
+  function unbindLayers() {
+    offLayers?.();
+    offLayers = null;
+    cur?.layers?.attach(null);
+  }
+
+  /** The layers changed (painted, or the layers themselves): the flattened texture follows. */
+  function layersChanged(t: OpenTexture, s: LayerSession, kind: LayerChange, fresh: boolean) {
+    if (cur !== t || t.layers !== s || !pc) return;
+    let full: ImageData;
+    if (kind === 'pixels') {
+      // only the frame being painted changed
+      full = cloneImageData(t.full);
+      s.flattenInto(full);
+    } else full = flatten(s.stack);
+    t.full = full;
+    if (t.anim) {
+      if (kind === 'pixels') frames.update(t.full, t.frame);
+      else frames.set(t.full, t.anim, t.frame, stripOpts(t));
+    }
+    // a new change to the layers: other frames' undo steps were made on other layers
+    if (fresh) for (const k of [...histories.keys()]) if (k.startsWith(`${t.key}#`)) histories.delete(k);
+    if (t.base && !pc.canUndo() && s.plain && samePixels(t.full, t.base)) {
+      // everything was undone: the texture is untouched again
+      t.upscaled = t.baseUpscaled;
+      if (store.isEdited(t.key)) write.resetToVanilla(t.key);
+      store.setLayers(t.key, s.stack);
+    } else {
+      t.upscaled = false;
+      write.setImage(t.key, full, { keepLayers: true });
+      store.setLayers(t.key, s.stack, s.takePainted());
+    }
+    store.events.emit('image', { path: t.key, full });
+    if (kind === 'pixels' && PAINT_TOOLS.has(pc.tool)) dock.noteUsed(pc.color as RGBA);
+    paintHeader();
+    if (kind === 'pixels') layersUi.paintActive();
+    else {
+      layersUi.refresh();
+      syncSettings(pc.getSettings());
+    }
+    if (paletteTimer) clearTimeout(paletteTimer);
+    paletteTimer = setTimeout(() => cur === t && dock.setPalette(paletteSource(shownFrame(t))), 400);
+  }
+
+  /** The paint layers stored for a texture, while they still make its pixels (null: one plain layer). */
+  async function layersFor(path: string, full: ImageData): Promise<LayerSession | null> {
+    const stack = await store.loadLayers(path);
+    const kept = sessions.get(path);
+    if (!stack) {
+      if (kept) dropSession(path);
+      return null;
+    }
+    if (kept && kept.stack === stack) {
+      keepSession(path, kept);
+      return kept;
+    }
+    if (kept) dropSession(path);
+    const first = stack.layers[0].image;
+    if (first.width !== full.width || first.height !== full.height || !samePixels(flatten(stack), full)) {
+      // changed somewhere else (an older copy, a tweak that rewrote the texture): one layer again
+      store.setLayers(path, null);
+      toast(tl.dropped, { tone: 'info' });
+      return null;
+    }
+    const s = new LayerSession(stack, () => (cur?.key === path ? areaOf(cur) : { x: 0, y: 0, w: full.width, h: full.height }));
+    keepSession(path, s);
+    return s;
+  }
+
+  /** Remembers a texture's layers (the latest few: each holds every layer's pixels). */
+  function keepSession(path: string, s: LayerSession) {
+    sessions.delete(path);
+    sessions.set(path, s);
+    for (const k of [...sessions.keys()]) {
+      if (sessions.size <= KEPT_SESSIONS) break;
+      if (k !== path && k !== cur?.key) dropSession(k);
+    }
+  }
+
+  /** Forgets a texture's layers session and the undo steps that point at it. */
+  function dropSession(path: string) {
+    sessions.delete(path);
+    for (const k of [...histories.keys()]) if (k.startsWith(`${path}#`)) histories.delete(k);
+  }
+
+  /** The game's texture at the open texture's size, for a layer to trace over. */
+  function gameLayerImage(): ImageData | null {
+    const t = cur;
+    const v = t?.vanilla;
+    if (!t || !v) return null;
+    const W = t.full.width;
+    const H = t.full.height;
+    if (v.width === W && v.height === H) return cloneImageData(v);
+    const scale = W / v.width;
+    if (Math.abs(v.height * scale - H) < 0.5) return resizeNearest(v, W, H);
+    // other frames than the game's: its first frame in every frame
+    const a = t.anim;
+    if (!a) return resizeNearest(v, W, H);
+    const first = resizeNearest(getFrame(v, { ...a, frameW: v.width, frameH: v.width, cols: 1, count: Math.max(1, Math.floor(v.height / v.width)) }, 0), a.frameW, a.frameH);
+    const out = cloneImageData(t.full);
+    out.data.fill(0);
+    for (let i = 0; i < a.count; i++) putFrame(out, a, i, first);
+    return out;
+  }
+
+  let blockedAt = 0;
+  /** Painting a locked or hidden layer: say why (once in a while, not for every dab) */
+  function blocked() {
+    const a = cur?.layers?.active;
+    if (!a || Date.now() - blockedAt < 2500) return;
+    blockedAt = Date.now();
+    toast(fmt(a.hidden ? tl.hiddenToast : tl.lockedToast, { name: a.name }), { tone: 'info', duration: 3000 });
   }
 
   let hover3d: { pixels: readonly number[]; echo?: readonly number[] } | null = null;
@@ -588,7 +814,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       if (!t || !pc) return;
       const img = pc.getImage();
       let full = img;
-      if (t.anim) {
+      if (t.layers) {
+        full = cloneImageData(t.full);
+        t.layers.flattenInto(full, img);
+      } else if (t.anim) {
         full = cloneImageData(t.full);
         putFrame(full, t.anim, t.frame, img);
       }
@@ -606,20 +835,38 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     }
     const k = historyKey(t);
     histories.delete(k);
-    histories.set(k, { history: pc.saveHistory(), base: t.base, baseUpscaled: t.baseUpscaled });
+    histories.set(k, { history: pc.saveHistory(), base: t.base, baseUpscaled: t.baseUpscaled, layers: t.layers, image: t.layers?.active.image ?? null });
     while (histories.size > KEPT_HISTORIES) histories.delete(histories.keys().next().value!);
   }
 
-  /** Brings back the undo steps of a texture opened again, when its pixels are still the ones they lead to. */
+  /**
+   * Brings back the undo steps of a texture opened again, when its pixels are still the ones they
+   * lead to. The pixel editor shows the active layer (if any) and isn't connected to the layers yet.
+   */
   function restoreHistory(t: OpenTexture) {
     if (!pc) return;
     const k = historyKey(t);
     const kept = histories.get(k);
     if (!kept) return;
     histories.delete(k);
+    if (kept.layers !== t.layers) return;
+    const s = t.layers;
+    const active = s?.stack.active ?? 0;
+    const at = s && kept.image ? s.stack.layers.findIndex((l) => l.image === kept.image) : -1;
+    if (s && kept.image && at < 0) return;
+    if (s && at !== active) {
+      // the steps end on another layer: open it, then select the active one again (a passive step)
+      s.set({ layers: s.stack.layers, active: at });
+      pc.setImage(s.canvasImage(), { resetHistory: true, resetView: false });
+    }
     if (pc.restoreHistory(kept.history)) {
       t.base = kept.base;
       t.baseUpscaled = kept.baseUpscaled;
+    }
+    if (s && at !== active) {
+      s.attach(pc);
+      s.select(active);
+      s.attach(null);
     }
   }
 
@@ -674,7 +921,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       } catch {
         full = await defaultIcon();
       }
-      return { key: ICON_KEY, entry: null, name: te.canvas.packIcon, full, vanilla: null, upscaled: false, anim: null, frame: 0, alphaData: false, base: null, baseUpscaled: false };
+      return { key: ICON_KEY, entry: null, name: te.canvas.packIcon, full, vanilla: null, upscaled: false, anim: null, frame: 0, alphaData: false, base: null, baseUpscaled: false, layers: null };
     }
     const entry = store.byPath.get(path) ?? store.ensureEntry(path) ?? null;
     const edited = store.isEdited(path);
@@ -689,7 +936,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (!anim && entry && project.edition === 'bedrock' && isBedrockStrip(entry, full)) anim = stripLayout(full);
     const alphaData = project.edition === 'bedrock' && /\.tga$/i.test(path) && hasAlphaData(full);
     const pristine = !edited && !!vanilla;
-    return { key: path, entry, name: entry?.pretty ?? path, full, vanilla, upscaled, anim, frame: 0, alphaData, base: pristine ? cloneImageData(full) : null, baseUpscaled: upscaled };
+    const layers = edited ? await layersFor(path, full) : null;
+    return { key: path, entry, name: entry?.pretty ?? path, full, vanilla, upscaled, anim, frame: 0, alphaData, base: pristine ? cloneImageData(full) : null, baseUpscaled: upscaled, layers };
   }
 
   const defaultIcon = (): Promise<ImageData> => autoPackIcon(store, 64);
@@ -717,12 +965,19 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (my !== token) return;
     loading.hidden = true;
     stashHistory();
+    unbindLayers();
     cur = t;
     el.classList.remove('is-empty');
     const frameImg = getFrame(t.full, t.anim, 0);
     const canvas = ensureCanvas(frameImg);
-    canvas.setImage(frameImg, { resetHistory: true, resetView: true });
+    // with layers, the editor paints the active one
+    canvas.setImage(t.layers ? t.layers.canvasImage() : frameImg, { resetHistory: true, resetView: true });
+    // (paintable again after layers that were dropped from elsewhere)
+    if (!t.layers) canvas.setLocked(false);
     restoreHistory(t);
+    bindLayers(t);
+    layersUi.setAvailable(path !== ICON_KEY);
+    layersUi.refresh();
     // Alpha that is data (tint / dye / glow masks): paint colours by default so the mask survives.
     canvas.setChannelMode(t.alphaData ? 'rgb' : 'rgba');
     paintBanner(t);
@@ -748,8 +1003,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     stashHistory();
     t.frame = i;
     const f = getFrame(t.full, t.anim, i);
-    pc.setImage(f, { resetHistory: true, resetView: false });
+    unbindLayers();
+    pc.setImage(t.layers ? t.layers.canvasImage() : f, { resetHistory: true, resetView: false });
     restoreHistory(t);
+    bindLayers(t);
+    layersUi.refresh();
     dock.setPalette(paletteSource(f));
     opts.onHistory();
     opts.onFrame?.(t);
@@ -772,6 +1030,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       stage.insertBefore(canvasBox, stage3d);
     }
     if (pc) syncSettings(pc.getSettings());
+    placeCanvas();
     requestAnimationFrame(() => pc?.redraw());
   }
 
@@ -865,13 +1124,23 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   async function replaceFull(path: string, next: ImageData, label: string, viaHistory: boolean) {
     const before = cur && cur.key === path ? cloneImageData(cur.full) : null;
     const wasEdited = path === ICON_KEY ? !!project.icon : store.isEdited(path);
+    const s = cur && cur.key === path ? cur.layers : null;
+    const beforeLayers = s && !s.plain ? copyStack(s.stack) : null;
+    if (s && !s.plain && next.width === s.active.image.width && next.height === s.active.image.height) {
+      // painted on layers: the pixels go into the layer being painted, as an undo step
+      const a = s.active;
+      if (a.locked || a.hidden) return blocked();
+      s.apply({ layers: s.stack.layers.map((l, i) => (i === s.stack.active ? { ...l, image: cloneImageData(next) } : { ...l })), active: s.stack.active });
+      toast(fmt(byPointer(te.canvas.undoHint, te.canvas.undoHintTouch), { action: fmt(tl.replacedLayer, { name: a.name }) }), { tone: 'success' });
+      return;
+    }
     if (cur && cur.key === path && viaHistory && pc && !cur.anim && pc.width === next.width && pc.height === next.height) {
       pc.setImage(next, { resetHistory: false, resetView: false });
       onChange(pc.getImage());
       toast(fmt(byPointer(te.canvas.undoHint, te.canvas.undoHintTouch), { action: label }), { tone: 'success' });
       return;
     }
-    store.setImage(path, next);
+    write.setImage(path, next);
     if (cur && cur.key === path) await open(path);
     store.events.emit('image', { path, full: next });
     toast(label, {
@@ -880,8 +1149,9 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         ? {
             label: te.canvas.undo,
             onClick: () => {
-              if (wasEdited) store.setImage(path, before);
-              else if (path !== ICON_KEY) store.resetToVanilla(path);
+              if (wasEdited) write.setImage(path, before, { keepLayers: !!beforeLayers });
+              else if (path !== ICON_KEY) write.resetToVanilla(path);
+              if (beforeLayers) store.setLayers(path, beforeLayers);
               if (cur?.key === path) void open(path);
             },
           }
@@ -900,19 +1170,33 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const animatedOf = (t: OpenTexture): Animated | null => (t.anim && !t.anim.still ? { full: t.full, anim: store.animation(t.key) ?? recordFromInfo(t.anim) } : null);
 
   /**
+   * The layers of the open texture, each changed by `fn` (`active`: the layer being painted), with
+   * the flattened result. Null when the texture has no layers.
+   */
+  function perLayer(t: OpenTexture, fn: (img: ImageData, active: boolean) => ImageData): { stack: LayerStack; full: ImageData } | null {
+    const s = t.layers;
+    if (!s || s.plain) return null;
+    const stack: LayerStack = { layers: s.stack.layers.map((l, i) => ({ ...l, image: fn(l.image, i === s.stack.active) })), active: s.stack.active };
+    return { stack, full: flatten(stack) };
+  }
+
+  /**
    * Puts new frames and timing on the open texture (null animation: it isn't animated any more) and
    * shows `frame`. `undo`: a toast with Undo, for changes the pixel history can't take back.
+   * `layers`: the texture's layers with the same frames (their flattened pixels are `next.full`).
    */
-  function applyAnim(t: OpenTexture, next: { full: ImageData; anim: TextureAnimation | null }, frame: number, undo?: string) {
-    const before = { full: cloneImageData(t.full), anim: store.animation(t.key) ?? null, frame: t.frame, edited: store.isEdited(t.key) };
+  function applyAnim(t: OpenTexture, next: { full: ImageData; anim: TextureAnimation | null }, frame: number, undo?: string, layers?: LayerStack | null) {
+    const before = { full: cloneImageData(t.full), anim: store.animation(t.key) ?? null, frame: t.frame, edited: store.isEdited(t.key), layers: t.layers && !t.layers.plain ? copyStack(t.layers.stack) : null };
     // the frames moved: their undo steps no longer fit
     for (const k of [...histories.keys()]) if (k.startsWith(`${t.key}#`)) histories.delete(k);
-    store.setImage(t.key, next.full);
+    write.setImage(t.key, next.full, { keepLayers: !!layers });
+    if (layers) store.setLayers(t.key, layers);
     store.setAnimation(t.key, next.anim);
     animVersion++;
     const restore = () => {
-      if (before.edited) store.setImage(t.key, before.full);
-      else store.resetToVanilla(t.key);
+      if (before.edited) write.setImage(t.key, before.full, { keepLayers: !!before.layers });
+      else write.resetToVanilla(t.key);
+      if (before.layers) store.setLayers(t.key, before.layers);
       store.setAnimation(t.key, before.anim);
       if (cur?.key === t.key) void open(t.key).then(() => cur && cur.anim && selectFrame(Math.min(before.frame, cur.anim.count - 1)));
     };
@@ -932,7 +1216,16 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     t.base = null;
     t.baseUpscaled = false;
     const f = getFrame(t.full, t.anim, t.frame);
-    pc.setImage(f, { resetHistory: true, resetView: !sameSize });
+    unbindLayers();
+    if (t.layers && layers) t.layers.set(layers);
+    else if (t.layers) {
+      // the frames came without layers (an import that replaced them all): one layer again
+      dropSession(t.key);
+      t.layers = null;
+    }
+    pc.setImage(t.layers ? t.layers.canvasImage() : f, { resetHistory: true, resetView: !sameSize });
+    bindLayers(t);
+    layersUi.refresh();
     frames.set(t.full, t.anim, t.frame, stripOpts(t));
     dock.setPalette(paletteSource(f));
     store.events.emit('image', { path: t.key, full: t.full });
@@ -976,30 +1269,44 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       if (b) return showCant(b);
       if (cur !== t) return;
       const strip = t.anim?.still ? t.anim : null;
-      const r = makeAnimated(t.full, strip ? strip.frameW : t.full.width, strip ? strip.frameH : t.full.height);
+      const fw = strip ? strip.frameW : t.full.width;
+      const fh = strip ? strip.frameH : t.full.height;
+      const r = makeAnimated(t.full, fw, fh);
       const n = r.full.height / r.anim.frameHeight;
-      applyAnim(t, r, strip ? t.frame : 1);
+      const layered = perLayer(t, (img) => makeAnimated(img, fw, fh).full);
+      applyAnim(t, layered ? { full: layered.full, anim: r.anim } : r, strip ? t.frame : 1, undefined, layered?.stack);
       toast(fmt(ta.made, { count: n }), { tone: 'success', duration: 5000 });
     },
-    /** Applies a change to the open animation: `fn` gives its new frames and timing and the frame to show */
-    edit(fn: (a: Animated, t: OpenTexture) => [Animated, number], undo?: string) {
+    /**
+     * Applies a change to the open animation: `fn` gives its new frames and timing and the frame to
+     * show. With layers it runs for each layer; `outside(frames)` are pictures from elsewhere (pasted,
+     * imported), which go into the layer being painted (the other layers get empty frames there).
+     */
+    edit(fn: (a: Animated, t: OpenTexture, outside: (frames: ImageData[]) => ImageData[]) => [Animated, number], undo?: string) {
       const t = cur;
       const a = t && animatedOf(t);
       if (!t || !a) return;
-      const [next, frame] = fn(a, t);
+      const keep = (frames: ImageData[]) => frames;
+      const [next, frame] = fn(a, t, keep);
       if (next === a) {
         if (next.full.height / next.anim.frameHeight >= maxFramesFor(next.anim.frameHeight)) toast(fmt(ta.toasts.tooMany, { max: maxFramesFor(next.anim.frameHeight) }), { tone: 'warn' });
         return;
       }
-      applyAnim(t, next, frame, undo);
+      const blank = (frames: ImageData[]) => frames.map((f) => createImageData(f.width, f.height));
+      const layered = perLayer(t, (img, active) => fn({ full: img, anim: a.anim }, t, active ? keep : blank)[0].full);
+      applyAnim(t, layered ? { full: layered.full, anim: next.anim } : next, frame, undo, layered?.stack);
     },
     remove(i: number) {
       const t = cur;
       const a = t && animatedOf(t);
       if (!t || !a) return;
       const { next, full } = deleteFrame(a, i);
-      if (next) applyAnim(t, next, Math.min(i, next.full.height / next.anim.frameHeight - 1), fmt(ta.toasts.deleted, { n: i + 1 }));
-      else applyAnim(t, { full, anim: null }, 0, fmt(ta.toasts.stillNow, { n: i + 1 }));
+      const layered = perLayer(t, (img) => {
+        const r = deleteFrame({ full: img, anim: a.anim }, i);
+        return r.next?.full ?? r.full;
+      });
+      if (next) applyAnim(t, layered ? { full: layered.full, anim: next.anim } : next, Math.min(i, next.full.height / next.anim.frameHeight - 1), fmt(ta.toasts.deleted, { n: i + 1 }), layered?.stack);
+      else applyAnim(t, { full: layered?.full ?? full, anim: null }, 0, fmt(ta.toasts.stillNow, { n: i + 1 }), layered?.stack);
     },
     copy(i: number) {
       const t = cur;
@@ -1013,12 +1320,14 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         return;
       }
       const clip = frameClip;
-      anim.edit((a) => [addFrames(a, i + 1, [clip]), i + 1]);
+      anim.edit((a, _t, outside) => [addFrames(a, i + 1, outside([clip])), i + 1]);
     },
     still() {
       const t = cur;
-      if (!t?.anim) return;
-      applyAnim(t, { full: cloneImageData(getFrame(t.full, t.anim, t.frame)), anim: null }, 0, fmt(ta.toasts.still, { n: t.frame + 1 }));
+      const a = t?.anim;
+      if (!t || !a) return;
+      const layered = perLayer(t, (img) => cloneImageData(getFrame(img, a, t.frame)));
+      applyAnim(t, { full: layered?.full ?? cloneImageData(getFrame(t.full, a, t.frame)), anim: null }, 0, fmt(ta.toasts.still, { n: t.frame + 1 }), layered?.stack);
     },
     setOnion(mode: OnionMode) {
       onion = mode;
@@ -1062,7 +1371,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         canBlend: project.edition === 'bedrock' || javaAnimRules(project.version).interpolate,
         blend: blendMode(),
         onApply: (next) => {
-          if (cur === t) applyAnim(t, { full: t.full, anim: next }, t.frame, ta.toasts.timing);
+          if (cur === t) applyAnim(t, { full: t.full, anim: next }, t.frame, ta.toasts.timing, t.layers && !t.layers.plain ? t.layers.stack : null);
         },
       });
     },
@@ -1091,10 +1400,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
           if (cur !== t) return;
           const label = fmt(ta.toasts.imported, { count: list.length });
           if (a && mode === 'after') {
-            const now = animatedOf(t) ?? a;
-            applyAnim(t, addFrames(now, t.frame + 1, list, times ?? []), t.frame + 1, label);
+            anim.edit((now, _t, outside) => [addFrames(now, t.frame + 1, outside(list), times ?? []), t.frame + 1], label);
             return;
           }
+          if (t.layers && !t.layers.plain) toast(tl.importFlattens, { tone: 'info' });
           const base: Animated = a ?? { full: t.full, anim: { frameWidth: fw, frameHeight: fh, frametime: NEW_FRAMETIME, updatedAt: Date.now() } };
           const r = replaceFrames(base, list, times ?? undefined);
           applyAnim(t, r.full.height / fh >= 2 ? r : { full: r.full, anim: null }, 0, label);
@@ -1140,9 +1449,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
           alphaData: t.alphaData,
           onApply: (img: ImageData, scope: UploadScope) => {
             let next: ImageData;
+            const layer = cur === t && t.layers && !t.layers.plain ? t.layers.active.image : null;
             if (!t.anim || scope === 'full') next = img;
             else {
-              next = cloneImageData(t.full);
+              next = cloneImageData(layer ?? t.full);
               if (scope === 'frame') putFrame(next, t.anim, t.frame, img);
               else for (let i = 0; i < t.anim.count; i++) putFrame(next, t.anim, i, img);
             }
@@ -1173,9 +1483,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       } catch {
         before = null;
       }
-      // an animation made here goes with its pixels (and comes back with them)
+      // an animation made here goes with its pixels (and comes back with them), and so do layers
       const beforeAnim = store.animation(key) ?? null;
-      store.resetToVanilla(key);
+      const layered = await store.loadLayers(key).catch(() => null);
+      const beforeLayers = layered ? copyStack(layered) : null;
+      write.resetToVanilla(key);
       if (!hasVanilla) store.rebuildEntries();
       if (cur?.key === key) {
         if (hasVanilla) await open(key);
@@ -1192,7 +1504,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
           ? {
               label: te.canvas.undo,
               onClick: () => {
-                store.setImage(key, before!);
+                write.setImage(key, before!, { keepLayers: !!beforeLayers });
+                if (beforeLayers) store.setLayers(key, beforeLayers);
                 if (beforeAnim) store.setAnimation(key, beforeAnim);
                 void open(key);
               },
@@ -1226,7 +1539,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       hover3d = hv;
       pc?.redraw();
     },
+    layers: () => cur?.layers ?? null,
+    showLayers: (on) => layersUi.setOpen(on),
     destroy() {
+      unbindLayers();
+      sessions.clear();
       offs.forEach((f) => f());
       if (liveRaf) cancelAnimationFrame(liveRaf);
       histories.clear();
@@ -1255,6 +1572,24 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     window.removeEventListener('blur', onBlur);
   });
   offs.push(store.events.on('entries', () => renderEmpty()));
+  // Something else rewrote the open texture without its layers (a PvP tweak, a look's copy put back,
+  // a reset...): the layers are gone, so the editor opens what the texture is now and never paints
+  // the old layers back over it. Until then nothing can be painted.
+  offs.push(
+    store.events.on('layersDropped', ({ path }) => {
+      const t = cur;
+      if (ownWrites || !t || t.key !== path || !t.layers || !pc) return;
+      const plain = t.layers.plain;
+      unbindLayers();
+      dropSession(path);
+      t.layers = null;
+      pc.clearHistory();
+      pc.setLocked(true);
+      void open(path).then(() => {
+        if (!plain) toast(tl.dropped, { tone: 'info' });
+      });
+    }),
+  );
 
   paintHeader();
   return panel;

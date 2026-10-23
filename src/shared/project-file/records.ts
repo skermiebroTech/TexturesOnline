@@ -17,6 +17,7 @@ import { FILE_KEY_PREFIX, isImportedPack, loadEdits, loadImportedFiles, saveEdit
 import { readCapeSettings, readSavedCape, writeCapeSettings, writeSavedCape, type CapeSettings } from '../../tools/skins/cape/store';
 import { readDraftJson, writeDraftJson } from '../../tools/fonts/draft';
 import type { FontDraft } from '../../tools/fonts/font';
+import { checkLayerRecords } from '../../tools/textures/layers/record';
 import { ProjectFileError, type ItemType, type ProjectItem, type ProjectTool } from './format';
 import { pf } from './i18n/text';
 
@@ -129,7 +130,8 @@ const str = (x: unknown, fallback = ''): string => (typeof x === 'string' ? x : 
 function checkTexturePack(x: unknown): TexturePackProject {
   if (!isObj(x) || x.kind !== 'texturepack' || (x.edition !== 'java' && x.edition !== 'bedrock') || typeof x.version !== 'string') throw damaged();
   const p = x as unknown as TexturePackProject;
-  return {
+  const layers = checkLayerRecords(x.layers);
+  const out: TexturePackProject = {
     ...p,
     name: str(x.name),
     description: str(x.description),
@@ -139,6 +141,10 @@ function checkTexturePack(x: unknown): TexturePackProject {
     effects: Array.isArray(x.effects) ? (x.effects as unknown[]).filter(isObj) as unknown as TexturePackProject['effects'] : [],
     icon: x.icon instanceof Blob ? x.icon : undefined,
   };
+  // paint layers that can't be read are dropped (the texture itself is in overrides)
+  if (layers) out.layers = layers;
+  else delete out.layers;
+  return out;
 }
 
 function checkSkin(x: unknown): SkinProjectData {

@@ -78,6 +78,29 @@ export interface PixelHistory {
   readonly redo: readonly unknown[];
 }
 
+/**
+ * A change made outside the canvas, recorded as an undo step (e.g. a paint layer added): undo() and
+ * redo() take it back and do it again. A step may switch the image being edited with swapImage().
+ */
+export interface PixelStep {
+  undo(): void;
+  redo(): void;
+  /** Memory the step keeps (counted against the history budget) */
+  readonly bytes?: number;
+  /**
+   * Not a step of its own: undone and redone together with the step before it (e.g. which paint
+   * layer is being edited, so undoing a stroke goes back to the layer it was painted on).
+   */
+  readonly passive?: boolean;
+}
+
+/**
+ * Shows the edited image with other pixels around it (e.g. paint layers above and below): writes
+ * the pixels to show for `rect` of `img` into the same rect of `out` (the image's size, straight
+ * RGBA). Used for display and, by default, for the eyedropper.
+ */
+export type PixelCompositor = (img: ImageData, rect: Rect, out: ImageData) => void;
+
 /** Custom symmetry: returns the pixels that should also be painted when (x, y) is painted. */
 export type MirrorMap = (x: number, y: number) => ReadonlyArray<readonly [number, number]>;
 
@@ -128,6 +151,8 @@ export interface PixelCanvasEvents {
   settings: PixelCanvasSettings;
   zoom: number;
   selection: Rect | null;
+  /** Painting was refused because the canvas is locked (see setLocked) */
+  blocked: void;
 }
 
 /** Key name, or a translated description of a gesture */
@@ -206,7 +231,11 @@ interface Floating {
 
 interface RectEntry { kind: 'rect'; rect: Rect; data: Uint8ClampedArray<ArrayBuffer>; selBefore: Rect | null; selAfter: Rect | null }
 interface FullEntry { kind: 'full'; width: number; height: number; data: Uint8ClampedArray<ArrayBuffer>; selBefore: Rect | null; selAfter: Rect | null }
-type HistoryEntry = RectEntry | FullEntry;
+interface StepEntry { kind: 'step'; step: PixelStep }
+type HistoryEntry = RectEntry | FullEntry | StepEntry;
+
+const entryBytes = (e: HistoryEntry): number => (e.kind === 'step' ? (e.step.bytes ?? 0) : e.data.byteLength);
+const isPassive = (e: HistoryEntry | undefined): boolean => e?.kind === 'step' && !!e.step.passive;
 
 type Gesture =
   | { kind: 'stroke'; id: number; touch: boolean; last: Point; lastF: [number, number] }
@@ -264,6 +293,9 @@ export class PixelCanvas {
   private mask: Uint8Array | null = null;
   private overlay: PixelCanvasOptions['overlay'] = null;
   private overlayFailed = false;
+  private compositor: PixelCompositor | null = null;
+  private pickVisible = true;
+  private locked = false;
   private mirrorMap: MirrorMap | null;
   private readonly decode: ((file: Blob) => Promise<ImageData>) | null;
   private readonly dimMasked: boolean;
@@ -664,6 +696,51 @@ export class PixelCanvas {
     this.requestRender();
   }
 
+  /**
+   * Shows the image through a compositor (null: as it is), e.g. with the paint layers above and
+   * below it. Only the normal (RGBA) view uses it; the colour and alpha views show the image itself.
+   */
+  setCompositor(fn: PixelCompositor | null): void {
+    if (fn === this.compositor) return;
+    this.compositor = fn;
+    this.markAll();
+    this.requestRender();
+  }
+
+  /** Redraws after the pixels the compositor adds changed (an area, or everything). */
+  recompose(r?: Rect | null): void {
+    const c = r ? clampRect(r, this.img.width, this.img.height) : null;
+    if (c) this.markDirtyRect(c);
+    else if (!r) this.markAll();
+    this.requestRender();
+  }
+
+  /** The eyedropper takes what is shown (true, the default) or the image's own pixels (with a compositor). */
+  get pickShown(): boolean { return this.pickVisible; }
+  setPickShown(v: boolean): void {
+    this.pickVisible = !!v;
+  }
+
+  /**
+   * A locked canvas can't be painted: tools that change pixels (and strokes from outside) do nothing
+   * and emit 'blocked'. The eyedropper, the selection, panning and zooming still work.
+   */
+  get isLocked(): boolean { return this.locked; }
+  setLocked(v: boolean): void {
+    if (!!v === this.locked) return;
+    this.endGesture();
+    this.finalizeFloat();
+    this.locked = !!v;
+    this.updateCursor();
+  }
+
+  /** True (and 'blocked' emitted) when the canvas is locked. */
+  private refuse(): boolean {
+    if (!this.locked) return false;
+    this.emit('blocked', undefined);
+    return true;
+  }
+
   getSettings(): PixelCanvasSettings {
     return {
       tool: this._tool,
@@ -690,12 +767,21 @@ export class PixelCanvas {
       this.cancelGesture();
       return;
     }
-    const e = this.undoStack.pop();
-    if (!e) return;
+    if (!this.canUndo()) return;
     this.float = null;
-    this.swapEntry(e);
-    this.sel = e.selBefore ? { ...e.selBefore } : null;
-    this.committedSel = this.sel;
+    // passive steps on top go back with the step under them
+    while (isPassive(this.undoStack[this.undoStack.length - 1])) {
+      const p = this.undoStack.pop() as StepEntry;
+      p.step.undo();
+      this.redoStack.push(p);
+    }
+    const e = this.undoStack.pop()!;
+    if (e.kind === 'step') e.step.undo();
+    else {
+      this.swapEntry(e);
+      this.sel = e.selBefore ? { ...e.selBefore } : null;
+      this.committedSel = this.sel;
+    }
     this.redoStack.push(e);
     this.afterHistoryMove();
   }
@@ -705,14 +791,58 @@ export class PixelCanvas {
     const e = this.redoStack.pop();
     if (!e) return;
     this.float = null;
-    this.swapEntry(e);
-    this.sel = e.selAfter ? { ...e.selAfter } : null;
-    this.committedSel = this.sel;
+    if (e.kind === 'step') e.step.redo();
+    else {
+      this.swapEntry(e);
+      this.sel = e.selAfter ? { ...e.selAfter } : null;
+      this.committedSel = this.sel;
+    }
     this.undoStack.push(e);
+    while (isPassive(this.redoStack[this.redoStack.length - 1])) {
+      const p = this.redoStack.pop() as StepEntry;
+      p.step.redo();
+      this.undoStack.push(p);
+    }
     this.afterHistoryMove();
   }
 
-  canUndo(): boolean { return this.undoStack.length > 0; }
+  canUndo(): boolean { return this.undoStack.some((e) => !isPassive(e)); }
+
+  /**
+   * Records a change made outside the canvas as an undo step, after any edit in progress. A
+   * passive step with nothing under it to undo is dropped (there is nothing for it to go back with).
+   */
+  pushStep(step: PixelStep): void {
+    if (this.destroyed) return;
+    this.endGesture();
+    this.finalizeFloat();
+    this.commit();
+    if (step.passive && !this.canUndo()) {
+      if (this.redoStack.length) {
+        this.redoStack = [];
+        this.emit('history', undefined);
+      }
+      return;
+    }
+    this.pushHistory({ kind: 'step', step });
+  }
+
+  /**
+   * Edits another image of the same size from now on, keeping the undo steps (for steps that
+   * switch images, e.g. paint layers) and the selection. Never emits 'change'.
+   */
+  swapImage(img: ImageData): void {
+    if (!img || img.width !== this.img.width || img.height !== this.img.height || img.data.length !== img.width * img.height * 4) {
+      throw new Error('swapImage needs an ImageData of the same size');
+    }
+    this.cancelGesture();
+    this.float = null;
+    this.img = cloneImage(img);
+    this.baseline = this.img.data.slice();
+    this.lastPointF = null;
+    this.markAll();
+    this.requestRender();
+  }
 
   private hasPendingEdit(): boolean {
     const k = this.gesture?.kind;
@@ -768,6 +898,7 @@ export class PixelCanvas {
     this.endGesture();
     this.finalizeFloat();
     const tool = opts.tool ?? 'pencil';
+    this.refuse();
     this.prepareEdit(tool === 'eraser' || tool === 'lighten' || tool === 'darken' || tool === 'noise' ? tool : 'pencil', !!opts.secondary);
     this.gesture = { kind: 'external', id: -1, touch: false };
     this.updateCursor();
@@ -839,6 +970,25 @@ export class PixelCanvas {
     const i = (y * this.img.width + x) * 4;
     const d = this.img.data;
     return [d[i], d[i + 1], d[i + 2], d[i + 3]];
+  }
+
+  /** One pixel as the normal view shows it: through the compositor when there is one (see setCompositor). */
+  getShownPixel(x: number, y: number): RGBA {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    if (!this.compositor || !(x >= 0 && y >= 0 && x < this.img.width && y < this.img.height)) return this.getPixel(x, y);
+    const out = this.ensureDisplay();
+    this.compositor(this.img, { x, y, w: 1, h: 1 }, out);
+    return pickColor(out, x, y, 'rgba');
+  }
+
+  /** The colour the eyedropper takes at a pixel: what is shown there (see setPickShown), in the current view. */
+  pickAt(x: number, y: number): RGBA {
+    if (this.compositor && this.pickVisible && this._channelMode === 'rgba') return this.getShownPixel(x, y);
+    x = Math.floor(x);
+    y = Math.floor(y);
+    if (!(x >= 0 && y >= 0 && x < this.img.width && y < this.img.height)) return [0, 0, 0, 0];
+    return pickColor(this.img, x, y, this._channelMode);
   }
 
   // ---------------------------------------------------------------------------
@@ -927,6 +1077,7 @@ export class PixelCanvas {
 
   clear(): void {
     this.endGesture();
+    if (this.refuse()) return;
     const f = this.float;
     if (f) {
       if (f.composed) {
@@ -953,6 +1104,7 @@ export class PixelCanvas {
   applyFilter(fn: (img: ImageData) => ImageData): void {
     this.endGesture();
     this.finalizeFloat();
+    if (this.refuse()) return;
     const W = this.img.width;
     const H = this.img.height;
     const region = this.sel ? clampRect(this.sel, W, H) : null;
@@ -1033,6 +1185,7 @@ export class PixelCanvas {
   /** Copies then clears the selection. Needs a selection. */
   cut(): boolean {
     if (!this.sel && !this.float) return false;
+    if (this.refuse()) return false;
     if (!this.copy()) return false;
     this.clear();
     return true;
@@ -1054,6 +1207,7 @@ export class PixelCanvas {
     this.assertImage(src);
     this.endGesture();
     this.finalizeFloat();
+    if (this.refuse()) return;
     const W = this.img.width;
     const H = this.img.height;
     let buf = cloneImage(src);
@@ -1083,6 +1237,7 @@ export class PixelCanvas {
   on(ev: 'settings', cb: (s: PixelCanvasSettings) => void): () => void;
   on(ev: 'zoom', cb: (scale: number) => void): () => void;
   on(ev: 'selection', cb: (r: Rect | null) => void): () => void;
+  on(ev: 'blocked', cb: () => void): () => void;
   on(ev: keyof PixelCanvasEvents, cb: Listener): () => void {
     let set = this.listeners.get(ev);
     if (!set) {
@@ -1151,10 +1306,10 @@ export class PixelCanvas {
     this.redoStack = [];
     if (this.undoStack.length > HISTORY_MAX) this.undoStack.splice(0, this.undoStack.length - HISTORY_MAX);
     let total = 0;
-    for (const x of this.undoStack) total += x.data.byteLength;
+    for (const x of this.undoStack) total += entryBytes(x);
     // Keep a few steps even for big images, but never let history grow far past the budget.
     while (this.undoStack.length > 1 && total > HISTORY_BUDGET && (this.undoStack.length > HISTORY_MIN || total > HISTORY_HARD_LIMIT)) {
-      total -= this.undoStack.shift()!.data.byteLength;
+      total -= entryBytes(this.undoStack.shift()!);
     }
     this.emit('history', undefined);
   }
@@ -1177,7 +1332,7 @@ export class PixelCanvas {
     return true;
   }
 
-  private swapEntry(e: HistoryEntry): void {
+  private swapEntry(e: RectEntry | FullEntry): void {
     if (e.kind === 'rect') {
       const W = this.img.width;
       const cur = copyRegion(this.img.data, W, e.rect);
@@ -1296,6 +1451,7 @@ export class PixelCanvas {
   }
 
   private plotRaw(x: number, y: number): void {
+    if (this.locked) return;
     const clip = this.clip;
     if (clip && (x < clip.x || y < clip.y || x >= clip.x + clip.w || y >= clip.y + clip.h)) return;
     const p = y * this.img.width + x;
@@ -1369,6 +1525,7 @@ export class PixelCanvas {
   }
 
   private doFill(fx: number, fy: number, secondary: boolean): void {
+    if (this.refuse()) return;
     this.prepareEdit('fill', secondary);
     const color = secondary ? this._secondary : this._color;
     const seen = new Set<number>();
@@ -1392,7 +1549,7 @@ export class PixelCanvas {
   private doPick(fx: number, fy: number, secondary: boolean): void {
     const t = this.targetsOf(Math.floor(fx), Math.floor(fy))[0];
     if (!t) return;
-    const c = pickColor(this.img, t[0], t[1], this._channelMode);
+    const c = this.pickAt(t[0], t[1]);
     if (secondary) {
       if (sameColor(c, this._secondary)) return;
       this._secondary = c;
@@ -1486,6 +1643,7 @@ export class PixelCanvas {
   }
 
   private nudge(dx: number, dy: number): void {
+    if (this.refuse()) return;
     if (!this.float) this.lift();
     const f = this.float!;
     f.x += dx;
@@ -1498,6 +1656,7 @@ export class PixelCanvas {
 
   private transform(kind: 'h' | 'v' | 'r'): void {
     this.endGesture();
+    if (this.refuse()) return;
     const W = this.img.width;
     const H = this.img.height;
     const hasSel = !!this.sel || !!this.float;
@@ -1603,6 +1762,10 @@ export class PixelCanvas {
     // A pen's eraser end can paint while the move tool is active: drop the floating pixels first,
     // otherwise the next move would put back what was just erased.
     if (this.float && tool !== 'select' && tool !== 'move' && tool !== 'picker') this.finalizeFloat();
+    if (tool !== 'picker' && tool !== 'select' && this.refuse()) {
+      this.gesture = { kind: 'ignore', id, touch };
+      return;
+    }
     switch (tool) {
       case 'pencil':
       case 'eraser':
@@ -1644,6 +1807,10 @@ export class PixelCanvas {
         const px = Math.floor(fx);
         const py = Math.floor(fy);
         if (this.sel && rectContains(this.sel, px, py)) {
+          if (this.refuse()) {
+            this.gesture = { kind: 'ignore', id, touch };
+            break;
+          }
           this.beginMove(fx, fy, id, touch);
           break;
         }
@@ -2348,7 +2515,7 @@ export class PixelCanvas {
     this.hoverF = [next[0] + 0.5, next[1] + 0.5];
     this.setHover(this.hoverF);
     this.ensureVisible(next[0], next[1]);
-    const c = pickColor(this.img, next[0], next[1], 'rgba');
+    const c = this.compositor && this.pickVisible ? this.pickAt(next[0], next[1]) : pickColor(this.img, next[0], next[1], 'rgba');
     this.announce(`${next[0]}, ${next[1]}: ${c[3] === 0 ? canvasText.transparent : rgbaToHex(c)}`);
     this.requestRender();
   }
@@ -2361,6 +2528,7 @@ export class PixelCanvas {
     if (tool === 'fill') this.doFill(fx, fy, secondary);
     else if (tool === 'picker') this.doPick(fx, fy, secondary);
     else if (tool === 'select' || tool === 'move') return;
+    else if (this.refuse()) return;
     else {
       const strokeTool: StrokeTool = tool === 'eraser' || tool === 'lighten' || tool === 'darken' || tool === 'noise' ? tool : 'pencil';
       this.prepareEdit(strokeTool, secondary);
@@ -2576,7 +2744,10 @@ export class PixelCanvas {
     const y1 = clamp(this.dy1, 0, H - 1);
     this.dx0 = Infinity; this.dy0 = Infinity; this.dx1 = -1; this.dy1 = -1;
     let src = this.img;
-    if (this._channelMode !== 'rgba') {
+    if (this._channelMode === 'rgba' && this.compositor) {
+      src = this.ensureDisplay();
+      this.compositor(this.img, { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 }, src);
+    } else if (this._channelMode !== 'rgba') {
       if (!this.display || this.display.width !== W || this.display.height !== H) this.display = createImage(W, H);
       const s = this.img.data;
       const d = this.display.data;
@@ -2591,6 +2762,14 @@ export class PixelCanvas {
       src = this.display;
     }
     this.imgCtx.putImageData(src, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+  }
+
+  /** The display buffer (what is shown when it isn't the image itself), at the image's size. */
+  private ensureDisplay(): ImageData {
+    const W = this.img.width;
+    const H = this.img.height;
+    if (!this.display || this.display.width !== W || this.display.height !== H) this.display = createImage(W, H);
+    return this.display;
   }
 
   private drawImageClipped(src: CanvasImageSource, x0: number, y0: number): void {
@@ -2919,7 +3098,7 @@ export class PixelCanvas {
   private drawPickerSwatch(f: [number, number]): void {
     const t = this.targetsOf(Math.floor(f[0]), Math.floor(f[1]))[0];
     if (!t) return;
-    const c = pickColor(this.img, t[0], t[1], this._channelMode);
+    const c = this.pickAt(t[0], t[1]);
     const ctx = this.ctx;
     const { ds, ox, oy, dpr } = this;
     const size = Math.round(26 * dpr);

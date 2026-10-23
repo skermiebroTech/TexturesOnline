@@ -27,6 +27,7 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | `src/tools/textures/pbr/i18n/` | `textures.pbr` (the Material tab) | the editor, when the tab first opens |
 | `src/tools/textures/names/i18n/` | `textures.names` (the name-based textures window) | the editor, when the window first opens |
 | `src/tools/textures/anim/i18n/` | `textures.anim` (the animation maker: frames strip, timing, import and GIF windows) | `textures/view.ts`, with the editor's code |
+| `src/tools/textures/layers/i18n/` | `textures.layers` (paint layers: the Layers button and panel, the eyedropper's option) | `textures/view.ts`, with the editor's code |
 | `src/shared/models/i18n/` | `shared.models` (texture roles, block states, mob looks and parts, model notes) | `textures/view.ts`, with the editor's code |
 
 In a folder:

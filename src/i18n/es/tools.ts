@@ -26,6 +26,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     featureList: [
       'Explora todas las texturas vanilla de la versión elegida, con búsqueda y categorías',
       'Editor de píxeles: lápiz, goma, relleno, cuentagotas, línea, formas, ruido, selección, pintura en espejo, deshacer y rehacer',
+      'Capas: añade, oculta, bloquea, reordena y combina capas con opacidad y modos de fusión (multiplicar, trama, aclarar, superponer), o calca la textura del juego; el pack las recibe acopladas',
       'Pinta directamente sobre el modelo 3D del bloque: cada cara pinta la textura que muestra, incluidos bloques con varias texturas, escaleras, losas y cofres',
       'Edita texturas de criaturas sobre sus modelos 3D (más de 80 criaturas, Java y Bedrock) con variantes y partes que se pueden ocultar',
       'Sillas de montar, armaduras de caballo y de lobo, alfombras de llama y armaduras humanoides con adornos, mostradas y pintadas sobre las criaturas que las llevan',
@@ -45,6 +46,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     features: [
       ['Todas las texturas vanilla de la versión que elijas, con búsqueda y categorías.'],
       ['Un editor de píxeles completo: lápiz, goma, relleno, cuentagotas, línea, formas, ruido, selección, pintura en espejo y deshacer/rehacer, con vista en mosaico y zoom.'],
+      ['Capas: abre Capas sobre el lienzo para pintar en capas separadas, como en un editor de imágenes. Añádelas, duplícalas, cámbiales el nombre, ocúltalas, bloquéalas, arrástralas y combínalas, ajusta su opacidad y su modo de fusión (multiplicar, trama, aclarar, superponer) o pon la textura del juego en una capa bloqueada para calcarla. Las capas recorren todos los fotogramas de una animación, deshacer también deshace los cambios de capas y Minecraft recibe las capas acopladas en un solo PNG.'],
       ['Pinta en 3D: cambia el editor a 3D (o pulsa D) y pinta directamente sobre el modelo del bloque. Cada cara pinta la textura que muestra, así el frente, los lados y la parte de arriba de un horno, o la capa lateral de la hierba, se editan justo donde los ves.'],
       ['Criaturas en 3D: más de 80 criaturas, de los creepers a los aldeanos, aparecen con su propio modelo y se pintan como los bloques. Oculta una parte del cuerpo para llegar a lo que tapa, cambia variantes, edades o colores de lana, y ponles sillas y armaduras para pintarlas también.'],
       ['Cambia formas (Java): edita el modelo de un bloque o ítem cubo a cubo, con sus texturas, UV y cómo se ve en la mano, o convierte un ítem plano en uno 3D. Los archivos del modelo van al pack según tu versión. ', link('/guides/make-3d-items-texture-pack', 'Cómo hacer ítems 3D'), '.'],

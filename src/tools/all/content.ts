@@ -27,6 +27,7 @@ export type AllCardId =
   | 'cape'
   | 'shaders'
   | 'pixel'
+  | 'layers'
   | 'paint3d'
   | 'mobs'
   | 'gear'
@@ -112,6 +113,7 @@ const SECTIONS: Section[] = [
     accent: 'accent-green',
     cards: [
       { id: 'pixel', icon: 'pencil', to: '/textures' },
+      { id: 'layers', icon: 'images', to: '/textures' },
       { id: 'paint3d', icon: 'box', to: '/help?s=paint-3d' },
       { id: 'mobs', icon: 'users', to: '/help?s=mobs' },
       { id: 'gear', icon: 'sword', to: '/help?s=gear' },
@@ -207,6 +209,7 @@ export const ALL_EN: AllText = {
     cape: { title: 'Cape maker', desc: 'Paint a cape and elytra on the 64×32 template in 3D, then get the PNG or an elytra texture pack.' },
     shaders: { title: 'Shader maker', desc: 'Design your own shaders with sliders and a live preview, with or without mods.' },
     pixel: { title: 'Pixel editor', desc: 'Pencil, fill, lines, shapes, selection and mirror, with undo, at 16× up to 512× resolution.' },
+    layers: { title: 'Paint layers', desc: 'Paint on layers like in an image editor, with blend modes and opacity, or trace over the game’s texture. The pack gets them flattened.' },
     paint3d: { title: 'Paint in 3D', desc: 'Paint straight onto a block’s 3D model and watch every face it uses change at once.' },
     mobs: { title: 'Mobs and entities', desc: 'Repaint mobs on their real 3D models, one body part at a time.' },
     gear: { title: 'Saddles, armour and trims', desc: 'See saddles, horse armour, armour sets and armour trims on the mob that wears them.' },

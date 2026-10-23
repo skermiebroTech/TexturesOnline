@@ -73,6 +73,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
     featureList: [
       'Browse every vanilla texture of the chosen version, with search and categories',
       'Pixel editor: pencil, eraser, fill, eyedropper, line, shapes, noise, selection, mirror painting, undo and redo',
+      'Paint layers: add, hide, lock, reorder and merge layers with opacity and blend modes (multiply, screen, lighten, overlay), or trace over the game’s texture; the pack gets them flattened',
       'Paint straight onto the 3D block model: each face paints the texture it shows, including multi-texture blocks, stairs, slabs and chests',
       'Edit mob textures on 3D mob models (over 80 mobs, Java and Bedrock) with variants and part toggles',
       'Saddles, horse and wolf armour, llama carpets, and humanoid armour with trims, shown and painted on the mobs that wear them',
@@ -92,6 +93,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
     features: [
       ['Every vanilla texture of the version you pick, with search and categories.'],
       ['A full pixel editor: pencil, eraser, fill, eyedropper, line, shapes, noise, selection, mirror painting and undo/redo, with tiled preview and zoom.'],
+      ['Paint layers: open Layers over the canvas to paint on separate layers, like in an image editor. Add, duplicate, rename, hide, lock, drag and merge them, set their opacity and blend mode (multiply, screen, lighten, overlay), or put the game’s texture on a locked layer to trace over. Layers go through every animation frame, undo takes back layer changes too, and Minecraft gets the layers flattened into one PNG.'],
       ['Paint in 3D: switch the editor to 3D (or press D) and paint right on the block model. Each face paints the texture it shows, so a furnace’s front, sides and top, or the grass side overlay, are edited where you see them.'],
       ['Mobs in 3D: over 80 mobs, from creepers to villagers, show on their own models and paint like blocks. Hide a body part to reach what it covers, switch variants, ages or wool colours, and dress mobs in saddles and armour to paint those too.'],
       ['Change shapes (Java): edit a block’s or item’s model cube by cube, with its textures, UVs and the way it sits in hand, or turn a flat item into a 3D one. The model files go into the pack for your version. ', link('/guides/make-3d-items-texture-pack', 'How to make 3D items'), '.'],

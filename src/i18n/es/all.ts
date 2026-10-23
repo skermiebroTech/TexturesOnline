@@ -29,6 +29,7 @@ export const ALL: AllText = {
     cape: { title: 'Creador de capas', desc: 'Pinta una capa y unos élitros en la plantilla de 64×32 en 3D y descarga el PNG o un texture pack de élitros.' },
     shaders: { title: 'Creador de shaders', desc: 'Diseña tus propios shaders con controles deslizantes y vista previa en vivo, con o sin mods.' },
     pixel: { title: 'Editor de píxeles', desc: 'Lápiz, relleno, líneas, formas, selección y espejo, con deshacer, de 16× a 512× de resolución.' },
+    layers: { title: 'Capas de pintura', desc: 'Pinta en capas como en un editor de imágenes, con modos de fusión y opacidad, o calca la textura del juego. El pack las recibe acopladas.' },
     paint3d: { title: 'Pinta en 3D', desc: 'Pinta directamente sobre el modelo 3D de un bloque y mira cómo cambian todas sus caras a la vez.' },
     mobs: { title: 'Mobs y entidades', desc: 'Repinta mobs sobre sus modelos 3D reales, parte por parte.' },
     gear: { title: 'Monturas, armaduras y adornos', desc: 'Mira monturas, armaduras de caballo, sets de armadura y adornos de armadura en el mob que los lleva.' },
