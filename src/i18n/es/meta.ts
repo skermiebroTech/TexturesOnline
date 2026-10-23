@@ -62,7 +62,7 @@ export const META_ES: MetaTranslation = {
     },
     '/help': {
       title: 'Cómo instalar texture packs, skins y shaders en Minecraft',
-      description: 'Instala texture packs, skins y shaders en Minecraft Java y Bedrock en PC, Mac, móvil y consola, encuentra la carpeta resourcepacks y soluciona errores.',
+      description: 'Paso a paso para Java y Bedrock en Windows, Mac, Android, iPhone y consolas: dónde está la carpeta resourcepacks, cómo activarlo y qué hacer si falla.',
       label: 'Ayuda',
     },
     '/about': {
@@ -125,14 +125,14 @@ export const META_ES: MetaTranslation = {
     'make-shaders-without-mods': {
       title: 'Shaders de Minecraft sin mods ni OptiFine (Java y Bedrock)',
       h1: '¿Se pueden tener shaders en Minecraft sin mods?',
-      description: 'Sí: en Java 1.17+ un paquete de recursos cambia los shaders del juego (sin OptiFine ni Iris) y Bedrock tiene Visuales vibrantes. Qué se puede y cómo.',
+      description: 'Sí, sin OptiFine ni Iris: en Java 1.17+ un paquete de recursos cambia los shaders del juego y Bedrock tiene Visuales vibrantes. Créalo gratis.',
       label: 'Shaders sin mods',
       blurb: 'Lo que pueden hacer los shaders vanilla de Java y Visuales vibrantes en Bedrock.',
     },
     'java-vs-bedrock-packs': {
-      title: 'Texture packs Java vs Bedrock: diferencias y compatibilidad',
+      title: '¿Texture packs de Java en Bedrock? Conviértelos gratis',
       h1: 'Texture packs de Java vs Bedrock: diferencias y cómo convertirlos',
-      description: '¿Sirven los texture packs de Java en Bedrock? No: Java usa .zip + pack.mcmeta y Bedrock .mcpack + manifest.json. Carpetas, nombres, shaders y skins.',
+      description: 'No directamente: un pack de Java es un .zip con pack.mcmeta y Bedrock necesita un .mcpack. Conviértelo gratis en el navegador, archivo por archivo.',
       label: 'Packs de Java vs Bedrock',
       blurb: 'Archivos, carpetas, formatos, shaders y skins, comparados lado a lado.',
     },

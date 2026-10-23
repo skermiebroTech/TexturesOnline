@@ -63,7 +63,7 @@ export const META_JA: MetaTranslation = {
     },
     '/help': {
       title: 'テクスチャパック・スキン・シェーダーの入れ方',
-      description: 'MinecraftのJava版と統合版で、テクスチャパック・スキン・シェーダーを入れる方法。PC・Mac・スマホ・ゲーム機別の手順、resourcepacksフォルダーの場所、よくあるエラーの直し方。',
+      description: 'Java版と統合版の入れ方を、Windows・Mac・Android・iPhone・ゲーム機ごとに手順で解説。resourcepacksフォルダーの場所、パックの有効化、よくあるトラブルの直し方も。',
       label: 'ヘルプ',
     },
     '/about': {
@@ -126,14 +126,14 @@ export const META_JA: MetaTranslation = {
     'make-shaders-without-mods': {
       title: 'MODなし・OptiFineなしで使えるマイクラのシェーダー',
       h1: 'MODなしでMinecraftにシェーダーは入れられる？',
-      description: 'できます。Java版1.17以降はリソースパックでゲームのシェーダーを差し替えられ（OptiFine・Iris不要）、統合版にはバイブラントビジュアルズがあります。できることと限界を解説。',
+      description: 'できます（OptiFine・Iris不要）。Java版1.17以降はリソースパックでゲームのシェーダーを変えられ、統合版にはバイブラントビジュアルズがあります。スライダーで無料で作れます。',
       label: 'MODなしのシェーダー',
       blurb: 'Java版のバニラシェーダーと統合版のバイブラントビジュアルズでできること。',
     },
     'java-vs-bedrock-packs': {
-      title: 'Java版と統合版のテクスチャパックの違い',
+      title: 'Java版のテクスチャパックを統合版で使うには？無料ですぐ変換',
       h1: 'Java版と統合版（Bedrock）のテクスチャパックの違いと変換方法',
-      description: 'Java版のテクスチャパックは統合版で使える？使えません。Java版は.zip＋pack.mcmeta、統合版は.mcpack＋manifest.json。フォルダー、ファイル名、シェーダー、スキンを比較。',
+      description: 'そのままでは使えません。Java版は.zip＋pack.mcmeta、統合版は.mcpackが必要です。ブラウザで無料で変換でき、何が変わるかもファイルごとに確認できます。',
       label: 'Java版と統合版のパック',
       blurb: 'ファイル、フォルダー、形式、シェーダー、スキンを並べて比較。',
     },

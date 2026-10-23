@@ -64,7 +64,7 @@ export const META_RU: MetaTranslation = {
     },
     '/help': {
       title: 'Как установить текстурпак, скин и шейдеры в Minecraft',
-      description: 'Как установить текстурпаки, скины и шейдеры в Minecraft Java и Bedrock на ПК, Mac, телефоне и консоли, где найти нужную папку и что делать при ошибках.',
+      description: 'Пошагово для Java и Bedrock на Windows, Mac, Android, iPhone и консолях: где папка resourcepacks, как включить пак и как быстро исправить частые ошибки.',
       label: 'Помощь',
     },
     '/about': {
@@ -127,14 +127,14 @@ export const META_RU: MetaTranslation = {
     'make-shaders-without-mods': {
       title: 'Шейдеры Minecraft без модов и OptiFine (Java и Bedrock)',
       h1: 'Можно ли сделать шейдеры для Minecraft без модов?',
-      description: 'Да: в Java с 1.17 ресурспак может заменить шейдеры игры без OptiFine и Iris, а в Bedrock есть Vibrant Visuals. Что можно, чего нельзя и как это сделать.',
+      description: 'Да, без OptiFine и Iris: в Java с 1.17 ресурспак меняет шейдеры самой игры, а в Bedrock есть Vibrant Visuals. Сделай свой бесплатно с помощью ползунков.',
       label: 'Шейдеры без модов',
       blurb: 'Что умеют ванильные шейдерпаки для Java и Vibrant Visuals в Bedrock.',
     },
     'java-vs-bedrock-packs': {
-      title: 'Текстурпаки Java и Bedrock: отличия и конвертация',
+      title: 'Текстурпак Java на Bedrock? Конвертируй бесплатно за минуту',
       h1: 'Текстурпаки Java и Bedrock: чем отличаются и как перенести',
-      description: 'Работают ли паки Java в Bedrock? Нет: в Java это .zip и pack.mcmeta, в Bedrock — .mcpack и manifest.json. Сравниваем папки, имена, шейдеры и скины.',
+      description: 'Не напрямую: пак Java — это .zip с pack.mcmeta, а Bedrock нужен .mcpack. Конвертируй свой бесплатно в браузере и посмотри, что меняется в каждом файле.',
       label: 'Паки Java и Bedrock',
       blurb: 'Файлы, папки, форматы, шейдеры и скины: сравнение бок о бок.',
     },
