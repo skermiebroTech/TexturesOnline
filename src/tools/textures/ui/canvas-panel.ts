@@ -193,6 +193,20 @@ const QUICK_PICKS: { pick: keyof EditorText['canvas']['picks']; ids: string[] }[
 export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const { store } = opts;
   const project = store.project;
+  /** Writes of this panel to the store (they take care of the texture's layers themselves) */
+  let ownWrites = 0;
+  const own = <T,>(fn: () => T): T => {
+    ownWrites++;
+    try {
+      return fn();
+    } finally {
+      ownWrites--;
+    }
+  };
+  const write = {
+    setImage: (path: string, full: ImageData, o?: { keepLayers?: boolean }) => own(() => store.setImage(path, full, o)),
+    resetToVanilla: (path: string) => own(() => store.resetToVanilla(path)),
+  };
   let pc: PixelCanvas | null = null;
   let cur: OpenTexture | null = null;
   let token = 0;
@@ -587,10 +601,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (t.base && !pc.canUndo() && samePixels(t.full, t.base)) {
       // everything was undone: the texture is untouched again, not an edit that looks like vanilla
       t.upscaled = t.baseUpscaled;
-      if (store.isEdited(t.key)) store.resetToVanilla(t.key);
+      if (store.isEdited(t.key)) write.resetToVanilla(t.key);
     } else {
       t.upscaled = false;
-      store.setImage(t.key, copy);
+      write.setImage(t.key, copy);
     }
     store.events.emit('image', { path: t.key, full: copy });
     if (PAINT_TOOLS.has(pc.tool)) dock.noteUsed(pc.color as RGBA);
@@ -638,7 +652,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
 
   /** The layers changed (painted, or the layers themselves): the flattened texture follows. */
   function layersChanged(t: OpenTexture, s: LayerSession, kind: LayerChange, fresh: boolean) {
-    if (cur !== t || !pc) return;
+    if (cur !== t || t.layers !== s || !pc) return;
     let full: ImageData;
     if (kind === 'pixels') {
       // only the frame being painted changed
@@ -655,11 +669,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (t.base && !pc.canUndo() && s.plain && samePixels(t.full, t.base)) {
       // everything was undone: the texture is untouched again
       t.upscaled = t.baseUpscaled;
-      if (store.isEdited(t.key)) store.resetToVanilla(t.key);
+      if (store.isEdited(t.key)) write.resetToVanilla(t.key);
       store.setLayers(t.key, s.stack);
     } else {
       t.upscaled = false;
-      store.setImage(t.key, full, { keepLayers: true });
+      write.setImage(t.key, full, { keepLayers: true });
       store.setLayers(t.key, s.stack, s.takePainted());
     }
     store.events.emit('image', { path: t.key, full });
@@ -958,6 +972,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     const canvas = ensureCanvas(frameImg);
     // with layers, the editor paints the active one
     canvas.setImage(t.layers ? t.layers.canvasImage() : frameImg, { resetHistory: true, resetView: true });
+    // (paintable again after layers that were dropped from elsewhere)
+    if (!t.layers) canvas.setLocked(false);
     restoreHistory(t);
     bindLayers(t);
     layersUi.setAvailable(path !== ICON_KEY);
@@ -1124,7 +1140,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       toast(fmt(byPointer(te.canvas.undoHint, te.canvas.undoHintTouch), { action: label }), { tone: 'success' });
       return;
     }
-    store.setImage(path, next);
+    write.setImage(path, next);
     if (cur && cur.key === path) await open(path);
     store.events.emit('image', { path, full: next });
     toast(label, {
@@ -1133,8 +1149,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
         ? {
             label: te.canvas.undo,
             onClick: () => {
-              if (wasEdited) store.setImage(path, before, { keepLayers: !!beforeLayers });
-              else if (path !== ICON_KEY) store.resetToVanilla(path);
+              if (wasEdited) write.setImage(path, before, { keepLayers: !!beforeLayers });
+              else if (path !== ICON_KEY) write.resetToVanilla(path);
               if (beforeLayers) store.setLayers(path, beforeLayers);
               if (cur?.key === path) void open(path);
             },
@@ -1173,13 +1189,13 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     const before = { full: cloneImageData(t.full), anim: store.animation(t.key) ?? null, frame: t.frame, edited: store.isEdited(t.key), layers: t.layers && !t.layers.plain ? copyStack(t.layers.stack) : null };
     // the frames moved: their undo steps no longer fit
     for (const k of [...histories.keys()]) if (k.startsWith(`${t.key}#`)) histories.delete(k);
-    store.setImage(t.key, next.full, { keepLayers: !!layers });
+    write.setImage(t.key, next.full, { keepLayers: !!layers });
     if (layers) store.setLayers(t.key, layers);
     store.setAnimation(t.key, next.anim);
     animVersion++;
     const restore = () => {
-      if (before.edited) store.setImage(t.key, before.full, { keepLayers: !!before.layers });
-      else store.resetToVanilla(t.key);
+      if (before.edited) write.setImage(t.key, before.full, { keepLayers: !!before.layers });
+      else write.resetToVanilla(t.key);
       if (before.layers) store.setLayers(t.key, before.layers);
       store.setAnimation(t.key, before.anim);
       if (cur?.key === t.key) void open(t.key).then(() => cur && cur.anim && selectFrame(Math.min(before.frame, cur.anim.count - 1)));
@@ -1471,7 +1487,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       const beforeAnim = store.animation(key) ?? null;
       const layered = await store.loadLayers(key).catch(() => null);
       const beforeLayers = layered ? copyStack(layered) : null;
-      store.resetToVanilla(key);
+      write.resetToVanilla(key);
       if (!hasVanilla) store.rebuildEntries();
       if (cur?.key === key) {
         if (hasVanilla) await open(key);
@@ -1488,7 +1504,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
           ? {
               label: te.canvas.undo,
               onClick: () => {
-                store.setImage(key, before!, { keepLayers: !!beforeLayers });
+                write.setImage(key, before!, { keepLayers: !!beforeLayers });
                 if (beforeLayers) store.setLayers(key, beforeLayers);
                 if (beforeAnim) store.setAnimation(key, beforeAnim);
                 void open(key);
@@ -1556,6 +1572,24 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     window.removeEventListener('blur', onBlur);
   });
   offs.push(store.events.on('entries', () => renderEmpty()));
+  // Something else rewrote the open texture without its layers (a PvP tweak, a look's copy put back,
+  // a reset...): the layers are gone, so the editor opens what the texture is now and never paints
+  // the old layers back over it. Until then nothing can be painted.
+  offs.push(
+    store.events.on('layersDropped', ({ path }) => {
+      const t = cur;
+      if (ownWrites || !t || t.key !== path || !t.layers || !pc) return;
+      const plain = t.layers.plain;
+      unbindLayers();
+      dropSession(path);
+      t.layers = null;
+      pc.clearHistory();
+      pc.setLocked(true);
+      void open(path).then(() => {
+        if (!plain) toast(tl.dropped, { tone: 'info' });
+      });
+    }),
+  );
 
   paintHeader();
   return panel;

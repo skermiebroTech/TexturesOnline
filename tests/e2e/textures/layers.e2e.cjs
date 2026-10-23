@@ -22,6 +22,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tx-pl-'));
 const J = 'assets/minecraft/textures/';
 const STONE = `${J}block/stone.png`;
 const APPLE = `${J}item/apple.png`;
+const GLASS = `${J}block/glass.png`;
 
 let failures = 0;
 function check(name, ok, detail = '') {
@@ -135,6 +136,11 @@ async function exportZip(page) {
   await page.click('.tx-export-modal .btn-primary:has-text("Done")');
   return { zip: unzip(file), file };
 }
+
+/** The texture as the store holds it (what the pack gets) */
+const stored = (page, p) => page.evaluate(async (x) => Array.from((await window.__tx.store.getFull(x)).data), p);
+/** Indexes of the RGBA values that differ */
+const diffAt = (a, b) => a.map((v, i) => (v !== b[i] ? i : -1)).filter((i) => i >= 0);
 
 /** The flattened texture (all of it) as the editor holds it */
 const fullOf = (page) => page.evaluate(() => {
@@ -373,6 +379,55 @@ const fullOf = (page) => page.evaluate(() => {
     await page.locator('.pc-root').focus();
     await page.keyboard.press('Control+z');
     check('Ctrl+Z: the layers are back', (await layers(page)).list.length === 3);
+
+    // ---------------------------------------------------------------- rewritten from elsewhere
+    // A PvP tweak rewrites a layered texture that is open: its layers are dropped, the editor shows
+    // the tweaked pixels, and the next stroke changes only the pixel it paints.
+    await openTexture(page, GLASS);
+    if (await page.isHidden('.tx-pl')) await page.click('.tx-pl-btn');
+    await page.click('.tx-pl-add');
+    await page.waitForFunction(() => window.__tx.canvas.layers()?.stack.layers.length === 2);
+    await paintAt(page, 3, 3, RED);
+    await page.waitForSelector('.tx-save[data-state="saved"]', { timeout: 30000 });
+    await page.evaluate(() => window.__tx.showSide('pvp'));
+    await page.waitForSelector('.pvp-tweak[data-tweak="clearGlass"] .switch', { timeout: 60000 });
+    await page.click('.pvp-tweak[data-tweak="clearGlass"] .switch');
+    await page.waitForFunction(() => document.querySelector('.pvp-tweak[data-tweak="clearGlass"] .switch')?.getAttribute('aria-checked') === 'true' && !document.querySelector('.pvp-tweak.is-busy'), null, { timeout: 60000 });
+    await page.waitForFunction(() => window.__tx.canvas.layers() === null, null, { timeout: 15000 }).catch(() => undefined);
+    check('a PvP tweak on a layered texture drops its layers', (await layers(page)) === null);
+    check('… and says so', await toastSeen(page, /changed outside the layers/));
+    const tweaked = await stored(page, GLASS);
+    check('the tweak cleared the glass (and the red painted inside it)', tweaked[(3 * 16 + 3) * 4 + 3] === 0);
+    await page.evaluate(() => window.__tx.showSide('preview'));
+    await page.waitForFunction(() => !window.__tx.canvas.canvas().isLocked);
+    await paintAt(page, 4, 4, BLUE);
+    await page.waitForFunction((p) => window.__tx.store.isEdited(p), GLASS);
+    let after = await stored(page, GLASS);
+    let changed = diffAt(tweaked, after);
+    check('a stroke after the tweak changes only its own pixel (the old layers don’t come back)', changed.length > 0 && changed.every((i) => Math.floor(i / 4) === 4 * 16 + 4), `changed values at ${changed.slice(0, 8).join(',')}`);
+    // the tweak switched off and on again: the same holds
+    await page.evaluate(() => window.__tx.showSide('pvp'));
+    for (let k = 0; k < 2; k++) {
+      const was = await page.getAttribute('.pvp-tweak[data-tweak="clearGlass"] .switch', 'aria-checked');
+      await page.click('.pvp-tweak[data-tweak="clearGlass"] .switch');
+      await page.waitForFunction((w) => document.querySelector('.pvp-tweak[data-tweak="clearGlass"] .switch')?.getAttribute('aria-checked') !== w && !document.querySelector('.pvp-tweak.is-busy'), was, { timeout: 60000 });
+    }
+    // any other rewrite through the store: layers again, then the texture replaced from outside
+    await page.evaluate(() => window.__tx.showSide('preview'));
+    await page.click('.tx-pl-add');
+    await page.waitForFunction(() => window.__tx.canvas.layers()?.stack.layers.length === 2);
+    await paintAt(page, 2, 2, RED);
+    await page.evaluate((p) => {
+      const img = new ImageData(16, 16);
+      for (let i = 0; i < 256; i++) img.data.set([0, 200, 0, 255], i * 4);
+      window.__tx.store.setImage(p, img);
+    }, GLASS);
+    await page.waitForFunction(() => window.__tx.canvas.layers() === null && !window.__tx.canvas.canvas().isLocked, null, { timeout: 15000 });
+    const green = await stored(page, GLASS);
+    await paintAt(page, 1, 5, BLUE);
+    after = await stored(page, GLASS);
+    changed = diffAt(green, after);
+    check('a rewrite from elsewhere: the next stroke keeps the new pixels', changed.length > 0 && changed.every((i) => Math.floor(i / 4) === 5 * 16 + 1) && same(await pixel(page, 2, 2), [0, 200, 0, 255]), `changed values at ${changed.slice(0, 8).join(',')}`);
 
     // ---------------------------------------------------------------- an animated texture
     await openTexture(page, APPLE);

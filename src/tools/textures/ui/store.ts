@@ -35,6 +35,11 @@ export interface EditorEvents extends Record<string, unknown> {
   names: { ids: string[] };
   /** A texture's animation was made, changed or removed (project.animations) */
   animation: { path: string };
+  /**
+   * A texture painted on layers was rewritten without them (reset, a tweak, a copy put back...):
+   * its layers are gone, and an editor holding them must not write them back.
+   */
+  layersDropped: { path: string };
 }
 
 /** Paint layer stacks kept decoded for textures that aren't being saved (besides those that are) */
@@ -157,30 +162,32 @@ export class TexStore {
       return;
     }
     const wasEdited = this.isEdited(path);
-    if (!opts.keepLayers) this.dropLayers(path);
+    const dropped = !opts.keepLayers && this.dropLayers(path);
     this.pending.set(path, full);
     this.bump(path);
     if (!wasEdited && !this.byPath.has(path)) this.rebuildEntries();
     this.schedule();
     this.events.emit('overrides', { path });
+    if (dropped) this.events.emit('layersDropped', { path });
   }
 
   /** Back to vanilla (drops the pack's copy, and the animation made for it). */
   resetToVanilla(path: string): void {
     this.pending.delete(path);
-    this.dropLayers(path);
+    const dropped = this.dropLayers(path);
     removeOverride(this.project, path);
     if (this.project.animations?.[path]) this.setAnimation(path, null);
     this.bump(path);
     this.metaDirty = true;
     this.schedule();
     this.events.emit('overrides', { path });
+    if (dropped) this.events.emit('layersDropped', { path });
   }
 
   /** Puts a stored copy of a texture back as it was (null: none, the game's own texture shows). */
   setOverrideBlob(path: string, blob: Blob | null): void {
     this.pending.delete(path);
-    this.dropLayers(path);
+    const dropped = this.dropLayers(path);
     if (blob) this.project.overrides[path] = blob;
     else removeOverride(this.project, path);
     this.bump(path);
@@ -189,6 +196,7 @@ export class TexStore {
     // a texture the game doesn't have comes and goes from the list with its copy
     if (!this.assets.hasFile(path)) this.rebuildEntries();
     this.events.emit('overrides', { path });
+    if (dropped) this.events.emit('layersDropped', { path });
   }
 
   /**
@@ -330,11 +338,12 @@ export class TexStore {
     this.schedule();
   }
 
-  /** The texture is no longer made of its layers (reset, replaced from elsewhere). */
-  private dropLayers(path: string): void {
-    if (!this.layerStacks.has(path) && !this.project.layers?.[path]) return;
+  /** The texture is no longer made of its layers (reset, replaced from elsewhere). True when it had some. */
+  private dropLayers(path: string): boolean {
+    if (!this.layerStacks.has(path) && !this.project.layers?.[path]) return false;
     this.layerStacks.delete(path);
     this.pendingLayers.set(path, (this.pendingLayers.get(path) ?? 0) + 1);
+    return true;
   }
 
   private keepStack(path: string, stack: LayerStack): void {

@@ -21,7 +21,9 @@ repository keeps its original name, `TexturesOnline`).
   Layers go through every animation frame (each layer holds the whole strip). A texture starts as one
   layer and stays exactly as before until a layer is added. The layers are stored in the project
   (`layers`: one PNG per layer, so project files carry them); the texture in the pack, the previews, PBR
-  maps and effects use the layers flattened, and an opened pack is one layer.
+  maps and effects use the layers flattened, and an opened pack is one layer. A texture rewritten
+  without its layers (a PvP tweak, a reset, an upload of another size) is one layer of its new pixels again,
+  also while it is open.
 - Upload your own PNGs (auto-resized to the texture, 16x up to 512x).
 - One-click whole-pack effects (Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon,
   Smooth HD and more), stacked non-destructively and applied on export.
