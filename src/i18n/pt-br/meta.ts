@@ -179,5 +179,12 @@ export const META_PT_BR: MetaTranslation = {
       label: 'Fazer um pack de PvP',
       blurb: 'Fogo baixo, vidro transparente, espadas menores, mira e texturas para FPS.',
     },
+    'make-a-pbr-texture-pack': {
+      title: 'Texture pack PBR para Visuais Vibrantes e shaders',
+      h1: 'Como fazer um texture pack PBR para Visuais Vibrantes e shaders',
+      description: 'Crie grátis um texture pack PBR: brilho, metal, luz própria e relevo como conjuntos de texturas dos Visuais Vibrantes e mapas labPBR para Iris e OptiFine.',
+      label: 'Fazer um pack PBR',
+      blurb: 'Brilho, metal, luz própria e relevo para Visuais Vibrantes e shaders labPBR.',
+    },
   },
 };

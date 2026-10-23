@@ -743,9 +743,31 @@
 .tx-col-tabs .tab[data-value='textures'] {
   display: none;
 }
-/* four tabs: their names fit the side panel in every language without icons */
+/* five tabs: names without icons, smaller when they would run together (editor.ts fitSideTabs),
+   and where even that is too wide, icons and the name of the open one */
 .tx-col-tabs .tab .icon {
   display: none;
+}
+.tx-col-tabs.is-snug .tab {
+  font-size: var(--fs-sm);
+}
+.tx-col-tabs.is-tight .tab {
+  flex: 0 1 auto;
+  padding: 0 6px 2px;
+}
+.tx-col-tabs.is-tight .tab[aria-selected='true'] {
+  flex: 1 0 auto;
+}
+.tx-col-tabs.is-tight .tab .icon {
+  display: inline-flex;
+}
+.tx-col-tabs.is-tight .tab:not([aria-selected='true']) span:not(.icon) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .tx-col-right {
   grid-area: right;
@@ -764,6 +786,7 @@
   padding: 16px;
 }
 .tx-editor[data-side='preview'] .tx-side-body[data-tab='preview'],
+.tx-editor[data-side='material'] .tx-side-body[data-tab='material'],
 .tx-editor[data-side='effects'] .tx-side-body[data-tab='effects'],
 .tx-editor[data-side='pvp'] .tx-side-body[data-tab='pvp'],
 .tx-editor[data-side='pack'] .tx-side-body[data-tab='pack'] {
@@ -2867,8 +2890,24 @@
 }
 /* (not on touch screens held in landscape, which get the phone layout) */
 @media (max-width: 1180px) and (min-width: 761px) and (min-height: 561px), (max-width: 1180px) and (min-width: 761px) and (pointer: fine) {
+  /* six tabs don't fit by name: icons, and the name of the open one */
+  .tx-col-tabs .tab {
+    flex: 0 1 auto;
+    padding: 0 6px 2px;
+  }
+  .tx-col-tabs .tab[aria-selected='true'] {
+    flex: 1 0 auto;
+  }
   .tx-col-tabs .tab .icon {
-    display: none;
+    display: inline-flex;
+  }
+  .tx-col-tabs .tab:not([aria-selected='true']) span:not(.icon) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 
@@ -2922,6 +2961,7 @@
   .tx-editor[data-mobile='textures'] .tx-col-left,
   .tx-editor[data-mobile='editor'] .tx-col-center,
   .tx-editor[data-mobile='preview'] .tx-col-right,
+  .tx-editor[data-mobile='material'] .tx-col-right,
   .tx-editor[data-mobile='effects'] .tx-col-right,
   .tx-editor[data-mobile='pvp'] .tx-col-right,
   .tx-editor[data-mobile='pack'] .tx-col-right {
@@ -2953,7 +2993,7 @@
     backdrop-filter: blur(12px);
   }
   .tx-tabbar-btn {
-    /* six tabs: long names (Textures, Vorschau) take room the short ones (PvP, Pack) leave */
+    /* seven tabs: long names (Textures, Vorschau) take room the short ones (PvP, Pack) leave */
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
@@ -2982,6 +3022,18 @@
   }
   .tx-tabbar-btn[aria-current='page'] .icon {
     color: var(--tool-accent);
+  }
+  /* names that don't fit: the open tab keeps its name, the others show their icon */
+  .tx-tabbar.is-tight .tx-tabbar-btn[aria-current='page'] {
+    flex: 1 0 auto;
+  }
+  .tx-tabbar.is-tight .tx-tabbar-btn:not([aria-current='page']) span:not(.icon) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    text-overflow: clip;
   }
   .tx-texhead {
     min-height: 56px;

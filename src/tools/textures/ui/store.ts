@@ -1,7 +1,7 @@
 // Editor state for one texture pack project: the texture list, pending edits, debounced autosave to
 // IndexedDB and the events the panels listen to.
 
-import type { AssetIndex, CustomModel, TexturePackProject } from '../../../core/types';
+import type { AssetIndex, CustomModel, PbrMaterial, TexturePackProject } from '../../../core/types';
 import { Emitter } from '../../../core/events';
 import { saveProject } from '../../../core/storage';
 import { decodeImage, encodePng } from '../../../core/image';
@@ -27,6 +27,8 @@ export interface EditorEvents extends Record<string, unknown> {
   entries: void;
   /** Model, blockstate or item definition files changed (the model editor): paths written or removed */
   models: { paths: string[]; entries: { kind: 'block' | 'item'; id: string }[] };
+  /** PBR materials changed (the Material tab): the colour textures they belong to */
+  pbr: { paths: string[] };
 }
 
 const SAVE_DELAY = 700;
@@ -205,6 +207,26 @@ export class TexStore {
     this.touch();
     this.events.emit('models', { paths: [...info.files], entries: [{ kind: info.kind, id: info.id }] });
     return true;
+  }
+
+  // ---- PBR materials (project.pbr) ----
+
+  material(path: string): PbrMaterial | undefined {
+    return this.project.pbr?.[path];
+  }
+
+  /** Sets (or with null removes) the materials of textures. */
+  setMaterials(changes: Record<string, PbrMaterial | null>): void {
+    const paths = Object.keys(changes);
+    if (!paths.length) return;
+    const pbr = (this.project.pbr ??= {});
+    for (const [path, m] of Object.entries(changes)) {
+      if (m) pbr[path] = { ...m, updatedAt: Date.now() };
+      else delete pbr[path];
+    }
+    if (!Object.keys(pbr).length) delete this.project.pbr;
+    this.touch();
+    this.events.emit('pbr', { paths });
   }
 
   /** Project settings changed. */

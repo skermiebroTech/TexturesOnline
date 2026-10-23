@@ -35,6 +35,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Edite texturas animadas quadro a quadro',
       'Packs de PvP e de FPS: fogo baixo, vidro transparente, mira personalizada, espadas menores e texturas 8× com um clique',
       'Editor de GUI: barra de atalhos, corações, fome, armadura, inventário e recipientes, botões, fundos de menu, o panorama da tela de título, os textos de abertura e o brilho de encantamento, com prévia ao vivo no jogo',
+      'Materiais PBR: brilho, metal, luz própria, luz através e relevo (mapas de normais feitos com as cores) para os Visuais Vibrantes do Bedrock e shaders labPBR do Java, com prévia 3D iluminada',
       'Efeitos de um clique para o pack inteiro, como Modo escuro, Sonho pastel, Contorno neon, Retrô 8 bits, Outono, Geada de inverno, Noir, Desenho animado e HD suave',
       'Abra um pack .zip ou .mcpack existente e continue editando',
       'Prévia 3D do bloco, ícone do pack, descrição e faixa de compatibilidade do Java',
@@ -48,6 +49,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Mude formas (Java): edite o modelo de um bloco ou item cubo por cubo, com texturas, UVs e o jeito como fica na mão, ou transforme um item plano em 3D. Os arquivos do modelo vão para o pack da sua versão. ', link('/guides/make-3d-items-texture-pack', 'Como fazer itens 3D'), '.'],
       ['Packs de PvP e de FPS: fogo baixo, vidro transparente, sem borda de abóbora, mira personalizada, espadas menores e escudo mais baixo, além de texturas 8× e sem animações; cada coisa é um interruptor que grava os arquivos certos para a sua versão. ', link('/guides/make-a-pvp-texture-pack', 'Como fazer um pack de PvP'), '.'],
       ['Mude a interface: a barra de atalhos, os corações em todos os estados, a fome, a armadura, o ar, a barra de experiência, a mira, o inventário, os baús, a fornalha e a bancada de trabalho, os botões e os fundos de menu, no editor de pixels, com prévia ao vivo do HUD, do inventário, da tela de título com o panorama girando e os botões, e dos itens encantados. Dá para editar os textos de abertura também. Versões antigas do Java guardam o HUD em duas imagens grandes: ao escolher um coração, só a área dele é selecionada.'],
+      ['Materiais PBR: na aba Material, dê a uma textura um material rápido (metal, pedra polida ou áspera, madeira, vidro, luminoso, pontos luminosos de minério, água, folhas) ou ajuste o brilho, o metal, a luz própria e a luz através da textura inteira ou de partes dela, com relevo feito com as cores, num bloco 3D iluminado por um sol que se move. O Bedrock recebe conjuntos de texturas para os Visuais Vibrantes; o Java, mapas labPBR ', code('_n'), ' e ', code('_s'), ' para shaders PBR no Iris ou no OptiFine. ', link('/guides/make-a-pbr-texture-pack', 'Como fazer um pack PBR'), '.'],
       ['Envie seus próprios PNGs (redimensionados para a textura, de 16x a 512x) e edite texturas animadas quadro a quadro.'],
       ['Mude sons: toque qualquer som do jogo e troque por um arquivo seu ou uma gravação do microfone, cortado na forma de onda. É salvo em Ogg Vorbis, o formato que o Minecraft toca.'],
       ['Efeitos de um clique para o pack inteiro, como Modo escuro, Sonho pastel, Contorno neon, Retrô 8 bits, Outono, Geada de inverno, Noir, Desenho animado e HD suave, empilháveis sem mexer nas suas edições.'],
@@ -105,6 +107,11 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         id: 'gui',
         q: 'Posso mudar a barra de atalhos, os corações, os menus e a tela de título?',
         a: [p('Sim. Escolha o botão de GUI acima da lista de texturas: ele mostra o HUD, o inventário e os recipientes, os botões, os fundos de menu, o panorama, os textos de abertura e o brilho de encantamento da sua versão, e a aba Prévia mostra tudo no lugar enquanto você pinta. O Java antes da 1.20.2 guarda o HUD e os botões em gui/icons.png e gui/widgets.png; o editor seleciona a área certa para você.')],
+      },
+      {
+        id: 'pbr',
+        q: 'Posso fazer um pack PBR para os Visuais Vibrantes ou para shaders?',
+        a: [p('Sim. Abra uma textura e escolha a aba Material: pegue um material rápido como metal, vidro ou pontos luminosos de minério, ou ajuste você mesmo o brilho, o metal, a luz própria e o relevo. Packs de Bedrock recebem conjuntos de texturas e mantêm os Visuais Vibrantes ligados; packs de Java recebem mapas labPBR _n e _s, que os shaders PBR para Iris e OptiFine leem.')],
       },
       {
         id: 'devices',

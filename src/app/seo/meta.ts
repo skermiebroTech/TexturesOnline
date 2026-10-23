@@ -233,6 +233,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-green',
   }),
   guide({
+    slug: 'make-a-pbr-texture-pack',
+    blurb: 'Shine, metal, glow and bumps for Vibrant Visuals and labPBR shaders.',
+    title: 'How to Make a PBR Texture Pack for Vibrant Visuals & Shaders',
+    h1: 'How to make a PBR texture pack for Vibrant Visuals and shaders',
+    description:
+      'Make a free Minecraft PBR pack: shine, metal, glow and bumps as Bedrock Vibrant Visuals texture sets and Java labPBR maps for Iris and OptiFine.',
+    label: 'Make a PBR pack',
+    icon: 'diamond-gem',
+    accent: 'accent-green',
+  }),
+  guide({
     slug: 'install-resource-packs',
     blurb: 'Java resource packs, Bedrock .mcpack files and shader packs, plus fixes.',
     title: 'How to Install a Minecraft Texture Pack (Java & Bedrock)',

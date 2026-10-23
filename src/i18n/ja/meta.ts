@@ -179,5 +179,12 @@ export const META_JA: MetaTranslation = {
       label: 'PvPパックを作る',
       blurb: '低い炎、透明なガラス、小さい剣、照準、FPS向けテクスチャ。',
     },
+    'make-a-pbr-texture-pack': {
+      title: 'PBRテクスチャパックの作り方（バイブラントビジュアル・シェーダー）',
+      h1: 'バイブラントビジュアルとシェーダー向けPBRテクスチャパックの作り方',
+      description: 'MinecraftのPBRテクスチャパックを無料で作れます。つや、金属、発光、でこぼこを、バイブラントビジュアル用テクスチャセットとlabPBRマップに。',
+      label: 'PBRパックを作る',
+      blurb: 'バイブラントビジュアルとlabPBRシェーダー向けの、つや、金属、発光、でこぼこ。',
+    },
   },
 };

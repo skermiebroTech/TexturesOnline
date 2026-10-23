@@ -340,7 +340,10 @@ function irisPack() {
     await openWith(page, '.pe-open [data-project-file="open"]', shaderFile.file);
     await page.waitForURL(new RegExp(`/shaders/${shaderId}/?$`), { timeout: 20000 });
     const shaderAfter = (await dump(page)).projects[`project:${shaderId}`];
-    check('shader project comes back with its settings', !!shaderBefore && shaderAfter?.settings?.sunStrength === 1.7 && same(shaderBefore, shaderAfter), diff(shaderBefore, shaderAfter));
+    // the editor redraws the thumbnail from its live preview whenever the project opens
+    const noThumb = (p) => p && { ...p, thumb: undefined };
+    check('shader project comes back with its settings', !!shaderBefore && shaderAfter?.settings?.sunStrength === 1.7 && same(noThumb(shaderBefore), noThumb(shaderAfter)), diff(noThumb(shaderBefore), noThumb(shaderAfter)));
+    check('shader project comes back with a thumbnail', !shaderBefore?.thumb || !!shaderAfter?.thumb);
 
     // ---------------------------------------------------------------- imported shader pack
     await page.goto(base + 'shaders');

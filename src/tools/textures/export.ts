@@ -10,6 +10,7 @@ import { DEFAULT_MIN_ENGINE, buildResourceManifest, bumpPackVersion } from '../.
 import { applyEffects, effectsApply, hasActiveEffects, layerApplies, type EffectContext } from './effects';
 import { categoryForPath, extOf, imageDims, newBedrockUuids, packFileName, parseBedrockVersion, parseJsonLoose } from './project';
 import { prepareSoundExport } from './sounds/pack';
+import { hasMaterials, writePbrFiles } from './pbr/pack';
 import { renderIsoCube } from './iso-cube';
 import { packText } from '../../shared/i18n/packs';
 import { fmt, joinList, textLocale } from '../../i18n/editor-text';
@@ -98,7 +99,9 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     }
     nextVersion = bumpPackVersion(project.packVersion);
     const original = extra.get('manifest.json');
-    const extras = original ? manifestExtras(original) : {};
+    const extras: ReturnType<typeof manifestExtras> = original ? manifestExtras(original) : {};
+    // materials made in the Material tab: Vibrant Visuals stays on (texture sets keep the edits visible)
+    if (hasMaterials(project)) extras.capabilities = [...(extras.capabilities ?? []), 'pbr'];
     const manifest = buildResourceManifest({
       name: project.name?.trim() || packText.export.defaultName,
       description: project.description ?? '',
@@ -125,7 +128,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
       vanillaJobs++;
     }
   }
-  if (!jobs.length && !extra.size) {
+  if (!jobs.length && !extra.size && !hasMaterials(project)) {
     warnings.push(packText.export.unchanged);
   }
 
@@ -195,6 +198,24 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     else delete files[path];
   }
   check(signal);
+
+  // --- PBR materials: made from the textures as exported (after effects) ---
+  if (hasMaterials(project)) {
+    progress(packText.export.materials, 0.91);
+    await writePbrFiles({
+      project,
+      assets,
+      files,
+      warnings,
+      signal,
+      categoryOf: (path) => index.get(path)?.category ?? categoryForPath(path, edition),
+      text: {
+        missingColour: (names) => fmt(packText.export.pbrMissingColour, { count: names.length, files: sample(names) }),
+        plainSets: (count) => fmt(packText.export.pbrPlainSets, { count }),
+      },
+    });
+    check(signal);
+  }
 
   // --- zip ---
   progress(packText.export.compressing, 0.93);

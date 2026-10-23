@@ -27,6 +27,7 @@ const JA: EditorLanguage = {
     soundsFailed: 'サウンドを開けませんでした。接続を確認して、もう一度お試しください。',
     guiFailed: 'GUI セクションを開けませんでした。接続を確認して、もう一度お試しください。',
     pvpFailed: 'PvP設定を開けませんでした。接続を確認して、もう一度お試しください。',
+    pbrFailed: '質感タブを開けませんでした。接続を確認して、もう一度お試しください。',
     packName: 'パック名',
     renameHint: 'パックの名前を変更',
     save: {
@@ -53,6 +54,7 @@ const JA: EditorLanguage = {
       texture: 'テクスチャ',
       effects: '効果',
       pvp: 'PvP',
+      material: '質感',
       pack: 'パック',
       paint: '描く',
       edit: '編集',

@@ -19,6 +19,7 @@ import { contentOf, hasContent } from '../../i18n/content';
 import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TREE } from './skin-pack-files';
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from './model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from './pvp-files';
+import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from './pbr-files';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -169,6 +170,15 @@ const PVP_STEPS: Child[] = [
   ['In the ', strong('PvP'), ' tab, change what you like: the fire height, the crosshair design, the sword size, the shield height. Every change can be undone from its message.'],
   'Optional: paint anything else, such as clearer wool colours or a shorter sword texture.',
   ['Press ', strong('Export'), ', put the pack in Minecraft and select it above your other packs.'],
+];
+
+const PBR_STEPS: Child[] = [
+  ['Open the ', link('/textures', 'Texture Pack Maker'), ' and make a pack for Java or Bedrock, or open one you have.'],
+  'Pick a block or item texture, for example diamond ore, and open the Material tab next to Preview.',
+  ['Choose a quick material such as ', strong('Metal'), ', ', strong('Glass'), ' or ', strong('Glowing spots'), '. The lit 3D block shows it under a moving sun.'],
+  ['Fine-tune ', strong('Shine'), ', ', strong('Metal'), ', ', strong('Glow'), ' and ', strong('Light through'), ' for the whole texture, or add a part (colourful, bright or dark pixels, some colours or an area you select) with values of its own.'],
+  ['Switch on ', strong('Bumps from the colours'), ' and set the strength, then use ', strong('Use on similar textures'), ' to give every ore, plank or log the same material.'],
+  ['Press ', strong('Export'), '. Java gets ', code('_n.png'), ' and ', code('_s.png'), ' next to each texture, Bedrock gets texture sets and the ', code('pbr'), ' capability.'],
 ];
 
 export const GUIDE_CONTENT: Guide[] = [
@@ -2275,6 +2285,150 @@ export const GUIDE_CONTENT: Guide[] = [
     ],
     related: ['make-a-texture-pack', 'make-3d-items-texture-pack', 'install-resource-packs'],
     cta: { label: 'Make a PvP pack', to: '/textures?start=pvp', icon: 'sword' },
+  },
+  // ------------------------------------------------------------ PBR pack
+  {
+    meta: meta('make-a-pbr-texture-pack'),
+    intro: [
+      p(
+        'A PBR texture pack gives blocks more than colours: how shiny they are, which parts are metal, which parts glow and how bumpy they look in the light. Minecraft Bedrock’s Vibrant Visuals reads these maps from texture sets, and on Java, PBR shaders for Iris and OptiFine read them in the labPBR format. The ',
+        link('/textures', 'Texture Pack Maker'),
+        ' makes both in your browser from your textures, with quick materials such as metal, glass and glowing ore spots.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['Open a texture and the ', strong('Material'), ' tab.'],
+        ['Pick a quick material, then fine-tune shine, metal, glow and bumps on the lit 3D block.'],
+        ['Export: the editor writes the right files for your edition, next to the textures.'],
+      ],
+    },
+    howto: { name: 'How to make a PBR texture pack with Texture Pack Maker', steps: PBR_STEPS },
+    sections: [
+      {
+        id: 'maps',
+        title: 'What the maps do',
+        body: [
+          p('Each pixel of a texture gets a few extra numbers. The Material tab calls them by what you see; the table shows where each one goes in the files:'),
+          table(
+            ['In the editor', 'What it does', 'Java (labPBR)', 'Bedrock (texture set)'],
+            [
+              ['Shine', 'Smooth surfaces show sharp highlights and reflections, rough ones look matte.', [code('_s'), ' red: smoothness'], ['MER blue: roughness']],
+              ['Metal', 'Metal reflects the sky in its own colour, like iron or gold.', [code('_s'), ' green: 230–255'], ['MER red: metalness']],
+              ['Glow', 'Gives off light, even at night, like glowstone or ore gems.', [code('_s'), ' alpha: 0–254'], ['MER green: emissive']],
+              ['Light through', 'Light shines through thin parts, like leaves.', [code('_s'), ' blue: 65–255'], ['MERS alpha (Vibrant Visuals only)']],
+              ['Bumps', 'Light and shadow show bumps and dents on a flat face.', [code('_n'), ' red and green, height in alpha'], ['A normal map']],
+            ],
+          ),
+          p('Without a material a texture looks as it always does. On Java the colour texture stays where it is; the maps sit next to it.'),
+        ],
+      },
+      {
+        id: 'steps',
+        title: 'Make one step by step',
+        body: [steps(PBR_STEPS)],
+      },
+      {
+        id: 'parts',
+        title: 'Glowing ore spots and other parts',
+        body: [
+          p(
+            'A part gives some pixels their own values. ',
+            strong('Colourful pixels'),
+            ' picks out the gems of an ore from the grey stone around them, ',
+            strong('Bright pixels'),
+            ' the light of a lamp, ',
+            strong('Pixels of some colours'),
+            ' exactly the colours you click, and ',
+            strong('An area you select'),
+            ' a rectangle you drew with the select tool. A small picture shows which pixels a part covers.',
+          ),
+          p(
+            strong('Use on similar textures'),
+            ' copies the material to the other sides of the same block and to every texture whose name ends or starts with the same word: all ',
+            code('*_ore'),
+            ' textures, all ',
+            code('oak_*'),
+            ' ones and so on. Each keeps its own colours, so the parts and bumps follow its pixels.',
+          ),
+        ],
+      },
+      {
+        id: 'java',
+        title: 'Java: labPBR maps for shaders',
+        body: [
+          p(
+            'Java has no PBR of its own: a shader pack in Iris or OptiFine draws it. The editor writes the two labPBR maps next to each texture, for example ',
+            code('assets/minecraft/textures/block/stone_n.png'),
+            ' and ',
+            code('stone_s.png'),
+            ' (',
+            code('textures/blocks/'),
+            ' before 1.13), at the size of the texture as it is exported. Smoothness is perceptual (1 minus the roughness), non-metals get an F0 of about 4 %, and a pixel with no glow has alpha 255 so that images without alpha never glow.',
+          ),
+          p(
+            'Turn on a shader that reads labPBR maps; in its settings this is often called labPBR or resource pack support, and the shader decides how strong reflections and glow are. The shaders from this site’s ',
+            link('/shaders', 'shader maker'),
+            ' don’t use these maps yet.',
+          ),
+        ],
+      },
+      {
+        id: 'bedrock',
+        title: 'Bedrock: texture sets for Vibrant Visuals',
+        body: [
+          p('Bedrock reads a texture set next to the colour texture. Glowing spots and bumps are images:'),
+          pre(PBR_TEXTURE_SET.trimEnd()),
+          p('One value for the whole texture needs no image:'),
+          pre(PBR_UNIFORM_SET.trimEnd()),
+          p(
+            'Light through is the fourth channel of ',
+            code('metalness_emissive_roughness_subsurface'),
+            ' (format 1.21.30, Vibrant Visuals only), written as a TGA so its alpha stays as it is. A texture set may only name images in the same pack, so the editor adds the colour texture too, even when you did not repaint it. The pack declares the ',
+            code('pbr'),
+            ' capability, without which Vibrant Visuals stays off:',
+          ),
+          pre(PBR_MANIFEST.trimEnd()),
+          p(
+            'The game has texture sets of its own for most blocks. With Vibrant Visuals on, a game set would show the game’s colour texture instead of yours, so every texture you change without a material gets a copy of the game’s set in your pack. ',
+            link('/guides/bedrock-vibrant-visuals-settings', 'Vibrant Visuals settings explained'),
+            '.',
+          ),
+        ],
+      },
+      {
+        id: 'open',
+        title: 'Open a pack that has PBR maps',
+        body: [
+          p('Open a Java pack with labPBR maps or a Bedrock pack with texture sets, and its maps show in the Material tab of their textures. They are exported exactly as they were until you change that material.'),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'rtx',
+        q: 'Do I need an RTX graphics card?',
+        a: [p('No. Vibrant Visuals runs on many PCs, consoles and newer phones, and labPBR shaders run on most graphics cards that can run shaders. Bedrock’s older ray tracing mode reads the same texture sets, except materials that let light through: those use a layer only Vibrant Visuals reads.')],
+      },
+      {
+        id: 'same',
+        q: 'Why does my pack look the same in game?',
+        a: [p('Bedrock: set the graphics mode to Vibrant Visuals and put the pack at the top of your global resources. Java: turn on a shader with labPBR support and check its material or resource pack setting. Without one of those, Minecraft shows only the colours.')],
+      },
+      {
+        id: 'items',
+        q: 'Do materials work on items and mobs?',
+        a: [p('Yes, in Vibrant Visuals and in most labPBR shaders. The editor always writes normal maps, never height maps, because Vibrant Visuals can’t use height maps on items.')],
+      },
+      {
+        id: 'metal',
+        q: 'Why should metal be 0 or 100?',
+        a: [p('Real things are metal or not, and both labPBR and Vibrant Visuals treat a pixel as one or the other. Values in between look grey and dull. For a shiny stone, raise Shine and keep Metal at 0.')],
+      },
+    ],
+    related: ['bedrock-vibrant-visuals-settings', 'make-a-texture-pack', 'install-resource-packs'],
+    cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'diamond-gem' },
   },
 ];
 
