@@ -53,11 +53,14 @@ export type { BrushShape, ChannelMode, RGBA, Rect } from './pixel-algorithms';
 
 export type Tool =
   | 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'rect-fill' | 'ellipse'
-  | 'lighten' | 'darken' | 'noise' | 'select' | 'move';
+  | 'lighten' | 'darken' | 'noise' | 'select' | 'move' | 'stamp';
 
 export const TOOLS: readonly Tool[] = [
-  'pencil', 'eraser', 'fill', 'picker', 'line', 'rect', 'rect-fill', 'ellipse', 'lighten', 'darken', 'noise', 'select', 'move',
+  'pencil', 'eraser', 'fill', 'picker', 'line', 'rect', 'rect-fill', 'ellipse', 'lighten', 'darken', 'noise', 'select', 'move', 'stamp',
 ];
+
+/** What the stamp tool's R / H keys ask for (the editor that set the stamp turns it, see setStamp). */
+export type StampKey = 'rotate' | 'flipH' | 'flipV';
 
 export interface PixelView {
   /** CSS pixels per image pixel */
@@ -153,6 +156,8 @@ export interface PixelCanvasEvents {
   selection: Rect | null;
   /** Painting was refused because the canvas is locked (see setLocked) */
   blocked: void;
+  /** R, H or Shift + H with the stamp tool: turn the stamp (the image itself is left alone) */
+  stampkey: StampKey;
 }
 
 /** Key name, or a translated description of a gesture */
@@ -179,6 +184,7 @@ export const PIXEL_SHORTCUTS: ReadonlyArray<{ readonly id: keyof CanvasText['sho
   shortcut('O', 'ellipse'),
   shortcut('M', 'select'),
   shortcut('V', 'move'),
+  shortcut('S', 'stamp'),
   shortcut('X', 'swap'),
   shortcut('[ ]', 'brush'),
   shortcut(() => canvasText.keys.shiftClick, 'straight'),
@@ -244,6 +250,8 @@ type Gesture =
   | { kind: 'pan'; id: number; touch: boolean; cx: number; cy: number; ox: number; oy: number }
   | { kind: 'marquee'; id: number; touch: boolean; start: Point; moved: boolean; prevSel: Rect | null }
   | { kind: 'move'; id: number; touch: boolean; fx: number; fy: number; x0: number; y0: number; moved: boolean; lifted: boolean }
+  /** The stamp follows the pointer while it is down and is placed where it is let go */
+  | { kind: 'stamp'; id: number; touch: boolean; at: Point; secondary: boolean }
   | { kind: 'pinch'; ids: [number, number]; d0: number; ds0: number; ix: number; iy: number; mx0: number; my0: number; t0: number; travel: number }
   | { kind: 'ignore'; id: number; touch: boolean }
   /** A stroke driven through beginStroke() / setPixels() / endStroke(), e.g. painting on a 3D model. */
@@ -313,6 +321,9 @@ export class PixelCanvas {
   private _showGrid: boolean;
   private _tiled: boolean;
   private _channelMode: ChannelMode = 'rgba';
+  /** The stamp tool's picture (straight RGBA; null: none set) and what draws its preview */
+  private stampImg: ImageData | null = null;
+  private stampPreview: { canvas: HTMLCanvasElement; segs: number[] } | null = null;
 
   private dpr = 1;
   private ds = 1;
@@ -690,6 +701,26 @@ export class PixelCanvas {
     this.requestRender();
   }
 
+  /**
+   * The picture the stamp tool places (null: none, the tool then does nothing). Its pixels are
+   * painted as they are, transparent ones left out; S picks the tool while a stamp is set.
+   */
+  setStamp(img: ImageData | null): void {
+    if (this.stampHeld()) this.cancelGesture();
+    if (img && (!(img.width > 0) || !(img.height > 0) || img.data.length !== img.width * img.height * 4)) throw new Error('setStamp needs a valid ImageData');
+    this.stampImg = img ? cloneImage(img) : null;
+    this.stampPreview = null;
+    this.requestRender();
+  }
+
+  get stamp(): ImageData | null {
+    return this.stampImg ? cloneImage(this.stampImg) : null;
+  }
+
+  private stampHeld(): boolean {
+    return this.gesture?.kind === 'stamp';
+  }
+
   setOverlay(fn: PixelCanvasOptions['overlay']): void {
     this.overlay = fn ?? null;
     this.overlayFailed = false;
@@ -846,7 +877,7 @@ export class PixelCanvas {
 
   private hasPendingEdit(): boolean {
     const k = this.gesture?.kind;
-    return k === 'stroke' || k === 'shape' || k === 'move' || k === 'marquee' || k === 'external';
+    return k === 'stroke' || k === 'shape' || k === 'move' || k === 'marquee' || k === 'external' || k === 'stamp';
   }
   canRedo(): boolean { return this.redoStack.length > 0; }
 
@@ -1238,6 +1269,7 @@ export class PixelCanvas {
   on(ev: 'zoom', cb: (scale: number) => void): () => void;
   on(ev: 'selection', cb: (r: Rect | null) => void): () => void;
   on(ev: 'blocked', cb: () => void): () => void;
+  on(ev: 'stampkey', cb: (k: StampKey) => void): () => void;
   on(ev: keyof PixelCanvasEvents, cb: Listener): () => void {
     let set = this.listeners.get(ev);
     if (!set) {
@@ -1522,6 +1554,34 @@ export class PixelCanvas {
     if (this._mirrorY) out.push([x, H - 1 - y]);
     if (this._mirrorX && this._mirrorY) out.push([W - 1 - x, H - 1 - y]);
     return out;
+  }
+
+  /** Top-left image pixel of the stamp centred on a point */
+  private stampOrigin(fx: number, fy: number): Point {
+    const st = this.stampImg!;
+    return [Math.floor(fx) - Math.floor(st.width / 2), Math.floor(fy) - Math.floor(st.height / 2)];
+  }
+
+  /**
+   * Paints the stamp with its top-left corner at (ox, oy) over the committed pixels (the stamp shown
+   * before is taken back first), through the mask, selection, tiling and mirror painting. With
+   * `secondary` its shape is painted in the secondary colour (transparent by default: erasing).
+   */
+  private placeStamp(ox: number, oy: number, secondary: boolean): void {
+    const st = this.stampImg;
+    if (!st) return;
+    this.restoreStroke();
+    const d = st.data;
+    const W = st.width;
+    for (let y = 0; y < st.height; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = (y * W + x) * 4;
+        if (!d[i + 3]) continue;
+        this.opColor = secondary ? this._secondary : [d[i], d[i + 1], d[i + 2], d[i + 3]];
+        this.plot(ox + x, oy + y);
+      }
+    }
+    this.requestRender();
   }
 
   private doFill(fx: number, fy: number, secondary: boolean): void {
@@ -1825,6 +1885,17 @@ export class PixelCanvas {
       case 'move':
         this.beginMove(fx, fy, id, touch);
         break;
+      case 'stamp': {
+        if (!this.stampImg) {
+          this.gesture = { kind: 'ignore', id, touch };
+          break;
+        }
+        this.prepareEdit('pencil', secondary);
+        const at = this.stampOrigin(fx, fy);
+        this.gesture = { kind: 'stamp', id, touch, at, secondary };
+        this.placeStamp(at[0], at[1], secondary);
+        break;
+      }
     }
     this.updateCursor();
   }
@@ -1906,6 +1977,14 @@ export class PixelCanvas {
           this.sel = normalizeRect(g.start[0], g.start[1], end[0], end[1]);
           this.updateAnts();
           this.requestRender();
+        }
+        break;
+      }
+      case 'stamp': {
+        const at = this.stampOrigin(fx, fy);
+        if (at[0] !== g.at[0] || at[1] !== g.at[1]) {
+          g.at = at;
+          this.placeStamp(at[0], at[1], g.secondary);
         }
         break;
       }
@@ -1995,6 +2074,9 @@ export class PixelCanvas {
       case 'external':
         this.commit();
         break;
+      case 'stamp':
+        this.commit();
+        break;
       case 'marquee':
         if (!g.moved) this.sel = null;
         this.committedSel = this.sel;
@@ -2036,6 +2118,7 @@ export class PixelCanvas {
       case 'stroke':
       case 'shape':
       case 'external':
+      case 'stamp':
         this.restoreStroke();
         break;
       case 'marquee':
@@ -2416,7 +2499,11 @@ export class PixelCanvas {
     const lower = key.length === 1 ? key.toLowerCase() : key;
     const toolKey = TOOL_KEYS[lower];
     let handled = true;
+    const stampKeys = this._tool === 'stamp' && !!this.stampImg;
     if (toolKey && key.length === 1 && !e.shiftKey) this.setTool(toolKey);
+    else if (lower === 's' && !e.shiftKey && this.stampImg) this.setTool('stamp');
+    else if (stampKeys && lower === 'h') this.emit('stampkey', e.shiftKey ? 'flipV' : 'flipH');
+    else if (stampKeys && lower === 'r' && !e.shiftKey) this.emit('stampkey', 'rotate');
     else if (lower === 'u' && !e.shiftKey) this.setTool(this._tool === 'rect' ? 'rect-fill' : 'rect');
     else if (lower === 'x' && !e.shiftKey) this.swapColors();
     else if (key === '[') this.setBrushSize(this._brushSize - 1);
@@ -2529,6 +2616,13 @@ export class PixelCanvas {
     else if (tool === 'picker') this.doPick(fx, fy, secondary);
     else if (tool === 'select' || tool === 'move') return;
     else if (this.refuse()) return;
+    else if (tool === 'stamp') {
+      if (!this.stampImg) return;
+      this.prepareEdit('pencil', secondary);
+      const [ox, oy] = this.stampOrigin(fx, fy);
+      this.placeStamp(ox, oy, secondary);
+      this.commit();
+    }
     else {
       const strokeTool: StrokeTool = tool === 'eraser' || tool === 'lighten' || tool === 'darken' || tool === 'noise' ? tool : 'pencil';
       this.prepareEdit(strokeTool, secondary);
@@ -2974,12 +3068,18 @@ export class PixelCanvas {
     if (!f || this.hoverIsTouch) return;
     const g = this.gesture;
     if (g && (g.kind === 'pan' || g.kind === 'pinch' || g.kind === 'shape' || g.kind === 'marquee' || g.kind === 'move')) return;
+    if (g?.kind === 'stamp' && g.touch) return;
     if (this.spaceDown) return;
     const tool: Tool = this.altDown || g?.kind === 'pick' ? 'picker' : this._tool;
     const W = this.img.width;
     const H = this.img.height;
     const { ds, ox, oy } = this;
     const ctx = this.ctx;
+    if (tool === 'stamp') {
+      // (while placing, the stamp is painted already: only its outline follows)
+      this.drawStampPreview(f, g?.kind !== 'stamp');
+      return;
+    }
 
     let fill: string | null = null;
     if (ds >= 3 && tool !== 'picker' && tool !== 'select' && tool !== 'fill' && tool !== 'move') {
@@ -3049,6 +3149,52 @@ export class PixelCanvas {
     }
     this.strokeOutline(outlineSegments(pts), [[0, 0]]);
     if (tool === 'picker') this.drawPickerSwatch(f);
+  }
+
+  /** The stamp under the pointer: its pixels faintly (`fill`) and its outline, with mirror copies. */
+  private drawStampPreview(f: [number, number], fill: boolean): void {
+    const st = this.stampImg;
+    if (!st) return;
+    if (!this.stampPreview) {
+      const c = document.createElement('canvas');
+      c.width = st.width;
+      c.height = st.height;
+      c.getContext('2d')?.putImageData(st, 0, 0);
+      const pts: Point[] = [];
+      for (let y = 0; y < st.height; y++) for (let x = 0; x < st.width; x++) if (st.data[(y * st.width + x) * 4 + 3]) pts.push([x, y]);
+      this.stampPreview = { canvas: c, segs: outlineSegments(pts) };
+    }
+    const pv = this.stampPreview;
+    const W = this.img.width;
+    const H = this.img.height;
+    const [bx, by] = this.stampOrigin(f[0], f[1]);
+    const w = st.width;
+    const h = st.height;
+    // mirror copies land where mirror painting puts the stamp's pixels (flipped)
+    const copies: { x: number; y: number; fx: boolean; fy: boolean }[] = [{ x: bx, y: by, fx: false, fy: false }];
+    if (!this.mirrorMap) {
+      if (this._mirrorX) copies.push({ x: W - bx - w, y: by, fx: true, fy: false });
+      if (this._mirrorY) copies.push({ x: bx, y: H - by - h, fx: false, fy: true });
+      if (this._mirrorX && this._mirrorY) copies.push({ x: W - bx - w, y: H - by - h, fx: true, fy: true });
+    }
+    const { ds, ox, oy } = this;
+    const ctx = this.ctx;
+    for (const c of copies) {
+      if (fill && ds >= 2) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(ox, oy, W * ds, H * ds);
+        if (!this._tiled) ctx.clip();
+        ctx.globalAlpha = 0.65;
+        ctx.imageSmoothingEnabled = false;
+        ctx.translate(ox + (c.x + (c.fx ? w : 0)) * ds, oy + (c.y + (c.fy ? h : 0)) * ds);
+        ctx.scale(c.fx ? -ds : ds, c.fy ? -ds : ds);
+        ctx.drawImage(pv.canvas, 0, 0);
+        ctx.restore();
+      }
+      if (!c.fx && !c.fy) this.strokeOutline(pv.segs, [[c.x, c.y]]);
+      else this.strokeOutline(flipSegs(pv.segs, w, h, c.fx, c.fy), [[c.x, c.y]]);
+    }
   }
 
   private shapeCache: { key: string; segs: number[]; spans: number[] } | null = null;
@@ -3132,4 +3278,14 @@ export class PixelCanvas {
 
 function setActive(pc: PixelCanvas): void {
   activeCanvas = pc;
+}
+
+/** Outline segments ([x0, y0, x1, y1] runs) of a w x h shape, mirrored. */
+function flipSegs(segs: number[], w: number, h: number, fx: boolean, fy: boolean): number[] {
+  const out = segs.slice();
+  for (let i = 0; i < out.length; i += 2) {
+    if (fx) out[i] = w - out[i];
+    if (fy) out[i + 1] = h - out[i + 1];
+  }
+  return out;
 }

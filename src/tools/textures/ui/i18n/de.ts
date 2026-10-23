@@ -161,6 +161,7 @@ const DE: EditorLanguage = {
         lighten: 'Aufhellen',
         darken: 'Abdunkeln',
         noise: 'Rauschpinsel',
+        stamp: 'Stempel',
         select: 'Auswählen',
         move: 'Verschieben',
       },

@@ -241,6 +241,7 @@ const ES: SharedLanguage = {
       ellipse: 'Elipse (mantén Mayús para un círculo)',
       select: 'Seleccionar',
       move: 'Mover',
+      stamp: 'Sello (R lo gira, H / Mayús + H lo voltea)',
       swap: 'Intercambiar el color principal y el secundario',
       brush: 'Pincel más pequeño / más grande',
       straight: 'Línea recta desde el último punto',

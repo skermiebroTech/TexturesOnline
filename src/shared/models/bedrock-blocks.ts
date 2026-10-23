@@ -210,8 +210,9 @@ function tintForTexture(path: string, tex: TerrainTexture): { tint: Tint | null;
   if (/^grass_side(_snowed)?$/.test(name)) return { tint: { kind: 'grass' }, mask: true };
   if (GRASS_TEX.test(name)) return { tint: { kind: 'grass' }, mask: false };
   if (FOLIAGE_TEX.test(name)) return { tint: { kind: 'foliage' }, mask: false };
-  if (name === 'leaves_birch' || name === 'leaves_birch_opaque') return { tint: { kind: 'fixed', rgb: [0x80, 0xa7, 0x55] }, mask: false };
-  if (name === 'leaves_spruce' || name === 'leaves_spruce_opaque') return { tint: { kind: 'fixed', rgb: [0x61, 0x99, 0x61] }, mask: false };
+  // (tinted from colormap/birch.png and evergreen.png by the biome, like the other leaves)
+  if (name === 'leaves_birch' || name === 'leaves_birch_opaque') return { tint: { kind: 'birch' }, mask: false };
+  if (name === 'leaves_spruce' || name === 'leaves_spruce_opaque') return { tint: { kind: 'evergreen' }, mask: false };
   if (/^mangrove_leaves/.test(name)) return { tint: { kind: 'fixed', rgb: [0x92, 0xc6, 0x48] }, mask: false };
   if (/^water_(still|flow)(_grey)?$/.test(name)) return { tint: { kind: 'water' }, mask: false };
   if (/^redstone_dust/.test(name)) return { tint: { kind: 'fixed', rgb: [255, 51, 0] }, mask: false };

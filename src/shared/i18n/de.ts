@@ -241,6 +241,7 @@ const DE: SharedLanguage = {
       ellipse: 'Ellipse (Shift gedrückt halten für einen Kreis)',
       select: 'Auswahl',
       move: 'Verschieben',
+      stamp: 'Stempel (R dreht ihn, H / Umschalt + H spiegelt ihn)',
       swap: 'Haupt- und Zweitfarbe tauschen',
       brush: 'Pinsel kleiner / größer',
       straight: 'Gerade Linie vom letzten Punkt',

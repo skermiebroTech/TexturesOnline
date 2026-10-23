@@ -161,6 +161,7 @@ const ES: EditorLanguage = {
         lighten: 'Aclarar',
         darken: 'Oscurecer',
         noise: 'Pincel de ruido',
+        stamp: 'Sello',
         select: 'Seleccionar',
         move: 'Mover',
       },

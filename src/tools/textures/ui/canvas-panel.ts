@@ -1,6 +1,7 @@
 // Centre panel: the pixel editor for the selected texture with its tool rail, options bar, colour dock,
 // animation frames, paint layers, compare-with-vanilla, upload / reset, HD upscaling and Bedrock
-// alpha-mask mode.
+// alpha-mask mode. A colour map shows the biomes where the game reads it (../biomes/markers.ts); the
+// stamp tool places presets and stamps saved from selections (../stamps/).
 // In the 3D workspace the stage holds the 3D model instead (painted with the same tools) and the pixel
 // editor moves to the side panel. Each texture keeps its own undo history while you switch between them.
 
@@ -53,6 +54,11 @@ import { LayerSession, type LayerChange } from '../layers/session';
 import { createLayersPanel } from '../layers/panel';
 import { copyStack, flatten, singleLayer, type Area, type LayerStack } from '../layers/stack';
 import { tl } from '../layers/i18n/text';
+import { colorMapOf, type BiomeId } from '../biomes/biomes';
+import { drawMarkers, mapMarkers, markersOnCanvas, type Marker } from '../biomes/markers';
+import { StampLibrary } from '../stamps/library';
+import { createStampControls } from '../stamps/picker';
+import { tw } from '../swap/i18n/text';
 
 export interface OpenTexture {
   key: string;
@@ -106,10 +112,31 @@ export interface CanvasPanel {
   layers(): LayerSession | null;
   /** Opens or closes the layers panel */
   showLayers(open: boolean): void;
+  /** The stamps saved from selections */
+  stamps(): StampLibrary;
+  /**
+   * Changes several textures as one undo step (Ctrl+Z, the undo button): each goes from `before` to
+   * `after`, and back. A texture changed again in the meantime is left as it is.
+   */
+  applyBatch(changes: BatchChange[], label: string): void;
   destroy(): void;
 }
 
 export type Workspace = '2d' | '3d';
+
+/** A texture as a batch change puts it back: its pixels, its paint layers, whether the pack has it */
+export interface TexState {
+  full: ImageData;
+  layers: LayerStack | null;
+  edited: boolean;
+}
+
+/** One texture of a batch change (e.g. a colour swap across the pack) */
+export interface BatchChange {
+  path: string;
+  before: TexState;
+  after: TexState;
+}
 
 /** Tools that work on the 3D model (the others need the flat texture). */
 export const TOOLS_3D = new Set<Tool>(['pencil', 'eraser', 'fill', 'picker', 'lighten', 'darken', 'noise']);
@@ -133,6 +160,8 @@ export interface CanvasPanelOptions {
   onCanvasHover?(p: { x: number; y: number } | null): void;
   /** More entries for the texture's menu (⋮), read when it opens */
   menuItems?(): MenuItem[];
+  /** The biome the previews are coloured for (marked on an open colour map) */
+  biome?(): BiomeId;
 }
 
 type RailTool = keyof EditorText['canvas']['tools'] & Tool;
@@ -148,6 +177,7 @@ const TOOLS: { tool: RailTool; readonly label: string; icon: IconName; key?: str
     ['lighten', 'sun'],
     ['darken', 'moon'],
     ['noise', 'noise'],
+    ['stamp', 'sticker', 'S'],
     ['select', 'select', 'M'],
     ['move', 'move', 'V'],
   ] as [RailTool, IconName, string?][]
@@ -248,6 +278,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
           ]
         : []),
       ...(t.anim && !t.anim.still ? [{ label: ta.actions.gif, icon: 'download' as const, onClick: () => void anim.gif() }] : []),
+      { label: tw.button, icon: 'switch', onClick: () => void openSwap() },
       ...(opts.menuItems?.() ?? []),
     ]);
   }, { size: 'sm' });
@@ -307,7 +338,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     railButtons.set(t.tool, b);
     rail.appendChild(b);
     // (the shapes and the selection tools need the flat texture: the 3D workspace hides them and their separators)
-    if (i === 3 || i === 6 || i === 9) rail.appendChild(h('span', { class: ['tx-rail-sep', i !== 3 && 'tx-2d-only'], 'aria-hidden': 'true' }));
+    if (i === 3 || i === 6 || i === 10) rail.appendChild(h('span', { class: ['tx-rail-sep', i !== 3 && 'tx-2d-only'], 'aria-hidden': 'true' }));
   });
   rail.addEventListener('keydown', (e) => {
     const bs = [...railButtons.values()].filter((b) => b.offsetParent !== null);
@@ -406,13 +437,16 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     pc.setPickShown(!pc.pickShown);
     syncSettings(pc.getSettings());
   });
-  const toolOpts = h('div', { class: 'tx-optgroup' }, sizeGroup, mirrorGroup, fillAll, filledChip, strengthGroup, pickLayerChip);
+  const stampLib = new StampLibrary(store);
+  const stampUi = createStampControls(() => pc, stampLib);
+  const toolOpts = h('div', { class: 'tx-optgroup' }, stampUi.el, sizeGroup, mirrorGroup, fillAll, filledChip, strengthGroup, pickLayerChip, stampUi.saveChip);
 
   const gridBtn = iconButton('grid', te.canvas.grid, () => pc?.setShowGrid(!pc.showGrid), { size: 'sm', active: true });
   const tiledBtn = iconButton('grid-2x2-2', te.canvas.tiled, () => pc?.setTiledPreview(!pc.tiledPreview), { size: 'sm', active: false });
   const flipH = iconButton('flip-h', te.canvas.flipH, () => pc?.flipH(), { size: 'sm' });
   const flipV = iconButton('flip-v', te.canvas.flipV, () => pc?.flipV(), { size: 'sm' });
   const rotate = iconButton('rotate', te.canvas.rotate, () => pc?.rotate90(), { size: 'sm' });
+  const flipSep = h('span', { class: 'toolbar-sep tx-2d-only' });
   const zoomOut = iconButton('zoom-out', te.canvas.zoomOut, () => pc?.zoomOut(), { size: 'sm' });
   const zoomIn = iconButton('zoom-in', te.canvas.zoomIn, () => pc?.zoomIn(), { size: 'sm' });
   const zoomVal = h('button', { type: 'button', class: 'tx-zoom-val' }, '100%');
@@ -427,7 +461,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     { class: 'tx-optgroup tx-optgroup-view' },
     gridBtn,
     tiledBtn,
-    h('span', { class: 'toolbar-sep tx-2d-only' }),
+    flipSep,
     flipH,
     flipV,
     rotate,
@@ -438,7 +472,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   );
   const optbar = h('div', { class: 'tx-optbar', role: 'toolbar', 'aria-label': te.canvas.toolOptions }, toolOpts, viewOpts);
 
-  const dock = createColorDock(() => pc);
+  const dock = createColorDock(() => pc, { swap: () => void openSwap() });
   const frames = createFrameStrip({
     select: (i) => selectFrame(i),
     add: () => anim.edit((a, t) => [duplicateFrame(a, t.frame), t.frame + 1]),
@@ -536,7 +570,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       pc.on('colorpick', () => dock.sync()),
       pc.on('hover', (p) => opts.onCanvasHover?.(p)),
       pc.on('blocked', () => blocked()),
+      pc.on('stampkey', (k) => stampUi.step(k)),
+      pc.on('selection', () => paintSaveChip()),
     );
+    stampUi.sync();
     syncSettings(pc.getSettings());
     return pc;
   };
@@ -560,7 +597,13 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (rectIcon) setIcon(rectIcon, s.tool === 'rect-fill' ? 'rect-fill' : 'rect');
     sizeVal.textContent = String(s.brushSize);
     sizeGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool);
-    mirrorGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool) && s.tool !== 'fill';
+    mirrorGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool) && s.tool !== 'fill' && s.tool !== 'stamp';
+    // the stamp being placed (presets follow the main colour), and saving a selection as one
+    stampUi.el.hidden = s.tool !== 'stamp';
+    // (the stamp tool turns and flips the stamp: the picture's own buttons step aside)
+    for (const b of [flipSep, flipH, flipV, rotate]) b.hidden = s.tool === 'stamp';
+    if (pc) stampUi.sync();
+    paintSaveChip();
     mirrorX.setActive(s.mirrorX);
     mirrorY.setActive(s.mirrorY);
     fillAll.hidden = s.tool !== 'fill';
@@ -580,6 +623,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       scrollers.forEach((f) => f.paint());
     });
     opts.onSettings?.();
+  }
+
+  /** "Save selection as stamp" next to the select tool's options, while something is selected */
+  function paintSaveChip() {
+    stampUi.saveChip.hidden = !pc || pc.tool !== 'select' || !pc.getSelection();
   }
 
   let paletteTimer: ReturnType<typeof setTimeout> | null = null;
@@ -762,10 +810,25 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   /** Texels a press on the 3D model would paint, outlined on the flat texture */
   function drawHover(ctx: CanvasRenderingContext2D, view: PixelView) {
     drawOnion(ctx, view);
+    drawBiomes(ctx, view);
     if (!hover3d || !pc) return;
     const w = pc.width;
     if (hover3d.echo?.length) outlineTexels(ctx, view, hover3d.echo, w, 0.55);
     outlineTexels(ctx, view, hover3d.pixels, w, 1);
+  }
+
+  let biomeMarkers: { key: string; markers: Marker[] } = { key: '', markers: [] };
+  /** A colour map: the biomes where the game reads it, and the half it never reads */
+  function drawBiomes(ctx: CanvasRenderingContext2D, view: PixelView) {
+    const t = cur;
+    if (!t || t.key === ICON_KEY || !markersOnCanvas()) return;
+    const map = colorMapOf(t.key, project.edition, project.version);
+    if (!map) return;
+    if (biomeMarkers.key !== t.key) biomeMarkers = { key: t.key, markers: mapMarkers(project.edition, project.version, map) };
+    // (the game reads 256 x 256; a map of another size is marked where the preview reads it)
+    const sx = t.full.width / 256;
+    const sy = t.full.height / 256;
+    drawMarkers(ctx, (x, y) => view.toScreen(x * sx, y * sy), view.scale * sx, biomeMarkers.markers, opts.biome?.() ?? null);
   }
 
   // ---------------------------------------------------------------- onion skin
@@ -1159,6 +1222,71 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     });
   }
 
+  // ---------------------------------------------------------------- colour swap (loaded on first use)
+  async function openSwap(from?: RGBA) {
+    if (!cur || !pc) return;
+    try {
+      const { openSwapDialog } = await import('../swap/dialog');
+      openSwapDialog({ store, canvas: panel, from });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // ---------------------------------------------------------------- batch changes
+  /** Puts a texture in a state: the open one through the pixel editor, others in the store. */
+  function putState(path: string, st: TexState) {
+    const t = cur;
+    if (t && t.key === path && pc) {
+      if (t.layers && st.layers) {
+        // (the session puts the active layer in the editor and writes the flattened texture)
+        t.layers.set(copyStack(st.layers));
+        return;
+      }
+      if (t.layers && !st.layers) {
+        unbindLayers();
+        dropSession(path);
+        t.layers = null;
+      }
+      t.full = cloneImageData(st.full);
+      const frame = getFrame(t.full, t.anim, t.frame);
+      pc.swapImage(frame);
+      if (st.edited) write.setImage(path, cloneImageData(t.full));
+      else write.resetToVanilla(path);
+      if (t.anim) frames.set(t.full, t.anim, t.frame, stripOpts(t));
+      store.events.emit('image', { path, full: t.full });
+      paintHeader();
+      dock.setPalette(paletteSource(frame));
+      return;
+    }
+    if (!st.edited) write.resetToVanilla(path);
+    else {
+      write.setImage(path, cloneImageData(st.full), { keepLayers: !!st.layers });
+      if (st.layers) store.setLayers(path, copyStack(st.layers));
+    }
+    // (its layers in memory, and the undo steps made on them, no longer fit)
+    if (sessions.has(path)) dropSession(path);
+  }
+
+  function applyBatch(changes: BatchChange[], label: string) {
+    if (!changes.length) return;
+    // what each texture was left as, to leave alone the ones changed again since
+    const stamps = new Map<string, number>();
+    const put = (side: 'before' | 'after', check: boolean) => {
+      for (const c of changes) {
+        const open = cur?.key === c.path;
+        if (check && !open && stamps.has(c.path) && store.stamp(c.path) !== stamps.get(c.path)) continue;
+        putState(c.path, c[side]);
+        stamps.set(c.path, store.stamp(c.path));
+      }
+    };
+    const bytes = changes.reduce((n, c) => n + c.before.full.data.byteLength + c.after.full.data.byteLength, 0);
+    // (an undo step of the open texture's history: Ctrl+Z takes the whole batch back)
+    pc?.pushStep({ undo: () => put('before', true), redo: () => put('after', true), bytes });
+    put('after', false);
+    toast(pc ? fmt(byPointer(te.canvas.undoHint, te.canvas.undoHintTouch), { action: label }) : label, { tone: 'success' });
+  }
+
   // ---------------------------------------------------------------- animation maker
   /** How the game blends frames for this pack (Java before 1.21.2 keeps the first frame's alpha) */
   const blendMode = (): 'rgba' | 'rgb' => (project.edition === 'java' ? javaAnimRules(project.version).blend : 'rgba');
@@ -1541,7 +1669,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     },
     layers: () => cur?.layers ?? null,
     showLayers: (on) => layersUi.setOpen(on),
+    stamps: () => stampLib,
+    applyBatch,
     destroy() {
+      stampUi.destroy();
       unbindLayers();
       sessions.clear();
       offs.forEach((f) => f());

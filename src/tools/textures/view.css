@@ -1928,6 +1928,58 @@
   line-height: var(--lh-sm);
   white-space: nowrap;
 }
+/* the palette's label with the colour swap beside it */
+.tx-pal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tx-pal-swap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  margin: -3px 0;
+  padding: 0 6px 0 4px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  white-space: nowrap;
+}
+.tx-pal-swap .icon {
+  color: var(--tool-accent);
+}
+.tx-pal-swap:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+/* phones: the palette scrolls sideways, so the name would sit cut off at its edge; the icon stays
+   (the name is still read out) */
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  .tx-pal-swap span:not(.icon) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .tx-pal-swap {
+    position: relative;
+    min-width: 32px;
+    justify-content: center;
+    padding: 0 6px;
+  }
+  /* a finger-sized hit area around the small icon */
+  .tx-pal-swap::after {
+    content: '';
+    position: absolute;
+    inset: -10px -6px;
+  }
+}
 .tx-pal-row {
   display: grid;
   grid-auto-flow: column;

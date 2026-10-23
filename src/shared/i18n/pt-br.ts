@@ -241,6 +241,7 @@ const PT_BR: SharedLanguage = {
       ellipse: 'Elipse (segure Shift para um círculo)',
       select: 'Selecionar',
       move: 'Mover',
+      stamp: 'Carimbo (R gira, H / Shift + H espelha)',
       swap: 'Trocar a cor principal e a secundária',
       brush: 'Pincel menor / maior',
       straight: 'Linha reta a partir do último ponto',

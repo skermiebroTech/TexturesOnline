@@ -374,23 +374,43 @@ export function planCube(id: string, has: (id: string) => boolean, edition: Edit
 }
 
 export type Tint = [number, number, number];
-const WATER_TINT: Tint = [0x3f, 0x76, 0xe4];
+
+/** Where the game takes a texture's tint from: a biome colour (see ../biomes/biomes.ts) or a fixed colour */
+export type TintKind = 'grass' | 'foliage' | 'birch' | 'evergreen' | 'water' | 'fixed';
+
+/** Biome colours for previews when no biome's are at hand (plains, the game's water) */
+const DEFAULT_TINTS: Record<Exclude<TintKind, 'fixed'>, Tint> = {
+  grass: [0x91, 0xbd, 0x59],
+  foliage: [0x77, 0xab, 0x2f],
+  birch: [0x80, 0xa7, 0x55],
+  evergreen: [0x61, 0x99, 0x61],
+  water: [0x3f, 0x76, 0xe4],
+};
 
 /** Biome tint the game applies to a texture (preview only). */
-export function tintFor(id: string, edition: Edition): { tint: 'grass' | 'foliage' | 'fixed'; color?: Tint } | null {
+export function tintFor(id: string, edition: Edition): { tint: TintKind; color?: Tint } | null {
   const name = id.slice(id.lastIndexOf('/') + 1);
   if (edition === 'java') {
-    if (/^(grass_block_top|grass_block_side_overlay|short_grass|grass|fern|tall_grass_(top|bottom)|large_fern_(top|bottom)|sugar_cane|potted_fern)$/.test(name)) return { tint: 'grass' };
-    if (name === 'birch_leaves') return { tint: 'fixed', color: [0x80, 0xa7, 0x55] };
-    if (name === 'spruce_leaves') return { tint: 'fixed', color: [0x61, 0x99, 0x61] };
-    if (/^(oak|jungle|acacia|dark_oak|mangrove)_leaves$|^vine$/.test(name)) return { tint: 'foliage' };
-    if (/^water_(still|flow|overlay)$/.test(name)) return { tint: 'fixed', color: WATER_TINT };
+    // (names before 1.13 too: grass_top, tallgrass, leaves_oak...)
+    if (/^(grass_block_top|grass_block_side_overlay|grass_top|grass_side_overlay|short_grass|grass|tallgrass|fern|tall_grass_(top|bottom)|large_fern_(top|bottom)|double_plant_(grass|fern)_(top|bottom)|sugar_cane|reeds|potted_fern)$/.test(name)) return { tint: 'grass' };
+    if (name === 'birch_leaves' || name === 'leaves_birch') return { tint: 'fixed', color: [0x80, 0xa7, 0x55] };
+    if (name === 'spruce_leaves' || name === 'leaves_spruce') return { tint: 'fixed', color: [0x61, 0x99, 0x61] };
+    if (/^(oak|jungle|acacia|dark_oak|mangrove)_leaves$|^leaves_(oak|jungle|acacia|big_oak)$|^vine$/.test(name)) return { tint: 'foliage' };
+    if (/^water_(still|flow|overlay)$/.test(name)) return { tint: 'water' };
     return null;
   }
   if (/^(grass_top|grass_side|tallgrass|double_plant_grass_(top|bottom)|fern|reeds)$/.test(name)) return { tint: 'grass' };
-  if (/^leaves_(oak|jungle|acacia|big_oak|birch|spruce)(_opaque)?$|^vine$/.test(name)) return { tint: 'foliage' };
-  if (/^water_(still|flow)(_grey)?$/.test(name)) return { tint: 'fixed', color: WATER_TINT };
+  if (/^leaves_birch(_opaque)?$/.test(name)) return { tint: 'birch' };
+  if (/^leaves_spruce(_opaque)?$/.test(name)) return { tint: 'evergreen' };
+  if (/^leaves_(oak|jungle|acacia|big_oak)(_opaque)?$|^vine$/.test(name)) return { tint: 'foliage' };
+  if (/^water_(still|flow)(_grey)?$/.test(name)) return { tint: 'water' };
   return null;
+}
+
+/** The colour of a tint: the biome's (`colors`, e.g. the preview's biome) or the defaults. */
+export function tintRgb(t: { tint: TintKind; color?: Tint }, colors: Partial<Record<Exclude<TintKind, 'fixed'>, Tint>> = {}): Tint {
+  if (t.tint === 'fixed') return t.color ?? [255, 255, 255];
+  return colors[t.tint] ?? DEFAULT_TINTS[t.tint];
 }
 
 /** Share of fully transparent pixels. */

@@ -1,0 +1,245 @@
+/* Biome colours view of the texture pack editor (Preview tab, while a colour map is open; ./view.ts). */
+.tx-bm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.tx-bm[hidden] {
+  display: none;
+}
+.tx-bm > .section-title {
+  margin: 0;
+}
+.tx-bm-text {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
+/* ---- the map with its axes */
+.tx-bm-mapbox {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  row-gap: 4px;
+}
+.tx-bm-axis {
+  display: flex;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  white-space: nowrap;
+}
+.tx-bm-axis > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.tx-bm-axis-y {
+  grid-row: 1;
+  grid-column: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 2px 0 6px;
+}
+.tx-bm-axis-x {
+  grid-row: 2;
+  grid-column: 2;
+  justify-content: space-between;
+  max-width: 320px;
+}
+.tx-bm-mapcell {
+  grid-row: 1;
+  grid-column: 2;
+  min-width: 0;
+}
+.tx-bm-mapframe {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
+  border-radius: var(--r-xs);
+  box-shadow: 0 0 0 2px var(--border);
+  overflow: hidden;
+}
+.tx-bm-map {
+  display: block;
+  touch-action: manipulation;
+}
+.tx-bm-unused {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 0 6px 2px;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  cursor: help;
+}
+
+/* ---- the picked biome */
+.tx-bm-picked {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--bg-elev);
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.tx-bm-pickedhead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.tx-bm-swatch {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.tx-bm-pickedtext {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tx-bm-pickedname {
+  color: var(--text);
+  font-weight: 400;
+}
+.tx-bm-pickedsub {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tx-bm-own {
+  margin: 0;
+}
+.tx-bm-own[hidden],
+.tx-bm-blocks[hidden],
+.tx-bm-blockslabel[hidden] {
+  display: none;
+}
+.tx-bm-blockslabel {
+  margin-top: 2px;
+}
+.tx-bm-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.tx-bm-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 120px;
+  margin: 0;
+  min-width: 0;
+}
+.tx-bm-tilebox {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+.tx-bm-block {
+  width: 96px;
+  height: 96px;
+}
+.tx-bm-block.pixelated {
+  width: 64px;
+  height: 64px;
+}
+.tx-bm-tile figcaption {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  text-align: center;
+}
+
+/* ---- the list of biomes */
+.tx-bm-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tx-bm-chip {
+  height: 30px;
+  padding: 0 10px 0 8px;
+}
+.tx-bm-chipswatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+/* a biome with a colour of its own: the map doesn't change it */
+.tx-bm-chipswatch.is-own {
+  width: 12px;
+  height: 12px;
+  margin: 0 1px;
+  box-shadow: none;
+  outline: 2px dashed var(--text-3);
+  outline-offset: 1px;
+}
+
+/* ---- where the game doesn't use the map */
+.tx-bm-notesection .section-title {
+  margin: 0;
+}
+.tx-bm-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
+/* ---- the biome picker of the 3D preview */
+.tx-pv-biome {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tx-pv-biome[hidden] {
+  display: none;
+}
+.tx-pv-biomerow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tx-pv-biomerow > .tx-pv-state-label {
+  flex: none;
+}
+.tx-pv-biomerow > .field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tx-pv-biomeswatch {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-xs);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.tx-pv-biome .tx-inline-note {
+  margin: 0;
+}

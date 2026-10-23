@@ -182,6 +182,12 @@ export interface TexturePackProject extends ProjectBase {
    * layers flattened: the game, the previews and the export only ever use that.
    */
   layers?: Record<string, TextureLayers>;
+  /**
+   * Stamps saved from selections while editing this pack (src/tools/textures/stamps). Every browser
+   * keeps its own stamps; these come along in the pack's project file and join the stamps of the
+   * browser that opens it.
+   */
+  stamps?: TextureStamp[];
 }
 
 /** Blend mode of a paint layer (src/tools/textures/layers). */
@@ -198,6 +204,17 @@ export interface TextureLayer {
   /** 0..1 (default 1) */
   opacity?: number;
   blend?: TextureLayerBlend;
+}
+
+/** A small picture the stamp tool places, saved from a selection. */
+export interface TextureStamp {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  /** Straight RGBA, base64 */
+  pixels: string;
+  updatedAt: number;
 }
 
 /** The paint layers of a texture, bottom to top. */

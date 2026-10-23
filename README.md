@@ -24,6 +24,35 @@ repository keeps its original name, `TexturesOnline`).
   maps and effects use the layers flattened, and an opened pack is one layer. A texture rewritten
   without its layers (a PvP tweak, a reset, an upload of another size) is one layer of its new pixels again,
   also while it is open.
+- Stamp tool (S, the sticker on the tool rail): places a small picture where the pointer is, shown under
+  the pointer before the click (drag to place it, let go to stamp; a tap on touch screens), with mirror
+  painting, the selection and the active layer like any stroke and one undo step per stamp. Presets (ore
+  spots, cracks, moss, a dither patch, sparkles, pebbles) are drawn in hue-shifted shades of the main
+  colour; "Save selection as stamp" (in the stamp list, and by the select tool's options) keeps what shows
+  in a selection of up to 32 × 32 pixels. R turns the stamp, H / Shift + H flips it; a right click stamps
+  its shape in the second colour (transparent: erasing). Stamps are kept in the browser (localStorage),
+  and the ones saved in a pack also in the project (`stamps`), so its project file brings them along to
+  another browser.
+- Colour swap (by the texture's colours, or the texture's menu): replaces a colour with another, with a
+  tolerance for similar colours (each keeps its small difference, so shading inside the range stays), or
+  the colour's whole shade ramp (its darker and lighter shades in the texture, grouped like the palette,
+  move by the same hue, saturation and brightness change, so the ramp's hue shift is kept). In the open
+  texture (every unlocked layer, every frame), the selection (the active layer), or every texture of the
+  pack that uses the colour (the pack's edited textures, or the game's too), listed with before / after
+  pictures to leave some out; across the pack it is one undo step of the open texture's history, and a
+  texture changed again since is left alone by it.
+- Biome colours: a colour map (`textures/colormap/grass.png`, `foliage.png`, Java 1.21.5+ `dry_foliage.png`;
+  Bedrock also `birch.png`, `evergreen.png`, `swamp_grass.png`, `swamp_foliage.png`,
+  `mangrove_swamp_foliage.png`) opens with a biome colours view in the Preview tab: the map with its axes
+  in plain words, about twenty well-known biomes marked where the game reads them (also on the canvas,
+  with the half the game never reads shaded), the picked biome's colour and a grass block and leaves
+  coloured with it as you paint, and notes on where the game uses other colours (swamp grass noise, dark
+  forests mixed with dark green, fixed colours of badlands, cherry groves, pale gardens, mangrove swamps'
+  leaves and dappled forests, Java's spruce and birch leaves, water's biome colour). The 3D previews (the
+  block preview, painting in 3D, the model editor) read the pack's own maps and colour grass, leaves and
+  water for the biome picked under the preview (remembered in the browser). Lookups follow the game's
+  arithmetic (`src/tools/textures/biomes/biomes.ts`); climates and colours are checked against each
+  version's biome files in the unit tests when the game files are at hand.
 - Upload your own PNGs (auto-resized to the texture, 16x up to 512x).
 - One-click whole-pack effects (Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon,
   Smooth HD and more), stacked non-destructively and applied on export.
@@ -199,6 +228,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/pbr.e2e.cjs       # Material ta
 NODE_PATH=$(npm root -g) node tests/e2e/textures/names.e2e.cjs     # name-based textures: window, names, painting, 3D shape, 26.3 item definitions, 1.21.4 CIT, opened packs, Bedrock note
 NODE_PATH=$(npm root -g) node tests/e2e/textures/animation.e2e.cjs # animation maker: frames, onion skin, timing, GIF import / export, Java .mcmeta, Bedrock flipbooks, opened packs, phone
 NODE_PATH=$(npm root -g) node tests/e2e/textures/layers.e2e.cjs    # paint layers: panel, blend modes, undo, merge / flatten, animated textures, flattened export, project files, phone
+NODE_PATH=$(npm root -g) node tests/e2e/textures/tools-batch.e2e.cjs # biome colours, the stamp tool and the colour swap: views, previews, undo, exports, project files, phone
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs
