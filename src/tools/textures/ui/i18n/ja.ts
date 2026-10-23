@@ -161,6 +161,7 @@ const JA: EditorLanguage = {
         lighten: '明るく',
         darken: '暗く',
         noise: 'ノイズブラシ',
+        stamp: 'スタンプ',
         select: '選択',
         move: '移動',
       },

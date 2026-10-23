@@ -156,6 +156,7 @@ export const te = defineText('textures.editor', {
       lighten: 'Lighten',
       darken: 'Darken',
       noise: 'Noise brush',
+      stamp: 'Stamp',
       select: 'Select',
       move: 'Move',
     },

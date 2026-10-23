@@ -31,6 +31,7 @@ export const canvasText = defineText('shared.canvas', {
     ellipse: 'Ellipse (hold Shift for a circle)',
     select: 'Select',
     move: 'Move',
+    stamp: 'Stamp (R turns it, H / Shift + H flips it)',
     swap: 'Swap primary and secondary colors',
     brush: 'Smaller / bigger brush',
     straight: 'Straight line from the last point',

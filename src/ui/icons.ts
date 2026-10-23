@@ -163,6 +163,8 @@ import textStartASvg from 'pixelarticons/svg/text-start-a.svg?raw';
 import messageTextSvg from 'pixelarticons/svg/message-text.svg?raw';
 import roadSignSvg from 'pixelarticons/svg/road-sign.svg?raw';
 import cardTextSvg from 'pixelarticons/svg/card-text.svg?raw';
+import stickerSvg from 'pixelarticons/svg/sticker.svg?raw';
+import switchSvg from 'pixelarticons/svg/switch.svg?raw';
 
 const PIXELARTICONS = {
   'pencil': pencilSvg,
@@ -327,6 +329,8 @@ const PIXELARTICONS = {
   'message-text': messageTextSvg,
   'road-sign': roadSignSvg,
   'card-text': cardTextSvg,
+  'sticker': stickerSvg,
+  'switch': switchSvg,
 } as const;
 
 /** Custom glyphs: 12x12 bitmaps, each cell is 2x2 SVG units on the 24x24 icon grid. */

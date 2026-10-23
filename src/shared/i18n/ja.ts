@@ -241,6 +241,7 @@ const JA: SharedLanguage = {
       ellipse: '楕円（Shiftを押したままで円）',
       select: '選択',
       move: '移動',
+      stamp: 'スタンプ (R で回転、H / Shift + H で反転)',
       swap: 'メインとサブの色を入れ替え',
       brush: 'ブラシを小さく／大きく',
       straight: '最後の点から直線',

@@ -1,6 +1,7 @@
 // Centre panel: the pixel editor for the selected texture with its tool rail, options bar, colour dock,
 // animation frames, paint layers, compare-with-vanilla, upload / reset, HD upscaling and Bedrock
-// alpha-mask mode. A colour map shows the biomes where the game reads it (../biomes/markers.ts).
+// alpha-mask mode. A colour map shows the biomes where the game reads it (../biomes/markers.ts); the
+// stamp tool places presets and stamps saved from selections (../stamps/).
 // In the 3D workspace the stage holds the 3D model instead (painted with the same tools) and the pixel
 // editor moves to the side panel. Each texture keeps its own undo history while you switch between them.
 
@@ -55,6 +56,8 @@ import { copyStack, flatten, singleLayer, type Area, type LayerStack } from '../
 import { tl } from '../layers/i18n/text';
 import { colorMapOf, type BiomeId } from '../biomes/biomes';
 import { drawMarkers, mapMarkers, markersOnCanvas, type Marker } from '../biomes/markers';
+import { StampLibrary } from '../stamps/library';
+import { createStampControls } from '../stamps/picker';
 
 export interface OpenTexture {
   key: string;
@@ -108,6 +111,8 @@ export interface CanvasPanel {
   layers(): LayerSession | null;
   /** Opens or closes the layers panel */
   showLayers(open: boolean): void;
+  /** The stamps saved from selections */
+  stamps(): StampLibrary;
   destroy(): void;
 }
 
@@ -152,6 +157,7 @@ const TOOLS: { tool: RailTool; readonly label: string; icon: IconName; key?: str
     ['lighten', 'sun'],
     ['darken', 'moon'],
     ['noise', 'noise'],
+    ['stamp', 'sticker', 'S'],
     ['select', 'select', 'M'],
     ['move', 'move', 'V'],
   ] as [RailTool, IconName, string?][]
@@ -311,7 +317,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     railButtons.set(t.tool, b);
     rail.appendChild(b);
     // (the shapes and the selection tools need the flat texture: the 3D workspace hides them and their separators)
-    if (i === 3 || i === 6 || i === 9) rail.appendChild(h('span', { class: ['tx-rail-sep', i !== 3 && 'tx-2d-only'], 'aria-hidden': 'true' }));
+    if (i === 3 || i === 6 || i === 10) rail.appendChild(h('span', { class: ['tx-rail-sep', i !== 3 && 'tx-2d-only'], 'aria-hidden': 'true' }));
   });
   rail.addEventListener('keydown', (e) => {
     const bs = [...railButtons.values()].filter((b) => b.offsetParent !== null);
@@ -410,7 +416,9 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     pc.setPickShown(!pc.pickShown);
     syncSettings(pc.getSettings());
   });
-  const toolOpts = h('div', { class: 'tx-optgroup' }, sizeGroup, mirrorGroup, fillAll, filledChip, strengthGroup, pickLayerChip);
+  const stampLib = new StampLibrary(store);
+  const stampUi = createStampControls(() => pc, stampLib);
+  const toolOpts = h('div', { class: 'tx-optgroup' }, stampUi.el, sizeGroup, mirrorGroup, fillAll, filledChip, strengthGroup, pickLayerChip, stampUi.saveChip);
 
   const gridBtn = iconButton('grid', te.canvas.grid, () => pc?.setShowGrid(!pc.showGrid), { size: 'sm', active: true });
   const tiledBtn = iconButton('grid-2x2-2', te.canvas.tiled, () => pc?.setTiledPreview(!pc.tiledPreview), { size: 'sm', active: false });
@@ -540,7 +548,10 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       pc.on('colorpick', () => dock.sync()),
       pc.on('hover', (p) => opts.onCanvasHover?.(p)),
       pc.on('blocked', () => blocked()),
+      pc.on('stampkey', (k) => stampUi.step(k)),
+      pc.on('selection', () => paintSaveChip()),
     );
+    stampUi.sync();
     syncSettings(pc.getSettings());
     return pc;
   };
@@ -564,7 +575,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     if (rectIcon) setIcon(rectIcon, s.tool === 'rect-fill' ? 'rect-fill' : 'rect');
     sizeVal.textContent = String(s.brushSize);
     sizeGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool);
-    mirrorGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool) && s.tool !== 'fill';
+    mirrorGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool) && s.tool !== 'fill' && s.tool !== 'stamp';
+    // the stamp being placed (presets follow the main colour), and saving a selection as one
+    stampUi.el.hidden = s.tool !== 'stamp';
+    if (pc) stampUi.sync();
+    paintSaveChip();
     mirrorX.setActive(s.mirrorX);
     mirrorY.setActive(s.mirrorY);
     fillAll.hidden = s.tool !== 'fill';
@@ -584,6 +599,11 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       scrollers.forEach((f) => f.paint());
     });
     opts.onSettings?.();
+  }
+
+  /** "Save selection as stamp" next to the select tool's options, while something is selected */
+  function paintSaveChip() {
+    stampUi.saveChip.hidden = !pc || pc.tool !== 'select' || !pc.getSelection();
   }
 
   let paletteTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1560,7 +1580,9 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     },
     layers: () => cur?.layers ?? null,
     showLayers: (on) => layersUi.setOpen(on),
+    stamps: () => stampLib,
     destroy() {
+      stampUi.destroy();
       unbindLayers();
       sessions.clear();
       offs.forEach((f) => f());

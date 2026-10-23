@@ -161,6 +161,7 @@ const PT: EditorLanguage = {
         lighten: 'Clarear',
         darken: 'Escurecer',
         noise: 'Pincel de ruído',
+        stamp: 'Carimbo',
         select: 'Selecionar',
         move: 'Mover',
       },

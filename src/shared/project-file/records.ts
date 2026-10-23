@@ -18,6 +18,7 @@ import { readCapeSettings, readSavedCape, writeCapeSettings, writeSavedCape, typ
 import { readDraftJson, writeDraftJson } from '../../tools/fonts/draft';
 import type { FontDraft } from '../../tools/fonts/font';
 import { checkLayerRecords } from '../../tools/textures/layers/record';
+import { checkStampRecords } from '../../tools/textures/stamps/stamps';
 import { ProjectFileError, type ItemType, type ProjectItem, type ProjectTool } from './format';
 import { pf } from './i18n/text';
 
@@ -144,6 +145,10 @@ function checkTexturePack(x: unknown): TexturePackProject {
   // paint layers that can't be read are dropped (the texture itself is in overrides)
   if (layers) out.layers = layers;
   else delete out.layers;
+  // so are stamps that can't be read
+  const stamps = checkStampRecords(x.stamps);
+  if (stamps) out.stamps = stamps;
+  else delete out.stamps;
   return out;
 }
 

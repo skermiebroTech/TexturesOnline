@@ -1,0 +1,148 @@
+/* The stamp tool's options and list of stamps in the texture pack editor (./picker.ts). */
+.tx-st-opts[hidden],
+.tx-st-savechip[hidden] {
+  display: none;
+}
+.tx-st-btn {
+  gap: 6px;
+  max-width: 180px;
+  padding: 0 8px 0 4px;
+}
+.tx-st-thumbbox {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+.tx-st-thumb {
+  max-width: 24px;
+  max-height: 24px;
+  width: 24px;
+  height: auto;
+}
+.tx-st-label {
+  min-width: 0;
+}
+.tx-st-savechip .icon {
+  color: var(--tool-accent);
+}
+
+/* ---- the list */
+.tx-st-pop {
+  width: min(328px, calc(100vw - 16px));
+  max-height: min(560px, calc(100dvh - 24px));
+  overflow-y: auto;
+}
+.tx-st-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+.tx-st-hint {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tx-st-head {
+  margin: 4px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tx-st-note {
+  margin: 0;
+}
+.tx-st-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+}
+.tx-st-cell {
+  position: relative;
+  min-width: 0;
+}
+.tx-st-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 6px 4px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tx-st-tile:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.tx-st-tile[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.tx-st-tilebox {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-xs);
+}
+.tx-st-tilename {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.tx-st-del {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--text-2);
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.tx-st-cell:hover .tx-st-del,
+.tx-st-del:focus-visible {
+  opacity: 1;
+}
+.tx-st-del:hover {
+  color: var(--red);
+}
+.tx-st-save {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+@media (pointer: coarse) {
+  /* no hover: the delete buttons always show, and get bigger */
+  .tx-st-del {
+    opacity: 1;
+    width: 32px;
+    height: 32px;
+  }
+  .tx-st-tile {
+    min-height: 88px;
+  }
+}

@@ -138,6 +138,7 @@ const RU: EditorLanguage = {
         lighten: 'Осветлить',
         darken: 'Затемнить',
         noise: 'Кисть шума',
+        stamp: 'Штамп',
         select: 'Выделение',
         move: 'Перемещение',
       },
