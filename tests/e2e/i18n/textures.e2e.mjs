@@ -3,7 +3,8 @@
 // the effects, painting on the 3D model, a mob, the sound editor, the GUI section (library, preview
 // screens, splash texts), the model editor, the PvP tab, the Material tab (quick materials, a part,
 // "Use on similar textures"), name-based textures (the window, a new look, its names), the animation
-// maker (the texture menu, frames strip, timing, import and GIF windows, a texture that can't), the pack
+// maker (the texture menu, frames strip, timing, import and GIF windows, a texture that can't), paint
+// layers (the panel with one and two layers, its menu, the eyedropper's option), the pack
 // settings, the keyboard shortcuts and the export
 // dialog. Every state is checked for English left in
 // the visible text and labels, for content wider than the screen or clipped labels, and for console
@@ -484,6 +485,22 @@ try {
           await page.waitForSelector('.an-gif-modal');
           await inspect(page, `tex-${L}-17t-anim-gif`, lang);
           await closeDialog(page);
+
+          // ------------------------------------------------ paint layers: the button, the panel, its menu, the eyedropper's option
+          await page.click('.tx-pl-btn');
+          await page.waitForSelector('.tx-pl:not([hidden]) .tx-plr');
+          await inspect(page, `tex-${L}-17v-layers-one`, lang);
+          await page.click('.tx-pl-add');
+          await page.waitForFunction(() => window.__tx.canvas.layers()?.stack.layers.length === 2);
+          await page.selectOption('.tx-pl-blend', 'lighten');
+          await page.evaluate(() => window.__tx.canvas.canvas().setTool('picker'));
+          await inspect(page, `tex-${L}-17w-layers-two`, lang, { wait: 400 });
+          await page.click('.tx-pl-more');
+          await page.waitForSelector('.menu [role="menuitem"]');
+          await inspect(page, `tex-${L}-17x-layers-menu`, lang);
+          await page.keyboard.press('Escape');
+          await page.click('.tx-pl-close');
+          await page.evaluate(() => window.__tx.canvas.canvas().setTool('pencil'));
           await page.evaluate(() => window.__tx.open('assets/minecraft/textures/entity/zombie/zombie.png'));
           await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('/zombie.png'), null, { timeout: 30000 });
           await page.click('.tx-head-actions .icon-btn:last-child');

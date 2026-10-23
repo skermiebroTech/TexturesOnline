@@ -6,6 +6,7 @@ import { loadTexturesText } from './i18n/load';
 import { loadEditorText } from './ui/i18n/load';
 import { loadModelsText } from '../../shared/models/i18n/load';
 import { loadAnimText } from './anim/i18n/load';
+import { loadLayersText } from './layers/i18n/load';
 
 export default async function view(root: HTMLElement, ctx: RouteContext): Promise<() => void> {
   const id = ctx.params.id;
@@ -29,7 +30,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
   });
   // The editor (pixel canvas, 3D preview, panels) loads only when a project opens, so the start
   // screen does not wait for it; its text loads alongside.
-  const [{ renderEditor }] = await Promise.all([import('./ui/editor'), loadTexturesText(ctx.locale), loadEditorText(ctx.locale), loadModelsText(ctx.locale), loadAnimText(ctx.locale)]);
+  const [{ renderEditor }] = await Promise.all([import('./ui/editor'), loadTexturesText(ctx.locale), loadEditorText(ctx.locale), loadModelsText(ctx.locale), loadAnimText(ctx.locale), loadLayersText(ctx.locale)]);
   const cleanup = await renderEditor(root, decodeURIComponent(id), life.signal);
   return () => {
     leave();

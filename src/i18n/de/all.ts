@@ -29,6 +29,7 @@ export const ALL: AllText = {
     cape: { title: 'Umhang-Ersteller', desc: 'Bemale Umhang und Elytren auf der 64×32-Vorlage in 3D und lade das PNG oder ein Elytren-Texture-Pack.' },
     shaders: { title: 'Shader-Ersteller', desc: 'Gestalte eigene Shader mit Reglern und Live-Vorschau – mit oder ohne Mods.' },
     pixel: { title: 'Pixel-Editor', desc: 'Stift, Füllen, Linien, Formen, Auswahl und Spiegeln, mit Rückgängig, in 16× bis 512× Auflösung.' },
+    layers: { title: 'Ebenen', desc: 'Male auf Ebenen wie in einem Bildprogramm, mit Füllmodi und Deckkraft, oder zeichne die Spieltextur nach. Das Pack bekommt sie zusammengefügt.' },
     paint3d: { title: 'In 3D malen', desc: 'Male direkt auf das 3D-Modell eines Blocks und sieh, wie sich jede Seite gleichzeitig ändert.' },
     mobs: { title: 'Mobs und Kreaturen', desc: 'Male Mobs auf ihren echten 3D-Modellen neu, Körperteil für Körperteil.' },
     gear: { title: 'Sättel, Rüstung und Verzierungen', desc: 'Sieh Sättel, Pferderüstung, Rüstungssets und Rüstungsverzierungen an dem Mob, der sie trägt.' },

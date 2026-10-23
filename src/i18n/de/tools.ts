@@ -26,6 +26,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     featureList: [
       'Alle Vanilla-Texturen der gewählten Version durchsuchen, mit Suche und Kategorien',
       'Pixel-Editor: Stift, Radierer, Füllen, Pipette, Linie, Formen, Rauschen, Auswahl, Spiegelmalen, Rückgängig und Wiederholen',
+      'Ebenen: Ebenen hinzufügen, ausblenden, sperren, umsortieren und zusammenfügen, mit Deckkraft und Füllmodi (Multiplizieren, Negativ multiplizieren, Aufhellen, Ineinanderkopieren), oder die Spieltextur nachzeichnen; das Pack bekommt sie zusammengefügt',
       'Direkt auf das 3D-Blockmodell malen: Jede Seite bemalt die Textur, die sie zeigt, auch bei Blöcken mit mehreren Texturen, Treppen, Stufen und Truhen',
       'Mob-Texturen auf 3D-Mob-Modellen bearbeiten (über 80 Mobs, Java und Bedrock) mit Varianten und ein-/ausblendbaren Körperteilen',
       'Sättel, Pferde- und Wolfsrüstung, Lama-Teppiche und Rüstungen für Humanoide mit Rüstungsbesätzen werden an den Mobs gezeigt und bemalt, die sie tragen',
@@ -45,6 +46,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     features: [
       ['Jede Vanilla-Textur der gewählten Version, mit Suche und Kategorien.'],
       ['Ein vollständiger Pixel-Editor: Stift, Radierer, Füllen, Pipette, Linie, Formen, Rauschen, Auswahl, Spiegelmalen und Rückgängig/Wiederholen, mit Kachelvorschau und Zoom.'],
+      ['Ebenen: Öffne „Ebenen“ über der Zeichenfläche und male auf getrennten Ebenen wie in einem Bildprogramm. Füg sie hinzu, dupliziere, benenne, blende aus, sperre, verschiebe und füg sie zusammen, stell Deckkraft und Füllmodus ein (Multiplizieren, Negativ multiplizieren, Aufhellen, Ineinanderkopieren) oder leg die Spieltextur auf eine gesperrte Ebene zum Nachzeichnen. Ebenen gehen durch alle Bilder einer Animation, Rückgängig nimmt auch Ebenen-Änderungen zurück, und Minecraft bekommt die Ebenen zu einem PNG zusammengefügt.'],
       ['Malen in 3D: Schalte den Editor auf 3D (oder drücke D) und male direkt auf das Blockmodell. Jede Seite bemalt die Textur, die sie zeigt – Vorderseite, Seiten und Oberseite eines Ofens oder die Seitenauflage von Gras bearbeitest du genau dort, wo du sie siehst.'],
       ['Mobs in 3D: Über 80 Mobs vom Creeper bis zum Dorfbewohner erscheinen auf ihren eigenen Modellen und lassen sich wie Blöcke bemalen. Blende Körperteile aus, um an Verdecktes zu kommen, wechsle Varianten, Alter oder Wollfarben und zieh Mobs Sättel und Rüstungen an, um auch diese zu bemalen.'],
       ['Formen ändern (Java): Bearbeite das Modell eines Blocks oder Items Würfel für Würfel, mit Texturen, UVs und der Haltung in der Hand, oder mach aus einem flachen Item ein 3D-Item. Die Modelldateien kommen passend zu deiner Version ins Pack. ', link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'), '.'],

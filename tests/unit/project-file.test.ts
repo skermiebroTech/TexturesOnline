@@ -84,6 +84,16 @@ function texturePack(id = 'tex-1'): TexturePackProject {
     effects: [{ id: 'ab12cd34', type: 'hue', enabled: true, params: { shift: 30, keep: true, mode: 'soft' }, categories: ['block'] }],
     bedrockUuids: { header: '11111111-1111-4111-8111-111111111111', module: '22222222-2222-4222-8222-222222222222' },
     packVersion: [1, 0, 3],
+    layers: {
+      'textures/blocks/stone.png': {
+        layers: [
+          { id: 'l1', name: 'Layer 1', image: png(32, 32, [120, 120, 120, 255]), locked: true },
+          { id: 'l2', name: 'Shine', image: png(32, 32, [255, 255, 255, 40]), opacity: 0.5, blend: 'screen', hidden: true },
+        ],
+        active: 1,
+        updatedAt: 9,
+      },
+    },
     sounds: { 'sounds/random/click.ogg': { source: new Blob([strToU8('RIFF')], { type: 'audio/wav' }), sourceName: 'click.wav', start: 0.1, end: 0.4, gain: 1.2, stereo: false, updatedAt: 5 } },
     pvp: {
       tweaks: {
@@ -122,7 +132,8 @@ test('textures are PNG files at their pack paths, and the game’s own files are
   assert.ok(names.includes('items/0-texturepack/project/icon.png'), 'a Blob without a name gets an extension from its type');
   assert.ok(names.includes('items/0-texturepack/project/pvp/tweaks/lowFire/textures/1/before.png'));
   assert.ok(names.includes('items/0-texturepack/project/extraFiles/sounds/random/click.ogg'));
-  assert.equal(names.length, 9, names.join('\n'));
+  assert.ok(names.includes('items/0-texturepack/project/layers/textures/blocks/stone.png/layers/1/image.png'), 'paint layers are PNGs too');
+  assert.equal(names.length, 11, names.join('\n'));
   const manifest = JSON.parse(strFromU8(files['manifest.json']));
   assert.equal(manifest.format, 'texture-pack-maker');
   assert.equal(manifest.tool, 'textures');

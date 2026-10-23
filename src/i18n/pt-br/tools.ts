@@ -26,6 +26,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     featureList: [
       'Navegue por todas as texturas vanilla da versão escolhida, com busca e categorias',
       'Editor de pixels: lápis, borracha, balde, conta-gotas, linha, formas, ruído, seleção, pintura espelhada, desfazer e refazer',
+      'Camadas: adicione, oculte, bloqueie, reordene e mescle camadas com opacidade e modos de mesclagem (multiplicar, tela, clarear, sobrepor), ou decalque a textura do jogo; o pack recebe tudo achatado',
       'Pinte direto no modelo 3D do bloco: cada face pinta a textura que mostra, inclusive blocos com várias texturas, escadas, lajes e baús',
       'Edite texturas de mobs nos modelos 3D (mais de 80 mobs, Java e Bedrock) com variantes e partes que podem ser escondidas',
       'Selas, armaduras de cavalo e de lobo, tapetes de lhama e armaduras humanoides com acabamentos aparecem e são pintadas nos mobs que as usam',
@@ -45,6 +46,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     features: [
       ['Todas as texturas vanilla da versão escolhida, com busca e categorias.'],
       ['Um editor de pixels completo: lápis, borracha, balde, conta-gotas, linha, formas, ruído, seleção, pintura espelhada e desfazer/refazer, com prévia em mosaico e zoom.'],
+      ['Camadas: abra Camadas sobre a tela de pintura para pintar em camadas separadas, como num editor de imagens. Adicione, duplique, renomeie, oculte, bloqueie, arraste e mescle camadas, ajuste a opacidade e o modo de mesclagem (multiplicar, tela, clarear, sobrepor) ou coloque a textura do jogo numa camada bloqueada para decalcar. As camadas passam por todos os quadros de uma animação, desfazer também desfaz mudanças nas camadas e o Minecraft recebe as camadas achatadas num só PNG.'],
       ['Pinte em 3D: mude o editor para 3D (ou aperte D) e pinte direto no modelo do bloco. Cada face pinta a textura que mostra, então a frente, as laterais e o topo de uma fornalha, ou a camada lateral da grama, são editados exatamente onde você vê.'],
       ['Mobs em 3D: mais de 80 mobs, de creepers a aldeões, aparecem nos próprios modelos e são pintados como blocos. Esconda uma parte do corpo para alcançar o que ela cobre, troque variantes, idades ou cores de lã, e coloque selas e armaduras nos mobs para pintar essas peças também.'],
       ['Mude formas (Java): edite o modelo de um bloco ou item cubo por cubo, com texturas, UVs e o jeito como fica na mão, ou transforme um item plano em 3D. Os arquivos do modelo vão para o pack da sua versão. ', link('/guides/make-3d-items-texture-pack', 'Como fazer itens 3D'), '.'],

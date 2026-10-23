@@ -13,6 +13,15 @@ repository keeps its original name, `TexturesOnline`).
 - Browse every vanilla texture of the version you pick, with search and categories.
 - Paint pixels with a full editor: pencil, eraser, fill, eyedropper, line, rectangle, ellipse,
   lighten/darken, noise, selection and move, mirror painting, undo/redo, tiled preview and zoom.
+- Paint layers: the Layers button over the canvas opens a panel to add, duplicate, rename, hide, lock,
+  reorder (drag with a mouse, buttons on touch screens), merge down and flatten layers, each with an opacity
+  and a blend mode (normal, multiply, screen, lighten, overlay), and to put the game's texture on a locked
+  layer to trace over. Every tool paints the active layer; the eyedropper takes what shows (or only the
+  active layer); undo / redo cover layer changes, each stroke going back to the layer it was painted on.
+  Layers go through every animation frame (each layer holds the whole strip). A texture starts as one
+  layer and stays exactly as before until a layer is added. The layers are stored in the project
+  (`layers`: one PNG per layer, so project files carry them); the texture in the pack, the previews, PBR
+  maps and effects use the layers flattened, and an opened pack is one layer.
 - Upload your own PNGs (auto-resized to the texture, 16x up to 512x).
 - One-click whole-pack effects (Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon,
   Smooth HD and more), stacked non-destructively and applied on export.
@@ -187,6 +196,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/gui.e2e.cjs       # GUI and men
 NODE_PATH=$(npm root -g) node tests/e2e/textures/pbr.e2e.cjs       # Material tab (PBR): presets, parts, bumps, lit preview, similar textures, labPBR / texture set exports, opened packs
 NODE_PATH=$(npm root -g) node tests/e2e/textures/names.e2e.cjs     # name-based textures: window, names, painting, 3D shape, 26.3 item definitions, 1.21.4 CIT, opened packs, Bedrock note
 NODE_PATH=$(npm root -g) node tests/e2e/textures/animation.e2e.cjs # animation maker: frames, onion skin, timing, GIF import / export, Java .mcmeta, Bedrock flipbooks, opened packs, phone
+NODE_PATH=$(npm root -g) node tests/e2e/textures/layers.e2e.cjs    # paint layers: panel, blend modes, undo, merge / flatten, animated textures, flattened export, project files, phone
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

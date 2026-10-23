@@ -135,7 +135,7 @@ export function createPaint3d(deps: { store: TexStore; canvas: CanvasPanel; prev
     const t = texelOf(hit);
     if (!t) return false;
     if (tool === 'picker') {
-      p.setColor(p.getPixel(t.x, t.y));
+      p.setColor(p.pickShown ? p.getShownPixel(t.x, t.y) : p.getPixel(t.x, t.y));
       mode = { kind: 'pick', path };
       return true;
     }
@@ -218,7 +218,7 @@ export function createPaint3d(deps: { store: TexStore; canvas: CanvasPanel; prev
         const last = [...hits].reverse().find((x) => x.texture === m.path);
         const t = last && texelOf(last);
         const p = pc();
-        if (t && p) p.setColor(p.getPixel(t.x, t.y));
+        if (t && p) p.setColor(p.pickShown ? p.getShownPixel(t.x, t.y) : p.getPixel(t.x, t.y));
         return;
       }
       extendStroke(hits);
@@ -300,7 +300,7 @@ export function createPaint3d(deps: { store: TexStore; canvas: CanvasPanel; prev
       const cursor: PaintCursor = { texture: path, width: g[0], height: g[1], pixels, echo, fill, tone: locked ? 'locked' : 'normal' };
       preview.setPaintCursor(cursor);
       canvas.showHover(path === openKey() ? { pixels, echo } : null);
-      const color = path === openKey() ? (p.getPixel(t.x, t.y) as [number, number, number, number]) : undefined;
+      const color = path === openKey() ? (p.getShownPixel(t.x, t.y) as [number, number, number, number]) : undefined;
       preview.setPaintHint({ label: preview.partLabel(hit.quad.part) ?? preview.textureLabel(path) ?? te.paint3d.texture, name: nameOf(path), x: t.x, y: t.y, color, locked: locked ?? undefined });
     }
     return kind;

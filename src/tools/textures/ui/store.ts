@@ -10,6 +10,8 @@ import { categoryForPath, getBaseImage, isEdited, removeOverride, setOverride } 
 import { hasActiveEffects } from '../effects';
 import { buildEntries, makeEntry, type TextureEntry } from './meta';
 import { customModelKey, resetCustomModel, writeCustomModel } from '../models/pack';
+import { isPlain, type LayerStack } from '../layers/stack';
+import { recordOf, stackOf } from '../layers/record';
 import { te } from './i18n/editor';
 
 export type SaveState = 'saved' | 'saving' | 'dirty' | 'error';
@@ -35,6 +37,9 @@ export interface EditorEvents extends Record<string, unknown> {
   animation: { path: string };
 }
 
+/** Paint layer stacks kept decoded for textures that aren't being saved (besides those that are) */
+const KEPT_LAYER_STACKS = 6;
+
 const SAVE_DELAY = 700;
 
 export class TexStore {
@@ -53,6 +58,14 @@ export class TexStore {
   private again = false;
   private discarded = false;
   private vanillaCache = new Map<string, Promise<ImageData | null>>();
+  /** Paint layers in memory: being painted, waiting to be saved, or read lately */
+  private layerStacks = new Map<string, LayerStack>();
+  /** Textures whose layers (null: none any more) are waiting to be saved, with a change counter */
+  private pendingLayers = new Map<string, number>();
+  /** Changes to the pixels of layer images (painting changes them in place) */
+  private layerRevs = new WeakMap<ImageData, number>();
+  /** PNGs made of layer images, reused while they don't change */
+  private layerPngs = new WeakMap<ImageData, { rev: number; blob: Blob }>();
 
   constructor(
     readonly project: TexturePackProject,
@@ -131,8 +144,11 @@ export class TexStore {
 
   // ---- edits ----
 
-  /** Records new pixels for a texture (saved shortly after). */
-  setImage(path: string, full: ImageData): void {
+  /**
+   * Records new pixels for a texture (saved shortly after). Its paint layers no longer make these
+   * pixels and are dropped, unless `keepLayers` (the pixel editor, which sets the layers too).
+   */
+  setImage(path: string, full: ImageData, opts: { keepLayers?: boolean } = {}): void {
     if (path === ICON_KEY) {
       this.pendingIcon = full;
       this.metaDirty = true;
@@ -141,6 +157,7 @@ export class TexStore {
       return;
     }
     const wasEdited = this.isEdited(path);
+    if (!opts.keepLayers) this.dropLayers(path);
     this.pending.set(path, full);
     this.bump(path);
     if (!wasEdited && !this.byPath.has(path)) this.rebuildEntries();
@@ -151,6 +168,7 @@ export class TexStore {
   /** Back to vanilla (drops the pack's copy, and the animation made for it). */
   resetToVanilla(path: string): void {
     this.pending.delete(path);
+    this.dropLayers(path);
     removeOverride(this.project, path);
     if (this.project.animations?.[path]) this.setAnimation(path, null);
     this.bump(path);
@@ -162,6 +180,7 @@ export class TexStore {
   /** Puts a stored copy of a texture back as it was (null: none, the game's own texture shows). */
   setOverrideBlob(path: string, blob: Blob | null): void {
     this.pending.delete(path);
+    this.dropLayers(path);
     if (blob) this.project.overrides[path] = blob;
     else removeOverride(this.project, path);
     this.bump(path);
@@ -269,6 +288,88 @@ export class TexStore {
     this.events.emit('animation', { path });
   }
 
+  // ---- paint layers (project.layers) ----
+
+  /** True when the texture is painted on layers (more than one, or one with settings of its own). */
+  hasLayers(path: string): boolean {
+    const mem = this.layerStacks.get(path);
+    if (mem) return !isPlain(mem);
+    return this.pendingLayers.has(path) ? false : !!this.project.layers?.[path];
+  }
+
+  /**
+   * The texture's paint layers: the stack being painted (the same object each time while it is in
+   * memory), else read from the project. Null when it has none (or they can't be read).
+   */
+  async loadLayers(path: string): Promise<LayerStack | null> {
+    const mem = this.layerStacks.get(path);
+    if (mem) {
+      this.keepStack(path, mem);
+      return mem;
+    }
+    if (this.pendingLayers.has(path)) return null;
+    const rec = this.project.layers?.[path];
+    if (!rec) return null;
+    const stack = await stackOf(rec, (b) => decodeImage(b, 'png'));
+    // painted or dropped while it was being read
+    if (this.layerStacks.has(path) || this.pendingLayers.has(path) || this.project.layers?.[path] !== rec) return this.layerStacks.get(path) ?? null;
+    if (stack) this.keepStack(path, stack);
+    return stack;
+  }
+
+  /**
+   * Sets a texture's paint layers (saved shortly after; a plain single layer stores nothing, but
+   * stays in memory). `painted`: layer images whose pixels changed in place.
+   */
+  setLayers(path: string, stack: LayerStack | null, painted: readonly ImageData[] = []): void {
+    for (const img of painted) this.layerRevs.set(img, (this.layerRevs.get(img) ?? 0) + 1);
+    if (stack) this.keepStack(path, stack);
+    else this.layerStacks.delete(path);
+    this.pendingLayers.set(path, (this.pendingLayers.get(path) ?? 0) + 1);
+    this.metaDirty = true;
+    this.schedule();
+  }
+
+  /** The texture is no longer made of its layers (reset, replaced from elsewhere). */
+  private dropLayers(path: string): void {
+    if (!this.layerStacks.has(path) && !this.project.layers?.[path]) return;
+    this.layerStacks.delete(path);
+    this.pendingLayers.set(path, (this.pendingLayers.get(path) ?? 0) + 1);
+  }
+
+  private keepStack(path: string, stack: LayerStack): void {
+    this.layerStacks.delete(path);
+    this.layerStacks.set(path, stack);
+    let extra = this.layerStacks.size - KEPT_LAYER_STACKS;
+    for (const key of this.layerStacks.keys()) {
+      if (extra <= 0) break;
+      if (key === path || this.pendingLayers.has(key)) continue;
+      this.layerStacks.delete(key);
+      extra--;
+    }
+  }
+
+  private layerPng(img: ImageData): Blob {
+    const rev = this.layerRevs.get(img) ?? 0;
+    const known = this.layerPngs.get(img);
+    if (known && known.rev === rev) return known.blob;
+    const blob = new Blob([encodePng(img)], { type: 'image/png' });
+    this.layerPngs.set(img, { rev, blob });
+    return blob;
+  }
+
+  /** Writes the layers waiting to be saved into the project record. */
+  private storeLayers(): void {
+    for (const [path, n] of [...this.pendingLayers]) {
+      const stack = this.layerStacks.get(path);
+      const all = (this.project.layers ??= {});
+      if (stack && !isPlain(stack)) all[path] = recordOf(stack, (img) => this.layerPng(img));
+      else delete all[path];
+      if (!Object.keys(all).length) delete this.project.layers;
+      if (this.pendingLayers.get(path) === n) this.pendingLayers.delete(path);
+    }
+  }
+
   /** Project settings changed. */
   touch(event: 'meta' | 'effects' | null = null): void {
     this.metaDirty = true;
@@ -286,7 +387,7 @@ export class TexStore {
 
   hasUnsaved(): boolean {
     if (this.discarded) return false;
-    return this.metaDirty || this.pending.size > 0 || !!this.pendingIcon || this.timer !== null || this.flushing !== null;
+    return this.metaDirty || this.pending.size > 0 || !!this.pendingIcon || this.pendingLayers.size > 0 || this.timer !== null || this.flushing !== null;
   }
 
   private schedule(): void {
@@ -309,6 +410,8 @@ export class TexStore {
     this.timer = null;
     this.pending.clear();
     this.pendingIcon = null;
+    this.pendingLayers.clear();
+    this.layerStacks.clear();
     this.metaDirty = false;
     await this.flushing?.catch(() => undefined);
   }
@@ -343,12 +446,14 @@ export class TexStore {
   }
 
   private async saveOnce(): Promise<void> {
-    if (!this.metaDirty && !this.pending.size && !this.pendingIcon) {
+    if (!this.metaDirty && !this.pending.size && !this.pendingIcon && !this.pendingLayers.size) {
       if (this.saveState !== 'error') this.setState('saved');
       return;
     }
     this.setState('saving');
     try {
+      // paint layers as they are now, with the flattened textures they make
+      this.storeLayers();
       const batch = [...this.pending.entries()];
       for (const [path, img] of batch) {
         const stamp = this.stamp(path);
@@ -366,8 +471,8 @@ export class TexStore {
       if (this.discarded) return;
       await saveProject(this.project);
       this.lastError = '';
-      this.setState(this.pending.size || this.pendingIcon || this.metaDirty ? 'dirty' : 'saved');
-      if (this.pending.size || this.pendingIcon) this.again = true;
+      this.setState(this.pending.size || this.pendingIcon || this.pendingLayers.size || this.metaDirty ? 'dirty' : 'saved');
+      if (this.pending.size || this.pendingIcon || this.pendingLayers.size) this.again = true;
     } catch (err) {
       console.error(err);
       this.metaDirty = true;

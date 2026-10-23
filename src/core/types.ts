@@ -176,6 +176,36 @@ export interface TexturePackProject extends ProjectBase {
    * entries are written from these on export; textures without one keep the pack's or the game's.
    */
   animations?: Record<string, TextureAnimation>;
+  /**
+   * Paint layers of textures painted on more than one layer (or one hidden, locked, see-through or
+   * blended layer), by the pack path of their texture. The texture in overrides is always these
+   * layers flattened: the game, the previews and the export only ever use that.
+   */
+  layers?: Record<string, TextureLayers>;
+}
+
+/** Blend mode of a paint layer (src/tools/textures/layers). */
+export type TextureLayerBlend = 'normal' | 'multiply' | 'screen' | 'lighten' | 'overlay';
+
+/** One paint layer of a texture, as stored. */
+export interface TextureLayer {
+  id: string;
+  name: string;
+  /** The layer's pixels at the texture's size (every animation frame), PNG */
+  image: Blob;
+  hidden?: boolean;
+  locked?: boolean;
+  /** 0..1 (default 1) */
+  opacity?: number;
+  blend?: TextureLayerBlend;
+}
+
+/** The paint layers of a texture, bottom to top. */
+export interface TextureLayers {
+  layers: TextureLayer[];
+  /** Index of the layer being painted */
+  active: number;
+  updatedAt: number;
 }
 
 /** One step of an animation's play order: a frame, shown for its own number of ticks (else the default). */

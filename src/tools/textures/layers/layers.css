@@ -1,0 +1,353 @@
+/* Paint layers: the Layers button over the canvas (top right, beside the 2D / 3D switch) and the
+   layers panel it opens (floating under it; a sheet at the bottom of the canvas on phones). */
+
+.tx-pl-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(220px, calc(100% - 200px));
+  height: 36px;
+  padding: 0 10px 2px 8px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--bg-elev) 84%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-1);
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  cursor: pointer;
+  transition:
+    color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.tx-pl-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.tx-pl-btn .icon {
+  flex: none;
+}
+.tx-pl-btn.has-layers {
+  color: var(--text);
+}
+.tx-pl-btn.has-layers > .icon,
+.tx-pl-btn.is-open > .icon {
+  color: var(--tool-accent);
+}
+.tx-pl-btn.is-open {
+  border-color: var(--tool-accent);
+}
+.tx-pl-btn[hidden],
+.tx-center.is-empty .tx-pl-btn {
+  display: none;
+}
+.tx-pl-btn-label {
+  min-width: 0;
+}
+.tx-pl-btn-count {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px 2px;
+  border-radius: var(--r-xs);
+  background: var(--tool-accent);
+  color: var(--on-accent);
+  font-size: var(--fs-sm);
+  line-height: 1;
+}
+.tx-pl-btn-count[hidden] {
+  display: none;
+}
+
+/* ---- the panel ---- */
+.tx-pl {
+  position: absolute;
+  top: 54px;
+  right: 10px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: 284px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 64px);
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+.tx-pl[hidden],
+.tx-center.is-empty .tx-pl {
+  display: none;
+}
+.tx-pl-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 6px 12px;
+  border-bottom: 2px solid var(--border);
+}
+.tx-pl-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+}
+.tx-pl-title .icon {
+  color: var(--tool-accent);
+}
+.tx-pl-listbox {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 60px;
+}
+.tx-pl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 264px;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.tx-pl-drop {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 3px;
+  background: var(--tool-accent);
+  pointer-events: none;
+}
+.tx-pl-drop[hidden] {
+  display: none;
+}
+
+.tx-plr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 44px;
+  padding: 2px 2px 2px 0;
+  border: 2px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+.tx-plr:hover {
+  background: var(--surface-2);
+}
+.tx-plr.is-active {
+  border-color: var(--tool-accent);
+  background: var(--tool-accent-soft);
+  color: var(--text);
+}
+.tx-plr:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.tx-plr.is-hidden .tx-plr-thumb,
+.tx-plr.is-hidden .tx-plr-name {
+  opacity: 0.5;
+}
+.tx-pl-list.is-dragging .tx-plr {
+  cursor: grabbing;
+}
+.tx-plr.is-dragged {
+  opacity: 0.5;
+}
+.tx-plr-thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  --checker-size: 6px;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.tx-plr-thumb canvas {
+  display: block;
+  max-width: 32px;
+  max-height: 32px;
+}
+.tx-plr-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tx-plr-name {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.tx-plr-tags {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  overflow-wrap: anywhere;
+}
+.tx-plr-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  font-size: var(--fs-sm);
+}
+.tx-plr .icon-btn {
+  flex: none;
+}
+/* (on / off show in the icon itself, not as a pressed button) */
+.tx-plr .icon-btn[aria-pressed] {
+  background: none;
+  border-color: transparent;
+  color: var(--text-2);
+}
+.tx-plr .icon-btn[aria-pressed]:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.tx-plr-eye[aria-pressed='false'],
+.tx-plr-lock:not(.is-on) {
+  color: var(--text-3);
+}
+.tx-plr .tx-plr-lock.is-on {
+  color: var(--gold);
+}
+
+/* ---- the selected layer's settings and actions ---- */
+.tx-pl-props {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 10px;
+  border-top: 2px solid var(--border);
+}
+.tx-pl-opacity {
+  width: 100%;
+  min-width: 0;
+}
+.tx-pl-opacity-val {
+  min-width: 40px;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  text-align: right;
+}
+.tx-pl-select {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.tx-pl-select .select-input {
+  height: 32px;
+  padding-left: 8px;
+  font-size: var(--fs-sm);
+}
+.tx-pl-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-top: 2px solid var(--border);
+}
+.tx-pl-delete:not(:disabled):hover {
+  color: var(--red);
+}
+.tx-pl-note {
+  flex: none;
+  margin: 0;
+  padding: 0 12px 8px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+
+/* The eyedropper's "This layer only" sits with the other tool options. */
+.tx-pick-layer[hidden] {
+  display: none;
+}
+
+/* ---- phones: an icon button, and the panel is a sheet at the bottom of the screen, over the
+   tools under the canvas and just above the tab bar (the canvas keeps the room above it) ---- */
+@media (max-width: 760px), (max-height: 560px) and (min-width: 600px) and (pointer: coarse) {
+  .tx-pl-btn {
+    top: 8px;
+    right: 8px;
+    max-width: calc(100% - 180px);
+    padding: 0 8px 2px;
+  }
+  .tx-pl-btn-label {
+    display: none;
+  }
+  .tx-pl {
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: var(--tx-pl-bottom, 0px);
+    left: 0;
+    z-index: 80;
+    width: auto;
+    max-width: none;
+    max-height: min(60vh, 420px);
+    border-width: 2px 0;
+    border-radius: var(--r-md) var(--r-md) 0 0;
+  }
+  .tx-pl-head {
+    padding: 2px 4px 2px 12px;
+  }
+  .tx-pl-list {
+    max-height: 156px;
+    padding: 4px 6px;
+  }
+  .tx-pl-props {
+    grid-template-columns: minmax(0, 148px) minmax(0, 1fr) auto;
+    padding: 6px 10px;
+  }
+  .tx-pl-select {
+    grid-column: auto;
+  }
+  .tx-pl-foot {
+    padding: 2px 6px;
+  }
+}
+@media (pointer: coarse) {
+  .tx-plr {
+    min-height: 48px;
+  }
+  .tx-pl-select .select-input {
+    height: 40px;
+  }
+  .tx-pl-foot .icon-btn,
+  .tx-pl-head .icon-btn,
+  .tx-plr .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+.tx-pl-note[hidden] {
+  display: none;
+}
