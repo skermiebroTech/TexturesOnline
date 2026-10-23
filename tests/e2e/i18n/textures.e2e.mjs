@@ -2,7 +2,8 @@
 // starts a pack and goes through the library (blocks, all textures, mobs, sounds), the pixel editor,
 // the effects, painting on the 3D model, a mob, the sound editor, the GUI section (library, preview
 // screens, splash texts), the model editor, the PvP tab, the Material tab (quick materials, a part,
-// "Use on similar textures"), the pack settings, the keyboard shortcuts and the export
+// "Use on similar textures"), name-based textures (the window, a new look, its names), the pack
+// settings, the keyboard shortcuts and the export
 // dialog. Every state is checked for English left in
 // the visible text and labels, for content wider than the screen or clipped labels, and for console
 // errors, at 1280 and 390 px wide in the dark and the light theme.
@@ -63,6 +64,8 @@ async function routeSounds(ctx) {
 const GAME_NAMES = [
   '.tx-tile', '.tx-tile-name', '.tx-tile-id', '.tx-mb-tile', '.tx-head-title', '.tx-head-sub', '.tx-usedby-chip', '.tx-pv-texname', '.tx-pv-name', '.tx-pv-sub', '.snd-row',
   '.me-title-name', '.me-title-sub', '.me-tex-name', '.me-tp-name', '.me-tp-tile', '.tx-rc-name', '.gui-sp-text',
+  // name-based textures: the item's name and the names typed in the anvil
+  '.nm-head-name', '.nm-tip',
 ];
 
 function collectTexts(gameNames) {
@@ -419,6 +422,28 @@ try {
           await page.waitForSelector('.pbr-sim-modal .pbr-sim-row');
           await page.click('.pbr-sim-row[data-kind="suffix"] .switch');
           await inspect(page, `tex-${L}-17h-material-similar`, lang);
+          await closeDialog(page);
+
+          // ------------------------------------------------ name-based textures: the window, a new look, its row, names
+          await page.evaluate(() => window.__tx.open('assets/minecraft/textures/item/diamond_sword.png'));
+          await page.waitForFunction(() => window.__tx.canvas.current()?.key.endsWith('/diamond_sword.png'), null, { timeout: 30000 });
+          if (phone) await show(page, phone, 'editor');
+          await page.click('.tx-head-actions .icon-btn:last-child');
+          await page.click('[role=menuitem]:has(.icon[data-icon="label"])');
+          await page.waitForSelector('.nm-modal .nm-form', { timeout: 60000 });
+          await inspect(page, `tex-${L}-17i-names-new`, lang, { wait: 500 });
+          await page.fill('.nm-form .nm-input', 'Excalibur');
+          await page.press('.nm-form .nm-input', 'Enter');
+          await inspect(page, `tex-${L}-17j-names-adding`, lang);
+          await page.click('.nm-create');
+          await page.waitForSelector('.nm-modal', { state: 'detached' });
+          await page.waitForSelector('.tx-names-for', { timeout: 30000 });
+          await inspect(page, `tex-${L}-17k-names-look`, lang, { wait: 400 });
+          await page.evaluate(() => window.__tx.names('assets/minecraft/textures/item/diamond_sword.png'));
+          await page.waitForSelector('.nm-modal .nm-look');
+          await inspect(page, `tex-${L}-17l-names-list`, lang, { wait: 500 });
+          await page.click('.nm-look .nm-names');
+          await inspect(page, `tex-${L}-17m-names-edit`, lang);
           await closeDialog(page);
 
           // ------------------------------------------------ pack settings

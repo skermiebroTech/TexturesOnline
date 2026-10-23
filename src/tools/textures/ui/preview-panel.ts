@@ -79,6 +79,8 @@ export interface PreviewHooks {
   onEntry?(entry: ModelEntry | null): void;
   /** Open the model editor for a block / item (shows the "Edit shape" button) */
   onEditModel?(entry: ModelEntry, state: BlockState): void;
+  /** Open an item's name-based textures (shows the "Names" button next to "Edit shape" on Java items) */
+  onNames?(entry: ModelEntry): void;
 }
 
 type Mode = 'auto' | 'cube' | 'flat';
@@ -252,7 +254,14 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   editShapeBtn.addEventListener('click', () => {
     if (entry && entry.kind !== 'entity') hooks.onEditModel?.(entry, { ...state });
   });
-  const body = h('div', { class: 'tx-pv' }, head, hero, editShapeBtn, canvasSlot, note, trimNote, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
+  const namesCount = h('span', { class: 'tx-pv-shapebadge', hidden: true });
+  const namesBtn = h('button', { type: 'button', class: 'btn btn-secondary btn-sm tx-pv-shapebtn tx-pv-namesbtn', hidden: true }, icon('label'), h('span', { class: 'btn-label' }, te.names.button), namesCount);
+  tooltip(namesBtn, te.names.buttonHint);
+  namesBtn.addEventListener('click', () => {
+    if (entry?.kind === 'item') hooks.onNames?.(entry);
+  });
+  const shapeRow = h('div', { class: 'tx-pv-shaperow', hidden: true }, editShapeBtn, namesBtn);
+  const body = h('div', { class: 'tx-pv' }, head, hero, shapeRow, canvasSlot, note, trimNote, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
   const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, te.preview.loadingModel));
   hero.appendChild(loadingModel);
   const el = h('div', { class: 'tx-pv-wrap' }, body, empty);
@@ -471,6 +480,12 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   function paintShapeButton() {
     const can = !!hooks.onEditModel && !!entry && !!view && entry.kind !== 'entity' && (entry.kind === 'item' || view.category !== 'special');
     editShapeBtn.hidden = !can;
+    // name-based textures: Java items drawn flat from their picture, and items that have some
+    const looks = entry?.kind === 'item' ? Object.values(project.nameVariants ?? {}).filter((v) => v.item === entry!.id).length : 0;
+    namesBtn.hidden = !hooks.onNames || project.edition !== 'java' || entry?.kind !== 'item' || (view?.shape !== 'sprite' && !looks);
+    namesCount.hidden = !looks;
+    namesCount.textContent = String(looks);
+    shapeRow.hidden = editShapeBtn.hidden && namesBtn.hidden;
     if (!can || !entry) return;
     const custom = Object.values(project.customModels ?? {}).some((m) => m.id === entry!.id && (m.kind === entry!.kind || (entry!.kind === 'item' && m.kind === 'block')));
     editShapeBtn.querySelector<HTMLElement>('.tx-pv-shapebadge')!.hidden = !custom;
@@ -836,6 +851,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       partsSection.hidden = true;
       partsBtn.hidden = true;
       editShapeBtn.hidden = true;
+      namesBtn.hidden = true;
+      shapeRow.hidden = true;
       note.hidden = true;
       trimNote.hidden = true;
       trimNoteKey = '';
@@ -1049,6 +1066,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
   };
 
   const offs = [
+    store.events.on('names', () => paintShapeButton()),
     store.events.on('image', ({ path, full }) => {
       if (!tex || path !== tex.key) return;
       paintTiled(tex);

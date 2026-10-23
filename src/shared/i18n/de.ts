@@ -207,6 +207,8 @@ const DE: SharedLanguage = {
       overlaysInactive: 'Overlay-Ordner funktionieren erst ab Minecraft 1.20.2, deshalb bleiben sie als Dateien erhalten, sind in dieser Version aber nicht aktiv.',
       iconUnreadable: 'Das Pack-Symbol konnte nicht gelesen werden, deshalb wurde ein erzeugtes Symbol verwendet.',
       pbrMissingColour: '{count, plural, one {# Material wurde weggelassen, weil seine Textur weder im Pack noch im Spiel ist: {files}.} other {# Materialien wurden weggelassen, weil ihre Texturen weder im Pack noch im Spiel sind: {files}.}}',
+      namesCit: '{count, plural, one {# Namenstextur braucht in Minecraft vor 1.21.5 OptiFine oder die Mod CIT Resewn.} other {# Namenstexturen brauchen in Minecraft vor 1.21.5 OptiFine oder die Mod CIT Resewn.}}',
+      namesPattern: '{count, plural, one {# Namenstextur aus dem geöffneten Pack erkennt Namen an einem OptiFine-Muster ({names}) und funktioniert deshalb nur mit OptiFine oder CIT Resewn.} other {# Namenstexturen aus dem geöffneten Pack erkennen Namen an OptiFine-Mustern ({names}) und funktionieren deshalb nur mit OptiFine oder CIT Resewn.}}',
       pbrPlainSets: '{count, plural, one {# geänderte Textur bekommt für Vibrant Visuals ein schlichtes Material, weil das Material des Spiels dafür nicht geladen werden konnte.} other {# geänderte Texturen bekommen für Vibrant Visuals ein schlichtes Material, weil die Materialien des Spiels dafür nicht geladen werden konnten.}}',
     },
   },

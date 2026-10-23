@@ -71,6 +71,21 @@ repository keeps its original name, `TexturesOnline`).
   for textures changed without a material, the game's own texture set (from bedrock-samples) so the edit
   still shows with Vibrant Visuals. Bedrock textures start from the game's material. Opened packs keep
   their `_n` / `_s` maps and texture sets, shown in the tab and exported unchanged until edited.
+- Name-based textures (Java): an item renamed in an anvil gets its own texture, e.g. a diamond sword named
+  "Excalibur". From an item's texture (its menu, the Names button under the preview, or the names under the
+  texture header): type one or more names (matched exactly, capital letters too; the anvil's 50 characters, no
+  `§`), paint the new texture (a copy of the item's at first, in `textures/item/names/<item>/<name>.png`), and
+  give it a 3D shape in the model editor if you like; names can be changed and looks removed (with Undo). The
+  look's model builds on the item's (`models/item/names/<item>/<name>.json`). Java 1.21.5+ gets the item
+  definition `assets/minecraft/items/<item>.json` with a `minecraft:select` on `minecraft:component` /
+  `minecraft:custom_name` in front of what the pack already shows (the model editor's definitions, PvP display
+  changes, else the game's; 1.21.4 has item definitions but no `component` property). Older versions get
+  OptiFine CIT files (`optifine/cit/names/<item>/<name>.properties`: `type=item`, `items=`, `texture=` or
+  `model=`, `nbt.display.Name` / 1.20.5+ `components.custom_name`, several names as `regex:(A|B)`), read by
+  OptiFine and the CIT Resewn mod; a version range that spans 1.21.5 gets both. Opened packs keep theirs: CIT
+  rules for one item by name and 1.21.5+ name cases become looks; rules that check more stay files, and
+  OptiFine patterns (`ipattern:`...) are kept and written as CIT. Bedrock resource packs can't pick a look by
+  an item's name (Molang's `query.is_item_name_any` takes item ids), so the editor says so instead.
 - Sounds: browse the game's sound events by category, play them, and replace any sound with your own file
   (MP3, WAV, OGG, M4A...) or a microphone recording, trimmed on its waveform and levelled. Replacements are
   saved as Ogg Vorbis (Java: `assets/minecraft/sounds/`; Bedrock: `sounds/` plus `sound_definitions.json`
@@ -154,6 +169,7 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/models.e2e.cjs    # model edito
 NODE_PATH=$(npm root -g) node tests/e2e/textures/phone.e2e.cjs     # phones with touch, portrait and landscape: Paint tab, finger painting, pinch, tap targets
 NODE_PATH=$(npm root -g) node tests/e2e/textures/gui.e2e.cjs       # GUI and menus: library, atlas areas, live preview screens, splash texts, exports
 NODE_PATH=$(npm root -g) node tests/e2e/textures/pbr.e2e.cjs       # Material tab (PBR): presets, parts, bumps, lit preview, similar textures, labPBR / texture set exports, opened packs
+NODE_PATH=$(npm root -g) node tests/e2e/textures/names.e2e.cjs     # name-based textures: window, names, painting, 3D shape, 26.3 item definitions, 1.21.4 CIT, opened packs, Bedrock note
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs

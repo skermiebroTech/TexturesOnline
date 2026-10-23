@@ -11,6 +11,7 @@ import { applyEffects, effectsApply, hasActiveEffects, layerApplies, type Effect
 import { categoryForPath, extOf, imageDims, newBedrockUuids, packFileName, parseBedrockVersion, parseJsonLoose } from './project';
 import { prepareSoundExport } from './sounds/pack';
 import { hasMaterials, writePbrFiles } from './pbr/pack';
+import { hasNameVariants, nameFiles } from './names/pack';
 import { renderIsoCube } from './iso-cube';
 import { packText } from '../../shared/i18n/packs';
 import { fmt, joinList, textLocale } from '../../i18n/editor-text';
@@ -75,6 +76,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   const effectsOn = hasActiveEffects(layers);
   const extra = await collectExtraFiles(project, warnings);
   await prepareSoundExport(project, extra, warnings);
+  if (edition === 'java' && hasNameVariants(project)) await addNameFiles(project, assets, extra, warnings);
   const extraMcmeta = new Map<string, string>();
   for (const [path, bytes] of extra) if (path.endsWith('.mcmeta')) extraMcmeta.set(path, decodeText(bytes));
   const overrides = new Map<string, Blob>();
@@ -794,6 +796,28 @@ async function modelWarnings(project: TexturePackProject, assets: AssetIndex, ex
   } catch {
     return [];
   }
+}
+
+/**
+ * Name-based looks of items: 1.21.5+ item definitions that pick the look by name, over the definition
+ * the pack has (its own: a model made in the model editor, PvP changes; else the game's), and OptiFine
+ * CIT files for versions before 1.21.5.
+ */
+async function addNameFiles(project: TexturePackProject, assets: AssetIndex, extra: Map<string, Uint8Array>, warnings: string[]): Promise<void> {
+  const readJson = async (path: string): Promise<unknown> => {
+    const own = extra.get(path);
+    if (own) return parseJsonLoose(decodeText(own)) ?? undefined;
+    if (!assets.hasFile(path)) return undefined;
+    try {
+      return parseJsonLoose(await assets.readText(path)) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const res = await nameFiles(project, readJson);
+  for (const [path, text] of Object.entries(res.files)) extra.set(path, encodeText(text));
+  if (res.cit) warnings.push(fmt(packText.export.namesCit, { count: res.cit }));
+  if (res.patterns.length) warnings.push(fmt(packText.export.namesPattern, { count: res.patterns.length, names: sample(res.patterns) }));
 }
 
 async function collectExtraFiles(project: TexturePackProject, warnings: string[]): Promise<Map<string, Uint8Array>> {

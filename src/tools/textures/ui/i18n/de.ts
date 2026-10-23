@@ -28,6 +28,18 @@ const DE: EditorLanguage = {
     guiFailed: 'Der GUI-Bereich konnte nicht geöffnet werden. Prüf deine Verbindung und versuch es noch einmal.',
     pvpFailed: 'Die PvP-Optionen konnten nicht geöffnet werden. Prüfe deine Verbindung und versuche es noch einmal.',
     pbrFailed: 'Der Tab „Material“ konnte nicht geöffnet werden. Prüf deine Verbindung und versuch es noch einmal.',
+    names: {
+      menu: 'Namenstexturen',
+      button: 'Namen',
+      buttonHint: 'Gib diesem Item eine andere Textur, wenn es am Amboss umbenannt wird',
+      label: 'Namen',
+      lookOf: 'Wenn {item} {names} heißt',
+      quoted: '„{name}“',
+      paintLook: 'Textur für {name} malen',
+      manage: 'Namen bearbeiten',
+      add: 'Namenstextur hinzufügen',
+      failed: 'Die Namenstexturen konnten nicht geöffnet werden. Prüf deine Verbindung und versuch es noch einmal.',
+    },
     packName: 'Name des Packs',
     renameHint: 'Pack umbenennen',
     save: {

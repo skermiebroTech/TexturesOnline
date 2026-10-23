@@ -3247,6 +3247,46 @@
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
 }
+/* The names of an item's name-based textures share the row (../names/strip.ts) */
+.tx-usedby-main,
+.tx-names {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.tx-usedby-main[hidden],
+.tx-names[hidden] {
+  display: none;
+}
+.tx-usedby-main:not([hidden]) + .tx-names {
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+/* a look's texture: which item and names it is for, cut short before the button */
+.tx-names.is-look {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tx-names-for {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--text-2);
+  white-space: normal;
+}
+/* wraps on narrow screens rather than hiding the names (two lines at most) */
+.tx-names-text {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.tx-names-edit {
+  flex: none;
+}
 
 /* ========================================================================== Model workspace (Preview tab) */
 .tx-pv-head {

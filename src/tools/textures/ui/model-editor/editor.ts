@@ -3,7 +3,8 @@
 // (position, size, rotation), its faces (texture, UV area, rotation, cull face, tint), the display
 // transforms (with the model shown in the inventory, in hand, on the ground...) and the model itself
 // (start points, lighting, problems, files). Every change is one undo step and is saved into the pack
-// (model file, plus an item definition or blockstate when the game needs one).
+// (model file, plus an item definition or blockstate when the game needs one). A name-based look of
+// an item (src/tools/textures/names) opens its own model file instead: only that file is written.
 
 import type { CustomModel } from '../../../../core/types';
 import { h } from '../../../../ui/dom';
@@ -89,6 +90,12 @@ export interface ModelEditorOptions {
   paintTexture(path: string): void;
   /** Undo / redo availability changed */
   onHistory(): void;
+  /**
+   * Edit the model of a look the item gets from its name instead of the item's own: `model` is the
+   * look's model id (its file is in the pack), `label` names it in the title, `flat` is the file that
+   * puts the flat look back.
+   */
+  look?: { model: string; label: string; flat(): string };
 }
 
 export interface ModelEditor {
@@ -124,7 +131,8 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   const kind = entry.kind === 'item' ? 'item' : 'block';
   const flattened = store.assets.hasFile('assets/minecraft/textures/block/stone.png') || !store.assets.hasFile('assets/minecraft/textures/blocks/stone.png');
   const newDir = kind === 'item' ? (flattened ? 'item' : 'items') : flattened ? 'block' : 'blocks';
-  const existing = (): CustomModel[] => Object.values(project.customModels ?? {}).filter((m) => m.kind === kind && m.id === entry.id);
+  const look = kind === 'item' ? o.look : undefined;
+  const existing = (): CustomModel[] => (look ? [] : Object.values(project.customModels ?? {}).filter((m) => m.kind === kind && m.id === entry.id));
   /**
    * Files as they were before the model editor wrote them (the pack's own copy, else the game's): an
    * item definition or blockstate the editor made must not be read back as the starting point.
@@ -168,6 +176,11 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   function makePlan(): ModelPlan {
     // item definitions and blockstates as they were; models as the pack has them now
     const json: JsonGet = (path) => (/\/models\//.test(path) ? files().json(path) : baseJson(path));
+    if (look) {
+      // the look's own file; the item's model gives the game's display transforms
+      const source = planItem({ itemId: entry.id, rules, json: files().vanilla }).source;
+      return { kind: 'item', id: entry.id, source, target: look.model, base: look.model, definition: null, blockstate: null, canFlatGui: false };
+    }
     if (kind === 'item') return planItem({ itemId: entry.id, rules, json, option, flatGui });
     siblings = randomSiblings(baseJson(blockstatePath(entry.id)), chosen);
     return planBlock({ blockId: entry.id, model: chosen, json, everyVariant: everyVariant && siblings.length > 0 });
@@ -187,7 +200,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   let doc = loadDoc();
   let defaults = gameDisplay();
   let gameHasCubes = gameModelHasCubes();
-  let changed = existing().some((m) => m.model === plan.base);
+  let changed = look ? doc.elements.length > 0 : existing().some((m) => m.model === plan.base);
   let sel = doc.elements.length ? 0 : -1;
   let face: Dir = 'north';
   const isPhone = () => matchMedia('(max-width: 760px)').matches;
@@ -212,7 +225,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
   const offs: (() => void)[] = [];
 
   // ---------------------------------------------------------------- DOM
-  const titleName = h('h2', { class: 'me-title-name truncate' }, entry.name);
+  const titleName = h('h2', { class: 'me-title-name truncate' }, look ? `${entry.name} · ${look.label}` : entry.name);
   const titleSub = h('span', { class: 'me-title-sub truncate' });
   const backBtn = button({ label: tm.done, icon: 'arrow-left', variant: 'ghost', size: 'sm', class: 'me-back', onClick: () => close() });
   tooltip(backBtn, tm.doneHint);
@@ -476,7 +489,8 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       paintStatus();
       return;
     }
-    store.saveModel(info(), planFiles(plan, modelText(doc)));
+    if (look) store.setExtraFiles({ [modelPath(look.model)]: new Blob([modelText(doc)], { type: 'application/json' }) }, [{ kind: 'item', id: entry.id }]);
+    else store.saveModel(info(), planFiles(plan, modelText(doc)));
     paintStatus();
   }
 
@@ -997,7 +1011,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     const layers = Object.keys(doc.textures).filter((k) => /^layer\d+$/.test(k)).sort();
     const p = tm.presets;
     if (kind === 'item' && layers.length) out.push({ id: 'sprite3d', label: p.sprite3d, text: p.sprite3dText, ic: 'sword', run: () => sprite3d(layers) });
-    if (gameHasCubes) out.push({ id: 'game', label: p.game, text: p.gameText, ic: 'reset', run: () => gameModel() });
+    if (gameHasCubes && !look) out.push({ id: 'game', label: p.game, text: p.gameText, ic: 'reset', run: () => gameModel() });
     out.push(
       { id: 'cube', label: p.cube, text: p.cubeText, ic: 'box', run: () => fullCube(doc) },
       { id: 'slab', label: p.slab, text: p.slabText, ic: 'flatten', run: () => slab(doc) },
@@ -1098,7 +1112,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       );
     }
     if (plan.replacesSpecial) notes.push(note('info', tm.replacesSpecial));
-    else if (kind === 'item' && plan.source !== plan.base) notes.push(note('info', fmt(tm.showsModel, { model: shortModelName(plan.source) })));
+    else if (kind === 'item' && plan.source !== plan.base && !look) notes.push(note('info', fmt(tm.showsModel, { model: shortModelName(plan.source) })));
     if (kind === 'block') {
       const others = usersOf(plan.base).filter((b) => b !== entry.id);
       if (others.length) {
@@ -1202,14 +1216,16 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
     if (!ok) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = null;
-    store.resetModel(plan.base);
+    // a look goes back to its flat picture
+    if (look) store.setExtraFiles({ [modelPath(look.model)]: new Blob([look.flat()], { type: 'application/json' }) }, [{ kind: 'item', id: entry.id }]);
+    else store.resetModel(plan.base);
     changed = false;
     flatGui = false;
     // the library reads the pack's files again before the model is loaded back
     await new Promise((r) => setTimeout(r, 60));
     plan = makePlan();
     pushUndo();
-    doc = gameModel();
+    doc = look ? loadDoc() : gameModel();
     sel = doc.elements.length ? 0 : -1;
     void refresh3d();
     renderList();
@@ -1235,7 +1251,7 @@ export async function createModelEditor(o: ModelEditorOptions): Promise<ModelEdi
       s.querySelector('select')?.setAttribute('aria-label', tm.blockModel);
       choiceBox.appendChild(s);
     }
-    if (kind === 'item') {
+    if (kind === 'item' && !look) {
       const looks = lib!.properties(entry).find((p) => p.name === 'model');
       if (looks && looks.values.length > 1) {
         const s = select<string>({ value: String(option), options: looks.values.map((v) => ({ value: v.value, label: v.label })), onChange: (v) => switchModel(() => (option = Number(v))) });

@@ -28,6 +28,18 @@ const PT: EditorLanguage = {
     guiFailed: 'Não foi possível abrir a seção de GUI. Verifique sua conexão e tente de novo.',
     pvpFailed: 'Não foi possível abrir os ajustes de PvP. Verifique sua conexão e tente de novo.',
     pbrFailed: 'Não foi possível abrir a aba Material. Verifique sua conexão e tente de novo.',
+    names: {
+      menu: 'Texturas por nome',
+      button: 'Nomes',
+      buttonHint: 'Dê a este item outra textura quando ele for renomeado numa bigorna',
+      label: 'Nomes',
+      lookOf: 'Para {item} com o nome {names}',
+      quoted: '“{name}”',
+      paintLook: 'Pintar a textura de {name}',
+      manage: 'Editar nomes',
+      add: 'Adicionar uma textura por nome',
+      failed: 'Não foi possível abrir as texturas por nome. Verifique sua conexão e tente de novo.',
+    },
     packName: 'Nome do pack',
     renameHint: 'Renomeie seu pack',
     save: {

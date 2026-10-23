@@ -207,6 +207,8 @@ const JA: SharedLanguage = {
       overlaysInactive: 'オーバーレイフォルダーはMinecraft 1.20.2以降でしか使えないため、ファイルとしては残しますが、このバージョンでは有効になりません。',
       iconUnreadable: 'パックのアイコンを読み込めなかったため、自動で作ったアイコンを使いました。',
       pbrMissingColour: 'テクスチャがパックにもゲームにもないため、質感{count}個を含めませんでした：{files}。',
+      namesCit: '名前で変わるテクスチャ{count}個は、1.21.5より前のMinecraftではOptiFineかCIT Resewn MODが必要です。',
+      namesPattern: '開いたパックの名前で変わるテクスチャ{count}個はOptiFineのパターン（{names}）で名前を見分けるため、OptiFineかCIT Resewnでしか動きません。',
       pbrPlainSets: 'ゲームの質感を読み込めなかったため、変更したテクスチャ{count}個はバイブラントビジュアルでシンプルな質感になります。',
     },
   },

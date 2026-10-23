@@ -11,6 +11,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2270,6 +2271,146 @@ const pbrPack: GuideText = {
   ctaLabel: 'Abrir o Texture Pack Maker',
 };
 
+const NAMES_STEPS: Child[] = [
+  ['Abra o ', link('/textures', 'Texture Pack Maker'), ' e crie um pacote do Java, ou abra um que você já tem.'],
+  ['Abra a textura de um item, por exemplo a espada de diamante, e escolha ', strong('Texturas por nome'), ' no menu dela (⋮), ou ', strong('Nomes'), ' embaixo da prévia 3D.'],
+  ['Digite o nome, por exemplo ', strong('Excalibur'), '. Adicione mais nomes se eles devem usar a mesma textura.'],
+  ['Clique em ', strong('Criar e pintar'), '. A nova textura começa como uma cópia da do item, então pinte por cima. ', strong('Forma 3D'), ' dá a ela um modelo próprio também.'],
+  ['Clique em ', strong('Exportar'), ', instale o pacote, renomeie o item numa bigorna exatamente com esse nome e segure-o.'],
+];
+
+const renameItems: GuideText = {
+  intro: [
+    p(
+      'No Minecraft você pode renomear qualquer item numa bigorna. Um pacote de recursos pode dar a um item renomeado uma textura própria: uma espada de diamante chamada “Excalibur” pode brilhar dourada enquanto todas as outras espadas de diamante continuam iguais. O Java 1.21.5 e mais novos fazem isso sem mods; versões anteriores precisam do OptiFine ou do mod CIT Resewn. O ',
+      link('/textures', 'Texture Pack Maker'),
+      ' escreve os arquivos certos para a sua versão.',
+    ),
+  ],
+  quick: {
+    title: 'A versão curta',
+    items: [
+      ['Abra a textura de um item e escolha ', strong('Texturas por nome'), '.'],
+      ['Digite o nome e pinte a nova textura.'],
+      ['Exporte e renomeie o item numa bigorna exatamente com esse nome.'],
+    ],
+  },
+  howto: { name: 'Como dar a um item renomeado uma textura própria com o Texture Pack Maker', steps: NAMES_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Passo a passo',
+      body: [steps(NAMES_STEPS)],
+    },
+    {
+      id: 'names',
+      title: 'Quando um nome vale',
+      body: [
+        ul([
+          ['O nome precisa ser exatamente igual, maiúsculas também: ', strong('Excalibur'), ' e ', strong('excalibur'), ' são nomes diferentes. Adicione os dois se quiser que ambos funcionem.'],
+          'Vários nomes podem usar a mesma textura, e um item pode ter muitas texturas por nome.',
+          'A bigorna aceita nomes de até 50 caracteres, sem códigos de cor. Um nome colorido ou em negrito com comandos não vale como um nome simples.',
+          'O item muda na mão, no inventário, no chão e nas molduras. Um bloco colocado a partir de um item renomeado fica como sempre.',
+        ]),
+      ],
+    },
+    {
+      id: 'vanilla',
+      title: 'Java 1.21.5 e mais novos: sem mods',
+      body: [
+        p(
+          'Desde a 1.21.5, uma definição de item (',
+          code('assets/minecraft/items/<item>.json'),
+          ') pode escolher um modelo pelo nome do item com um ',
+          code('minecraft:select'),
+          ' na propriedade ',
+          code('minecraft:component'),
+          ' e no componente ',
+          code('minecraft:custom_name'),
+          '. Qualquer outro nome mostra o modelo normal do item:',
+        ),
+        pre(NAMES_DEFINITION.trimEnd()),
+        p('O modelo do nome é o próprio modelo do item com a nova imagem, então a espada continua sendo segurada como espada:'),
+        pre(NAMES_MODEL.trimEnd()),
+        p(
+          'Se o pacote já muda essa definição de item, por exemplo com um modelo 3D feito no editor de modelos, os nomes vêm na frente. O Java 1.21.4 também tem definições de item, mas ainda não lê o nome de um item, então recebe os arquivos do OptiFine abaixo. ',
+          link('/guides/make-3d-items-texture-pack', 'Como funcionam as definições de item e os itens 3D'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'optifine',
+      title: 'Antes da 1.21.5: OptiFine ou CIT Resewn',
+      body: [
+        p(
+          'As versões anteriores não escolhem uma textura pelo nome sozinhas. As Custom Item Textures (CIT) do OptiFine escolhem, e o mod CIT Resewn para Fabric também. O editor escreve um arquivo ',
+          code('.properties'),
+          ' para cada textura por nome em ',
+          code('assets/minecraft/optifine/cit/'),
+          ':',
+        ),
+        pre(NAMES_CIT.trimEnd()),
+        p(
+          'Um nome só é escrito como está; vários viram uma regra ',
+          code('regex:'),
+          '. A partir da 1.20.5 o editor escreve ',
+          code('components.custom_name'),
+          ' em vez de ',
+          code('nbt.display.Name'),
+          '; os dois mods leem os dois. Uma textura com forma 3D usa ',
+          code('model='),
+          ' em vez de ',
+          code('texture='),
+          '. Um pacote cuja faixa de versões vai de antes da 1.21.5 até depois recebe os dois tipos de arquivo.',
+        ),
+        callout('warn', 'Os jogadores precisam do mod', 'Sem o OptiFine ou o CIT Resewn, o Minecraft antes da 1.21.5 mostra a textura normal, seja qual for o nome do item.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Pacotes de recursos da Bedrock não podem mudar a aparência de um item pelo nome. Os nomes de item no Molang (como ', code('query.is_item_name_any'), ') são IDs como ', code('minecraft:diamond_sword'), ', não os nomes que os jogadores dão numa bigorna, então o editor não oferece texturas por nome para pacotes da Bedrock.'),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Abrir um pacote que já tem',
+      body: [
+        p(
+          'Abra um pacote do Java e as texturas por nome dele aparecem embaixo da textura do item e na janela: regras CIT do OptiFine para um item com um nome e uma textura ou modelo, e definições de item da 1.21.5+ que escolhem um modelo pelo nome. Regras que verificam mais do que o nome (dano, encantamentos, vários itens) ficam no pacote como estão. Uma regra com um padrão do OptiFine como ',
+          code('ipattern:*sword*'),
+          ' o mantém e continua funcionando só com o OptiFine e o CIT Resewn.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-working',
+      q: 'Meu item renomeado continua normal. Por quê?',
+      a: [p('Confira se o nome é exatamente igual, com maiúsculas e espaços, se o pacote está ativado e acima dos outros pacotes, e se você joga a 1.21.5 ou mais nova, ou tem o OptiFine ou o CIT Resewn numa versão anterior. Um item renomeado antes de você adicionar o pacote também funciona: o nome é verificado sempre que o item é desenhado.')],
+    },
+    {
+      id: 'case',
+      q: 'Um nome pode ignorar maiúsculas?',
+      a: [p('No Minecraft sem mods, não: o nome precisa ser exatamente igual. Adicione cada jeito de escrever que você quiser como um nome a mais. Pacotes do OptiFine podem usar padrões que ignoram maiúsculas; pacotes abertos mantêm os deles.')],
+    },
+    {
+      id: 'shape',
+      q: 'Um item renomeado pode ser 3D?',
+      a: [p('Sim. Clique em Forma 3D numa textura por nome para abri-la no editor de modelos e comece com um item 3D feito da sua nova imagem.')],
+    },
+    {
+      id: 'servers',
+      q: 'Outros jogadores veem?',
+      a: [p('Quem usa o seu pacote vê, em servidores também. O nome faz parte do item, então todo mundo vê o nome; só a textura precisa do pacote.')],
+    },
+  ],
+  ctaLabel: 'Abrir o Texture Pack Maker',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2285,4 +2426,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-3d-items-texture-pack': make3dItems,
   'make-a-pvp-texture-pack': pvpPack,
   'make-a-pbr-texture-pack': pbrPack,
+  'rename-items-texture-pack': renameItems,
 };

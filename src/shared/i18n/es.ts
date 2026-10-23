@@ -207,6 +207,8 @@ const ES: SharedLanguage = {
       overlaysInactive: 'Las carpetas de overlay solo funcionan en Minecraft 1.20.2 y posteriores, así que se conservan como archivos pero no están activas en esta versión.',
       iconUnreadable: 'No se pudo leer el icono del pack, así que se usó un icono generado.',
       pbrMissingColour: '{count, plural, one {Se omitió # material porque su textura no está ni en el pack ni en el juego: {files}.} other {Se omitieron # materiales porque sus texturas no están ni en el pack ni en el juego: {files}.}}',
+      namesCit: '{count, plural, one {# textura por nombre necesita OptiFine o el mod CIT Resewn en Minecraft anterior a 1.21.5.} other {# texturas por nombre necesitan OptiFine o el mod CIT Resewn en Minecraft anterior a 1.21.5.}}',
+      namesPattern: '{count, plural, one {# textura por nombre del paquete abierto reconoce los nombres con un patrón de OptiFine ({names}), así que solo funciona con OptiFine o CIT Resewn.} other {# texturas por nombre del paquete abierto reconocen los nombres con patrones de OptiFine ({names}), así que solo funcionan con OptiFine o CIT Resewn.}}',
       pbrPlainSets: '{count, plural, one {# textura cambiada recibe un material sencillo para Visuales vibrantes, porque no se pudo cargar el material del juego.} other {# texturas cambiadas reciben un material sencillo para Visuales vibrantes, porque no se pudieron cargar los materiales del juego.}}',
     },
   },

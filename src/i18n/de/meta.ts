@@ -185,5 +185,12 @@ export const META_DE: MetaTranslation = {
       label: 'PBR-Pack erstellen',
       blurb: 'Glanz, Metall, Leuchten und Relief für Vibrant Visuals und labPBR-Shader.',
     },
+    'rename-items-texture-pack': {
+      title: 'Item-Textur durch Umbenennen ändern (Minecraft)',
+      h1: 'Items umbenennen und ihre Textur ändern',
+      description: 'Erstelle gratis ein Minecraft-Pack, in dem umbenannte Items anders aussehen: Item-Definitionen für Java 1.21.5+, OptiFine-CIT für ältere Versionen.',
+      label: 'Items umbenennen',
+      blurb: 'Gib einem umbenannten Item eine eigene Textur, etwa einem Schwert namens „Excalibur“.',
+    },
   },
 };

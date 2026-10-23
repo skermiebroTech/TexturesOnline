@@ -28,6 +28,18 @@ const JA: EditorLanguage = {
     guiFailed: 'GUI セクションを開けませんでした。接続を確認して、もう一度お試しください。',
     pvpFailed: 'PvP設定を開けませんでした。接続を確認して、もう一度お試しください。',
     pbrFailed: '質感タブを開けませんでした。接続を確認して、もう一度お試しください。',
+    names: {
+      menu: '名前で変わるテクスチャ',
+      button: '名前',
+      buttonHint: '金床で名前を変えたときに、このアイテムを別のテクスチャにします',
+      label: '名前',
+      lookOf: '{names}という名前の{item}用',
+      quoted: '「{name}」',
+      paintLook: '{name}のテクスチャを描く',
+      manage: '名前を編集',
+      add: '名前で変わるテクスチャを追加',
+      failed: '名前で変わるテクスチャを開けませんでした。接続を確認して、もう一度お試しください。',
+    },
     packName: 'パック名',
     renameHint: 'パックの名前を変更',
     save: {

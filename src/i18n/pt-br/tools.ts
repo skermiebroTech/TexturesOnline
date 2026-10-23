@@ -36,6 +36,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Packs de PvP e de FPS: fogo baixo, vidro transparente, mira personalizada, espadas menores e texturas 8× com um clique',
       'Editor de GUI: barra de atalhos, corações, fome, armadura, inventário e recipientes, botões, fundos de menu, o panorama da tela de título, os textos de abertura e o brilho de encantamento, com prévia ao vivo no jogo',
       'Materiais PBR: brilho, metal, luz própria, luz através e relevo (mapas de normais feitos com as cores) para os Visuais Vibrantes do Bedrock e shaders labPBR do Java, com prévia 3D iluminada',
+      'Texturas por nome: um item renomeado ganha textura e modelo próprios, como definições de item para Java 1.21.5+ (sem mods) ou arquivos CIT do OptiFine para versões anteriores',
       'Efeitos de um clique para o pack inteiro, como Modo escuro, Sonho pastel, Contorno neon, Retrô 8 bits, Outono, Geada de inverno, Noir, Desenho animado e HD suave',
       'Abra um pack .zip ou .mcpack existente e continue editando',
       'Prévia 3D do bloco, ícone do pack, descrição e faixa de compatibilidade do Java',
@@ -50,6 +51,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Packs de PvP e de FPS: fogo baixo, vidro transparente, sem borda de abóbora, mira personalizada, espadas menores e escudo mais baixo, além de texturas 8× e sem animações; cada coisa é um interruptor que grava os arquivos certos para a sua versão. ', link('/guides/make-a-pvp-texture-pack', 'Como fazer um pack de PvP'), '.'],
       ['Mude a interface: a barra de atalhos, os corações em todos os estados, a fome, a armadura, o ar, a barra de experiência, a mira, o inventário, os baús, a fornalha e a bancada de trabalho, os botões e os fundos de menu, no editor de pixels, com prévia ao vivo do HUD, do inventário, da tela de título com o panorama girando e os botões, e dos itens encantados. Dá para editar os textos de abertura também. Versões antigas do Java guardam o HUD em duas imagens grandes: ao escolher um coração, só a área dele é selecionada.'],
       ['Materiais PBR: na aba Material, dê a uma textura um material rápido (metal, pedra polida ou áspera, madeira, vidro, luminoso, pontos luminosos de minério, água, folhas) ou ajuste o brilho, o metal, a luz própria e a luz através da textura inteira ou de partes dela, com relevo feito com as cores, num bloco 3D iluminado por um sol que se move. O Bedrock recebe conjuntos de texturas para os Visuais Vibrantes; o Java, mapas labPBR ', code('_n'), ' e ', code('_s'), ' para shaders PBR no Iris ou no OptiFine. ', link('/guides/make-a-pbr-texture-pack', 'Como fazer um pack PBR'), '.'],
+      ['Texturas por nome (Java): dê a um item uma textura própria quando ele for renomeado numa bigorna, como uma espada de diamante chamada “Excalibur”. Digite um ou mais nomes, pinte a nova textura a partir de uma cópia da do item e, se quiser, dê a ela uma forma 3D. O Java 1.21.5 e mais novos não precisam de mods; versões anteriores recebem arquivos CIT do OptiFine. ', link('/guides/rename-items-texture-pack', 'Como renomear itens para mudar a textura'), '.'],
       ['Envie seus próprios PNGs (redimensionados para a textura, de 16x a 512x) e edite texturas animadas quadro a quadro.'],
       ['Mude sons: toque qualquer som do jogo e troque por um arquivo seu ou uma gravação do microfone, cortado na forma de onda. É salvo em Ogg Vorbis, o formato que o Minecraft toca.'],
       ['Efeitos de um clique para o pack inteiro, como Modo escuro, Sonho pastel, Contorno neon, Retrô 8 bits, Outono, Geada de inverno, Noir, Desenho animado e HD suave, empilháveis sem mexer nas suas edições.'],
@@ -112,6 +114,11 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         id: 'pbr',
         q: 'Posso fazer um pack PBR para os Visuais Vibrantes ou para shaders?',
         a: [p('Sim. Abra uma textura e escolha a aba Material: pegue um material rápido como metal, vidro ou pontos luminosos de minério, ou ajuste você mesmo o brilho, o metal, a luz própria e o relevo. Packs de Bedrock recebem conjuntos de texturas e mantêm os Visuais Vibrantes ligados; packs de Java recebem mapas labPBR _n e _s, que os shaders PBR para Iris e OptiFine leem.')],
+      },
+      {
+        id: 'names',
+        q: 'Um item renomeado pode ter uma textura própria?',
+        a: [p('Sim, em pacotes do Java. Abra a textura de um item, escolha Texturas por nome no menu dela (ou Nomes embaixo da prévia), digite o nome e pinte a nova textura. O Minecraft 1.21.5 e mais novos a mostram sem mods quando o item é renomeado numa bigorna exatamente com esse nome; versões anteriores precisam do OptiFine ou do mod CIT Resewn. Pacotes de recursos da Bedrock não fazem isso.')],
       },
       {
         id: 'devices',

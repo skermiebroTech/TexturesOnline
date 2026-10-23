@@ -1,7 +1,7 @@
 // Editor state for one texture pack project: the texture list, pending edits, debounced autosave to
 // IndexedDB and the events the panels listen to.
 
-import type { AssetIndex, CustomModel, PbrMaterial, TexturePackProject } from '../../../core/types';
+import type { AssetIndex, CustomModel, NameVariant, PbrMaterial, TexturePackProject } from '../../../core/types';
 import { Emitter } from '../../../core/events';
 import { saveProject } from '../../../core/storage';
 import { decodeImage, encodePng } from '../../../core/image';
@@ -29,6 +29,8 @@ export interface EditorEvents extends Record<string, unknown> {
   models: { paths: string[]; entries: { kind: 'block' | 'item'; id: string }[] };
   /** PBR materials changed (the Material tab): the colour textures they belong to */
   pbr: { paths: string[] };
+  /** Name-based looks of items changed (project.nameVariants): their ids */
+  names: { ids: string[] };
 }
 
 const SAVE_DELAY = 700;
@@ -58,7 +60,7 @@ export class TexStore {
   }
 
   rebuildEntries(): void {
-    this.entries = buildEntries(this.project, this.assets, categoryForPath);
+    this.entries = buildEntries(this.project, this.assets, categoryForPath, this.pending.keys());
     this.byPath = new Map(this.entries.map((e) => [e.path, e]));
     this.events.emit('entries');
   }
@@ -227,6 +229,22 @@ export class TexStore {
     if (!Object.keys(pbr).length) delete this.project.pbr;
     this.touch();
     this.events.emit('pbr', { paths });
+  }
+
+  // ---- name-based looks (project.nameVariants) ----
+
+  /** Sets (or with null removes) looks items get from their name. */
+  setNameVariants(changes: Record<string, NameVariant | null>): void {
+    const ids = Object.keys(changes);
+    if (!ids.length) return;
+    const all = (this.project.nameVariants ??= {});
+    for (const [id, v] of Object.entries(changes)) {
+      if (v) all[id] = { ...v, names: [...v.names], updatedAt: Date.now() };
+      else delete all[id];
+    }
+    if (!Object.keys(all).length) delete this.project.nameVariants;
+    this.touch();
+    this.events.emit('names', { ids });
   }
 
   /** Project settings changed. */

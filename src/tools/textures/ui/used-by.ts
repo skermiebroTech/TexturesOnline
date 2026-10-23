@@ -1,5 +1,6 @@
 // "Used by" chips under the texture header: the mobs, blocks and items whose models use the open texture.
-// Clicking one shows that block in the model workspace.
+// Clicking one shows that block in the model workspace. The same row holds the names of the item's
+// name-based textures (`extra`, ../names/strip.ts).
 
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
@@ -16,18 +17,26 @@ export interface UsedByApi {
   setPath(path: string | null): void;
   /** The block / item on show in the workspace (its chip is marked) */
   setCurrent(entry: ModelEntry | null): void;
+  /** The `extra` part was shown or hidden */
+  refresh(): void;
   destroy(): void;
 }
 
 const MAX_CHIPS = 3;
 
-export function createUsedBy(opts: { store: TexStore; models: ModelService; onPick(entry: ModelEntry): void }): UsedByApi {
+export function createUsedBy(opts: { store: TexStore; models: ModelService; onPick(entry: ModelEntry): void; extra?: HTMLElement }): UsedByApi {
   const { models, store } = opts;
   let path: string | null = null;
   let current: ModelEntry | null = null;
   let menu: PopoverHandle | null = null;
   const chips = h('div', { class: 'tx-usedby-chips' });
-  const el = h('div', { class: 'tx-usedby', hidden: true, role: 'group', 'aria-label': te.preview.usedBy }, h('span', { class: 'tx-usedby-label' }, icon('link', { size: 16 }), te.preview.usedBy), chips);
+  const main = h('span', { class: 'tx-usedby-main', role: 'group', 'aria-label': te.preview.usedBy }, h('span', { class: 'tx-usedby-label' }, icon('link', { size: 16 }), te.preview.usedBy), chips);
+  const el = h('div', { class: 'tx-usedby', hidden: true }, main, opts.extra ?? null);
+  /** The row shows when there are chips or the extra part has something */
+  const show = (chipsShown: boolean) => {
+    main.hidden = !chipsShown;
+    el.hidden = !chipsShown && (!opts.extra || opts.extra.hidden);
+  };
 
   const iconInto = (canvas: HTMLCanvasElement, e: ModelEntry) => {
     const draw = (img: HTMLCanvasElement | ImageData | null) => {
@@ -57,7 +66,7 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
     menu?.close();
     const lib = models.lib;
     if (!path || !lib?.available || !lib.usageReady) {
-      el.hidden = true;
+      show(false);
       return;
     }
     const u = lib.usageOf(path);
@@ -70,10 +79,10 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
       return true;
     });
     if (!entries.length) {
-      el.hidden = true;
+      show(false);
       return;
     }
-    el.hidden = false;
+    show(true);
     const shown = entries.slice(0, MAX_CHIPS);
     const rest = entries.slice(MAX_CHIPS);
     const nodes: HTMLElement[] = shown.map(chip);
@@ -117,6 +126,9 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
       path = p;
       if (p && !models.lib) void models.load();
       render();
+    },
+    refresh() {
+      show(!main.hidden && chips.childElementCount > 0);
     },
     setCurrent(e) {
       current = e;

@@ -14,9 +14,22 @@
 .tx-modelhost[hidden] {
   display: none;
 }
+/* "Edit shape" and, for items, "Names" (name-based textures) side by side */
+.tx-pv-shaperow {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.tx-pv-shaperow[hidden] {
+  display: none;
+}
 .tx-pv-shapebtn {
-  align-self: stretch;
+  flex: 1 1 0;
+  min-width: 0;
   justify-content: center;
+}
+.tx-pv-namesbtn {
+  flex: 0 1 auto;
 }
 .tx-pv-shapebtn[hidden] {
   display: none;

@@ -24,6 +24,25 @@ export const te = defineText('textures.editor', {
   guiFailed: 'The GUI section couldn’t be opened. Check your connection and try again.',
   pvpFailed: 'The PvP tweaks couldn’t be opened. Check your connection and try again.',
   pbrFailed: 'The Material tab couldn’t be opened. Check your connection and try again.',
+  /** Name-based textures: an item renamed in an anvil gets its own texture (../../names) */
+  names: {
+    /** In the texture's menu and the window's title */
+    menu: 'Name-based textures',
+    /** Button next to "Edit shape" in the preview of an item */
+    button: 'Names',
+    buttonHint: 'Give this item another texture when it’s renamed in an anvil',
+    /** Before the names of the item's looks under the texture header */
+    label: 'Names',
+    /** Under the header of a look's texture: {item} "Diamond Sword", {names} “Excalibur” or “Caliburn” */
+    lookOf: 'For a {item} named {names}',
+    /** One name in quotes */
+    quoted: '“{name}”',
+    /** Chip tooltip: {name} is quoted */
+    paintLook: 'Paint the texture for {name}',
+    manage: 'Edit names',
+    add: 'Add a name-based texture',
+    failed: 'Name-based textures couldn’t be opened. Check your connection and try again.',
+  },
   packName: 'Pack name',
   renameHint: 'Rename your pack',
   save: { saved: 'Saved', saving: 'Saving…', error: 'Not saved — retry', savedHint: 'Every change is saved in this browser' },

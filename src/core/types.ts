@@ -164,6 +164,30 @@ export interface TexturePackProject extends ProjectBase {
    * Their maps (Java labPBR _n / _s, Bedrock texture sets) are made from these on export.
    */
   pbr?: Record<string, PbrMaterial>;
+  /**
+   * Java: items that look different when they are renamed (in an anvil), by id ('<item>/<slug>'). Their
+   * textures are in overrides and their models in extraFiles; the item definitions (1.21.5+) and
+   * OptiFine CIT files (older versions) are written from these on export.
+   */
+  nameVariants?: Record<string, NameVariant>;
+}
+
+/** A look an item gets when it has one of some names (src/tools/textures/names). */
+export interface NameVariant {
+  /** Item id, e.g. 'diamond_sword' */
+  item: string;
+  /** Names that pick this look, exactly as typed in the anvil */
+  names: string[];
+  /**
+   * An opened OptiFine pack's own match ('ipattern:*sword*', 'regex:...') that plain names can't say:
+   * only OptiFine and CIT Resewn understand it
+   */
+  match?: string;
+  /** Pack path of its texture (in overrides) */
+  texture: string;
+  /** Model id it shows, e.g. 'minecraft:item/names/diamond_sword/excalibur' (in extraFiles) */
+  model: string;
+  updatedAt: number;
 }
 
 /** Metal, glow (emissive), roughness and light through (subsurface), 0-255 each (Bedrock's MERS order). */
