@@ -1,5 +1,5 @@
 // Colour dock under the canvas: primary / secondary swatches (click for the full picker), the
-// texture's own palette and recently used colours.
+// texture's own palette and recently used colours, and the colour swap (../swap/).
 
 import type { PixelCanvas } from '../../../shared/pixel-canvas';
 import { h } from '../../../ui/dom';
@@ -11,6 +11,7 @@ import { extractPalette, rgbaHex, type RGBA } from './meta';
 import { fmt } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
 import { isLandscapePhone } from './media';
+import { tw } from '../swap/i18n/text';
 
 export interface ColorDock {
   el: HTMLElement;
@@ -25,7 +26,7 @@ export interface ColorDock {
 
 const css = (c: RGBA) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${(c[3] / 255).toFixed(3)})`;
 
-export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock {
+export function createColorDock(getCanvas: () => PixelCanvas | null, opts: { swap?(): void } = {}): ColorDock {
   let palette: RGBA[] = [];
   let pop: PopoverHandle | null = null;
 
@@ -37,7 +38,13 @@ export function createColorDock(getCanvas: () => PixelCanvas | null): ColorDock 
 
   const palRow = h('div', { class: 'tx-pal-row', role: 'list', 'aria-label': te.canvas.paletteLabel });
   const recentRow = h('div', { class: 'tx-pal-row', role: 'list', 'aria-label': te.canvas.recentLabel });
-  const palGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, te.canvas.inTexture), palRow);
+  // the colour swap, by the texture's colours
+  const swapBtn = opts.swap ? h('button', { type: 'button', class: 'tx-pal-swap' }, icon('switch', { size: 16 }), h('span', null, tw.button)) : null;
+  if (swapBtn) {
+    tooltip(swapBtn, tw.buttonHint);
+    swapBtn.addEventListener('click', () => opts.swap?.());
+  }
+  const palGroup = h('div', { class: 'tx-pal-group' }, h('div', { class: 'tx-pal-head' }, h('span', { class: 'tx-pal-label' }, te.canvas.inTexture), swapBtn), palRow);
   const recentGroup = h('div', { class: 'tx-pal-group' }, h('span', { class: 'tx-pal-label' }, te.canvas.recent), recentRow);
 
   const scroller = h('div', { class: 'tx-pal-scroll' }, palGroup, recentGroup);

@@ -58,6 +58,7 @@ import { colorMapOf, type BiomeId } from '../biomes/biomes';
 import { drawMarkers, mapMarkers, markersOnCanvas, type Marker } from '../biomes/markers';
 import { StampLibrary } from '../stamps/library';
 import { createStampControls } from '../stamps/picker';
+import { tw } from '../swap/i18n/text';
 
 export interface OpenTexture {
   key: string;
@@ -113,10 +114,29 @@ export interface CanvasPanel {
   showLayers(open: boolean): void;
   /** The stamps saved from selections */
   stamps(): StampLibrary;
+  /**
+   * Changes several textures as one undo step (Ctrl+Z, the undo button): each goes from `before` to
+   * `after`, and back. A texture changed again in the meantime is left as it is.
+   */
+  applyBatch(changes: BatchChange[], label: string): void;
   destroy(): void;
 }
 
 export type Workspace = '2d' | '3d';
+
+/** A texture as a batch change puts it back: its pixels, its paint layers, whether the pack has it */
+export interface TexState {
+  full: ImageData;
+  layers: LayerStack | null;
+  edited: boolean;
+}
+
+/** One texture of a batch change (e.g. a colour swap across the pack) */
+export interface BatchChange {
+  path: string;
+  before: TexState;
+  after: TexState;
+}
 
 /** Tools that work on the 3D model (the others need the flat texture). */
 export const TOOLS_3D = new Set<Tool>(['pencil', 'eraser', 'fill', 'picker', 'lighten', 'darken', 'noise']);
@@ -258,6 +278,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
           ]
         : []),
       ...(t.anim && !t.anim.still ? [{ label: ta.actions.gif, icon: 'download' as const, onClick: () => void anim.gif() }] : []),
+      { label: tw.button, icon: 'switch', onClick: () => void openSwap() },
       ...(opts.menuItems?.() ?? []),
     ]);
   }, { size: 'sm' });
@@ -450,7 +471,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   );
   const optbar = h('div', { class: 'tx-optbar', role: 'toolbar', 'aria-label': te.canvas.toolOptions }, toolOpts, viewOpts);
 
-  const dock = createColorDock(() => pc);
+  const dock = createColorDock(() => pc, { swap: () => void openSwap() });
   const frames = createFrameStrip({
     select: (i) => selectFrame(i),
     add: () => anim.edit((a, t) => [duplicateFrame(a, t.frame), t.frame + 1]),
@@ -1198,6 +1219,71 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     });
   }
 
+  // ---------------------------------------------------------------- colour swap (loaded on first use)
+  async function openSwap(from?: RGBA) {
+    if (!cur || !pc) return;
+    try {
+      const { openSwapDialog } = await import('../swap/dialog');
+      openSwapDialog({ store, canvas: panel, from });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // ---------------------------------------------------------------- batch changes
+  /** Puts a texture in a state: the open one through the pixel editor, others in the store. */
+  function putState(path: string, st: TexState) {
+    const t = cur;
+    if (t && t.key === path && pc) {
+      if (t.layers && st.layers) {
+        // (the session puts the active layer in the editor and writes the flattened texture)
+        t.layers.set(copyStack(st.layers));
+        return;
+      }
+      if (t.layers && !st.layers) {
+        unbindLayers();
+        dropSession(path);
+        t.layers = null;
+      }
+      t.full = cloneImageData(st.full);
+      const frame = getFrame(t.full, t.anim, t.frame);
+      pc.swapImage(frame);
+      if (st.edited) write.setImage(path, cloneImageData(t.full));
+      else write.resetToVanilla(path);
+      if (t.anim) frames.set(t.full, t.anim, t.frame, stripOpts(t));
+      store.events.emit('image', { path, full: t.full });
+      paintHeader();
+      dock.setPalette(paletteSource(frame));
+      return;
+    }
+    if (!st.edited) write.resetToVanilla(path);
+    else {
+      write.setImage(path, cloneImageData(st.full), { keepLayers: !!st.layers });
+      if (st.layers) store.setLayers(path, copyStack(st.layers));
+    }
+    // (its layers in memory, and the undo steps made on them, no longer fit)
+    if (sessions.has(path)) dropSession(path);
+  }
+
+  function applyBatch(changes: BatchChange[], label: string) {
+    if (!changes.length) return;
+    // what each texture was left as, to leave alone the ones changed again since
+    const stamps = new Map<string, number>();
+    const put = (side: 'before' | 'after', check: boolean) => {
+      for (const c of changes) {
+        const open = cur?.key === c.path;
+        if (check && !open && stamps.has(c.path) && store.stamp(c.path) !== stamps.get(c.path)) continue;
+        putState(c.path, c[side]);
+        stamps.set(c.path, store.stamp(c.path));
+      }
+    };
+    const bytes = changes.reduce((n, c) => n + c.before.full.data.byteLength + c.after.full.data.byteLength, 0);
+    // (an undo step of the open texture's history: Ctrl+Z takes the whole batch back)
+    pc?.pushStep({ undo: () => put('before', true), redo: () => put('after', true), bytes });
+    put('after', false);
+    toast(pc ? fmt(byPointer(te.canvas.undoHint, te.canvas.undoHintTouch), { action: label }) : label, { tone: 'success' });
+  }
+
   // ---------------------------------------------------------------- animation maker
   /** How the game blends frames for this pack (Java before 1.21.2 keeps the first frame's alpha) */
   const blendMode = (): 'rgba' | 'rgb' => (project.edition === 'java' ? javaAnimRules(project.version).blend : 'rgba');
@@ -1581,6 +1667,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     layers: () => cur?.layers ?? null,
     showLayers: (on) => layersUi.setOpen(on),
     stamps: () => stampLib,
+    applyBatch,
     destroy() {
       stampUi.destroy();
       unbindLayers();
