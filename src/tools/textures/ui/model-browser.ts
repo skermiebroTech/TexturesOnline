@@ -138,8 +138,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     let i = 0;
     const step = () => {
       if (job !== catJob) return;
+      // slices of about 8 ms (or 120 entries), so a tap never waits long behind them
       const end = Math.min(list.length, i + 120);
-      for (; i < end; i++) {
+      const t0 = performance.now();
+      for (; i < end && performance.now() - t0 < 8; i++) {
         const e = list[i];
         const key = `${e.kind}:${e.id}`;
         if (categories.has(key)) continue;

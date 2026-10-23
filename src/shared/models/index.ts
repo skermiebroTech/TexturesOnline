@@ -15,6 +15,7 @@ import type { BakedQuad, Dir } from './geometry';
 import type { BlockState, EditionBackend, ModelCategory, ModelEntry, ModelTexture, ModelView, RawView, StateProperty, TextureStates, TextureUsage } from './types';
 import { fmt } from '../../i18n/editor-text';
 import { mt } from './i18n/text';
+import { nextTask } from '../../core/yield';
 
 export * from './types';
 export type { BakedQuad, Tint, Dir, Vec3, RGB } from './geometry';
@@ -33,6 +34,17 @@ interface BlockRecord {
 }
 
 const DIR_RANK: Record<Dir, number> = { north: 0, up: 1, east: 2, west: 2, south: 3, down: 4 };
+
+/** Runs a job's steps in slices of about 8 ms, giving the page a turn (taps, frames) between them. */
+async function runSliced(job: Generator<void, void, void>): Promise<void> {
+  let t0 = performance.now();
+  while (!job.next().done) {
+    if (performance.now() - t0 > 8) {
+      await nextTask();
+      t0 = performance.now();
+    }
+  }
+}
 
 export class ModelLibrary {
   private readonly blockRecords: BlockRecord[] = [];
@@ -118,8 +130,7 @@ export class ModelLibrary {
 
   /** Builds the reverse index again in slices (after the pack's model files changed), keeping the old one meanwhile. */
   async rebuildUsage(): Promise<Map<string, TextureUsage>> {
-    const job = this.usageJob(true);
-    while (!job.next().done) await new Promise((r) => setTimeout(r, 0));
+    await runSliced(this.usageJob(true));
     return this.usageCache!;
   }
 
@@ -420,8 +431,7 @@ export class ModelLibrary {
   /** Same as usage(), built in slices that yield to the page between them. */
   async usageAsync(): Promise<Map<string, TextureUsage>> {
     if (this.usageCache) return this.usageCache;
-    const job = this.usageJob();
-    while (!job.next().done) await new Promise((r) => setTimeout(r, 0));
+    await runSliced(this.usageJob());
     return this.usageCache!;
   }
 
@@ -445,7 +455,7 @@ export class ModelLibrary {
       } catch {
         /* a broken blockstate shouldn't hide the rest */
       }
-      if (++n % 120 === 0) yield;
+      if (++n % 12 === 0) yield;
     }
     if (this.backend)
       for (const e of this.itemEntries) {
@@ -454,7 +464,7 @@ export class ModelLibrary {
         } catch {
           /* skip */
         }
-        if (++n % 120 === 0) yield;
+        if (++n % 12 === 0) yield;
       }
     for (const e of this.entityEntries) {
       try {
@@ -465,7 +475,7 @@ export class ModelLibrary {
       } catch {
         /* skip */
       }
-      if (++n % 60 === 0) yield;
+      if (++n % 6 === 0) yield;
     }
     for (const [path, u] of map) {
       const name = path.slice(path.lastIndexOf('/') + 1).replace(/\.(png|tga)$/i, '');

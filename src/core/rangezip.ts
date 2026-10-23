@@ -3,6 +3,7 @@ import type { ProgressFn } from './types';
 import { NetError, abortError, fetchResponse, hostOf, readBodyWithProgress, throwIfAborted, withRetry, createLimiter } from './net';
 import { fileText } from '../shared/i18n/files';
 import { fmt } from '../i18n/editor-text';
+import { nextTask } from './yield';
 
 /*
  * Random-access zip reader over HTTP Range requests (or a local Blob / bytes).
@@ -379,8 +380,6 @@ export interface ReadManyOptions extends ReadOptions {
   concurrency?: number;
 }
 
-const yieldToEventLoop = () => new Promise<void>((r) => setTimeout(r, 0));
-
 export class RangeZip {
   private readonly byName = new Map<string, ZipEntry>();
   /** Offset where file data ends (start of the central directory). */
@@ -461,7 +460,8 @@ export class RangeZip {
     const report = () => opts.onProgress?.({ label, fraction: total ? Math.min(1, loaded / total) : null, loaded, total });
     report();
     const limit = createLimiter(source.kind === 'http' ? (opts.concurrency ?? 4) : 1);
-    let processed = 0;
+    // the event loop gets a turn after about 10 ms of inflating: taps aren't held up by a big read
+    let slice = performance.now();
 
     const handleRange = async (r: ByteRange) => {
       let rangeLoaded = 0;
@@ -485,7 +485,10 @@ export class RangeZip {
       for (const e of r.entries) {
         throwIfAborted(opts.signal);
         out.set(e.name, await this.extract(e, buf, r.start, opts.signal));
-        if (++processed % 250 === 0) await yieldToEventLoop();
+        if (performance.now() - slice > 10) {
+          await nextTask();
+          slice = performance.now();
+        }
       }
     };
     await Promise.all(ranges.map((r) => limit(() => handleRange(r))));

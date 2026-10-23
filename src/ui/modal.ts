@@ -37,11 +37,14 @@ export function setScrollLock(on: boolean): void {
   if (on) {
     if (root.classList.contains('modal-open')) return;
     const bar = window.innerWidth - root.clientWidth;
-    root.style.setProperty('--scrollbar-comp', `${Math.max(0, bar)}px`);
+    // The padding stands in for the hidden scrollbar. Set on the root itself: a custom property
+    // there would restyle every element of the page (slow taps on phones), and overlay scrollbars
+    // (phones) need none.
+    if (bar > 0) root.style.paddingRight = `${bar}px`;
     root.classList.add('modal-open');
   } else if (!document.querySelector('dialog[open]')) {
     root.classList.remove('modal-open');
-    root.style.removeProperty('--scrollbar-comp');
+    root.style.removeProperty('padding-right');
   }
 }
 

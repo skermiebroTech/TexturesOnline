@@ -238,10 +238,11 @@ class Session {
     );
   }
   /** Runs `fn` as the named step and records the slowest interaction it caused. */
-  async step(name, fn, { quiet = 400 } = {}) {
+  /** `busy`: don't wait for the page to go quiet first (a tap while it is still working). */
+  async step(name, fn, { quiet = 400, busy = false } = {}) {
     const page = this.page;
     try {
-      await this.settle(250, 6000);
+      if (!busy) await this.settle(250, 6000);
       const t0 = await page.evaluate(() => performance.now());
       if (PROFILE) await this.cdp.send('Profiler.start');
       await fn(page);
@@ -417,6 +418,10 @@ async function flowStart(s, page) {
   await s.step('open version picker', () => s.tap('.vp-trigger'));
   await s.step('close version picker', () => page.keyboard.press('Escape'));
   await s.step('tap Create pack', () => s.tap('.tx-create-btn'), { quiet: 800 });
+  // the editor is still loading the game's files: a tap as soon as the first textures show
+  await page.waitForSelector('.tx-pick', { timeout: 120000 });
+  await s.step('tap a quick pick while the editor loads', () => s.tap('.tx-pick:nth-child(2)'), { busy: true, quiet: 800 });
+  await s.step('tab: Textures while the editor loads', () => s.tap('.tx-tabbar-btn[data-v="textures"]'), { busy: true, quiet: 800 });
 }
 
 /** Waits until the editor is ready and idle (the texture list has loaded). */
@@ -438,6 +443,12 @@ async function flowEditor(s, page) {
     await s.step('tap quick pick: Grass block (first texture)', () => s.tap('.tx-pick'), { quiet: 800 });
     await s.step('tab: Textures', () => tab('textures'));
     await s.step('tap a texture in the list', () => s.tap('.tx-tile:nth-child(3)'), { quiet: 800 });
+    // the list draws its block icons when it shows: a tap right after it
+    await s.step('tab: Textures, then a tile 0.3 s later', async () => {
+      await tab('textures');
+      await page.waitForTimeout(300);
+      await s.tap('.tx-tile:nth-child(5)');
+    }, { quiet: 800 });
     if ((await page.locator('.tx-editor').getAttribute('data-mobile')) !== 'editor') await s.step('tab: Paint', () => tab('editor'));
   } else {
     await s.step('tap quick pick: Grass block (first texture)', () => s.tap('.tx-pick'), { quiet: 800 });
@@ -460,6 +471,21 @@ async function flowEditor(s, page) {
     const pts = [];
     for (let i = 0; i <= 20; i++) pts.push([cx - r / 2 + Math.cos(i / 4) * r * 0.4, cy - r + (2 * r * i) / 20]);
     return s.stroke(pts);
+  });
+  // Painting on: a stroke, then the next tap half a second later, while what follows a stroke runs
+  // (saving, thumbnails, the preview)
+  await s.step('paint: stroke, then a tool 0.5 s later', async () => {
+    const pts = [];
+    for (let i = 0; i <= 12; i++) pts.push([cx - r + (2 * r * i) / 12, cy + r / 3]);
+    await s.stroke(pts);
+    await page.waitForTimeout(500);
+    await s.tap('.tx-tool[data-tool="eraser"]');
+  });
+  await s.step('paint: stroke, then a stroke 0.5 s later', async () => {
+    await s.stroke([[cx - r, cy - r / 3], [cx, cy - r / 4], [cx + r, cy - r / 3]]);
+    await page.waitForTimeout(500);
+    await s.stroke([[cx - r, cy + r / 2], [cx, cy + r / 2], [cx + r, cy + r / 2]]);
+    await s.tap('.tx-tool[data-tool="pencil"]');
   });
   await s.step('undo', () => s.tap('.tx-undo, button[aria-label^="Undo"]'));
   await s.step('redo', () => s.tap('.tx-redo, button[aria-label^="Redo"]'));
@@ -547,22 +573,36 @@ async function flowSkins(s, page) {
 
 async function flowShaders(s, page) {
   await page.goto(base + 'shaders/');
-  await page.waitForLoadState('load');
+  await page.waitForSelector('.sh-card');
   await page.waitForTimeout(1500);
   await s.throttle();
-  const create = page.locator('.sh-create-btn, .sh-new .btn-primary, button.btn-primary').first();
-  await s.step('create a shader pack', () => create.tap(), { quiet: 1200 });
+  await s.step('tap "Start" on the Iris card', () => s.tap('.sh-card[data-target="iris"] .sh-card-start'), { quiet: 800 });
+  await page.waitForSelector('.sh-new .sh-preset');
+  await s.step('tap a preset in the new pack dialog', () => s.tap('.sh-new .sh-preset:nth-child(2)'));
+  await s.step('tap Create pack', () => page.getByRole('button', { name: 'Create pack' }).tap(), { quiet: 1200 });
+  await page.waitForSelector('.sh-editor', { timeout: 30000 });
   await page.waitForTimeout(3000);
-  const ranges = page.locator('input[type="range"]:visible');
+  const ranges = page.locator('.sh-editor input[type="range"]').filter({ visible: true });
   const n = Math.min(await ranges.count(), 3);
   for (let i = 0; i < n; i++) {
-    const sel = `input[type="range"]:visible >> nth=${i}`;
-    await s.step(`slider ${i + 1}: drag`, () => s.slide(sel, i % 2 ? 0.2 : 0.8));
+    const r = ranges.nth(i);
+    await s.step(`slider ${i + 1}: drag`, async () => {
+      await r.scrollIntoViewIfNeeded();
+      const box = await r.boundingBox();
+      const y = box.y + box.height / 2;
+      const pts = [];
+      for (let k = 0; k <= 8; k++) pts.push([box.x + box.width * (0.5 + (i % 2 ? -0.04 : 0.04) * k), y]);
+      await s.stroke(pts, 30);
+    });
   }
-  const tabs = await page.locator('.editor-tab').count();
-  for (let i = 0; i < tabs; i++) await s.step(`tab ${i + 1}`, () => page.locator('.editor-tab').nth(i).tap(), { quiet: 800 });
-  const presets = page.locator('.sh-preset, [data-preset]');
-  if (await presets.count()) await s.step('tap a preset', () => presets.nth(1).tap(), { quiet: 800 });
+  const presets = page.locator('.sh-settings .sh-preset').filter({ visible: true });
+  if (await presets.count()) {
+    await s.step('tap a preset', () => presets.nth(1).tap(), { quiet: 800 });
+    await s.step('tap another preset', () => presets.nth(0).tap(), { quiet: 800 });
+  }
+  const tabs = page.locator('.editor-tab, .tx-tabbar-btn, .sh-tabbar button').filter({ visible: true });
+  const nt = Math.min(await tabs.count(), 5);
+  for (let i = 0; i < nt; i++) await s.step(`tab ${i + 1}`, () => tabs.nth(i).tap(), { quiet: 800 });
 }
 
 async function flowConverter(s, page) {
