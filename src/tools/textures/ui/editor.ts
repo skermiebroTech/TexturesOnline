@@ -52,6 +52,7 @@ import { versionLabel } from './start-screen';
 import { PHONE_MQ, TABLET_MQ } from './media';
 import { projectsText } from '../../../shared/i18n/projects';
 import { saveProjectFile } from '../../../shared/project-file/entry';
+import { onMarkersOnCanvas } from '../biomes/markers';
 
 type Side = 'textures' | 'preview' | 'material' | 'effects' | 'pvp' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'gui' | 'sounds';
@@ -219,6 +220,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     },
     onSettings: () => paint3d.sync(),
     onCanvasHover: (p) => paint3d.canvasHover(p),
+    biome: () => models.previewBiome,
     // Phones show the preview on its own tab: its "Edit shape" is in the texture's menu too.
     menuItems: () => {
       const cur = canvas.current();
@@ -922,6 +924,9 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const libTimer = setTimeout(() => void models.load(), 700);
   cleanups.push(
     () => clearTimeout(libTimer),
+    // the biome marked on an open colour map
+    models.events.on('biome', () => canvas.canvas()?.redraw()),
+    onMarkersOnCanvas(() => canvas.canvas()?.redraw()),
     // Versions without block models (Java before 1.8) start in All textures.
     models.events.on('ready', () => {
       if (models.lib && !models.lib.available && libMode !== 'textures' && libMode !== 'sounds' && libMode !== 'gui') setLibMode('textures');

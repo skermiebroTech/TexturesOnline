@@ -1,6 +1,6 @@
 // Centre panel: the pixel editor for the selected texture with its tool rail, options bar, colour dock,
 // animation frames, paint layers, compare-with-vanilla, upload / reset, HD upscaling and Bedrock
-// alpha-mask mode.
+// alpha-mask mode. A colour map shows the biomes where the game reads it (../biomes/markers.ts).
 // In the 3D workspace the stage holds the 3D model instead (painted with the same tools) and the pixel
 // editor moves to the side panel. Each texture keeps its own undo history while you switch between them.
 
@@ -53,6 +53,8 @@ import { LayerSession, type LayerChange } from '../layers/session';
 import { createLayersPanel } from '../layers/panel';
 import { copyStack, flatten, singleLayer, type Area, type LayerStack } from '../layers/stack';
 import { tl } from '../layers/i18n/text';
+import { colorMapOf, type BiomeId } from '../biomes/biomes';
+import { drawMarkers, mapMarkers, markersOnCanvas, type Marker } from '../biomes/markers';
 
 export interface OpenTexture {
   key: string;
@@ -133,6 +135,8 @@ export interface CanvasPanelOptions {
   onCanvasHover?(p: { x: number; y: number } | null): void;
   /** More entries for the texture's menu (⋮), read when it opens */
   menuItems?(): MenuItem[];
+  /** The biome the previews are coloured for (marked on an open colour map) */
+  biome?(): BiomeId;
 }
 
 type RailTool = keyof EditorText['canvas']['tools'] & Tool;
@@ -762,10 +766,25 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   /** Texels a press on the 3D model would paint, outlined on the flat texture */
   function drawHover(ctx: CanvasRenderingContext2D, view: PixelView) {
     drawOnion(ctx, view);
+    drawBiomes(ctx, view);
     if (!hover3d || !pc) return;
     const w = pc.width;
     if (hover3d.echo?.length) outlineTexels(ctx, view, hover3d.echo, w, 0.55);
     outlineTexels(ctx, view, hover3d.pixels, w, 1);
+  }
+
+  let biomeMarkers: { key: string; markers: Marker[] } = { key: '', markers: [] };
+  /** A colour map: the biomes where the game reads it, and the half it never reads */
+  function drawBiomes(ctx: CanvasRenderingContext2D, view: PixelView) {
+    const t = cur;
+    if (!t || t.key === ICON_KEY || !markersOnCanvas()) return;
+    const map = colorMapOf(t.key, project.edition, project.version);
+    if (!map) return;
+    if (biomeMarkers.key !== t.key) biomeMarkers = { key: t.key, markers: mapMarkers(project.edition, project.version, map) };
+    // (the game reads 256 x 256; a map of another size is marked where the preview reads it)
+    const sx = t.full.width / 256;
+    const sy = t.full.height / 256;
+    drawMarkers(ctx, (x, y) => view.toScreen(x * sx, y * sy), view.scale * sx, biomeMarkers.markers, opts.biome?.() ?? null);
   }
 
   // ---------------------------------------------------------------- onion skin

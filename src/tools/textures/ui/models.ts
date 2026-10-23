@@ -1,7 +1,7 @@
 // Model support for the texture pack editor: loads the version's block / item / mob model library,
 // turns a resolved model into a 3D scene made of the pack's own textures (edits, effects, animation
-// strips, biome colours from the pack's colour maps; a mob texture whose shape doesn't fit its model is
-// left off) and draws inventory-style icons for the browser.
+// strips, the colours of the biome picked for the previews from the pack's colour maps; a mob texture
+// whose shape doesn't fit its model is left off) and draws inventory-style icons for the browser.
 
 import type { Progress } from '../../../core/types';
 import { Emitter } from '../../../core/events';
@@ -14,7 +14,7 @@ import { DEFAULT_BIOME_COLORS, tintColor, type BiomeColors } from '../../../shar
 import type { ModelIconRenderer } from '../../../shared/models/model-icons';
 import type { ModelScene } from '../../../shared/preview/block-preview';
 import type { ModelTextureImage } from '../../../shared/models/model-mesh';
-import { sampleColormap } from '../../../shared/preview/preview-textures';
+import { biomeLooks, biomeTints, biomesOf, colorMapPath, colorMapsOf, DEFAULT_BIOME, mapsRead, type BiomeId, type ColorMap, type MapImage } from '../biomes/biomes';
 import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, getFrame, makeEntry, readAnimInfo, type AnimInfo } from './meta';
 import { parseJsonLoose } from '../project';
@@ -38,12 +38,14 @@ export interface BuiltScene {
 type Icon = HTMLCanvasElement | ImageData;
 
 const ICON_SIZE = 96;
+/** The biome the previews are coloured for (localStorage) */
+const BIOME_KEY = 'to-tex-preview-biome';
 
 /** Pack files the model library reads before the game's (Java models, blockstates, item definitions). */
 const PACK_MODEL_FILE = /^assets\/[^/]+\/(models|blockstates|items)\/.+\.json$/;
 
 export class ModelService {
-  readonly events = new Emitter<{ progress: Progress; ready: void; failed: string; usage: void; models: { kind: 'block' | 'item'; id: string }[] }>();
+  readonly events = new Emitter<{ progress: Progress; ready: void; failed: string; usage: void; models: { kind: 'block' | 'item'; id: string }[]; biome: BiomeId }>();
   /** Parsed model / blockstate / item files of the pack (Java), read over the game's */
   private packFiles = new Map<string, unknown>();
   /** Bumped when an entry's model changes, so its icon is drawn again */
@@ -54,6 +56,8 @@ export class ModelService {
   error: string | null = null;
   private loading: Promise<ModelLibrary | null> | null = null;
   private biomeP: Promise<Partial<BiomeColors>> | null = null;
+  /** The biome whose colours the previews show (picked in the preview or the biome colours view) */
+  private biomeId: BiomeId = DEFAULT_BIOME;
   private anims = new Map<string, AnimInfo | null>();
   private iconRenderer: Promise<ModelIconRenderer | null> | null = null;
   private iconCache = new Map<string, Icon>();
@@ -65,6 +69,12 @@ export class ModelService {
   private offAnim: () => void;
 
   constructor(private readonly store: TexStore) {
+    try {
+      const saved = localStorage.getItem(BIOME_KEY) as BiomeId | null;
+      if (saved && biomesOf(store.project.edition, store.project.version).includes(saved)) this.biomeId = saved;
+    } catch {
+      /* storage blocked */
+    }
     // an animation made or changed in the editor: its frames and speed are read again
     this.offAnim = store.events.on('animation', ({ path }) => {
       for (const k of [...this.anims.keys()]) if (k.startsWith(`${path}|`)) this.anims.delete(k);
@@ -177,23 +187,52 @@ export class ModelService {
 
   // ------------------------------------------------------------------ colours
 
-  /** Grass / foliage colours sampled from the pack's colour maps (with effects), like the texture preview. */
+  /** The biome the previews are coloured for. */
+  get previewBiome(): BiomeId {
+    return this.biomeId;
+  }
+
+  /** Colours the previews for another biome (remembered in this browser). */
+  setPreviewBiome(id: BiomeId): void {
+    if (id === this.biomeId) return;
+    this.biomeId = id;
+    try {
+      localStorage.setItem(BIOME_KEY, id);
+    } catch {
+      /* storage blocked */
+    }
+    this.biomeP = null;
+    this.events.emit('biome', id);
+  }
+
+  /** The colour maps the preview biome reads (the pack's, else the game's), with effects when `fx`. */
+  async colorMaps(fx: boolean, only?: readonly ColorMap[]): Promise<Partial<Record<ColorMap, MapImage>>> {
+    const { edition, version } = this.store.project;
+    const out: Partial<Record<ColorMap, MapImage>> = {};
+    await Promise.all(
+      colorMapsOf(edition, version)
+        .filter((m) => !only || only.includes(m))
+        .map(async (m) => {
+          const p = colorMapPath(edition, m);
+          if (!this.store.assets.hasFile(p) && !this.store.isEdited(p)) return;
+          try {
+            out[m] = this.fx(await this.store.getFull(p), p, false, fx);
+          } catch {
+            /* the game's colours */
+          }
+        }),
+    );
+    return out;
+  }
+
+  /** The preview biome's grass, leaf, leaf-litter and water colours from the pack's colour maps (with effects). */
   biome(fx: boolean): Promise<Partial<BiomeColors>> {
     if (!this.biomeP) {
       this.biomeP = (async () => {
-        const root = this.store.project.edition === 'java' ? 'assets/minecraft/textures/' : 'textures/';
-        const read = async (name: string) => {
-          const p = `${root}colormap/${name}.png`;
-          if (!this.store.assets.hasFile(p) && !this.store.isEdited(p)) return undefined;
-          try {
-            const img = this.fx(await this.store.getFull(p), p, false, fx);
-            return sampleColormap(img, 0.8, 0.4) ?? undefined;
-          } catch {
-            return undefined;
-          }
-        };
-        const [grass, foliage, dry] = await Promise.all([read('grass'), read('foliage'), read('dry_foliage')]);
-        return { grass, foliage, dry_foliage: dry };
+        const { edition, version } = this.store.project;
+        const looks = biomeLooks(this.biomeId, edition, version) ?? biomeLooks(DEFAULT_BIOME, edition, version);
+        if (!looks) return {};
+        return biomeTints(looks, await this.colorMaps(fx, mapsRead(looks)));
       })();
     }
     return this.biomeP;

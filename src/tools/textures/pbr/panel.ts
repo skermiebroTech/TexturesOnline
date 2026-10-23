@@ -18,8 +18,8 @@ import { categoryForPath } from '../project';
 import { ICON_KEY, type TexStore } from '../ui/store';
 import type { OpenTexture } from '../ui/canvas-panel';
 import { byPointer } from '../ui/media';
-import { tintFor } from '../ui/meta';
-import { DEFAULT_FOLIAGE_TINT, DEFAULT_GRASS_TINT, tintByAlphaMask, tintImage } from '../../../shared/preview/preview-textures';
+import { tintFor, tintRgb } from '../ui/meta';
+import { tintByAlphaMask, tintImage } from '../../../shared/preview/preview-textures';
 import {
   DEFAULT_AMOUNT,
   DEFAULT_BUMPS,
@@ -707,7 +707,7 @@ export function createMaterialPanel(opts: MaterialPanelOptions): MaterialPanel {
     const id = store.byPath.get(p)?.id ?? p;
     const t = tintFor(id, edition);
     if (!t) return img;
-    const c = t.tint === 'fixed' ? t.color! : t.tint === 'grass' ? DEFAULT_GRASS_TINT : DEFAULT_FOLIAGE_TINT;
+    const c = tintRgb(t);
     const out = edition === 'bedrock' && /grass_side\.tga$/.test(p) ? tintByAlphaMask(img, c) : tintImage(img, c);
     return createImageData(out.width, out.height, new Uint8ClampedArray(out.data));
   }

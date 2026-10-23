@@ -14,6 +14,9 @@ export type Tint =
   | { kind: 'grass' }
   | { kind: 'foliage' }
   | { kind: 'dry_foliage' }
+  /** Bedrock's birch and spruce leaves (their own colour maps; Java's are fixed colours) */
+  | { kind: 'birch' }
+  | { kind: 'evergreen' }
   | { kind: 'water' }
   | { kind: 'fixed'; rgb: RGB };
 

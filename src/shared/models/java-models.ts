@@ -684,10 +684,10 @@ export function javaBlockTint(blockId: string, state: Record<string, string> = {
   const id = blockId.replace(/^minecraft:/, '');
   if (/^(pink_petals|wildflowers)$/.test(id) && tintindex === 0) return null;
   if (GRASS_BLOCKS.test(id)) return { kind: 'grass' };
-  if (FOLIAGE_BLOCKS.test(id)) return { kind: 'foliage' };
+  // (mangrove leaves too: the biome's foliage colour, a fixed one in mangrove swamps; their item has its own)
+  if (FOLIAGE_BLOCKS.test(id) || id === 'mangrove_leaves') return { kind: 'foliage' };
   if (id === 'birch_leaves') return { kind: 'fixed', rgb: rgbOf(0x80a755) };
   if (id === 'spruce_leaves') return { kind: 'fixed', rgb: rgbOf(0x619961) };
-  if (id === 'mangrove_leaves') return { kind: 'fixed', rgb: rgbOf(0x92c648) };
   if (id === 'lily_pad' || id === 'waterlily') return { kind: 'fixed', rgb: rgbOf(0x208030) };
   if (/^(water|flowing_water|bubble_column|water_cauldron|cauldron)$/.test(id)) return { kind: 'water' };
   if (id === 'leaf_litter') return { kind: 'dry_foliage' };

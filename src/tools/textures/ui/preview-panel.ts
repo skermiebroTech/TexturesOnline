@@ -3,7 +3,8 @@
 // state picker (lit, facing, half, age...) and the list of textures the model uses, labelled by role.
 // Other textures show on a rotating cube or as a flat sprite. A tiled 3x3 view and the pack's effects
 // complete it. In the 3D workspace the 3D view moves to the main editor area to be painted on, and the
-// pixel editor takes its place here.
+// pixel editor takes its place here. Grass, leaves and water are coloured like the biome picked under
+// the view; a colour map open in the editor shows the biome colours view instead (../biomes/view.ts).
 
 import type { BlockPreview, ModelCameraView, ModelHit, ModelPaintHandler, ModelScene, PaintCursor } from '../../../shared/preview/block-preview';
 import type { BlockState, ModelEntry, ModelTexture, ModelView, StateProperty } from '../../../shared/models/index';
@@ -12,9 +13,10 @@ import { cloneImageData } from '../../../core/image';
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import { badge, emptyState, iconButton, openPopover, segmented, select, spinner, toggle, tooltip, type PopoverHandle } from '../../../ui/components';
-import { DEFAULT_FOLIAGE_TINT, DEFAULT_GRASS_TINT, compositeOverlay, tintByAlphaMask, tintImage } from '../../../shared/preview/preview-textures';
+import { compositeOverlay, tintByAlphaMask, tintImage } from '../../../shared/preview/preview-textures';
+import type { BiomeColors } from '../../../shared/models/tints';
 import { applyEffects, effectsApply } from '../effects';
-import { displayAlphaData, firstSquare, getFrame, planCube, tile3, tintFor, transparentShare, type AnimInfo } from './meta';
+import { displayAlphaData, firstSquare, getFrame, planCube, tile3, tintFor, tintRgb, transparentShare, type AnimInfo } from './meta';
 import { ICON_KEY, type TexStore } from './store';
 import type { OpenTexture } from './canvas-panel';
 import type { LiveTexture, ModelService } from './models';
@@ -22,6 +24,9 @@ import { paintCanvas } from './thumbs';
 import { fmt, textLocale } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
 import { byPointer } from './media';
+import { createBiomeView } from '../biomes/view';
+import { biomeLooks, biomesOf, rgbHex, type BiomeId } from '../biomes/biomes';
+import { tb } from '../biomes/i18n/text';
 
 export interface PreviewPanel {
   el: HTMLElement;
@@ -261,7 +266,21 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     if (entry?.kind === 'item') hooks.onNames?.(entry);
   });
   const shapeRow = h('div', { class: 'tx-pv-shaperow', hidden: true }, editShapeBtn, namesBtn);
-  const body = h('div', { class: 'tx-pv' }, head, hero, shapeRow, canvasSlot, note, trimNote, statesEl, partsSection, controls, texSection, fxToggle, tiledSection);
+  // the biome grass, leaves and water are coloured for (shown while some are on show)
+  const biomeNames = () => tb.names as Record<BiomeId, string>;
+  const biomeSel = select<BiomeId>({
+    value: models.previewBiome,
+    options: biomesOf(project.edition, project.version).map((id) => ({ value: id, label: biomeNames()[id] })),
+    onChange: (v) => models.setPreviewBiome(v),
+  });
+  biomeSel.querySelector('select')?.setAttribute('aria-label', tb.picker);
+  const biomeSwatch = h('span', { class: 'tx-pv-biomeswatch', 'aria-hidden': 'true' });
+  const biomeNote = h('p', { class: 'tx-inline-note', hidden: true });
+  const biomeRow = h('div', { class: 'tx-pv-biomerow' }, h('span', { class: 'tx-pv-state-label' }, tb.picker), biomeSwatch, biomeSel);
+  tooltip(biomeRow.querySelector('.tx-pv-state-label') as HTMLElement, tb.pickerHint);
+  const biomeBox = h('div', { class: 'tx-pv-biome', hidden: true }, biomeRow, biomeNote);
+  const biomeView = createBiomeView(store, models);
+  const body = h('div', { class: 'tx-pv' }, head, hero, biomeView.el, shapeRow, canvasSlot, note, trimNote, statesEl, biomeBox, partsSection, controls, texSection, fxToggle, tiledSection);
   const loadingModel = h('div', { class: 'tx-pv-busy', hidden: true }, spinner(16), h('span', null, te.preview.loadingModel));
   hero.appendChild(loadingModel);
   const el = h('div', { class: 'tx-pv-wrap' }, body, empty);
@@ -710,12 +729,49 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     hooks.openTexture(hit.texture, 'face');
   }
 
+  // ---------------------------------------------------------------- biome
+  /**
+   * The biome picker, while grass, leaves or water are on show: their colour in the picked biome,
+   * and a note where the game doesn't use the colour maps for them there.
+   */
+  async function paintBiome(t: OpenTexture | null, modelMode: boolean, mapView: boolean) {
+    const kinds = new Set<string>();
+    if (modelMode && view) {
+      for (const q of view.quads) if (q.tint && q.tint.kind !== 'fixed') kinds.add(q.tint.kind);
+      for (const sp of view.sprite ?? []) if (sp.tint && sp.tint.kind !== 'fixed') kinds.add(sp.tint.kind);
+    } else if (t?.entry && !mapView) {
+      const k = tintFor(t.entry.id, project.edition);
+      if (k && k.tint !== 'fixed') kinds.add(k.tint);
+    }
+    const ids = biomesOf(project.edition, project.version);
+    biomeBox.hidden = !kinds.size || ids.length < 2;
+    if (biomeBox.hidden) return;
+    const id = models.previewBiome;
+    biomeSel.setValue(id);
+    const colors = await models.biome(fxOn());
+    const kind = (['grass', 'foliage', 'dry_foliage', 'birch', 'evergreen', 'water'] as const).find((k) => kinds.has(k)) ?? 'grass';
+    const c = colors[kind];
+    biomeSwatch.style.background = c ? rgbHex(c) : '';
+    biomeSwatch.title = c ? rgbHex(c) : '';
+    const looks = biomeLooks(id, project.edition, project.version);
+    let text = '';
+    if (looks) {
+      const name = biomeNames()[id];
+      const fixed = (l: { kind: string } | null) => l?.kind === 'fixed';
+      if (kinds.has('grass') && looks.grass.kind === 'noise') text = tb.previewNotes.swamp;
+      else if ((kinds.has('grass') && fixed(looks.grass)) || (kinds.has('foliage') && fixed(looks.foliage)) || (kinds.has('dry_foliage') && fixed(looks.dry))) text = fmt(tb.previewNotes.fixed, { biome: name });
+      else if (kinds.has('grass') && looks.grass.kind === 'mix' && project.edition === 'java' && id === 'dark_forest') text = tb.previewNotes.dark;
+    }
+    biomeNote.hidden = !text;
+    if (text) biomeNote.replaceChildren(icon('info'), h('span', null, text));
+  }
+
   // ---------------------------------------------------------------- render
-  let tints: { grass: [number, number, number]; foliage: [number, number, number] } | null = null;
+  let tints: Partial<BiomeColors> | null = null;
   const tinted = (img: ImageData, id: string, path: string): ImageData => {
     const t = tintFor(id, project.edition);
     if (!t) return img;
-    const color = t.tint === 'fixed' ? t.color! : t.tint === 'grass' ? tints?.grass ?? DEFAULT_GRASS_TINT : tints?.foliage ?? DEFAULT_FOLIAGE_TINT;
+    const color = tintRgb(t, tints ?? {});
     if (project.edition === 'bedrock' && /grass_side\.tga$/.test(path)) return toImage(tintByAlphaMask(img, color));
     return toImage(tintImage(img, color));
   };
@@ -749,7 +805,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       if (ov) {
         try {
           const overlay = withFx(firstSquare(await store.getFull(ov)), ov, false);
-          return toImage(compositeOverlay(img, overlay, tints?.grass ?? DEFAULT_GRASS_TINT));
+          return toImage(compositeOverlay(img, overlay, tintRgb({ tint: 'grass' }, tints ?? {})));
         } catch {
           /* plain side */
         }
@@ -760,8 +816,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
 
   async function loadTints() {
     if (tints) return;
-    const b = await models.biome(showFx);
-    tints = { grass: b.grass ?? DEFAULT_GRASS_TINT, foliage: b.foliage ?? DEFAULT_FOLIAGE_TINT };
+    tints = await models.biome(showFx);
   }
 
   function paintTiled(t: OpenTexture) {
@@ -863,6 +918,14 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     if (t) paintTiled(t);
     else tiledSection.hidden = true;
     fxToggle.hidden = !store.effectsActive();
+    // a colour map: the biome colours view takes the 3D view's place
+    const mapView = !modelMode && biomeView.show(t);
+    hero.hidden = mapView && !docked;
+    if (mapView) {
+      controls.hidden = true;
+      tiledSection.hidden = true;
+    }
+    void paintBiome(t, modelMode, mapView);
 
     if (!visible) return;
     const pv = await ensure();
@@ -1069,6 +1132,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     store.events.on('names', () => paintShapeButton()),
     store.events.on('image', ({ path, full }) => {
       if (!tex || path !== tex.key) return;
+      biomeView.update(full);
       paintTiled(tex);
       if (entry && view) {
         // (a trim palette recolours the trims using it)
@@ -1100,6 +1164,12 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     models.events.on('ready', () => {
       follow();
       soon(0, {});
+    }),
+    // another biome for the previews: grass, leaves and water change colour
+    models.events.on('biome', () => {
+      tints = null;
+      sceneKey = '';
+      soon(0);
     }),
     // a model changed in the model editor: show its new shape
     models.events.on('models', (changed) => {
@@ -1213,6 +1283,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     destroy() {
       destroyed = true;
       partsPop?.close();
+      biomeView.destroy();
       token++;
       offs.forEach((f) => f());
       if (timer) clearTimeout(timer);
