@@ -1,7 +1,7 @@
 // Editor state for one texture pack project: the texture list, pending edits, debounced autosave to
 // IndexedDB and the events the panels listen to.
 
-import type { AssetIndex, CustomModel, NameVariant, PbrMaterial, TexturePackProject } from '../../../core/types';
+import type { AssetIndex, CustomModel, NameVariant, PbrMaterial, TextureAnimation, TexturePackProject } from '../../../core/types';
 import { Emitter } from '../../../core/events';
 import { saveProject } from '../../../core/storage';
 import { decodeImage, encodePng } from '../../../core/image';
@@ -31,6 +31,8 @@ export interface EditorEvents extends Record<string, unknown> {
   pbr: { paths: string[] };
   /** Name-based looks of items changed (project.nameVariants): their ids */
   names: { ids: string[] };
+  /** A texture's animation was made, changed or removed (project.animations) */
+  animation: { path: string };
 }
 
 const SAVE_DELAY = 700;
@@ -146,10 +148,11 @@ export class TexStore {
     this.events.emit('overrides', { path });
   }
 
-  /** Back to vanilla (drops the pack's copy). */
+  /** Back to vanilla (drops the pack's copy, and the animation made for it). */
   resetToVanilla(path: string): void {
     this.pending.delete(path);
     removeOverride(this.project, path);
+    if (this.project.animations?.[path]) this.setAnimation(path, null);
     this.bump(path);
     this.metaDirty = true;
     this.schedule();
@@ -245,6 +248,25 @@ export class TexStore {
     if (!Object.keys(all).length) delete this.project.nameVariants;
     this.touch();
     this.events.emit('names', { ids });
+  }
+
+  // ---- animations (project.animations) ----
+
+  animation(path: string): TextureAnimation | undefined {
+    return this.project.animations?.[path];
+  }
+
+  /** Sets (or with null removes) the animation of a texture; its frames are the texture's pixels. */
+  setAnimation(path: string, anim: TextureAnimation | null): void {
+    const all = (this.project.animations ??= {});
+    const had = !!all[path];
+    if (anim) all[path] = { ...anim, ...(anim.frames ? { frames: anim.frames.map((s) => ({ ...s })) } : {}), updatedAt: Date.now() };
+    else delete all[path];
+    if (!Object.keys(all).length) delete this.project.animations;
+    this.touch();
+    // the texture list marks animated textures
+    if (had !== !!anim) this.rebuildEntries();
+    this.events.emit('animation', { path });
   }
 
   /** Project settings changed. */

@@ -80,6 +80,12 @@ export const packText = defineText('shared.packs', {
     /** {names} lists up to three OptiFine name patterns, e.g. "*sword*" */
     namesPattern: '{count, plural, one {# name-based texture from the opened pack matches names with an OptiFine pattern ({names}), so it only works with OptiFine or CIT Resewn.} other {# name-based textures from the opened pack match names with OptiFine patterns ({names}), so they only work with OptiFine or CIT Resewn.}}',
     pbrPlainSets: "{count, plural, one {# changed texture gets a plain material for Vibrant Visuals, because the game's material for it couldn't be loaded.} other {# changed textures get a plain material for Vibrant Visuals, because the game's materials for them couldn't be loaded.}}",
+    /** Java before 1.8 has no frame blending (interpolate) */
+    animBlend: "{count, plural, one {# animation blends its frames, which Minecraft before 1.8 can't do: there it plays without blending.} other {# animations blend their frames, which Minecraft before 1.8 can't do: there they play without blending.}}",
+    /** {files} lists up to three texture names; Java before 1.13 only plays square frames as wide as the texture */
+    animSize: "{count, plural, one {# animation has frames that aren't squares as wide as the texture, which Minecraft before 1.13 can't play: {files}.} other {# animations have frames that aren't squares as wide as the texture, which Minecraft before 1.13 can't play: {files}.}}",
+    /** Bedrock: {files} lists up to three texture names that no block uses in terrain_texture.json */
+    animUnplaced: "{count, plural, one {# animation was left out because Bedrock only animates textures that blocks use: {files}.} other {# animations were left out because Bedrock only animates textures that blocks use: {files}.}}",
   },
 });
 

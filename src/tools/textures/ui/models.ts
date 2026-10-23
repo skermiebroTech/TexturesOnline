@@ -62,7 +62,14 @@ export class ModelService {
   private viewPaths = new Map<string, string[]>();
   private disposed = false;
 
-  constructor(private readonly store: TexStore) {}
+  private offAnim: () => void;
+
+  constructor(private readonly store: TexStore) {
+    // an animation made or changed in the editor: its frames and speed are read again
+    this.offAnim = store.events.on('animation', ({ path }) => {
+      for (const k of [...this.anims.keys()]) if (k.startsWith(`${path}|`)) this.anims.delete(k);
+    });
+  }
 
   /** Loads the model library once (Java downloads its model files on first use). */
   load(): Promise<ModelLibrary | null> {
@@ -407,6 +414,7 @@ export class ModelService {
 
   dispose(): void {
     this.disposed = true;
+    this.offAnim();
     this.offModels?.();
     if (this.usageTimer) clearTimeout(this.usageTimer);
     // the library is shared by every pack of this game version: back to the game's own models

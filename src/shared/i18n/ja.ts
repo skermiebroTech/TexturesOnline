@@ -210,6 +210,9 @@ const JA: SharedLanguage = {
       namesCit: '名前で変わるテクスチャ{count}個は、1.21.5より前のMinecraftではOptiFineかCIT Resewn MODが必要です。',
       namesPattern: '開いたパックの名前で変わるテクスチャ{count}個はOptiFineのパターン（{names}）で名前を見分けるため、OptiFineかCIT Resewnでしか動きません。',
       pbrPlainSets: 'ゲームの質感を読み込めなかったため、変更したテクスチャ{count}個はバイブラントビジュアルでシンプルな質感になります。',
+      animBlend: '{count}個のアニメーションはフレームをなめらかにつなぎますが、1.8より前のMinecraftではできないため、つながずに再生されます。',
+      animSize: '{count}個のアニメーションのフレームがテクスチャと同じ幅の正方形ではないため、1.13より前のMinecraftでは再生できません: {files}。',
+      animUnplaced: '統合版はブロックが使うテクスチャしかアニメーションできないため、{count}個のアニメーションを含めませんでした: {files}。',
     },
   },
   'shared.canvas': {

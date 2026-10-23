@@ -13,6 +13,7 @@ import { prepareSoundExport } from './sounds/pack';
 import { hasMaterials, writePbrFiles } from './pbr/pack';
 import { hasNameVariants, nameFiles } from './names/pack';
 import { renderIsoCube } from './iso-cube';
+import { FLIPBOOK_PATH, animationMcmeta, flipbookJson, frameCount, javaAnimLosses, mergeFlipbooks, mergeTerrain, packAnimRules, parseFlipbooks, type OwnFlipbook } from './anim/pack';
 import { packText } from '../../shared/i18n/packs';
 import { fmt, joinList, textLocale } from '../../i18n/editor-text';
 
@@ -50,6 +51,8 @@ interface McmetaSource {
   text: string;
   /** true when the pack itself (an imported pack) provides this .mcmeta */
   fromPack: boolean;
+  /** Written from an animation made in the editor (it is in no file yet) */
+  made?: boolean;
 }
 type Dims = { w: number; h: number };
 
@@ -79,6 +82,9 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   if (edition === 'java' && hasNameVariants(project)) await addNameFiles(project, assets, extra, warnings);
   const extraMcmeta = new Map<string, string>();
   for (const [path, bytes] of extra) if (path.endsWith('.mcmeta')) extraMcmeta.set(path, decodeText(bytes));
+  // animations made in the editor follow what the pack's oldest version reads
+  const animRules = packAnimRules(project);
+  const animLosses: Record<'interpolate' | 'size', string[]> = { interpolate: [], size: [] };
   const overrides = new Map<string, Blob>();
   for (const [raw, blob] of Object.entries(project.overrides ?? {})) {
     const path = normalizeZipPath(raw);
@@ -184,6 +190,8 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   if (unreadable.length) {
     warnings.push(fmt(packText.export.unreadable, { count: unreadable.length, files: sample(unreadable) }));
   }
+  if (animLosses.interpolate.length) warnings.push(fmt(packText.export.animBlend, { count: animLosses.interpolate.length }));
+  if (animLosses.size.length) warnings.push(fmt(packText.export.animSize, { count: animLosses.size.length, files: sample(animLosses.size) }));
 
   // --- icon ---
   progress(packText.export.icon, 0.88);
@@ -200,6 +208,28 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     else delete files[path];
   }
   check(signal);
+
+  // --- Bedrock animations: flipbook entries, merged with the game's list and the pack's own ---
+  if (edition === 'bedrock' && project.animations) {
+    const own: OwnFlipbook[] = [];
+    for (const [path, anim] of Object.entries(project.animations)) {
+      const bytes = files[path];
+      const dims = bytes instanceof Uint8Array ? imageDims(bytes, extOf(path)) : null;
+      // flipbook frames are squares as wide as the image, top to bottom
+      if (!dims || dims.h % dims.w || dims.h / dims.w < 2) continue;
+      own.push({ stem: path.replace(/\.(png|tga)$/i, ''), anim, count: dims.h / dims.w });
+    }
+    if (own.length) {
+      const read = async (p: string) => (assets.hasFile(p) ? assets.readText(p).catch(() => null) : null);
+      const game = parseFlipbooks(await read(FLIPBOOK_PATH));
+      const packList = extra.get(FLIPBOOK_PATH);
+      const packTerrain = extra.get('textures/terrain_texture.json');
+      const terrain = mergeTerrain(parseJsonLoose((await read('textures/terrain_texture.json')) ?? ''), packTerrain ? parseJsonLoose(decodeText(packTerrain)) : null);
+      const { entries, unplaced } = mergeFlipbooks(game, packList ? parseFlipbooks(decodeText(packList)) : null, own, terrain);
+      files[FLIPBOOK_PATH] = flipbookJson(entries);
+      if (unplaced.length) warnings.push(fmt(packText.export.animUnplaced, { count: unplaced.length, files: sample(unplaced.map((s) => s.slice(s.lastIndexOf('/') + 1))) }));
+    }
+  }
 
   // --- PBR materials: made from the textures as exported (after effects) ---
   if (hasMaterials(project)) {
@@ -238,7 +268,8 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     const category = info?.category ?? categoryForPath(path, edition);
     const ext = extOf(path);
     const isImage = ext === 'png' || ext === 'tga';
-    const mcmeta = edition === 'java' && isImage ? await findMcmeta(path) : null;
+    const srcBytes = isOverride ? new Uint8Array(await overrides.get(path)!.arrayBuffer()) : null;
+    const mcmeta = edition === 'java' && isImage ? await findMcmeta(path, srcBytes ? imageDims(srcBytes, ext) : null) : null;
     const anim = parseAnimation(mcmeta?.text);
     // Java: exactly the textures with an animation .mcmeta. Bedrock: the flipbook list (only guess for unknown paths).
     const animated = edition === 'java' ? !!anim : info ? !!info.animated : undefined;
@@ -259,8 +290,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
       return [[path, encodeFor(ext, result)], ...(await metadataFor(path, { w: result.width, h: result.height }, inDims, inDims, inDims, anim, mcmeta, still))];
     }
 
-    const srcBytes = new Uint8Array(await overrides.get(path)!.arrayBuffer());
-    if (!isImage) return [[path, srcBytes]];
+    if (!srcBytes || !isImage) return srcBytes ? [[path, srcBytes]] : null;
     const needsVanillaSize = assets.hasFile(path) && (applies || nineSlice || (!!mcmeta && !mcmeta.fromPack));
     const vanillaDims = needsVanillaSize ? imageDims(await assets.readFile(path), ext) : null;
     if (!applies) {
@@ -278,15 +308,25 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     return [[path, bytes], ...(await metadataFor(path, { w: result.width, h: result.height }, ref, vanillaDims, inDims, anim, mcmeta, still))];
   }
 
-  async function findMcmeta(path: string): Promise<McmetaSource | null> {
+  /**
+   * The .mcmeta that goes with a texture: the pack's, else the game's. A texture animated in the
+   * editor (`dims`: its stored size) gets one written from its animation, with the other sections kept.
+   */
+  async function findMcmeta(path: string, dims: Dims | null = null): Promise<McmetaSource | null> {
+    let found: McmetaSource | null = null;
     const own = extraMcmeta.get(`${path}.mcmeta`);
-    if (own !== undefined) return { text: own, fromPack: true };
-    if (!assets.hasFile(`${path}.mcmeta`)) return null;
-    try {
-      return { text: await assets.readText(`${path}.mcmeta`), fromPack: false };
-    } catch {
-      return null;
+    if (own !== undefined) found = { text: own, fromPack: true };
+    else if (assets.hasFile(`${path}.mcmeta`)) {
+      try {
+        found = { text: await assets.readText(`${path}.mcmeta`), fromPack: false };
+      } catch {
+        found = null;
+      }
     }
+    const made = project.animations?.[path];
+    if (!made || !dims || frameCount(made, dims.w, dims.h) < 2) return found;
+    for (const loss of javaAnimLosses(made, dims.w, animRules)) animLosses[loss].push(path.slice(path.lastIndexOf('/') + 1));
+    return { text: animationMcmeta(made, found?.text ?? null, dims.w, dims.h, animRules), fromPack: true, made: true };
   }
 
   /**
@@ -303,7 +343,7 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
     } else if (edition === 'java' && mcmeta) {
       const adjusted = adjustMcmeta(mcmeta.text, anim, dims, dims.w / ref.w);
       if (adjusted !== null) files.push([`${path}.mcmeta`, encodeText(adjusted)]);
-      else if (!mcmeta.fromPack) files.push([`${path}.mcmeta`, encodeText(mcmeta.text)]);
+      else if (!mcmeta.fromPack || mcmeta.made) files.push([`${path}.mcmeta`, encodeText(mcmeta.text)]);
     }
     if (edition === 'bedrock' && isNineSliceCandidate(path)) {
       const jsonPath = path.replace(/\.[^./]+$/, '.json');

@@ -213,6 +213,10 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     onBrowse: () => showMobile('textures', true),
     onWorkspace: (v) => setWorkspace(v, true),
     onFrame: () => paint3d.textureChanged(),
+    onAnimation: (t) => {
+      preview.setTexture(t);
+      paint3d.textureChanged();
+    },
     onSettings: () => paint3d.sync(),
     onCanvasHover: (p) => paint3d.canvasHover(p),
     // Phones show the preview on its own tab: its "Edit shape" is in the texture's menu too.

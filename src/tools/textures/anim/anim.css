@@ -1,0 +1,279 @@
+/* Windows of the animation maker: timing, import and Save as GIF (loaded with ./dialogs.ts). */
+.an {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.an-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-2);
+}
+.an-intro .icon {
+  flex: none;
+  color: var(--tool-accent);
+}
+.an-hint {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.an-section {
+  margin: 4px 0 0;
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  color: var(--text);
+}
+.an-msg {
+  margin: 0;
+  color: var(--red);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.an-msg[hidden] {
+  display: none;
+}
+
+/* ---- preview at game speed ---- */
+.an-pv {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--r-md);
+  --checker-size: 12px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+.an-fig {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.an-fig figcaption {
+  max-width: 144px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  text-align: center;
+}
+
+/* ---- timing ---- */
+.an-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.an-top-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.an-speed {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.an-num {
+  width: 84px;
+  flex: none;
+  text-align: right;
+}
+.an-unit {
+  color: var(--text);
+}
+.an-per,
+.an-loop {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.an-loop {
+  margin: 0;
+}
+.an-times {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(154px, 1fr));
+  gap: 6px 12px;
+  max-height: 228px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.an-time {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+.an-time .an-num {
+  width: 56px;
+}
+/* the frame's thumbnail with its number in the corner */
+.an-time-label {
+  position: relative;
+  display: block;
+}
+.an-time-n {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  min-width: 14px;
+  padding: 0 2px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 10px;
+  line-height: 13px;
+  text-align: center;
+}
+.an-secs {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  white-space: nowrap;
+}
+.an-thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  --checker-size: 8px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+.an-more {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.an-more summary {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+}
+.an-more[open] summary {
+  margin-bottom: 6px;
+}
+.an-order {
+  width: 100%;
+}
+.an-more > * + * {
+  margin-top: 6px;
+}
+
+/* ---- import ---- */
+.an-reading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+  color: var(--text-2);
+}
+.an-reading[hidden],
+.an-import[hidden] {
+  display: none;
+}
+.an-import {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.an-import-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.an-import-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.an-found {
+  margin: 0;
+  color: var(--text);
+  font-weight: 700;
+}
+.an-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.an-thumb-more {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.an-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.an-opt[hidden] {
+  display: none;
+}
+.an-opt .segmented {
+  flex: none;
+  max-width: 100%;
+}
+.an-opt .segmented-item {
+  flex: 1 0 auto;
+}
+.an-opt-end {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.an-again {
+  align-self: flex-start;
+}
+
+/* ---- Save as GIF ---- */
+.an-gif-pv {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 560px) {
+  .an-top {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .an-fig {
+    flex-direction: row;
+    gap: 12px;
+  }
+  .an-fig figcaption {
+    max-width: none;
+    text-align: left;
+  }
+  .an-times {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 200px;
+  }
+  .an-import-top {
+    flex-direction: column;
+    align-items: center;
+  }
+  .an-opt .segmented {
+    width: 100%;
+  }
+}

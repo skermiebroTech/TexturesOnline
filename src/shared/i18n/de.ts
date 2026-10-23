@@ -210,6 +210,9 @@ const DE: SharedLanguage = {
       namesCit: '{count, plural, one {# Namenstextur braucht in Minecraft vor 1.21.5 OptiFine oder die Mod CIT Resewn.} other {# Namenstexturen brauchen in Minecraft vor 1.21.5 OptiFine oder die Mod CIT Resewn.}}',
       namesPattern: '{count, plural, one {# Namenstextur aus dem geöffneten Pack erkennt Namen an einem OptiFine-Muster ({names}) und funktioniert deshalb nur mit OptiFine oder CIT Resewn.} other {# Namenstexturen aus dem geöffneten Pack erkennen Namen an OptiFine-Mustern ({names}) und funktionieren deshalb nur mit OptiFine oder CIT Resewn.}}',
       pbrPlainSets: '{count, plural, one {# geänderte Textur bekommt für Vibrant Visuals ein schlichtes Material, weil das Material des Spiels dafür nicht geladen werden konnte.} other {# geänderte Texturen bekommen für Vibrant Visuals ein schlichtes Material, weil die Materialien des Spiels dafür nicht geladen werden konnten.}}',
+      animBlend: '{count, plural, one {# Animation überblendet ihre Frames, was Minecraft vor 1.8 nicht kann: Dort läuft sie ohne Überblenden.} other {# Animationen überblenden ihre Frames, was Minecraft vor 1.8 nicht kann: Dort laufen sie ohne Überblenden.}}',
+      animSize: '{count, plural, one {# Animation hat Frames, die keine Quadrate in Texturbreite sind; Minecraft vor 1.13 kann sie nicht abspielen: {files}.} other {# Animationen haben Frames, die keine Quadrate in Texturbreite sind; Minecraft vor 1.13 kann sie nicht abspielen: {files}.}}',
+      animUnplaced: '{count, plural, one {# Animation wurde weggelassen, weil Bedrock nur Texturen animiert, die Blöcke verwenden: {files}.} other {# Animationen wurden weggelassen, weil Bedrock nur Texturen animiert, die Blöcke verwenden: {files}.}}',
     },
   },
   'shared.canvas': {
