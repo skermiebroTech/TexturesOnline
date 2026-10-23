@@ -5,7 +5,9 @@
 }
 .tx-st-btn {
   gap: 6px;
-  max-width: 240px;
+  /* (the bar scrolls sideways rather than cutting the stamp's name) */
+  flex: none;
+  max-width: 300px;
   padding: 0 8px 0 4px;
 }
 .tx-st-thumbbox {
