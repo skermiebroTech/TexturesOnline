@@ -77,7 +77,7 @@ const ES: BiomesLanguage = {
       fixed: 'Colores propios: {biomes}.',
       spruceBirch: 'Las hojas de abeto (#619961) y de abedul (#80A755) nunca cambian de color.',
       inventoryGrass: 'En el inventario, el césped toma el color del centro de la diagonal (calor 0,5, lluvia 1).',
-      inventoryLeaves: 'En el inventario, las hojas siempre tienen el mismo verde (#48B518).',
+      inventoryLeaves: 'En el inventario, las hojas no usan esta imagen: tienen verdes fijos (hojas de roble #48B518).',
       bedrockSwampGrass: 'Los pantanos y los manglares leen swamp_grass.png en su lugar.',
       bedrockSwampFoliage: 'Los pantanos leen swamp_foliage.png en su lugar, y los manglares, mangrove_swamp_foliage.png.',
       bedrockLeaves: 'Las hojas de abeto y de abedul leen evergreen.png y birch.png.',

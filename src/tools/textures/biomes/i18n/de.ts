@@ -77,7 +77,7 @@ const DE: BiomesLanguage = {
       fixed: 'Eigene Farben: {biomes}.',
       spruceBirch: 'Fichtennadeln (#619961) und Birkenlaub (#80A755) ändern ihre Farbe nie.',
       inventoryGrass: 'Im Inventar nehmen Grasblöcke die Farbe aus der Mitte der Diagonale (Wärme 0,5, Regen 1).',
-      inventoryLeaves: 'Im Inventar ist Laub immer im selben Grün (#48B518).',
+      inventoryLeaves: 'Im Inventar nutzt Laub dieses Bild nicht: Es hat feste Grüntöne (Eichenlaub #48B518).',
       bedrockSwampGrass: 'Sümpfe und Mangrovensümpfe lesen stattdessen swamp_grass.png.',
       bedrockSwampFoliage: 'Sümpfe lesen stattdessen swamp_foliage.png und Mangrovensümpfe mangrove_swamp_foliage.png.',
       bedrockLeaves: 'Fichtennadeln und Birkenlaub lesen evergreen.png und birch.png.',

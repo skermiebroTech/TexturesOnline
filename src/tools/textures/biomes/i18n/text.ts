@@ -97,7 +97,7 @@ export const tb = defineText('textures.biomes', {
     fixed: 'Colours of their own: {biomes}.',
     spruceBirch: 'Spruce leaves (#619961) and birch leaves (#80A755) never change colour.',
     inventoryGrass: 'In the inventory, grass blocks take the colour at the middle of the diagonal (warmth 0.5, rain 1).',
-    inventoryLeaves: 'In the inventory, leaves are always the same green (#48B518).',
+    inventoryLeaves: 'In the inventory, leaves don’t use this picture: they have fixed greens (oak leaves #48B518).',
     bedrockSwampGrass: 'Swamps and mangrove swamps read swamp_grass.png instead.',
     bedrockSwampFoliage: 'Swamps read swamp_foliage.png and mangrove swamps mangrove_swamp_foliage.png instead.',
     bedrockLeaves: 'Spruce and birch leaves read evergreen.png and birch.png.',

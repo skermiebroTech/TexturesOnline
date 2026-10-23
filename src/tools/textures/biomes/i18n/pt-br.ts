@@ -77,7 +77,7 @@ const PT_BR: BiomesLanguage = {
       fixed: 'Cores próprias: {biomes}.',
       spruceBirch: 'Folhas de abeto (#619961) e de bétula (#80A755) nunca mudam de cor.',
       inventoryGrass: 'No inventário, blocos de grama pegam a cor do meio da diagonal (calor 0,5, chuva 1).',
-      inventoryLeaves: 'No inventário, as folhas têm sempre o mesmo verde (#48B518).',
+      inventoryLeaves: 'No inventário, as folhas não usam esta imagem: elas têm verdes fixos (folhas de carvalho #48B518).',
       bedrockSwampGrass: 'Pântanos e manguezais leem swamp_grass.png no lugar.',
       bedrockSwampFoliage: 'Pântanos leem swamp_foliage.png no lugar, e manguezais, mangrove_swamp_foliage.png.',
       bedrockLeaves: 'Folhas de abeto e de bétula leem evergreen.png e birch.png.',

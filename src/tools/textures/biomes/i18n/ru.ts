@@ -77,7 +77,7 @@ const RU: BiomesLanguage = {
       fixed: 'Свои цвета: {biomes}.',
       spruceBirch: 'Хвоя (#619961) и берёзовые листья (#80A755) никогда не меняют цвет.',
       inventoryGrass: 'В инвентаре дёрн берёт цвет из середины диагонали (тепло 0,5, дождь 1).',
-      inventoryLeaves: 'В инвентаре листья всегда одного зелёного цвета (#48B518).',
+      inventoryLeaves: 'В инвентаре листья не используют эту картинку: у них постоянные оттенки зелёного (дубовые листья — #48B518).',
       bedrockSwampGrass: 'Болота и мангровые болота вместо неё читают swamp_grass.png.',
       bedrockSwampFoliage: 'Болота вместо неё читают swamp_foliage.png, а мангровые болота — mangrove_swamp_foliage.png.',
       bedrockLeaves: 'Хвоя и берёзовые листья читают evergreen.png и birch.png.',

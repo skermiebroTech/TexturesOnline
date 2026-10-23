@@ -446,6 +446,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const flipH = iconButton('flip-h', te.canvas.flipH, () => pc?.flipH(), { size: 'sm' });
   const flipV = iconButton('flip-v', te.canvas.flipV, () => pc?.flipV(), { size: 'sm' });
   const rotate = iconButton('rotate', te.canvas.rotate, () => pc?.rotate90(), { size: 'sm' });
+  const flipSep = h('span', { class: 'toolbar-sep tx-2d-only' });
   const zoomOut = iconButton('zoom-out', te.canvas.zoomOut, () => pc?.zoomOut(), { size: 'sm' });
   const zoomIn = iconButton('zoom-in', te.canvas.zoomIn, () => pc?.zoomIn(), { size: 'sm' });
   const zoomVal = h('button', { type: 'button', class: 'tx-zoom-val' }, '100%');
@@ -460,7 +461,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     { class: 'tx-optgroup tx-optgroup-view' },
     gridBtn,
     tiledBtn,
-    h('span', { class: 'toolbar-sep tx-2d-only' }),
+    flipSep,
     flipH,
     flipV,
     rotate,
@@ -599,6 +600,8 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
     mirrorGroup.hidden = !SIZE_TOOLS.has(s.tool === 'rect-fill' ? 'rect' : s.tool) && s.tool !== 'fill' && s.tool !== 'stamp';
     // the stamp being placed (presets follow the main colour), and saving a selection as one
     stampUi.el.hidden = s.tool !== 'stamp';
+    // (the stamp tool turns and flips the stamp: the picture's own buttons step aside)
+    for (const b of [flipSep, flipH, flipV, rotate]) b.hidden = s.tool === 'stamp';
     if (pc) stampUi.sync();
     paintSaveChip();
     mirrorX.setActive(s.mirrorX);

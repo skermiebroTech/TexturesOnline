@@ -77,7 +77,7 @@ const JA: BiomesLanguage = {
       fixed: '独自の色: {biomes}',
       spruceBirch: 'トウヒの葉 (#619961) とシラカバの葉 (#80A755) は色が変わりません。',
       inventoryGrass: 'インベントリでは、草ブロックは対角線の中央 (暖かさ 0.5、雨 1) の色になります。',
-      inventoryLeaves: 'インベントリでは、葉はいつも同じ緑 (#48B518) です。',
+      inventoryLeaves: 'インベントリでは、葉はこの画像を使わず、決まった緑になります (オークの葉は #48B518)。',
       bedrockSwampGrass: '沼地とマングローブの沼地は代わりに swamp_grass.png を読みます。',
       bedrockSwampFoliage: '沼地は代わりに swamp_foliage.png を、マングローブの沼地は mangrove_swamp_foliage.png を読みます。',
       bedrockLeaves: 'トウヒとシラカバの葉は evergreen.png と birch.png を読みます。',

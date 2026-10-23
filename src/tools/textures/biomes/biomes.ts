@@ -140,7 +140,7 @@ export type BiomeId =
 
 interface BiomeDef {
   id: BiomeId;
-  /** Java: the first version with the biome and its climate (with the climate of versions before `changed`) */
+  /** Java: the first version with the biome and its climate (`old`: the climate of versions before `old.before`) */
   java: { since: string; climate: Climate; old?: { before: string; climate: Climate } } | null;
   /** Bedrock: its id and climate (the latest release's, from bedrock-samples) */
   bedrock: { id: string; climate: Climate; water: RGB } | null;

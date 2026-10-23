@@ -219,8 +219,11 @@ export function openSwapDialog(o: SwapDialogOptions): void {
     if (gameToo) for (const e of store.entries) if (isTexture(e.path)) paths.add(e.path);
     const all = [...paths].filter(isTexture);
     const found: Row[] = [];
+    // (the list fills in as the textures are looked through)
+    rows = found;
     list.replaceChildren();
     progress.hidden = all.length < 40;
+    paintApply();
     for (let i = 0; i < all.length; i++) {
       if (my !== scanToken || !open) return;
       if (i % 24 === 0) {
@@ -236,10 +239,10 @@ export function openSwapDialog(o: SwapDialogOptions): void {
       const row = makeRow(path, img, ps, n);
       found.push(row);
       list.appendChild(row.el);
+      paintApply();
     }
     if (my !== scanToken) return;
     progress.hidden = true;
-    rows = found;
     if (!found.length) list.replaceChildren(h('li', { class: 'faint small tx-sw-none' }, tw.none));
     paintApply();
   }
@@ -320,7 +323,8 @@ export function openSwapDialog(o: SwapDialogOptions): void {
   async function stateOf(path: string): Promise<TexState | null> {
     if (path === t!.key) {
       const s = t!.layers && !t!.layers.plain ? copyStack(t!.layers.stack) : null;
-      return { full: cloneImageData(t!.full), layers: s, edited: store.isEdited(path) };
+      // (the pack icon is the pack's own picture whatever it shows)
+      return { full: cloneImageData(t!.full), layers: s, edited: path === ICON_KEY || store.isEdited(path) };
     }
     const full = await imageOf(path);
     if (!full) return null;
