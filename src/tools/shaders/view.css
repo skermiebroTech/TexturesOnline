@@ -136,6 +136,9 @@
 .sh-card-render.is-in {
   opacity: 1;
 }
+.sh-card-art.is-covered {
+  display: none;
+}
 .sh-card-badges {
   position: absolute;
   bottom: 12px;
