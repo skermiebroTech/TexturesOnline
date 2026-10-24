@@ -435,11 +435,15 @@ async function flowHome(s, page) {
     await s.step('open site menu', () => s.tap('.menu-btn'));
     await s.step('close site menu', () => page.keyboard.press('Escape'));
   }
-  await s.step('tap "Start creating" (to /textures/)', () => s.tap('a.btn-primary.btn-lg'));
+  await s.step('tap "Start creating" (a dialog)', () => s.tap('a.btn-primary.btn-lg'));
+  await s.step('close the dialog', () => page.keyboard.press('Escape'));
+  await page.waitForTimeout(400);
+  await s.step('tap the Texture Packs card (to /textures/)', () => s.tap('a.tool-card.accent-green'), { quiet: 800 });
   await page.waitForSelector('.tx-new');
-  await s.step('back to home', () => page.goBack());
-  await page.waitForTimeout(500);
-  await s.step('tap Skins card', () => s.tap('a.tool-card.accent-blue'));
+  await page.goBack();
+  await page.waitForSelector('a.tool-card.accent-blue');
+  await page.waitForTimeout(1500);
+  await s.step('tap the Skins card (to /skins/)', () => s.tap('a.tool-card.accent-blue'), { quiet: 800 });
 }
 
 async function newPack(s, page) {

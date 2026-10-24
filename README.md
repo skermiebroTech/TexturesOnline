@@ -239,6 +239,14 @@ NODE_PATH=$(npm root -g) node tests/e2e/shaders/preview-textures.e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/projects/project-files.e2e.cjs  # project files in every editor, backup and restore
 ```
 
+Responsiveness on phones (Interaction to Next Paint): `tests/perf/inp.mjs` drives the site with touch on an
+emulated phone or tablet with a slowed-down CPU and lists the slowest taps, strokes and drags with what made
+them slow (usage at the top of the file):
+
+```sh
+npm run build && NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/perf/inp.mjs dist --cpu 4
+```
+
 The Bedrock texture catalogue (file paths only) is generated with `node scripts/bedrock-index.mjs`.
 
 ### Project layout
