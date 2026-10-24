@@ -92,6 +92,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   tooltip(listBtn, te.browser.list);
   const setMode = (m: 'grid' | 'list') => {
     if (m === mode) return;
+    // the list's box before the switch restyles every tile (see readBox)
+    readBox();
     mode = m;
     gridBtn.setAttribute('aria-pressed', String(m === 'grid'));
     listBtn.setAttribute('aria-pressed', String(m === 'list'));
@@ -301,7 +303,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     renderEmpty();
     active = selected ? items.findIndex((e) => e.path === selected) : -1;
     recycleTiles();
-    if (resetScroll) scroller.scrollTop = 0;
+    if (resetScroll) scrollListTo(0);
     if (lean) leanLayout(layout);
     else layout();
   }
@@ -429,8 +431,28 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     tile.style.height = `${rowH}px`;
   };
 
+  /**
+   * The list's box (client size, scroll position), read once per task: reading it again after the
+   * tiles changed (a second layout, a reveal) would lay the page out an extra time before the paint.
+   */
+  let box: { w: number; h: number; top: number } | null = null;
+  function readBox(): { w: number; h: number; top: number } {
+    if (!box) {
+      box = { w: scroller.clientWidth, h: scroller.clientHeight, top: scroller.scrollTop };
+      queueMicrotask(() => (box = null));
+    }
+    return box;
+  }
+  function scrollListTo(top: number) {
+    const b = readBox();
+    if (b.top === top) return;
+    scroller.scrollTop = top;
+    b.top = top;
+  }
+
+  let tileVar = '';
   function measure() {
-    const w = scroller.clientWidth;
+    const w = readBox().w;
     if (!w) return false;
     const inner = w - PAD * 2;
     if (mode === 'list') {
@@ -442,7 +464,10 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
       tileW = Math.floor((inner - GAP * (cols - 1)) / cols);
       rowH = tileW;
     }
-    el.style.setProperty('--tile-w', `${tileW}px`);
+    if (tileVar !== `${tileW}px`) {
+      tileVar = `${tileW}px`;
+      el.style.setProperty('--tile-w', tileVar);
+    }
     return true;
   }
 
@@ -479,8 +504,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     const relayout = cols !== lastCols || tileW !== lastTileW;
     lastCols = cols;
     lastTileW = tileW;
-    const top = scroller.scrollTop;
-    const vh = scroller.clientHeight || 600;
+    const { top, h: vh0 } = readBox();
+    const vh = vh0 || 600;
     const over = lean ? 0 : OVERSCAN;
     const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - over);
     const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + over);
@@ -536,8 +561,9 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     measure();
     const r = Math.floor(i / cols);
     const y = PAD + r * (rowH + GAP);
-    if (y < scroller.scrollTop) scroller.scrollTop = y - PAD;
-    else if (y + rowH > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = y + rowH - scroller.clientHeight + PAD;
+    const b = readBox();
+    if (y < b.top) scrollListTo(y - PAD);
+    else if (y + rowH > b.top + b.h) scrollListTo(y + rowH - b.h + PAD);
     layout();
   };
 

@@ -127,8 +127,9 @@ export class ViewportLoop {
   private width = 0;
   private height = 0;
   private failures = 0;
-  /** Something asked for a frame (invalidate): it draws without waiting for the pacer. */
+  /** Something asked for a frame (invalidate): it waits for the pacer one frame at most. */
   private dirty = true;
+  private waited = false;
   private readonly pacer: FramePacer;
   private readonly unwatchDpr: () => void;
 
@@ -205,11 +206,15 @@ export class ViewportLoop {
   private tick = (now: number): void => {
     this.raf = 0;
     if (!this.visible()) return;
-    if (!this.pacer.ready(now) && !this.dirty) {
+    // A change (dirty) waits one frame at most: a tap elsewhere that changed the scene (a texture
+    // picked in a list) paints its own answer first, the scene follows in the next frame.
+    if (!this.pacer.ready(now) && !(this.dirty && this.waited)) {
+      if (this.dirty) this.waited = true;
       this.raf = requestAnimationFrame(this.tick);
       return;
     }
     this.dirty = false;
+    this.waited = false;
     const dt = Math.min(0.1, Math.max(0, (now - this.last) / 1000));
     this.last = now;
     let more: boolean | void = true;

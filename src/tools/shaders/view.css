@@ -1735,6 +1735,13 @@ button.sh-stage-chip:active,
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
+  /* stacked: the cards under the first screen wait until they come near it (see .site-footer) */
+  .sh-card {
+    contain-intrinsic-size: auto 920px;
+  }
+  .view[data-cv] .sh-card {
+    content-visibility: auto;
+  }
   .sh-card[data-target='bedrock-vibrant'] {
     display: flex;
   }
