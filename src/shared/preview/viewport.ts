@@ -70,7 +70,8 @@ function inputPending(el: Element): boolean {
  * - on a device where one of its frames keeps the main thread busy for long (a weak GPU, software
  *   rendering), the next frame waits as long again, so taps get every other turn instead of queueing
  *   behind frame after frame. A device that keeps up never waits.
- * Changes the user asked for (a drag in the preview, a slider) are drawn by the owner regardless.
+ * The owner decides what a change the user asked for (a drag in the preview, a slider) may skip:
+ * ViewportLoop lets one wait a single frame at most.
  */
 export class FramePacer {
   private drewAt = -1;

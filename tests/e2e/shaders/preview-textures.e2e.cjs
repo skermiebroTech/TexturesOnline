@@ -178,8 +178,16 @@ async function sample(page) {
     tmp.width = W;
     tmp.height = H;
     const ctx = tmp.getContext('2d');
-    ctx.drawImage(c, 0, 0, W, H);
-    const d = ctx.getImageData(0, 0, W, H).data;
+    // The WebGL canvas can only be read in a frame the preview drew (it does not draw every frame:
+    // 30 fps for ambient motion, fewer on a slow device): read frame after frame until one has it.
+    let d = null;
+    for (let k = 0; k < 120; k++) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(c, 0, 0, W, H);
+      d = ctx.getImageData(0, 0, W, H).data;
+      if (d.some((v, i) => i % 4 !== 3 && v > 0)) break;
+      await new Promise((r) => requestAnimationFrame(() => r()));
+    }
     let magenta = 0;
     let cyan = 0;
     let yellow = 0;
