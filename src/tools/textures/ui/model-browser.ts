@@ -504,8 +504,11 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + over);
     const lo = first * cols;
     const hi = Math.min(items.length - 1, (last + 1) * cols - 1);
+    // tiles already built just outside the screen stay (a lean layout only builds fewer)
+    const keepLo = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - OVERSCAN) * cols;
+    const keepHi = Math.min(items.length - 1, (Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + OVERSCAN) + 1) * cols - 1);
     for (const [i, t] of tiles) {
-      if (i < lo || i > hi) {
+      if (i < keepLo || i > keepHi) {
         io.unobserve(t);
         t.remove();
         tiles.delete(i);
@@ -683,7 +686,21 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     },
     { passive: true },
   );
-  const ro = new ResizeObserver(() => layout());
+  // Hidden (another library mode, another tab on phones): nothing to lay out, and no layout to read.
+  // Shown again: the rows on screen first, the rest after the paint (as after a tap).
+  let shown = false;
+  const ro = new ResizeObserver((entries) => {
+    const box = entries[entries.length - 1]?.contentRect;
+    if (!box || (!box.width && !box.height)) {
+      shown = false;
+      return;
+    }
+    if (shown) layout();
+    else {
+      shown = true;
+      leanLayout(layout);
+    }
+  });
   ro.observe(scroller);
 
   // ---- store / library events ----

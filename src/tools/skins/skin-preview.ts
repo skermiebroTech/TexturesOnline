@@ -6,7 +6,7 @@
 import { FlyingAnimation, IdleAnimation, RunningAnimation, SkinViewer, WalkingAnimation, type PlayerAnimation } from 'skinview3d';
 import * as THREE from 'three';
 import type { SkinModel } from '../../core/types';
-import { createStage, prefersReducedMotion, watchDevicePixelRatio } from '../../shared/preview/viewport';
+import { createStage, FramePacer, prefersReducedMotion, watchDevicePixelRatio } from '../../shared/preview/viewport';
 import { isTypingTarget } from '../../ui/dom';
 import { BOX_FACE_ORDER, texelPlace } from './surface';
 import { faceRect, PARTS, scaleOf, type LayerSelection, type SkinFace, type SkinLayer, type SkinPart } from './templates';
@@ -275,6 +275,7 @@ class SkinPreviewImpl implements SkinPreview {
   private onScreen = true;
   private dirty = false;
   private destroyed = false;
+  private pacer!: FramePacer;
 
   // What the caller asked for; paint mode overrides these while it is on.
   private wantAnimation: SkinAnimation = 'idle';
@@ -323,6 +324,20 @@ class SkinPreviewImpl implements SkinPreview {
     } finally {
       THREE.ColorManagement.enabled = colorManagement;
     }
+    // The running animation (idle sway, a turn) lets taps elsewhere paint first, and on a device that
+    // draws it slowly leaves every other frame free (see FramePacer); its clock keeps time meanwhile.
+    const pacer = (this.pacer = new FramePacer(this.stage.root));
+    const v = this.viewer as unknown as { draw: () => void; animationID: number | null };
+    const draw = v.draw.bind(this.viewer);
+    v.draw = () => {
+      const now = performance.now();
+      if (!this.destroyed && !pacer.ready(now)) {
+        v.animationID = requestAnimationFrame(() => v.draw());
+        return;
+      }
+      draw();
+      pacer.drew(now);
+    };
     const skin = this.viewer.playerObject.skin;
     for (const part of PARTS) {
       this.meshInfo.set(skin[part].innerLayer, { part, layer: 'base' });
@@ -389,7 +404,10 @@ class SkinPreviewImpl implements SkinPreview {
   private updatePaused = (): void => {
     if (this.destroyed) return;
     const run = this.visible && (this.viewer.animation !== null || this.viewer.autoRotate);
-    if (this.viewer.renderPaused === run) this.viewer.renderPaused = !run;
+    if (this.viewer.renderPaused === run) {
+      this.pacer.reset();
+      this.viewer.renderPaused = !run;
+    }
     if (!run && this.visible && this.dirty) this.renderNow();
   };
 
@@ -420,8 +438,13 @@ class SkinPreviewImpl implements SkinPreview {
 
   private resize(force = false): void {
     if (this.destroyed) return;
-    const w = Math.max(1, this.stage.root.clientWidth);
-    const h = Math.max(1, this.stage.root.clientHeight);
+    const cw = this.stage.root.clientWidth;
+    const ch = this.stage.root.clientHeight;
+    // Hidden (display: none, another tab on phones): keep the current size and picture, so showing it
+    // again needs no resize and redraw in the same frame.
+    if (!cw && !ch && !force) return;
+    const w = Math.max(1, cw);
+    const h = Math.max(1, ch);
     const pr = pixelRatio();
     const prChanged = this.viewer.pixelRatio !== pr;
     if (!force && !prChanged && w === this.viewer.width && h === this.viewer.height) return;

@@ -7,7 +7,7 @@ import { emptyState, button, openMenu, openPopover, tooltip, type MenuItem, type
 import { TEXTURE_CATEGORY_ORDER } from '../../../editions/index';
 import { CATEGORY_INFO, searchScore, tokenize, type TextureEntry } from './meta';
 import { afterNextPaint } from '../../../core/yield';
-import { paintCanvas, type ThumbService } from './thumbs';
+import { thumbUrl, type ThumbService } from './thumbs';
 import type { TexStore } from './store';
 import { fmt, num } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
@@ -92,6 +92,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   tooltip(listBtn, te.browser.list);
   const setMode = (m: 'grid' | 'list') => {
     if (m === mode) return;
+    // the list's box before the switch restyles every tile (see readBox)
+    readBox();
     mode = m;
     gridBtn.setAttribute('aria-pressed', String(m === 'grid'));
     listBtn.setAttribute('aria-pressed', String(m === 'list'));
@@ -301,7 +303,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     renderEmpty();
     active = selected ? items.findIndex((e) => e.path === selected) : -1;
     recycleTiles();
-    if (resetScroll) scroller.scrollTop = 0;
+    if (resetScroll) scrollListTo(0);
     if (lean) leanLayout(layout);
     else layout();
   }
@@ -321,19 +323,26 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
 
   const tileId = (i: number) => `tx-opt-${i}`;
 
-  /** Sizes a tile's thumbnail for the view (grid tile width or list row) from its canvas. */
-  const fitThumb = (c: HTMLCanvasElement) => {
+  /**
+   * Sizes a tile's thumbnail for the view (grid tile width or list row) from its picture's size. The
+   * picture is an <img> (see thumbUrl): dozens of new tiles then cost no GPU texture each.
+   */
+  const fitThumb = (c: HTMLImageElement) => {
+    const w = Number(c.dataset.w) || 1;
+    const hgt = Number(c.dataset.h) || 1;
     const box = mode === 'list' ? 32 : tileW - 12;
-    const m = Math.max(c.width, c.height);
+    const m = Math.max(w, hgt);
     let scale = box / m;
     if (m <= box) scale = Math.max(1, Math.floor(box / m));
-    c.style.width = `${Math.round(c.width * scale)}px`;
-    c.style.height = `${Math.round(c.height * scale)}px`;
+    c.style.width = `${Math.round(w * scale)}px`;
+    c.style.height = `${Math.round(hgt * scale)}px`;
     c.classList.toggle('smooth', m > box);
   };
   const setThumb = (tile: HTMLElement, img: ImageData) => {
-    const c = tile.querySelector('canvas')!;
-    paintCanvas(c, img);
+    const c = tile.querySelector('img')!;
+    c.dataset.w = String(img.width);
+    c.dataset.h = String(img.height);
+    c.src = thumbUrl(img);
     fitThumb(c);
     tile.classList.add('loaded');
   };
@@ -357,7 +366,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     spare.delete(e.path);
     t.id = tileId(i);
     t.dataset.index = String(i);
-    if (t.classList.contains('loaded')) fitThumb(t.querySelector('canvas')!);
+    if (t.classList.contains('loaded')) fitThumb(t.querySelector('img')!);
     return t;
   };
   const dropSpare = () => {
@@ -393,7 +402,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         'aria-label': `${e.pretty}${edited ? te.browser.editedSuffix : ''}${e.animated ? te.browser.animatedSuffix : ''}`,
         dataset: { index: i, path: e.path },
       },
-      h('span', { class: 'tx-tile-img' }, h('canvas', { class: 'tx-thumb-canvas', 'aria-hidden': 'true' })),
+      h('span', { class: 'tx-tile-img' }, h('img', { class: 'tx-thumb-canvas', alt: '', 'aria-hidden': 'true', decoding: 'sync', draggable: false })),
       h('span', { class: 'tx-tile-text' }, h('span', { class: 'tx-tile-name' }, e.pretty), h('span', { class: 'tx-tile-id' }, e.id)),
       h(
         'span',
@@ -422,8 +431,28 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     tile.style.height = `${rowH}px`;
   };
 
+  /**
+   * The list's box (client size, scroll position), read once per task: reading it again after the
+   * tiles changed (a second layout, a reveal) would lay the page out an extra time before the paint.
+   */
+  let box: { w: number; h: number; top: number } | null = null;
+  function readBox(): { w: number; h: number; top: number } {
+    if (!box) {
+      box = { w: scroller.clientWidth, h: scroller.clientHeight, top: scroller.scrollTop };
+      queueMicrotask(() => (box = null));
+    }
+    return box;
+  }
+  function scrollListTo(top: number) {
+    const b = readBox();
+    if (b.top === top) return;
+    scroller.scrollTop = top;
+    b.top = top;
+  }
+
+  let tileVar = '';
   function measure() {
-    const w = scroller.clientWidth;
+    const w = readBox().w;
     if (!w) return false;
     const inner = w - PAD * 2;
     if (mode === 'list') {
@@ -435,7 +464,10 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
       tileW = Math.floor((inner - GAP * (cols - 1)) / cols);
       rowH = tileW;
     }
-    el.style.setProperty('--tile-w', `${tileW}px`);
+    if (tileVar !== `${tileW}px`) {
+      tileVar = `${tileW}px`;
+      el.style.setProperty('--tile-w', tileVar);
+    }
     return true;
   }
 
@@ -472,21 +504,24 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     const relayout = cols !== lastCols || tileW !== lastTileW;
     lastCols = cols;
     lastTileW = tileW;
-    const top = scroller.scrollTop;
-    const vh = scroller.clientHeight || 600;
+    const { top, h: vh0 } = readBox();
+    const vh = vh0 || 600;
     const over = lean ? 0 : OVERSCAN;
     const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - over);
     const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + over);
     const lo = first * cols;
     const hi = Math.min(items.length - 1, (last + 1) * cols - 1);
+    // tiles already built just outside the screen stay (a lean layout only builds fewer)
+    const keepLo = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - OVERSCAN) * cols;
+    const keepHi = Math.min(items.length - 1, (Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + OVERSCAN) + 1) * cols - 1);
     for (const [i, t] of tiles) {
-      if (i < lo || i > hi) {
+      if (i < keepLo || i > keepHi) {
         io.unobserve(t);
         t.remove();
         tiles.delete(i);
       } else if (relayout) {
         place(t, i);
-        if (t.classList.contains('loaded')) fitThumb(t.querySelector('canvas')!);
+        if (t.classList.contains('loaded')) fitThumb(t.querySelector('img')!);
       }
     }
     const frag = document.createDocumentFragment();
@@ -526,8 +561,9 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     measure();
     const r = Math.floor(i / cols);
     const y = PAD + r * (rowH + GAP);
-    if (y < scroller.scrollTop) scroller.scrollTop = y - PAD;
-    else if (y + rowH > scroller.scrollTop + scroller.clientHeight) scroller.scrollTop = y + rowH - scroller.clientHeight + PAD;
+    const b = readBox();
+    if (y < b.top) scrollListTo(y - PAD);
+    else if (y + rowH > b.top + b.h) scrollListTo(y + rowH - b.h + PAD);
     layout();
   };
 
@@ -747,7 +783,22 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     },
     { passive: true },
   );
-  const ro = new ResizeObserver(() => layout());
+  // Hidden (another library mode, another tab on phones): nothing to lay out, and no layout to read.
+  // Shown again: the rows on screen first, the rest after the paint (as after a tap).
+  let shown = false;
+  const ro = new ResizeObserver((entries) => {
+    const box = entries[entries.length - 1]?.contentRect;
+    if (!box || (!box.width && !box.height)) {
+      shown = false;
+      dropSpare();
+      return;
+    }
+    if (shown) layout();
+    else {
+      shown = true;
+      leanLayout(layout);
+    }
+  });
   ro.observe(scroller);
 
   cleanups.push(

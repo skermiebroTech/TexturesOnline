@@ -35,6 +35,75 @@ export function watchDevicePixelRatio(onChange: () => void): () => void {
   };
 }
 
+// ---- taps go first
+// A 3D preview that keeps animating (water, a turning model) keeps the main thread busy drawing, and a
+// tap elsewhere on the page waits for those frames before its handlers run and its answer paints.
+const HOLD_MS = 250;
+/** A frame slower than this (under 20 fps) is one the device struggles with. */
+const SLOW_FRAME_MS = 50;
+const MAX_REST_MS = 200;
+let holdUntil = 0;
+let holdTarget: EventTarget | null = null;
+let holdInstalled = false;
+function installInputHold(): void {
+  if (holdInstalled || typeof window === 'undefined') return;
+  holdInstalled = true;
+  const start = (e: Event): void => {
+    holdUntil = performance.now() + HOLD_MS;
+    holdTarget = e.target;
+  };
+  window.addEventListener('pointerdown', start, { capture: true, passive: true });
+  window.addEventListener('keydown', start, { capture: true, passive: true });
+}
+
+/** True for a short moment after a pointer or key press outside `el` (the page is answering it). */
+function inputPending(el: Element): boolean {
+  if (holdUntil === 0 || performance.now() >= holdUntil) return false;
+  return !(typeof Node !== 'undefined' && holdTarget instanceof Node && el.contains(holdTarget));
+}
+
+/**
+ * Decides, at each animation frame of a preview that keeps moving, whether this frame draws an
+ * animation step:
+ * - for a moment after a pointer or key press outside the preview, its frames wait, so the tap's
+ *   answer paints first;
+ * - on a device where one of its frames keeps the main thread busy for long (a weak GPU, software
+ *   rendering), the next frame waits as long again, so taps get every other turn instead of queueing
+ *   behind frame after frame. A device that keeps up never waits.
+ * The owner decides what a change the user asked for (a drag in the preview, a slider) may skip:
+ * ViewportLoop lets one wait a single frame at most.
+ */
+export class FramePacer {
+  private drewAt = -1;
+  private restUntil = 0;
+
+  constructor(private readonly el: Element) {
+    installInputHold();
+  }
+
+  /** At the start of an animation frame (`now`: its timestamp). */
+  ready(now: number): boolean {
+    if (this.drewAt >= 0) {
+      // the time from the frame that drew to this one is what drawing it cost (a pause is not a cost)
+      const cost = now - this.drewAt;
+      this.drewAt = -1;
+      if (cost > SLOW_FRAME_MS && cost < 1000) this.restUntil = now + Math.min(cost, MAX_REST_MS);
+    }
+    if (now < this.restUntil) return false;
+    return !inputPending(this.el);
+  }
+
+  /** After drawing in the frame of timestamp `now`. */
+  drew(now: number): void {
+    this.drewAt = now;
+  }
+
+  /** The animation stopped (or restarts): the next frame's gap is no cost of drawing. */
+  reset(): void {
+    this.drewAt = -1;
+  }
+}
+
 export interface LoopOptions {
   /** Called every animation frame while visible. Return false when nothing is animating (loop idles until invalidated). */
   frame: (dt: number, now: number) => boolean | void;
@@ -59,9 +128,14 @@ export class ViewportLoop {
   private width = 0;
   private height = 0;
   private failures = 0;
+  /** Something asked for a frame (invalidate): it waits for the pacer one frame at most. */
+  private dirty = true;
+  private waited = false;
+  private readonly pacer: FramePacer;
   private readonly unwatchDpr: () => void;
 
   constructor(private readonly el: HTMLElement, private readonly opts: LoopOptions) {
+    this.pacer = new FramePacer(el);
     if (typeof ResizeObserver !== 'undefined') {
       this.ro = new ResizeObserver(() => this.measure());
       this.ro.observe(el);
@@ -95,8 +169,13 @@ export class ViewportLoop {
   /** Layout size (ignores CSS transforms such as a scale-in animation, which ResizeObserver does not report). */
   private measure(force = false): void {
     if (this.disposed) return;
-    const w = Math.max(1, this.el.clientWidth);
-    const h = Math.max(1, this.el.clientHeight);
+    const cw = this.el.clientWidth;
+    const ch = this.el.clientHeight;
+    // Hidden (display: none, e.g. another tab on phones): keep the current size, so showing it again
+    // costs no new render targets (the loop stops while it is off screen).
+    if (!cw && !ch && this.width && !force) return;
+    const w = Math.max(1, cw);
+    const h = Math.max(1, ch);
     if (!force && w === this.width && h === this.height) return;
     this.width = w;
     this.height = h;
@@ -116,6 +195,7 @@ export class ViewportLoop {
   private start(): void {
     if (this.raf) return;
     this.last = performance.now();
+    this.pacer.reset();
     this.raf = requestAnimationFrame(this.tick);
   }
 
@@ -127,6 +207,15 @@ export class ViewportLoop {
   private tick = (now: number): void => {
     this.raf = 0;
     if (!this.visible()) return;
+    // A change (dirty) waits one frame at most: a tap elsewhere that changed the scene (a texture
+    // picked in a list) paints its own answer first, the scene follows in the next frame.
+    if (!this.pacer.ready(now) && !(this.dirty && this.waited)) {
+      if (this.dirty) this.waited = true;
+      this.raf = requestAnimationFrame(this.tick);
+      return;
+    }
+    this.dirty = false;
+    this.waited = false;
     const dt = Math.min(0.1, Math.max(0, (now - this.last) / 1000));
     this.last = now;
     let more: boolean | void = true;
@@ -143,12 +232,14 @@ export class ViewportLoop {
       }
     }
     this.idle = more === false;
+    this.pacer.drew(now);
     if (!this.idle) this.raf = requestAnimationFrame(this.tick);
   };
 
   /** Wakes an idle loop to render at least one more frame. */
   invalidate(): void {
     this.idle = false;
+    this.dirty = true;
     this.update();
   }
 

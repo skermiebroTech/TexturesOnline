@@ -337,6 +337,22 @@ body[data-route='shaders'] .topbar {
 }
 
 /* ---------- Footer ---------- */
+/* Long pages on phones and tablets: once a view has been drawn in full (data-cv, set when the page is
+   idle after it shows), the footer and the sections under the first screen (the home page's, a tool's
+   introduction) are left out of style, layout and paint until they come near the screen. A theme
+   switch or a dialog (which makes the rest of the page inert) then restyles what shows, not the whole
+   page. Each keeps the size it was drawn at (contain-intrinsic-size: auto), so the page keeps its
+   height; the length only stands in for one never drawn. */
+.site-footer,
+.tool-intro.is-below {
+  contain-intrinsic-size: auto 1200px;
+}
+@media (max-width: 1180px) {
+  .view[data-cv] .site-footer,
+  .view[data-cv] .tool-intro.is-below {
+    content-visibility: auto;
+  }
+}
 .site-footer {
   margin-top: auto;
   padding: var(--sp-7) 0 var(--sp-5);

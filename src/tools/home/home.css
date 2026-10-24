@@ -3,6 +3,15 @@
 .home {
   overflow-x: clip;
 }
+/* the sections under the first screen wait until they come near it (see .site-footer) */
+.home > .section:not(.hero) {
+  contain-intrinsic-size: auto 1200px;
+}
+@media (max-width: 1180px) {
+  .home[data-cv] > .section:not(.hero) {
+    content-visibility: auto;
+  }
+}
 
 /* ---------- Hero ---------- */
 .hero {

@@ -490,7 +490,21 @@ export class PixelCanvas {
       this.cleanups.push(() => scheme.removeEventListener('change', onScheme));
     }
 
-    this.themeObserver = new MutationObserver(() => this.refreshColors());
+    // Only what can change the colours: opening a dialog (the scroll lock's class and padding on the
+    // root) needs no colours read again, nor the canvas drawn again in the dialog's first frame.
+    const themeKey = (): string => {
+      const root = document.documentElement;
+      const cls = [...root.classList].filter((c) => c !== 'modal-open').join(' ');
+      const style = root.style.cssText.replace(/padding-right:[^;]*;?/, '').trim();
+      return `${root.dataset.theme}|${root.dataset.tool}|${cls}|${style}|${document.body?.className ?? ''}|${document.body?.dataset.theme ?? ''}`;
+    };
+    let lastThemeKey = themeKey();
+    this.themeObserver = new MutationObserver(() => {
+      const key = themeKey();
+      if (key === lastThemeKey) return;
+      lastThemeKey = key;
+      this.refreshColors();
+    });
     this.themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'data-tool', 'style'] });
     if (document.body) this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
 

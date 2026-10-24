@@ -56,14 +56,20 @@ export function mountStart(root: HTMLElement): () => void {
 
   function targetCard(t: ShaderTargetInfo): HTMLElement {
     const render = h('img', { class: 'sh-card-render', src: SHOWCASE[t.id], alt: '', decoding: 'async' });
-    const reveal = () => render.classList.add('is-in');
+    const art = artEl(sceneSvg(TARGET_SCENES[t.id]), 'sh-card-art');
+    // Once the (opaque) picture has faded in over the drawn scene, the scene leaves the page's
+    // rendering: its hundred-odd shapes would otherwise be restyled by every dialog and theme switch.
+    const reveal = () => {
+      render.classList.add('is-in');
+      setTimeout(() => art.classList.add('is-covered'), 400);
+    };
     if (render.complete && render.naturalWidth) reveal();
     else render.addEventListener('load', reveal);
     render.addEventListener('error', () => render.remove());
     const thumb = h(
       'div',
       { class: 'sh-card-thumb' },
-      artEl(sceneSvg(TARGET_SCENES[t.id]), 'sh-card-art'),
+      art,
       render,
       h(
         'div',

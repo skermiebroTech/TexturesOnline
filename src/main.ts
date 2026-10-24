@@ -7,6 +7,7 @@ import './app/app.css';
 import { onNavigation, onViewRendered, startRouter } from './core/router';
 import { createShell } from './app/shell';
 import { initHead } from './app/head';
+import { whenIdle } from './ui/dom';
 import { initTheme } from './ui/theme';
 import { initToasts, toast } from './ui/toast';
 import { initPwa } from './pwa';
@@ -76,6 +77,19 @@ onViewRendered((state, view) => {
     loadIntro()
       .then((m) => m.mountToolIntro(view, tool, state.locale))
       .catch((err) => console.warn('Tool introduction unavailable', err));
+});
+
+// Long pages: once a view (with its introduction) has been drawn in full, every section's size is
+// known, and the ones out of sight can be left out of rendering until they come near the screen
+// (data-cv, see .site-footer in layout.css). Not before: a section never drawn would only have an
+// estimated height.
+onViewRendered((state, view) => {
+  const ready = introTool(state.pattern) ? loadIntro().catch(() => undefined) : Promise.resolve();
+  void ready.then(() =>
+    whenIdle(() => {
+      if (view.isConnected) view.dataset.cv = '';
+    }),
+  );
 });
 
 // A prerendered page that the app renders the same way ("keep" pages: home, help, guides) is shown
