@@ -337,6 +337,15 @@ body[data-route='shaders'] .topbar {
 }
 
 /* ---------- Footer ---------- */
+/* Long pages: the footer (and the sections under the first screen, e.g. the home page's and a tool's
+   introduction) are left out of style, layout and paint until they come near the screen. A theme
+   switch or a dialog (which makes the rest of the page inert) then restyles what shows, not the whole
+   page. Each keeps its size once drawn (auto); the estimate only stands in before that. */
+.site-footer,
+.tool-intro.is-below {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1200px;
+}
 .site-footer {
   margin-top: auto;
   padding: var(--sp-7) 0 var(--sp-5);
