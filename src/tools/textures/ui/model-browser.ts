@@ -352,7 +352,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   }
   let loadingBar: ReturnType<typeof progressBar> | null = null;
 
-  function refilter(resetScroll: boolean) {
+  /** `lean`: a tap changed the list (see leanLayout); typing in the search box isn't one. */
+  function refilter(resetScroll: boolean, lean = true) {
     computeItems();
     renderCats();
     paintMeta();
@@ -361,7 +362,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     for (const t of tiles.values()) t.remove();
     tiles.clear();
     if (resetScroll) scroller.scrollTop = 0;
-    leanLayout(layout);
+    if (lean) leanLayout(layout);
+    else layout();
   }
 
   // ---- virtual list ----
@@ -618,7 +620,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       query = input.value.trim();
-      refilter(true);
+      refilter(true, false);
     }, 110);
   });
   input.addEventListener('keydown', (ev) => {

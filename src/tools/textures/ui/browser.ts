@@ -293,7 +293,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     }
   };
 
-  function refilter(resetScroll: boolean) {
+  /** `lean`: a tap changed the list (see leanLayout); typing in the search box isn't one. */
+  function refilter(resetScroll: boolean, lean = true) {
     computeItems();
     renderCats();
     paintMeta();
@@ -301,7 +302,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     active = selected ? items.findIndex((e) => e.path === selected) : -1;
     recycleTiles();
     if (resetScroll) scroller.scrollTop = 0;
-    leanLayout(layout);
+    if (lean) leanLayout(layout);
+    else layout();
   }
 
   // ---- virtual grid ----
@@ -697,7 +699,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       query = input.value.trim();
-      refilter(true);
+      refilter(true, false);
     }, 110);
   });
   input.addEventListener('keydown', (ev) => {
