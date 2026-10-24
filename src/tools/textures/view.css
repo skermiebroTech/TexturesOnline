@@ -1035,10 +1035,18 @@
 .tx-tile:hover .tx-tile-img {
   box-shadow: inset 0 0 0 2px var(--border-strong);
 }
-.tx-tile-img canvas {
+.tx-tile-img canvas,
+.tx-tile-img img {
   image-rendering: pixelated;
 }
-.tx-tile-img canvas.smooth {
+/* a picture, not something to drag, save or open: the tap goes to the tile */
+.tx-tile-img img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+.tx-tile-img canvas.smooth,
+.tx-tile-img img.smooth {
   image-rendering: auto;
 }
 .tx-tile:not(.loaded):not(.failed) .tx-tile-img::after {

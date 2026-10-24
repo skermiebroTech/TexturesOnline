@@ -7,7 +7,7 @@ import { emptyState, button, openMenu, openPopover, tooltip, type MenuItem, type
 import { TEXTURE_CATEGORY_ORDER } from '../../../editions/index';
 import { CATEGORY_INFO, searchScore, tokenize, type TextureEntry } from './meta';
 import { afterNextPaint } from '../../../core/yield';
-import { paintCanvas, type ThumbService } from './thumbs';
+import { thumbUrl, type ThumbService } from './thumbs';
 import type { TexStore } from './store';
 import { fmt, num } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
@@ -321,19 +321,26 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
 
   const tileId = (i: number) => `tx-opt-${i}`;
 
-  /** Sizes a tile's thumbnail for the view (grid tile width or list row) from its canvas. */
-  const fitThumb = (c: HTMLCanvasElement) => {
+  /**
+   * Sizes a tile's thumbnail for the view (grid tile width or list row) from its picture's size. The
+   * picture is an <img> (see thumbUrl): dozens of new tiles then cost no GPU texture each.
+   */
+  const fitThumb = (c: HTMLImageElement) => {
+    const w = Number(c.dataset.w) || 1;
+    const hgt = Number(c.dataset.h) || 1;
     const box = mode === 'list' ? 32 : tileW - 12;
-    const m = Math.max(c.width, c.height);
+    const m = Math.max(w, hgt);
     let scale = box / m;
     if (m <= box) scale = Math.max(1, Math.floor(box / m));
-    c.style.width = `${Math.round(c.width * scale)}px`;
-    c.style.height = `${Math.round(c.height * scale)}px`;
+    c.style.width = `${Math.round(w * scale)}px`;
+    c.style.height = `${Math.round(hgt * scale)}px`;
     c.classList.toggle('smooth', m > box);
   };
   const setThumb = (tile: HTMLElement, img: ImageData) => {
-    const c = tile.querySelector('canvas')!;
-    paintCanvas(c, img);
+    const c = tile.querySelector('img')!;
+    c.dataset.w = String(img.width);
+    c.dataset.h = String(img.height);
+    c.src = thumbUrl(img);
     fitThumb(c);
     tile.classList.add('loaded');
   };
@@ -357,7 +364,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     spare.delete(e.path);
     t.id = tileId(i);
     t.dataset.index = String(i);
-    if (t.classList.contains('loaded')) fitThumb(t.querySelector('canvas')!);
+    if (t.classList.contains('loaded')) fitThumb(t.querySelector('img')!);
     return t;
   };
   const dropSpare = () => {
@@ -393,7 +400,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         'aria-label': `${e.pretty}${edited ? te.browser.editedSuffix : ''}${e.animated ? te.browser.animatedSuffix : ''}`,
         dataset: { index: i, path: e.path },
       },
-      h('span', { class: 'tx-tile-img' }, h('canvas', { class: 'tx-thumb-canvas', 'aria-hidden': 'true' })),
+      h('span', { class: 'tx-tile-img' }, h('img', { class: 'tx-thumb-canvas', alt: '', 'aria-hidden': 'true', decoding: 'sync', draggable: false })),
       h('span', { class: 'tx-tile-text' }, h('span', { class: 'tx-tile-name' }, e.pretty), h('span', { class: 'tx-tile-id' }, e.id)),
       h(
         'span',
@@ -489,7 +496,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         tiles.delete(i);
       } else if (relayout) {
         place(t, i);
-        if (t.classList.contains('loaded')) fitThumb(t.querySelector('canvas')!);
+        if (t.classList.contains('loaded')) fitThumb(t.querySelector('img')!);
       }
     }
     const frag = document.createDocumentFragment();

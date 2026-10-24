@@ -161,6 +161,51 @@ export function paintCanvas(canvas: HTMLCanvasElement, img: ImageData): void {
   ctx.putImageData(img, 0, 0);
 }
 
+const urls = new WeakMap<ImageData, string>();
+
+/**
+ * The image as a `data:` URL (an uncompressed 32-bit BMP with alpha: quick to make, and the browser
+ * shows a data URL in the same frame). For lists of thumbnails: an <img> is painted with the page,
+ * where every <canvas> needs a texture of its own from the GPU process (slow taps on phones when a
+ * tap shows dozens of new tiles). Kept per ImageData, so a tile built again reuses it.
+ */
+export function thumbUrl(img: ImageData): string {
+  let url = urls.get(img);
+  if (url) return url;
+  const w = img.width;
+  const h = img.height;
+  const HEAD = 14 + 108; // file header + BITMAPV4HEADER (bit masks with alpha)
+  const bytes = new Uint8Array(HEAD + w * h * 4);
+  const v = new DataView(bytes.buffer);
+  v.setUint16(0, 0x4d42, true); // 'BM'
+  v.setUint32(2, bytes.length, true);
+  v.setUint32(10, HEAD, true);
+  v.setUint32(14, 108, true);
+  v.setInt32(18, w, true);
+  v.setInt32(22, -h, true); // top-down rows
+  v.setUint16(26, 1, true);
+  v.setUint16(28, 32, true);
+  v.setUint32(30, 3, true); // BI_BITFIELDS
+  v.setUint32(34, w * h * 4, true);
+  v.setUint32(54, 0x00ff0000, true);
+  v.setUint32(58, 0x0000ff00, true);
+  v.setUint32(62, 0x000000ff, true);
+  v.setUint32(66, 0xff000000, true);
+  v.setUint32(70, 0x73524742, true); // 'sRGB'
+  const src = img.data;
+  for (let i = 0, o = HEAD; i < src.length; i += 4, o += 4) {
+    bytes[o] = src[i + 2];
+    bytes[o + 1] = src[i + 1];
+    bytes[o + 2] = src[i];
+    bytes[o + 3] = src[i + 3];
+  }
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000) as unknown as number[]);
+  url = `data:image/bmp;base64,${btoa(bin)}`;
+  urls.set(img, url);
+  return url;
+}
+
 /** A small crisp canvas showing an image, scaled with CSS. */
 export function thumbCanvas(img: ImageData | null, cls = ''): HTMLCanvasElement {
   const c = document.createElement('canvas');
