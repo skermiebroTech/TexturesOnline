@@ -6,6 +6,7 @@ import { resizeSmooth } from '../../../core/pixels';
 import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, firstSquare, isBedrockStrip, type TextureEntry } from './meta';
 import type { TexStore } from './store';
+import { nextTask } from '../../../core/yield';
 
 const MAX_THUMB = 128;
 
@@ -88,6 +89,8 @@ export class ThumbService {
     let p = this.inflight.get(key);
     if (!p) {
       p = this.limit(async () => {
+        // a task per thumbnail: a screenful of them (with effects) doesn't hold up a tap
+        await nextTask();
         const src = await this.source(e);
         if (!src) return null;
         let img = src;
@@ -139,11 +142,20 @@ export class ThumbService {
   }
 }
 
+/**
+ * A small display canvas's 2D context, kept in memory (willReadFrequently): the browser then draws it
+ * with the page instead of giving each one its own GPU layer, so a list of a hundred thumbnails
+ * doesn't make every frame composite a hundred layers (slow taps on phones).
+ */
+export function thumbContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
+  return canvas.getContext('2d', { willReadFrequently: true });
+}
+
 /** Draws an ImageData into a canvas at its own size (display only). */
 export function paintCanvas(canvas: HTMLCanvasElement, img: ImageData): void {
   if (canvas.width !== img.width) canvas.width = img.width;
   if (canvas.height !== img.height) canvas.height = img.height;
-  const ctx = canvas.getContext('2d');
+  const ctx = thumbContext(canvas);
   if (!ctx) return;
   ctx.clearRect(0, 0, img.width, img.height);
   ctx.putImageData(img, 0, 0);

@@ -5,7 +5,8 @@ import { h, listen } from '../../../ui/dom';
 import { icon, type IconName } from '../../../ui/icons';
 import { button, emptyState, openPopover, progressBar, spinner, tooltip, type PopoverHandle } from '../../../ui/components';
 import type { ModelCategory, ModelEntry, ModelLibrary } from '../../../shared/models/index';
-import { paintCanvas } from './thumbs';
+import { paintCanvas, thumbContext } from './thumbs';
+import { afterNextPaint } from '../../../core/yield';
 import type { ModelService } from './models';
 import type { TexStore } from './store';
 import { fmt, num } from '../../../i18n/editor-text';
@@ -138,8 +139,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     let i = 0;
     const step = () => {
       if (job !== catJob) return;
+      // slices of about 8 ms (or 120 entries), so a tap never waits long behind them
       const end = Math.min(list.length, i + 120);
-      for (; i < end; i++) {
+      const t0 = performance.now();
+      for (; i < end && performance.now() - t0 < 8; i++) {
         const e = list[i];
         const key = `${e.kind}:${e.id}`;
         if (categories.has(key)) continue;
@@ -349,7 +352,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   }
   let loadingBar: ReturnType<typeof progressBar> | null = null;
 
-  function refilter(resetScroll: boolean) {
+  /** `lean`: a tap changed the list (see leanLayout); typing in the search box isn't one. */
+  function refilter(resetScroll: boolean, lean = true) {
     computeItems();
     renderCats();
     paintMeta();
@@ -358,7 +362,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     for (const t of tiles.values()) t.remove();
     tiles.clear();
     if (resetScroll) scroller.scrollTop = 0;
-    layout();
+    if (lean) leanLayout(layout);
+    else layout();
   }
 
   // ---- virtual list ----
@@ -380,7 +385,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     if (img instanceof HTMLCanvasElement) {
       c.width = img.width;
       c.height = img.height;
-      const ctx = c.getContext('2d');
+      const ctx = thumbContext(c);
       ctx?.clearRect(0, 0, c.width, c.height);
       ctx?.drawImage(img, 0, 0);
       c.classList.add('smooth');
@@ -408,6 +413,15 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     else tile.classList.add('failed');
   }
 
+  /**
+   * Draws a shown tile's icon again (it keeps the old one until then). Through the observer, so the
+   * icons of a list that isn't on screen (the phone's Paint tab) wait until it shows.
+   */
+  function reloadIcon(tile: HTMLElement) {
+    io.unobserve(tile);
+    io.observe(tile);
+  }
+
   const tileId = (i: number) => `tx-mb-opt-${i}`;
   function makeTile(i: number): HTMLElement {
     const e = items[i];
@@ -429,7 +443,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   const place = (tile: HTMLElement, i: number) => {
     const r = Math.floor(i / cols);
     const c = i % cols;
-    tile.style.transform = `translate(${PAD + c * (tileW + GAP)}px, ${PAD + r * (rowH + GAP)}px)`;
+    // left / top rather than a transform: a transform per tile splits the page's painting into a
+    // piece per tile, which every frame then has to sort into layers
+    tile.style.left = `${PAD + c * (tileW + GAP)}px`;
+    tile.style.top = `${PAD + r * (rowH + GAP)}px`;
     tile.style.width = `${tileW}px`;
     tile.style.height = `${rowH}px`;
   };
@@ -452,6 +469,27 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
 
   let lastCols = -1;
   let lastW = -1;
+  /**
+   * After a tap that changes the list (category, search, grid / list), only the rows on screen are
+   * built before the next paint; the rows just outside it (for smooth scrolling) follow right after.
+   */
+  let lean = false;
+  let fillPending = false;
+  function leanLayout(run: () => void) {
+    lean = true;
+    try {
+      run();
+    } finally {
+      lean = false;
+    }
+    if (fillPending) return;
+    fillPending = true;
+    void afterNextPaint().then(() => {
+      fillPending = false;
+      layout();
+    });
+  }
+
   function layout() {
     if (!measure()) return;
     const rows = Math.ceil(items.length / cols);
@@ -461,8 +499,9 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     lastW = tileW;
     const top = scroller.scrollTop;
     const vh = scroller.clientHeight || 600;
-    const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - OVERSCAN);
-    const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + OVERSCAN);
+    const over = lean ? 0 : OVERSCAN;
+    const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - over);
+    const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + over);
     const lo = first * cols;
     const hi = Math.min(items.length - 1, (last + 1) * cols - 1);
     for (const [i, t] of tiles) {
@@ -581,7 +620,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       query = input.value.trim();
-      refilter(true);
+      refilter(true, false);
     }, 110);
   });
   input.addEventListener('keydown', (ev) => {
@@ -624,8 +663,10 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     for (const t of tiles.values()) t.remove();
     tiles.clear();
     lastCols = -1;
-    layout();
-    if (active >= 0) reveal(active);
+    leanLayout(() => {
+      layout();
+      if (active >= 0) reveal(active);
+    });
   };
   gridBtn.addEventListener('click', () => setView('grid'));
   listBtn.addEventListener('click', () => setView('list'));
@@ -653,7 +694,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     const ids = new Set<string>();
     for (const p of pending) for (const e of models.entriesUsing(p)) if (e.kind === kind) ids.add(e.id);
     pending.clear();
-    for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) void loadIcon(t);
+    for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) reloadIcon(t);
     paintMeta();
     if (editedOnly) refilter(false);
   };
@@ -663,7 +704,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
       refreshTimer ??= setTimeout(refreshIcons, 400);
     }),
     store.events.on('effects', () => {
-      for (const t of tiles.values()) void loadIcon(t);
+      for (const t of tiles.values()) reloadIcon(t);
     }),
     models.events.on('progress', (p) => loadingBar?.set(p)),
     models.events.on('ready', () => {
@@ -675,7 +716,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     models.events.on('failed', () => renderOverlay()),
     models.events.on('models', (changed) => {
       const ids = new Set(changed.map((c) => c.id));
-      for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) void loadIcon(t);
+      for (const t of tiles.values()) if (ids.has(t.dataset.id ?? '')) reloadIcon(t);
     }),
     models.events.on('usage', () => (editedOnly ? refilter(false) : paintMeta())),
     listen(window, 'resize', () => layout()),

@@ -6,6 +6,7 @@ import { icon } from '../../../ui/icons';
 import { emptyState, button, openMenu, openPopover, tooltip, type MenuItem, type PopoverHandle } from '../../../ui/components';
 import { TEXTURE_CATEGORY_ORDER } from '../../../editions/index';
 import { CATEGORY_INFO, searchScore, tokenize, type TextureEntry } from './meta';
+import { afterNextPaint } from '../../../core/yield';
 import { paintCanvas, type ThumbService } from './thumbs';
 import type { TexStore } from './store';
 import { fmt, num } from '../../../i18n/editor-text';
@@ -100,11 +101,12 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     } catch {
       /* storage blocked */
     }
-    for (const t of tiles.values()) t.remove();
-    tiles.clear();
+    recycleTiles();
     lastCols = -1;
-    layout();
-    if (active >= 0) reveal(active);
+    leanLayout(() => {
+      layout();
+      if (active >= 0) reveal(active);
+    });
   };
   gridBtn.addEventListener('click', () => setMode('grid'));
   listBtn.addEventListener('click', () => setMode('list'));
@@ -291,16 +293,17 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     }
   };
 
-  function refilter(resetScroll: boolean) {
+  /** `lean`: a tap changed the list (see leanLayout); typing in the search box isn't one. */
+  function refilter(resetScroll: boolean, lean = true) {
     computeItems();
     renderCats();
     paintMeta();
     renderEmpty();
     active = selected ? items.findIndex((e) => e.path === selected) : -1;
-    for (const t of tiles.values()) t.remove();
-    tiles.clear();
+    recycleTiles();
     if (resetScroll) scroller.scrollTop = 0;
-    layout();
+    if (lean) leanLayout(layout);
+    else layout();
   }
 
   // ---- virtual grid ----
@@ -318,17 +321,51 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
 
   const tileId = (i: number) => `tx-opt-${i}`;
 
+  /** Sizes a tile's thumbnail for the view (grid tile width or list row) from its canvas. */
+  const fitThumb = (c: HTMLCanvasElement) => {
+    const box = mode === 'list' ? 32 : tileW - 12;
+    const m = Math.max(c.width, c.height);
+    let scale = box / m;
+    if (m <= box) scale = Math.max(1, Math.floor(box / m));
+    c.style.width = `${Math.round(c.width * scale)}px`;
+    c.style.height = `${Math.round(c.height * scale)}px`;
+    c.classList.toggle('smooth', m > box);
+  };
   const setThumb = (tile: HTMLElement, img: ImageData) => {
     const c = tile.querySelector('canvas')!;
     paintCanvas(c, img);
-    const box = mode === 'list' ? 32 : tileW - 12;
-    const m = Math.max(img.width, img.height);
-    let scale = box / m;
-    if (m <= box) scale = Math.max(1, Math.floor(box / m));
-    c.style.width = `${Math.round(img.width * scale)}px`;
-    c.style.height = `${Math.round(img.height * scale)}px`;
-    c.classList.toggle('smooth', m > box);
+    fitThumb(c);
     tile.classList.add('loaded');
+  };
+
+  // Tiles of the last layout, by texture, after the list changed (filter, search, grid / list): the
+  // next layout reuses the ones it still shows instead of building them (and their canvases) again.
+  const tileEntry = new WeakMap<HTMLElement, TextureEntry>();
+  const spare = new Map<string, HTMLElement>();
+  const recycleTiles = () => {
+    for (const t of tiles.values()) {
+      const e = tileEntry.get(t);
+      if (e) spare.set(e.path, t);
+      else t.remove();
+    }
+    tiles.clear();
+  };
+  const reuseTile = (i: number): HTMLElement | null => {
+    const e = items[i];
+    const t = e ? spare.get(e.path) : undefined;
+    if (!t || tileEntry.get(t) !== e) return null;
+    spare.delete(e.path);
+    t.id = tileId(i);
+    t.dataset.index = String(i);
+    if (t.classList.contains('loaded')) fitThumb(t.querySelector('canvas')!);
+    return t;
+  };
+  const dropSpare = () => {
+    for (const t of spare.values()) {
+      io.unobserve(t);
+      t.remove();
+    }
+    spare.clear();
   };
 
   async function loadThumb(tile: HTMLElement) {
@@ -365,6 +402,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         h('span', { class: 'tx-badge-edit', title: te.browser.edited }, icon('pencil', { size: 16 })),
       ),
     );
+    tileEntry.set(tile, e);
     const cached = thumbs.peek(e);
     if (cached) {
       tile.dataset.key = thumbs.key(e);
@@ -376,7 +414,10 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   const place = (tile: HTMLElement, i: number) => {
     const r = Math.floor(i / cols);
     const c = i % cols;
-    tile.style.transform = `translate(${PAD + c * (tileW + GAP)}px, ${PAD + r * (rowH + GAP)}px)`;
+    // left / top rather than a transform: a transform per tile splits the page's painting into a
+    // piece per tile, which every frame then has to sort into layers
+    tile.style.left = `${PAD + c * (tileW + GAP)}px`;
+    tile.style.top = `${PAD + r * (rowH + GAP)}px`;
     tile.style.width = `${tileW}px`;
     tile.style.height = `${rowH}px`;
   };
@@ -400,8 +441,32 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
 
   let lastCols = -1;
   let lastTileW = -1;
+  /**
+   * After a tap that changes the list (filter, search, grid / list), only the rows on screen are built
+   * before the next paint; the rows just outside it (for smooth scrolling) follow right after.
+   */
+  let lean = false;
+  let fillPending = false;
+  function leanLayout(run: () => void) {
+    lean = true;
+    try {
+      run();
+    } finally {
+      lean = false;
+    }
+    if (fillPending) return;
+    fillPending = true;
+    void afterNextPaint().then(() => {
+      fillPending = false;
+      layout();
+    });
+  }
+
   function layout() {
-    if (!measure()) return;
+    if (!measure()) {
+      dropSpare();
+      return;
+    }
     const rows = Math.ceil(items.length / cols);
     sizer.style.height = `${rows ? PAD * 2 + rows * rowH + (rows - 1) * GAP : 0}px`;
     const relayout = cols !== lastCols || tileW !== lastTileW;
@@ -409,8 +474,9 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     lastTileW = tileW;
     const top = scroller.scrollTop;
     const vh = scroller.clientHeight || 600;
-    const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - OVERSCAN);
-    const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + OVERSCAN);
+    const over = lean ? 0 : OVERSCAN;
+    const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - over);
+    const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + over);
     const lo = first * cols;
     const hi = Math.min(items.length - 1, (last + 1) * cols - 1);
     for (const [i, t] of tiles) {
@@ -420,18 +486,19 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
         tiles.delete(i);
       } else if (relayout) {
         place(t, i);
-        const img = t.classList.contains('loaded') ? items[i] && thumbs.peek(items[i]) : null;
-        if (img) setThumb(t, img);
+        if (t.classList.contains('loaded')) fitThumb(t.querySelector('canvas')!);
       }
     }
     const frag = document.createDocumentFragment();
     for (let i = lo; i <= hi; i++) {
       if (tiles.has(i)) continue;
-      const t = makeTile(i);
+      const reused = reuseTile(i);
+      const t = reused ?? makeTile(i);
       place(t, i);
       tiles.set(i, t);
-      frag.appendChild(t);
+      if (!reused) frag.appendChild(t);
     }
+    dropSpare();
     grid.appendChild(frag);
     syncActive();
   }
@@ -632,7 +699,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       query = input.value.trim();
-      refilter(true);
+      refilter(true, false);
     }, 110);
   });
   input.addEventListener('keydown', (ev) => {
@@ -655,8 +722,9 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   clearBtn.addEventListener('click', () => {
     input.value = '';
     query = '';
-    refilter(true);
+    // focus first, while the layout is still clean (after the new list it would lay out the page)
     input.focus();
+    refilter(true);
   });
   editedBtn.addEventListener('click', () => {
     editedOnly = !editedOnly;

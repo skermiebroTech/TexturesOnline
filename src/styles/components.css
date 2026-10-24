@@ -1621,10 +1621,9 @@ input[type='number']::-webkit-outer-spin-button {
   display: none;
 }
 
-/* page scroll is locked under dialogs; the padding stands in for the hidden scrollbar */
+/* page scroll is locked under dialogs (setScrollLock pads the root for a hidden scrollbar) */
 html.modal-open {
   overflow: hidden;
-  padding-right: var(--scrollbar-comp, 0px);
 }
 
 /* ---------- Shortcuts sheet ---------- */

@@ -19,6 +19,7 @@ import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, getFrame, makeEntry, readAnimInfo, type AnimInfo } from './meta';
 import { parseJsonLoose } from '../project';
 import type { TexStore } from './store';
+import { nextTask } from '../../../core/yield';
 
 export interface LiveTexture {
   path: string;
@@ -422,7 +423,12 @@ export class ModelService {
         let icon: Icon | null = null;
         if (built?.flat) icon = built.flat;
         else if (built && built.view === 'item' && view.shape === 'sprite') icon = composeSprite(built.scene, view);
-        else if (built) icon = (await this.renderer())?.render(built.scene, { mob: built.view === 'mob' }) ?? null;
+        else if (built) {
+          const r = await this.renderer();
+          // (the first time, setting up WebGL was this task's work: draw in the next one)
+          await nextTask();
+          icon = r?.render(built.scene, { mob: built.view === 'mob' }) ?? null;
+        }
         if (!icon) {
           const thumb = this.lib.thumbnail(entry);
           if (thumb) {
@@ -436,8 +442,10 @@ export class ModelService {
         }
         return icon;
       };
-      // One at a time: the icon renderer is shared, and thumbnails shouldn't starve the editor.
-      p = this.iconQueue.then(run, run).finally(() => this.iconWaits.delete(key));
+      // One at a time: the icon renderer is shared, and thumbnails shouldn't starve the editor. Each
+      // icon is its own task, so a tap during a screenful of icons waits for one icon, not all of them.
+      const next = () => nextTask().then(run);
+      p = this.iconQueue.then(next, next).finally(() => this.iconWaits.delete(key));
       this.iconQueue = p.catch(() => undefined);
       this.iconWaits.set(key, p);
     }

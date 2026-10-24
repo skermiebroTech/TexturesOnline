@@ -15,6 +15,7 @@ import { paintCanvas } from './thumbs';
 import type { TexStore } from './store';
 import { fmt } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
+import { nextTask } from '../../../core/yield';
 
 export interface EffectsPanel {
   el: HTMLElement;
@@ -471,17 +472,28 @@ export function createEffectsPanel(store: TexStore): EffectsPanel {
     await samplesLoading;
   }
 
+  /** The samples each strip was drawn from: showing the tab again doesn't draw them again. */
+  const drawnFrom = new WeakMap<HTMLElement, Sample[]>();
   async function fillStrips() {
     if (!visible) return;
+    // the tab shows first; the strips fill in after it, one preset per task
+    await nextTask();
     await loadSamples();
-    if (!samples) return;
-    stripCanvases(legend.querySelector('.tx-strip') as HTMLElement, samples.map((s) => drawSample(s, null)));
-    legend.hidden = samples.length === 0;
+    const now = samples;
+    if (!now || !visible) return;
+    const legendStrip = legend.querySelector('.tx-strip') as HTMLElement;
+    if (drawnFrom.get(legendStrip) !== now) {
+      stripCanvases(legendStrip, now.map((s) => drawSample(s, null)));
+      drawnFrom.set(legendStrip, now);
+    }
+    legend.hidden = now.length === 0;
     for (const p of EFFECT_PRESETS) {
       const strip = cards.get(p.id)?.querySelector('.tx-strip') as HTMLElement | null;
-      if (!strip) continue;
-      stripCanvases(strip, samples.map((s) => drawSample(s, p.layers)));
-      await new Promise((r) => setTimeout(r, 0));
+      if (!strip || drawnFrom.get(strip) === now) continue;
+      await nextTask();
+      if (samples !== now) return;
+      stripCanvases(strip, now.map((s) => drawSample(s, p.layers)));
+      drawnFrom.set(strip, now);
     }
   }
 
