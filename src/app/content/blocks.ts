@@ -75,6 +75,22 @@ export const figure = (shot: Shot): ElNode =>
   );
 export const strong = (...text: Child[]): ElNode => el('strong', null, ...text);
 
+/** A link to a section of the same page ('#version'). */
+export const anchor = (id: string, ...label: Child[]): ElNode => el('a', { href: `#${id}` }, ...label);
+
+/**
+ * A message as the game shows it, quoted word for word from its language files: one entry per line on
+ * screen (a dialog's title and text, a toast's two lines). What the game fills in is written as "…".
+ * `about` says what it means and how to fix it.
+ */
+export const gameMessage = (lines: Child[], ...about: Child[]): ElNode =>
+  el(
+    'div',
+    { class: 'game-msg' },
+    el('blockquote', { class: 'game-msg-text' }, lines.map((l, i) => [i > 0 ? el('br', null) : null, l])),
+    about.length ? el('p', null, ...about) : null,
+  );
+
 export interface TabOption {
   value: string;
   label: string;

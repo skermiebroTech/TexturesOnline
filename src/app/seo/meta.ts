@@ -282,7 +282,7 @@ export const GUIDES: GuideMeta[] = [
     title: 'Minecraft Texture Pack Not Working? Fixes for Java & Bedrock',
     h1: 'Minecraft texture pack not working? How to fix it',
     description:
-      'Pack not in the list, “made for an older version”, purple and black blocks, grey grass, failed .mcpack imports: what each problem means and how to fix it.',
+      'Pack not in the list, “made for an older version”, purple and black blocks, grey grass, manifest errors: every message, what it means and how to fix it.',
     label: 'Pack not working? Fixes',
     icon: 'warning-diamond',
     accent: 'accent-gold',

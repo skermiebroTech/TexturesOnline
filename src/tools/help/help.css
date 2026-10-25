@@ -317,6 +317,29 @@
   white-space: normal;
 }
 
+/* A game message quoted word for word, then what it means */
+.game-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.game-msg-text {
+  margin: 0;
+  padding: 10px 14px 12px;
+  border: 2px solid var(--border-strong);
+  border-left: 6px solid var(--tool-accent);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.game-msg > p {
+  color: var(--text-2);
+}
+.game-msg + .game-msg {
+  margin-top: 8px;
+}
+
 .guide-tabs {
   display: flex;
   flex-direction: column;

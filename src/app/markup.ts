@@ -146,7 +146,7 @@ export function renderHtml(node: Child, ctx: HtmlContext): string {
 
 // ---------------------------------------------------------------- Text
 
-const BLOCK = new Set(['p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'section', 'tr', 'summary', 'dt', 'dd', 'pre', 'table', 'ul', 'ol', 'aside', 'header', 'footer', 'figcaption']);
+const BLOCK = new Set(['p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'section', 'tr', 'summary', 'dt', 'dd', 'pre', 'table', 'ul', 'ol', 'aside', 'header', 'footer', 'figcaption', 'blockquote']);
 
 function isHidden(n: ElNode): boolean {
   return n.attrs['aria-hidden'] === 'true' || n.attrs['aria-hidden'] === true || n.attrs['data-md'] === 'skip';
@@ -344,7 +344,8 @@ function mdBlocks(children: Child[], ctx: MarkdownContext, depth: number, out: s
         );
         break;
       }
-      case 'aside': {
+      case 'aside':
+      case 'blockquote': {
         flushInline();
         const sub: string[] = [];
         mdBlocks(c.children, ctx, depth, sub);

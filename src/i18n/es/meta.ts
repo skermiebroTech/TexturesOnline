@@ -104,7 +104,7 @@ export const META_ES: MetaTranslation = {
     'texture-pack-not-working': {
       title: '¿Tu texture pack de Minecraft no funciona? Soluciones',
       h1: '¿Tu texture pack de Minecraft no funciona? Cómo arreglarlo',
-      description: 'El pack no sale en la lista, «versión anterior», bloques morados y negros, hierba gris, .mcpack que no se importa: qué significa y cómo arreglarlo.',
+      description: 'El pack no sale, «versión anterior», bloques morados y negros, hierba gris, errores del manifiesto del pack: qué significa cada mensaje y cómo arreglarlo.',
       label: '¿No funciona el pack? Soluciones',
       blurb: 'Packs que no aparecen, avisos de versión, bloques morados y negros y más.',
     },
