@@ -105,7 +105,7 @@ export const META_PT_BR: MetaTranslation = {
     'texture-pack-not-working': {
       title: 'Texture pack do Minecraft não funciona? Veja as soluções',
       h1: 'Texture pack do Minecraft não funciona? Como resolver',
-      description: 'Pack não aparece na lista, “versão mais antiga”, blocos roxos e pretos, grama cinza, .mcpack que não importa: o que significa cada problema e a solução.',
+      description: 'Pack não aparece na lista, “versão mais antiga”, blocos roxos e pretos, grama cinza, erros no manifesto: o que significa cada mensagem e a solução.',
       label: 'Pack não funciona? Soluções',
       blurb: 'Packs que não aparecem, avisos de versão, blocos roxos e pretos e mais.',
     },

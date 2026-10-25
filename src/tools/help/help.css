@@ -336,6 +336,9 @@
 .game-msg > p {
   color: var(--text-2);
 }
+.game-msg + .game-msg {
+  margin-top: 8px;
+}
 
 .guide-tabs {
   display: flex;

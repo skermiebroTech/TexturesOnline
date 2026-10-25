@@ -104,7 +104,7 @@ export const META_DE: MetaTranslation = {
     'texture-pack-not-working': {
       title: 'Minecraft Texture Pack funktioniert nicht? Die Lösungen',
       h1: 'Minecraft Texture Pack funktioniert nicht? So behebst du es',
-      description: 'Pack fehlt in der Liste, „für eine ältere Version erstellt“, lila-schwarze Blöcke, graues Gras, Import schlägt fehl: was dahintersteckt und wie du es löst.',
+      description: 'Pack fehlt in der Liste, „für eine ältere Version erstellt“, lila-schwarze Blöcke, graues Gras, Fehlermeldungen: was dahintersteckt und wie du es löst.',
       label: 'Pack geht nicht? Lösungen',
       blurb: 'Fehlende Packs, Versionswarnungen, lila-schwarze Blöcke und weitere Lösungen.',
     },
