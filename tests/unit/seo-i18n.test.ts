@@ -346,7 +346,8 @@ function texts(node: Child, out: string[] = []): string[] {
   for (const c of flatten([node])) {
     if (typeof c === 'string') out.push(c);
     else if (c.kind === 'el') {
-      if (['code', 'pre', 'kbd', 'svg', 'script'].includes(c.tag)) continue;
+      // code, and English quoted on purpose (marked lang="en", e.g. a game message's English original)
+      if (['code', 'pre', 'kbd', 'svg', 'script'].includes(c.tag) || c.attrs.lang === 'en') continue;
       for (const k of ['alt', 'aria-label', 'title']) if (typeof c.attrs[k] === 'string') out.push(c.attrs[k] as string);
       texts(c.children, out);
     } else if (c.label) out.push(c.label);
