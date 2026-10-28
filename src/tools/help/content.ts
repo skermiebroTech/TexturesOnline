@@ -611,7 +611,7 @@ export const FAQ: FaqItem[] = [
         ') or a backup of every project (',
         code('.tpmbackup'),
         ') and open it there. ',
-        link('/help?s=backup', 'How to back up and restore'),
+        link('/help#backup', 'How to back up and restore'),
         '.',
       ),
     ],
@@ -722,7 +722,7 @@ export type HelpSectionText = Pick<HelpSection, 'title' | 'short' | 'body' | 'ho
 export interface HelpText {
   /** By section id (a section without a translation keeps its English text; a unit test flags it) */
   sections: Partial<Record<HelpSectionId, HelpSectionText>>;
-  /** Same ids as the English FAQ (links such as /help?s=offline open them) */
+  /** Same ids as the English FAQ (links such as /help#offline open them) */
   faq: FaqItem[];
   quick: Record<QuickId, string>;
   toc: {
@@ -785,7 +785,7 @@ export function helpSections(locale: Locale = 'en'): HelpSection[] {
 }
 
 const tocItem = (id: string, label: string, icon: IconName, accent: string, active: boolean) =>
-  el('a', { class: ['toc-link', accent], to: `/help?s=${id}`, 'data-section': id, 'aria-current': active ? 'true' : null }, ic(icon), el('span', null, label));
+  el('a', { class: ['toc-link', accent], to: `/help#${id}`, 'data-section': id, 'aria-current': active ? 'true' : null }, ic(icon), el('span', null, label));
 
 const BADGE_TONE: Record<NonNullable<HelpSection['edition']>, string> = { Java: 'green', Bedrock: 'blue', 'Java & Bedrock': 'gold' };
 
@@ -822,7 +822,7 @@ export function helpPage(locale: Locale = 'en'): ElNode[] {
   const sections = helpSections(locale).map((s) =>
     el(
       'section',
-      { class: ['help-section', s.accent], id: `help-${s.id}`, tabindex: '-1', 'aria-labelledby': `help-${s.id}-title` },
+      { class: ['help-section', s.accent], id: s.id, tabindex: '-1', 'aria-labelledby': `help-${s.id}-title` },
       el(
         'header',
         { class: 'help-section-head' },
@@ -836,9 +836,9 @@ export function helpPage(locale: Locale = 'en'): ElNode[] {
 
   const faq = el(
     'section',
-    { class: 'help-section accent-gold', id: 'help-faq', tabindex: '-1', 'aria-labelledby': 'help-faq-title' },
+    { class: 'help-section accent-gold', id: 'faq', tabindex: '-1', 'aria-labelledby': 'help-faq-title' },
     el('header', { class: 'help-section-head' }, el('span', { class: 'help-section-icon' }, ic('circle-question')), el('h2', { id: 'help-faq-title' }, t.faqTitle)),
-    faqList(t.faq),
+    faqList(t.faq, { idPrefix: '' }),
   );
 
   return [
@@ -855,7 +855,7 @@ export function helpPage(locale: Locale = 'en'): ElNode[] {
         QUICK.map((q) =>
           el(
             'a',
-            { class: ['help-quick-card', q.accent], to: `/help?s=${q.id}`, 'data-section': q.id },
+            { class: ['help-quick-card', q.accent], to: `/help#${q.id}`, 'data-section': q.id },
             el('span', { class: 'help-quick-icon' }, ic(q.icon)),
             el('span', null, t.quick[q.id]),
             ic('arrow-right', { class: 'help-quick-go' }),

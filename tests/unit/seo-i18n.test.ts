@@ -255,7 +255,7 @@ test('translated content keeps every question, section and step of the English p
   for (const l of TRANSLATED_LOCALES) {
     const c = contentOf(l);
     assert.deepEqual(ids(c.home!.faq), ids(HOME_EN.faq), `${l} home FAQ`);
-    assert.deepEqual(ids(c.help!.faq), ids(HELP_FAQ_EN), `${l} help FAQ (ids are used in /help?s= links)`);
+    assert.deepEqual(ids(c.help!.faq), ids(HELP_FAQ_EN), `${l} help FAQ (ids are used in /help#<id> links)`);
     assert.deepEqual(ids(c.about!.faq), ids(ABOUT_EN.faq), `${l} about FAQ`);
     assert.deepEqual(Object.keys(c.home!.tools).sort(), Object.keys(HOME_EN.tools).sort(), `${l} home tool cards`);
     for (const [k, s] of Object.entries(HELP_EN.sections)) {
@@ -391,6 +391,7 @@ test('interface texts exist for every language and differ from English', () => {
 // ---------------------------------------------------------------- routing
 
 test('localized paths: language folders only where the page exists, app pages follow the language', () => {
+  assert.equal(localizedPath('/help#faq', 'de'), '/de/help#faq');
   assert.equal(localizedPath('/help?s=faq', 'de'), '/de/help?s=faq');
   assert.equal(localizedPath('/', 'ja'), '/ja');
   if (englishOnly) assert.equal(localizedPath(englishOnly.path, 'es'), englishOnly.path, 'untranslated page stays English');
@@ -427,9 +428,11 @@ test('every localized page and project URL survives a round trip under each base
         assert.ok(resolveRoute(split.path), `route for ${r}`);
       }
     }
+    assert.equal(toHref('/de/help#faq', base), `${base}de/help/#faq`);
     assert.equal(toHref('/de/help?s=faq', base), `${base}de/help/?s=faq`);
     assert.equal(toHref('/ja', base), `${base}ja/`);
     assert.equal(stripBase(`${base}ja/`, base), '/ja');
   }
   assert.equal(parseLocation('/es/help?s=iris#x').path, '/es/help');
+  assert.equal(parseLocation('/es/help#iris').path, '/es/help');
 });

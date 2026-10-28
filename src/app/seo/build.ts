@@ -71,7 +71,7 @@ export function rootPrefix(path: string): string {
   return depth ? '../'.repeat(depth) : './';
 }
 
-/** href for an internal route path or site file, relative to a page ('/help?s=faq' -> '../help/?s=faq'). */
+/** href for an internal route path or site file, relative to a page ('/help#faq' -> '../help/#faq'). */
 export function relativeHref(to: string, prefix: string): string {
   const m = /^([^?#]*)(\?[^#]*)?(#.*)?$/.exec(to) ?? ['', to, '', ''];
   const path = m[1] || '/';

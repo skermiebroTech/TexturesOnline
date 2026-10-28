@@ -49,9 +49,9 @@ const exe = ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome', '/opt/pw-brow
   assert.ok(Math.abs(y - 1800) < 40, `scroll restored on back (got ${y})`);
   step('scroll restoration on back');
 
-  await page.goto(base + '#/help?s=faq', { waitUntil: 'networkidle' });
+  await page.goto(base + 'help/#faq', { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  const top = await page.evaluate(() => document.getElementById('help-faq').getBoundingClientRect().top);
+  const top = await page.evaluate(() => document.getElementById('faq').getBoundingClientRect().top);
   assert.ok(top >= 0 && top < 200, `deep link scrolls to FAQ (top ${top})`);
   assert.equal(await page.locator('.toc-link[aria-current="true"]').innerText(), 'FAQ');
   step('help deep link');

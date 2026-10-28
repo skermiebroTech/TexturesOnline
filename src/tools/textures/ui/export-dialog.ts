@@ -200,7 +200,7 @@ export function openExportDialog(store: TexStore): void {
       ...(warnings ? [warnings] : []),
       h('h3', { class: 'section-title' }, icon('book-open'), te.export.howToInstall),
       h('ol', { class: 'tx-steps' }, steps.map((s) => h('li', null, s))),
-      h('a', { class: 'tx-help-link', href: href(`/help?s=${java ? 'java-packs' : 'bedrock-packs'}`) }, icon('circle-question', { size: 16 }), te.export.moreHelp),
+      h('a', { class: 'tx-help-link', href: href(`/help#${java ? 'java-packs' : 'bedrock-packs'}`) }, icon('circle-question', { size: 16 }), te.export.moreHelp),
     );
     body.querySelector('.tx-help-link')?.addEventListener('click', () => modal.close());
     footer.replaceChildren(

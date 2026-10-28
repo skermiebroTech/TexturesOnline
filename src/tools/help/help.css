@@ -142,7 +142,8 @@
   border-radius: var(--r-lg);
   background: var(--surface);
   box-shadow: var(--inner-hi), var(--shadow-1);
-  scroll-margin-top: calc(var(--topbar-h) + 16px);
+  /* With the page's scroll padding (top bar + 16px), a '#section' link lands where the app scrolls it (88px) */
+  scroll-margin-top: 8px;
 }
 .help-section:focus {
   outline: none;

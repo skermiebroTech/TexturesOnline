@@ -137,7 +137,7 @@ export function classifyRequest(req: RequestFacts, scope: string): RequestKind {
 
 /**
  * Where a page lives in the caches: its folder URL without query or fragment ("/help" and
- * "/help/?s=faq" are both "/help/"; files keep their name).
+ * "/help/?ref=x#faq" are both "/help/"; files keep their name).
  */
 export function pageKey(url: string): string {
   const u = new URL(url);
@@ -162,7 +162,7 @@ export function needsSlashRedirect(url: string): boolean {
   return !pathname.endsWith('/') && !/\.[a-z0-9]{1,8}$/i.test(pathname);
 }
 
-/** The folder URL of a page, keeping its query ("/help?s=faq" -> "/help/?s=faq"). */
+/** The folder URL of a page, keeping its query ("/help?ref=x" -> "/help/?ref=x"). */
 export function withSlash(url: string): string {
   const u = new URL(url);
   if (needsSlashRedirect(url)) u.pathname += '/';

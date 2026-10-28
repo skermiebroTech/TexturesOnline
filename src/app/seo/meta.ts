@@ -457,8 +457,8 @@ export function allPublicPages(): PageMeta[] {
 }
 
 /**
- * Route path in a language's folder when that page exists there ('/help?s=faq', 'de' ->
- * '/de/help?s=faq'). Public pages without a translation stay English; app pages (projects, the UI
+ * Route path in a language's folder when that page exists there ('/help#faq', 'de' ->
+ * '/de/help#faq'). Public pages without a translation stay English; app pages (projects, the UI
  * kit) always follow the language. Paths that already name a language folder are kept.
  */
 export function localizedPath(path: string, locale: Locale): string {

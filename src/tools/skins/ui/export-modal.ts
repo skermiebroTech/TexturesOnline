@@ -392,7 +392,7 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
       saveBlob(r.blob, r.filename);
     }),
   );
-  const help = h('a', { class: 'sk-help-link', href: routeHref(`/help?s=${info.edition === 'Java' ? 'java-skins' : 'bedrock-skins'}`) }, icon('book-open'), t.done.guide);
+  const help = h('a', { class: 'sk-help-link', href: routeHref(`/help#${info.edition === 'Java' ? 'java-skins' : 'bedrock-skins'}`) }, icon('book-open'), t.done.guide);
   const body = h(
     'div',
     { class: 'sk-export' },

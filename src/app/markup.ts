@@ -11,7 +11,7 @@ export type ClassValue = string | false | null | undefined | ClassValue[];
 export interface Attrs {
   class?: ClassValue;
   /**
-   * Internal route path ('/textures', '/help?s=faq'); becomes the href. Written in English: on a
+   * Internal route path ('/textures', '/help#faq'); becomes the href. Written in English: on a
    * translated page it leads to the page in the same language when one exists. A link that names
    * its language with `hreflang` (the language switcher) goes exactly where `to` says.
    */

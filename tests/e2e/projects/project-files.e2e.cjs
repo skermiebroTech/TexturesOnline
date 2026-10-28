@@ -496,9 +496,9 @@ function irisPack() {
     check('the backup holds every project, the cape and the font', bm.tool === 'backup' && bm.items.length === projectCount + 2, `${bm.items.length} items, ${projectCount} projects`);
 
     await clearStorage(page, base);
-    await page.goto(base + 'help?s=backup');
-    await page.waitForSelector('#help-backup [data-backup="open"]');
-    await openWith(page, '#help-backup [data-backup="open"]', backup.file);
+    await page.goto(base + 'help#backup');
+    await page.waitForSelector('#backup [data-backup="open"]');
+    await openWith(page, '#backup [data-backup="open"]', backup.file);
     await page.waitForSelector('dialog[open].pf-restore-modal .pf-row');
     const rows = await page.$$eval('dialog[open] .pf-row', (els) => els.map((e) => ({ type: e.dataset.type, checked: e.querySelector('input').checked })));
     check('the restore dialog lists everything, all ticked', rows.length === bm.items.length && rows.every((r) => r.checked), JSON.stringify(rows));
@@ -512,10 +512,12 @@ function irisPack() {
     check('imported pack files are back', same(everything.packs, back.packs));
     check('the cape and the font are back', same(everything.cape, back.cape) && same(everything.capeSettings, back.capeSettings) && everything.font === back.font, diff(everything, back));
 
-    // the same backup again: projects already here are skipped, or kept both
+    // the same backup again: projects already here are skipped, or kept both (an old ?s= link still opens the section)
     await page.goto(base + 'help?s=backup');
-    await page.waitForSelector('#help-backup [data-backup="open"]');
-    await openWith(page, '#help-backup [data-backup="open"]', backup.file);
+    await page.waitForSelector('#backup [data-backup="open"]');
+    await page.waitForFunction(() => location.hash === '#backup');
+    check('an old help?s=backup link ends at help/#backup', page.url().endsWith('help/#backup'), page.url());
+    await openWith(page, '#backup [data-backup="open"]', backup.file);
     await page.waitForSelector('dialog[open] .pf-existing:not([hidden])');
     const disabled = await page.$eval('dialog[open] .modal-footer .btn-primary', (b) => b.disabled);
     check('a second restore skips everything already here', disabled && (await page.$$('dialog[open] .pf-row-tag:not([hidden])')).length === bm.items.length);
@@ -535,14 +537,14 @@ function irisPack() {
         const c2 = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: theme, acceptDownloads: true });
         await c2.addInitScript((t) => localStorage.setItem('to-theme', t), theme);
         const p2 = await c2.newPage();
-        await p2.goto(base + 'help?s=backup');
-        await p2.waitForSelector('#help-backup [data-backup="open"]');
-        await openWith(p2, '#help-backup [data-backup="open"]', backup.file);
+        await p2.goto(base + 'help#backup');
+        await p2.waitForSelector('#backup [data-backup="open"]');
+        await openWith(p2, '#backup [data-backup="open"]', backup.file);
         await p2.waitForSelector('dialog[open] .pf-row');
         await p2.waitForTimeout(400);
         await p2.screenshot({ path: path.join(shotsDir, `restore-${w}-${theme}.png`) });
         await closeModals(p2);
-        await p2.click('#help-backup [data-backup="all"]');
+        await p2.click('#backup [data-backup="all"]');
         await p2.waitForSelector('dialog[open] .pf-summary');
         await p2.waitForTimeout(400);
         await p2.screenshot({ path: path.join(shotsDir, `backup-${w}-${theme}.png`) });

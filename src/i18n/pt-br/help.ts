@@ -439,7 +439,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: 'Onde meus projetos ficam salvos?',
-      a: [p('No armazenamento do seu navegador neste dispositivo. Eles ficam lá até você apagar ou limpar os dados deste site. Para guardar uma cópia ou levá-los para outro computador, salve um arquivo de projeto (', code('.tpmproject'), ') ou um backup de todos os projetos (', code('.tpmbackup'), ') e abra lá. ', link('/help?s=backup', 'Como fazer e restaurar backups'), '.')],
+      a: [p('No armazenamento do seu navegador neste dispositivo. Eles ficam lá até você apagar ou limpar os dados deste site. Para guardar uma cópia ou levá-los para outro computador, salve um arquivo de projeto (', code('.tpmproject'), ') ou um backup de todos os projetos (', code('.tpmbackup'), ') e abra lá. ', link('/help#backup', 'Como fazer e restaurar backups'), '.')],
     },
     {
       id: 'versions',
