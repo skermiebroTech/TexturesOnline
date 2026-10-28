@@ -157,14 +157,25 @@ function isFolderPath(path: string, routes: RouteDef[]): boolean {
   return !!r && !r.route.pattern.includes(':');
 }
 
-/** URL for a route path under a site base: toHref('/help?s=faq', '/Repo/') === '/Repo/help/?s=faq' (no language changes) */
+/** The '#fragment' of a location string, without its '#' ('' for none and for a bare legacy '#/x' hash). */
+export function fragmentOf(input: string): string {
+  const h = input.startsWith('#') ? input.slice(1) : input;
+  const fi = h.indexOf('#');
+  return fi >= 0 ? h.slice(fi + 1) : '';
+}
+
+/**
+ * URL for a route path under a site base, its '#fragment' kept: toHref('/help#faq', '/Repo/') ===
+ * '/Repo/help/#faq' (no language changes)
+ */
 export function toHref(path: string, base = '/', routes: RouteDef[] = ROUTES): string {
   const { path: p, query } = parseLocation(path);
   const qs = query.toString();
+  const fragment = fragmentOf(path);
   let rel = p === '/' ? '' : p.slice(1);
   if (rel && isFolderPath(p, routes)) rel += '/';
   const b = base.endsWith('/') ? base : `${base}/`;
-  return `${b}${rel}${qs ? `?${qs}` : ''}`;
+  return `${b}${rel}${qs ? `?${qs}` : ''}${fragment ? `#${fragment}` : ''}`;
 }
 
 /** Route path of a URL pathname under a site base ('/Repo/help/' -> '/help'); null outside the base. */
@@ -199,6 +210,8 @@ export function exactHref(path: string): string {
 // ---------------- Runtime (browser only) ----------------
 
 type Listener = (state: RouteState) => void;
+/** Shows what a '#fragment' names; `smooth`: the visitor asked for it on the page (not a page load). */
+export type FragmentHandler = (fragment: string, opts: { smooth: boolean }) => void;
 type RenderedListener = (state: RouteState, root: HTMLElement) => void;
 
 let outletEl: HTMLElement | null = null;
@@ -211,6 +224,7 @@ let maxIdx = 0;
 let firstRender = true;
 let started = false;
 let pendingFragment = '';
+let fragmentHandler: FragmentHandler | null = null;
 const scrollPositions = new Map<number, number>();
 const listeners = new Set<Listener>();
 const navListeners = new Set<Listener>();
@@ -234,30 +248,65 @@ function currentUrl(): string {
   return location.pathname + location.search;
 }
 
+/** The address bar's '#fragment' without its '#' ('' for none and for legacy '#/...' hashes). */
+function currentFragment(): string {
+  const raw = location.hash.slice(1);
+  return raw.startsWith('/') ? '' : raw;
+}
+
 /**
  * Opens a route path in the current language (navigate('/help') goes to '/de/help/' on German
- * pages). `exact`: the path already names its language ('/textures' then means English).
+ * pages). `exact`: the path already names its language ('/textures' then means English). A
+ * '#fragment' stays in the address bar and is shown once the page is there ('/help#faq').
  */
 export function navigate(path: string, opts: { replace?: boolean; exact?: boolean } = {}): void {
   const hashAt = path.startsWith('#') ? -1 : path.indexOf('#');
-  pendingFragment = hashAt >= 0 ? path.slice(hashAt + 1) : '';
+  const fragment = hashAt >= 0 ? path.slice(hashAt + 1) : '';
   const bare = hashAt >= 0 ? path.slice(0, hashAt) : path;
-  const target = opts.exact ? exactHref(bare) : href(bare);
+  const page = opts.exact ? exactHref(bare) : href(bare);
+  const target = fragment ? `${page}#${fragment}` : page;
   if (!started) {
     if (opts.replace) location.replace(target);
     else location.assign(target);
     return;
   }
+  pendingFragment = fragment;
   if (opts.replace) {
     history.replaceState(null, '', target);
     void render();
-  } else if (currentUrl() === target && !location.hash) {
+  } else if (currentUrl() === page && !location.hash && !fragment) {
     void render(true);
   } else {
     saveScrollMap();
     history.pushState(null, '', target);
     void render();
   }
+}
+
+/**
+ * Lets the view on screen show '#fragment' targets itself (open a section, an FAQ answer) instead
+ * of the router's "scroll to the element with that id": on the first load, after navigations to
+ * the page, and when only the fragment changes. Back/forward visits restore their scroll instead.
+ * Returns the function that removes it (for the view's cleanup).
+ */
+export function handleFragments(fn: FragmentHandler): () => void {
+  fragmentHandler = fn;
+  return () => {
+    if (fragmentHandler === fn) fragmentHandler = null;
+  };
+}
+
+/** Shows a fragment on the page already on screen (the view's handler, else the element with that id). */
+function showFragment(fragment: string, smooth: boolean): void {
+  if (fragmentHandler) {
+    try {
+      fragmentHandler(fragment, { smooth });
+    } catch (err) {
+      console.error(err);
+    }
+    return;
+  }
+  document.getElementById(fragment)?.scrollIntoView({ block: 'start' });
 }
 
 /** Change the URL without re-rendering the view (e.g. after a new project got its id). */
@@ -382,7 +431,13 @@ async function render(force = false): Promise<void> {
   const { locale, path, query } = readLocation();
   const key = routeKey(locale, path, query);
   const restoreY = trackEntry();
-  if (!force && key === currentKey && !firstRender && outlet.firstChild) return;
+  if (!force && key === currentKey && !firstRender && outlet.firstChild) {
+    // Same page, new fragment (navigate('/help#faq') on the help page)
+    const fragment = pendingFragment;
+    pendingFragment = '';
+    if (fragment) showFragment(safeDecode(fragment), true);
+    return;
+  }
   currentKey = key;
   const my = ++token;
   const match = resolveRoute(path);
@@ -468,13 +523,16 @@ async function render(force = false): Promise<void> {
 
   const wasFirst = firstRender;
   firstRender = false;
-  const fragment = pendingFragment;
+  // A view with its own fragment handling is handed the address bar's fragment (also on the first
+  // load and after a view rewrote its URL); others scroll to the element a navigation named.
+  const fragment = safeDecode(fragmentHandler ? currentFragment() : pendingFragment);
   pendingFragment = '';
   requestAnimationFrame(() => {
     if (my !== token) return;
     restoring = false;
-    const target = fragment ? document.getElementById(decodeURIComponent(fragment)) : null;
-    if (target) target.scrollIntoView({ block: 'start' });
+    const target = fragment && !fragmentHandler ? document.getElementById(fragment) : null;
+    if (fragment && fragmentHandler && restoreY === 0) showFragment(fragment, false);
+    else if (target) target.scrollIntoView({ block: 'start' });
     // The first view keeps whatever scroll the visitor already has on the prerendered page.
     else if (!wasFirst || restoreY > 0) window.scrollTo({ top: restoreY, left: 0, behavior: 'instant' as ScrollBehavior });
     if (!wasFirst) {
@@ -482,6 +540,14 @@ async function render(force = false): Promise<void> {
       if (liveRegion) liveRegion.textContent = document.title;
     }
   });
+}
+
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
 }
 
 const FILE_RE = /\.[a-z0-9]{1,8}$/i;
@@ -550,9 +616,14 @@ export function startRouter(outlet: HTMLElement): void {
     saveScrollMap();
     void render();
   });
-  // Old '#/...' links typed or pasted into the address bar of an open page.
+  // Old '#/...' links typed or pasted into the address bar of an open page; other fragments (an
+  // edited address, back/forward between two of them) go to the view that shows them itself.
   window.addEventListener('hashchange', () => {
-    if (!location.hash.startsWith('#/')) return;
+    if (!location.hash.startsWith('#/')) {
+      const fragment = currentFragment();
+      if (fragment && fragmentHandler) showFragment(safeDecode(fragment), true);
+      return;
+    }
     saveScrollMap();
     void render();
   });

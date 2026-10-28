@@ -161,7 +161,7 @@ export function footer(year: number, locale: Locale = 'en', route = '/'): ElNode
           el('div', { class: 'section-title' }, f.learn),
           el('a', { to: '/all' }, f.everything),
           el('a', { to: '/help' }, f.installGuide),
-          el('a', { to: '/help?s=faq' }, f.faq),
+          el('a', { to: '/help#faq' }, f.faq),
           el('a', { to: '/about' }, f.about),
           el('a', { to: '/privacy' }, appText(locale).privacy),
           el('a', { href: REPO_URL, target: '_blank', rel: 'noopener noreferrer' }, 'GitHub ', ic('external-link', { class: 'ext' })),

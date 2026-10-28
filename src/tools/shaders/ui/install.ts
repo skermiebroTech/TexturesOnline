@@ -1,6 +1,7 @@
 // Install instructions for each target (used by the Pack panel and the export success screen).
 
 import { h } from '../../../ui/dom';
+import { href as routeHref } from '../../../core/router';
 import { icon } from '../../../ui/icons';
 import type { ShaderTargetInfo } from '../targets';
 import { t } from '../i18n/text';
@@ -27,5 +28,5 @@ export function installSteps(target: ShaderTargetInfo, opts: { compact?: boolean
 }
 
 export function helpLink(target: ShaderTargetInfo, label = t.installGuide): HTMLAnchorElement {
-  return h('a', { class: 'sh-help-link', href: `#/help?s=${target.helpSection}` }, icon('book-open'), h('span', null, label), icon('arrow-right'));
+  return h('a', { class: 'sh-help-link', href: routeHref(`/help#${target.helpSection}`) }, icon('book-open'), h('span', null, label), icon('arrow-right'));
 }

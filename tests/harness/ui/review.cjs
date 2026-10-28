@@ -93,20 +93,20 @@ const manifest = {
 
   // Help: in-page links keep working after the URL was updated by a table-of-contents jump.
   await page.click('.toc-link:has-text("FAQ")');
-  await page.waitForFunction(() => location.hash === '#/help?s=faq');
+  await page.waitForFunction(() => location.hash === '#faq');
   await page.waitForTimeout(300);
-  assert.equal(await page.evaluate(() => location.hash), '#/help?s=faq');
+  assert.equal(await page.evaluate(() => location.hash), '#faq');
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(150);
-  await page.evaluate(() => document.querySelector('.site-footer a[href="#/help?s=faq"]').click());
+  await page.evaluate(() => document.querySelector('.site-footer a[href$="help/#faq"]').click());
   // smooth scrolling: wait until it settles near the FAQ heading
   await page
     .waitForFunction(() => {
-      const top = document.getElementById('help-faq').getBoundingClientRect().top;
+      const top = document.getElementById('faq').getBoundingClientRect().top;
       return top > 0 && top < 200;
     }, null, { timeout: 8000 })
     .catch(() => undefined);
-  const faqTop = await page.evaluate(() => document.getElementById('help-faq').getBoundingClientRect().top);
+  const faqTop = await page.evaluate(() => document.getElementById('faq').getBoundingClientRect().top);
   assert.ok(faqTop > 0 && faqTop < 200, `footer FAQ link scrolls to the FAQ (top ${faqTop})`);
   await page.evaluate(() => window.scrollBy(0, 400));
   await page.waitForTimeout(150);

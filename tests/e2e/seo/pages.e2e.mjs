@@ -235,7 +235,7 @@ try {
     await page.waitForSelector('.help .help-section');
     await page.click('.help-quick-card[data-section="iris"]');
     await page.waitForTimeout(400);
-    check(page.url() === `${base}ja/help/?s=iris`, 'Japanese help section link keeps /ja/', page.url());
+    check(page.url() === `${base}ja/help/#iris`, 'Japanese help section link keeps /ja/', page.url());
     // the menu drawer offers the languages too (phone width)
     await page.setViewportSize({ width: 390, height: 800 });
     await page.click('.menu-btn');
@@ -344,13 +344,114 @@ try {
     await page.goForward();
     await page.waitForSelector('[data-tool-intro="skins"].is-below');
     check(page.url() === `${base}skins/` && (await page.evaluate(() => window.__stay)) === 1, 'forward works without reloads', page.url());
-    // help deep link to a section keeps the query
+    // help deep link to a section keeps the fragment
     await page.click('.mainnav a[data-tool="help"]');
     await page.waitForSelector('.help .help-section');
     await page.click('.help-quick-card[data-section="iris"]');
     await page.waitForTimeout(400);
-    check(page.url() === `${base}help/?s=iris`, 'help section links update the query', page.url());
+    check(page.url() === `${base}help/#iris`, 'help section links update the fragment', page.url());
     check(errors.length === 0, 'no console errors while navigating', errors.join('\n'));
+    await ctx.close();
+  }
+
+  // ---- Help sections are fragments (/help/#faq): one help page per language for search engines
+  {
+    // The section's own id is the fragment, so the static page lands on it before any script runs.
+    const top = (page, id) => page.evaluate((id) => {
+      const el = document.getElementById(id);
+      return el ? Math.round(el.getBoundingClientRect().top) : null;
+    }, id);
+    const atTop = (t) => t !== null && t >= 40 && t <= 140;
+    const tocCurrent = (page) => page.evaluate(() => document.querySelector('.help-toc .toc-link[aria-current="true"]')?.getAttribute('data-section'));
+    const inView = (page, id) => page.evaluate((id) => {
+      const r = document.getElementById(id)?.getBoundingClientRect();
+      return !!r && r.top >= 60 && r.top < innerHeight - 40;
+    }, id);
+    {
+      const { ctx, page } = await newPage(false);
+      for (const [path, id] of [['help/#faq', 'faq'], ['de/help/#iris', 'iris'], ['ja/help/#backup', 'backup']]) {
+        await page.goto(base + path, { waitUntil: 'load' });
+        const t = await top(page, id);
+        check(atTop(t), `no-JS ${path} lands on the section under the top bar`, `top ${t}`);
+      }
+      await ctx.close();
+    }
+    const { ctx, page, errors } = await newPage(true);
+    // Fresh loads of prerendered pages, then the app takes over
+    await page.goto(`${base}help/#faq`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.querySelector('.help-toc .toc-link[aria-current="true"]')?.getAttribute('data-section') === 'faq');
+    await page.waitForTimeout(300);
+    let t = await top(page, 'faq');
+    check(atTop(t) && page.url() === `${base}help/#faq`, '/help/#faq opens on the FAQ and keeps the fragment', `top ${t} ${page.url()}`);
+    const dupes = await page.evaluate(() => {
+      const ids = [...document.querySelectorAll('[id]')].map((e) => e.id);
+      return ids.filter((id, i) => ids.indexOf(id) !== i);
+    });
+    check(dupes.length === 0, 'help page ids are unique', dupes.join(' '));
+    await page.goto(`${base}de/help/#iris`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.documentElement.lang === 'de' && document.querySelector('.help-toc .toc-link[aria-current="true"]')?.getAttribute('data-section') === 'iris');
+    await page.waitForTimeout(300);
+    t = await top(page, 'iris');
+    check(atTop(t) && page.url() === `${base}de/help/#iris`, '/de/help/#iris opens the German Iris section', `top ${t} ${page.url()}`);
+    await page.goto(`${base}help/#offline`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.getElementById('offline')?.open && document.querySelector('.help-toc .toc-link[aria-current="true"]')?.getAttribute('data-section') === 'faq');
+    await page.waitForTimeout(300);
+    check((await inView(page, 'offline')) && page.url() === `${base}help/#offline`, '/help/#offline opens that answer', page.url());
+    // Old ?s= links (already in search results and bookmarks) open the section and become #
+    await page.goto(`${base}help/?s=sounds`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => location.hash === '#sounds');
+    await page.waitForTimeout(300);
+    const sounds = await page.evaluate(() => ({ open: document.getElementById('sounds')?.open, canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') }));
+    check(page.url() === `${base}help/#sounds` && sounds.open && (await inView(page, 'sounds')), 'old /help/?s=sounds opens Sounds and ends at /help/#sounds', `${page.url()} ${JSON.stringify(sounds)}`);
+    check(sounds.canonical?.endsWith('/help/'), 'canonical stays /help/', sounds.canonical);
+    await page.goto(`${base}de/help/?s=java-skins`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => location.hash === '#java-skins');
+    await page.waitForTimeout(300);
+    t = await top(page, 'java-skins');
+    check(page.url() === `${base}de/help/#java-skins` && atTop(t), 'old /de/help/?s=java-skins opens the section at /de/help/#java-skins', `top ${t} ${page.url()}`);
+    const before = await page.evaluate(() => history.length);
+    await page.goto(`${base}help/?s=iris&ref=x`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => location.hash === '#iris');
+    check(page.url() === `${base}help/?ref=x#iris` && (await page.evaluate(() => history.length)) === before + 1, 'old link: other query parameters stay, the URL is replaced (no extra history entry)', page.url());
+    // The footer FAQ link from another page, in the app; then back and forward
+    await page.goto(`${base}guides/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.guides-index .guide-card');
+    await page.evaluate(() => (window.__stay = 1));
+    await page.click('.site-footer a[href$="help/#faq"]');
+    await page.waitForFunction(() => document.querySelector('.help-toc .toc-link[aria-current="true"]')?.getAttribute('data-section') === 'faq');
+    await page.waitForTimeout(300);
+    t = await top(page, 'faq');
+    check(page.url() === `${base}help/#faq` && atTop(t) && (await page.evaluate(() => window.__stay)) === 1, 'footer FAQ link opens /help/#faq in the app without a reload', `top ${t} ${page.url()}`);
+    await page.click('.help-toc .toc-link[data-section="java-skins"]');
+    await page.waitForTimeout(400);
+    t = await top(page, 'java-skins');
+    check(page.url() === `${base}help/#java-skins` && atTop(t) && (await tocCurrent(page)) === 'java-skins', 'table of contents link -> #java-skins', `top ${t} ${page.url()}`);
+    await page.goBack();
+    await page.waitForSelector('.guides-index .guide-card');
+    check(page.url() === `${base}guides/` && (await page.evaluate(() => window.__stay)) === 1, 'back returns to the guides', page.url());
+    await page.goForward();
+    await page.waitForSelector('.help .help-section');
+    await page.waitForTimeout(400);
+    t = await top(page, 'java-skins');
+    check(page.url() === `${base}help/#java-skins` && atTop(t) && (await page.evaluate(() => window.__stay)) === 1, 'forward returns to the section that was open', `top ${t} ${page.url()}`);
+    // An edited fragment on the open page
+    await page.evaluate(() => (location.hash = '#bedrock-packs'));
+    await page.waitForTimeout(400);
+    t = await top(page, 'bedrock-packs');
+    check(atTop(t) && (await tocCurrent(page)) === 'bedrock-packs', 'a new fragment typed on the help page scrolls to it', `top ${t}`);
+    await page.goBack();
+    await page.waitForTimeout(400);
+    t = await top(page, 'java-skins');
+    check(page.url() === `${base}help/#java-skins` && atTop(t), 'back to the previous fragment', `top ${t} ${page.url()}`);
+    // A link inside an answer to another section of the page
+    await page.goto(`${base}help/#storage`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.getElementById('storage')?.open);
+    await page.evaluate(() => (window.__stay = 1));
+    await page.click('#storage a[href$="help/#backup"]');
+    await page.waitForTimeout(400);
+    t = await top(page, 'backup');
+    check(page.url() === `${base}help/#backup` && atTop(t) && (await page.evaluate(() => window.__stay)) === 1, 'an answer\'s link to #backup scrolls within the page', `top ${t} ${page.url()}`);
+    check(errors.length === 0, 'no console errors on help fragments', errors.join('\n'));
     await ctx.close();
   }
 
@@ -369,7 +470,8 @@ try {
     check(page.url() === `${base}textures/`, 'old #/textures link redirects to /textures/', page.url());
     await page.goto(`${base}#/help?s=faq`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.help .help-section');
-    check(page.url() === `${base}help/?s=faq`, 'old #/help?s=faq link keeps the section', page.url());
+    await page.waitForFunction(() => location.hash === '#faq');
+    check(page.url() === `${base}help/#faq`, 'old #/help?s=faq link keeps the section (as #faq)', page.url());
     await page.goto(`${base}textures/#/skins`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-tool-intro="skins"].is-below');
     check(page.url() === `${base}skins/`, 'a hash route on another page wins', page.url());

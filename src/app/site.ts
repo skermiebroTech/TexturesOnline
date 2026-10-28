@@ -51,7 +51,8 @@ export const CONTENT_UPDATED = '2026-10-25';
 export function absoluteUrl(path: string): string {
   const clean = path.replace(/^\/+/, '');
   if (!clean) return SITE_URL;
-  const isFile = /\.[a-z0-9]+$/i.test(clean.split(/[?#]/)[0]);
-  const withSlash = isFile || clean.endsWith('/') || clean.includes('?') ? clean : `${clean}/`;
-  return SITE_URL + withSlash;
+  // The page's folder URL, its query and fragment kept ('help#faq' -> '<site>/help/#faq')
+  const [, route, rest] = /^([^?#]*)(.*)$/.exec(clean)!;
+  const isFile = /\.[a-z0-9]+$/i.test(route);
+  return SITE_URL + (!route || isFile || route.endsWith('/') ? route : `${route}/`) + rest;
 }

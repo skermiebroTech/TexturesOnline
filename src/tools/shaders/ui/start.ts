@@ -2,7 +2,7 @@
 // shader projects.
 
 import { siteFooter } from '../../../app/footer';
-import { navigate } from '../../../core/router';
+import { href as routeHref, navigate } from '../../../core/router';
 import { deleteProject, listProjects, saveProject } from '../../../core/storage';
 import { friendlyError } from '../../../core/net';
 import type { ShaderTarget } from '../../../core/types';
@@ -94,7 +94,7 @@ export function mountStart(root: HTMLElement): () => void {
         h('h3', { class: 'sh-card-sub' }, tx.card.limits),
         h('ul', { class: 'sh-card-list is-limits' }, t.limits.map((g) => h('li', null, icon('info'), h('span', null, g)))),
       ),
-      h('div', { class: 'sh-card-foot' }, start, h('a', { class: 'sh-card-help', href: `#/help?s=${t.helpSection}` }, icon('book-open'), h('span', null, tx.card.installGuide))),
+      h('div', { class: 'sh-card-foot' }, start, h('a', { class: 'sh-card-help', href: routeHref(`/help#${t.helpSection}`) }, icon('book-open'), h('span', null, tx.card.installGuide))),
     );
     card.addEventListener('dblclick', (e) => {
       if ((e.target as HTMLElement).closest('a, button')) return;

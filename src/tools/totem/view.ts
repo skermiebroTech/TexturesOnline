@@ -807,7 +807,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
           edition === 'bedrock'
             ? t.step3.installBedrock
             : t.step3.installJava,
-          h('a', { href: routeHref(`/help?s=${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.step3.installHelp),
+          h('a', { href: routeHref(`/help#${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.step3.installHelp),
         ),
       );
       announce(fmt(t.step3.downloaded, { file: r.filename }));

@@ -160,7 +160,7 @@ export const folderTable = (sub: string, head: { system: string; folder: string 
     ),
   );
 
-/** Expandable questions; the first one starts open. */
+/** Expandable questions; the first one starts open. Ids are `<idPrefix>-<id>` (just `<id>` with an empty prefix). */
 export function faqList(items: FaqItem[], opts: { idPrefix?: string; openFirst?: boolean } = {}): ElNode {
   const prefix = opts.idPrefix ?? 'faq';
   return el(
@@ -169,7 +169,7 @@ export function faqList(items: FaqItem[], opts: { idPrefix?: string; openFirst?:
     items.map((f, i) =>
       el(
         'details',
-        { class: 'faq-item', id: `${prefix}-${f.id}`, open: (opts.openFirst ?? true) && i === 0 },
+        { class: 'faq-item', id: prefix ? `${prefix}-${f.id}` : f.id, open: (opts.openFirst ?? true) && i === 0 },
         el('summary', null, el('span', null, f.q), ic('chevron-down', { class: 'faq-chev' })),
         el('div', { class: 'faq-answer' }, f.a),
       ),

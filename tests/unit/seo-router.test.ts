@@ -1,12 +1,12 @@
 // Path routing: URL <-> route path under any site base, legacy hash links, public page routes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ROUTES, parseLocation, resolveRoute, stripBase, toHref } from '../../src/core/router';
+import { ROUTES, fragmentOf, parseLocation, resolveRoute, stripBase, toHref } from '../../src/core/router';
 import { PUBLIC_PAGES, GUIDES, publicPageMeta } from '../../src/app/seo/meta';
 
 const BASES = ['/', '/TexturesOnline/'];
 
-test('toHref: public pages are folders, project pages are not, queries are kept', () => {
+test('toHref: public pages are folders, project pages are not, queries and fragments are kept', () => {
   const b = '/TexturesOnline/';
   assert.equal(toHref('/', '/'), '/');
   assert.equal(toHref('/', b), '/TexturesOnline/');
@@ -14,7 +14,10 @@ test('toHref: public pages are folders, project pages are not, queries are kept'
   assert.equal(toHref('/textures/', b), '/TexturesOnline/textures/');
   assert.equal(toHref('/textures/abc', b), '/TexturesOnline/textures/abc');
   assert.equal(toHref('/skins/abc/', '/'), '/skins/abc');
-  assert.equal(toHref('/help?s=faq', b), '/TexturesOnline/help/?s=faq');
+  assert.equal(toHref('/help#faq', b), '/TexturesOnline/help/#faq');
+  assert.equal(toHref('/help#faq', '/'), '/help/#faq');
+  assert.equal(toHref('/help?x=1#faq', '/'), '/help/?x=1#faq');
+  assert.equal(toHref('/help?s=faq', b), '/TexturesOnline/help/?s=faq', 'old links keep their query');
   assert.equal(toHref('/guides/make-a-skin', '/'), '/guides/make-a-skin/');
   assert.equal(toHref('/kit', '/'), '/kit/');
   assert.equal(toHref('/nope/x', '/'), '/nope/x');
@@ -26,6 +29,7 @@ test('toHref turns legacy hash locations into paths', () => {
   assert.equal(toHref('#/textures/abc?x=1', '/'), '/textures/abc?x=1');
   assert.equal(toHref('#/', '/TexturesOnline/'), '/TexturesOnline/');
   assert.equal(toHref('#/help?s=java-packs', '/'), '/help/?s=java-packs');
+  assert.equal(toHref('#/help#java-packs', '/'), '/help/#java-packs');
 });
 
 test('stripBase maps a URL path back to the route path', () => {
@@ -51,6 +55,13 @@ test('every route path survives a round trip through a URL under each base', () 
 });
 
 test('parseLocation accepts paths, legacy hashes and ignores fragments', () => {
+  assert.equal(parseLocation('/help#faq').path, '/help');
+  assert.equal(parseLocation('/help#faq').query.toString(), '');
+  assert.equal(fragmentOf('/help#faq'), 'faq');
+  assert.equal(fragmentOf('/de/help?x=1#iris'), 'iris');
+  assert.equal(fragmentOf('/help'), '');
+  assert.equal(fragmentOf('#/help'), '', 'a legacy hash is the path, not a fragment');
+  assert.equal(fragmentOf('#/help#faq'), 'faq');
   assert.equal(parseLocation('/help?s=faq#top').query.get('s'), 'faq');
   assert.equal(parseLocation('/help?s=faq#top').path, '/help');
   assert.equal(parseLocation('#/textures/abc?x=1').path, '/textures/abc');

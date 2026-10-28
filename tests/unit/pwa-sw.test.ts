@@ -58,7 +58,8 @@ test('requests are routed by kind, at the domain root and under a project path',
 });
 
 test('pages are cached by folder URL; offline, a folder path without its slash is redirected first', () => {
-  assert.equal(pageKey(`${ROOT}help?s=faq`), `${ROOT}help/`);
+  assert.equal(pageKey(`${ROOT}help#faq`), `${ROOT}help/`);
+  assert.equal(pageKey(`${ROOT}help?s=faq`), `${ROOT}help/`, 'old ?s= links are the same page');
   assert.equal(pageKey(`${ROOT}help/?s=faq#x`), `${ROOT}help/`);
   assert.equal(pageKey(`${ROOT}de/`), `${ROOT}de/`);
   assert.equal(pageKey(`${ROOT}`), ROOT);
@@ -67,6 +68,7 @@ test('pages are cached by folder URL; offline, a folder path without its slash i
   assert.equal(needsSlashRedirect(`${ROOT}help/`), false);
   assert.equal(needsSlashRedirect(`${ROOT}sitemap.xml`), false);
   assert.equal(withSlash(`${PROJECT}de/help?s=iris`), `${PROJECT}de/help/?s=iris`);
+  assert.equal(withSlash(`${PROJECT}de/help#iris`), `${PROJECT}de/help/#iris`);
 });
 
 test('precache: the app code, fonts, icons, manifest, home page and app shell; not the big or crawler-only files', () => {

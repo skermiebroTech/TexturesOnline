@@ -42,7 +42,7 @@ export function isLocale(s: string): s is Locale {
   return (LOCALES as readonly string[]).includes(s);
 }
 
-/** Splits '/de/help?s=x' into its language and route path: { locale: 'de', path: '/help?s=x' }. */
+/** Splits '/de/help#x' into its language and route path: { locale: 'de', path: '/help#x' }. */
 export function splitLocale(path: string): { locale: Locale; path: string } {
   const m = /^\/([a-z]{2}(?:-[a-z]{2})?)(?=$|[/?#])(.*)$/.exec(path);
   if (m && m[1] !== DEFAULT_LOCALE && isLocale(m[1])) {
@@ -52,7 +52,7 @@ export function splitLocale(path: string): { locale: Locale; path: string } {
   return { locale: DEFAULT_LOCALE, path };
 }
 
-/** Route path in a language's folder, without any checks: prefixPath('/help?s=x', 'de') === '/de/help?s=x'. */
+/** Route path in a language's folder, without any checks: prefixPath('/help#x', 'de') === '/de/help#x'. */
 export function prefixPath(path: string, locale: Locale): string {
   if (locale === DEFAULT_LOCALE) return path;
   const p = path.startsWith('/') ? path : `/${path}`;

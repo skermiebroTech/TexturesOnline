@@ -1015,7 +1015,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
       installBox.replaceChildren(
         h('div', { class: 'cv-file' }, icon('check', { size: 20 }), h('strong', null, r.filename), h('span', { class: 'faint small' }, `${formatBytes(r.blob.size)} · ${fmt(t.download.files, { count: r.files.length })}${r.packVersion ? ` · v${r.packVersion.join('.')}` : ''}`)),
         ...(r.notes.length ? [h('ul', { class: 'cv-note-list fm-pack-notes' }, r.notes.map((n) => h('li', null, n)))] : []),
-        h('p', { class: 'small muted' }, edition === 'bedrock' ? t.download.installBedrock : t.download.installJava, h('a', { href: routeHref(`/help?s=${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.download.installHelp)),
+        h('p', { class: 'small muted' }, edition === 'bedrock' ? t.download.installBedrock : t.download.installJava, h('a', { href: routeHref(`/help#${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.download.installHelp)),
       );
       announce(fmt(t.download.downloaded, { file: r.filename }));
     } catch (err) {

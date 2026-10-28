@@ -12,7 +12,8 @@ test('every card on the Everything page leads to a page or help answer that exis
   for (const to of ALL_LINKS) {
     const url = new URL(to, 'https://example.com');
     assert.ok(pages.has(url.pathname), `${to}: no such page`);
-    const s = url.searchParams.get('s');
+    assert.equal(url.search, '', `${to}: help sections are fragments (/help#id), not queries`);
+    const s = url.hash.slice(1);
     if (s) assert.ok(HELP_SECTION_IDS.includes(s) || FAQ.some((f) => f.id === s), `${to}: no help section or answer "${s}"`);
   }
 });

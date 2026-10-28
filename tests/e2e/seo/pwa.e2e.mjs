@@ -114,6 +114,8 @@ async function offlineRoutes(label, page, base) {
     { path: 'skins/', ready: '[data-tool-intro="skins"]', lang: 'en', note: 'skin tool (never visited)' },
     { path: 'privacy/', ready: READY.privacy, lang: 'en', note: 'privacy page (never visited)' },
     { path: 'help', ready: READY.help, lang: 'en', note: 'folder path without its slash' },
+    { path: 'de/help/#iris', ready: READY.help, lang: 'de', hash: '#iris', note: 'German help section by fragment' },
+    { path: 'help/?s=sounds', ready: READY.help, lang: 'en', hash: '#sounds', note: 'old ?s= help link, rewritten to #sounds' },
   ];
   for (const c of cases) {
     let ok = false;
@@ -121,8 +123,9 @@ async function offlineRoutes(label, page, base) {
     try {
       await page.goto(base + c.path, { waitUntil: 'domcontentloaded', timeout: 20000 });
       await page.waitForSelector(c.ready, { timeout: 20000 });
+      if (c.hash) await page.waitForFunction((h) => location.hash === h && document.querySelector('.help-toc .toc-link[aria-current="true"]')?.getAttribute('data-section') === (h === '#sounds' ? 'faq' : h.slice(1)), c.hash, { timeout: 20000 });
       const lang = await page.evaluate(() => document.documentElement.lang);
-      ok = lang === c.lang;
+      ok = lang === c.lang && (!c.hash || !page.url().includes('?s='));
       detail = `lang ${lang} url ${page.url()}`;
     } catch (err) {
       detail = String(err).split('\n')[0];

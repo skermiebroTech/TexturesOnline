@@ -612,7 +612,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
             'p',
             { class: 'small muted' },
             edition === 'bedrock' ? t.result.installBedrock : t.result.installJava,
-            h('a', { href: routeHref(`/help?s=${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.result.installHelp),
+            h('a', { href: routeHref(`/help#${edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.result.installHelp),
           ),
         );
         if (r.warnings.length) {

@@ -446,7 +446,7 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
             'p',
             { class: 'small muted' },
             target.edition === 'bedrock' ? t.result.installBedrock : t.result.installJava,
-            h('a', { href: routeHref(`/help?s=${target.edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.result.installHelp),
+            h('a', { href: routeHref(`/help#${target.edition === 'bedrock' ? 'bedrock-packs' : 'java-packs'}`) }, t.result.installHelp),
           ),
         );
         if (r.warnings.length) {

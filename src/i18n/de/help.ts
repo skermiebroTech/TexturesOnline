@@ -454,7 +454,7 @@ export const HELP: HelpText = {
     {
       id: 'storage',
       q: 'Wo werden meine Projekte gespeichert?',
-      a: [p('Im Speicher deines Browsers auf diesem Gerät. Sie bleiben, bis du sie löschst oder die Daten dieser Website entfernst. Um eine Kopie zu behalten oder sie auf einen anderen Computer mitzunehmen, speichere eine Projektdatei (', code('.tpmproject'), ') oder eine Sicherung aller Projekte (', code('.tpmbackup'), ') und öffne sie dort. ', link('/help?s=backup', 'So sicherst du Projekte und stellst sie wieder her'), '.')],
+      a: [p('Im Speicher deines Browsers auf diesem Gerät. Sie bleiben, bis du sie löschst oder die Daten dieser Website entfernst. Um eine Kopie zu behalten oder sie auf einen anderen Computer mitzunehmen, speichere eine Projektdatei (', code('.tpmproject'), ') oder eine Sicherung aller Projekte (', code('.tpmbackup'), ') und öffne sie dort. ', link('/help#backup', 'So sicherst du Projekte und stellst sie wieder her'), '.')],
     },
     {
       id: 'versions',

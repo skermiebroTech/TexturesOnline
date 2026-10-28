@@ -79,13 +79,13 @@ const VARIANT: Partial<Record<IssueCode, (i: Issue) => string>> = {
 const LINKS: Record<IssueLink, { to: string; label: () => string; icon: IconName }> = {
   converter: { to: '/texture-pack-converter', label: () => r.links.converter, icon: 'repeat' },
   install: { to: '/guides/install-resource-packs', label: () => r.links.install, icon: 'download' },
-  'shaders-help': { to: '/help?s=iris', label: () => r.links.shadersHelp, icon: 'sparkles' },
+  'shaders-help': { to: '/help#iris', label: () => r.links.shadersHelp, icon: 'sparkles' },
   formats: { to: '/guides/minecraft-pack-format-versions', label: () => r.links.formats, icon: 'bulletlist' },
   textures: { to: '/textures', label: () => r.links.textures, icon: 'image' },
-  sounds: { to: '/help?s=sounds', label: () => r.links.sounds, icon: 'music' },
+  sounds: { to: '/help#sounds', label: () => r.links.sounds, icon: 'music' },
   skins: { to: '/skin-pack-maker', label: () => r.links.skins, icon: 'package' },
   'not-working': { to: '/guides/texture-pack-not-working', label: () => r.links.notWorking, icon: 'warning-diamond' },
-  'bedrock-packs': { to: '/help?s=bedrock-packs', label: () => r.links.bedrockPacks, icon: 'gamepad' },
+  'bedrock-packs': { to: '/help#bedrock-packs', label: () => r.links.bedrockPacks, icon: 'gamepad' },
 };
 
 const SEVERITY_ICON: Record<Severity, IconName> = { error: 'square-alert', broken: 'warning-diamond', warning: 'circle-info', info: 'info' };
@@ -516,7 +516,7 @@ export function createReport(opts: Options): ReportHandle {
       box.hidden = false;
       box.replaceChildren(
         h('div', { class: 'cv-file' }, icon('check', { size: 20 }), h('strong', null, out.name), h('span', { class: 'faint small' }, `${formatBytes(out.blob.size)} · ${fmt(r.download.saved, { count: out.count })}`)),
-        h('p', { class: 'small muted' }, bedrock ? r.download.bedrock : r.download.java, h('a', { href: routeHref(`/help?s=${bedrock ? 'bedrock-packs' : 'java-packs'}`) }, r.download.help)),
+        h('p', { class: 'small muted' }, bedrock ? r.download.bedrock : r.download.java, h('a', { href: routeHref(`/help#${bedrock ? 'bedrock-packs' : 'java-packs'}`) }, r.download.help)),
       );
     } catch (err) {
       console.error(err);

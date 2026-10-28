@@ -230,7 +230,11 @@ test('asset URLs and internal links are correct for the page depth', () => {
     // shared chunk from the template is not preloaded twice
     assert.equal((html.match(/assets\/shared-abc\.js/g) ?? []).length, 1, `${file} dedupes preloads`);
   }
-  assert.equal(relativeHref('/help?s=faq', '../'), '../help/?s=faq');
+  assert.equal(relativeHref('/help#faq', '../'), '../help/#faq');
+  assert.equal(relativeHref('/de/help#iris', '../../'), '../../de/help/#iris');
+  assert.equal(absoluteUrl('/help#faq'), `${SITE_URL}help/#faq`);
+  assert.equal(absoluteUrl('/help'), `${SITE_URL}help/`);
+  assert.equal(absoluteUrl('/llms.txt'), `${SITE_URL}llms.txt`);
   assert.equal(relativeHref('/', './'), './');
   assert.equal(relativeHref('/fonts/OFL.txt', '../../'), '../../fonts/OFL.txt');
 });
@@ -355,4 +359,38 @@ test('markup renderers escape and convert', () => {
   assert.equal(renderText(tree), 'A & B one <tag> help first second');
   const md = renderMarkdown(tree, { link: (to) => `https://example.test${to}/` });
   assert.equal(md, '## A & B\n\none `<tag>` [help](https://example.test/help/)\n\n- first\n- second');
+});
+
+test('help sections are linked by fragment (/help/#faq), never by query, and every fragment has its target', () => {
+  // One help page per language for search engines: no '?s=' variants anywhere (pages, llms files, sitemap).
+  for (const [name, source] of byName) {
+    if (!/\.(html|txt|xml)$/.test(name)) continue;
+    assert.ok(!/help\/?\?s=/.test(source), `${name} links a help section by query`);
+  }
+  const helpIds = new Map<string, Set<string>>();
+  for (const p of pages.filter((x) => splitLocale(x.meta.path).path === '/help')) {
+    const html = byName.get(pageFileName(p.meta.path))!;
+    const ids = Array.from(html.matchAll(/\sid="([^"]+)"/g), (m) => m[1]);
+    assert.deepEqual(ids.filter((id, i) => ids.indexOf(id) !== i), [], `${p.meta.path}: ids are unique`);
+    helpIds.set(p.meta.path, new Set(ids));
+    // Fragments name the section or FAQ answer itself, so they work before the app runs too.
+    for (const id of ['java-packs', 'iris', 'backup', 'faq']) assert.match(html, new RegExp(`<section class="help-section[^"]*" id="${id}"`), `${p.meta.path} #${id}`);
+    assert.match(html, /<details class="faq-item" id="offline"/, `${p.meta.path} #offline`);
+  }
+  assert.equal(helpIds.size, 6, 'a help page in every language');
+  let links = 0;
+  for (const p of pages) {
+    const html = byName.get(pageFileName(p.meta.path))!;
+    for (const m of html.matchAll(/href="([^"]*help\/#([^"]+))"/g)) {
+      const target = new URL(m[1], absoluteUrl(p.meta.path));
+      const helpPath = target.pathname.replace(/\/$/, '') || '/';
+      const ids = helpIds.get(helpPath);
+      assert.ok(ids, `${p.meta.path}: ${m[1]} leads to a help page`);
+      assert.ok(ids.has(decodeURIComponent(m[2])), `${p.meta.path}: ${m[1]} has its target`);
+      links++;
+    }
+  }
+  assert.ok(links > 50, `help fragment links are checked (${links})`);
+  assert.ok(byName.get(pageFileName('/de/guides'))!.includes('href="../../de/help/#faq"'), 'German footer FAQ link');
+  assert.ok(byName.get('llms-full.txt')!.includes(`${SITE_URL}help/#`), 'llms-full links help sections by fragment');
 });
