@@ -1477,3 +1477,273 @@ const convertJavaToBedrock: GuideText = {
   ],
   ctaLabel: 'Otwórz konwerter paczek tekstur',
 };
+
+// ---------------------------------------------------------------- merge packs
+
+const MERGE_STEPS: Child[] = [
+  ['Otwórz ', link('/merge-texture-packs', 'łączenie paczek tekstur'), ' i dodaj od dwóch do ośmiu paczek: pliki ', code('.zip'), ' z Javy albo ', code('.mcpack'), ' z Bedrocka.'],
+  'Ustaw je w kolejności, przeciągając albo strzałkami. Tam, gdzie dwie paczki zmieniają ten sam plik, wygrywa paczka na górze.',
+  'Nazwij nową paczkę i wybierz jej ikonę. W Javie wybierz też wersję, w którą grasz.',
+  ['Kliknij ', strong('Połącz'), ' i przejrzyj listę konfliktów.'],
+  'Pobierz połączoną paczkę albo otwórz ją w edytorze, żeby pracować dalej.',
+];
+
+const mergePacks: GuideText = {
+  image: SHOTS.mergeResult,
+  intro: [
+    p(
+      'Minecraft już umie układać paczki tekstur jedna na drugiej: włącz kilka, a tam, gdzie dwie zmieniają tę samą teksturę, wygrywa ta wyżej na liście. Łączenie robi z kilku paczek jedną, z tą kolejnością wbudowaną na stałe. Przydaje się na serwerze albo Realmie, który przyjmuje tylko jedną paczkę, żeby podzielić się ulubionym zestawem albo żeby mieć krótką listę paczek. Darmowe narzędzie ',
+      link('/merge-texture-packs', 'Łączenie paczek tekstur'),
+      ' robi to w twojej przeglądarce.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Otwórz ', link('/merge-texture-packs', 'łączenie paczek tekstur'), ' i dodaj od dwóch do ośmiu paczek tej samej edycji.'],
+      'Przeciągnij je w kolejności: paczka na górze wygrywa każdy konflikt.',
+      'Kliknij „Połącz”, sprawdź listę konfliktów i pobierz paczkę.',
+    ],
+  },
+  howto: { name: 'Jak połączyć paczki tekstur do Minecrafta', steps: MERGE_STEPS },
+  sections: [
+    { id: 'steps', title: 'Krok po kroku', body: [steps(MERGE_STEPS), figure(SHOTS.mergeSettings), figure(SHOTS.mergeResult)] },
+    {
+      id: 'wins',
+      title: 'Która paczka wygrywa?',
+      body: [
+        p('Ta sama zasada co w Minecrafcie: przy każdym pliku wygrywa paczka, która jest najwyżej na liście. Tekstura i jej plik animacji zawsze zostają razem, więc animacja z niższej paczki nigdy nie trafia do obrazka z wyższej.'),
+        p('Niektóre pliki są łączone zamiast zastępowane, żeby nic przydatnego nie zginęło:'),
+        ul([
+          [strong('Java: '), 'pliki językowe (wpis po wpisie), ', code('sounds.json'), ' (dźwięk po dźwięku), atlasy tekstur i czcionki.'],
+          [strong('Bedrock: '), code('terrain_texture.json'), ', ', code('item_texture.json'), ', ', code('flipbook_textures.json'), ', ', code('blocks.json'), ', definicje dźwięków i pliki językowe.'],
+        ]),
+        p('Wynik wymienia każdy konflikt, na przykład „block/stone.png z paczki A, zastępuje paczkę B”, i ile plików dała każda paczka.'),
+      ],
+    },
+    {
+      id: 'versions',
+      title: 'Paczki do różnych wersji',
+      body: [
+        p(
+          'Paczki do różnych wersji Javy da się połączyć: wybierz wersję, w którą grasz, a starsze paczki najpierw dostaną jej nazwy tekstur (te same zmiany nazw, których używa ',
+          link('/texture-pack-converter', 'konwerter'),
+          `), więc paczka do 1.12 i paczka do ${LATEST} będą do siebie pasować. Paczek do Javy i do Bedrocka nie da się połączyć bezpośrednio: najpierw przekonwertuj jedną z nich.`,
+        ),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'Ręczne łączenie paczek',
+      body: [
+        steps([
+          'Rozpakuj każdą paczkę do osobnego folderu.',
+          'Zrób nowy folder i skopiuj do niego najpierw paczkę o najniższym priorytecie, potem każdą wyższą na wierzch, zastępując pliki, kiedy komputer zapyta.',
+          ['Pliki, które powinny być łączone (', code('sounds.json'), ', pliki językowe, atlasy), połącz ręcznie – inaczej wygra ostatnia kopia.'],
+          ['Zostaw jeden ', code('pack.mcmeta'), ' (Java) albo napisz nowy ', code('manifest.json'), ' z nowymi identyfikatorami (Bedrock), a potem spakuj zawartość do zipa.'],
+        ]),
+        p('Narzędzie robi to wszystko, łącznie z łączonymi plikami i właściwym formatem paczki – ręcznie opłaca się to tylko przy nietypowych paczkach.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'how-many', q: 'Ile paczek mogę połączyć?', a: [p('Od dwóch do ośmiu naraz. Żeby połączyć więcej, połącz wynik jeszcze raz z kolejnymi paczkami.')] },
+    { id: 'shaders', q: 'Mogę łączyć paczki shaderów?', a: [p('Nie. Paczki shaderów do Irisa i OptiFine zawsze działają pojedynczo. Paczki zasobów z shaderami bez modów da się połączyć jak każdą paczkę zasobów, ale dwie paczki, które zmieniają ten sam plik shadera, nie łączą swoich efektów.')] },
+    { id: 'server', q: 'Mogę użyć połączonej paczki jako paczki zasobów serwera?', a: [p('Tak. Wgraj połączony ', code('.zip'), ' tam, gdzie trzymasz paczki serwera, i wpisz go w ', code('server.properties'), ' jak każdą inną paczkę.')] },
+    { id: 'upload', q: 'Czy moje paczki są gdzieś wysyłane?', a: [p('Nie. Paczki są łączone w twojej przeglądarce i zostają na twoim urządzeniu.')] },
+  ],
+  ctaLabel: 'Połącz paczki tekstur',
+};
+
+// ---------------------------------------------------------------- bedrock skin pack
+
+const SKIN_PACK_STEPS: Child[] = [
+  ['Otwórz ', link('/skin-pack-maker', 'kreator paczek skinów'), ' i zacznij skina: pusty albo kolorowy szablon, PNG, który już masz, skina gracza Javy po nicku albo jeden z domyślnych skinów. Wybierz szerokie (4 piksele) albo wąskie (3 piksele) ręce.'],
+  'Pomaluj go na szablonie 64×64 albo prosto na modelu 3D. Każdy skin jest zapisywany na twoim urządzeniu jako osobny projekt, a jego nazwa to nazwa, którą gracze zobaczą w grze.',
+  'Tak samo zrób pozostałe skiny do paczki.',
+  ['Otwórz jeden z nich, wybierz ', strong('Eksportuj'), ' › ', strong('Paczka skinów do Bedrocka (.mcpack)'), ', nazwij paczkę, zaznacz pozostałe skiny i naciśnij ', strong('Pobierz paczkę'), '.'],
+  ['Otwórz ', code('.mcpack'), ' na Windowsie, Androidzie, iPhonie albo iPadzie. Minecraft go zaimportuje.'],
+  ['W Minecrafcie przejdź do ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ', znajdź swoją paczkę, wybierz skina i stuknij ', strong(BEDROCK.equip), '.'],
+];
+
+const bedrockSkinPack: GuideText = {
+  image: SHOTS.skinPack,
+  intro: [
+    p(
+      strong('Tak, możesz za darmo zrobić własną paczkę skinów do Minecraft Bedrock.'),
+      ` Paczka skinów (skin pack, w polskiej wersji gry „${BEDROCK.skinPack}”) to plik `,
+      code('.mcpack'),
+      ' z jednym albo kilkoma skinami i dwoma małymi plikami z opisem, ',
+      code('manifest.json'),
+      ' i ',
+      code('skins.json'),
+      '. Narysuj albo wgraj skiny w ',
+      link('/skin-pack-maker', 'kreatorze paczek skinów'),
+      `, pobierz paczkę, otwórz ją na Windowsie, Androidzie, iPhonie albo iPadzie i noś swoje skiny w menu „${BEDROCK.dressingRoom}”. Sprzedawanie paczki na Minecraft Marketplace (w grze „Rynek”) to coś innego: publikują tam tylko partnerzy Marketplace zatwierdzeni przez Mojang.`,
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Narysuj albo wgraj każdego skina w ', link('/skin-pack-maker', 'kreatorze paczek skinów'), ', z szerokimi albo wąskimi rękami.'],
+      ['Wybierz ', strong('Eksportuj'), ' › ', strong('Paczka skinów do Bedrocka (.mcpack)'), ', nazwij paczkę i zaznacz pozostałe skiny.'],
+      ['Otwórz ', code('.mcpack'), ' i załóż skina w ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), '.'],
+    ],
+  },
+  howto: { name: 'Jak zrobić paczkę skinów do Minecraft Bedrock', steps: SKIN_PACK_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Co jest w paczce skinów?',
+      body: [
+        p('Paczka skinów to plik zip z rozszerzeniem ', code('.mcpack'), '. Na jej najwyższym poziomie leżą te pliki:'),
+        table(
+          ['Plik', 'Do czego służy'],
+          [
+            [code('manifest.json'), ['Nazwa paczki, dwa unikalne identyfikatory (UUID) i numer wersji. Typ modułu ', code('skin_pack'), ' mówi Minecraftowi, że to paczka skinów, a nie paczka tekstur.']],
+            [code('skins.json'), ['Lista skinów: dla każdego klucz nazwy, jego PNG, model (', code('geometry.humanoid.custom'), ' dla szerokich rąk, ', code('geometry.humanoid.customSlim'), ' dla wąskich) i ', code('"type": "free"'), '.']],
+            ['Obrazki skinów', ['Jeden PNG 64×64 na skina, tuż obok ', code('manifest.json'), '.']],
+            [code('texts/en_US.lang'), [`Nazwy w menu „${BEDROCK.dressingRoom}” dla paczki i każdego skina. `, code('texts/languages.json'), ' wymienia pliki językowe.']],
+          ],
+        ),
+        p(code('"type": "free"'), ' znaczy, że każdy, kto ma paczkę, może nosić tego skina. Paczki z Marketplace oznaczają większość skinów jako ', code('"paid"'), ' – te odblokowują się dopiero po zakupie. Dlatego własna paczka zawsze używa „free”.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Z kreatorem paczek skinów',
+      body: [
+        steps(SKIN_PACK_STEPS),
+        figure(SHOTS.skinPack),
+        p(
+          'Kreator zapisuje za ciebie ',
+          code('manifest.json'),
+          ', ',
+          code('skins.json'),
+          ' i plik językowy, z nowymi identyfikatorami dla każdej paczki. Szerokie i wąskie skiny mieszczą się w jednej paczce, każdy skin zachowuje swoją nazwę, a nazwa paczki, którą wpiszesz, jest widoczna dla wszystkich nad skinami.',
+        ),
+        figure(SHOTS.skin3d),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Instalacja na Windowsie, Androidzie i iOS',
+      body: [
+        tabbed(
+          'install-skin-pack',
+          [
+            {
+              value: 'windows',
+              label: 'Windows',
+              icon: 'monitor',
+              content: [
+                steps([
+                  ['Kliknij dwukrotnie ', code('.mcpack'), '. Minecraft się otworzy i pokaże ', el('em', null, BEDROCK.importStarted), ', a potem ', el('em', null, `${BEDROCK.imported}: …`), '.'],
+                  ['Otwórz ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ', wybierz skina ze swojej paczki i stuknij ', strong(BEDROCK.equip), '.'],
+                ]),
+              ],
+            },
+            {
+              value: 'mobile',
+              label: 'Android i iOS',
+              icon: 'smartphone',
+              content: [
+                steps([
+                  ['Pobierz ', code('.mcpack'), ' na telefon albo tablet.'],
+                  [strong('Android: '), 'otwórz go w pobranych plikach albo aplikacji Pliki i wybierz Minecrafta. ', strong('iPhone / iPad: '), 'stuknij go w aplikacji Pliki, a potem ', uiPath('Udostępnij', 'Minecraft'), '.'],
+                  ['Otwórz ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ' i załóż skina ze swojej paczki.'],
+                ]),
+              ],
+            },
+            {
+              value: 'console',
+              label: 'Konsole',
+              icon: 'gamepad',
+              content: [p('Xbox, PlayStation i Switch nie mogą importować paczek skinów ani plików skinów. Na konsolach własny wygląd pochodzi z kreatora postaci albo z paczek skinów z Marketplace.')],
+            },
+          ],
+          UI_PL.platform,
+        ),
+        callout(
+          'tip',
+          'Tylko jeden skin?',
+          `Do jednego skina nie potrzebujesz paczki: w „${BEDROCK.classicSkins}” otwórz „${BEDROCK.ownedSkins}”, wybierz „${BEDROCK.import}” i wskaż PNG 64×64. Paczka jest wygodniejsza przy kilku skinach, zachowuje ich nazwy i instaluje się tak samo na każdym urządzeniu.`,
+        ),
+      ],
+    },
+    {
+      id: 'update',
+      title: 'Aktualizacja albo usuwanie paczki skinów',
+      body: [
+        p('Żeby zmienić już zaimportowaną paczkę, edytuj skiny, wyeksportuj paczkę jeszcze raz z tego samego projektu i otwórz nowy plik. Kreator zachowuje oba identyfikatory paczki i podnosi jej wersję (1.0.0, potem 1.0.1 i tak dalej), więc Minecraft zastąpi zainstalowaną paczkę, zamiast pokazywać ją dwa razy.'),
+        p('Paczka zrobiona ręcznie? Zachowaj oba UUID i podnieś wersję w ', code('manifest.json'), ', w nagłówku i w module. Nowe UUID dają drugą paczkę, a ta sama wersja nie zaimportuje się drugi raz, bo paczka jest już zainstalowana.'),
+        p('Żeby ją usunąć, przejdź do ', uiPath(BEDROCK.settings, BEDROCK.storage), ', wybierz paczkę i ją usuń.'),
+      ],
+    },
+    {
+      id: 'arms',
+      title: 'Szerokie czy wąskie ręce',
+      body: [
+        p(
+          'Każdy skin w paczce ma własny model, więc paczka może mieszać oba. ',
+          strong('Szerokie'),
+          ' ręce (Steve) mają 4 piksele szerokości i używają ',
+          code('geometry.humanoid.custom'),
+          '; ',
+          strong('wąskie'),
+          ' ręce (Alex) mają 3 piksele szerokości i używają ',
+          code('geometry.humanoid.customSlim'),
+          '. Model musi pasować do tego, jak skin był malowany, bo inaczej ręce wyglądają na ucięte albo mają przezroczysty pasek.',
+        ),
+        p('Zaimportowane paczki mogą używać tylko tych dwóch modeli. Własne kształty, na przykład ogromna głowa, są niedozwolone w paczce skinów importowanej samodzielnie.'),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'Ręczne budowanie paczki skinów',
+      body: [
+        p('Pliki możesz też napisać samodzielnie w dowolnym edytorze tekstu. Paczka z dwoma skinami wygląda tak:'),
+        pre(SKIN_PACK_TREE),
+        p(code('manifest.json'), ' potrzebuje dwóch różnych UUID. Wygeneruj własne dowolnym generatorem UUID, zamiast kopiować te niżej, i zachowaj je na późniejsze aktualizacje:'),
+        pre(SKIN_PACK_MANIFEST.trimEnd()),
+        p(code('skins.json'), ' wymienia skiny. ', code('serialize_name'), ' i ', code('localization_name'), ' to identyfikator paczki: jedno słowo bez spacji, którego nie używa żadna inna paczka. Kreator paczek skinów dla pewności dokleja początek UUID paczki.'),
+        pre(SKIN_PACK_SKINS_JSON.trimEnd()),
+        p(code('texts/en_US.lang'), ' zawiera nazwy pokazywane w grze, a ', code('texts/languages.json'), ' zawiera ', code('["en_US"]'), ':'),
+        pre(SKIN_PACK_LANG.trimEnd()),
+        steps([
+          ['Ułóż pliki w folderze jak wyżej, z plikami PNG tuż obok ', code('manifest.json'), '.'],
+          'Zaznacz pliki w folderze, a nie sam folder, i spakuj je do zipa.',
+          ['Zmień rozszerzenie zipa z ', code('.zip'), ' na ', code('.mcpack'), ' i go otwórz.'],
+        ]),
+        p('Jeśli import się nie udaje, zwykle winny jest folder wokół plików w zipie, literówka w JSON-ie albo dwa takie same UUID. ', link('/skin-pack-maker', 'Kreator paczek skinów'), ' pisze dokładnie te pliki – możesz więc też wyeksportować paczkę, zmienić rozszerzenie na ', code('.zip'), ' i zajrzeć do środka.'),
+      ],
+    },
+    {
+      id: 'marketplace',
+      title: 'Paczki z Marketplace a własne paczki',
+      body: [
+        p('Chcesz zrobić paczkę skinów na Minecraft Marketplace? Publikują tam tylko partnerzy Marketplace: studia i twórcy, których Mojang przyjął do programu partnerskiego i którzy wysyłają każdą paczkę do sprawdzenia. Z gry ani ze strony internetowej nie da się wgrać paczki na Marketplace.'),
+        ul([
+          [strong('Własna paczka skinów: '), 'za darmo, może ją zrobić każdy, importuje się z pliku ', code('.mcpack'), ' na Windowsie, Androidzie, iPhonie i iPadzie. Plikiem możesz podzielić się ze znajomymi.'],
+          [strong('Paczka skinów z Marketplace: '), 'zrobiona przez zatwierdzonego partnera, kupiona za Minecoins albo darmowa, dostępna na każdym urządzeniu, także na konsolach.'],
+        ]),
+        p('Wkładaj do paczki tylko skiny, które zrobisz samodzielnie albo którymi wolno ci się dzielić.'),
+      ],
+    },
+    {
+      id: 'trusted',
+      title: 'Dlaczego znajomi mogą widzieć domyślnego skina',
+      body: [
+        p('Bedrock ma ustawienie ', strong(BEDROCK.trustedSkins), '. Gracze, którzy je włączą, widzą każdy własny skin, także te z zaimportowanych paczek, jako domyślnego skina, takiego jak Steve czy Alex. To ustawienie po ich stronie, więc nie możesz go za nich zmienić. Wszyscy inni widzą twojego skina tak, jak go zrobisz.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'free', q: 'Czy można za darmo robić paczki skinów do Minecraft Bedrock?', a: [p('Tak. Własne paczki skinów robi się i używa za darmo, na Windowsie, Androidzie, iPhonie i iPadzie. Kreator paczek skinów nie wymaga konta, a twoje skiny zostają na twoim urządzeniu.')] },
+    { id: 'java', q: 'Czy paczki skinów działają w Java Edition?', a: [p('Nie. Paczki skinów są tylko w Bedrocku. W Javie nosisz jednego skina naraz, wgranego jako PNG w Minecraft Launcherze. ', link('/guides/make-a-skin', 'Jak zrobić skina'), '.')] },
+    { id: 'console', q: 'Mogę używać własnej paczki skinów na Xboksie, PlayStation albo Switchu?', a: [p('Nie. Konsole nie mogą importować paczek skinów ani plików skinów. Windows, Android, iPhone i iPad mogą.')] },
+    { id: 'marketplace', q: 'Mogę sprzedawać moją paczkę skinów na Marketplace?', a: [p('Tylko jako zatwierdzony partner Minecraft Marketplace. Własną paczką możesz się dzielić jako plikiem .mcpack, ale nie możesz jej sprzedawać w grze.')] },
+    { id: 'failed', q: 'Dlaczego import się nie udaje?', a: [p('Zwykle w zipie jest folder wokół plików, JSON ma literówkę, oba UUID są takie same albo paczka z tymi samymi identyfikatorami i tą samą wersją jest już zainstalowana. Paczki z kreatora paczek skinów unikają wszystkich czterech błędów.')] },
+  ],
+  ctaLabel: 'Otwórz kreator paczek skinów',
+};
