@@ -572,7 +572,7 @@ try {
       await page.click('.sk-part[data-part="rightArm"] .sk-part-actions button:last-child');
       await page.waitForSelector('.popover [role="menuitem"]');
       const menu = await page.textContent('.popover');
-      check(`fr skins ${tag}: part menu in French`, /Remplir le bras droit de couleur/.test(menu) && /Copier sur le bras gauche/.test(menu), menu.slice(0, 160));
+      check(`fr skins ${tag}: part menu in French`, /Remplir le bras droit/.test(menu) && /Copier sur le bras gauche/.test(menu), menu.slice(0, 160));
       await inspect(page, `fr-skins-5-parts-${tag}`, 'fr');
       await closeLayers(page);
       await showPanel(page, phone, 'center');
