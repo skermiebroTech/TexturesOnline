@@ -52,6 +52,14 @@ const DE: EditorLanguage = {
     redo: 'Wiederholen – Strg+Umschalt+Z',
     shortcutsButton: 'Tastenkürzel – ?',
     exportButton: 'Exportieren',
+    share: {
+      button: 'Bild deines Packs teilen',
+      making: 'Bild wird erstellt …',
+      shared: 'Bild geteilt',
+      saved: 'Bild gespeichert: {file}',
+      failed: 'Das Bild konnte nicht erstellt werden. Versuch es noch einmal.',
+      changed: '{count, plural, one {# Textur geändert} other {# Texturen geändert}}',
+    },
     openingModelEditor: 'Modell-Editor wird geöffnet …',
     modelEditorFailed: 'Der Modell-Editor konnte nicht geöffnet werden. Prüf deine Verbindung und versuch es noch einmal.',
     bedrockShapes: {

@@ -25,7 +25,7 @@ const SOURCES = {
 };
 
 /** Grey art gets the biome tint in game: decide before effects recolour it (as the exporter does). */
-function isGrayscale(img: ImageData): boolean {
+export function isGrayscale(img: ImageData): boolean {
   const d = img.data;
   let sat = 0;
   let n = 0;
@@ -46,7 +46,7 @@ function firstFrame(img: ImageData, opaque: boolean): ImageData {
   return out;
 }
 
-function multiply(img: ImageData, tint: ArrayLike<number>): ImageData {
+export function multiply(img: ImageData, tint: ArrayLike<number>): ImageData {
   const out = createImageData(img.width, img.height, new Uint8ClampedArray(img.data));
   for (let i = 0; i < out.data.length; i += 4) {
     out.data[i] = (out.data[i] * tint[0]) / 255;

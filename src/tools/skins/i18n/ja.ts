@@ -139,6 +139,15 @@ const JA: SkinsLanguage = {
       totemTitle: 'オリジナルのトーテム',
       totemText: 'このスキンから不死のトーテムを作ります',
     },
+    share: {
+      title: '画像を共有',
+      sub: 'スキンの前と後ろの画像。そのまま投稿できます',
+      making: '画像を作成しています…',
+      shared: '画像を共有しました',
+      saved: '画像を保存しました：{file}',
+      failed: '画像を作成できませんでした。もう一度お試しください。',
+      kind: 'Minecraftスキン',
+    },
     canvas: {
       layerLabel: '塗るレイヤー',
       base: 'ベース',

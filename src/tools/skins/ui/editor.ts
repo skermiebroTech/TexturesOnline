@@ -386,7 +386,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
   // the skin (and the skins in its Bedrock pack) as a .tpmproject file
   const fileExtra = { title: projectsText.save, sub: projectsText.saveTip, icon: 'save' as const, onPick: () => void saveProjectFile({ id, flush: flushSave }) };
-  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [fileExtra, totemExtra], { hd: scale === 2 })));
+  // a picture card to post (./share-card.ts, loaded when picked)
+  const shareExtra = { title: t.share.title, sub: t.share.sub, icon: 'share' as const, onPick: () => void sharePicture() };
+  exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [shareExtra, fileExtra, totemExtra], { hd: scale === 2 })));
   const backBtn = iconButton('arrow-left', t.bar.allSkins, () => navigate('/skins'));
 
   const bar = h(
@@ -1687,6 +1689,31 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
       openPoseStudio({ image: pc.getImage(), model, name: nameInput.value.trim() || startText.defaultName });
     } catch {
       toast(t.right.loadFailed, { tone: 'error' });
+    }
+  }
+
+  let sharing = false;
+  async function sharePicture() {
+    if (sharing) return;
+    sharing = true;
+    exportBtn.setAttribute('aria-busy', 'true');
+    const note = toast(t.share.making, { duration: 60_000 });
+    try {
+      await afterNextPaint();
+      const { shareSkinCard } = await import('./share-card');
+      if (destroyed) return;
+      const typed = nameInput.value.trim();
+      const r = await shareSkinCard({ image: pc.getImage(), model, name: typed === startText.defaultName ? '' : typed });
+      if (destroyed) return;
+      if (r.result === 'shared') toast(t.share.shared, { tone: 'success' });
+      else if (r.result === 'saved') toast(fmt(t.share.saved, { file: r.filename }), { tone: 'success' });
+    } catch (err) {
+      console.warn('Share picture failed', err);
+      if (!destroyed) toast(t.share.failed, { tone: 'error' });
+    } finally {
+      note.close();
+      sharing = false;
+      exportBtn.removeAttribute('aria-busy');
     }
   }
 

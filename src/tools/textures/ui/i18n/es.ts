@@ -52,6 +52,14 @@ const ES: EditorLanguage = {
     redo: 'Rehacer: Ctrl+Mayús+Z',
     shortcutsButton: 'Atajos de teclado: ?',
     exportButton: 'Exportar',
+    share: {
+      button: 'Compartir una imagen de tu pack',
+      making: 'Creando tu imagen…',
+      shared: 'Imagen compartida',
+      saved: 'Imagen guardada: {file}',
+      failed: 'No se pudo crear la imagen. Inténtalo de nuevo.',
+      changed: '{count, plural, one {# textura cambiada} other {# texturas cambiadas}}',
+    },
     openingModelEditor: 'Abriendo el editor de modelos…',
     modelEditorFailed: 'No se pudo abrir el editor de modelos. Revisa tu conexión y vuelve a intentarlo.',
     bedrockShapes: {

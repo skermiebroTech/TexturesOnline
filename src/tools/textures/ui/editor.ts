@@ -53,7 +53,7 @@ import { PHONE_MQ, TABLET_MQ } from './media';
 import { projectsText } from '../../../shared/i18n/projects';
 import { saveProjectFile } from '../../../shared/project-file/entry';
 import { onMarkersOnCanvas } from '../biomes/markers';
-import { yieldToMain } from '../../../core/yield';
+import { afterNextPaint, yieldToMain } from '../../../core/yield';
 
 type Side = 'textures' | 'preview' | 'material' | 'effects' | 'pvp' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'gui' | 'sounds';
@@ -646,6 +646,31 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   // a .tpmproject file of the whole project (src/shared/project-file/)
   const fileBtn = iconButton('save', projectsText.save, () => void saveProjectFile({ id: proj.id, flush: () => store.flush() }), { class: 'tx-file-btn' });
   const exportBtn = button({ label: te.exportButton, icon: 'download', variant: 'primary', class: 'tx-export-btn', onClick: () => openExportDialog(store) });
+  // a picture card of the pack to post (./share-card.ts, loaded on the first click)
+  const shareBtn = iconButton('share', te.share.button, () => void sharePicture(), { class: 'tx-share-btn' });
+  async function sharePicture() {
+    if (shareBtn.getAttribute('aria-busy') === 'true') return;
+    const glyph = shareBtn.firstElementChild;
+    shareBtn.setAttribute('aria-busy', 'true');
+    shareBtn.replaceChildren(spinner(20));
+    const note = toast(te.share.making, { duration: 60_000 });
+    try {
+      await afterNextPaint();
+      const { sharePackCard } = await import('./share-card');
+      if (life.aborted) return;
+      const r = await sharePackCard(store, thumbs);
+      if (life.aborted) return;
+      if (r.result === 'shared') toast(te.share.shared, { tone: 'success' });
+      else if (r.result === 'saved') toast(fmt(te.share.saved, { file: r.filename }), { tone: 'success' });
+    } catch (err) {
+      console.warn('Share picture failed', err);
+      if (!life.aborted) toast(te.share.failed, { tone: 'error' });
+    } finally {
+      note.close();
+      shareBtn.removeAttribute('aria-busy');
+      shareBtn.replaceChildren(...(glyph ? [glyph] : []));
+    }
+  }
   function paintHistory() {
     undoBtn.disabled = modelEditor ? !modelEditor.canUndo() : !canvas.canUndo();
     redoBtn.disabled = modelEditor ? !modelEditor.canRedo() : !canvas.canRedo();
@@ -764,7 +789,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     h('div', { class: 'tx-bar-iconbox checker' }, barIcon),
     h('div', { class: 'tx-bar-title' }, nameInput, measurer, h('span', { class: 'tx-bar-sub' }, badge(versionText(proj), proj.edition === 'java' ? 'green' : 'blue'), saveEl)),
     h('span', { class: 'grow' }),
-    h('div', { class: 'tx-bar-actions' }, undoBtn, redoBtn, h('span', { class: 'toolbar-sep' }), helpBtn, fileBtn, exportBtn),
+    h('div', { class: 'tx-bar-actions' }, undoBtn, redoBtn, h('span', { class: 'toolbar-sep' }), helpBtn, fileBtn, shareBtn, exportBtn),
   );
   tooltip(bar.querySelector('.tx-back') as HTMLElement, te.allPacks);
   paintBarIcon();

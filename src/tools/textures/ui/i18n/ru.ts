@@ -40,6 +40,14 @@ const RU: EditorLanguage = {
     redo: 'Повторить — Ctrl+Shift+Z',
     shortcutsButton: 'Горячие клавиши — ?',
     exportButton: 'Экспорт',
+    share: {
+      button: 'Поделиться картинкой пака',
+      making: 'Создаём картинку…',
+      shared: 'Картинка отправлена',
+      saved: 'Картинка сохранена: {file}',
+      failed: 'Не удалось создать картинку. Попробуй ещё раз.',
+      changed: '{count, plural, one {# текстура изменена} few {# текстуры изменены} many {# текстур изменено} other {# текстуры изменено}}',
+    },
     openingModelEditor: 'Открытие редактора моделей…',
     modelEditorFailed: 'Не удалось открыть редактор моделей. Проверь подключение и попробуй снова.',
     bedrockShapes: {

@@ -32,6 +32,17 @@ export const editorText = defineText('skins.editor', {
     totemTitle: 'Custom totem',
     totemText: 'Make a Totem of Undying from this skin',
   },
+  share: {
+    /** In the Export menu: makes a PNG card of the skin (front and back) to post */
+    title: 'Share a picture',
+    sub: 'Your skin from the front and back, ready to post',
+    making: 'Making your picture…',
+    shared: 'Picture shared',
+    saved: 'Picture saved: {file}',
+    failed: 'Couldn’t make the picture. Try again.',
+    /** Drawn on the picture, above the skin’s name */
+    kind: 'Minecraft skin',
+  },
   canvas: {
     layerLabel: 'Layer to paint on',
     base: 'Base',

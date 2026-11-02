@@ -146,6 +146,15 @@ const PL: SkinsLanguage = {
       totemTitle: 'Własny totem',
       totemText: 'Zrób Totem nieśmiertelności z tego skina',
     },
+    share: {
+      title: 'Udostępnij obrazek',
+      sub: 'Twój skin z przodu i z tyłu, gotowy do wrzucenia',
+      making: 'Tworzenie obrazka…',
+      shared: 'Udostępniono obrazek',
+      saved: 'Zapisano obrazek: {file}',
+      failed: 'Nie udało się utworzyć obrazka. Spróbuj ponownie.',
+      kind: 'Skin do Minecrafta',
+    },
     canvas: {
       layerLabel: 'Warstwa do malowania',
       base: 'Baza',

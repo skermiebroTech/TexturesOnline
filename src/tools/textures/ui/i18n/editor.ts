@@ -50,6 +50,16 @@ export const te = defineText('textures.editor', {
   redo: 'Redo — Ctrl+Shift+Z',
   shortcutsButton: 'Keyboard shortcuts — ?',
   exportButton: 'Export',
+  share: {
+    /** The share button in the top bar: makes a PNG card of the pack to post */
+    button: 'Share a picture of your pack',
+    making: 'Making your picture…',
+    shared: 'Picture shared',
+    saved: 'Picture saved: {file}',
+    failed: 'Couldn’t make the picture. Try again.',
+    /** Drawn on the picture, at the bottom */
+    changed: '{count, plural, one {# texture changed} other {# textures changed}}',
+  },
   openingModelEditor: 'Opening the model editor…',
   modelEditorFailed: 'The model editor couldn’t be opened. Check your connection and try again.',
   bedrockShapes: {

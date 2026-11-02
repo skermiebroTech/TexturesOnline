@@ -140,6 +140,15 @@ const PT_BR: SkinsLanguage = {
       totemTitle: 'Totem personalizado',
       totemText: 'Faça um totem da imortalidade com esta skin',
     },
+    share: {
+      title: 'Compartilhar uma imagem',
+      sub: 'Sua skin de frente e de costas, pronta para postar',
+      making: 'Criando sua imagem…',
+      shared: 'Imagem compartilhada',
+      saved: 'Imagem salva: {file}',
+      failed: 'Não foi possível criar a imagem. Tente de novo.',
+      kind: 'Skin do Minecraft',
+    },
     canvas: {
       layerLabel: 'Camada para pintar',
       base: 'Base',

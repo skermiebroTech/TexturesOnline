@@ -52,6 +52,14 @@ const JA: EditorLanguage = {
     redo: 'やり直す：Ctrl+Shift+Z',
     shortcutsButton: 'キーボードショートカット：?',
     exportButton: '書き出す',
+    share: {
+      button: 'パックの画像を共有',
+      making: '画像を作成しています…',
+      shared: '画像を共有しました',
+      saved: '画像を保存しました：{file}',
+      failed: '画像を作成できませんでした。もう一度お試しください。',
+      changed: '{count, plural, other {#個のテクスチャを変更}}',
+    },
     openingModelEditor: 'モデルエディターを開いています…',
     modelEditorFailed: 'モデルエディターを開けませんでした。接続を確認して、もう一度お試しください。',
     bedrockShapes: {

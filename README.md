@@ -148,6 +148,9 @@ repository keeps its original name, `TexturesOnline`).
   entries). Java sounds play straight from Mojang's servers; Bedrock's come from bedrock-samples (FSB5,
   decoded in the browser).
 - Exports a `.zip` with the exact `pack.mcmeta` rules of the chosen Java version, or a Bedrock `.mcpack`.
+- Share a picture (the share button next to Export): a 1200×675 PNG card to post, with the pack's icon,
+  name and description, a block made of a changed texture and a strip of the changed textures, pixel-crisp.
+  Phones that can share files get the share sheet; everywhere else it downloads.
 
 ### Skins
 - Paint on the 64x64 template with part outlines and a live 3D preview (classic and slim arms).
@@ -157,6 +160,8 @@ repository keeps its original name, `TexturesOnline`).
 - Start from a blank skin, a colour-coded template, original starter characters, an uploaded PNG
   (legacy 64x32 skins are converted), any player's skin by username, or Steve/Alex from the game files.
 - Export a Java PNG (plus legacy 64x32) or a Bedrock skin pack `.mcpack`.
+- Share a picture (in the Export menu): a 1200×675 PNG card of the skin in 3D from the front and the back,
+  with its face and name, shared on phones that can share files and downloaded elsewhere.
 
 ### Shaders
 - **Iris / OptiFine shader packs** (Java, needs the mod): shadows, waving plants, water, bloom, god rays,
@@ -229,8 +234,10 @@ NODE_PATH=$(npm root -g) node tests/e2e/textures/names.e2e.cjs     # name-based 
 NODE_PATH=$(npm root -g) node tests/e2e/textures/animation.e2e.cjs # animation maker: frames, onion skin, timing, GIF import / export, Java .mcmeta, Bedrock flipbooks, opened packs, phone
 NODE_PATH=$(npm root -g) node tests/e2e/textures/layers.e2e.cjs    # paint layers: panel, blend modes, undo, merge / flatten, animated textures, flattened export, project files, phone
 NODE_PATH=$(npm root -g) node tests/e2e/textures/tools-batch.e2e.cjs # biome colours, the stamp tool and the colour swap: views, previews, undo, exports, project files, phone
+NODE_PATH=$(npm root -g) node tests/e2e/textures/share.e2e.cjs     # the pack's picture card: size, changed textures in it, share sheet or download, phone, Japanese
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins.e2e.mjs
 NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-3d.e2e.mjs
+NODE_PATH=$(npm root -g) node tests/e2e/skins/skins-share.e2e.mjs  # the skin's picture card: face and 3D figures in it, share sheet or download, phone, Japanese
 NODE_PATH=$(npm root -g) node tests/e2e/shaders/shaders.e2e.cjs
 NODE_PATH=$(npm root -g) node tests/e2e/seo/pages.e2e.mjs   # public pages, routing, 404 fallback, old #/ links
 NODE_PATH=$(npm root -g) node tests/e2e/seo/pwa.e2e.mjs     # installable app: manifest, offline start, updates, share target

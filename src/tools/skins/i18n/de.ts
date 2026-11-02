@@ -139,6 +139,15 @@ const DE: SkinsLanguage = {
       totemTitle: 'Eigenes Totem',
       totemText: 'Ein Totem der Unsterblichkeit aus diesem Skin machen',
     },
+    share: {
+      title: 'Bild teilen',
+      sub: 'Dein Skin von vorn und hinten, fertig zum Posten',
+      making: 'Bild wird erstellt …',
+      shared: 'Bild geteilt',
+      saved: 'Bild gespeichert: {file}',
+      failed: 'Das Bild konnte nicht erstellt werden. Versuch es noch einmal.',
+      kind: 'Minecraft-Skin',
+    },
     canvas: {
       layerLabel: 'Ebene zum Bemalen',
       base: 'Grund',

@@ -43,6 +43,14 @@ const PL: EditorLanguage = {
     redo: 'Ponów — Ctrl+Shift+Z',
     shortcutsButton: 'Skróty klawiszowe — ?',
     exportButton: 'Eksportuj',
+    share: {
+      button: 'Udostępnij obrazek paczki',
+      making: 'Tworzenie obrazka…',
+      shared: 'Udostępniono obrazek',
+      saved: 'Zapisano obrazek: {file}',
+      failed: 'Nie udało się utworzyć obrazka. Spróbuj ponownie.',
+      changed: '{count, plural, one {# zmieniona tekstura} few {# zmienione tekstury} many {# zmienionych tekstur} other {# zmienionej tekstury}}',
+    },
     openingModelEditor: 'Otwieranie edytora modeli…',
     modelEditorFailed: 'Nie udało się otworzyć edytora modeli. Sprawdź połączenie i spróbuj ponownie.',
     bedrockShapes: {
