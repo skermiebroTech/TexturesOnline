@@ -207,7 +207,7 @@ const FR: ShadersLanguage = {
     opened: '« {name} » ouvert avec tous ses réglages',
     editInstead: 'Modifier plutôt les fichiers',
     openFilesFailed: 'Impossible d’ouvrir les fichiers',
-    openedFiles: '« {name} » ouvert ({count, plural, one {{n} fichier} other {{n} fichiers}})',
+    openedFiles: '« {name} » ouvert ({count, plural, one {{n} fichier} other {{n} fichiers}})',
     saveFailed: 'Le pack n’a pas pu être enregistré',
     notPackFile: '« {name} » n’est pas un fichier de pack. Ouvre un pack de shaders ou un pack de ressources .zip, ou un .mcpack Bedrock.',
     tooBig: '« {name} » fait {size}, c’est trop gros pour qu’un pack s’ouvre ici.',

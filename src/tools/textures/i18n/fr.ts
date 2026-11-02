@@ -56,7 +56,7 @@ const FR: TexturesLanguage = {
       merge: 'Fusionner des packs',
       mergeHint: 'Combine plusieurs packs en un seul, le pack du haut en premier',
       openedTitle: 'Pack ouvert',
-      openedText: '« {name} » est prêt à être modifié ({version}, {count, plural, one {# texture} other {# textures}}). Quelques infos à savoir :',
+      openedText: '« {name} » est prêt à être modifié ({version}, {count, plural, one {# texture} other {# textures}}). Quelques infos à savoir :',
       openInEditor: 'Ouvrir dans l’éditeur',
       opened: '« {name} » ouvert',
     },
@@ -81,7 +81,7 @@ const FR: TexturesLanguage = {
       delete: 'Supprimer',
       untitled: 'Sans titre',
       edited: '{count} modifiées',
-      effects: '{count, plural, one {# effet} other {# effets}}',
+      effects: '{count, plural, one {# effet} other {# effets}}',
       editedAgo: 'Modifié {time}',
       renameTitle: 'Renommer le pack',
       renamed: 'Pack renommé',
@@ -234,7 +234,7 @@ const FR: TexturesLanguage = {
   'textures.pack': {
     notInGame: '« {file} » n’est pas une texture de {edition, select, java {Minecraft {version}} other {cette version de Bedrock}}, et ce pack n’en a pas de copie.',
     emptyImage: 'L’image est vide.',
-    soundsNotOgg: '{count, plural, one {# fichier son n’est pas en Ogg Vorbis, Java ne le jouera donc pas : {files}. Remplace-le dans Sons.} other {# fichiers son ne sont pas en Ogg Vorbis, Java ne les jouera donc pas : {files}. Remplace-les dans Sons.}}',
+    soundsNotOgg: '{count, plural, one {# fichier son n’est pas en Ogg Vorbis, Java ne le jouera donc pas : {files}. Remplace-le dans Sons.} other {# fichiers son ne sont pas en Ogg Vorbis, Java ne les jouera donc pas : {files}. Remplace-les dans Sons.}}',
   },
 };
 

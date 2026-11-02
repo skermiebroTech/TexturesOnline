@@ -7,7 +7,7 @@ import type { GuiLanguage } from './load';
 const FR: GuiLanguage = {
   'textures.gui': {
     switchLabel: 'Interface et menus',
-    search: 'Chercher dans l’interface',
+    search: 'Rechercher',
     clearSearch: 'Effacer la recherche',
     noMatch: 'Rien dans l’interface ne correspond à « {query} ».',
     sections: {
@@ -95,7 +95,7 @@ const FR: GuiLanguage = {
     atlasNote: 'En {version}, le HUD et les boutons sont des zones de deux grandes images, gui/icons.png et gui/widgets.png. Choisis-en une et sa zone est sélectionnée dans l’éditeur de pixels.',
     spriteNote: 'Depuis Java 1.20.2, chaque icône du HUD et chaque bouton est un fichier à part.',
     bedrockNote: 'Bedrock dessine son HUD à partir des fichiers de textures/ui, et étire ses boutons et ses fenêtres classiques à partir de petites images.',
-    splashRow: '{count, plural, one {# message} other {# messages}}',
+    splashRow: '{count, plural, one {# message} other {# messages}}',
     splashGame: 'Ceux du jeu',
     editedCount: '{count} changés',
     preview: {
@@ -164,7 +164,7 @@ const FR: GuiLanguage = {
       bedrockNote: 'Les messages d’accueil de Bedrock ne sont pas dans les fichiers publics de Mojang, cette liste commence donc vide.',
       gameList: 'Les messages d’accueil du jeu',
       yourList: 'Tes messages d’accueil',
-      count: '{count, plural, one {# message} other {# messages}}',
+      count: '{count, plural, one {# message} other {# messages}}',
       editThese: 'Modifier ceux-ci',
       startEmpty: 'Commencer une liste vide',
       add: 'Ajouter',
@@ -174,12 +174,12 @@ const FR: GuiLanguage = {
       edit: 'Message d’accueil {n}',
       show: 'Afficher sur l’écran titre',
       long: 'Les messages longs sont écrits en petit.',
-      search: 'Chercher dans les messages d’accueil',
+      search: 'Rechercher',
       none: 'Aucun message d’accueil : l’écran titre n’en affiche aucun.',
       noMatch: 'Aucun message d’accueil ne correspond à « {query} ».',
       reset: 'Reprendre la liste du jeu',
       resetDone: 'Les messages d’accueil du jeu sont de retour.',
-      added: '{count, plural, one {# message d’accueil ajouté} other {# messages d’accueil ajoutés}}',
+      added: '{count, plural, one {# message d’accueil ajouté} other {# messages d’accueil ajoutés}}',
       duplicate: 'Celui-ci est déjà dans la liste.',
       removed: 'Message d’accueil retiré',
       undo: 'Annuler',

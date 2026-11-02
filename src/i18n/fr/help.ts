@@ -337,8 +337,8 @@ export const HELP: HelpText = {
       a: [
         p(
           'Oui. Choisis ',
-          strong('Créatures'),
-          ' dans la liste des textures (Blocs · Objets · Créatures · Tout), ou ouvre n’importe quelle texture du dossier entity. La créature apparaît en 3D et se peint comme un bloc. Utilise les choix à côté (variante, âge, couleur de la laine, métier, etc.) pour atteindre chaque texture qu’elle utilise ; les couches comme la laine du mouton, les yeux lumineux et les vêtements des villageois se peignent sur leurs propres textures. Dans la liste Parts, clique sur une partie pour la masquer et peindre ce qu’elle cache, double-clique pour n’afficher que cette partie, et utilise Tout afficher pour tout faire revenir. Les créatures Bedrock utilisent les modèles de Bedrock, et les masques de teinte cachés dans leurs pixels transparents sont gardés.',
+          strong('Mobs'),
+          ' dans la liste des textures (Blocs · Objets · Mobs · Tout), ou ouvre n’importe quelle texture du dossier entity. La créature apparaît en 3D et se peint comme un bloc. Utilise les choix à côté (variante, âge, couleur de la laine, métier, etc.) pour atteindre chaque texture qu’elle utilise ; les couches comme la laine du mouton, les yeux lumineux et les vêtements des villageois se peignent sur leurs propres textures. Dans la liste Parts, clique sur une partie pour la masquer et peindre ce qu’elle cache, double-clique pour n’afficher que cette partie, et utilise Tout afficher pour tout faire revenir. Les créatures Bedrock utilisent les modèles de Bedrock, et les masques de teinte cachés dans leurs pixels transparents sont gardés.',
         ),
       ],
     },
@@ -348,7 +348,7 @@ export const HELP: HelpText = {
       a: [
         p(
           'Oui. Les créatures qui portent des choses ont un groupe ',
-          strong('Porte'),
+          strong('Équipement'),
           ' dans leurs choix : mets une selle sur un cochon, un arpenteur, un cheval, un dromadaire ou un nautile ; habille les zombies, les squelettes, les piglins et le porte-armure d’une armure (choisis un matériau pour tout l’ensemble, puis active ou désactive chaque pièce, et teins le cuir avec ',
           strong('Teinture'),
           ') ; donne leur armure aux chevaux, aux loups et aux nautiles, un tapis aux lamas et un harnais au ghast heureux. Chaque objet porté se peint sur sa propre texture et a sa propre entrée dans ',
@@ -430,7 +430,7 @@ export const HELP: HelpText = {
       q: 'Je peux changer les sons dans mon pack ?',
       a: [
         p(
-          'Oui. Dans l’éditeur de packs de textures, appuie sur la note de musique au bout de l’interrupteur Blocs · Objets · Créatures · Tout. Trouve un son par son nom ou sa catégorie et appuie sur lecture pour l’écouter. Ouvre-le, puis ',
+          'Oui. Dans l’éditeur de packs de textures, appuie sur la note de musique au bout de l’interrupteur Blocs · Objets · Mobs · Tout. Trouve un son par son nom ou sa catégorie et appuie sur lecture pour l’écouter. Ouvre-le, puis ',
           strong('Remplacer'),
           ' un fichier par ton propre audio (MP3, WAV, OGG, M4A et d’autres) ou enregistre-en un avec ton micro. Fais glisser les poignées sur la forme d’onde pour le couper, règle le volume ou appuie sur ',
           strong('Normaliser'),

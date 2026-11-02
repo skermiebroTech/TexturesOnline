@@ -8,7 +8,7 @@ const FR: PvpLanguage = {
     preset: {
       button: 'Activer le préréglage PvP',
       hint: 'Feu bas, verre transparent, pas de flou de citrouille, un viseur plus net, des épées plus petites et un bouclier plus bas, là où cette version les a.',
-      applied: 'Préréglage PvP : {count, plural, one {# réglage activé} other {# réglages activés}}',
+      applied: 'Préréglage PvP : {count, plural, one {# réglage activé} other {# réglages activés}}',
       none: 'Tous les réglages du préréglage sont déjà activés.',
     },
     groups: { pvp: 'PvP', fps: 'FPS' },
@@ -72,7 +72,7 @@ const FR: PvpLanguage = {
       on: '{name} : activé',
       updated: '{name} : changé',
       off: '{name} : désactivé',
-      kept: '{count, plural, one {# fichier que tu as changé depuis a été gardé.} other {# fichiers que tu as changés depuis ont été gardés.}}',
+      kept: '{count, plural, one {# fichier que tu as changé depuis a été gardé.} other {# fichiers que tu as changés depuis ont été gardés.}}',
       undo: 'Annuler',
       undone: 'Annulé',
       failed: '{name} n’a pas pu être changé : {error}',

@@ -48,10 +48,10 @@ const FR: KitLanguage = {
     },
     time: {
       justNow: 'à l’instant',
-      minutes: 'il y a {n} min',
-      hours: 'il y a {n} h',
+      minutes: 'il y a {n} min',
+      hours: 'il y a {n} h',
       yesterday: 'hier',
-      days: 'il y a {n} jours',
+      days: 'il y a {n} jours',
     },
     versions: {
       releases: 'Versions',
