@@ -2043,3 +2043,264 @@ const make3dItems: GuideText = {
   ],
   ctaLabel: 'Otwórz edytor paczek tekstur',
 };
+
+// ---------------------------------------------------------------- PvP pack
+
+const PVP_STEPS: Child[] = [
+  ['Otwórz ', link('/textures', 'edytor paczek tekstur'), ', nazwij paczkę i wybierz ', strong('Paczka PvP / FPS'), '. Włącz ', strong('Także paczka FPS'), ', jeśli chcesz tekstury 8× i brak animacji.'],
+  ['Wybierz Javę albo Bedrocka i wersję, w którą grasz, na przykład Javę 1.8.9 na serwery PvP 1.8, i naciśnij ', strong('Utwórz paczkę PvP'), '.'],
+  ['Edytor wczyta tekstury tej wersji i włączy szablon PvP: niski ogień, czyste szkło, brak ramki dyni, czystszy celownik, mniejsze miecze i niżej trzymaną tarczę, o ile ta wersja je ma.'],
+  ['W zakładce ', strong('PvP'), ' zmień, co chcesz: wysokość ognia, kształt celownika, rozmiar miecza, wysokość tarczy. Każdą zmianę możesz cofnąć z jej komunikatu.'],
+  'Jeśli chcesz: pomaluj resztę, na przykład wyraźniejsze kolory wełny albo krótszą teksturę miecza.',
+  ['Naciśnij ', strong('Eksportuj'), ', wrzuć paczkę do Minecrafta i wybierz ją nad innymi paczkami.'],
+];
+
+const pvpLabel = (l: string) => l;
+
+const pvpPack: GuideText = {
+  image: SHOTS.pvpTweaks,
+  intro: [
+    p(
+      'Paczka tekstur PvP zmienia to, co przeszkadza w walce: ogień, który zasłania pół ekranu, kiedy się palisz, szkło, przez które nic nie widać, ciemny widok z dynią na głowie, duży celownik i miecz, który zasłania gracza, którego bijesz. Paczki FPS idą dalej i robią tekstury mniejsze i nieruchome, żeby słabsze komputery dawały radę. To wszystko zwykłe pliki paczki zasobów, zupełnie bez modów. ',
+      link('/textures', 'Edytor paczek tekstur'),
+      ' robi je w przeglądarce, każde jednym przełącznikiem, dla Javy od 1.8.9 (wersji, na której stoi wiele serwerów PvP) do ',
+      LATEST,
+      ' i częściowo dla Bedrocka.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['W edytorze paczek tekstur wybierz ', strong('Paczka PvP / FPS'), ' i swoją wersję Minecrafta, potem ', strong('Utwórz paczkę PvP'), '.'],
+      ['W zakładce ', strong('PvP'), ' wybierz wysokość ognia, celownik, rozmiar miecza i opcje FPS, które chcesz.'],
+      ['Wyeksportuj paczkę i wybierz ją w Minecrafcie nad innymi paczkami.'],
+    ],
+  },
+  howto: { name: 'Jak zrobić paczkę tekstur PvP w Texture Pack Maker', steps: PVP_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Co zmienia paczka PvP',
+      body: [
+        p('Większość paczek PvP i FPS, od paczek na Bedwars po paczki „FPS boost”, składa się z tych samych kilku zmian. Każda z nich to przełącznik w zakładce „PvP” w edytorze:'),
+        table(
+          ['Zmiana', 'Co robi', 'Java', 'Bedrock'],
+          [
+            ['Niski ogień', 'Płomienie na ekranie są niżej, kiedy się palisz.', 'Każda wersja', 'Nie'],
+            ['Czyste szkło', 'Szkło, barwione szkło i szyby są w środku przezroczyste i zachowują ramkę.', 'Każda wersja', 'Tak'],
+            ['Bez ramki dyni', 'Wydrążona dynia na głowie nie przyciemnia już ekranu.', 'Każda wersja', 'Tak'],
+            ['Własny celownik', 'Mniejszy celownik: kropka, mały krzyżyk, krzyżyk z przerwą, kółko albo kształt X, albo narysowany samodzielnie.', 'Każda wersja', 'Tak'],
+            ['Mniejsze miecze', 'Miecze albo cała broń wyglądają w widoku z pierwszej osoby na mniejsze i są niżej.', 'Od 1.8', 'Nie'],
+            ['Niższa tarcza', 'Tarcza jest niżej w widoku z pierwszej osoby, także przy blokowaniu.', 'Od 1.9', 'Nie'],
+            ['Tekstury 8×', 'Bloki (i przedmioty) o wymiarach 8 × 8 pikseli.', 'Każda wersja', 'Tak'],
+            ['Bez animacji', 'Woda, lawa, ogień i portale stoją w miejscu.', 'Każda wersja', 'Nie'],
+          ],
+        ),
+        p('Każdy przełącznik zapisuje zwykłe pliki paczki, więc możesz dalej po nich malować. Kiedy go wyłączysz, wracają pliki, które zmienił, oprócz tych, które od tamtej pory pomalujesz albo zmienisz. Tabela na końcu podaje dokładne pliki dla każdej wersji.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Paczka PvP krok po kroku',
+      body: [steps(PVP_STEPS), figure(SHOTS.pvpStart), figure(SHOTS.pvpTweaks)],
+    },
+    {
+      id: 'fire',
+      title: 'Niski ogień',
+      body: [
+        p(
+          'Java rysuje ogień na ekranie jedną teksturą: ',
+          code('textures/block/fire_1.png'),
+          ' (przed 1.13 ',
+          code('textures/blocks/fire_layer_1.png'),
+          '). To animowany pasek z 32 klatkami, a „Niski ogień” przesuwa płomienie w każdej klatce w dół o 5, 8 albo 11 z 16 pikseli (',
+          strong('Nisko'),
+          ', ',
+          strong('Niżej'),
+          ', ',
+          strong('Najniżej'),
+          '), żeby górna część ekranu została wolna. Animacja dalej działa.',
+        ),
+        p(
+          'Bloki ognia używają tej samej tekstury, więc prosta paczka z niskim ogniem sprawia, że ogień w świecie też wygląda na ucięty. Z opcją ',
+          strong('Zostaw bloki ognia bez zmian'),
+          ' (Java od 1.8) paczka dostaje kopię oryginalnej tekstury, ',
+          code('fire_1_world.png'),
+          ', a modele bloków ognia na nią wskazują. Płonący gracze i moby dalej pokazują niższe płomienie.',
+        ),
+      ],
+    },
+    {
+      id: 'glass',
+      title: 'Czyste szkło i bez ramki dyni',
+      body: [
+        p(
+          '„Czyste szkło” zostawia zewnętrzny pierścień pikseli, jeden piksel przy 16× i dwa przy 32×, a wszystko w środku robi przezroczyste. Dotyczy to ',
+          code('glass.png'),
+          ' i 16 tekstur barwionego szkła (',
+          code('red_stained_glass.png'),
+          ' itd.; przed 1.13 ',
+          code('glass_red.png'),
+          ', z ',
+          code('glass_silver.png'),
+          ' dla jasnoszarego). Szyby używają tych samych tekstur i też stają się czyste. Wybierz ',
+          strong('Lekko zabarwione'),
+          ', żeby barwione szkło zachowało słaby kolor i drużyny dało się dalej odróżnić.',
+        ),
+        p('„Bez ramki dyni” zastępuje ', code('textures/misc/pumpkinblur.png'), ', obrazek, który gra nakłada na twój widok, kiedy nosisz wydrążoną dynię, całkowicie przezroczystym obrazkiem tego samego rozmiaru. W Bedrocku plik też nazywa się ', code('textures/misc/pumpkinblur.png'), '.'),
+      ],
+    },
+    {
+      id: 'crosshair',
+      title: 'Własny celownik',
+      body: [
+        p('To, gdzie leży celownik, zależy od wersji:'),
+        ul([
+          [strong('Java 1.20.1 i starsze oraz Bedrock: '), 'pole 16 × 16 w lewym górnym rogu ', code('textures/gui/icons.png'), ', arkusza, na którym są też serca, głód i zbroja. Zmienia się tylko to pole.'],
+          [strong('Java 1.20.2 i nowsze: '), 'osobny plik 15 × 15 pikseli, ', code('textures/gui/sprites/hud/crosshair.png'), '.'],
+        ]),
+        p(
+          'Wybierz jeden z pięciu kształtów narysowanych dla edytora albo naciśnij ',
+          strong('Narysuj własny'),
+          ': edytor otworzy teksturę celownika i od razu zaznaczy właściwe pole na arkuszu. Java rysuje celownik w negatywie na tle, więc maluj go na biało albo szaro; inne kolory wychodzą zmienione. Gra ustawia środkowy piksel (7, 7) na środku ekranu.',
+        ),
+        figure(SHOTS.pvpCrosshair),
+      ],
+    },
+    {
+      id: 'swords',
+      title: 'Mniejsze miecze i niższa tarcza',
+      body: [
+        p(
+          'To, jak przedmiot leży w twojej ręce, zapisane jest w części ',
+          code('display'),
+          ' jego pliku modelu: obrót, pozycja i rozmiar dla każdego miejsca, w którym jest pokazywany. „Mniejsze miecze” zmienia tylko widok z pierwszej osoby, na 80, 65 albo 50% rozmiaru i trochę niżej, żeby rękojeść została blisko dłoni. Inni gracze, widok z trzeciej osoby i ekwipunek dalej pokazują zwykły miecz. ',
+          strong('Cała broń'),
+          ' robi to samo dla siekier, buzdygana i włóczni, o ile są w twojej wersji.',
+        ),
+        p('Java 1.8 ma jeden wpis, ', code('firstperson'), ', we własnym pliku każdego miecza. Tak wygląda diamentowy miecz z opcją ', strong('Mniejszy'), ':'),
+        pre(PVP_SWORD_189.trimEnd()),
+        p(
+          'Od 1.9 są dwa wpisy, ',
+          code('firstperson_righthand'),
+          ' i ',
+          code('firstperson_lefthand'),
+          ', a miecze przejmują je z ',
+          code('item/handheld'),
+          '. Plik zachowuje swój model nadrzędny, więc miecz zostaje płaskim przedmiotem, i dostaje oba wpisy:',
+        ),
+        pre(PVP_SWORD_LATEST.trimEnd()),
+        p(
+          '„Niższa tarcza” przesuwa tarczę w ',
+          code('models/item/shield.json'),
+          ' i ',
+          code('shield_blocking.json'),
+          ' o 3 albo 6 pikseli niżej (Java od 1.9; także od 1.21.4 gra czyta trzymanie tarczy z tych plików). Jeśli w ',
+          link('/guides/make-3d-items-texture-pack', 'edytorze modeli'),
+          ' zbudujesz własny model miecza albo tarczy, zmieniają się tylko jego wpisy dla widoku z pierwszej osoby, a twój kształt zostaje.',
+        ),
+      ],
+    },
+    {
+      id: 'fps',
+      title: 'FPS boost: tekstury 8× i brak animacji',
+      body: [
+        p(
+          strong('Tekstury 8×'),
+          ' przy eksporcie zmniejsza tekstury bloków i, jeśli chcesz, przedmiotów do 8 × 8 pikseli. Liście, szkło i rośliny zachowują ostre krawędzie. ',
+          strong('Bez animacji'),
+          ' zostawia tylko pierwszą klatkę animowanych tekstur i usuwa animację z pliku ',
+          code('.mcmeta'),
+          ', żeby gra nie odświeżała ich już w każdym ticku (Java; kompas i zegar dalej działają). Oba to warstwy efektów, które są też w zakładce „Efekty”; twoje własne tekstury zostają bez zmian.',
+        ),
+        callout(
+          'info',
+          'Ile szybciej?',
+          'Mniejsze, nieruchome tekstury potrzebują mniej pamięci karty graficznej i mniej pracy na każdą klatkę. Najbardziej pomaga to na starszych komputerach i ze zintegrowaną grafiką. Największe zyski FPS dają zasięg renderowania, cząsteczki i mody takie jak Sodium albo OptiFine, a tego paczka tekstur zmienić nie może.',
+        ),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Jakie pliki trafiają do paczki',
+      body: [
+        table(
+          ['', ...PVP_EXAMPLE_FILES.map((e) => pvpLabel(e.label))],
+          [
+            ['Niski ogień', ...PVP_EXAMPLE_FILES.map((e) => (e.files.lowFire ? code(e.files.lowFire) : '—'))],
+            ['Czyste szkło', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.glass))],
+            ['Bez ramki dyni', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.pumpkin))],
+            ['Celownik', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.crosshair))],
+            ['Mniejsze miecze', ...PVP_EXAMPLE_FILES.map((e) => (e.files.sword ? code(e.files.sword) : '—'))],
+            ['Niższa tarcza', ...PVP_EXAMPLE_FILES.map((e) => (e.files.shield ? code(e.files.shield) : '—'))],
+          ],
+        ),
+        p('Szkło stoi tu za każdą teksturę szkła, a miecz za każdy miecz. Edytor sam znajduje ścieżki dla wersji twojej paczki.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Czyste szkło, brak ramki dyni, celownik i tekstury 8× działają w paczce do Bedrocka. Pozostałe są tam wyłączone, z podanym powodem:'),
+        ul([
+          [strong('Niski ogień: '), 'Bedrock rysuje ogień na ekranie na swój sposób, którego paczka tekstur nie może pewnie obniżyć.'],
+          [strong('Miecze i tarcza: '), 'Bedrock ustala trzymanie przedmiotów w plikach attachable, tak jak dodatki, a tych edytor nie tworzy.'],
+          [strong('Bez animacji: '), 'Bedrock odtwarza animowane tekstury według listy klatek w ', code('flipbook_textures.json'), ', której paczka nie może usunąć.'],
+        ]),
+        figure(SHOTS.pvpBedrock),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Instalacja i testowanie',
+      body: [
+        steps([
+          ['Naciśnij ', strong('Eksportuj'), ' i pobierz ', code('.zip'), ' (Java) albo ', code('.mcpack'), ' (Bedrock).'],
+          ['Java: otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam zipa i przesuń paczkę na samą górę ', strong(JAVA.selected), '. Bedrock: otwórz .mcpack i aktywuj paczkę w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+          'Podpal się, spójrz przez szkło, załóż dynię i weź do ręki miecz i tarczę, żeby sprawdzić każdą zmianę.',
+        ]),
+        p(
+          'Nie działa tak, jak powinno? Może inna paczka nad nią zastępuje te same pliki. Więcej pomocy: ',
+          link('/guides/install-resource-packs', 'Jak zainstalować paczki zasobów'),
+          ' i ',
+          link('/guides/texture-pack-not-working', 'Paczka tekstur nie działa'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'allowed',
+      q: 'Czy paczki tekstur PvP są dozwolone na serwerach?',
+      a: [p('Paczka tekstur zmienia tylko to, jak wygląda gra, a zmiany tutaj (niższy ogień, czyste szkło, mniejszy miecz) większość serwerów dopuszcza. Paczki, które pokazują coś, czego normalnie nie widać, na przykład rudy przez kamień, są zwykle zakazane. Każdy serwer ma własne zasady, więc je przeczytaj.')],
+    },
+    {
+      id: 'fps',
+      q: 'Czy paczka FPS naprawdę daje więcej FPS?',
+      a: [p('Trochę, zwłaszcza na słabszych komputerach: tekstury 8× potrzebują mniej pamięci karty graficznej, a nieruchome tekstury oszczędzają pracę w każdym ticku. Na szybkim PC różnica jest mała. Zasięg renderowania, cząsteczki i mody takie jak Sodium albo OptiFine dają dużo więcej.')],
+    },
+    {
+      id: 'version',
+      q: 'Dla której wersji zrobić paczkę PvP?',
+      a: [p('Dla wersji, w którą grasz. Wiele serwerów PvP działa na 1.8.9, a paczka do 1.8.9 ma inne nazwy plików niż nowa. Żeby używać paczki w kilku wersjach, ustaw zakres w zakładce ', strong('Paczka'), ': gra pokaże ją wtedy jako zgodną, ale pliki działają tylko tam, gdzie pasują nazwy.')],
+    },
+    {
+      id: 'short',
+      q: 'Mogę zrobić krótki miecz zamiast małego?',
+      a: [p('Tak: namaluj krótsze ostrze na teksturze miecza, jak robi to wiele paczek do 1.8.9. To zmienia miecz wszędzie, także w ekwipunku i w rękach innych graczy. „Mniejsze miecze” zmienia tylko to, jak duży wygląda w twojej własnej ręce. Możesz zrobić jedno i drugie.')],
+    },
+    {
+      id: 'crosshair',
+      q: 'Dlaczego mój kolorowy celownik ma zły kolor?',
+      a: [p('Java rysuje celownik w negatywie na tle: biały celownik wygląda na ciemny na jasnym niebie i na jasny na ciemnej ziemi. Kolory mieszają się z tłem tak samo. Wybierz biały albo szary.')],
+    },
+    {
+      id: 'mods',
+      q: 'Czy paczka tekstur może dodać zoom, licznik FPS albo „brak mgły”?',
+      a: [p('Nie. Zoom, liczniki FPS i klawiszy, ciągły sprint, brak mgły i rozmycie ruchu wymagają moda (OptiFine, Sodium i innych), klienta PvP albo ustawień gry. Paczka zmienia tylko tekstury, modele, dźwięki i podobne pliki.')],
+    },
+  ],
+  ctaLabel: 'Zrób paczkę PvP',
+};
