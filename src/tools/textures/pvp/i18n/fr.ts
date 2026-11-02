@@ -1,0 +1,90 @@
+// French text of the PvP / FPS tab of the texture pack editor (English source: ./text.ts).
+
+import type { PvpLanguage } from './load';
+
+const FR: PvpLanguage = {
+  'textures.pvp': {
+    intro: 'Ce que changent les packs PvP et FPS, en un clic chacun, pour {version}. Chaque réglage écrit des fichiers normaux dans ton pack : tu peux toujours les peindre, et en désactiver un remet les fichiers comme avant.',
+    preset: {
+      button: 'Activer le préréglage PvP',
+      hint: 'Feu bas, verre transparent, pas de flou de citrouille, un viseur plus net, des épées plus petites et un bouclier plus bas, là où cette version les a.',
+      applied: 'Préréglage PvP : {count, plural, one {# réglage activé} other {# réglages activés}}',
+      none: 'Tous les réglages du préréglage sont déjà activés.',
+    },
+    groups: { pvp: 'PvP', fps: 'FPS' },
+    switchLabel: '{name} : activé ou désactivé',
+    changes: 'Change',
+    worksIn: 'Marche dans',
+    more: '+{count} de plus',
+    tweaks: {
+      lowFire: { title: 'Feu bas', text: 'Les flammes à l’écran quand tu brûles sont plus basses, pour que tu voies toujours le combat.' },
+      clearGlass: { title: 'Verre transparent', text: 'Le verre, le verre teinté et les vitres sont transparents à l’intérieur et gardent leur bordure.' },
+      noPumpkin: { title: 'Pas de flou de citrouille', text: 'Porter une citrouille sculptée n’assombrit plus l’écran.' },
+      crosshair: { title: 'Viseur perso', text: 'Un viseur plus petit et plus net. Le jeu le dessine en inversant ce qui est derrière, le blanc marche donc le mieux.' },
+      swords: { title: 'Épées plus petites', text: 'Les épées (ou toutes les armes) paraissent plus petites et plus basses dans ta main à la première personne. Les autres joueurs, la vue à la troisième personne et l’inventaire ne changent pas.' },
+      shield: { title: 'Bouclier plus bas', text: 'Ton bouclier est plus bas à l’écran à la première personne, même quand tu pares.' },
+      lowRes: { title: 'Textures 8×', text: 'Les textures des blocs (et des objets, si tu veux) en 8 × 8 pixels : un look plat et net, et moins de mémoire vidéo. Appliqué à l’export.' },
+      still: { title: 'Pas d’animations', text: 'L’eau, la lave, le feu, les portails et les autres textures animées restent immobiles. Appliqué à l’export.' },
+    },
+    support: {
+      java: 'Java (toutes les versions)',
+      javaBedrock: 'Java (toutes les versions) et Bedrock',
+      models: 'Java 1.8 et plus récent',
+      shield: 'Java 1.9 et plus récent',
+    },
+    unsupported: {
+      bedrockFire: 'Pas pour Bedrock : Bedrock dessine le feu à l’écran à sa façon, qu’un pack de textures ne peut pas baisser de façon fiable.',
+      bedrockHeld: 'Pas pour Bedrock : là-bas, les objets tenus sont placés par des fichiers attachables (comme dans les add-ons), que cet éditeur ne crée pas.',
+      bedrockAnimations: 'Pas pour Bedrock : Bedrock joue les textures animées à partir d’une liste d’images qu’un pack ne peut pas retirer.',
+      noModels: 'Il faut Java 1.8 ou plus récent : les versions plus anciennes n’ont pas de fichiers de modèles à changer.',
+      noShield: 'Les boucliers sont arrivés dans Java 1.9.',
+    },
+    options: {
+      height: 'Hauteur',
+      low: 'Bas',
+      lower: 'Plus bas',
+      lowest: 'Tout en bas',
+      keepBlocks: 'Garder les blocs de feu tels quels',
+      keepBlocksHint: 'Les blocs de feu reçoivent une copie de l’ancienne texture : seul le feu à l’écran et sur les joueurs qui brûlent est plus bas.',
+      glass: 'Intérieur',
+      clear: 'Transparent',
+      tint: 'Légère teinte',
+      design: 'Motif',
+      designs: { dot: 'Point', cross: 'Petite croix', gap: 'Croix avec un trou', circle: 'Cercle', x: 'X' },
+      drawOwn: 'Dessiner le tien',
+      size: 'Taille',
+      small: 'Petite',
+      smaller: 'Plus petite',
+      tiny: 'Minuscule',
+      weapons: 'Lesquelles',
+      swords: 'Épées',
+      allWeapons: 'Toutes les armes',
+      allWeaponsHint: 'Les épées, les haches, la masse et les lances, là où cette version les a.',
+      textures: 'Textures',
+      blocks: 'Blocs',
+      blocksItems: 'Blocs et objets',
+    },
+    draw: {
+      sheet: 'Le viseur est le carré de 16 × 16 dans le coin en haut à gauche, maintenant sélectionné. Peins à l’intérieur.',
+      sprite: 'Voici le viseur. Peins-le en blanc : le jeu l’inverse par-dessus ce qui est derrière.',
+    },
+    toasts: {
+      on: '{name} : activé',
+      updated: '{name} : changé',
+      off: '{name} : désactivé',
+      kept: '{count, plural, one {# fichier que tu as changé depuis a été gardé.} other {# fichiers que tu as changés depuis ont été gardés.}}',
+      undo: 'Annuler',
+      undone: 'Annulé',
+      failed: '{name} n’a pas pu être changé : {error}',
+    },
+    mods: {
+      title: 'Il faut un mod, pas un pack',
+      text: 'Le zoom, un compteur de FPS, l’affichage des touches, le sprint automatique, l’absence de brouillard, le flou de mouvement et les gros gains de FPS (moins de chunks, d’entités et de particules dessinés) viennent de mods comme OptiFine ou Sodium, de clients PvP ou des réglages Graphismes du jeu. Un pack de textures ne peut pas les changer.',
+    },
+    stale: 'Fait pour {version} : cette version nomme peut-être les fichiers autrement. Écris-les à nouveau pour cette version.',
+    update: 'Mettre à jour',
+    guide: 'Comment faire un pack de textures PvP',
+  },
+};
+
+export default FR;

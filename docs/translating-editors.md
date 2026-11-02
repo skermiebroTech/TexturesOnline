@@ -3,9 +3,9 @@
 The public pages (home, help, guides, tool introductions) are translated in `src/i18n/<lang>/`.
 The editors themselves (start screens, panels, dialogs, toasts, tooltips, aria-labels, errors) use
 a separate, lighter system: `src/i18n/editor-text.ts`. Languages: `de` (du), `es` (tú), `pt-br`
-(você), `ja` (です/ます), `ru` (ты), `pl` (ty). English is the source of truth and stays byte-identical.
-`fr` (tu) has its public pages but no editor files yet: its editors show English until they come
-(the unit tests skip a language whose `src/ui/i18n/<lang>.ts` does not exist).
+(você), `ja` (です/ます), `ru` (ты), `pl` (ty), `fr` (tu). English is the source of truth and stays
+byte-identical. A new language can get its public pages first: until its `src/ui/i18n/<lang>.ts`
+exists, its editors show English and the unit tests skip it.
 
 ## Layout
 
@@ -20,13 +20,16 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | `src/tools/merge/i18n/` | `merge` | `merge/view.ts` |
 | `src/tools/totem/i18n/` | `totem` | `totem/view.ts` |
 | `src/tools/fonts/i18n/` | `fonts` | `fonts/view.ts` |
-| `src/tools/skins/i18n/` | `skins` (start screen), `skins.parts`, `skins.editor`, `skins.export` | `skins/view.ts` |
+| `src/tools/doctor/i18n/` | `doctor` (start screen), `doctor.report` (the report and every problem) | `doctor/view.ts` |
+| `src/tools/skins/i18n/` | `skins` (start screen), `skins.parts`, `skins.editor`, `skins.export`, `skins.pose` (the pose maker), `skins.cape` (the cape maker) | `skins/view.ts`, `skins/cape/view.ts` |
 | `src/tools/shaders/i18n/` | `shaders` (start screen, targets, "New pack"), `shaders.import` | `shaders/view.ts` |
 | `src/tools/shaders/ui/i18n/` | `shaders.editor`, `shaders.options` (settings, presets and notes by key), `shaders.messages` (the generators' messages) | `shaders/view.ts` for an editor route, and every `loadGenerator()` |
 | `src/tools/shaders/packedit/i18n/` | `shaders.packedit` | `shaders/view.ts` for an editor route |
 | `src/tools/textures/i18n/` | `textures` (start screen), `textures.effects`, `textures.pack` | `textures/view.ts` |
 | `src/tools/textures/ui/i18n/` | `textures.editor`, `textures.sounds`, `textures.modelRules`, `textures.modelEditor` | `textures/view.ts`, with the editor's code |
 | `src/tools/textures/pbr/i18n/` | `textures.pbr` (the Material tab) | the editor, when the tab first opens |
+| `src/tools/textures/pvp/i18n/` | `textures.pvp` (the PvP / FPS tab) | the editor, when the tab first opens |
+| `src/tools/textures/gui/i18n/` | `textures.gui` (the GUI section: library, live preview, splash texts) | the editor, when the section first opens |
 | `src/tools/textures/names/i18n/` | `textures.names` (the name-based textures window) | the editor, when the window first opens |
 | `src/tools/textures/anim/i18n/` | `textures.anim` (the animation maker: frames strip, timing, import and GIF windows) | `textures/view.ts`, with the editor's code |
 | `src/tools/textures/layers/i18n/` | `textures.layers` (paint layers: the Layers button and panel, the eyedropper's option) | `textures/view.ts`, with the editor's code |
@@ -41,7 +44,7 @@ In a folder:
   `defineText('<section id>', { ... })`. Nested objects group keys; leaves are strings. They import
   nothing but `src/i18n/editor-text.ts` (the unit test imports them in Node).
 - **`load.ts`**: the language-file type and its loader.
-- **`de.ts`, `es.ts`, `pt-br.ts`, `ja.ts`, `ru.ts`, `pl.ts`**: one language file each, translating every section of
+- **`de.ts`, `es.ts`, `pt-br.ts`, `ja.ts`, `ru.ts`, `pl.ts`, `fr.ts`**: one language file each, translating every section of
   the folder, keyed by section id. Optionally `export const SAME_AS_ENGLISH = ['<id>:<key.path>']`
   for text that is rightly identical to English (see Tests).
 
@@ -148,10 +151,19 @@ still share one language file. English pages never load a language file. Check w
   ru_ru names for blocks, items and mobs (Броня, Отделка, Тотем бессмертия, Гардеробная). In-game menu
   paths use the game's own names (de Optionen → Ressourcenpakete, es Opciones → Paquetes de
   recursos, pt-br Opções → Pacotes de recursos, ja 設定 → リソースパック, ru Настройки → Наборы
-  ресурсов; Bedrock Настройки → Глобальные ресурсы). fr (public pages, `src/i18n/fr/game-ui.ts`):
-  "pack de textures", "pack de ressources", "un skin" (masculine, as the game's fr_FR "Skins
-  classiques"), "pack de shaders", Graphismes éclatants, Vestiaire, Totem d'immortalité, Élytres;
-  menus Options... → Packs de ressources..., Bedrock Paramètres → Ressources globales.
+  ресурсов; Bedrock Настройки → Глобальные ресурсы). fr (`src/i18n/fr/game-ui.ts` has the game's
+  menu names): "pack de textures", "pack de ressources", "un skin" (masculine, as the game's fr_FR
+  "Skins classiques"), "pack de shaders", "préréglage" (preset),
+  "créature" for mob, "objet" for item, HUD, "viseur", "calque" (layer), "Matériau" (the Material
+  tab), "Aperçu" (Preview), Graphismes éclatants, Vestiaire, Équiper, Totem d'immortalité, Élytres,
+  Maj for Shift and Suppr for Delete; tools: Éditeur de packs de textures, Convertisseur de packs,
+  Fusionner des packs, Éditeur de skins, Créateur de packs de skins / de capes / de totems / de
+  polices / de shaders / de poses; Pack Doctor keeps its name; menus Options... → Packs de
+  ressources... → Ouvrir le dossier des packs, Graphismes... → API graphique, Bedrock Paramètres →
+  Ressources globales → Mes packs, Paramètres → Vidéo → Mode graphique. Blocks, items, biomes and
+  villager jobs use the game's fr_fr names (Bloc d'herbe, Feuilles d'acajou, Forêt ambrée, Fléchier).
+  French typography: a no-break space (U+00A0, typed as the character) before `: ; ! ?` and `%`, and
+  inside « »; apostrophes are ’.
   Polish (`pl`, ty): "paczka tekstur" (short
   "paczka"), "paczka zasobów", "skin" / "skina" / "skiny" (the game says "skórka": quote it only in
   menu names), "paczka skinów", "paczka shaderów", Java Edition / Bedrock Edition, the game's pl_pl
@@ -202,11 +214,20 @@ does), but must show every parameter English shows and may not add new ones.
 translated once per language, keys and parameters match, plural forms exist in that language (and
 a plural that tells forms apart gives every form whole numbers use, e.g. Russian one/few/many),
 every message formats, and no English is left: an identical phrase (two or more words) or English
-function words in a translation fail unless listed in that file's `SAME_AS_ENGLISH`.
+function words in a translation fail unless listed in that file's `SAME_AS_ENGLISH`. English
+words that are also words of a language don't count there (`ALSO_NATIVE`: French "on", "or";
+Polish "to", "on").
 
-`tests/e2e/i18n/editors.e2e.mjs` drives the translated converter, merger and totem maker at 1280
-and 390 px in both themes and fails on English left in visible text or labels, overflow or clipped
-labels, and console errors (`--shots <dir>` saves screenshots).
+`tests/e2e/i18n/editors.e2e.mjs` drives the translated converter, merger and totem maker (and, in
+French, Pack Doctor and the font maker) at 1280 and 390 px in both themes and fails on English
+left in visible text or labels, overflow or clipped labels, and console errors (`--shots <dir>`
+saves screenshots). `skins.e2e.mjs`, `shaders.e2e.mjs` and `textures.e2e.mjs` do the same for the
+skin tools, the Shader Maker and the texture pack maker; `--langs fr` (`--locales fr` for shaders)
+runs one language.
+
+The pages quote the editors' buttons (`strong('Ouvrir un pack')`): when a label changes, change
+the quotes in `src/i18n/<lang>/` too. Screenshot alt texts (`shots.ts`) describe the English
+screenshots, so they keep the English labels.
 
 ## Left for later
 

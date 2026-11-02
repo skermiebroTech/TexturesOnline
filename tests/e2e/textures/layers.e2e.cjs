@@ -496,8 +496,9 @@ const fullOf = (page) => page.evaluate(() => {
       await pp.waitForSelector('.tx-pl:not([hidden])');
       await pp.tap('.tx-pl-add');
       await pp.waitForFunction(() => window.__tx.canvas.layers()?.stack.layers.length === 2);
-      await paintAt(pp, 3, 1, RED, true);
-      check(`phone ${scheme}: a finger paints the new layer above the sheet`, same(await layerPixel(pp, 1, 3, 1), RED));
+      // (a texel clear of the 2D / 3D switch over the canvas's top edge)
+      await paintAt(pp, 7, 9, RED, true);
+      check(`phone ${scheme}: a finger paints the new layer above the sheet`, same(await layerPixel(pp, 1, 7, 9), RED));
       const box = await pp.$eval('.tx-pl', (e) => {
         const r = e.getBoundingClientRect();
         const s = e.closest('.tx-stage').getBoundingClientRect();

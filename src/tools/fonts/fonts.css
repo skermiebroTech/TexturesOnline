@@ -154,10 +154,19 @@
   align-items: center;
   gap: 12px;
 }
+/* On a narrow phone a badge wraps between words, growing taller, instead of spilling out. */
 .fm-chosen-row .badge {
+  display: inline-block;
   max-width: 100%;
+  height: auto;
+  min-height: 24px;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+/* File paths break anywhere on narrow screens: keep each piece's padding inside the line. */
+.fm-page code {
+  box-decoration-break: slice;
+  -webkit-box-decoration-break: slice;
 }
 .fm-chosen-sample {
   display: grid;
@@ -640,6 +649,15 @@
 @media (max-width: 560px) {
   .fm-grid {
     gap: 16px;
+  }
+  .fm-chosen-row {
+    gap: 8px;
+  }
+  .fm-chosen-sample {
+    width: 56px;
+  }
+  .fm-change {
+    padding-inline: 8px;
   }
   .fm-editor {
     grid-template-columns: minmax(0, 1fr);

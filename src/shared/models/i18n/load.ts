@@ -15,5 +15,6 @@ export const loadModelsText = textLoader<ModelsLanguage>({
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
   ru: () => import('./ru'),
+  fr: () => import('./fr'),
   pl: () => import('./pl'),
 });

@@ -1,0 +1,57 @@
+// French text of the name-based textures window (English source: ./text.ts).
+
+import type { NamesLanguage } from './load';
+
+const FR: NamesLanguage = {
+  'textures.names': {
+    title: 'Textures selon le nom',
+    intro: 'Renomme un objet {item} dans une enclume avec un de ces noms, et il reçoit sa propre texture.',
+    edition: {
+      vanilla: 'Marche dans Minecraft 1.21.5 et plus récent, sans mods.',
+      range: 'Marche dans Minecraft 1.21.5 et plus récent, sans mods. Pour les versions plus anciennes de la plage de ton pack, ça ajoute aussi des fichiers OptiFine.',
+      optifine: 'Il faut OptiFine ou le mod CIT Resewn : Minecraft avant la 1.21.5 ne sait pas le faire tout seul. Les joueurs qui n’ont aucun des deux voient la texture normale.',
+      old: 'Il faut Java 1.8 ou plus récent. Choisis une version plus récente dans l’onglet Pack.',
+      bedrock: 'Bedrock Edition ne sait pas faire ça : ses packs de ressources ne peuvent pas changer l’aspect d’un objet selon son nom. Seuls les packs Java Edition le peuvent.',
+    },
+    exact: 'Le nom doit correspondre exactement, majuscules comprises : « Excalibur » et « excalibur » sont deux noms différents (ajoute les deux si tu veux). Les noms colorés avec des commandes ne correspondent pas.',
+    notItem: 'Cette texture n’est pas l’image d’un objet, elle ne peut donc pas avoir de textures selon le nom. Ouvre la texture d’un objet, comme une épée ou une pomme.',
+    noModels: 'La liste des objets n’a pas pu être chargée, l’objet de cette texture est donc inconnu. Vérifie ta connexion et réessaie.',
+    loading: 'Chargement de l’objet…',
+    looks: 'Les noms et leurs textures',
+    add: 'Ajouter une texture selon le nom',
+    addIntro: 'Tape le nom que tu donneras à l’objet {item} dans l’enclume. Sa nouvelle texture commence comme une copie de la normale.',
+    nameLabel: 'Nom',
+    namePlaceholder: 'ex. Excalibur',
+    addName: 'Ajouter un nom',
+    moreNames: 'Plusieurs noms peuvent partager la même texture : ajoute-les aussi.',
+    removeName: 'Retirer {name}',
+    create: 'Créer et peindre',
+    paint: 'Peindre',
+    paintHint: 'Peindre la texture de ce nom',
+    shape: 'Forme 3D',
+    shapeHint: 'Changer la forme de l’objet pour ce nom dans l’éditeur de modèles',
+    shaped: '3D',
+    editNames: 'Noms',
+    editNamesHint: 'Changer les noms',
+    save: 'Enregistrer',
+    remove: 'Retirer',
+    removeHint: 'Retirer cette texture',
+    removeTitle: 'Retirer cette texture ?',
+    removeText: 'La texture de {names} sera supprimée.',
+    removed: 'Texture de {names} retirée',
+    undo: 'Annuler',
+    created: 'Peins maintenant la nouvelle texture. Un objet {item} nommé {names} l’affiche.',
+    quoted: '« {name} »',
+    nameEmpty: 'Tape d’abord un nom.',
+    nameTaken: '{name} a déjà une texture sur cet objet.',
+    nameCleaned: 'Les codes de couleur (§) ne peuvent pas être tapés dans une enclume, ils ont donc été retirés.',
+    pattern: 'Règle OptiFine',
+    patternHint: 'Du pack ouvert : une règle que seuls OptiFine et CIT Resewn comprennent, elle ne marche donc qu’avec eux.',
+    kept: 'Gardées du pack ouvert',
+    keptHint: 'Ces règles OptiFine font plus que choisir un nom, elles restent donc telles quelles.',
+    slot: 'Texture de {names}',
+    failed: 'La texture n’a pas pu être créée : {error}',
+  },
+};
+
+export default FR;

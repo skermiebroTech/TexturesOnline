@@ -3403,6 +3403,17 @@
   gap: 6px;
   min-width: 0;
 }
+.tx-usedby-wait {
+  flex: none;
+  width: 112px;
+  background: var(--surface-3);
+  animation: tx-usedby-wait 1.2s var(--ease) infinite alternate;
+}
+@keyframes tx-usedby-wait {
+  to {
+    opacity: 0.45;
+  }
+}
 .tx-usedby-chip {
   flex: none;
   max-width: 200px;
@@ -4240,7 +4251,8 @@
     --btn-h: 44px;
   }
   .tx-usedby-chip,
-  .tx-usedby-more {
+  .tx-usedby-more,
+  .tx-usedby-wait {
     position: relative;
     height: 40px;
   }

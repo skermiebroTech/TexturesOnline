@@ -60,7 +60,7 @@ export const ALL: AllText = {
     presets: { title: 'Préréglages et aperçu en direct', desc: 'Pars d’un style comme Cinéma ou Noir et vois chaque changement tout de suite.' },
     packEditor: { title: 'Modifier un pack de shaders', desc: 'Ouvre un pack de shaders que tu as déjà, change ses options ou ses fichiers et télécharge-le à nouveau.' },
     app: { title: 'Installe-le comme une appli', desc: 'Ajoute-le à ton écran d’accueil ou à ton bureau et utilise-le hors ligne.' },
-    languages: { title: 'En huit langues', desc: 'Anglais, allemand, espagnol, français, portugais, japonais, russe et polonais.' },
+    languages: { title: 'En huit langues', desc: 'Anglais, allemand, espagnol, français, portugais, japonais, russe et polonais, éditeurs inclus.' },
     privacy: { title: 'Rien n’est envoyé', desc: 'Pas de compte, pas de pub, pas de pistage. Ton travail reste sur ton appareil.' },
     backup: { title: 'Sauvegardes', desc: 'Enregistre un projet ou tous dans un fichier et ouvre-les dans un autre navigateur ou sur un autre appareil.' },
     openSource: { title: 'Open source', desc: 'Le code est public sur GitHub, où tu peux signaler des problèmes et proposer des idées.' },

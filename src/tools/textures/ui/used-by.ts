@@ -23,6 +23,8 @@ export interface UsedByApi {
 }
 
 const MAX_CHIPS = 3;
+/** Textures a mob, block or item can use: their row is kept while the model library loads, so the canvas below doesn't jump when the chips arrive. */
+const MAYBE_USED = /\/textures\/(block|blocks|item|items|entity)\//;
 
 export function createUsedBy(opts: { store: TexStore; models: ModelService; onPick(entry: ModelEntry): void; extra?: HTMLElement }): UsedByApi {
   const { models, store } = opts;
@@ -65,6 +67,12 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
   function render() {
     menu?.close();
     const lib = models.lib;
+    if (path && ((!lib && !models.error) || (lib?.available && !lib.usageReady)) && MAYBE_USED.test(path)) {
+      // still loading: the row keeps its place, a placeholder where the chips will be
+      show(true);
+      chips.replaceChildren(h('span', { class: 'chip tx-usedby-wait', 'aria-hidden': 'true' }));
+      return;
+    }
     if (!path || !lib?.available || !lib.usageReady) {
       show(false);
       return;
@@ -118,7 +126,8 @@ export function createUsedBy(opts: { store: TexStore; models: ModelService; onPi
     chips.replaceChildren(...nodes);
   }
 
-  const offs = [models.events.on('usage', () => render())];
+  // (the library failing, or a version without block models, ends the wait too)
+  const offs = [models.events.on('usage', () => render()), models.events.on('ready', () => render()), models.events.on('failed', () => render())];
 
   return {
     el,

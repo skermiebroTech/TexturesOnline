@@ -1,4 +1,4 @@
-// The texture pack maker in German, Japanese, Spanish, Portuguese and Russian, in Chromium. Each language
+// The texture pack maker in German, Japanese, Spanish, Portuguese, Russian and French, in Chromium. Each language
 // starts a pack and goes through the library (blocks, all textures, mobs, sounds), the pixel editor,
 // the effects, painting on the 3D model, a mob, the sound editor, the GUI section (library, preview
 // screens, splash texts), the model editor, the PvP tab, the Material tab (quick materials, a part,
@@ -31,7 +31,7 @@ const baseArg = argv.find((a) => /^https?:/.test(a));
 const opt = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : null);
 const shotsDir = opt('--shots');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
-const LANGS = (opt('--langs') ?? 'de,ja,es,pt-br,ru,pl').split(',');
+const LANGS = (opt('--langs') ?? 'de,ja,es,pt-br,ru,pl,fr').split(',');
 const WIDTHS = (opt('--widths') ?? '1280,390').split(',').map(Number);
 
 let failures = 0;
@@ -164,7 +164,7 @@ function cutLabels(gameNames) {
 // ------------------------------------------------------------------ English detection
 const KEEP = [
   'Texture Pack Maker', 'Texture Packs', 'Texture Pack', 'Texture pack', 'Minecraft Java Edition', 'Minecraft', 'Java', 'Bedrock', 'Mojang', 'Ogg Vorbis', 'Scale2x', 'Scale3x', 'Game Boy', 'PICO-8',
-  'Pixelwelt', 'Bloco', 'Kachel', 'Celular', 'Кубомир', 'Kostkowo', 'PNG', 'JPG', 'GIF', 'WebP', 'TGA', 'MP3', 'WAV', 'OGG', 'M4A', 'JSON', 'UV', 'HD', 'GUI', 'FMOD', 'FSB5', 'Creeper', 'Sprite', 'Noir', 'Cartoon',
+  'Pixelwelt', 'Bloco', 'Kachel', 'Celular', 'Кубомир', 'Kostkowo', 'Cubeville', 'PNG', 'JPG', 'GIF', 'WebP', 'TGA', 'MP3', 'WAV', 'OGG', 'M4A', 'JSON', 'UV', 'HD', 'GUI', 'FMOD', 'FSB5', 'Creeper', 'Sprite', 'Noir', 'Cartoon',
   'Ctrl', 'Shift', 'Alt', 'Esc', 'Enter', 'Delete', 'Chrome', 'Edge', 'Firefox', 'Safari', 'https', 'kHz', 'Mob', 'Mobs', 'Pack', 'Packs', 'Add-on',
 ];
 const ENGLISH = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|choose|drop|download|convert|merge|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo|search|show|hide)(?!\p{L})/iu;
@@ -176,6 +176,8 @@ function english(texts, locale) {
   for (const text of texts) {
     let s = text;
     for (const k of KEEP) s = s.split(k).join(' ');
+    // French "on" (one), "or" (gold) and "change" are French words too.
+    if (locale === 'fr') s = s.replace(/(?<!\p{L})(on|or|change)(?!\p{L})/giu, ' ');
     // Paths, file names, versions, keys and quoted examples of the (English) game names.
     s = s.replace(/[“"«「][^”"»」]*[”"»」]/g, ' ').replace(/\S*[./_\\0-9:#×§]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
@@ -187,7 +189,7 @@ function english(texts, locale) {
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', pl: 'pl' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', pl: 'pl', fr: 'fr' };
 /** A few words each language's editor shows, to be sure the page is in that language. */
 const EXPECT = {
   de: { create: 'Pack erstellen', export: 'Exportieren', effects: 'Effekte' },
@@ -196,8 +198,9 @@ const EXPECT = {
   ja: { create: 'パックを作る', export: '書き出す', effects: '効果' },
   ru: { create: 'Создать пак', export: 'Экспорт', effects: 'Эффекты' },
   pl: { create: 'Utwórz paczkę', export: 'Eksportuj', effects: 'Efekty' },
+  fr: { create: 'Créer le pack', export: 'Exporter', effects: 'Effets' },
 };
-const PACK_NAME = { de: 'Pixelwelt', es: 'Celular', 'pt-br': 'Bloco', ja: 'Kachel', ru: 'Кубомир', pl: 'Kostkowo' };
+const PACK_NAME = { de: 'Pixelwelt', es: 'Celular', 'pt-br': 'Bloco', ja: 'Kachel', ru: 'Кубомир', pl: 'Kostkowo', fr: 'Cubeville' };
 
 const fx = fixturesDir();
 if (!fx) {

@@ -17,5 +17,6 @@ export const loadShadersText = textLoader<ShadersLanguage>({
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
   ru: () => import('./ru'),
+  fr: () => import('./fr'),
   pl: () => import('./pl'),
 });

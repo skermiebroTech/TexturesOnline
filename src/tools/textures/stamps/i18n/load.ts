@@ -14,5 +14,6 @@ export const loadStampsText = textLoader<StampsLanguage>({
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
   ru: () => import('./ru'),
+  fr: () => import('./fr'),
   pl: () => import('./pl'),
 });

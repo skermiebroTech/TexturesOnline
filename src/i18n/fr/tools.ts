@@ -42,7 +42,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Éditeur d’interface : barre d’action, cœurs, faim, armure, inventaire et conteneurs, boutons, fonds de menu, panorama de l’écran titre, messages d’accueil et éclat d’enchantement, avec un aperçu en direct',
       'Matériaux PBR : brillance, métal, lumière propre, lumière traversante et relief (cartes normales faites à partir des couleurs) pour les Graphismes éclatants de Bedrock et les shaders labPBR de Java, avec un aperçu 3D éclairé',
       'Textures selon le nom : un objet renommé reçoit sa propre texture et son modèle, en définitions d’objets pour Java 1.21.5+ (sans mods) ou en fichiers CIT d’OptiFine pour les versions plus anciennes',
-      'Effets en un clic pour tout le pack, comme Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon et Smooth HD',
+      'Effets en un clic pour tout le pack, comme Mode sombre, Rêve pastel, Contours néon, Rétro 8 bits, Automne, Givre d’hiver, Noir, Cartoon et HD lisse',
       'Ouvre un pack .zip ou .mcpack existant et continue à le modifier',
       'Aperçu 3D du bloc, icône du pack, description et plage de compatibilité Java',
       'Exporte un .zip avec le bon pack.mcmeta pour la version Java, ou un .mcpack Bedrock',
@@ -50,7 +50,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     features: [
       ['Toutes les textures vanilla de la version que tu choisis, avec recherche et catégories.'],
       ['Un éditeur de pixels complet : crayon, gomme, remplissage, pipette, ligne, formes, bruit, sélection, peinture en miroir et annuler/rétablir, avec aperçu en mosaïque et zoom.'],
-      ['Calques : ouvre Layers au-dessus de la zone de dessin pour peindre sur des calques séparés, comme dans un logiciel de dessin. Ajoute-les, duplique-les, renomme-les, masque-les, verrouille-les, fais-les glisser et fusionne-les, règle leur opacité et leur mode de fusion (produit, superposition claire, éclaircir, incrustation), ou mets la texture du jeu sur un calque verrouillé pour la décalquer. Les calques traversent toutes les images d’une animation, annuler défait aussi les changements de calques, et Minecraft reçoit les calques aplatis en un seul PNG.'],
+      ['Calques : ouvre Calques au-dessus de la zone de dessin pour peindre sur des calques séparés, comme dans un logiciel de dessin. Ajoute-les, duplique-les, renomme-les, masque-les, verrouille-les, fais-les glisser et fusionne-les, règle leur opacité et leur mode de fusion (produit, superposition claire, éclaircir, incrustation), ou mets la texture du jeu sur un calque verrouillé pour la décalquer. Les calques traversent toutes les images d’une animation, annuler défait aussi les changements de calques, et Minecraft reçoit les calques aplatis en un seul PNG.'],
       ['Tampons : prends l’outil tampon (S) pour poser des taches de minerai, des fissures, de la mousse, un tramage ou des éclats dans les nuances de ta couleur, ou garde une sélection comme tampon perso. Tourne-le avec R, retourne-le avec H, vois-le sous le pointeur avant de cliquer, et touche l’écran pour le poser sur un téléphone. Les tampons peignent sur le calque où tu es et s’annulent comme n’importe quel trait.'],
       ['Changement de couleur : remplace une couleur par une autre, embarque les couleurs proches avec une tolérance, ou déplace toute la gamme de teintes d’une couleur pour que ses nuances plus sombres et plus claires gardent leur décalage de teinte. Fais-le dans la texture ouverte, dans la sélection ou dans toutes les textures de ton pack qui utilisent cette couleur, choisies dans une liste avec des images avant et après, et annule tout d’un seul coup.'],
       ['Couleurs des biomes : ouvre la carte de couleurs de l’herbe, du feuillage ou (1.21.5+) du feuillage sec pour voir où chaque biome prend sa couleur, avec le chaud et le froid, le sec et le pluvieux expliqués, et des biomes comme la plaine, la jungle, le marais et la cerisaie marqués. Un bloc d’herbe et des feuilles montrent la couleur pendant que tu peins, et les aperçus 3D colorent l’herbe et les feuilles selon le biome que tu choisis. L’éditeur t’indique où le jeu utilise plutôt ses propres couleurs, comme l’herbe des marais, les badlands et les feuilles de sapin et de bouleau.'],
@@ -59,12 +59,12 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Change les formes (Java) : modifie le modèle d’un bloc ou d’un objet cube par cube, avec ses textures, ses UV et sa position en main, ou transforme un objet plat en objet 3D. Les fichiers du modèle vont dans le pack selon ta version. ', link('/guides/make-3d-items-texture-pack', 'Comment faire des objets 3D'), '.'],
       ['Packs PvP et FPS : feu bas, verre transparent, sans le flou de la citrouille, un viseur perso, des épées plus petites et un bouclier plus bas, plus des textures 8× et sans animations ; chacun est un interrupteur qui écrit les bons fichiers pour ta version. ', link('/guides/make-a-pvp-texture-pack', 'Comment faire un pack PvP'), '.'],
       ['Relooke l’interface : la barre d’action, les cœurs dans tous leurs états, la faim, l’armure, l’air, la barre d’expérience, le viseur, l’inventaire, les coffres, le fourneau et l’établi, les boutons et les fonds de menu, dans l’éditeur de pixels, avec un aperçu en direct du HUD, de l’inventaire, de l’écran titre avec son panorama qui tourne et ses boutons, et des objets enchantés. Tu peux aussi modifier les messages d’accueil de l’écran titre. Les anciennes versions de Java rangent le HUD dans deux grandes images : choisir un cœur ne sélectionne que sa zone.'],
-      ['Matériaux PBR : dans l’onglet Material, donne à une texture un matériau rapide (métal, pierre polie ou brute, bois, verre, lumineux, points de minerai lumineux, eau, feuilles) ou règle sa brillance, son métal, sa lumière propre et sa lumière traversante pour toute la texture ou certaines parties, avec un relief fait à partir de ses couleurs, sur un bloc 3D éclairé par un soleil qui bouge. Bedrock reçoit des jeux de textures pour les Graphismes éclatants ; Java, des cartes labPBR ', code('_n'), ' et ', code('_s'), ' pour les shaders PBR dans Iris ou OptiFine. ', link('/guides/make-a-pbr-texture-pack', 'Comment faire un pack PBR'), '.'],
+      ['Matériaux PBR : dans l’onglet Matériau, donne à une texture un matériau rapide (métal, pierre polie ou brute, bois, verre, lumineux, points de minerai lumineux, eau, feuilles) ou règle sa brillance, son métal, sa lumière propre et sa lumière traversante pour toute la texture ou certaines parties, avec un relief fait à partir de ses couleurs, sur un bloc 3D éclairé par un soleil qui bouge. Bedrock reçoit des jeux de textures pour les Graphismes éclatants ; Java, des cartes labPBR ', code('_n'), ' et ', code('_s'), ' pour les shaders PBR dans Iris ou OptiFine. ', link('/guides/make-a-pbr-texture-pack', 'Comment faire un pack PBR'), '.'],
       ['Textures selon le nom (Java) : donne à un objet sa propre texture quand il est renommé sur une enclume, comme une épée en diamant appelée « Excalibur ». Tape un ou plusieurs noms, peins la nouvelle texture à partir d’une copie de celle de l’objet et donne-lui une forme 3D si tu veux. Java 1.21.5 et plus récent n’ont besoin d’aucun mod ; les versions plus anciennes reçoivent des fichiers CIT d’OptiFine. ', link('/guides/rename-items-texture-pack', 'Comment renommer des objets pour changer leur texture'), '.'],
       ['Textures animées : anime n’importe quel bloc ou objet, ou change l’eau, la lave et le feu. Ajoute, fais glisser, copie et supprime des images, peins avec la pelure d’oignon, règle la vitesse en ticks (20 ticks font 1 seconde) avec des durées pour des images précises et un fondu, et regarde le résultat à la vitesse du jeu. Importe un GIF ou une planche de sprites comme images et enregistre l’animation en GIF. Les packs Java reçoivent des fichiers ', code('.png.mcmeta'), ', les packs Bedrock des entrées de flipbook (blocs seulement). ', link('/guides/make-animated-textures', 'Comment faire des textures animées'), '.'],
       ['Importe tes propres PNG (redimensionnés à la texture, de 16x à 512x).'],
       ['Change les sons : écoute n’importe quel son du jeu, puis remplace-le par ton propre fichier ou un enregistrement au micro, coupé sur sa forme d’onde. Les sons sont enregistrés en Ogg Vorbis, le format que Minecraft lit.'],
-      ['Effets en un clic pour tout le pack, comme Dark Mode, Pastel, Neon Outline, Retro 8-bit, Autumn, Winter, Noir, Cartoon et Smooth HD, à empiler sans toucher à tes propres modifications.'],
+      ['Effets en un clic pour tout le pack, comme Mode sombre, Rêve pastel, Contours néon, Rétro 8 bits, Automne, Givre d’hiver, Noir, Cartoon et HD lisse, à empiler sans toucher à tes propres modifications.'],
       ['Ouvre un ', code('.zip'), ' ou un ', code('.mcpack'), ' existant et continue à le modifier.'],
       ['Un aperçu 3D du bloc, l’icône du pack, une description et une plage de compatibilité Java.'],
       ['Exporte un ', code('.zip'), ' avec les règles exactes de ', code('pack.mcmeta'), ' de ta version de Java, ou un ', code('.mcpack'), ' Bedrock.'],
@@ -118,7 +118,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'gui',
         q: 'Je peux changer la barre d’action, les cœurs, les menus et l’écran titre ?',
-        a: [p('Oui. Choisis le bouton GUI au-dessus de la liste des textures : il liste le HUD, l’inventaire et les conteneurs, les boutons, les fonds de menu, le panorama, les messages d’accueil et l’éclat d’enchantement de ta version, et l’onglet Preview les montre à leur place pendant que tu peins. Java avant la 1.20.2 range le HUD et les boutons dans gui/icons.png et gui/widgets.png ; l’éditeur sélectionne la bonne zone pour toi.')],
+        a: [p('Oui. Choisis le bouton Interface et menus au-dessus de la liste des textures : il liste le HUD, l’inventaire et les conteneurs, les boutons, les fonds de menu, le panorama, les messages d’accueil et l’éclat d’enchantement de ta version, et l’onglet Aperçu les montre à leur place pendant que tu peins. Java avant la 1.20.2 range le HUD et les boutons dans gui/icons.png et gui/widgets.png ; l’éditeur sélectionne la bonne zone pour toi.')],
       },
       {
         id: 'pbr',
@@ -128,12 +128,12 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'names',
         q: 'Un objet renommé peut avoir sa propre texture ?',
-        a: [p('Oui, dans les packs Java. Ouvre la texture d’un objet, choisis Name-based textures dans son menu (ou Names sous l’aperçu), tape le nom et peins la nouvelle texture. Minecraft 1.21.5 et plus récent l’affiche sans mods quand l’objet est renommé sur une enclume avec exactement ce nom ; les versions plus anciennes ont besoin d’OptiFine ou du mod CIT Resewn. Les packs de ressources Bedrock ne peuvent pas faire ça.')],
+        a: [p('Oui, dans les packs Java. Ouvre la texture d’un objet, choisis Textures selon le nom dans son menu (ou Noms sous l’aperçu), tape le nom et peins la nouvelle texture. Minecraft 1.21.5 et plus récent l’affiche sans mods quand l’objet est renommé sur une enclume avec exactement ce nom ; les versions plus anciennes ont besoin d’OptiFine ou du mod CIT Resewn. Les packs de ressources Bedrock ne peuvent pas faire ça.')],
       },
       {
         id: 'animation',
         q: 'Je peux faire mes propres textures animées ?',
-        a: [p('Oui. Ouvre la texture d’un bloc ou d’un objet, choisis Make animated dans son menu, peins les images, ajoutes-en avec + et règle la vitesse dans la fenêtre Timing, où 20 ticks font 1 seconde. Tu peux aussi importer un GIF. Les packs Java reçoivent un fichier .png.mcmeta par animation ; les packs Bedrock, des entrées de flipbook, que seuls les blocs ont : sur Bedrock, les objets restent donc immobiles.')],
+        a: [p('Oui. Ouvre la texture d’un bloc ou d’un objet, choisis Make animated dans son menu, peins les images, ajoutes-en avec + et règle la vitesse dans la fenêtre Durée de l’animation, où 20 ticks font 1 seconde. Tu peux aussi importer un GIF. Les packs Java reçoivent un fichier .png.mcmeta par animation ; les packs Bedrock, des entrées de flipbook, que seuls les blocs ont : sur Bedrock, les objets restent donc immobiles.')],
       },
       {
         id: 'biomes',
@@ -148,7 +148,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'existing',
         q: 'Je peux modifier un pack de textures que j’ai déjà ?',
-        a: [p('Oui. Choisis ', strong('Open a pack'), ' et sélectionne un ', code('.zip'), ' Java ou un ', code('.mcpack'), ' Bedrock. L’édition et la version sont détectées à partir du pack.')],
+        a: [p('Oui. Choisis ', strong('Ouvrir un pack'), ' et sélectionne un ', code('.zip'), ' Java ou un ', code('.mcpack'), ' Bedrock. L’édition et la version sont détectées à partir du pack.')],
       },
       {
         id: 'purple',
@@ -386,7 +386,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Vérifie les images (faux PNG, abîmées, 16 bits, tailles), les animations et les sons',
       'Vérifie le manifest.json de Bedrock (format, UUID, modules, min_engine_version), les UUID en double et les listes de textures',
       'Distingue les packs de shaders et les packs de données des packs de ressources',
-      'Fix all applique les corrections sûres, montre un avant/après et télécharge le .zip ou le .mcpack réparé',
+      'Corriger les … problèmes applique les corrections sûres, montre un avant/après et télécharge le .zip ou le .mcpack réparé',
     ],
     features: [
       ['Dépose un ', code('.zip'), ' Java, un ', code('.mcpack'), ' ou un ', code('.mcaddon'), ' Bedrock, ou le dossier du pack. Les gros packs restent fluides : tout se passe dans ton navigateur.'],
@@ -395,14 +395,14 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Bedrock : ', code('manifest.json'), ' (format, UUID, modules, version du moteur), des packs copiés avec le même UUID, les listes de textures, des lettres dans la mauvaise casse pour les téléphones, et un ', code('.zip'), ' qui devrait être un ', code('.mcpack'), '.'],
       ['Des images qui ne sont pas de vrais PNG, des images abîmées ou en 16 bits, des tailles qui ne sont pas des puissances de deux, des animations sans leur ', code('.mcmeta'), ' et des sons qui ne sont pas en Ogg Vorbis.'],
       ['Les packs de shaders et les packs de données déposés par erreur sont reconnus, et un pack Java utilisé sur Bedrock (ou l’inverse) mène au convertisseur.'],
-      [strong('Fix all'), ' applique toutes les corrections sûres, vérifie à nouveau le pack et montre ce qui a changé. Ensuite, télécharge le pack réparé.'],
+      [strong('Corriger les … problèmes'), ' applique toutes les corrections sûres, vérifie à nouveau le pack et montre ce qui a changé. Ensuite, télécharge le pack réparé.'],
     ],
     howTitle: 'Comment réparer un pack de textures',
     steps: [
       ['Dépose le pack qui ne marche pas : un ', code('.zip'), ', un ', code('.mcpack'), ', un ', code('.mcaddon'), ' ou un dossier.'],
       'Choisis où tu joues : Java et ta version, ou Bedrock.',
       'Lis le rapport. Chaque problème dit à quel point il est grave, quelles versions il touche et comment le corriger.',
-      [strong('Fix all'), ' applique les corrections sûres et vérifie à nouveau. Télécharge le pack réparé et installe-le.'],
+      [strong('Corriger les … problèmes'), ' applique les corrections sûres et vérifie à nouveau. Télécharge le pack réparé et installe-le.'],
     ],
     faq: [
       {
@@ -423,7 +423,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         q: 'Je peux le laisser réparer mon pack sans risque ?',
         a: [
           p(
-            'Oui. Fix all n’applique que des corrections qui ne peuvent pas changer l’apparence du pack, comme sortir des fichiers d’un dossier en trop, écrire un ',
+            'Oui. Corriger les … problèmes n’applique que des corrections qui ne peuvent pas changer l’apparence du pack, comme sortir des fichiers d’un dossier en trop, écrire un ',
             code('pack.mcmeta'),
             ' correct ou renommer des textures pour ta version. Les corrections qui sont un choix, comme animer une texture ou donner de nouveaux UUID à un pack Bedrock, ont leur propre bouton. Ton fichier d’origine n’est jamais modifié : tu télécharges une copie réparée.',
           ),
@@ -505,7 +505,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     steps: [
       'Choisis un skin : importe un PNG, tape un pseudo Java, choisis un de tes skins enregistrés ou un personnage par défaut.',
       'Choisis un style (Classic, Big head ou Full body) et si tu gardes la couche extérieure, le contour doré ou les ailes dorées.',
-      ['Vérifie les aperçus. Utilise ', strong('Edit pixels'), ' pour changer ce que tu veux à la main.'],
+      ['Vérifie les aperçus. Utilise ', strong('Modifier les pixels'), ' pour changer ce que tu veux à la main.'],
       ['Choisis Java et la version à laquelle tu joues, ou Bedrock, puis télécharge le ', code('.zip'), ' ou le ', code('.mcpack'), '.'],
       'Installe-le comme n’importe quel pack de ressources et place-le en haut de ta liste de packs.',
     ],
@@ -735,7 +735,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'edit',
         q: 'Je peux modifier un pack de police que j’ai déjà ?',
-        a: [p('Oui. Ouvre son ', code('.zip'), ' ou son ', code('.mcpack'), ' avec Open a pack : ses planches bitmap sont relues en caractères que tu peux modifier, et le fichier TrueType qu’il contient est gardé.')],
+        a: [p('Oui. Ouvre son ', code('.zip'), ' ou son ', code('.mcpack'), ' avec Ouvrir un pack : ses planches bitmap sont relues en caractères que tu peux modifier, et le fichier TrueType qu’il contient est gardé.')],
       },
       {
         id: 'upload',
@@ -814,7 +814,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         a: [
           p(
             'Peins chaque skin comme un projet à part, puis choisis ',
-            strong('Bedrock skin pack (.mcpack)'),
+            strong('Pack de skins Bedrock (.mcpack)'),
             ' et coche les autres skins à ajouter. Chaque skin garde son nom et ses bras classiques ou fins, et exporter à nouveau met à jour le pack installé au lieu d’ajouter une copie. ',
             link('/skin-pack-maker', 'En savoir plus sur le créateur de packs de skins'),
             '.',
@@ -860,7 +860,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     steps: [
       'Crée un skin : choisis un point de départ et le style de bras, puis peins-le. Chaque skin est enregistré sur cet appareil comme un projet à part.',
       'Fais de la même façon les autres skins que tu veux dans le pack.',
-      ['Ouvre l’un d’eux, choisis ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', donne un nom au pack et coche les autres skins à inclure.'],
+      ['Ouvre l’un d’eux, choisis ', strong('Exporter'), ' › ', strong('Pack de skins Bedrock (.mcpack)'), ', donne un nom au pack et coche les autres skins à inclure.'],
       ['Ouvre le ', code('.mcpack'), ' téléchargé : double-clique dessus sur Windows, ou touche-le et choisis Minecraft sur Android, iPhone et iPad.'],
       ['Dans Minecraft, va dans ', strong(BEDROCK.dressingRoom), ' › ', strong(BEDROCK.classicSkins), ', trouve ton pack, choisis un skin et appuie sur ', strong(BEDROCK.equip), '.'],
     ],
@@ -962,8 +962,8 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     howTitle: 'Comment faire une cape',
     steps: [
       'Pars d’un dessin, ou peins le modèle vide. La grande face à gauche est l’extérieur de la cape, celle que les gens voient derrière toi.',
-      ['Peins aussi l’intérieur et les bords, puis appuie sur ', strong('Copy cape onto elytra'), ', ou peins toi-même les faces des élytres.'],
-      ['Fais tourner le joueur 3D, passe de ', strong('Cape'), ' à ', strong('Elytra'), ' et essaie l’animation de vol.'],
+      ['Peins aussi l’intérieur et les bords, puis appuie sur ', strong('Copier la cape sur les élytres'), ', ou peins toi-même les faces des élytres.'],
+      ['Fais tourner le joueur 3D, passe de ', strong('Cape'), ' à ', strong('Élytres'), ' et essaie l’animation de vol.'],
       ['Télécharge le ', code('.png'), ' pour un mod de capes, ou le pack de textures d’élytres pour Java ou Bedrock.'],
     ],
     extra: (sub) => [
@@ -1009,7 +1009,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     eyebrow: 'Shaders',
     heading: 'Crée des shaders Minecraft en ligne',
     appName: 'Minecraft Shader Maker',
-    screenshotCaption: 'Le Shader Maker de Texture Pack Maker : Iris / OptiFine, Java vanilla ou Graphismes éclatants de Bedrock',
+    screenshotCaption: 'Le créateur de shaders de Texture Pack Maker : Iris / OptiFine, Java vanilla ou Graphismes éclatants de Bedrock',
     lead: ['Choisis où tu joues, prends un préréglage, bouge quelques curseurs et regarde un aperçu 3D en direct avec un cycle jour-nuit. Ensuite, exporte un pack prêt à mettre dans le jeu.'],
     featureList: [
       'Packs de shaders Iris / OptiFine pour Java : ombres, plantes qui ondulent, eau, bloom, rayons de lumière, tone mapping et étalonnage des couleurs',
