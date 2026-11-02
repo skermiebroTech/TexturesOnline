@@ -60,6 +60,7 @@ const LANGS = [
   { code: 'pt-br', lang: 'pt-BR', help: 'Ajuda', name: 'Português (Brasil)' },
   { code: 'ja', lang: 'ja', help: 'ヘルプ', name: '日本語' },
   { code: 'ru', lang: 'ru', help: 'Помощь', name: 'Русский' },
+  { code: 'fr', lang: 'fr', help: 'Aide', name: 'Français' },
 ];
 const LOCALIZED = LANGS.flatMap((l) => [
   { lang: l, path: `${l.code}/`, tool: 'home', ready: '.home .hero-title' },
@@ -259,14 +260,14 @@ try {
       return document.fonts.check('16px Texel', 'Ж') && document.fonts.check('bold 16px Texel', 'Ж');
     });
     check(cyrillic, 'Cyrillic regular and bold come from the pixel font');
-    // the language switcher fits six languages on a phone, in the footer and the menu drawer
+    // the language switcher fits every language on a phone, in the footer and the menu drawer
     await page.setViewportSize({ width: 390, height: 800 });
     await page.waitForTimeout(300);
     const fit = await page.evaluate(() => {
       const sw = document.querySelector('.site-footer .lang-switch');
       return { page: document.documentElement.scrollWidth, sw: sw ? sw.scrollWidth - sw.clientWidth : -1, links: document.querySelectorAll('.site-footer .lang-switch a').length };
     });
-    check(fit.page <= 390 && fit.sw === 0 && fit.links === 6, 'six languages fit the footer switcher at 390 px', JSON.stringify(fit));
+    check(fit.page <= 390 && fit.sw === 0 && fit.links === LANGS.length + 1, `${LANGS.length + 1} languages fit the footer switcher at 390 px`, JSON.stringify(fit));
     await page.click('.menu-btn');
     await page.waitForSelector('.nav-drawer .drawer-langs a[hreflang="ru"]');
     const drawer = await page.evaluate(() => {
@@ -278,7 +279,7 @@ try {
       }).length;
       return { links: d.querySelectorAll('a').length, out, overflow: d.scrollWidth - d.clientWidth };
     });
-    check(drawer.links === 6 && drawer.out === 0 && drawer.overflow <= 0, 'six languages fit the menu drawer at 390 px', JSON.stringify(drawer));
+    check(drawer.links === LANGS.length + 1 && drawer.out === 0 && drawer.overflow <= 0, `${LANGS.length + 1} languages fit the menu drawer at 390 px`, JSON.stringify(drawer));
     await page.keyboard.press('Escape');
     // switching to Russian inside the app keeps the page and loads the Cyrillic font
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -291,6 +292,25 @@ try {
     // the app waits for the font up to a second, then lets the text swap to it when it arrives
     const fontReady = await page.waitForFunction(() => document.fonts.check('bold 16px Texel', 'Ж'), null, { timeout: 5000 }).then(() => true, () => false);
     check(fontReady, 'Cyrillic font is ready after switching to Russian in the app');
+    // French: accents and œ are in the pixel font's Latin file (preloaded on every page), so French
+    // text never waits for the extension file; French pages preload nothing more
+    await page.goto(`${base}fr/all/`, { waitUntil: 'load' });
+    await page.waitForSelector('.all-page h1');
+    const french = await page.evaluate(async () => {
+      await document.fonts.ready;
+      const core = [...document.fonts].filter((f) => /Texel/.test(f.family) && /^U\+0+-F+\b/i.test(f.unicodeRange.trim()));
+      return {
+        preloads: [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((l) => l.href.split('/').pop()),
+        core: core.map((f) => `${f.weight} ${f.status} ${f.unicodeRange}`),
+        oe: document.body.innerText.includes('œ'),
+        glyphs: document.fonts.check('16px Texel', 'éèêàçœŒ«»') && document.fonts.check('bold 16px Texel', 'éèêàçœŒ«»'),
+      };
+    });
+    check(
+      french.oe && french.glyphs && french.core.length === 2 && french.core.every((r) => / loaded /.test(r) && /U\+152-153/i.test(r)) && !french.preloads.some((f) => /-ext/.test(f)),
+      'French accents and œ come from the Latin pixel font file',
+      JSON.stringify(french),
+    );
     check(errors.length === 0, 'no console errors while switching languages', errors.join('\n'));
     await ctx.close();
   }
@@ -499,7 +519,7 @@ try {
       check(r.status() === 200, `${f} is served`);
     }
     const sitemap = await (await page.request.get(server.url + 'sitemap.xml')).text();
-    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('hreflang="ru"') && sitemap.includes('/ja/guides/make-a-skin/') && sitemap.includes('/ru/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
+    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('hreflang="ru"') && sitemap.includes('hreflang="fr"') && sitemap.includes('/ja/guides/make-a-skin/') && sitemap.includes('/ru/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
     await ctx.close();
   }
 } finally {
