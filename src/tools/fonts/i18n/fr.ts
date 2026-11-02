@@ -126,7 +126,7 @@ const FR: FontsLanguage = {
       scenes: 'Où',
       sceneNames: { chat: 'Chat', sign: 'Pancarte', book: 'Livre', title: 'Écran titre', tooltip: 'Infobulle' },
       sample: 'Texte d’exemple',
-      sampleDefault: 'Portez ce vieux whisky au juge blond qui fume !',
+      sampleDefault: 'Voix ambiguë d’un cœur qui, au zéphyr, préfère les jattes de kiwis.',
       reply: 'Trop bien, ta police ! Tu l’as trouvée où ?',
       joined: 'Alex a rejoint la partie',
       player: 'Steve',
