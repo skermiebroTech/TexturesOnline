@@ -59,8 +59,8 @@ const PL: ConvertLanguage = {
     },
     result: {
       meter: 'Przekonwertowane tekstury: {done} z {total}',
-      allConverted: '{count, plural, one {Przekonwertowano # teksturę} few {Przekonwertowano wszystkie # tekstury} many {Przekonwertowano wszystkie # tekstur} other {Przekonwertowano wszystkie # tekstury}}',
-      someConverted: 'Przekonwertowano {done} z {total, plural, one {# tekstury} few {# tekstur} many {# tekstur} other {# tekstury}}',
+      allConverted: '{count, plural, one {Gotowe: # tekstura} few {Gotowe: wszystkie # tekstury} many {Gotowe: wszystkie # tekstur} other {Gotowe: wszystkie # tekstury}}',
+      someConverted: 'Gotowe: {done} z {total, plural, one {# tekstury} few {# tekstur} many {# tekstur} other {# tekstury}}',
       noTextures: 'Paczka nie ma tekstur do konwersji',
       saved: 'Zapisano jako „{name}” w twoich paczkach tekstur · {file}',
       statConverted: 'przekonwertowane',

@@ -60,7 +60,7 @@ const PL: MergeLanguage = {
       converter: 'Konwerterze paczek tekstur',
       quoted: '„{name}”',
       bedrockResult: '{count, plural, one {Dostaniesz jeden plik .mcpack do Bedrocka z # paczką w środku.} few {Dostaniesz jeden plik .mcpack do Bedrocka z # paczkami w środku.} many {Dostaniesz jeden plik .mcpack do Bedrocka z # paczkami w środku.} other {Dostaniesz jeden plik .mcpack do Bedrocka z # paczki w środku.}}',
-      renamed: '{packs} dostaną nazwy tekstur z Javy {version}.',
+      renamed: 'Nazwy tekstur z Javy {version} dostanie: {packs}.',
       packVersion: '{name} (Java {version})',
       sameVersion: 'Wszystkie paczki są do Javy {version}. Dostaniesz jeden plik .zip.',
     },
