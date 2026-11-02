@@ -17,7 +17,7 @@ const JAVA_PACK_STEPS: Child[] = [
   ['Uruchom Minecraft Java Edition i otwórz ', uiPath(JAVA.options, JAVA.packs), '.'],
   ['Kliknij ', uiPath(JAVA.openFolder), '. Otworzy się folder ', code('resourcepacks'), '.'],
   ['Wrzuć ', code('.zip'), ` do tego folderu. Możesz też przeciągnąć go prosto na ekran „${JAVA.packsScreen}”.`],
-  ['Na liście ', strong(JAVA.available), ' najedź myszką na swoją paczkę i kliknij strzałkę, żeby przenieść ją do ', strong(JAVA.selected), '. Paczki wyżej na liście wygrywają. Kliknij ', strong(JAVA.done), '.'],
+  ['Na liście ', strong(JAVA.available), ' najedź myszką na swoją paczkę i kliknij strzałkę, żeby przenieść ją na listę ', strong(JAVA.selected), '. Paczki wyżej na liście wygrywają. Kliknij ', strong(JAVA.done), '.'],
 ];
 
 const BEDROCK_PACK_STEPS: Child[] = [
@@ -52,7 +52,7 @@ const IRIS_STEPS: Child[] = [
 const VANILLA_SHADER_STEPS: Child[] = [
   ['Wyeksportuj z celem ', strong('czysta Java'), '. Dostaniesz paczkę zasobów jako ', code('.zip'), '.'],
   ['Zainstaluj ją jak paczkę tekstur: ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć zipa.'],
-  `Przenieś ją do „${JAVA.selected}” i kliknij „${JAVA.done}”. Nowy wygląd działa od razu.`,
+  `Przenieś ją na listę „${JAVA.selected}” i kliknij „${JAVA.done}”. Nowy wygląd działa od razu.`,
 ];
 
 const VIBRANT_STEPS: Child[] = [

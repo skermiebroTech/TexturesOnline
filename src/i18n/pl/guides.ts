@@ -54,7 +54,7 @@ const INSTALL_JAVA_STEPS: Child[] = [
   ['Uruchom Minecraft Java Edition i otwórz ', uiPath(JAVA.options, JAVA.packs), '.'],
   ['Kliknij ', uiPath(JAVA.openFolder), '. Otworzy się folder ', code('resourcepacks'), '.'],
   ['Wrzuć ', code('.zip'), ` paczki do tego folderu (nie rozpakowuj go). Możesz też przeciągnąć plik na ekran „${JAVA.packsScreen}”.`],
-  ['Przenieś paczkę strzałką z ', strong(JAVA.available), ' do ', strong(JAVA.selected), ' i, jeśli używasz kilku paczek, ustaw ją na samej górze. Kliknij ', strong(JAVA.done), '.'],
+  ['Przenieś paczkę strzałką z listy ', strong(JAVA.available), ' do listy ', strong(JAVA.selected), ' i, jeśli używasz kilku paczek, ustaw ją na samej górze. Kliknij ', strong(JAVA.done), '.'],
 ];
 
 const SKIN_STEPS: Child[] = [
@@ -176,7 +176,7 @@ const makeATexturePack: GuideText = {
       body: [
         p(MAKE_PACK_STEPS[4]),
         ul([
-          ['Java: otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam ', code('.zip'), ' (nie rozpakowuj) i przenieś paczkę do ', strong(JAVA.selected), '. Po zmianach naciśnij w grze F3 + T, żeby przeładować zasoby.'],
+          ['Java: otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam ', code('.zip'), ' (nie rozpakowuj) i przenieś paczkę na listę ', strong(JAVA.selected), '. Po zmianach naciśnij w grze F3 + T, żeby przeładować zasoby.'],
           ['Bedrock: otwórz ', code('.mcpack'), ' i aktywuj go w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
         ]),
         p('Coś wygląda źle? ', link('/guides/texture-pack-not-working', 'Paczka tekstur nie działa: rozwiązania'), '.'),
@@ -528,7 +528,7 @@ const notWorking: GuideText = {
         ),
         gameMessage(
           ['Czy na pewno chcesz załadować tę paczkę?', 'Ta paczka została stworzona dla starszej wersji Minecrafta i może już nie działać poprawnie.'],
-          'Pojawia się, kiedy przenosisz taką paczkę do ',
+          'Pojawia się, kiedy przenosisz taką paczkę na listę ',
           strong(JAVA.selected),
           '. Przy nowszej paczce druga linijka brzmi „Ta paczka została stworzona dla nowszej wersji Minecrafta i może już nie działać poprawnie.”, a przy zepsutej „Ta paczka jest uszkodzona lub stworzona dla nieznanej wersji Minecrafta i może nie działać poprawnie.” ',
           strong(JAVA.yes),
@@ -729,7 +729,7 @@ const install: GuideText = {
   quick: {
     title: 'Szybka odpowiedź',
     items: [
-      ['Java: ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć ', code('.zip'), `, przenieś paczkę do „${JAVA.selected}” i kliknij „${JAVA.done}”.`],
+      ['Java: ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć ', code('.zip'), `, przenieś paczkę na listę „${JAVA.selected}” i kliknij „${JAVA.done}”.`],
       ['Bedrock: otwórz plik ', code('.mcpack'), ' i aktywuj go w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
       ['Shadery (Java): zainstaluj Irisa albo OptiFine i wrzuć zipa z shaderami do folderu ', code('shaderpacks'), '.'],
     ],
@@ -1462,7 +1462,7 @@ const convertJavaToBedrock: GuideText = {
       body: [
         ul([
           ['Bedrock: otwórz ', code('.mcpack'), ' (dwukrotnym kliknięciem na Windowsie, „Otwórz w Minecraft” na telefonie) i aktywuj go w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
-          ['Java: wrzuć ', code('.zip'), ' do folderu ', code('resourcepacks'), ` i przenieś go do „${JAVA.selected}”.`],
+          ['Java: wrzuć ', code('.zip'), ' do folderu ', code('resourcepacks'), ` i przenieś go na listę „${JAVA.selected}”.`],
         ]),
         p('Więcej w poradniku ', link('/guides/install-resource-packs', 'Jak zainstalować paczki tekstur'), '. Jeśli coś wygląda źle, pomoże ', link('/guides/texture-pack-not-working', 'Paczka tekstur nie działa'), '.'),
       ],
@@ -1967,7 +1967,7 @@ const make3dItems: GuideText = {
       body: [
         steps([
           ['Naciśnij ', strong('Gotowe'), ', żeby wyjść z edytora modeli, a potem wyeksportuj paczkę przyciskiem ', strong('Eksportuj'), ' jako ', code('.zip'), '.'],
-          ['W Minecrafcie otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam zipa (nie rozpakowuj) i przenieś paczkę do ', strong(JAVA.selected), ', nad inne paczki.'],
+          ['W Minecrafcie otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam zipa (nie rozpakowuj) i przenieś paczkę na listę ', strong(JAVA.selected), ', nad inne paczki.'],
           'Trzymaj przedmiot, naciśnij F5, żeby przejść do widoku z trzeciej osoby, wyrzuć go na ziemię i powieś w ramce, żeby sprawdzić każde wyświetlanie.',
           'Po zmianie modelu wyeksportuj jeszcze raz, podmień zipa i naciśnij w grze F3 + T, żeby przeładować paczki.',
         ]),
@@ -2257,7 +2257,7 @@ const pvpPack: GuideText = {
       body: [
         steps([
           ['Naciśnij ', strong('Eksportuj'), ' i pobierz ', code('.zip'), ' (Java) albo ', code('.mcpack'), ' (Bedrock).'],
-          ['Java: otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam zipa i przesuń paczkę na samą górę ', strong(JAVA.selected), '. Bedrock: otwórz .mcpack i aktywuj paczkę w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+          ['Java: otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam zipa i przesuń paczkę na samą górę listy ', strong(JAVA.selected), '. Bedrock: otwórz .mcpack i aktywuj paczkę w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
           'Podpal się, spójrz przez szkło, załóż dynię i weź do ręki miecz i tarczę, żeby sprawdzić każdą zmianę.',
         ]),
         p(
