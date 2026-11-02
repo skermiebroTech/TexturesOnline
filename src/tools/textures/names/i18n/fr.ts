@@ -41,7 +41,7 @@ const FR: NamesLanguage = {
     removed: 'Texture de {names} retirée',
     undo: 'Annuler',
     created: 'Peins maintenant la nouvelle texture. Un objet {item} nommé {names} l’affiche.',
-    quoted: '« {name} »',
+    quoted: '« {name} »',
     nameEmpty: 'Tape d’abord un nom.',
     nameTaken: '{name} a déjà une texture sur cet objet.',
     nameCleaned: 'Les codes de couleur (§) ne peuvent pas être tapés dans une enclume, ils ont donc été retirés.',

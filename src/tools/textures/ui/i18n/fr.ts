@@ -29,7 +29,7 @@ const FR: EditorLanguage = {
       buttonHint: 'Donner une autre texture à cet objet quand il est renommé dans une enclume',
       label: 'Noms',
       lookOf: '{item} nommé {names}',
-      quoted: '« {name} »',
+      quoted: '« {name} »',
       paintLook: 'Peindre la texture de {name}',
       manage: 'Modifier les noms',
       add: 'Ajouter une texture selon le nom',

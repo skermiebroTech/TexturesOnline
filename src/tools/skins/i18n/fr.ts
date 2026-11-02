@@ -147,7 +147,7 @@ const FR: SkinsLanguage = {
       layerLabel: 'Couche sur laquelle peindre',
       base: 'Base',
       outer: 'Externe',
-      both: 'Les deux',
+      both: 'Tout',
       layerTip: 'Sur quelle couche peindre (1 / 2 / 3)',
       paintOn: 'Couche',
       mirror: 'Miroir',
