@@ -1394,7 +1394,7 @@ const convertJavaToBedrock: GuideText = {
     title: 'W skrócie',
     items: [
       ['Otwórz ', link('/texture-pack-converter', 'konwerter paczek tekstur'), ' i wybierz swój ', code('.zip'), ' z Javy.'],
-      ['Wybierz ', strong('Bedrock Edition'), ' i kliknij ', strong('Konwertuj na Bedrocka'), '.'],
+      ['Wybierz ', strong('Bedrock Edition'), ' i kliknij ', strong('Konwertuj na Bedrock'), '.'],
       ['Pobierz ', code('.mcpack'), ' i go otwórz: Minecraft go zaimportuje.'],
     ],
   },
@@ -1752,7 +1752,7 @@ const bedrockSkinPack: GuideText = {
 
 const MODEL_STEPS: Child[] = [
   ['Otwórz ', link('/textures', 'edytor paczek tekstur'), ' i zrób paczkę do ', strong('Javy'), ' dla swojej wersji: 1.8 albo nowszej, albo 1.21.4 albo nowszej, jeśli przedmiot ma zostać płaski w ekwipunku.'],
-  ['Przełącz listę na ', strong('Items'), ' i otwórz przedmiot, na przykład diamentowy miecz. W zakładce ', strong('Preview'), ' naciśnij ', strong('Edytuj kształt'), '.'],
+  ['Przełącz listę na ', strong('Przedmioty'), ' i otwórz przedmiot, na przykład diamentowy miecz. W zakładce ', strong('Podgląd'), ' naciśnij ', strong('Edytuj kształt'), '.'],
   ['Wybierz ', strong('Przedmiot 3D ze sprite’a'), '. Każdy piksel płaskiego obrazka staje się częścią sześcianu o głębokości 1 piksela.'],
   ['Zmień kształt: kliknij sześcian w widoku 3D albo na liście i przesuń go, powiększ albo skopiuj, albo dodaj nowe. W ', strong('Ściany'), ' ściana dostaje inną teksturę albo inny fragment tekstury.'],
   ['Otwórz ', strong('Wyświetlanie'), ' i sprawdź model w ekwipunku, w widoku z pierwszej i trzeciej osoby, na ziemi, w ramce i na głowie. Popraw obrót, pozycję albo rozmiar tam, gdzie nie pasuje.'],
@@ -1774,7 +1774,7 @@ const make3dItems: GuideText = {
   quick: {
     title: 'W skrócie',
     items: [
-      ['Pokaż przedmiot w edytorze w zakładce ', strong('Preview'), ' i naciśnij ', strong('Edytuj kształt'), '.'],
+      ['Pokaż przedmiot w edytorze w zakładce ', strong('Podgląd'), ' i naciśnij ', strong('Edytuj kształt'), '.'],
       ['Wybierz ', strong('Przedmiot 3D ze sprite’a'), ', a potem dopracuj sześciany i trzymanie w ręce.'],
       ['Wyeksportuj paczkę. Ma model w ', code('models/item/'), ', a od 1.21.4, jeśli trzeba, definicję przedmiotu w ', code('items/'), '.'],
     ],
@@ -1836,7 +1836,7 @@ const make3dItems: GuideText = {
         ul([
           'Pogrub ostrze: wybierz jego sześciany i zmień pozycję i rozmiar na osi Z, na przykład z 7,5 i 1 na 7 i 2.',
           ['Przyciskiem ', strong('+'), ' (albo N) dodaj sześcian na jelec albo klejnot i daj jego ścianom inną teksturę w ', uiPath('Faces', 'Change'), '.'],
-          ['Obróć sześcian w ', strong('Rotation'), '. Przed Minecraftem 1.21.6 sześcian obraca się tylko wokół jednej osi, o -45°, -22,5°, 0°, 22,5° albo 45°; edytor proponuje to, na co pozwala twoja wersja.'],
+          ['Obróć sześcian w ', strong('Obrót'), '. Przed Minecraftem 1.21.6 sześcian obraca się tylko wokół jednej osi, o -45°, -22,5°, 0°, 22,5° albo 45°; edytor proponuje to, na co pozwala twoja wersja.'],
           'Każdą zmianę cofniesz skrótem Ctrl+Z.',
         ]),
       ],
@@ -1860,9 +1860,9 @@ const make3dItems: GuideText = {
         p(
           strong('Przedmiot 3D ze sprite’a'),
           ' przejmuje wyświetlanie przedmiotu, więc miecz 3D jest trzymany tak jak płaski. ',
-          strong('Game’s default'),
+          strong('Domyślne z gry'),
           ' przywraca w danym miejscu wartości z gry, a ',
-          strong('No change'),
+          strong('Bez zmian'),
           ' usuwa ustawienie. Java 1.21.9 dodała miejsce ',
           code('on_shelf'),
           ' dla półek; edytor przejmuje wartość z modelu gry.',
@@ -1898,13 +1898,13 @@ const make3dItems: GuideText = {
           'Z blokami jest tak samo. Pokaż blok w zakładce Preview i naciśnij ',
           strong('Edytuj kształt'),
           '. Edytor otworzy model, którego blok używa w stanie, który właśnie widzisz, a menu na górze wymienia jego inne modele, na przykład górną i podwójną płytę. Zostaw model z gry albo zacznij od ',
-          strong('Full cube'),
+          strong('Pełny sześcian'),
           ', ',
-          strong('Slab'),
+          strong('Płyta'),
           ', ',
-          strong('Cross (plant)'),
+          strong('Krzyż (roślina)'),
           ' albo ',
-          strong('Empty'),
+          strong('Pusty'),
           ', a potem dodawaj sześciany, przesuwaj je i zmieniaj ich rozmiar. Kamień staje się stopniem z punktem startowym Slab i jednym dodatkowym sześcianem:',
         ),
         figure(SHOTS.modelBlock),
@@ -1916,7 +1916,7 @@ const make3dItems: GuideText = {
         ]),
         p(
           'Kamień i kilka innych bloków losują między dwoma modelami: kamieniem i jego odbitą kopią, każdy także obrócony. ',
-          strong('Use for every random variant'),
+          strong('Użyj dla każdego losowego wariantu'),
           ' w zakładce Model daje twój kształt im wszystkim, bo edytor zapisuje plik stanu bloku. Wpis ',
           code('"y": 180'),
           ' zachowuje losowy obrót, a ',
@@ -2033,7 +2033,7 @@ const make3dItems: GuideText = {
     {
       id: 'undo',
       q: 'Jak przywrócić oryginalny kształt?',
-      a: [p('W menu edytora modeli wybierz ', strong('Put back the original model'), '. Twoje pliki dla tego modelu zostaną usunięte z paczki, a gra znowu użyje własnego modelu.')],
+      a: [p('W menu edytora modeli wybierz ', strong('Przywróć oryginalny model'), '. Twoje pliki dla tego modelu zostaną usunięte z paczki, a gra znowu użyje własnego modelu.')],
     },
     {
       id: 'phone',

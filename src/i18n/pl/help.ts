@@ -327,8 +327,8 @@ export const HELP: HelpText = {
       a: [
         p(
           'Tak. Wybierz ',
-          strong('Mobs'),
-          ' na liście tekstur (Blocks · Items · Mobs · All) albo otwórz dowolną teksturę z folderu „entity”. Mob pojawi się w 3D i maluje się go jak blok. Polami wyboru obok (wariant, wiek, kolor wełny, profesja i tak dalej) dotrzesz do każdej tekstury, której używa; nakładki, takie jak wełna owcy, świecące oczy i ubrania osadników, malujesz na ich własnych teksturach. Na liście „Parts” jednym kliknięciem ukrywasz część, żeby pomalować to, co zasłania, dwukrotne kliknięcie pokazuje tylko tę część, a „Show all” przywraca wszystko. Moby z Bedrocka używają własnych modeli Bedrocka, a maski barwienia w ich przezroczystych pikselach zostają zachowane.',
+          strong('Moby'),
+          ' na liście tekstur (Bloki · Przedmioty · Moby · Wszystko) albo otwórz dowolną teksturę z folderu „entity”. Mob pojawi się w 3D i maluje się go jak blok. Polami wyboru obok (wariant, wiek, kolor wełny, profesja i tak dalej) dotrzesz do każdej tekstury, której używa; nakładki, takie jak wełna owcy, świecące oczy i ubrania osadników, malujesz na ich własnych teksturach. Na liście „Części” jednym kliknięciem ukrywasz część, żeby pomalować to, co zasłania, dwukrotne kliknięcie pokazuje tylko tę część, a „Pokaż wszystko” przywraca wszystko. Moby z Bedrocka używają własnych modeli Bedrocka, a maski barwienia w ich przezroczystych pikselach zostają zachowane.',
         ),
       ],
     },
@@ -338,24 +338,24 @@ export const HELP: HelpText = {
       a: [
         p(
           'Tak. Moby, które mogą coś nosić, mają obok pól wyboru grupę ',
-          strong('Wearing'),
+          strong('Noszone'),
           ': załóż siodło świni, magmołazowi, koniowi, wielbłądowi albo łodzikowi; ubierz w zbroję zombie, szkielety, pigliny i stojak na zbroję (wybierz materiał dla całego zestawu, potem włączaj i wyłączaj pojedyncze części, skórę farbuj przyciskiem ',
-          strong('Dye'),
+          strong('Barwnik'),
           '); daj koniom, wilkom i łodzikom ich zbroję, lamom dywan, a wesołemu ghastowi uprząż. Każda noszona część jest malowana na własnej teksturze i ma własny wpis w ',
-          strong('Parts'),
+          strong('Części'),
           ', więc możesz ją ukryć, żeby pomalować moba pod spodem. Kiedy otworzysz teksturę zbroi, siodła albo dywanu, zobaczysz ją na mobie, a ',
-          strong('Used by'),
+          strong('Używają'),
           ' wymienia każdego moba, który ją nosi. Starsze wersje używają tekstur zbroi i siodeł, które miały wtedy.',
         ),
         p(
           strong('Zdobienia zbroi: '),
-          'kiedy humanoidalny mob nosi zbroję, w Wearing wybierasz wzór ',
-          strong('Trim'),
+          'kiedy humanoidalny mob nosi zbroję, w Noszone wybierasz wzór ',
+          strong('Zdobienie'),
           ' i ',
-          strong('Material'),
+          strong('Materiał zdobienia'),
           ' (Java od 1.20 i Bedrock). Gra koloruje szary wzór paletą materiału, a ciemniejszej palety używa, gdy zdobienie i zbroja są z tego samego materiału, na przykład żelazne zdobienie na żelaznej zbroi. Maluj zdobienie na modelu albo otwórz jego wzór: osiem odcieni szarości przyjmuje kolor zdobienia, a każdy inny kolor zostaje taki, jak go namalujesz. Zmień paletę materiału, żeby przekolorować go na każdym zdobieniu, i ukryj ',
-          strong('Trim'),
-          ' w Parts, żeby dostać się do zbroi pod spodem.',
+          strong('Zdobienie'),
+          ' w Częściach, żeby dostać się do zbroi pod spodem.',
         ),
       ],
     },
@@ -407,8 +407,8 @@ export const HELP: HelpText = {
       id: 'sounds',
       q: 'Mogę zmienić dźwięki w mojej paczce?',
       a: [
-        p('Tak. W edytorze paczek tekstur naciśnij nutkę na końcu przełącznika Blocks · Items · Mobs · All. Znajdź dźwięk po nazwie albo kategorii i naciśnij Play, żeby go usłyszeć. Otwórz go i zastąp plik przyciskiem ', strong('Replace'), ' własnym audio (MP3, WAV, OGG, M4A i inne) albo nagraj go mikrofonem. Przeciągaj uchwyty na wykresie fali, żeby przyciąć, ustaw głośność albo naciśnij ', strong('Normalise'), '; przyciskiem Reset wracasz do dźwięku z gry. Podmienione dźwięki są zapisywane jako Ogg Vorbis i eksportowane z paczką: paczki do Javy kładą je w ', code('assets/minecraft/sounds'), ', paczki do Bedrocka w ', code('sounds/'), ' z pasującymi wpisami w ', code('sound_definitions.json'), '.'),
-        p('Nagrywanie pyta o mikrofon dopiero po naciśnięciu Start; jeśli jest zablokowany, zezwól na niego dla tej strony ikoną w pasku adresu. Nagrania nigdy nie opuszczają twojego urządzenia. Większość dźwięków trzymaj w mono, żeby dochodziły z miejsca w świecie, a stereo używaj do muzyki i dźwięków menu. Dźwięki Javy przychodzą prosto z serwerów Mojang, które nie pozwalają stronom czytać audio: możesz ich posłuchać, ale przycinać możesz tylko wgrane albo nagrane dźwięki. Edycja dźwięków działa od Javy 1.7.10 i w Bedrocku.'),
+        p('Tak. W edytorze paczek tekstur naciśnij nutkę na końcu przełącznika Bloki · Przedmioty · Moby · Wszystko. Znajdź dźwięk po nazwie albo kategorii i naciśnij Odtwórz, żeby go usłyszeć. Otwórz go i zastąp plik przyciskiem ', strong('Zastąp'), ' własnym audio (MP3, WAV, OGG, M4A i inne) albo nagraj go mikrofonem. Przeciągaj uchwyty na wykresie fali, żeby przyciąć, ustaw głośność albo naciśnij ', strong('Normalizuj'), '; opcją Przywróć dźwięk z gry wracasz do oryginału. Podmienione dźwięki są zapisywane jako Ogg Vorbis i eksportowane z paczką: paczki do Javy kładą je w ', code('assets/minecraft/sounds'), ', paczki do Bedrocka w ', code('sounds/'), ' z pasującymi wpisami w ', code('sound_definitions.json'), '.'),
+        p('Nagrywanie pyta o mikrofon dopiero po naciśnięciu Zacznij nagrywać; jeśli jest zablokowany, zezwól na niego dla tej strony ikoną w pasku adresu. Nagrania nigdy nie opuszczają twojego urządzenia. Większość dźwięków trzymaj w mono, żeby dochodziły z miejsca w świecie, a stereo używaj do muzyki i dźwięków menu. Dźwięki Javy przychodzą prosto z serwerów Mojang, które nie pozwalają stronom czytać audio: możesz ich posłuchać, ale przycinać możesz tylko wgrane albo nagrane dźwięki. Edycja dźwięków działa od Javy 1.7.10 i w Bedrocku.'),
       ],
     },
     {
@@ -445,7 +445,7 @@ export const HELP: HelpText = {
       a: [
         p(
           'Tak, po pierwszym wczytaniu. Aplikacja i każda wersja, którą już otworzysz, zostają na tym urządzeniu, więc możesz pracować dalej bez internetu. Wersja, której jeszcze nie używasz, wymaga połączenia – albo wybierz ',
-          strong('Use my own .jar'),
+          strong('Użyj własnego pliku .jar'),
           ' i weź ją ze swojego folderu ',
           code('.minecraft/versions'),
           '.',
