@@ -6,6 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fmt, registerTranslations, setTextLocale, type LanguageFile } from '../../src/i18n/editor-text';
+import { existsSync } from 'node:fs';
 import { TRANSLATED_LOCALES } from '../../src/i18n/locales';
 import { ot } from '../../src/tools/shaders/ui/i18n/options';
 import { mt } from '../../src/tools/shaders/ui/i18n/messages';
@@ -54,9 +55,12 @@ test("the editor's settings text is the generators' English, for every setting, 
   }
 });
 
+/** Languages the Shader Maker is translated into (one with only its public pages so far shows it in English). */
+const SHADER_LOCALES = TRANSLATED_LOCALES.filter((l) => existsSync(new URL(`../../src/tools/shaders/i18n/${l}.ts`, import.meta.url)));
+
 /** Every translation of the shader editors, as the loaders would register them. */
 async function registerAll(): Promise<void> {
-  for (const locale of TRANSLATED_LOCALES) {
+  for (const locale of SHADER_LOCALES) {
     for (const folder of ['../../src/tools/shaders/i18n', '../../src/tools/shaders/ui/i18n', '../../src/tools/shaders/packedit/i18n']) {
       const mod = (await import(`${folder}/${locale}.ts`)) as { default: LanguageFile };
       registerTranslations(locale, mod.default);
@@ -82,7 +86,7 @@ test('exported files are the same in every language; only messages are translate
     support: vanilla.supportedFor('1.16.5'),
   };
   assert.ok(en.vanilla.warnings.some((w) => /Bloom needs Java 26\.3/.test(w)));
-  for (const locale of TRANSLATED_LOCALES) {
+  for (const locale of SHADER_LOCALES) {
     setTextLocale(locale);
     try {
       assert.deepEqual(iris.generateIrisPack(irisValues, { name: 'Pack', description: 'Warm', version: '1.21.4', preset: 'golden' }), en.iris, `${locale}: Iris pack`);

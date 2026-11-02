@@ -12,7 +12,7 @@ import { renderHtml, renderMarkdown, renderText, el, ic } from '../../src/app/ma
 import { formatGroups, BEDROCK_MIN_ENGINE } from '../../src/tools/guides/content';
 import { DEFAULT_MIN_ENGINE } from '../../src/editions/bedrock/manifest';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../src/editions/java/packformats';
-import { splitLocale } from '../../src/i18n/locales';
+import { LOCALES, splitLocale } from '../../src/i18n/locales';
 
 const TEMPLATE = `<!doctype html>
 <html lang="en" class="no-js" data-theme="dark">
@@ -58,6 +58,8 @@ const visibleText = (html: string) =>
   )
     .replace(/\s+/g, ' ')
     .replace(/\s+([.,;:!?)])(?=\s|$)/g, '$1');
+/** A text as visibleText shows it (French puts a space before ? ! : ;) */
+const asVisible = (s: string) => s.replace(/\s+/g, ' ').replace(/\s+([.,;:!?)])(?=\s|$)/g, '$1');
 const jsonLd = (html: string) => JSON.parse(one(html, /<script type="application\/ld\+json">([\s\S]*?)<\/script>/)) as { '@context': string; '@graph': Record<string, unknown>[] };
 
 test('one HTML file per public page, plus 404, sitemap, robots and llms files', () => {
@@ -161,8 +163,8 @@ test('structured data parses and has the required properties', () => {
         const answer = String((q.acceptedAnswer as Node).text);
         assert.ok(answer.length > 20);
         // (visible text has its whitespace collapsed, no-break spaces included)
-        assert.ok(text.includes(String(q.name).replace(/\s+/g, ' ')), `FAQ question visible: ${q.name}`);
-        assert.ok(text.includes(answer.slice(0, 40)), `FAQ answer visible: ${answer.slice(0, 40)}`);
+        assert.ok(text.includes(asVisible(String(q.name))), `FAQ question visible: ${q.name}`);
+        assert.ok(text.includes(asVisible(answer).slice(0, 40)), `FAQ answer visible: ${answer.slice(0, 40)}`);
       }
     }
     for (const how of ofType(g, 'HowTo')) {
@@ -172,7 +174,7 @@ test('structured data parses and has the required properties', () => {
       steps.forEach((s, i) => {
         assert.equal(s['@type'], 'HowToStep');
         assert.equal(s.position, i + 1);
-        assert.ok(text.includes(String(s.text).replace(/\s+/g, ' ')), `HowTo step visible: ${s.text}`);
+        assert.ok(text.includes(asVisible(String(s.text))), `HowTo step visible: ${s.text}`);
       });
     }
     const crumbs = ofType(g, 'BreadcrumbList');
@@ -182,13 +184,13 @@ test('structured data parses and has the required properties', () => {
       items.forEach((it, i) => {
         assert.equal(it.position, i + 1);
         assert.match(String(it.item), /^https:\/\//);
-        assert.ok(text.includes(String(it.name).replace(/\s+/g, ' ')), `breadcrumb visible: ${it.name}`);
+        assert.ok(text.includes(asVisible(String(it.name))), `breadcrumb visible: ${it.name}`);
       });
       assert.equal(items[items.length - 1].item, absoluteUrl(p.meta.path));
     }
     for (const a of ofType(g, 'TechArticle')) {
       assert.ok(a.headline && a.datePublished && a.dateModified);
-      assert.ok(text.includes(String(a.headline).replace(/\s+/g, ' ')));
+      assert.ok(text.includes(asVisible(String(a.headline))));
     }
   }
 });
@@ -377,7 +379,7 @@ test('help sections are linked by fragment (/help/#faq), never by query, and eve
     for (const id of ['java-packs', 'iris', 'backup', 'faq']) assert.match(html, new RegExp(`<section class="help-section[^"]*" id="${id}"`), `${p.meta.path} #${id}`);
     assert.match(html, /<details class="faq-item" id="offline"/, `${p.meta.path} #offline`);
   }
-  assert.equal(helpIds.size, 6, 'a help page in every language');
+  assert.equal(helpIds.size, LOCALES.length, 'a help page in every language');
   let links = 0;
   for (const p of pages) {
     const html = byName.get(pageFileName(p.meta.path))!;
