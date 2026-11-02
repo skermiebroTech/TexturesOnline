@@ -1,7 +1,7 @@
 // Skin editor: tool rail + 64x64 (or HD 128x128) pixel canvas with part guides, colours and parts on
 // the left, live 3D preview on the right. Autosaves to IndexedDB.
 
-import { afterNextPaint } from '../../../core/yield';
+import { afterNextPaint, yieldToMain } from '../../../core/yield';
 import { debounce } from '../../../core/events';
 import { decodeImage, encodePng } from '../../../core/image';
 import { navigate } from '../../../core/router';
@@ -761,6 +761,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   sideObserver.observe(layout, { attributes: true, attributeFilter: ['data-side'] });
   const editorRoot = h('div', { class: 'sk-editor' }, bar, layout);
   disposers.push(() => sideObserver.disconnect());
+  // The panels were this task's work: the pixel canvas and the rest are set up in the next one,
+  // before anything is on screen (so nothing can be pressed in between).
+  await yieldToMain();
   root.append(editorRoot);
 
   // =============================================================================================
