@@ -5,7 +5,7 @@
 // meta.ts and content.ts) and register those in src/i18n/ui.ts, src/app/seo/meta.ts and
 // src/i18n/content.ts (which also explains how a page gets translated).
 
-export const LOCALES = ['en', 'de', 'es', 'pt-br', 'ja', 'ru', 'fr'] as const;
+export const LOCALES = ['en', 'de', 'es', 'pt-br', 'ja', 'ru', 'fr', 'pl'] as const;
 export type Locale = (typeof LOCALES)[number];
 export type TranslatedLocale = Exclude<Locale, 'en'>;
 
@@ -37,6 +37,7 @@ export const LOCALE_INFO: Record<Locale, LocaleInfo> = {
   ja: { code: 'ja', lang: 'ja', ogLocale: 'ja_JP', name: '日本語', englishName: 'Japanese' },
   ru: { code: 'ru', lang: 'ru', ogLocale: 'ru_RU', name: 'Русский', englishName: 'Russian', extendedFont: true },
   fr: { code: 'fr', lang: 'fr', ogLocale: 'fr_FR', name: 'Français', englishName: 'French' },
+  pl: { code: 'pl', lang: 'pl', ogLocale: 'pl_PL', name: 'Polski', englishName: 'Polish', extendedFont: true },
 };
 
 export function isLocale(s: string): s is Locale {

@@ -3,7 +3,7 @@
 The public pages (home, help, guides, tool introductions) are translated in `src/i18n/<lang>/`.
 The editors themselves (start screens, panels, dialogs, toasts, tooltips, aria-labels, errors) use
 a separate, lighter system: `src/i18n/editor-text.ts`. Languages: `de` (du), `es` (tú), `pt-br`
-(você), `ja` (です/ます), `ru` (ты). English is the source of truth and stays byte-identical.
+(você), `ja` (です/ます), `ru` (ты), `pl` (ty). English is the source of truth and stays byte-identical.
 `fr` (tu) has its public pages but no editor files yet: its editors show English until they come
 (the unit tests skip a language whose `src/ui/i18n/<lang>.ts` does not exist).
 
@@ -41,7 +41,7 @@ In a folder:
   `defineText('<section id>', { ... })`. Nested objects group keys; leaves are strings. They import
   nothing but `src/i18n/editor-text.ts` (the unit test imports them in Node).
 - **`load.ts`**: the language-file type and its loader.
-- **`de.ts`, `es.ts`, `pt-br.ts`, `ja.ts`, `ru.ts`**: one language file each, translating every section of
+- **`de.ts`, `es.ts`, `pt-br.ts`, `ja.ts`, `ru.ts`, `pl.ts`**: one language file each, translating every section of
   the folder, keyed by section id. Optionally `export const SAME_AS_ENGLISH = ['<id>:<key.path>']`
   for text that is rightly identical to English (see Tests).
 
@@ -152,11 +152,33 @@ still share one language file. English pages never load a language file. Check w
   "pack de textures", "pack de ressources", "un skin" (masculine, as the game's fr_FR "Skins
   classiques"), "pack de shaders", Graphismes éclatants, Vestiaire, Totem d'immortalité, Élytres;
   menus Options... → Packs de ressources..., Bedrock Paramètres → Ressources globales.
+  Polish (`pl`, ty): "paczka tekstur" (short
+  "paczka"), "paczka zasobów", "skin" / "skina" / "skiny" (the game says "skórka": quote it only in
+  menu names), "paczka skinów", "paczka shaderów", Java Edition / Bedrock Edition, the game's pl_pl
+  names (Totem nieśmiertelności, Przebieralnia, Elytry) and menus from `src/i18n/pl/game-ui.ts`
+  (Java Ustawienia… → Paczki zasobów… → Otwórz folder z paczkami, Wybrane, Gotowe; Bedrock
+  Ustawienia → Zasoby globalne → Moje zestawy, Aktywuj, Tryb grafiki → Odświeżona szata graficzna;
+  Iris Pakiety Shaderów..., Ustawienia pakietu Shader...). The game's pl_pl / pl_PL.lang words are
+  used for game things (Blok trawy, Złoże diamentu, Nakrycie głowy, Płatnerz, Napierśnik, Zdobienie,
+  Cząstki, Kiedy w głównej ręce:). The pages and the editors quote the same buttons (Utwórz paczkę,
+  Otwórz paczkę, Eksportuj, Edytuj kształt, Podgląd, Napraw wszystko, Paczka PvP / FPS, Materiał,
+  Tekstury po nazwie, Animuj, Czasy, Zastosuj do podobnych tekstur, Paczka skinów do Bedrocka
+  (.mcpack)); a guide that quotes a button uses its label from the language file. The skin editor
+  calls the arm models Szerokie / Wąskie (the Launcher's Klasyczny / Smukły only in its install
+  steps) and the layers Baza / Wierzch in short labels (warstwa podstawowa / zewnętrzna in
+  sentences). The one-click style names (Dark Mode, Autumn, Smooth HD…) and the totem styles stay
+  English, as the pages quote them. Edition names are not inflected after a parameter ("Konwertuj na
+  {target}" gives "Konwertuj na Bedrock"); write sentences so a nominative fits (colon forms such as
+  "Zdejmij: {piece}"). Skin part names have an accusative `it` form for "Wypełnij {part} kolorem".
+  Avoid past-tense "you" forms, which are gendered in Polish (zrobiłeś / zrobiłaś): use impersonal
+  forms (zmieniono, namalowano). Plurals need `one` / `few` / `many` plus `other` (fractions), like
+  Russian. "to" and "on" are Polish words, so the English detectors of the tests skip them for `pl`.
 - **Touch screens**: a hint that says "Click", "Double-click" or names a key gets a twin ending in
   `Touch` (`partsHint` / `partsHintTouch`) with "Tap" / "Double-tap" and no keyboard. The code picks
   one when the text is shown (`byPointer(mouse, touch)` in `textures/ui/media.ts`, by
   `(pointer: coarse)`); translate both.
-- **Fit**: German runs ~30 % longer, Russian too (and its pixel-font glyphs are wider), Japanese
+- **Fit**: German runs ~30 % longer, Russian and Polish too (and Russian pixel-font glyphs are
+  wider; Polish has long single words such as "Przekonwertowano" that can't wrap), Japanese
   needs no spaces but wraps anywhere. Check at 390 px;
   prefer shorter wording over smaller buttons; use ` ` to keep "16 × 16" together.
 
@@ -188,9 +210,6 @@ labels, and console errors (`--shots <dir>` saves screenshots).
 
 ## Left for later
 
-- The tool introductions in `src/i18n/<lang>/tools.ts` still name a few English buttons of the
-  texture and skin editors (`strong('Open a pack')`, `strong('Export')`,
-  `strong('Bedrock skin pack (.mcpack)')`): update them to the translated labels with phase B.
 - Block and item names: the editors show texture paths and English names. The game's own language
   files (`assets/minecraft/lang/<locale>.json`, e.g. `de_de.json`, `es_es.json`, `pt_br.json`,
   `ja_jp.json`) are in the Java asset index (`objects` in the version's asset index JSON, fetched

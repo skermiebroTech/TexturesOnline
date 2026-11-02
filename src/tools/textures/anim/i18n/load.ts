@@ -14,4 +14,5 @@ export const loadAnimText = textLoader<AnimLanguage>({
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
   ru: () => import('./ru'),
+  pl: () => import('./pl'),
 });

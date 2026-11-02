@@ -59,10 +59,11 @@ const LOADERS: Record<TranslatedLocale, () => Promise<{ CONTENT: LocaleContent }
   ja: () => import('./ja/content'),
   ru: () => import('./ru/content'),
   fr: () => import('./fr/content'),
+  pl: () => import('./pl/content'),
 };
 
 /**
- * Fetches the pixel font's extension files for a language written with them (Cyrillic), so a page
+ * Fetches the pixel font's extension files for a language written with them (Cyrillic, and Polish ą ć ę ł ń ś ź ż), so a page
  * reached in the app does not show its text in the fallback font first (prerendered pages preload
  * them). Gives up after a moment: the text then simply swaps to the pixel font when it arrives.
  */
@@ -88,4 +89,5 @@ export const CONTENT_MODULES: Record<TranslatedLocale, string> = {
   ja: 'src/i18n/ja/content.ts',
   ru: 'src/i18n/ru/content.ts',
   fr: 'src/i18n/fr/content.ts',
+  pl: 'src/i18n/pl/content.ts',
 };

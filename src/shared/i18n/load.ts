@@ -28,4 +28,5 @@ export const loadSharedText = textLoader<SharedLanguage>({
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
   ru: () => import('./ru'),
+  pl: () => import('./pl'),
 });

@@ -136,6 +136,8 @@ function prose(msg: string): string {
 
 /** Words that give English away (not words of German, Spanish, Portuguese or Russian; letters around them are any script's). */
 const ENGLISH_WORDS = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|which|when|there)(?!\p{L})/iu;
+/** The same for Polish, where "to" (it, this) and "on" (he) are Polish words too. */
+const ENGLISH_WORDS_PL = /(?<!\p{L})(the|and|your|with|you|of|is|are|this|that|from|can|it|its|were|has|have|not|or|by|be|will|which|when|there)(?!\p{L})/iu;
 
 test('every editor section is translated into every language, once', async () => {
   const { english, files, owner } = await loaded;
@@ -212,7 +214,7 @@ test('translations contain no English left untranslated', async () => {
         // Identical single-word labels (OK, Zoom, Shader) are fine; identical phrases are not.
         if (text === source && (prose(source).match(/[A-Za-z]{2,}/g) ?? []).length >= 2) problems.push(`${f.locale} ${key} is the English text: "${text}"`);
         else if (f.locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) problems.push(`ru ${key} has no Russian: "${text}"`);
-        else if (f.locale !== 'ja' && ENGLISH_WORDS.test(prose(text))) problems.push(`${f.locale} ${key} looks English: "${text}"`);
+        else if (f.locale !== 'ja' && (f.locale === 'pl' ? ENGLISH_WORDS_PL : ENGLISH_WORDS).test(prose(text))) problems.push(`${f.locale} ${key} looks English: "${text}"`);
         else if (f.locale === 'ja' && words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text)) problems.push(`ja ${key} has no Japanese: "${text}"`);
       }
     }

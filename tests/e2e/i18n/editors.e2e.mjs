@@ -19,7 +19,7 @@ const argv = process.argv.slice(2);
 const baseArg = argv.find((a) => /^https?:/.test(a));
 const shotsDir = argv.includes('--shots') ? argv[argv.indexOf('--shots') + 1] : null;
 /** --langs de,ru: run some languages only */
-const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,pt-br,es,ru').split(',');
+const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,pt-br,es,ru,pl').split(',');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 const tmp = mkdtempSync(join(tmpdir(), 'i18n-editors-'));
 const J = 'assets/minecraft/textures/';
@@ -178,6 +178,8 @@ const KEEP = [
   'Steve', 'Alex', 'Classic', 'Big head', 'Full body', 'Pixelwelt', 'Bloco', 'Kachel', 'Celular', 'Texturas', 'Aventureira', 'jeb_', 'Dinnerbone', 'Notch', 'OK', 'PNG', 'TGA', 'JPEG', 'HD', 'MB', 'KB', 'GB', 'Ctrl', 'Shift', 'Alt', 'Esc', 'Enter',
 ];
 const ENGLISH = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|choose|drop|download|convert|merge|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo)(?!\p{L})/iu;
+/** The same for Polish, where "to" (it, this) and "on" (he) are Polish words too. */
+const ENGLISH_PL = /(?<!\p{L})(the|and|your|with|you|of|is|are|this|that|from|can|it|its|were|has|have|not|or|by|be|will|choose|drop|download|convert|merge|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo)(?!\p{L})/iu;
 
 function english(texts, locale) {
   const found = [];
@@ -186,7 +188,7 @@ function english(texts, locale) {
     for (const k of KEEP) s = s.split(k).join(' ');
     s = s.replace(/\S*[./_\\0-9:#×]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
-    if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
+    if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : (locale === 'pl' ? ENGLISH_PL : ENGLISH).test(s)) found.push(text);
     // Russian: two Latin words and no Cyrillic is English (or another language) left over.
     else if (locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) found.push(text);
   }
@@ -194,7 +196,7 @@ function english(texts, locale) {
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', pl: 'pl' };
 
 const files = await makeFiles();
 const server = baseArg ? null : await startVite();
@@ -433,6 +435,95 @@ try {
         await page.click('.tt-ed-modal .modal-footer .btn-secondary');
         await page.waitForSelector('.tt-ed-modal', { state: 'detached' });
         check(`ru totem ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
+        await page.close();
+      }
+      // ---------------------------------------------------------- Polish converter, merger and totem maker
+      if (LANGS.includes('pl')) {
+        const c = await openPage(ctx, 'pl/texture-pack-converter/', '.cv-dz');
+        check(`pl converter ${tag}: page is Polish`, (await c.page.getAttribute('html', 'lang')) === LANG.pl && (await c.page.textContent('.cv-step h2')).trim() === 'Wybierz paczkę', (await c.page.textContent('.cv-step h2')).trim());
+        await inspect(c.page, `pl-convert-1-start-${tag}`, 'pl');
+        await c.page.setInputFiles('.cv-dz input[type=file]', files.legacy);
+        await c.page.waitForSelector('.cv-pack:not([hidden]) .cv-pack-name');
+        check(`pl converter ${tag}: pack summary in Polish (plural form for 4)`, /4 tekstury/.test(await c.page.textContent('.cv-pack-info')), (await c.page.textContent('.cv-pack-info')).trim());
+        await c.page.click('.cv-ed[data-value="java"]');
+        await c.page.waitForFunction(() => /Tekstury, które zmieniły nazwę między Javą/.test(document.querySelector('.cv-hint')?.textContent ?? ''));
+        await c.page.$$eval('.cv-pack details', (ds) => ds.forEach((d) => (d.open = true)));
+        await inspect(c.page, `pl-convert-2-pack-${tag}`, 'pl');
+        await c.page.click('.cv-version .vp-trigger');
+        await c.page.waitForSelector('.vp-pop .vp-item, .vp-pop .vp-status', { timeout: 60000 });
+        check(`pl converter ${tag}: version search in Polish`, (await c.page.getAttribute('.vp-pop input[type=search]', 'placeholder')) === 'Szukaj wersji, np. 1.20');
+        await inspect(c.page, `pl-convert-3-versions-${tag}`, 'pl');
+        await c.page.keyboard.press('Escape');
+        await c.page.click('.cv-ed[data-value="bedrock"]');
+        await inspect(c.page, `pl-convert-4-bedrock-${tag}`, 'pl');
+        if (fx) {
+          await c.page.click('.cv-ed[data-value="java"]');
+          await c.page.click('.cv-go');
+          await c.page.waitForSelector('.cv-result .cv-dl-btn, .cv-result .cv-res-icon.is-error', { timeout: 300000 });
+          const head = (await c.page.textContent('.cv-res-titles h2')).trim();
+          check(`pl converter ${tag}: report headline in Polish`, /Gotowe: \d+ z 4 tekstur|Gotowe: wszystkie 4 tekstury/.test(head), head);
+          await c.page.$$eval('.cv-result details', (ds) => ds.forEach((d) => (d.open = true)));
+          await inspect(c.page, `pl-convert-5-report-${tag}`, 'pl');
+        }
+        check(`pl converter ${tag}: no console errors`, c.errors.length === 0, c.errors.slice(0, 3).join(' | '));
+        await c.page.close();
+
+        const l = await openPage(ctx, 'pl/texture-pack-converter/', '.cv-dz');
+        await l.page.setInputFiles('.cv-dz input[type=file]', files.loose);
+        await l.page.waitForSelector('.cv-pack:not([hidden]) .cv-pack-name');
+        await l.page.$$eval('.cv-pack details', (ds) => ds.forEach((d) => (d.open = true)));
+        check(`pl converter ${tag}: loose PNG notes in Polish`, /nie pasuj\S* do żadnej nazwy tekstury/.test(await l.page.textContent('.cv-pack')), (await l.page.textContent('.cv-pack')).trim().slice(0, 160));
+        await inspect(l.page, `pl-convert-6-loose-${tag}`, 'pl');
+        check(`pl converter loose ${tag}: no console errors`, l.errors.length === 0, l.errors.slice(0, 3).join(' | '));
+        await l.page.close();
+
+        const m = await openPage(ctx, 'pl/merge-texture-packs/', '.mg-dz');
+        await inspect(m.page, `pl-merge-1-start-${tag}`, 'pl');
+        await m.page.setInputFiles('.mg-dz input[type=file]', [files.modern, files.modern2, files.legacy]);
+        await m.page.waitForFunction(() => document.querySelectorAll('.mg-list .mg-row').length === 3 && !document.querySelector('.mg-dz.is-busy'), null, { timeout: 60000 });
+        check(`pl merge ${tag}: merge button counts in Polish`, /Połącz paczki \(3\)/.test(await m.page.textContent('.mg-go')), (await m.page.textContent('.mg-go')).trim());
+        await inspect(m.page, `pl-merge-2-packs-${tag}`, 'pl');
+        await m.page.click('.mg-go');
+        await m.page.waitForSelector('.mg-result .mg-dl-btn, .mg-result .cv-res-icon.is-error', { timeout: 120000 });
+        const head = (await m.page.textContent('.mg-result h2')).trim();
+        check(`pl merge ${tag}: report in Polish`, /Połączono 3 paczki w „/.test(head), head);
+        await m.page.$$eval('.mg-result details', (ds) => ds.forEach((d) => (d.open = true)));
+        await inspect(m.page, `pl-merge-3-report-${tag}`, 'pl');
+        check(`pl merge ${tag}: no console errors`, m.errors.length === 0, m.errors.slice(0, 3).join(' | '));
+        await m.page.close();
+
+        const x = await openPage(ctx, 'pl/merge-texture-packs/', '.mg-dz');
+        await x.page.setInputFiles('.mg-dz input[type=file]', [files.modern, files.bedrock]);
+        await x.page.waitForSelector('.mg-hint.is-alert a');
+        const hint = await x.page.textContent('.mg-hint');
+        check(`pl merge ${tag}: mixed editions explained in Polish, with the converter link`, /nie da się połączyć/.test(hint) && (await x.page.textContent('.mg-hint a')) === 'Konwerterze paczek tekstur', hint.trim().slice(0, 160));
+        await inspect(x.page, `pl-merge-4-mixed-${tag}`, 'pl');
+        check(`pl merge mixed ${tag}: no console errors`, x.errors.length === 0, x.errors.slice(0, 3).join(' | '));
+        await x.page.close();
+
+        const { page, errors } = await openPage(ctx, 'pl/totem-maker/', '.tt-tabs');
+        check(`pl totem ${tag}: page is Polish`, (await page.getAttribute('html', 'lang')) === LANG.pl && /Wybierz skina/.test(await page.textContent('.tt-step h2, .cv-step h2')));
+        await inspect(page, `pl-totem-1-start-${tag}`, 'pl');
+        await page.click('.tt-tab[data-source="upload"]');
+        await page.setInputFiles('.tt-dz input[type=file]', files.skin);
+        await page.waitForSelector('.tt-chosen:not([hidden]) .tt-chosen-name');
+        await page.waitForSelector('.tt-big-canvas');
+        check(`pl totem ${tag}: style names kept, descriptions in Polish`, /Classic/.test(await page.textContent('.tt-styles')) && /ręce rozłożone/.test(await page.textContent('.tt-styles')));
+        await inspect(page, `pl-totem-2-skin-${tag}`, 'pl');
+        if (fx) {
+          await page.locator('.tt-opt-outline .switch').click();
+          await page.waitForSelector('.tt-shape.is-ready', { timeout: 300000 });
+          check(`pl totem ${tag}: vanilla outline status in Polish`, /Dopasowany do zwykłego totemu z Java 26\.3/.test(await page.textContent('.tt-shape')));
+          await inspect(page, `pl-totem-3-outline-${tag}`, 'pl');
+        }
+        check(`pl totem ${tag}: edit button in Polish`, (await page.textContent('.tt-edit-btn')).trim() === 'Edytuj piksele', (await page.textContent('.tt-edit-btn')).trim());
+        await page.click('.tt-edit-btn');
+        await page.waitForSelector('.tt-ed-modal .pc-canvas');
+        check(`pl totem ${tag}: pixel editor in Polish`, /piksele totemu/.test(await page.textContent('.tt-ed-modal')));
+        await inspect(page, `pl-totem-4-editor-${tag}`, 'pl');
+        await page.click('.tt-ed-modal .modal-footer .btn-secondary');
+        await page.waitForSelector('.tt-ed-modal', { state: 'detached' });
+        check(`pl totem ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
         await page.close();
       }
       await ctx.close();

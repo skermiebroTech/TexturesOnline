@@ -61,6 +61,7 @@ const LANGS = [
   { code: 'ja', lang: 'ja', help: 'ヘルプ', name: '日本語' },
   { code: 'ru', lang: 'ru', help: 'Помощь', name: 'Русский' },
   { code: 'fr', lang: 'fr', help: 'Aide', name: 'Français' },
+  { code: 'pl', lang: 'pl', help: 'Pomoc', name: 'Polski' },
 ];
 const LOCALIZED = LANGS.flatMap((l) => [
   { lang: l, path: `${l.code}/`, tool: 'home', ready: '.home .hero-title' },
@@ -260,6 +261,16 @@ try {
       return document.fonts.check('16px Texel', 'Ж') && document.fonts.check('bold 16px Texel', 'Ж');
     });
     check(cyrillic, 'Cyrillic regular and bold come from the pixel font');
+    // Polish: ą ć ę ł ń ś ź ż are in the same extension files (ó is in the Latin file)
+    await page.goto(`${base}pl/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.home .hero-title');
+    const plPreloads = await page.$$eval('link[rel="preload"][as="font"]', (ls) => ls.map((l) => new URL(l.href).pathname.split('/').pop()));
+    check(['texel-regular-ext.woff2', 'texel-bold-ext.woff2'].every((f) => plPreloads.includes(f)), 'Polish pages preload the font files with ą ę ł ż', plPreloads.join(' '));
+    const polish = await page.evaluate(async () => {
+      await document.fonts.ready;
+      return [...'ąćęłńóśźżĄĆĘŁŃÓŚŹŻ'].every((c) => document.fonts.check('16px Texel', c) && document.fonts.check('bold 16px Texel', c));
+    });
+    check(polish, 'Polish letters, regular and bold, come from the pixel font');
     // the language switcher fits every language on a phone, in the footer and the menu drawer
     await page.setViewportSize({ width: 390, height: 800 });
     await page.waitForTimeout(300);
@@ -519,7 +530,7 @@ try {
       check(r.status() === 200, `${f} is served`);
     }
     const sitemap = await (await page.request.get(server.url + 'sitemap.xml')).text();
-    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('hreflang="ru"') && sitemap.includes('hreflang="fr"') && sitemap.includes('/ja/guides/make-a-skin/') && sitemap.includes('/ru/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
+    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('hreflang="ru"') && sitemap.includes('hreflang="fr"') && sitemap.includes('hreflang="pl"') && sitemap.includes('/ja/guides/make-a-skin/') && sitemap.includes('/ru/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
     await ctx.close();
   }
 } finally {

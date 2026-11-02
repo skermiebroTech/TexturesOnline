@@ -8,6 +8,7 @@ import { CONTENT as PT_BR } from './pt-br/content';
 import { CONTENT as JA } from './ja/content';
 import { CONTENT as RU } from './ru/content';
 import { CONTENT as FR } from './fr/content';
+import { CONTENT as PL } from './pl/content';
 
 registerContent('de', DE);
 registerContent('es', ES);
@@ -15,3 +16,4 @@ registerContent('pt-br', PT_BR);
 registerContent('ja', JA);
 registerContent('ru', RU);
 registerContent('fr', FR);
+registerContent('pl', PL);

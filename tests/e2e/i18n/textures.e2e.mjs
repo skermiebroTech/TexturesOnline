@@ -31,7 +31,7 @@ const baseArg = argv.find((a) => /^https?:/.test(a));
 const opt = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : null);
 const shotsDir = opt('--shots');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
-const LANGS = (opt('--langs') ?? 'de,ja,es,pt-br,ru').split(',');
+const LANGS = (opt('--langs') ?? 'de,ja,es,pt-br,ru,pl').split(',');
 const WIDTHS = (opt('--widths') ?? '1280,390').split(',').map(Number);
 
 let failures = 0;
@@ -164,10 +164,12 @@ function cutLabels(gameNames) {
 // ------------------------------------------------------------------ English detection
 const KEEP = [
   'Texture Pack Maker', 'Texture Packs', 'Texture Pack', 'Texture pack', 'Minecraft Java Edition', 'Minecraft', 'Java', 'Bedrock', 'Mojang', 'Ogg Vorbis', 'Scale2x', 'Scale3x', 'Game Boy', 'PICO-8',
-  'Pixelwelt', 'Bloco', 'Kachel', 'Celular', 'Кубомир', 'PNG', 'JPG', 'GIF', 'WebP', 'TGA', 'MP3', 'WAV', 'OGG', 'M4A', 'JSON', 'UV', 'HD', 'GUI', 'FMOD', 'FSB5', 'Creeper', 'Sprite', 'Noir', 'Cartoon',
+  'Pixelwelt', 'Bloco', 'Kachel', 'Celular', 'Кубомир', 'Kostkowo', 'PNG', 'JPG', 'GIF', 'WebP', 'TGA', 'MP3', 'WAV', 'OGG', 'M4A', 'JSON', 'UV', 'HD', 'GUI', 'FMOD', 'FSB5', 'Creeper', 'Sprite', 'Noir', 'Cartoon',
   'Ctrl', 'Shift', 'Alt', 'Esc', 'Enter', 'Delete', 'Chrome', 'Edge', 'Firefox', 'Safari', 'https', 'kHz', 'Mob', 'Mobs', 'Pack', 'Packs', 'Add-on',
 ];
 const ENGLISH = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|choose|drop|download|convert|merge|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo|search|show|hide)(?!\p{L})/iu;
+/** The same for Polish, where "to" (it, this) and "on" (he) are Polish words too. */
+const ENGLISH_PL = /(?<!\p{L})(the|and|your|with|you|of|is|are|this|that|from|can|it|its|were|has|have|not|or|by|be|will|choose|drop|download|convert|merge|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo|search|show|hide)(?!\p{L})/iu;
 
 function english(texts, locale) {
   const found = [];
@@ -177,7 +179,7 @@ function english(texts, locale) {
     // Paths, file names, versions, keys and quoted examples of the (English) game names.
     s = s.replace(/[“"«「][^”"»」]*[”"»」]/g, ' ').replace(/\S*[./_\\0-9:#×§]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
-    if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
+    if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : (locale === 'pl' ? ENGLISH_PL : ENGLISH).test(s)) found.push(text);
     // Russian: two Latin words and no Cyrillic is English (or another language) left over.
     else if (locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) found.push(text);
   }
@@ -185,7 +187,7 @@ function english(texts, locale) {
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', pl: 'pl' };
 /** A few words each language's editor shows, to be sure the page is in that language. */
 const EXPECT = {
   de: { create: 'Pack erstellen', export: 'Exportieren', effects: 'Effekte' },
@@ -193,8 +195,9 @@ const EXPECT = {
   'pt-br': { create: 'Criar pack', export: 'Exportar', effects: 'Efeitos' },
   ja: { create: 'パックを作る', export: '書き出す', effects: '効果' },
   ru: { create: 'Создать пак', export: 'Экспорт', effects: 'Эффекты' },
+  pl: { create: 'Utwórz paczkę', export: 'Eksportuj', effects: 'Efekty' },
 };
-const PACK_NAME = { de: 'Pixelwelt', es: 'Celular', 'pt-br': 'Bloco', ja: 'Kachel', ru: 'Кубомир' };
+const PACK_NAME = { de: 'Pixelwelt', es: 'Celular', 'pt-br': 'Bloco', ja: 'Kachel', ru: 'Кубомир', pl: 'Kostkowo' };
 
 const fx = fixturesDir();
 if (!fx) {
