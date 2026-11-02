@@ -12,7 +12,7 @@ import { renderHtml, renderMarkdown, renderText, el, ic } from '../../src/app/ma
 import { formatGroups, BEDROCK_MIN_ENGINE } from '../../src/tools/guides/content';
 import { DEFAULT_MIN_ENGINE } from '../../src/editions/bedrock/manifest';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../src/editions/java/packformats';
-import { splitLocale } from '../../src/i18n/locales';
+import { LOCALES, splitLocale } from '../../src/i18n/locales';
 
 const TEMPLATE = `<!doctype html>
 <html lang="en" class="no-js" data-theme="dark">
@@ -377,7 +377,7 @@ test('help sections are linked by fragment (/help/#faq), never by query, and eve
     for (const id of ['java-packs', 'iris', 'backup', 'faq']) assert.match(html, new RegExp(`<section class="help-section[^"]*" id="${id}"`), `${p.meta.path} #${id}`);
     assert.match(html, /<details class="faq-item" id="offline"/, `${p.meta.path} #offline`);
   }
-  assert.equal(helpIds.size, 6, 'a help page in every language');
+  assert.equal(helpIds.size, LOCALES.length, 'a help page in every language');
   let links = 0;
   for (const p of pages) {
     const html = byName.get(pageFileName(p.meta.path))!;

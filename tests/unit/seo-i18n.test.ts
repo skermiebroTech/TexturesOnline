@@ -355,24 +355,30 @@ function texts(node: Child, out: string[] = []): string[] {
   return out;
 }
 
-function englishRuns(text: string): string[] {
+/** Words of the English list that are also words of a language (Polish "to", "on", "one", "by"). */
+const ALSO_IN: Partial<Record<Locale, string[]>> = { pl: ['to', 'on', 'one', 'by'] };
+
+function englishRuns(text: string, locale?: Locale): string[] {
   let t = text;
   for (const a of ALLOWED) t = t.split(a).join(' ');
   // file names, paths and version numbers are not prose
   t = t.replace(/\S*[./\\]\S*/g, ' ');
   const words = t.toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g) ?? [];
-  const hits = words.filter((w) => ENGLISH.has(w));
+  const own = (locale && ALSO_IN[locale]) || [];
+  const hits = words.filter((w) => ENGLISH.has(w) && !own.includes(w));
   return hits.length >= 2 ? [text] : [];
 }
 
 test('no English prose is left on translated pages (heuristic)', () => {
   for (const p of translated) {
-    const found = [...texts(p.body(2026)), p.meta.title, p.meta.description].flatMap(englishRuns);
+    const found = [...texts(p.body(2026)), p.meta.title, p.meta.description].flatMap((t) => englishRuns(t, p.locale));
     assert.deepEqual(found, [], `${p.meta.path} has English text`);
   }
   // The check does catch English
   assert.equal(englishRuns('Open the pack and click Done.').length, 1);
   assert.equal(englishRuns('Öffne das Pack mit Open a pack.').length, 0);
+  assert.equal(englishRuns('Czy to jest to, o co chodzi?', 'pl').length, 0);
+  assert.equal(englishRuns('Open the pack to make it work.', 'pl').length, 1);
 });
 
 test('interface texts exist for every language and differ from English', () => {

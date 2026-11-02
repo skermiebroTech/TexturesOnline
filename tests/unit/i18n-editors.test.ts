@@ -9,7 +9,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { fmt, messageParams, registeredSections, type TextTree } from '../../src/i18n/editor-text';
@@ -18,6 +18,8 @@ import { LOCALE_INFO, TRANSLATED_LOCALES, type TranslatedLocale } from '../../sr
 const ROOT = join(import.meta.dirname, '../..');
 const SRC = join(ROOT, 'src');
 const LANG_FILES = new Set(TRANSLATED_LOCALES.map((l) => `${l}.ts`));
+/** Languages whose editors are translated (a language whose public pages come first starts with the UI kit's file). */
+const EDITOR_LOCALES = TRANSLATED_LOCALES.filter((l) => existsSync(join(SRC, 'ui/i18n', `${l}.ts`)));
 
 /** Names and words that are the same in every language. */
 const SAME_EVERYWHERE = [
@@ -71,7 +73,7 @@ async function load(): Promise<{ english: Map<string, TextTree>; files: LangFile
   }
   const files: LangFile[] = [];
   for (const folder of folders) {
-    for (const locale of TRANSLATED_LOCALES) {
+    for (const locale of EDITOR_LOCALES) {
       const mod = (await import(pathToFileURL(join(folder, `${locale}.ts`)).href)) as { default: Record<string, TextTree>; SAME_AS_ENGLISH?: string[] };
       files.push({ folder: relative(ROOT, folder), locale, sections: mod.default, same: new Set(mod.SAME_AS_ENGLISH ?? []) });
     }
@@ -139,7 +141,7 @@ test('every editor section is translated into every language, once', async () =>
   const { english, files, owner } = await loaded;
   assert.ok(folders.length >= 5, `found ${folders.length} i18n folders`);
   assert.ok(english.size >= 8, `found ${english.size} sections`);
-  for (const locale of TRANSLATED_LOCALES) {
+  for (const locale of EDITOR_LOCALES) {
     const seen = new Map<string, string>();
     for (const f of files.filter((x) => x.locale === locale)) {
       for (const id of Object.keys(f.sections)) {

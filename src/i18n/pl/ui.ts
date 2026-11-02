@@ -57,7 +57,7 @@ export const UI_PL: UiText = {
     return `${d} ${MIESIACE[m - 1]} ${y}`;
   },
   platform: 'Platforma',
-  folderTable: { system: 'System', folder: 'Folder' },
+  folderTable: { system: 'System', folder: 'Ścieżka' },
   toolIntro: {
     whatYouCanDo: 'Co tu zrobisz',
     questions: 'Częste pytania',

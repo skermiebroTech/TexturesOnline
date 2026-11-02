@@ -12,11 +12,11 @@ export const META_PL: MetaTranslation = {
     },
     '/textures': {
       title: 'Edytor paczek tekstur – zrób paczkę zasobów do Minecrafta',
-      description: 'Edytuj każdą teksturę Minecrafta: maluj bloki, przedmioty i moby na modelach 3D, wgraj własne PNG albo zmień styl całej paczki. Eksport do .zip lub .mcpack.',
+      description: 'Edytuj każdą teksturę Minecrafta: maluj bloki, przedmioty i moby na modelach 3D, wgraj własne PNG albo zmień styl paczki. Eksport do .zip lub .mcpack.',
       label: 'Paczki tekstur',
     },
     '/texture-pack-converter': {
-      title: 'Konwerter paczek tekstur Minecraft – Java na Bedrock i z powrotem',
+      title: 'Konwerter paczek tekstur – z Javy na Bedrock i z powrotem',
       description: 'Zamień paczkę tekstur Minecrafta z Javy na Bedrock, z Bedrocka na Javę albo między wersjami Javy, lub zrób .mcpack z plików PNG. Za darmo w przeglądarce.',
       label: 'Konwerter paczek tekstur',
     },
@@ -37,7 +37,7 @@ export const META_PL: MetaTranslation = {
     },
     '/font-maker': {
       title: 'Zrób czcionkę do Minecrafta – własna czcionka w paczce',
-      description: 'Własna czcionka w Minecrafcie: narysuj pikselowe litery albo zamień plik TTF/OTF, sprawdź ją na czacie, tabliczkach i w książkach, pobierz .zip lub .mcpack.',
+      description: 'Własna czcionka w Minecrafcie: narysuj pikselowe litery albo zamień plik TTF/OTF, sprawdź ją na czacie, tabliczkach i w książkach i pobierz paczkę.',
       label: 'Kreator czcionek',
     },
     '/skins': {
@@ -61,7 +61,7 @@ export const META_PL: MetaTranslation = {
       label: 'Shadery',
     },
     '/help': {
-      title: 'Jak zainstalować paczki tekstur, skiny i shadery w Minecrafcie',
+      title: 'Jak zainstalować paczki tekstur, skiny i shadery',
       description: 'Krok po kroku dla Javy i Bedrocka na Windowsie, Macu, Androidzie, iPhonie i konsoli: znajdź folder resourcepacks, włącz paczkę i napraw błędy.',
       label: 'Pomoc',
     },
@@ -95,7 +95,7 @@ export const META_PL: MetaTranslation = {
       blurb: 'Wybierz wersję, pomaluj tekstury i wyeksportuj paczkę, którą Minecraft wczyta.',
     },
     'install-resource-packs': {
-      title: 'Jak zainstalować paczkę tekstur w Minecrafcie (Java i Bedrock)',
+      title: 'Instalacja paczki tekstur w Minecrafcie (Java i Bedrock)',
       h1: 'Jak zainstalować paczki tekstur, shadery i pliki .mcpack',
       description: 'Zainstaluj paczkę zasobów w Javie, zaimportuj .mcpack w Bedrocku na PC lub telefonie, włącz shadery z Irisem lub OptiFine i napraw brakujące paczki.',
       label: 'Instalacja paczek i shaderów',
@@ -167,7 +167,7 @@ export const META_PL: MetaTranslation = {
     'make-3d-items-texture-pack': {
       title: 'Przedmioty 3D w paczce tekstur do Minecrafta (Java)',
       h1: 'Przedmioty 3D i własne modele w paczce tekstur',
-      description: 'Zamień płaskie przedmioty z Minecrafta w modele 3D i zmień kształty bloków w paczce zasobów do Javy: JSON modelu, definicje przedmiotów od 1.21.4, rozwiązania.',
+      description: 'Zamień płaskie przedmioty z Minecrafta w modele 3D i zmień kształty bloków w paczce zasobów do Javy: JSON modelu, definicje przedmiotów od 1.21.4.',
       label: 'Przedmioty 3D',
       blurb: 'Zrób z płaskich przedmiotów modele 3D i zmień kształt bloków, plik po pliku.',
     },
