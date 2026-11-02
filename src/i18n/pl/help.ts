@@ -280,7 +280,7 @@ export const HELP: HelpText = {
       short: 'Kopie zapasowe',
       body: [
         el('p', { class: 'guide-intro' }, 'Twoje projekty są zapisane tylko w tej przeglądarce. Jeśli usuniesz dane strony albo zmienisz przeglądarkę czy urządzenie, zostaną tutaj. Dlatego trzymaj kopię w pliku.'),
-        backupButtons('Kopia zapasowa wszystkich projektów', 'Otwórz kopię zapasową'),
+        backupButtons('Zapisz wszystkie projekty', 'Otwórz kopię zapasową'),
         el(
           'ul',
           { class: 'guide-list' },

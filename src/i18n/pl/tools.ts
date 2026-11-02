@@ -128,7 +128,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'pbr',
         q: 'Mogę zrobić paczkę PBR do Vibrant Visuals albo shaderów?',
-        a: [p('Tak. Otwórz teksturę i wybierz zakładkę „Materiał”: weź szybki materiał, na przykład metal, szkło albo świecące kropki rudy, albo sam ustaw połysk, metal, świecenie i wypukłość. Paczki do Bedrocka dostają zestawy tekstur i zostawiają włączone Vibrant Visuals; paczki do Javy dostają mapy labPBR _n i _s, które czytają shadery PBR do Irisa i OptiFine.')],
+        a: [p('Tak. Otwórz teksturę i wybierz zakładkę „Materiał”: weź szybki materiał, na przykład metal, szkło albo świecące kropki rudy, albo samodzielnie ustaw połysk, metal, świecenie i wypukłość. Paczki do Bedrocka dostają zestawy tekstur i zostawiają włączone Vibrant Visuals; paczki do Javy dostają mapy labPBR _n i _s, które czytają shadery PBR do Irisa i OptiFine.')],
       },
       {
         id: 'names',
@@ -871,7 +871,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     howTitle: 'Jak zrobić pelerynę',
     steps: [
       'Zacznij od wzoru albo pomaluj pusty szablon. Duży obszar po lewej to zewnętrzna strona peleryny, którą widać za tobą.',
-      ['Pomaluj też wewnętrzną stronę i krawędzie, a potem naciśnij ', strong('Skopiuj pelerynę na elytry'), ' albo sam pomaluj obszary elytr.'],
+      ['Pomaluj też wewnętrzną stronę i krawędzie, a potem naciśnij ', strong('Skopiuj pelerynę na elytry'), ' albo samodzielnie pomaluj obszary elytr.'],
       ['Obracaj gracza 3D, przełączaj między ', strong('Peleryna'), ' i ', strong('Elytry'), ' i wypróbuj animację lotu.'],
       ['Pobierz ', code('.png'), ' do moda z pelerynami albo paczkę tekstur z elytrami do Javy lub Bedrocka.'],
     ],

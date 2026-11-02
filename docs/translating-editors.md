@@ -147,6 +147,15 @@ still share one language file. English pages never load a language file. Check w
   paths use the game's own names (de Optionen → Ressourcenpakete, es Opciones → Paquetes de
   recursos, pt-br Opções → Pacotes de recursos, ja 設定 → リソースパック, ru Настройки → Наборы
   ресурсов; Bedrock Настройки → Глобальные ресурсы).
+  Polish (`pl`, ty; public pages so far, the editors still show English): "paczka tekstur" (short
+  "paczka"), "paczka zasobów", "skin" / "skina" / "skiny" (the game says "skórka": quote it only in
+  menu names), "paczka skinów", "paczka shaderów", Java Edition / Bedrock Edition, the game's pl_pl
+  names (Totem nieśmiertelności, Przebieralnia, Elytry) and menus from `src/i18n/pl/game-ui.ts`
+  (Java Ustawienia… → Paczki zasobów…, Bedrock Ustawienia → Zasoby globalne). The pages already
+  quote some editor buttons in Polish (Utwórz paczkę, Otwórz paczkę, Eksportuj, Edytuj kształt,
+  Napraw wszystko, Paczka PvP / FPS, Utwórz paczkę PvP, Materiał, Tekstury po nazwie, Animuj): use
+  the same words when the editors are translated. Avoid past-tense "you" forms, which are gendered
+  in Polish (zrobiłeś / zrobiłaś).
 - **Touch screens**: a hint that says "Click", "Double-click" or names a key gets a twin ending in
   `Touch` (`partsHint` / `partsHintTouch`) with "Tap" / "Double-tap" and no keyboard. The code picks
   one when the text is shown (`byPointer(mouse, touch)` in `textures/ui/media.ts`, by

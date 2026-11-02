@@ -255,7 +255,7 @@ const makeATexturePack: GuideText = {
       id: 'by-hand',
       title: 'Jak zrobić paczkę tekstur ręcznie',
       body: [
-        p('Paczkę możesz też zbudować sam w dowolnym programie graficznym. Trwa to dłużej, ale pokazuje, jak działa paczka:'),
+        p('Paczkę możesz też zbudować samodzielnie w dowolnym programie graficznym. Trwa to dłużej, ale pokazuje, jak działa paczka:'),
         h3('Java Edition'),
         steps([
           ['Znajdź oryginalne tekstury: skopiuj ', code('versions/<version>/<version>.jar'), ' ze swojego folderu ', code('.minecraft'), ', zmień rozszerzenie kopii na ', code('.zip'), ' i ją otwórz. Obrazki są w ', code('assets/minecraft/textures'), '.'],
