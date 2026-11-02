@@ -239,6 +239,6 @@ const FR: TexturesLanguage = {
 };
 
 /** Rightly the same as in English (a product name). */
-export const SAME_AS_ENGLISH = ['textures.effects:préréglages.gameBoy.label'];
+export const SAME_AS_ENGLISH = ['textures.effects:presets.gameBoy.label'];
 
 export default FR;
