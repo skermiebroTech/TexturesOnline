@@ -2304,3 +2304,516 @@ const pvpPack: GuideText = {
   ],
   ctaLabel: 'Zrób paczkę PvP',
 };
+
+// ---------------------------------------------------------------- PBR
+
+const PBR_STEPS: Child[] = [
+  ['Otwórz ', link('/textures', 'edytor paczek tekstur'), ' i zrób paczkę do Javy albo Bedrocka albo otwórz paczkę, którą już masz.'],
+  'Wybierz teksturę bloku albo przedmiotu, na przykład złoże diamentu, i otwórz zakładkę „Materiał” obok „Podgląd”.',
+  ['Wybierz szybki materiał, taki jak ', strong('Metal'), ', ', strong('Szkło'), ' albo ', strong('Świecące kropki'), '. Oświetlony blok 3D pokazuje go pod wędrującym słońcem.'],
+  ['Ustaw ', strong('Połysk'), ', ', strong('Metal'), ', ', strong('Świecenie'), ' i ', strong('Prześwit'), ' dla całej tekstury albo dodaj część (kolorowe, jasne albo ciemne piksele, wybrane kolory albo zaznaczony obszar) z własnymi wartościami.'],
+  ['Włącz ', strong('Wypukłość z kolorów'), ' i ustaw siłę, a potem przyciskiem ', strong('Zastosuj do podobnych tekstur'), ' daj ten sam materiał każdemu złożu, każdym deskom albo pniowi.'],
+  ['Kliknij ', strong('Eksportuj'), '. Java dostaje ', code('_n.png'), ' i ', code('_s.png'), ' obok każdej tekstury, a Bedrock zestawy tekstur i możliwość ', code('pbr'), '.'],
+];
+
+const pbrPack: GuideText = {
+  intro: [
+    p(
+      'Paczka tekstur PBR daje blokom coś więcej niż kolory: jak mocno błyszczą, które części są z metalu, które świecą i jak nierówne wydają się w świetle. Vibrant Visuals w Minecraft Bedrock czyta te mapy z zestawów tekstur, a w Javie czytają je shadery PBR do Irisa i OptiFine w formacie labPBR. ',
+      link('/textures', 'Edytor paczek tekstur'),
+      ' robi jedno i drugie w przeglądarce z twoich tekstur, z szybkimi materiałami takimi jak metal, szkło i świecące kropki rudy.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Otwórz teksturę i zakładkę ', strong('Materiał'), '.'],
+      ['Wybierz szybki materiał i dostrój połysk, metal, świecenie i wypukłość na oświetlonym bloku 3D.'],
+      ['Wyeksportuj: edytor zapisze właściwe pliki dla twojej edycji obok tekstur.'],
+    ],
+  },
+  howto: { name: 'Jak zrobić paczkę tekstur PBR w Texture Pack Maker', steps: PBR_STEPS },
+  sections: [
+    {
+      id: 'maps',
+      title: 'Co robią mapy',
+      body: [
+        p('Każdy piksel tekstury dostaje kilka dodatkowych liczb. Zakładka „Materiał” nazywa je według tego, co widać; tabela pokazuje, gdzie trafiają w plikach:'),
+        table(
+          ['W edytorze', 'Co robi', 'Java (labPBR)', 'Bedrock (zestaw tekstur)'],
+          [
+            ['Połysk', 'Gładkie powierzchnie pokazują ostre odblaski i odbicia, szorstkie wyglądają matowo.', [code('_s'), ' czerwony: gładkość'], ['MER niebieski: szorstkość']],
+            ['Metal', 'Metal odbija niebo we własnym kolorze, jak żelazo albo złoto.', [code('_s'), ' zielony: 230–255'], ['MER czerwony: metaliczność']],
+            ['Świecenie', 'Daje światło, także w nocy, jak jasnogłaz albo klejnoty w złożach.', [code('_s'), ' alfa: 0–254'], ['MER zielony: świecenie']],
+            ['Prześwit', 'Przez cienkie części przechodzi światło, jak przez liście.', [code('_s'), ' niebieski: 65–255'], ['MERS alfa (tylko Vibrant Visuals)']],
+            ['Wypukłość', 'Światło i cień pokazują wypukłości i wgłębienia na płaskiej ścianie.', [code('_n'), ' czerwony i zielony, wysokość w alfie'], ['Mapa normalnych']],
+          ],
+        ),
+        p('Bez materiału tekstura wygląda jak zawsze. W Javie tekstura z kolorami zostaje tam, gdzie jest; mapy leżą obok niej.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Krok po kroku',
+      body: [steps(PBR_STEPS)],
+    },
+    {
+      id: 'parts',
+      title: 'Świecące kropki rudy i inne części',
+      body: [
+        p(
+          'Część daje niektórym pikselom własne wartości. ',
+          strong('Kolorowe piksele'),
+          ' znajdują klejnoty złoża w szarym kamieniu, ',
+          strong('Jasne piksele'),
+          ' światło lampy, ',
+          strong('Piksele wybranych kolorów'),
+          ' dokładnie te kolory, które klikniesz, a ',
+          strong('Zaznaczony obszar'),
+          ' prostokąt, który zaznaczysz narzędziem zaznaczania. Mały obrazek pokazuje, które piksele obejmuje część.',
+        ),
+        p(
+          strong('Zastosuj do podobnych tekstur'),
+          ' kopiuje materiał na inne ściany tego samego bloku i na każdą teksturę, której nazwa kończy się albo zaczyna tym samym słowem: wszystkie tekstury ',
+          code('*_ore'),
+          ', wszystkie ',
+          code('oak_*'),
+          ' i tak dalej. Każda zachowuje własne kolory, więc części i wypukłość idą za jej pikselami.',
+        ),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java: mapy labPBR do shaderów',
+      body: [
+        p(
+          'Java nie ma własnego PBR: rysuje je paczka shaderów w Irisie albo OptiFine. Edytor zapisuje obie mapy labPBR obok każdej tekstury, na przykład ',
+          code('assets/minecraft/textures/block/stone_n.png'),
+          ' i ',
+          code('stone_s.png'),
+          ' (przed 1.13 ',
+          code('textures/blocks/'),
+          '), w rozmiarze, w jakim eksportowana jest tekstura. Gładkość jest percepcyjna (1 minus szorstkość), niemetale dostają F0 około 4%, a piksel bez świecenia ma alfę 255, żeby obrazki bez alfy nigdy nie świeciły.',
+        ),
+        p(
+          'Włącz shader, który czyta mapy labPBR; w jego ustawieniach nazywa się to często labPBR albo obsługą paczek zasobów, a to shader decyduje, jak mocne są odbicia i świecenie. Shadery z ',
+          link('/shaders', 'kreatora shaderów'),
+          ' na tej stronie jeszcze nie używają tych map.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock: zestawy tekstur do Vibrant Visuals',
+      body: [
+        p('Bedrock czyta zestaw tekstur obok tekstury z kolorami. Świecące kropki i wypukłość to obrazki:'),
+        pre(PBR_TEXTURE_SET.trimEnd()),
+        p('Wartość dla całej tekstury nie potrzebuje obrazka:'),
+        pre(PBR_UNIFORM_SET.trimEnd()),
+        p(
+          'Prześwit to czwarty kanał ',
+          code('metalness_emissive_roughness_subsurface'),
+          ' (format 1.21.30, tylko Vibrant Visuals) i jest zapisywany jako TGA, żeby jego alfa została taka, jaka jest. Zestaw tekstur może wskazywać tylko obrazki z tej samej paczki, dlatego edytor dokłada też teksturę z kolorami, nawet jeśli jej nie malujesz. Paczka zgłasza możliwość ',
+          code('pbr'),
+          ', bez której Vibrant Visuals zostaje wyłączone:',
+        ),
+        pre(PBR_MANIFEST.trimEnd()),
+        p(
+          'Gra ma własne zestawy tekstur dla większości bloków. Przy Vibrant Visuals zestaw z gry pokazałby jej teksturę z kolorami zamiast twojej, dlatego każda tekstura, którą zmienisz bez materiału, dostaje w twojej paczce kopię zestawu z gry. ',
+          link('/guides/bedrock-vibrant-visuals-settings', 'Ustawienia Vibrant Visuals wyjaśnione'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Otwieranie paczki z mapami PBR',
+      body: [p('Otwórz paczkę do Javy z mapami labPBR albo paczkę do Bedrocka z zestawami tekstur, a jej mapy pojawią się w zakładce „Materiał” swoich tekstur. Są eksportowane dokładnie takie, jakie były, dopóki nie zmienisz materiału.')],
+    },
+  ],
+  faq: [
+    {
+      id: 'rtx',
+      q: 'Potrzebuję karty graficznej RTX?',
+      a: [p('Nie. Vibrant Visuals działa na wielu komputerach, konsolach i nowszych telefonach, a shadery labPBR działają na większości kart graficznych, które obsługują shadery. Starszy tryb ray tracingu w Bedrocku czyta te same zestawy tekstur, oprócz materiałów, które przepuszczają światło: te używają warstwy, którą czyta tylko Vibrant Visuals.')],
+    },
+    {
+      id: 'same',
+      q: 'Dlaczego moja paczka wygląda w grze tak samo?',
+      a: [p(`Bedrock: ustaw tryb grafiki na „${BEDROCK.vibrantVisuals}” (Vibrant Visuals) i przesuń paczkę na samą górę w zasobach globalnych. Java: włącz shader z obsługą labPBR i sprawdź jego ustawienie materiałów albo paczek zasobów. Bez jednego z nich Minecraft pokazuje tylko kolory.`)],
+    },
+    {
+      id: 'items',
+      q: 'Czy materiały działają na przedmiotach i mobach?',
+      a: [p('Tak, w Vibrant Visuals i w większości shaderów labPBR. Edytor zawsze zapisuje mapy normalnych, nigdy mapy wysokości, bo Vibrant Visuals nie umie używać map wysokości na przedmiotach.')],
+    },
+    {
+      id: 'metal',
+      q: 'Dlaczego metal powinien mieć 0 albo 100?',
+      a: [p('Prawdziwe rzeczy są z metalu albo nie, a labPBR i Vibrant Visuals traktują piksel jako jedno albo drugie. Wartości pośrednie wyglądają szaro i matowo. Żeby kamień błyszczał, podnieś połysk, a metal zostaw na 0.')],
+    },
+  ],
+  ctaLabel: 'Otwórz edytor paczek tekstur',
+};
+
+// ---------------------------------------------------------------- renamed items
+
+const NAMES_STEPS: Child[] = [
+  ['Otwórz ', link('/textures', 'edytor paczek tekstur'), ' i zrób paczkę do Javy albo otwórz paczkę, którą już masz.'],
+  ['Otwórz teksturę przedmiotu, na przykład diamentowego miecza, i wybierz w jej menu (⋮) ', strong('Tekstury po nazwie'), ' albo ', strong('Nazwy'), ' pod podglądem 3D.'],
+  ['Wpisz nazwę, na przykład ', strong('Excalibur'), '. Dodaj więcej nazw, jeśli mają używać tej samej tekstury.'],
+  ['Kliknij ', strong('Utwórz i maluj'), '. Nowa tekstura zaczyna jako kopia tekstury przedmiotu, więc po prostu ją przemaluj. Z opcją ', strong('Kształt 3D'), ' dostanie też własny model.'],
+  ['Kliknij ', strong('Eksportuj'), ', zainstaluj paczkę, zmień nazwę przedmiotu na kowadle dokładnie na tę samą i weź go do ręki.'],
+];
+
+const renameItems: GuideText = {
+  intro: [
+    p(
+      'W Minecrafcie możesz zmienić nazwę każdego przedmiotu na kowadle. Paczka zasobów może dać przedmiotowi z nową nazwą własną teksturę: diamentowy miecz o nazwie „Excalibur” może lśnić złotem, a wszystkie inne diamentowe miecze zostają takie, jakie są. Java 1.21.5 i nowsze potrafią to bez modów; starsze wersje potrzebują OptiFine albo moda CIT Resewn. ',
+      link('/textures', 'Edytor paczek tekstur'),
+      ' zapisuje właściwe pliki dla twojej wersji.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Otwórz teksturę przedmiotu i wybierz ', strong('Tekstury po nazwie'), '.'],
+      ['Wpisz nazwę i namaluj nową teksturę.'],
+      ['Wyeksportuj i zmień nazwę przedmiotu na kowadle dokładnie na tę samą.'],
+    ],
+  },
+  howto: { name: 'Jak dać przedmiotowi ze zmienioną nazwą własną teksturę w Texture Pack Maker', steps: NAMES_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Krok po kroku',
+      body: [steps(NAMES_STEPS)],
+    },
+    {
+      id: 'names',
+      title: 'Kiedy nazwa pasuje',
+      body: [
+        ul([
+          ['Nazwa musi być dokładnie taka sama, łącznie z wielkimi i małymi literami: ', strong('Excalibur'), ' i ', strong('excalibur'), ' to różne nazwy. Dodaj obie, jeśli obie mają działać.'],
+          'Kilka nazw może mieć wspólną teksturę, a jeden przedmiot może mieć wiele tekstur po nazwie.',
+          'Na kowadle działają nazwy do 50 znaków, bez kodów kolorów. Nazwa pokolorowana albo pogrubiona komendami nie pasuje do zwykłej nazwy.',
+          'Przedmiot zmienia się w ręce, w ekwipunku, na ziemi i w ramkach. Blok postawiony z przedmiotu ze zmienioną nazwą wygląda jak zawsze.',
+        ]),
+      ],
+    },
+    {
+      id: 'vanilla',
+      title: 'Java 1.21.5 i nowsze: bez modów',
+      body: [
+        p(
+          'Od 1.21.5 definicja przedmiotu (',
+          code('assets/minecraft/items/<item>.json'),
+          ') może wybrać model według nazwy przedmiotu, przez ',
+          code('minecraft:select'),
+          ' na właściwości ',
+          code('minecraft:component'),
+          ' z komponentem ',
+          code('minecraft:custom_name'),
+          '. Wszystko inne pokazuje zwykły model przedmiotu:',
+        ),
+        pre(NAMES_DEFINITION.trimEnd()),
+        p('Model dla nazwy to własny model przedmiotu z nowym obrazkiem, dlatego miecz dalej trzyma się jak miecz:'),
+        pre(NAMES_MODEL.trimEnd()),
+        p(
+          'Jeśli paczka już zmienia tę definicję przedmiotu, na przykład modelem 3D z edytora modeli, nazwy trafiają przed niego. Java 1.21.4 ma już definicje przedmiotów, ale nie umie jeszcze czytać nazwy przedmiotu, dlatego dostaje pliki OptiFine opisane niżej. ',
+          link('/guides/make-3d-items-texture-pack', 'Jak działają definicje przedmiotów i przedmioty 3D'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'optifine',
+      title: 'Przed 1.21.5: OptiFine albo CIT Resewn',
+      body: [
+        p(
+          'Starsze wersje nie umieją same wybrać tekstury według nazwy. Potrafią to Custom Item Textures (CIT) z OptiFine i mod CIT Resewn na Fabricu. Edytor zapisuje dla każdej tekstury po nazwie plik ',
+          code('.properties'),
+          ' w ',
+          code('assets/minecraft/optifine/cit/'),
+          ':',
+        ),
+        pre(NAMES_CIT.trimEnd()),
+        p(
+          'Pojedyncza nazwa jest zapisywana taka, jaka jest; kilka nazw staje się regułą ',
+          code('regex:'),
+          '. Od 1.20.5 edytor zapisuje ',
+          code('components.custom_name'),
+          ' zamiast ',
+          code('nbt.display.Name'),
+          '; oba mody czytają jedno i drugie. Tekstura z kształtem 3D używa ',
+          code('model='),
+          ' zamiast ',
+          code('texture='),
+          '. Jeśli zakres wersji paczki sięga od wersji przed 1.21.5 do późniejszych, dostaje ona oba rodzaje plików.',
+        ),
+        callout('warn', 'Gracze potrzebują moda', 'Bez OptiFine albo CIT Resewn Minecraft przed 1.21.5 pokazuje zwykłą teksturę, niezależnie od nazwy przedmiotu.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Paczki zasobów do Bedrocka nie mogą zmieniać wyglądu przedmiotu zależnie od nazwy. Nazwy przedmiotów w Molangu (na przykład ', code('query.is_item_name_any'), ') to identyfikatory przedmiotów, takie jak ', code('minecraft:diamond_sword'), ', a nie nazwy nadawane przez graczy na kowadle. Dlatego edytor nie oferuje tekstur po nazwie w paczkach do Bedrocka.'),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Otwieranie paczki, która je ma',
+      body: [
+        p(
+          'Otwórz paczkę do Javy, a jej tekstury po nazwie pojawią się pod teksturą przedmiotu i w oknie: reguły CIT z OptiFine dla przedmiotu z nazwą i teksturą albo modelem oraz definicje przedmiotów od 1.21.5, które wybierają model według nazwy. Reguły, które sprawdzają coś więcej niż nazwę (uszkodzenie, zaklęcia, kilka przedmiotów), zostają w paczce bez zmian. Reguła ze wzorcem OptiFine, takim jak ',
+          code('ipattern:*sword*'),
+          ', zachowuje go i dalej działa tylko z OptiFine i CIT Resewn.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-working',
+      q: 'Mój przedmiot ze zmienioną nazwą dalej wygląda zwyczajnie. Dlaczego?',
+      a: [p('Sprawdź, czy nazwa jest dokładnie taka sama, łącznie z wielkimi literami i spacjami, czy paczka jest aktywna i stoi nad innymi paczkami i czy grasz w 1.21.5 albo nowszą wersję albo w starszej masz OptiFine lub CIT Resewn. Przedmiot, którego nazwę zmienisz przed zainstalowaniem paczki, też zadziała: nazwa jest sprawdzana za każdym razem, kiedy przedmiot jest rysowany.')],
+    },
+    {
+      id: 'case',
+      q: 'Czy nazwa może ignorować wielkość liter?',
+      a: [p('W zwykłym Minecrafcie nie: nazwa musi pasować dokładnie. Dodaj każdą pisownię, którą chcesz, jako osobną nazwę. Paczki do OptiFine mogą używać wzorców, które ignorują wielkość liter; otwarte paczki zachowują swoje.')],
+    },
+    {
+      id: 'shape',
+      q: 'Czy przedmiot ze zmienioną nazwą może być 3D?',
+      a: [p('Tak. Przy teksturze po nazwie kliknij Kształt 3D, żeby otworzyć ją w edytorze modeli, i zacznij od przedmiotu 3D z twojego nowego obrazka.')],
+    },
+    {
+      id: 'servers',
+      q: 'Czy inni gracze to widzą?',
+      a: [p('Kto używa twojej paczki, ten to widzi, także na serwerach. Sama nazwa należy do przedmiotu, więc widzą ją wszyscy; tylko do tekstury potrzebna jest paczka.')],
+    },
+  ],
+  ctaLabel: 'Otwórz edytor paczek tekstur',
+};
+
+// ---------------------------------------------------------------- animated textures
+
+const ANIM_STEPS: Child[] = [
+  ['Otwórz ', link('/textures', 'edytor paczek tekstur'), ' i zrób paczkę albo otwórz paczkę, którą już masz.'],
+  ['Otwórz teksturę bloku albo przedmiotu i wybierz w jej menu (⋮) ', strong('Animuj'), '. Dostanie dwie klatki, a pod obszarem rysowania pojawi się pasek klatek.'],
+  ['Pomaluj każdą klatkę. ', strong('+'), ' dodaje kopię wybranej klatki; menu ⋯ duplikuje, kopiuje, wkleja, przesuwa i usuwa klatki. Włącz kalkę, żeby podczas malowania widzieć poprzednią klatkę na blado.'],
+  ['Zegar otwiera ', strong('Czasy'), ': ile ticków trwa każda klatka (20 ticków to 1 sekunda), czasy pojedynczych klatek i ', strong('Płynne przejścia'), '. Przyciskiem Play zobaczysz wszystko w tempie gry.'],
+  ['Kliknij ', strong('Eksportuj'), '. Paczki do Javy dostają pasek klatek z plikiem ', code('.png.mcmeta'), ', a paczki do Bedrocka wpis w ', code('flipbook_textures.json'), '.'],
+];
+
+const animatedTextures: GuideText = {
+  intro: [
+    p(
+      'Animowana tekstura to wysoki obrazek z klatkami jedna pod drugą, które gra pokazuje po kolei. Tak działają woda, lawa, ogień i portale, a paczka może animować też inne bloki i przedmioty. ',
+      link('/textures', 'Edytor paczek tekstur'),
+      ' robi animację z każdego bloku i przedmiotu, odtwarza ją podczas malowania w tempie gry, importuje GIF-y i zapisuje pliki, których potrzebuje każda edycja: plik ',
+      code('.png.mcmeta'),
+      ' do Javy i wpis flipbooka do Bedrocka.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Otwórz teksturę i wybierz w jej menu ', strong('Animuj'), '.'],
+      ['Pomaluj klatki, dodaj kolejne przyciskiem ', strong('+'), ' i ustaw tempo w tickach.'],
+      ['Wyeksportuj: edytor zapisze pliki animacji dla twojej edycji.'],
+    ],
+  },
+  howto: { name: 'Jak zrobić animowaną teksturę w Texture Pack Maker', steps: ANIM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Krok po kroku',
+      body: [steps(ANIM_STEPS)],
+    },
+    {
+      id: 'frames',
+      title: 'Klatki, kalka i pasek klatek',
+      body: [
+        ul([
+          ['Przeciągnij klatkę myszką w nowe miejsce. Na telefonie i tablecie użyj ', strong('Do przodu'), ' i ', strong('Do tyłu'), ' w menu ⋯.'],
+          ['Po kliknięciu klatki: Alt + strzałki ją przesuwają, Delete ją usuwa, a Ctrl+C i Ctrl+V kopiują ją i wklejają jako nową klatkę, do każdej animacji w paczce. Przecinkiem i kropką przechodzisz między klatkami podczas malowania.'],
+          'Kalka pokazuje poprzednią klatkę na blado nad tą, którą malujesz, żeby ruchy do siebie pasowały. W menu ⋯ możesz dodać też następną klatkę.',
+          ['Kiedy usuniesz wszystkie klatki oprócz jednej albo wybierzesz ', strong('Wyłącz animację'), ', tekstura znowu jest nieruchoma. Oba da się cofnąć.'],
+        ]),
+      ],
+    },
+    {
+      id: 'ticks',
+      title: 'Czas w tickach',
+      body: [
+        p('Minecraft mierzy czas w tickach: 20 ticków to 1 sekunda, więc jeden tick to 0,05 sekundy. Każda klatka trwa całkowitą liczbę ticków:'),
+        table(
+          ['Ticki na klatkę', 'Sekundy', 'Klatki na sekundę'],
+          [
+            ['1', '0,05 s', '20'],
+            ['2', '0,1 s', '10'],
+            ['4', '0,2 s', '5'],
+            ['10', '0,5 s', '2'],
+            ['20', '1 s', '1'],
+          ],
+        ),
+        ul([
+          [strong('Każda klatka trwa'), ' ustawia tempo wszystkich klatek. Nowa animacja zaczyna od 4 ticków.'],
+          [strong('Czas klatki'), ' daje pojedynczym klatkom własny czas, na pauzę albo krótki błysk.'],
+          [strong('Płynne przejścia'), ' przenika każdą klatkę w następną tick po ticku, jak płynąca woda. Najładniej wygląda przy wolnych klatkach.'],
+          [strong('Kolejność'), ' odtwarza klatki w dowolnej kolejności i tyle razy, ile chcesz: ', code('1, 2, 3, 2'), ' wraca w tył, ', code('1-8'), ' odtwarza zakres, a ', code('3:40'), ' trzyma klatkę 3 przez 40 ticków.'],
+        ]),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java Edition: plik .png.mcmeta',
+      body: [
+        p(
+          'Java czyta animację z pliku, który nazywa się tak jak tekstura, z dopiskiem ',
+          code('.mcmeta'),
+          ', i leży tuż obok niej: ',
+          code('stone.png'),
+          ' dostaje ',
+          code('stone.png.mcmeta'),
+          '. Klatki idą od góry do dołu, ',
+          code('frametime'),
+          ' to tempo w tickach (1, jeśli go brakuje), a ',
+          code('frames'),
+          ' to kolejność, z ',
+          code('time'),
+          ' dla klatek, które trwają dłużej:',
+        ),
+        pre(ANIM_MCMETA.trimEnd()),
+        p('Klatki, które nie są kwadratami, od 1.13 potrzebują swojego rozmiaru. Gra czyta je wtedy rzędami, od lewej do prawej:'),
+        pre(ANIM_MCMETA_WIDE.trimEnd()),
+        table(
+          ['Wersja', 'Co potrafi animacja'],
+          [
+            ['1.6.1 – 1.7.10', ['Tempo (', code('frametime'), ') i kolejność z czasami (', code('frames'), '). Klatki to kwadraty o szerokości tekstury.']],
+            ['1.8 – 1.12.2', ['Do tego płynne przejścia (', code('interpolate'), ').']],
+            ['1.13 i nowsze', ['Klatki w dowolnym rozmiarze (', code('width'), ', ', code('height'), ').']],
+            ['1.21.2 i nowsze', 'Płynne przejścia przenikają też przezroczyste piksele. Wcześniej przenikają się tylko kolory, a każda klatka zachowuje własną przezroczystość.'],
+          ],
+        ),
+        p(
+          'Edytor zapisuje to, co czyta najstarsza wersja twojej paczki, i przy eksporcie ostrzega, jeśli jakaś wersja w jej zakresie nie umie odtworzyć części animacji. Java animuje tekstury, które zbiera na atlasie tekstur: bloki i przedmioty w każdej wersji, cząsteczki, obrazy i ikony efektów od 1.14, skrzynie, łóżka, tabliczki, sztandary, tarcze i shulkerowe skrzynie od 1.15 i sprite’y interfejsu od 1.20.2. Skiny mobów, zbroje, czcionki, mapy kolorów i ikona paczki są rysowane osobno i zostają nieruchome, dlatego edytor to mówi, zamiast je animować.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition: tekstury flipbook',
+      body: [
+        p(
+          'Bedrock wymienia swoje animacje w ',
+          code('textures/flipbook_textures.json'),
+          '. Każdy wpis podaje teksturę i kafelek bloku z ',
+          code('terrain_texture.json'),
+          ', który ją pokazuje:',
+        ),
+        pre(ANIM_FLIPBOOK.trimEnd()),
+        table(
+          ['Pole', 'Co robi'],
+          [
+            [code('flipbook_texture'), 'Ścieżka tekstury, bez rozszerzenia pliku.'],
+            [code('atlas_tile'), ['Kafelek bloku w ', code('terrain_texture.json'), ', który jest animowany.']],
+            [[code('atlas_index'), ', ', code('atlas_tile_variant')], 'Która tekstura kafelka, jeśli ma ich kilka (od 0).'],
+            [code('ticks_per_frame'), 'Ticki na klatkę (20 ticków = 1 sekunda). Jedno tempo dla wszystkich klatek.'],
+            [code('frames'), 'Kolejność. Klatka, która trwa dłużej, występuje w niej kilka razy.'],
+            [code('blend_frames'), ['Przenika klatki jedna w drugą; włączone, jeśli go brakuje. Edytor zapisuje ', code('false'), ', chyba że włączysz „Płynne przejścia”.']],
+            [code('replicate'), 'Używa go gra dla płynącej wody i lawy; zostaje bez zmian.'],
+          ],
+        ),
+        p('Klatki to kwadraty o szerokości tekstury, od góry do dołu. Edytor zapisuje wpisy z gry razem z twoimi, żeby woda, lawa, ogień i inne animowane bloki dalej się ruszały.'),
+        callout(
+          'info',
+          'Bedrock animuje tylko bloki',
+          'Paczki zasobów do Bedrocka nie mają animacji przedmiotów: ',
+          code('item_texture.json'),
+          ' nie ma niczego takiego jak flipbook. Edytor mówi o tym, kiedy chcesz animować przedmiot w paczce do Bedrocka. Paczki do Javy mogą animować przedmioty.',
+        ),
+      ],
+    },
+    {
+      id: 'gif',
+      title: 'Import GIF-a, zapis jako GIF',
+      body: [
+        ul([
+          [strong('Importuj GIF albo obrazki…'), ' w menu tekstury albo w menu ⋯ bierze animowany GIF, arkusz sprite’ów (klatki w rozmiarze tekstury obok siebie albo pasek z kwadratów) albo kilka obrazków, w kolejności ich nazw. GIF możesz też przeciągnąć na obszar rysowania.'],
+          'Każda klatka jest zmieniana do rozmiaru tekstury bez wygładzania, żeby pixel art został ostry.',
+          'Czasy w GIF-ach to setne części sekundy: 5 setnych to jeden tick, więc czasy GIF-a są zaokrąglane do ticków. Możesz zamiast tego zostawić obecne tempo.',
+          [strong('Zapisz jako GIF…'), ' zapisuje animację do udostępnienia, aż do 16 razy większą. Klatki z płynnymi przejściami są zapisywane tick po ticku, tak jak pokazuje je gra. GIF-y nie znają półprzezroczystych pikseli: stają się one kryjące albo przezroczyste.'],
+        ]),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Otwieranie paczki z animacjami',
+      body: [
+        p(
+          'Otwórz ',
+          code('.zip'),
+          ' z Javy albo ',
+          code('.mcpack'),
+          ' z Bedrocka, a jego animacje będą działać w edytorze, gotowe do zmian: klatki, tempo, czasy klatek i płynne przejścia pochodzą z jego plików ',
+          code('.png.mcmeta'),
+          ' albo listy flipbooka. Animacje są zapisywane z projektem, więc pliki projektów i kopie zapasowe też je zachowują.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-moving',
+      q: 'Moja animacja nie rusza się w grze. Dlaczego?',
+      a: [
+        p(
+          'W Javie ',
+          code('.png.mcmeta'),
+          ' musi leżeć obok obrazka i mieć dokładnie jego nazwę z dopiskiem ',
+          code('.mcmeta'),
+          ', a tekstura musi być taka, którą gra animuje (bloki, przedmioty i inne tekstury z atlasu). W Bedrocku ruszają się tylko tekstury bloków z wpisem flipbooka. Sprawdź, czy paczka jest aktywna i leży nad innymi paczkami, które zmieniają tę samą teksturę.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock-items',
+      q: 'Mogę animować przedmioty w Bedrocku?',
+      a: [p('Nie. Paczki zasobów do Bedrocka mogą animować tylko tekstury bloków, przez flipbook_textures.json. Paczki do Javy mogą animować przedmioty.')],
+    },
+    {
+      id: 'speed',
+      q: 'Jak szybka może być animacja?',
+      a: [p('Najszybciej jedna klatka na tick: 20 klatek na sekundę. Edytor przyjmuje do 12 000 ticków (10 minut) na jedną klatkę.')],
+    },
+    {
+      id: 'sizes',
+      q: 'Czy wszystkie klatki muszą mieć ten sam rozmiar?',
+      a: [p('Tak. Klatki są wycinane z jednej tekstury, więc mają jej szerokość i tę samą wysokość. Importowane obrazki są zmieniane do rozmiaru klatki.')],
+    },
+  ],
+  ctaLabel: 'Otwórz edytor paczek tekstur',
+};
+
+export const GUIDES: Record<string, GuideText> = {
+  'make-a-texture-pack': makeATexturePack,
+  'texture-pack-not-working': notWorking,
+  'install-resource-packs': install,
+  'minecraft-pack-format-versions': packFormats,
+  'make-a-skin': makeASkin,
+  'make-shaders-without-mods': shadersWithoutMods,
+  'java-vs-bedrock-packs': javaVsBedrock,
+  'bedrock-vibrant-visuals-settings': vibrantVisuals,
+  'convert-java-to-bedrock-texture-pack': convertJavaToBedrock,
+  'merge-texture-packs': mergePacks,
+  'make-a-bedrock-skin-pack': bedrockSkinPack,
+  'make-3d-items-texture-pack': make3dItems,
+  'make-a-pvp-texture-pack': pvpPack,
+  'make-a-pbr-texture-pack': pbrPack,
+  'rename-items-texture-pack': renameItems,
+  'make-animated-textures': animatedTextures,
+};
