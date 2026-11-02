@@ -60,6 +60,7 @@ const LANGS = [
   { code: 'pt-br', lang: 'pt-BR', help: 'Ajuda', name: 'Português (Brasil)' },
   { code: 'ja', lang: 'ja', help: 'ヘルプ', name: '日本語' },
   { code: 'ru', lang: 'ru', help: 'Помощь', name: 'Русский' },
+  { code: 'pl', lang: 'pl', help: 'Pomoc', name: 'Polski' },
 ];
 const LOCALIZED = LANGS.flatMap((l) => [
   { lang: l, path: `${l.code}/`, tool: 'home', ready: '.home .hero-title' },
@@ -259,14 +260,24 @@ try {
       return document.fonts.check('16px Texel', 'Ж') && document.fonts.check('bold 16px Texel', 'Ж');
     });
     check(cyrillic, 'Cyrillic regular and bold come from the pixel font');
-    // the language switcher fits six languages on a phone, in the footer and the menu drawer
+    // Polish: ą ć ę ł ń ś ź ż are in the same extension files (ó is in the Latin file)
+    await page.goto(`${base}pl/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.home .hero-title');
+    const plPreloads = await page.$$eval('link[rel="preload"][as="font"]', (ls) => ls.map((l) => new URL(l.href).pathname.split('/').pop()));
+    check(['texel-regular-ext.woff2', 'texel-bold-ext.woff2'].every((f) => plPreloads.includes(f)), 'Polish pages preload the font files with ą ę ł ż', plPreloads.join(' '));
+    const polish = await page.evaluate(async () => {
+      await document.fonts.ready;
+      return [...'ąćęłńóśźżĄĆĘŁŃÓŚŹŻ'].every((c) => document.fonts.check('16px Texel', c) && document.fonts.check('bold 16px Texel', c));
+    });
+    check(polish, 'Polish letters, regular and bold, come from the pixel font');
+    // the language switcher fits every language on a phone, in the footer and the menu drawer
     await page.setViewportSize({ width: 390, height: 800 });
     await page.waitForTimeout(300);
     const fit = await page.evaluate(() => {
       const sw = document.querySelector('.site-footer .lang-switch');
       return { page: document.documentElement.scrollWidth, sw: sw ? sw.scrollWidth - sw.clientWidth : -1, links: document.querySelectorAll('.site-footer .lang-switch a').length };
     });
-    check(fit.page <= 390 && fit.sw === 0 && fit.links === 6, 'six languages fit the footer switcher at 390 px', JSON.stringify(fit));
+    check(fit.page <= 390 && fit.sw === 0 && fit.links === LANGS.length + 1, `${LANGS.length + 1} languages fit the footer switcher at 390 px`, JSON.stringify(fit));
     await page.click('.menu-btn');
     await page.waitForSelector('.nav-drawer .drawer-langs a[hreflang="ru"]');
     const drawer = await page.evaluate(() => {
@@ -278,7 +289,7 @@ try {
       }).length;
       return { links: d.querySelectorAll('a').length, out, overflow: d.scrollWidth - d.clientWidth };
     });
-    check(drawer.links === 6 && drawer.out === 0 && drawer.overflow <= 0, 'six languages fit the menu drawer at 390 px', JSON.stringify(drawer));
+    check(drawer.links === LANGS.length + 1 && drawer.out === 0 && drawer.overflow <= 0, `${LANGS.length + 1} languages fit the menu drawer at 390 px`, JSON.stringify(drawer));
     await page.keyboard.press('Escape');
     // switching to Russian inside the app keeps the page and loads the Cyrillic font
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -499,7 +510,7 @@ try {
       check(r.status() === 200, `${f} is served`);
     }
     const sitemap = await (await page.request.get(server.url + 'sitemap.xml')).text();
-    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('hreflang="ru"') && sitemap.includes('/ja/guides/make-a-skin/') && sitemap.includes('/ru/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
+    check(/xmlns:xhtml=/.test(sitemap) && sitemap.includes('hreflang="pt-BR"') && sitemap.includes('hreflang="ru"') && sitemap.includes('hreflang="pl"') && sitemap.includes('/ja/guides/make-a-skin/') && sitemap.includes('/ru/guides/make-a-skin/'), 'sitemap lists translations with xhtml:link alternates');
     await ctx.close();
   }
 } finally {
