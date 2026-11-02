@@ -224,41 +224,78 @@ export function parseEocd(tail: Uint8Array, tailStart: number, readAt?: (abs: nu
 
 const utf8 = new TextDecoder('utf-8');
 
+/**
+ * An entry name: plain ASCII (nearly every name in a jar or pack) without a TextDecoder call each,
+ * which for tens of thousands of short names is most of the time spent reading a directory.
+ */
+function decodeName(b: Uint8Array, start: number, end: number): string {
+  if (end - start <= 128) {
+    let ascii = true;
+    for (let i = start; i < end; i++)
+      if (b[i] > 0x7f) {
+        ascii = false;
+        break;
+      }
+    if (ascii) return String.fromCharCode.apply(null, b.subarray(start, end) as unknown as number[]);
+  }
+  return utf8.decode(b.subarray(start, end));
+}
+
 /** Parses central directory records. `shift` corrects archives with prepended data. */
 export function parseCentralDirectory(cd: Uint8Array, shift = 0): ZipEntry[] {
   const entries: ZipEntry[] = [];
   let p = 0;
-  while (p + 46 <= cd.length && u32(cd, p) === SIG_CD) {
-    const flags = u16(cd, p + 8);
-    const method = u16(cd, p + 10);
-    const crc32 = u32(cd, p + 16);
-    let compressedSize = u32(cd, p + 20);
-    let size = u32(cd, p + 24);
-    const nameLen = u16(cd, p + 28);
-    const extraLen = u16(cd, p + 30);
-    const commentLen = u16(cd, p + 32);
-    let offset = u32(cd, p + 42);
-    const name = utf8.decode(cd.subarray(p + 46, p + 46 + nameLen));
-    if (size === 0xffffffff || compressedSize === 0xffffffff || offset === 0xffffffff) {
-      let e = p + 46 + nameLen;
-      const eEnd = e + extraLen;
-      while (e + 4 <= eEnd) {
-        const id = u16(cd, e);
-        const len = u16(cd, e + 2);
-        if (id === 0x0001) {
-          let q = e + 4;
-          if (size === 0xffffffff) { size = u64(cd, q); q += 8; }
-          if (compressedSize === 0xffffffff) { compressedSize = u64(cd, q); q += 8; }
-          if (offset === 0xffffffff) { offset = u64(cd, q); q += 8; }
-          break;
-        }
-        e += 4 + len;
-      }
+  while (p >= 0) p = parseRecord(cd, p, shift, entries);
+  return entries;
+}
+
+/** Same as parseCentralDirectory, giving the page a turn every few ms (a jar lists tens of thousands of files). */
+export async function parseCentralDirectoryAsync(cd: Uint8Array, shift = 0, sliceMs = 8): Promise<ZipEntry[]> {
+  const entries: ZipEntry[] = [];
+  let p = 0;
+  let t0 = performance.now();
+  let n = 0;
+  while (p >= 0) {
+    p = parseRecord(cd, p, shift, entries);
+    if (++n % 256 === 0 && performance.now() - t0 > sliceMs) {
+      await nextTask();
+      t0 = performance.now();
     }
-    entries.push({ name, method, flags, crc32, compressedSize, size, offset: offset + shift, extraLength: extraLen });
-    p += 46 + nameLen + extraLen + commentLen;
   }
   return entries;
+}
+
+/** Parses the record at `p` into `entries`; the next record's position, or -1 at the end. */
+function parseRecord(cd: Uint8Array, p: number, shift: number, entries: ZipEntry[]): number {
+  if (!(p + 46 <= cd.length && u32(cd, p) === SIG_CD)) return -1;
+  const flags = u16(cd, p + 8);
+  const method = u16(cd, p + 10);
+  const crc32 = u32(cd, p + 16);
+  let compressedSize = u32(cd, p + 20);
+  let size = u32(cd, p + 24);
+  const nameLen = u16(cd, p + 28);
+  const extraLen = u16(cd, p + 30);
+  const commentLen = u16(cd, p + 32);
+  let offset = u32(cd, p + 42);
+  const name = decodeName(cd, p + 46, p + 46 + nameLen);
+  if (size === 0xffffffff || compressedSize === 0xffffffff || offset === 0xffffffff) {
+    let e = p + 46 + nameLen;
+    const eEnd = e + extraLen;
+    while (e + 4 <= eEnd) {
+      const id = u16(cd, e);
+      const len = u16(cd, e + 2);
+      if (id === 0x0001) {
+        let q = e + 4;
+        if (size === 0xffffffff) { size = u64(cd, q); q += 8; }
+        if (compressedSize === 0xffffffff) { compressedSize = u64(cd, q); q += 8; }
+        if (offset === 0xffffffff) { offset = u64(cd, q); q += 8; }
+        break;
+      }
+      e += 4 + len;
+    }
+  }
+  entries.push({ name, method, flags, crc32, compressedSize, size, offset: offset + shift, extraLength: extraLen });
+  return p + 46 + nameLen + extraLen + commentLen;
 }
 
 export interface ByteRange {
@@ -270,9 +307,13 @@ export interface ByteRange {
 /** Local header + name + (CD) extra + data, plus slack for a longer local extra field. */
 const LOCAL_SLACK = 128;
 const encoder = new TextEncoder();
+/** UTF-8 length of a name (ASCII names without encoding them). */
+function nameBytes(name: string): number {
+  for (let i = 0; i < name.length; i++) if (name.charCodeAt(i) > 0x7f) return encoder.encode(name).length;
+  return name.length;
+}
 function entrySpan(e: ZipEntry): [number, number] {
-  const nameBytes = encoder.encode(e.name).length;
-  return [e.offset, e.offset + 30 + nameBytes + e.extraLength + e.compressedSize + LOCAL_SLACK];
+  return [e.offset, e.offset + 30 + nameBytes(e.name) + e.extraLength + e.compressedSize + LOCAL_SLACK];
 }
 
 /**
@@ -425,8 +466,9 @@ export class RangeZip {
       const before = await source.read(cdOffset, Math.min(tailStart, cdOffset + cdSize), opts);
       cd = cdOffset + cdSize <= tailStart ? before : concat(before, tail.subarray(0, cdOffset + cdSize - tailStart));
     }
-    const entries = parseCentralDirectory(cd, shift);
+    const entries = await parseCentralDirectoryAsync(cd, shift);
     if (!entries.length && eocd.count) throw new Error(fileText.zip.noDirectory);
+    await nextTask();
     return new RangeZip(source, entries, cdOffset);
   }
 

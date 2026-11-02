@@ -43,9 +43,50 @@ export class ModelIconRenderer {
    * quarter view of the front (south), framed to the model's own size.
    */
   render(model: ModelScene, opts: { mob?: boolean } = {}): HTMLCanvasElement | null {
+    if (!this.draw(model, opts)) return null;
+    const out = this.output();
+    // kept in memory: icons are copied into list tiles, which draw with the page (no GPU layer each)
+    out.getContext('2d', { willReadFrequently: true })?.drawImage(this.canvas, 0, 0);
+    this.mesh.clear();
+    return out;
+  }
+
+  /**
+   * Same as render(), without waiting for the GPU in the page's task: the picture is taken as a
+   * bitmap (the GPU finishes it in the background) and copied out once it is ready.
+   */
+  async renderAsync(model: ModelScene, opts: { mob?: boolean } = {}): Promise<HTMLCanvasElement | null> {
+    if (typeof createImageBitmap !== 'function') return this.render(model, opts);
+    if (!this.draw(model, opts)) return null;
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await createImageBitmap(this.canvas);
+    } catch {
+      // (no bitmap from this canvas: read it now, as render() does)
+      const out = this.output();
+      out.getContext('2d', { willReadFrequently: true })?.drawImage(this.canvas, 0, 0);
+      return out;
+    } finally {
+      this.mesh.clear();
+    }
+    const out = this.output();
+    out.getContext('2d', { willReadFrequently: true })?.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    return out;
+  }
+
+  private output(): HTMLCanvasElement {
+    const out = document.createElement('canvas');
+    out.width = this.size;
+    out.height = this.size;
+    return out;
+  }
+
+  /** Draws a model into the renderer's canvas (false without WebGL or quads). */
+  private draw(model: ModelScene, opts: { mob?: boolean }): boolean {
     const r = this.renderer;
-    if (!r || this.disposed || !model.quads.length) return null;
-    if (r.getContext().isContextLost()) return null;
+    if (!r || this.disposed || !model.quads.length) return false;
+    if (r.getContext().isContextLost()) return false;
     this.mesh.build(model.quads, model.textures, model.tint);
     const min = [Infinity, Infinity, Infinity];
     const max = [-Infinity, -Infinity, -Infinity];
@@ -71,13 +112,7 @@ export class ModelIconRenderer {
     this.camera.lookAt(0, 0, 0);
     this.camera.updateProjectionMatrix();
     r.render(this.scene, this.camera);
-    const out = document.createElement('canvas');
-    out.width = this.size;
-    out.height = this.size;
-    // kept in memory: icons are copied into list tiles, which draw with the page (no GPU layer each)
-    out.getContext('2d', { willReadFrequently: true })?.drawImage(this.canvas, 0, 0);
-    this.mesh.clear();
-    return out;
+    return true;
   }
 
   dispose(): void {

@@ -325,6 +325,8 @@ class Session {
       const longest = data.loafs.reduce((m, l) => (l.blocking > (m?.blocking ?? 0) ? l : m), null);
       const blocker = longest && longest.dur > 100 ? { dur: Math.round(longest.dur), scripts: longest.scripts.sort((a, b) => b.dur - a.dur).slice(0, 3).map((sc) => `${Math.round(sc.dur)} ms ${sc.invoker || sc.type}${sc.fn ? ` → ${sc.fn}` : ''} ${where(sc.url, { char: sc.char })}`) } : null;
       const hot = prof ? hotFunctions(prof) : null;
+      // the profile's clock starts about when t0 was read: the samples inside the longest frame
+      if (prof && blocker) blocker.hot = hotFunctions(prof, [longest.start - t0, longest.start + longest.dur - t0]);
       if (trace && worst) {
         // the trace clock and performance.now() share no origin: line them up on the event dispatches
         const mainTid = trace.mainTid;
@@ -429,7 +431,7 @@ function attribute(worst, entries, loafs) {
 }
 
 /** Self time per function in a CPU profile, the top few, then the app's own functions by total time. */
-function hotFunctions(profile) {
+function hotFunctions(profile, window = null) {
   const self = new Map();
   const byId = new Map(profile.nodes.map((n) => [n.id, n]));
   const parent = new Map();
@@ -437,7 +439,10 @@ function hotFunctions(profile) {
   const keyOf = (cf) => `${cf.functionName || '(anonymous)'} ${cf.url ? where(cf.url, { line: cf.lineNumber, col: cf.columnNumber }) : ''}`;
   const total = new Map();
   const dt = profile.timeDeltas;
+  let at = 0;
   for (let i = 0; i < profile.samples.length; i++) {
+    at += dt[i] ?? 0;
+    if (window && (at / 1000 < window[0] || at / 1000 > window[1])) continue;
     const n = byId.get(profile.samples[i]);
     const cf = n.callFrame;
     if (['(idle)', '(program)', '(root)'].includes(cf.functionName)) continue;
@@ -800,7 +805,7 @@ if (frames.length) {
   for (const f of frames) {
     console.log(`${String(f.ms[0]).padStart(5)}${RUNS > 1 ? ` (${f.ms.join(', ')})` : ''}  ${f.k}`);
     for (const sc of f.worst.blocker.scripts) console.log(`${' '.repeat(12)}${sc}`);
-    if (PROFILE && f.worst.hot) for (const hline of f.worst.hot) console.log(`${' '.repeat(12)}${hline}`);
+    if (PROFILE && (f.worst.blocker.hot ?? f.worst.hot)) for (const hline of f.worst.blocker.hot ?? f.worst.hot) console.log(`${' '.repeat(12)}${hline}`);
   }
 }
 const probes = rows.filter((r) => r.worst.probe);

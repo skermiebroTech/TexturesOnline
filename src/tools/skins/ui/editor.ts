@@ -1,6 +1,7 @@
 // Skin editor: tool rail + 64x64 (or HD 128x128) pixel canvas with part guides, colours and parts on
 // the left, live 3D preview on the right. Autosaves to IndexedDB.
 
+import { afterNextPaint } from '../../../core/yield';
 import { debounce } from '../../../core/events';
 import { decodeImage, encodePng } from '../../../core/image';
 import { navigate } from '../../../core/router';
@@ -1180,7 +1181,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
 
   void import('../skin-preview')
-    .then(({ createSkinPreview }) => {
+    .then(async ({ createSkinPreview }) => {
+      // the editor paints first: setting up WebGL is a long task of its own
+      await afterNextPaint();
       if (destroyed) return;
       stage.replaceChildren();
       preview = createSkinPreview(stage, {

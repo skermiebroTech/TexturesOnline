@@ -92,6 +92,8 @@ export class ModelService {
       }).then(
         async (lib) => {
           await this.readPackFiles(lib);
+          // the lists rebuild on 'ready': in a task of their own
+          await nextTask();
           this.lib = lib;
           this.events.emit('ready');
           // Which blocks use which texture: built in slices so the editor stays responsive.
@@ -427,7 +429,7 @@ export class ModelService {
           const r = await this.renderer();
           // (the first time, setting up WebGL was this task's work: draw in the next one)
           await nextTask();
-          icon = r?.render(built.scene, { mob: built.view === 'mob' }) ?? null;
+          icon = (await r?.renderAsync(built.scene, { mob: built.view === 'mob' })) ?? null;
         }
         if (!icon) {
           const thumb = this.lib.thumbnail(entry);
