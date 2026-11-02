@@ -1747,3 +1747,299 @@ const bedrockSkinPack: GuideText = {
   ],
   ctaLabel: 'Otwórz kreator paczek skinów',
 };
+
+// ---------------------------------------------------------------- 3D items
+
+const MODEL_STEPS: Child[] = [
+  ['Otwórz ', link('/textures', 'edytor paczek tekstur'), ' i zrób paczkę do ', strong('Javy'), ' dla swojej wersji: 1.8 albo nowszej, albo 1.21.4 albo nowszej, jeśli przedmiot ma zostać płaski w ekwipunku.'],
+  ['Przełącz listę na ', strong('Items'), ' i otwórz przedmiot, na przykład diamentowy miecz. W zakładce ', strong('Preview'), ' naciśnij ', strong('Edytuj kształt'), '.'],
+  ['Wybierz ', strong('Przedmiot 3D ze sprite’a'), '. Każdy piksel płaskiego obrazka staje się częścią sześcianu o głębokości 1 piksela.'],
+  ['Zmień kształt: kliknij sześcian w widoku 3D albo na liście i przesuń go, powiększ albo skopiuj, albo dodaj nowe. W ', strong('Ściany'), ' ściana dostaje inną teksturę albo inny fragment tekstury.'],
+  ['Otwórz ', strong('Wyświetlanie'), ' i sprawdź model w ekwipunku, w widoku z pierwszej i trzeciej osoby, na ziemi, w ramce i na głowie. Popraw obrót, pozycję albo rozmiar tam, gdzie nie pasuje.'],
+  ['Jeśli chcesz, od 1.21.4: w zakładce ', strong('Model'), ' włącz opcję ', strong('Płaski w ekwipunku'), ', żeby płaska ikona została w ekwipunku, a model 3D pokazywał się w ręce.'],
+  ['Naciśnij ', strong('Gotowe'), ', wyeksportuj paczkę jako ', code('.zip'), ', wrzuć ją do folderu ', code('resourcepacks'), ' i przetestuj w grze.'],
+];
+
+const make3dItems: GuideText = {
+  image: SHOTS.model3dSword,
+  intro: [
+    p(
+      'Kształt bloku albo przedmiotu w Minecraft Java Edition pochodzi z jego ',
+      strong('modelu'),
+      ': małego pliku JSON z sześcianów w paczce zasobów. Dodaj nowy model do paczki tekstur, a kształt się zmieni, zupełnie bez modów i bez OptiFine: płaski miecz staje się mieczem 3D, a blok płytą albo schodkiem. ',
+      link('/textures', 'Edytor paczek tekstur'),
+      ' ma edytor modeli, który robi to w przeglądarce. Jednym kliknięciem zamienia płaski sprite przedmiotu w sześciany 3D, pozwala zmienić każdy sześcian i zapisuje pliki, których potrzebuje twoja wersja gry. Bedrock działa inaczej, więcej o tym niżej.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Pokaż przedmiot w edytorze w zakładce ', strong('Preview'), ' i naciśnij ', strong('Edytuj kształt'), '.'],
+      ['Wybierz ', strong('Przedmiot 3D ze sprite’a'), ', a potem dopracuj sześciany i trzymanie w ręce.'],
+      ['Wyeksportuj paczkę. Ma model w ', code('models/item/'), ', a od 1.21.4, jeśli trzeba, definicję przedmiotu w ', code('items/'), '.'],
+    ],
+  },
+  howto: { name: 'Jak zrobić przedmiot 3D w paczce tekstur do Minecrafta', steps: MODEL_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Czym jest model w Minecrafcie',
+      body: [
+        p('Java Edition od 1.8 rysuje większość bloków i przedmiotów z plików modeli w paczce zasobów:'),
+        ul([
+          [code('assets/minecraft/models/block/'), ' zawiera modele bloków, takie jak ', code('oak_slab.json'), '. Plik ', strong('stanu bloku'), ' w ', code('blockstates/'), ' ustala, którego modelu blok używa w każdym stanie: płyta na dole albo na górze, leżący pień.'],
+          [code('assets/minecraft/models/item/'), ' zawiera modele przedmiotów. Większość przedmiotów używa płaskiego modelu (', code('item/generated'), '): gra sama robi ze sprite’a 16×16 cienki kształt. Od 1.21.4 ', strong('definicja przedmiotu'), ' w ', code('assets/minecraft/items/'), ' ustala, jaki model pokazuje przedmiot.'],
+        ]),
+        p('Plik modelu ma cztery główne części:'),
+        ul([
+          [code('textures'), ': nazwy tekstur, których używa model, na przykład ', code('"oak_planks": "minecraft:block/oak_planks"'), '. ', code('particle'), ' to tekstura cząsteczek przy niszczeniu.'],
+          [code('elements'), ': sześciany. Każdy sięga od jednego rogu (', code('from'), ') do przeciwnego (', code('to'), '), mierzone w pikselach bloku 16 × 16 × 16, i może iść na każdej osi od -16 do 32. Przez ', code('rotation'), ' sześcian można obrócić.'],
+          [code('faces'), ': dla każdej ściany sześcianu (', code('down'), ', ', code('up'), ', ', code('north'), ', ', code('south'), ', ', code('west'), ', ', code('east'), ') tekstura, jej fragment (', code('uv'), ') i ', code('cullface'), ', które pomija ścianę, kiedy zasłania ją pełny blok.'],
+          [code('display'), ': jak model jest obracany, przesuwany i skalowany w ekwipunku (', code('gui'), '), w rękach, na ziemi, w ramce (', code('fixed'), ') i na głowie.'],
+        ]),
+        p('Oto model z jednego sześcianu w kształcie płyty, zbudowany tak, jak zapisuje go edytor modeli. Plik z edytora zawiera wyświetlanie we wszystkich miejscach, nie tylko w ekwipunku:'),
+        pre(MODEL_BLOCK_EXAMPLE.trimEnd()),
+        p(
+          'Ręcznie pisane modele często używają ',
+          code('"parent"'),
+          ', żeby przejąć tekstury, sześciany albo wyświetlanie z innego modelu. Edytor modeli zapisuje za to pełne pliki: wszystko, co przeczytał z modeli nadrzędnych, jest w środku, więc twój plik nie zależy od żadnego innego.',
+        ),
+        callout('tip', 'Współrzędne to piksele', 'Blok ma na każdej osi 16 jednostek, więc 8 to pół bloku. Edytor modeli przyciąga do tej siatki albo do ½ lub ¼ piksela i pokazuje rozmiary jako „16 = one block”.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Przedmiot 3D krok po kroku',
+      body: [steps(MODEL_STEPS), figure(SHOTS.modelEditShape), figure(SHOTS.modelSpriteStart), figure(SHOTS.model3dSword)],
+    },
+    {
+      id: 'sprite',
+      title: 'Jak działa „3D item from sprite”',
+      body: [
+        p(
+          'Płaski przedmiot to jeden obrazek, jego sprite, zwykle 16×16 pikseli. Ten punkt startowy bierze każdy nieprzezroczysty piksel i buduje z nich sześciany o głębokości 1 piksela, wyśrodkowane jak płaskie przedmioty gry (od 7,5 do 8,5 na osi Z). Piksele w rzędzie łączą się w jeden długi sześcian, a takie same rzędy jeden pod drugim w prostokąt. Dzięki temu diamentowy miecz to 19 sześcianów, a nie jeden sześcian na piksel. Ściany całkowicie zasłonięte przez sąsiedni piksel odpadają.',
+        ),
+        p('Każda ściana pokazuje pasujące piksele sprite’a. Trzy piksele w rzędzie, w kolumnach od 5 do 7 w wierszu 3, dają taki sześcian:'),
+        pre(MODEL_SPRITE_CUBE.trimEnd()),
+        p(
+          'Przód (',
+          code('south'),
+          ') pokazuje piksele takie, jakie są, a tył (',
+          code('north'),
+          ') odbite, tak jak obrazek widziany od tyłu. Sześciany dalej używają tekstury przedmiotu (',
+          code('#layer0'),
+          '): jeśli przemalujesz sprite, przedmiot 3D dostanie nowe kolory. Piksele, które dodasz albo usuniesz, zmieniają kształt dopiero wtedy, gdy jeszcze raz wybierzesz ',
+          strong('Przedmiot 3D ze sprite’a'),
+          '. Przedmioty z kilku warstw, takie jak mikstury albo skórzana zbroja, dostają sześciany dla każdej warstwy, a gra dalej je barwi.',
+        ),
+        p('A potem zrób z niego coś własnego:'),
+        ul([
+          'Pogrub ostrze: wybierz jego sześciany i zmień pozycję i rozmiar na osi Z, na przykład z 7,5 i 1 na 7 i 2.',
+          ['Przyciskiem ', strong('+'), ' (albo N) dodaj sześcian na jelec albo klejnot i daj jego ścianom inną teksturę w ', uiPath('Faces', 'Change'), '.'],
+          ['Obróć sześcian w ', strong('Rotation'), '. Przed Minecraftem 1.21.6 sześcian obraca się tylko wokół jednej osi, o -45°, -22,5°, 0°, 22,5° albo 45°; edytor proponuje to, na co pozwala twoja wersja.'],
+          'Każdą zmianę cofniesz skrótem Ctrl+Z.',
+        ]),
+      ],
+    },
+    {
+      id: 'display',
+      title: 'Jak przedmiot jest trzymany: Display',
+      body: [
+        p('Zakładka ', strong('Wyświetlanie'), ' pokazuje model w podglądzie w sześciu miejscach. Każde ma obrót w stopniach, pozycję w pikselach (do ±80) i rozmiar (1 to normalny, najwyżej 4).'),
+        table(
+          ['W edytorze', 'Gdzie go widać', 'Nazwa w pliku'],
+          [
+            ['Inventory', 'Ekwipunek i pasek szybkiego wyboru', code('gui')],
+            ['First person', 'We własnej ręce', [code('firstperson_righthand'), ' (lewa ręka to odbicie lustrzane)']],
+            ['Third person', 'W ręce gracza, na którego patrzysz, albo w widoku F5', code('thirdperson_righthand')],
+            ['Ground', 'Wyrzucony na ziemię', code('ground')],
+            ['Item frame', 'W ramce', code('fixed')],
+            ['Head', 'Noszony na głowie', code('head')],
+          ],
+        ),
+        p(
+          strong('Przedmiot 3D ze sprite’a'),
+          ' przejmuje wyświetlanie przedmiotu, więc miecz 3D jest trzymany tak jak płaski. ',
+          strong('Game’s default'),
+          ' przywraca w danym miejscu wartości z gry, a ',
+          strong('No change'),
+          ' usuwa ustawienie. Java 1.21.9 dodała miejsce ',
+          code('on_shelf'),
+          ' dla półek; edytor przejmuje wartość z modelu gry.',
+        ),
+        figure(SHOTS.modelDisplay),
+      ],
+    },
+    {
+      id: 'flat',
+      title: 'Płaska ikona w ekwipunku (od 1.21.4)',
+      body: [
+        p(
+          'Wiele paczek 3D zostawia w ekwipunku znajomą płaską ikonę i pokazuje model 3D tylko w ręce. Od Javy 1.21.4 definicja przedmiotu może wybierać model zależnie od tego, gdzie przedmiot jest pokazywany. W zakładce ',
+          strong('Model'),
+          ' włącz opcję ',
+          strong('Płaski w ekwipunku'),
+          ', a wtedy edytor:',
+        ),
+        ul([
+          ['zapisze twój kształt jako drugi model, ', code('models/item/diamond_sword_3d.json'), ', a płaski ', code('diamond_sword.json'), ' zostawi bez zmian;'],
+          ['zapisze ', code('items/diamond_sword.json'), ', który w ekwipunku (', code('gui'), '), na ziemi i w ramce (', code('fixed'), ') pokazuje płaski model, a wszędzie indziej model 3D:'],
+        ]),
+        pre(MODEL_FLAT_DEFINITION.trimEnd()),
+        p('Wersje przed 1.21.4 nie mają definicji przedmiotów. Tam przedmiot wszędzie pokazuje ten sam model i przełącznika nie ma.'),
+        figure(SHOTS.modelFlatInventory),
+      ],
+    },
+    {
+      id: 'blocks',
+      title: 'Zmiana kształtu bloku',
+      body: [
+        p(
+          'Z blokami jest tak samo. Pokaż blok w zakładce Preview i naciśnij ',
+          strong('Edytuj kształt'),
+          '. Edytor otworzy model, którego blok używa w stanie, który właśnie widzisz, a menu na górze wymienia jego inne modele, na przykład górną i podwójną płytę. Zostaw model z gry albo zacznij od ',
+          strong('Full cube'),
+          ', ',
+          strong('Slab'),
+          ', ',
+          strong('Cross (plant)'),
+          ' albo ',
+          strong('Empty'),
+          ', a potem dodawaj sześciany, przesuwaj je i zmieniaj ich rozmiar. Kamień staje się stopniem z punktem startowym Slab i jednym dodatkowym sześcianem:',
+        ),
+        figure(SHOTS.modelBlock),
+        ul([
+          [strong('Wspólne modele: '), 'niektóre bloki używają tego samego pliku modelu. Jeśli model, który edytujesz, ma też inny blok, edytor powie ci który; zmieni się razem z nim.'],
+          [strong('Przedmioty są osobno: '), 'przedmiot, który pokazuje model bloku, na przykład płyta w ręce, dostaje własny model przedmiotu, kiedy edytujesz przedmiot. Blok zachowuje więc swój kształt.'],
+          [strong('Zmienia się tylko wygląd: '), 'hitbox, kolizje i światło pochodzą z kodu gry. Blok kamienia w kształcie płyty dalej zatrzymuje cię jak pełny blok, a bloki obok dalej ukrywają przylegające ściany. Przez to mogą powstać szpary, przez które widać na wylot.'],
+          [strong('Bloki rysowane przez grę: '), 'skrzynie, łóżka, tabliczki, sztandary i inne bloki, które gra rysuje sama, nie mają modelu bloku, więc nie mają Edit shape. Przedmioty rysowane przez kod, takie jak tarcza, mogą dostać model, który zastąpi ten wygląd.'],
+        ]),
+        p(
+          'Kamień i kilka innych bloków losują między dwoma modelami: kamieniem i jego odbitą kopią, każdy także obrócony. ',
+          strong('Use for every random variant'),
+          ' w zakładce Model daje twój kształt im wszystkim, bo edytor zapisuje plik stanu bloku. Wpis ',
+          code('"y": 180'),
+          ' zachowuje losowy obrót, a ',
+          code('weight'),
+          ' ustala, jak często wybierany jest każdy wpis:',
+        ),
+        pre(MODEL_STONE_BLOCKSTATE.trimEnd()),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Jakie pliki trafiają do paczki',
+      body: [
+        table(
+          ['Co zmieniasz', 'Pliki w paczce'],
+          [
+            ['Przedmiot 3D', code(MODEL_FILES.sword.latest[0])],
+            ['Przedmiot 3D, płaski w ekwipunku (od 1.21.4)', [code(MODEL_FILES.swordFlat.latest[0]), ' i ', code(MODEL_FILES.swordFlat.latest[1])]],
+            ['Kształt bloku', code(MODEL_FILES.slab.latest[0])],
+            ['Kształt bloku dla każdego losowego wariantu', [code(MODEL_FILES.stoneEvery.latest[0]), ' i ', code(MODEL_FILES.stoneEvery.latest[1])]],
+          ],
+        ),
+        p(
+          'Wszystkie ścieżki są w ',
+          code('assets/minecraft/'),
+          '. Każda wersja Javy od 1.8 dostaje te same pliki; tylko „płaski w ekwipunku” wymaga 1.21.4 albo nowszej. Edytor dodaje definicję przedmiotu albo stan bloku tylko wtedy, gdy gra ich potrzebuje, a pliki modeli, które już są w otwartej paczce, zostają i można je edytować. Przy eksporcie każdy model jest sprawdzany dla twojej wersji gry i dostajesz ostrzeżenie o wszystkim, co by się nie wczytało.',
+        ),
+        h3('Co się zmieniało między wersjami'),
+        table(
+          ['Wersja', 'Co zmieniło się w modelach'],
+          [
+            ['1.8', 'Modele bloków i przedmiotów stały się plikami JSON, które paczki zasobów mogą zastępować. Sześciany obracają się wokół jednej osi, o -45°, -22,5°, 0°, 22,5° albo 45°.'],
+            ['1.13', ['Foldery tekstur nie nazywają się już ', code('blocks'), ' i ', code('items'), ', tylko ', code('block'), ' i ', code('item'), '. Przez to zmieniły się też nazwy tekstur w modelach.']],
+            ['1.15.2', [code('gui_light'), ' ustala, czy ikona w ekwipunku jest oświetlona z boku (bloki), czy z przodu (przedmioty).']],
+            ['1.19.3', ['Tekstury modeli muszą leżeć w folderze, który czytają atlasy tekstur gry, na przykład ', code('textures/block/'), ' albo ', code('textures/item/'), '.']],
+            ['1.21.4', ['Definicje przedmiotów w ', code('items/'), ' wybierają model przedmiotu, także zależnie od tego, gdzie jest pokazywany.']],
+            ['1.21.6', 'Sześciany można obracać o dowolny kąt od -45° do 45°.'],
+            ['1.21.9', ['Nowe miejsce wyświetlania ', code('on_shelf'), '.']],
+            ['1.21.11', 'Sześciany obracają się wokół kilku osi naraz i o dowolny kąt.'],
+          ],
+        ),
+        p('Edytor modeli trzyma się tych zasad dla wersji, dla której jest zrobiona twoja paczka.'),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Instalacja i testowanie',
+      body: [
+        steps([
+          ['Naciśnij ', strong('Gotowe'), ', żeby wyjść z edytora modeli, a potem wyeksportuj paczkę przyciskiem ', strong('Eksportuj'), ' jako ', code('.zip'), '.'],
+          ['W Minecrafcie otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam zipa (nie rozpakowuj) i przenieś paczkę do ', strong(JAVA.selected), ', nad inne paczki.'],
+          'Trzymaj przedmiot, naciśnij F5, żeby przejść do widoku z trzeciej osoby, wyrzuć go na ziemię i powieś w ramce, żeby sprawdzić każde wyświetlanie.',
+          'Po zmianie modelu wyeksportuj jeszcze raz, podmień zipa i naciśnij w grze F3 + T, żeby przeładować paczki.',
+        ]),
+        p('Więcej pomocy: ', link('/guides/install-resource-packs', 'Jak zainstalować paczki zasobów'), ' i ', link('/guides/texture-pack-not-working', 'Paczka tekstur nie działa'), '.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Paczki do Bedrocka działają inaczej, a edytor modeli robi tylko modele do Javy:'),
+        ul([
+          [strong('Bloki: '), 'paczka zasobów do Bedrocka nie może zmienić kształtu bloków z gry. Blok z własnym kształtem to nowy blok, dodany przez dodatek z paczką zachowań i plikiem geometrii.'],
+          [strong('Przedmioty w ręce: '), 'Bedrock daje przedmiotom model 3D w ręce przez attachables. To pliki w paczce zasobów, które używają geometrii i animacji Bedrocka. Texture Pack Maker ich nie tworzy, za to ', ext('https://www.blockbench.net/', 'Blockbench'), ' tak.'],
+          [strong('Punkt wyjścia: '), 'w menu edytora modeli ', strong('Pobierz jako geometrię Bedrocka'), ' zapisuje twój model jako plik ', code('.geo.json'), ' (format 1.12.0, jedna kość, wszystkie sześciany), który zaimportujesz do Blockbencha albo dodatku. Geometria Bedrocka używa jednej tekstury, więc każda ściana zachowuje swoje miejsce na własnej teksturze.'],
+        ]),
+        p('W paczce do Bedrocka ', strong('Edytuj kształt'), ' wyjaśnia to, zamiast otwierać edytor. Malowanie tekstur działa jak zwykle.'),
+      ],
+    },
+    {
+      id: 'problems',
+      title: 'Częste problemy',
+      body: [
+        ul([
+          [strong('Fioletowo-czarne ściany: '), 'ściana używa tekstury, której gra nie może znaleźć: nazwy (', code('#…'), '), której brakuje w ', code('textures'), ', pliku, którego nie ma ani w grze, ani w paczce, albo od 1.19.3 tekstury spoza folderów atlasu. Zakładka Model wymienia te problemy razem z sześcianem, na którym są.'],
+          [strong('Fioletowo-czarny sześcian zamiast modelu: '), 'plik się nie wczytał. Częste powody to zepsuty JSON, sześcian poza zakresem od -16 do 32 albo obrót, na który wersja nie pozwala. Dziennik gry podaje nazwę pliku.'],
+          [strong('Model w ogóle się nie pokazuje: '), 'sprawdź, czy paczka jest wybrana i stoi nad innymi paczkami, czy plik ma dokładnie nazwę i folder modelu, który zastępuje, i od 1.21.4, czy nowy model (na przykład kopia ', code('_3d'), ') ma definicję przedmiotu, która na niego wskazuje.'],
+          [strong('W ręce dobrze, w ekwipunku dziwnie: '), ['popraw wyświetlanie Inventory, spróbuj drugiego oświetlenia w ekwipunku (z boku albo z przodu) albo włącz ', strong('Płaski w ekwipunku'), '.']],
+          [strong('Za dużo sześcianów: '), 'każdy sześcian to ściany, które trzeba narysować. Przy przedmiocie w ręce nie ma to prawie znaczenia, ale blok stawiany tysiące razy powinien zostać prosty. Zostaw połączone sześciany z 3D item from sprite, zamiast je dzielić.'],
+          [strong('Kąt jest niedozwolony: '), 'przed 1.21.6 sześcian obraca się co 22,5° do 45°, wokół jednej osi. Zamiast ćwierć obrotu zamień rozmiary na dwóch osiach; inne kształty zbuduj z większej liczby sześcianów.'],
+        ]),
+        p('Więcej rozwiązań dla paczek w ogóle: ', link('/guides/texture-pack-not-working', 'Paczka tekstur nie działa? Rozwiązania'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'mods',
+      q: 'Potrzebuję OptiFine albo moda do przedmiotów 3D?',
+      a: [p('Nie. Paczki zasobów do Javy mogą zastępować modele bloków i przedmiotów od 1.8, więc paczka z plikami modeli działa w zwykłej grze. Zmienia każdy przedmiot tego rodzaju.')],
+    },
+    {
+      id: 'renamed',
+      q: 'Czy tylko przedmiot ze zmienioną nazwą może być 3D?',
+      a: [
+        p(
+          'Nie przez prostą zmianę modelu. Paczki, które zmieniają tylko przedmioty z nową nazwą, używają Custom Item Textures (CIT) z OptiFine albo moda, który je czyta. Od 1.21.4 definicje przedmiotów mogą też wybierać model według ',
+          code('custom_model_data'),
+          ', które serwery i twórcy map ustawiają komendami. Edytor modeli zmienia każdy przedmiot danego rodzaju.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      q: 'Mogę zrobić przedmioty 3D do Bedrocka?',
+      a: [p('Tak, przez attachables w paczce zasobów do Bedrocka, zrobione narzędziem takim jak Blockbench. Ten edytor modeli robi modele do Javy, ale może pobrać model jako geometrię Bedrocka do dalszej pracy. Kształtu bloków z gry paczki zasobów do Bedrocka zmienić nie mogą.')],
+    },
+    {
+      id: 'blockbench',
+      q: 'Mogę użyć modeli z Blockbencha?',
+      a: [p('Tak. Modele bloków i przedmiotów do Javy wyeksportowane z Blockbencha to zwykłe pliki modeli. Wrzuć je do paczki pod nazwą modelu, który zastępują, i otwórz paczkę przyciskiem ', strong('Otwórz paczkę'), ': pliki zostaną zachowane, a edytor modeli może je otworzyć i zmienić.')],
+    },
+    {
+      id: 'undo',
+      q: 'Jak przywrócić oryginalny kształt?',
+      a: [p('W menu edytora modeli wybierz ', strong('Put back the original model'), '. Twoje pliki dla tego modelu zostaną usunięte z paczki, a gra znowu użyje własnego modelu.')],
+    },
+    {
+      id: 'phone',
+      q: 'Mogę zrobić przedmioty 3D na telefonie?',
+      a: [p('Tak. Na telefonie widok 3D jest nad polami, a pracujesz dotykiem. Paczka dalej jest paczką do Javy, więc grasz na komputerze.')],
+    },
+  ],
+  ctaLabel: 'Otwórz edytor paczek tekstur',
+};
