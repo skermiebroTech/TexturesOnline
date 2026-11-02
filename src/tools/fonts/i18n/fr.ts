@@ -166,7 +166,7 @@ const FR: FontsLanguage = {
       download: 'Télécharger',
       downloadZip: 'Télécharger le .zip',
       downloadMcpack: 'Télécharger le .mcpack',
-      addToPack: 'Ajouter à un pack de textures',
+      addToPack: 'Ajouter à un pack',
       files: '{count, plural, one {# fichier} other {# fichiers}}',
       installJava: 'Mets le .zip dans ton dossier resourcepacks (Options... › Packs de ressources... › Ouvrir le dossier des packs), active-le et place-le au-dessus des autres packs. Si Police Unicode (Options... › Langue...) est activé, le jeu utilise plutôt sa police Unicode. ',
       installBedrock: 'Ouvre le .mcpack : Minecraft l’importe. Active-le dans Paramètres › Ressources globales et redémarre le jeu si les lettres ne changent pas. Le réglage de police du chat doit être Mojangles. ',

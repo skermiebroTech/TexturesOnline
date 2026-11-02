@@ -79,7 +79,7 @@ const FR: MergeLanguage = {
       text: 'Tes packs sont toujours là. Tu peux réessayer tout de suite.',
     },
     result: {
-      download: 'Télécharger le pack fusionné',
+      download: 'Télécharger le pack',
       building: 'Création de ton pack…',
       gettingFiles: 'Récupération des fichiers du jeu {target}…',
       openEditor: 'Ouvrir dans l’éditeur',
