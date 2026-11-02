@@ -967,3 +967,513 @@ const packFormats: GuideText = {
   ],
   ctaLabel: 'Zrób paczkę z właściwym formatem',
 };
+
+const makeASkin: GuideText = {
+  image: SHOTS.skin2d,
+  intro: [
+    p(
+      'Skin w Minecrafcie to obrazek PNG o wymiarach 64×64 piksele, który owija się wokół modelu gracza; Bedrock przyjmuje też skiny HD 128×128. Możesz zaprojektować go w przeglądarce: pomalować na szablonie, sprawdzić na modelu 3D, a potem wgrać w Minecraft Launcherze (Java) albo zaimportować jako paczkę skinów (Bedrock). W polskiej wersji gry skiny nazywają się „skórki”.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: ['Otwórz edytor skinów i wybierz szablon albo skina startowego.', 'Pomaluj go, patrząc na podgląd 3D.', 'Wyeksportuj PNG do Javy albo .mcpack do Bedrocka i go wgraj.'],
+  },
+  howto: { name: 'Jak zrobić własnego skina do Minecrafta online', steps: SKIN_STEPS },
+  sections: [
+    { id: 'steps', title: 'Krok po kroku', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d), figure(SHOTS.skin3d)] },
+    {
+      id: 'template',
+      title: 'Jak działa szablon skina',
+      body: [
+        ul([
+          ['Obrazek ma ', strong('64×64'), ' piksele. Java 1.7.10 i starsze używają starego układu ', strong('64×32'), ' bez osobnej lewej ręki i lewej nogi; Bedrock przyjmuje też skiny HD ', strong('128×128'), '.'],
+          ['Są dwie warstwy. ', strong('Warstwa podstawowa'), ' to ciało; ', strong('warstwa zewnętrzna'), ' (kapelusz, kurtka, rękawy i nogawki) unosi się tuż nad nią i może być przezroczysta.'],
+          [strong('Szerokie'), ' ręce (Steve) mają 4 piksele szerokości, ', strong('wąskie'), ' ręce (Alex) 3 piksele. Wgraj skina z tym samym modelem, na którym go malujesz.'],
+          'Nieużywane obszary szablonu powinny zostać całkowicie przezroczyste.',
+        ]),
+      ],
+    },
+    {
+      id: 'hd-skins',
+      title: 'Skiny HD 128×128',
+      body: [
+        p(
+          'Skin HD to ten sam szablon w podwójnej rozdzielczości: 128×128 zamiast 64×64 piksele. Każda twarz, każdy rękaw i każdy but mają więc cztery razy więcej pikseli na cieniowanie, oczy i drobne wzory. Gdzie działa:',
+        ),
+        ul([
+          [strong('Bedrock Edition'), ` (Windows, Android, iPhone i iPad): zaimportuj PNG w menu „${BEDROCK.dressingRoom}” albo spakuj go w paczkę skinów. Jedna paczka może mieszać skiny 64×64 i skiny HD.`],
+          [strong('Java Edition'), ': Minecraft Launcher i minecraft.net przyjmują tylko skiny 64×64. Do skina HD potrzebujesz moda, który wczytuje skiny HD, na przykład CustomSkinLoader.'],
+        ]),
+        h3('Jak zrobić go w edytorze skinów'),
+        steps([
+          ['Na ekranie startowym ustaw ', strong('Rozmiar'), ' na ', strong('HD 128×128'), ' i wybierz punkt startowy. Szablony i skiny startowe są podwajane do 128×128, a wgrany PNG 128×128 zostaje w HD.'],
+          ['Malujesz już skina 64×64? W edytorze ustaw ', strong('Rozmiar'), ' na ', strong('HD 128'), ' i potwierdź przyciskiem ', strong('Zamień na HD'), '. Każdy piksel staje się blokiem 2×2, więc skin wygląda tak samo, dopóki nie namalujesz drobniejszych szczegółów. Przez ', strong('Rozmiar'), ' › ', strong('64×64'), ' i ', strong('Zmniejsz do 64×64'), ' wracasz.'],
+          ['Wyeksportuj ', strong('Skin do Bedrocka (.png)'), ` do importu w menu „${BEDROCK.dressingRoom}” albo `, strong('Paczka skinów do Bedrocka (.mcpack)'), '. Oba zachowują 128×128.'],
+          ['Do Javy ', strong('Skin do Javy (.png)'), ' pobiera kopię 64×64, w której każdy blok 2×2 staje się jednym pikselem; twój skin HD zostaje bez zmian. Używasz moda do skinów HD? Wybierz wtedy ', strong('128×128 do modów'), '.'],
+        ]),
+        callout(
+          'warn',
+          'Ograniczenia',
+          `Konsole nie mogą importować plików skinów w żadnym rozmiarze. Skiny większe niż 128×128 nie są obsługiwane. Gracze z włączoną opcją „${BEDROCK.trustedSkins}” widzą każdy własny skin, HD czy nie, jako domyślny.`,
+        ),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Skin w Javie',
+      body: [
+        steps([
+          ['Otwórz Minecraft Launcher i przejdź do ', uiPath('Minecraft: Java Edition', LAUNCHER.skins), '.'],
+          ['Kliknij ', strong(LAUNCHER.newSkin), ', nadaj mu nazwę i wybierz ', strong(LAUNCHER.classic), ' albo ', strong(LAUNCHER.slim), '.'],
+          ['Kliknij ', strong(LAUNCHER.browse), ', wybierz swój PNG, a potem ', strong(LAUNCHER.saveAndUse), '.'],
+        ]),
+        p('Możesz go też wgrać w swoim profilu na ', ext('https://www.minecraft.net/', 'minecraft.net'), '.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Własna paczka skinów do Bedrocka',
+      body: [
+        p(
+          `Paczka skinów (w grze „${BEDROCK.skinPack}”) to `,
+          code('.mcpack'),
+          ' z jednym albo kilkoma skinami. Edytor skinów buduje ją za ciebie; w środku są ',
+          code('manifest.json'),
+          ' (typ modułu ',
+          code('skin_pack'),
+          '), ',
+          code('skins.json'),
+          ', który wymienia każdy skin z modelem szerokim (',
+          code('geometry.humanoid.custom'),
+          ') albo wąskim (',
+          code('geometry.humanoid.customSlim'),
+          ') i ',
+          code('"type": "free"'),
+          ', pliki PNG skinów na najwyższym poziomie i nazwy w ',
+          code('texts/en_US.lang'),
+          '.',
+        ),
+        steps([
+          ['Maluj każdy skin jako osobny projekt. Szerokie i wąskie skiny mieszczą się w jednej paczce.'],
+          ['Wybierz ', strong('Eksportuj'), ' › ', strong('Paczka skinów do Bedrocka (.mcpack)'), ', nazwij paczkę i zaznacz pozostałe skiny.'],
+          'Otwórz .mcpack (dwukrotnym kliknięciem na Windowsie, „Otwórz w Minecraft” na Androidzie, „Udostępnij › Minecraft” na iPhonie i iPadzie).',
+          ['W Minecrafcie przejdź do ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ', znajdź swoją paczkę, wybierz skina i stuknij ', strong(BEDROCK.equip), '.'],
+        ]),
+        figure(SHOTS.skinPack),
+        callout('warn', 'Warto wiedzieć', `Konsole nie mogą importować plików skinów. Gracze z włączoną opcją „${BEDROCK.trustedSkins}” widzą własne skiny jako domyślne. W zaimportowanych paczkach skinów nie wolno używać własnych modeli, tylko szerokiego i wąskiego.`),
+        p('Instalacja, aktualizacja i pliki w paczce krok po kroku: ', link('/guides/make-a-bedrock-skin-pack', 'Jak zrobić paczkę skinów do Minecraft Bedrock'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'size', q: 'Jaki rozmiar powinien mieć skin do Minecrafta?', a: [p('64×64 piksele, zapisany jako PNG. 64×32 tylko dla Javy 1.7.10 i starszych. Bedrock przyjmuje też skiny HD 128×128.')] },
+    {
+      id: 'hd',
+      q: 'Mogę zrobić skina 128×128 do Minecrafta?',
+      a: [
+        p(
+          'Tak, do Bedrock Edition. W edytorze skinów przed startem ustaw ',
+          strong('Rozmiar'),
+          ' na ',
+          strong('HD 128×128'),
+          ' albo przełącz gotowego skina na ',
+          strong('HD 128'),
+          ', a potem wyeksportuj PNG do Bedrocka albo paczkę skinów. Java Edition bez modów pokazuje tylko skiny 64×64, dlatego eksport do Javy robi kopię 64×64; mody do skinów HD, takie jak CustomSkinLoader, mogą używać pliku 128×128.',
+        ),
+      ],
+    },
+    { id: 'username', q: 'Mogę zacząć od skina kogoś innego?', a: [p('Tak. Edytor skinów może wczytać aktualny skin dowolnego gracza Javy po nicku, żeby zrobić z niego remiks. Szanuj przy tym pracę innych.')] },
+    { id: 'phone', q: 'Mogę zrobić skina na telefonie?', a: [p('Tak. Edytor działa z dotykiem, łącznie z przybliżaniem dwoma palcami.')] },
+    {
+      id: 'slim-pack',
+      q: 'Czy paczka skinów może mieszać szerokie i wąskie skiny?',
+      a: [p('Tak. Każdy skin w paczce ma własny model, więc twoja paczka skinów może mieć obok siebie skiny szerokie (ręce o szerokości 4 pikseli) i wąskie (ręce o szerokości 3 pikseli).')],
+    },
+    {
+      id: 'update-pack',
+      q: 'Jak zaktualizować już zaimportowaną paczkę skinów?',
+      a: [p('Wyeksportuj ją jeszcze raz z tego samego projektu i otwórz nowy .mcpack. Paczka zachowuje swoje identyfikatory i dostaje wyższy numer wersji, więc Minecraft zastąpi starą, zamiast robić kopię.')],
+    },
+  ],
+  ctaLabel: 'Otwórz edytor skinów',
+};
+
+const shadersWithoutMods: GuideText = {
+  image: SHOTS.shaderVanilla,
+  intro: [
+    p(
+      strong('Tak, z ograniczeniami.'),
+      ` Do prostych efektów shaderów nie potrzebujesz OptiFine, Irisa ani żadnego innego moda. Od Javy 1.17 zwykła paczka zasobów może podmienić część własnych plików shaderów Minecrafta – tak dostajesz color grading, winietę, inną mgłę, a w ${LATEST} także bloom, bez instalowania czegokolwiek. W Bedrocku własny kod shaderów jest niedozwolony, ale paczka Vibrant Visuals dostraja wbudowane światło, niebo, mgłę i wodę. Prawdziwe cienie i odbicia w Javie dalej wymagają Irisa albo OptiFine.`,
+    ),
+  ],
+  howto: { name: 'Jak zrobić paczkę shaderów do Minecraft Java bez modów', steps: VANILLA_SHADER_STEPS },
+  sections: [
+    {
+      id: 'java',
+      title: 'Java: shadery w paczce zasobów',
+      body: [
+        p('Od 1.17 Minecraft rysuje świat plikami shaderów, które paczka zasobów może nadpisać. To, co potrafi paczka shaderów bez modów, zależy od wersji:'),
+        table(
+          ['Efekt', 'Działa w'],
+          [
+            ['Color grading (jasność, kontrast, nasycenie, ciepło, czerń i biel, sepia)', 'Java 1.17 i nowsze'],
+            ['Winieta', 'Java 1.17 i nowsze'],
+            ['Zasięg i kolor mgły', 'Java 1.17 i nowsze'],
+            ['Bloom (poświata na cały ekran)', `Java ${LATEST} i nowsze`],
+            ['Falujące rośliny', 'tylko 1.17 – 1.21.4 i 1.21.6 – 1.21.10'],
+            ['Prawdziwe cienie, odbicia, promienie światła', 'Niemożliwe bez Irisa albo OptiFine'],
+          ],
+        ),
+        p(`Java ${LATEST} wprowadziła zawsze aktywny efekt pełnoekranowy, dlatego działają tam bloom i czystszy color grading. Wersje 1.16.5 i starsze nie mają shaderów świata, które dałoby się podmienić.`),
+        callout('warn', 'Dokładnie jedna wersja', 'Mojang często zmienia te pliki shaderów, dlatego paczka shaderów bez modów działa tylko w wersji, dla której ją zrobiono. Zepsuty shader może sprawić, że Minecraft wyłączy wszystkie twoje paczki zasobów – dlatego każdy shader, który pisze kreator shaderów, jest wcześniej sprawdzany pod kątem błędów kompilacji.'),
+        h3('Zrób to samodzielnie'),
+        steps(VANILLA_SHADER_STEPS),
+        figure(SHOTS.shaderVanilla),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock: Vibrant Visuals zamiast shaderów',
+      body: [
+        p('Bedrock nie wczytuje własnego kodu shaderów, odkąd przeszedł na silnik RenderDragon (1.16.200 na Windowsie i konsolach, 1.18.30 na innych urządzeniach). Narzędzia, które podmieniają skompilowane pliki shaderów gry, wymagają zmienionej instalacji gry i psują się przy aktualizacjach.'),
+        p(
+          'Oficjalny sposób to ',
+          strong('Vibrant Visuals'),
+          ` (w polskiej wersji gry „${BEDROCK.vibrantVisuals}”): nowoczesny renderer Bedrocka, w stabilnej grze od 1.21.90 (czerwiec 2025). Paczka zasobów może zmieniać jego ustawienia: światło słońca i księżyca, kolory nieba, mgłę, wodę, cienie i color grading, zależnie od pory dnia i biomu. `,
+          link('/guides/bedrock-vibrant-visuals-settings', 'Ustawienia Vibrant Visuals wyjaśnione'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'mods',
+      title: 'Shadery bez OptiFine: weź Irisa',
+      body: [
+        p(
+          `Jeśli „bez modów” tak naprawdę znaczy „bez OptiFine”, odpowiedzią jest Iris. Wczytuje te same paczki shaderów (prawdziwe cienie od słońca, falujące liście, odbijającą wodę, promienie światła), działa razem z modem na wydajność Sodium i jest dostępny dla Javy od 1.16.5 do ${LATEST}. W chwili pisania tego poradnika OptiFine sięga do 26.2.`,
+        ),
+        steps([
+          ['Pobierz instalator Irisa z ', ext('https://www.irisshaders.dev/', 'irisshaders.dev'), ' i go uruchom. Zainstaluje Irisa i Sodium dla wybranej wersji.'],
+          'Uruchom grę raz z nowym profilem Irisa w Minecraft Launcherze.',
+          ['Otwórz ', uiPath(JAVA.options, JAVA.video, IRIS.shaderPacks), ', kliknij ', strong(IRIS.openFolder), ' i wrzuć tam zipa z paczką shaderów.'],
+          `Wybierz paczkę na liście i kliknij „${IRIS.apply}”. Lżejsze paczki pasują do laptopów; cięższe potrzebują mocnej karty graficznej.`,
+        ]),
+        figure(SHOTS.shaderIris),
+        p('Z Forge albo NeoForge poszukaj wersji Irisa dla tego loadera. Własną paczkę shaderów do Irisa i OptiFine z presetami i podglądem na żywo zbudujesz też w ', link('/shaders', 'kreatorze shaderów'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'optifine', q: 'Czy shadery bez modów potrzebują OptiFine?', a: [p('Nie. Paczki shaderów bez modów to zwykłe paczki zasobów. Działają bez moda w wersji, dla której je zrobiono.')] },
+    { id: 'servers', q: 'Czy shadery bez modów działają na serwerach?', a: [p('Tak. Paczki zasobów stosuje twoja własna gra, więc działają też, kiedy grasz na serwerze.')] },
+    { id: 'bedrock', q: 'Mogę używać shaderów z Javy w Bedrocku?', a: [p('Nie. Bedrock nie może wczytywać kodu shaderów z paczek. Zamiast tego użyj paczki Vibrant Visuals.')] },
+  ],
+  ctaLabel: 'Otwórz kreator shaderów',
+};
+
+const javaVsBedrock: GuideText = {
+  intro: [
+    p(
+      'Java i Bedrock mają paczki zasobów, ale ich plików nie da się zamieniać. Paczka do ',
+      strong('Javy'),
+      ' to ',
+      code('.zip'),
+      ' z ',
+      code('pack.mcmeta'),
+      ' i teksturami PNG w ',
+      code('assets/minecraft/textures/'),
+      '. Paczka do ',
+      strong('Bedrocka'),
+      ' to ',
+      code('.mcpack'),
+      ' z ',
+      code('manifest.json'),
+      ' i teksturami w ',
+      code('textures/'),
+      '. Dla obu edycji robisz więc paczkę dwa razy.',
+    ),
+  ],
+  quick: {
+    title: 'Szybka odpowiedź: czy paczki tekstur z Javy działają w Bedrocku?',
+    items: [
+      'Nie. Bedrock nie wczyta .zip z Javy, a zmiana rozszerzenia na .mcpack nie pomaga.',
+      'Obie edycje używają innych folderów, nazw plików i plików z opisem.',
+      'Paczkę można przekonwertować, przenosząc jej obrazki, zmieniając ich nazwy i dodając manifest.json, albo zrobić ją od nowa w projekcie do Bedrocka.',
+    ],
+  },
+  sections: [
+    {
+      id: 'compare',
+      title: 'Porównanie obok siebie',
+      body: [
+        table(
+          ['', 'Java Edition', 'Bedrock Edition'],
+          [
+            ['Plik', [code('.zip'), ' (albo folder)'], [code('.mcpack'), ' (zip ze zmienionym rozszerzeniem)']],
+            ['Plik z opisem', [code('pack.mcmeta')], [code('manifest.json'), ' z dwoma UUID i numerem wersji']],
+            ['Wersja docelowa', ['Numer formatu paczki, np. ', F(LATEST), ' dla ', LATEST], ['Minimalna wersja silnika, np. ', code(MIN_ENGINE)]],
+            ['Przykładowa ścieżka tekstury', [code('assets/minecraft/textures/block/stone.png')], [code('textures/blocks/stone.png')]],
+            ['Formaty obrazków', 'PNG', 'PNG albo TGA (zachowaj rozszerzenie pliku z gry)'],
+            ['Ikona', [code('pack.png')], [code('pack_icon.png')]],
+            ['Instalacja', ['Wrzuć do folderu ', code('resourcepacks')], 'Otwórz plik; Minecraft go zaimportuje'],
+            ['Shadery', 'Paczki shaderów do Irisa i OptiFine albo shadery bez modów jako paczka zasobów (1.17+)', 'Bez własnego kodu shaderów; paczki ustawień Vibrant Visuals'],
+            ['Skiny', 'PNG wgrany w launcherze albo na minecraft.net', `Paczka skinów (.mcpack) albo PNG zaimportowany w menu „${BEDROCK.dressingRoom}”`],
+            ['Konsole', 'Nie dotyczy', 'Nie mogą importować plików; użyj świata, Realmu albo serwera z paczką'],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'textures',
+      title: 'Różnice w teksturach, na które trzeba uważać',
+      body: [
+        ul([
+          'Nazwy plików różnią się między edycjami, na przykład block/grass_block_top.png w Javie i blocks/grass_top.png w Bedrocku.',
+          'Wiele tekstur Bedrocka trzyma w przezroczystych pikselach maski barwienia, więc edytory nie mogą wyrzucać koloru niewidocznych pikseli. Texture Pack Maker zachowuje piksele dokładnie takie, jakie są.',
+          'Java może objąć zakresem zgodności kilka wersji w jednej paczce; paczki do Bedrocka podają jedną minimalną wersję.',
+        ]),
+      ],
+    },
+    {
+      id: 'convert',
+      title: 'Czy da się zamienić paczkę tekstur z Javy na Bedrock?',
+      body: [
+        p('Tak, ale nie przez zmianę nazwy pliku. Konwersja to złożenie paczki od nowa według układu Bedrocka:'),
+        steps([
+          ['Skopiuj obrazki z ', code('assets/minecraft/textures/'), ' do folderów Bedrocka w ', code('textures/'), ' (', code('block'), ' → ', code('blocks'), ', ', code('item'), ' → ', code('items'), ').'],
+          ['Zmień nazwy plików, które się różnią, na przykład ', code('grass_block_top.png'), ' → ', code('grass_top.png'), '. Tekstury bez odpowiednika w Bedrocku odpadają.'],
+          ['Napisz ', code('manifest.json'), ' z dwoma nowymi UUID, wersją i ', code('min_engine_version'), ' i zmień nazwę ', code('pack.png'), ' na ', code('pack_icon.png'), '.'],
+          ['Sprawdź przypadki szczególne: animacje w Bedrocku są w ', code('textures/flipbook_textures.json'), ' zamiast w plikach ', code('.png.mcmeta'), ', a niektóre tekstury to pliki ', code('.tga'), ' z maskami barwienia w przezroczystych pikselach.'],
+          ['Spakuj zawartość do zipa i zmień jego rozszerzenie na ', code('.mcpack'), '.'],
+        ]),
+        p(
+          'Własny poradnik Mojang to ',
+          ext('https://learn.microsoft.com/pl-pl/minecraft/creator/documents/convertingtexturepacks', 'Converting Texture Packs from Java Edition to Bedrock Edition'),
+          '. Szybki sposób to ',
+          link('/texture-pack-converter', 'konwerter paczek tekstur'),
+          ': przenosi każdą teksturę i zmienia jej nazwę, robi z animacji wpisy flipbooka, pisze manifest i wymienia wszystko, czego nie mógł przekonwertować.',
+        ),
+      ],
+    },
+    {
+      id: 'mcpack',
+      title: 'Czy .mcpack to po prostu zip?',
+      body: [
+        p(
+          'Tak. ',
+          code('.mcpack'),
+          ' to zwykły zip z innym rozszerzeniem, żeby Bedrock wiedział, że ma go zaimportować. Zmień rozszerzenie na ',
+          code('.zip'),
+          ', żeby zajrzeć do środka. Paczką do Bedrocka czyni go zawartość: ',
+          code('manifest.json'),
+          ' na najwyższym poziomie i układ folderów Bedrocka. Pliki ',
+          code('.mcaddon'),
+          ' łączą kilka paczek, a pliki ',
+          code('.mcworld'),
+          ' zawierają cały świat.',
+        ),
+      ],
+    },
+    {
+      id: 'both',
+      title: 'Jedna paczka do obu edycji',
+      body: [
+        steps([
+          ['W ', link('/textures', 'edytorze paczek tekstur'), ' zrób projekt do Javy i pomaluj tekstury.'],
+          'Zrób projekt do Bedrocka i pomaluj (albo wgraj) tam te same tekstury; lista plików będzie z Bedrocka.',
+          'Wyeksportuj oba i udostępnij oba pliki.',
+        ]),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'convert', q: 'Mogę zamienić paczkę z Javy na Bedrock?', a: [p('Nie przez zmianę nazwy pliku. Foldery, nazwy i plik z opisem są inne, więc obrazki trzeba przenieść, zmienić ich nazwy i dodać manifest.json. ', link('/texture-pack-converter', 'Konwerter paczek tekstur'), ' zrobi to za ciebie.')] },
+    { id: 'back', q: 'Mogę zamienić paczkę z Bedrocka na Javę?', a: [p('Tak samo, tylko odwrotnie: przenieś obrazki do ', code('assets/minecraft/textures/'), ', nadaj im nazwy z Javy, zamień pliki .tga na PNG i dodaj ', code('pack.mcmeta'), '.')] },
+    { id: 'missing', q: 'Dlaczego po konwersji brakuje niektórych tekstur?', a: [p('Każda edycja ma tekstury, których nie ma w drugiej, a niektóre są inaczej podzielone albo połączone (na przykład skrzynie, obrazy i interfejs). Te trzeba pomalować od nowa dla drugiej edycji.')] },
+    { id: 'which', q: 'W którą edycję gram?', a: [p('Jeśli grasz na konsoli, telefonie albo tablecie albo masz Minecrafta ze Sklepu Microsoft jako „Minecraft dla Windows”, to Bedrock. Java działa na Windowsie, macOS i Linuksie przez Minecraft Launcher.')] },
+  ],
+  ctaLabel: 'Otwórz edytor paczek tekstur',
+};
+
+// ---------------------------------------------------------------- vibrant visuals
+
+const VV_STEPS: Child[] = [
+  ['Zrób paczkę w ', link('/shaders', 'kreatorze shaderów'), ' (wybierz ', strong('Vibrant Visuals w Bedrocku'), ') i wyeksportuj ', code('.mcpack'), '.'],
+  'Otwórz plik. Minecraft sam go zaimportuje.',
+  ['Przejdź do ', uiPath(BEDROCK.settings, BEDROCK.globalResources, BEDROCK.myPacks), ' i aktywuj paczkę. Wyłącz klasyczne paczki tekstur, które nie obsługują Vibrant Visuals.'],
+  ['Otwórz ', uiPath(BEDROCK.settings, BEDROCK.video), ' i ustaw ', strong(BEDROCK.graphicsMode), ' na ', strong(BEDROCK.vibrantVisuals), ' (Vibrant Visuals).'],
+];
+
+const vibrantVisuals: GuideText = {
+  image: SHOTS.vibrantVisuals,
+  intro: [
+    p(
+      strong('Vibrant Visuals'),
+      ` (w polskiej wersji gry „${BEDROCK.vibrantVisuals}”) to nowoczesny tryb grafiki w Minecraft Bedrock, z kierunkowym światłem słońca, miękkimi cieniami, mgłą wolumetryczną, odbijającą wodą i materiałami opartymi na fizyce. Od 1.21.90 (czerwiec 2025) nie jest już eksperymentem i na obsługiwanych urządzeniach jest domyślnym trybem grafiki. Paczka zasobów może zmieniać jego ustawienia, ale nie może dodać nowego kodu shaderów.`,
+    ),
+  ],
+  howto: { name: 'Jak używać paczki Vibrant Visuals w Minecraft Bedrock', steps: VV_STEPS },
+  sections: [
+    {
+      id: 'settings',
+      title: 'Co może zmienić paczka Vibrant Visuals',
+      body: [
+        table(
+          ['Folder paczki', 'Czym steruje'],
+          [
+            [code('lighting/'), 'Jasność, kolor i nachylenie drogi słońca i księżyca, światło otoczenia (w jaskiniach), światło nieba i to, jak świecą kolorowe bloki.'],
+            [code('atmospherics/'), 'Kolory nieba w górze i przy horyzoncie i to, jak światło rozprasza się w powietrzu (gęstość nieba, zachody słońca).'],
+            [code('color_grading/'), 'Metoda tone mappingu, kontrast, nasycenie, wzmocnienie, gamma i temperatura barwowa: filmowy wygląd.'],
+            [code('water/'), 'Kolor wody, fale i kaustyka (wzory światła pod wodą).'],
+            [code('shadows/'), 'Kanciaste albo miękkie cienie.'],
+            [code('fogs/'), 'Gęstość i kolor mgły wolumetrycznej oraz klasyczna mgła odległości.'],
+            [code('local_lighting/'), 'Kolor światła bloków, takich jak pochodnie i latarnie.'],
+          ],
+        ),
+        p('Ustawienia mogą zmieniać się z porą dnia, a własne wartości Minecrafta są różne w różnych biomach – dlatego dobra paczka dopasowuje każdy biom, zamiast podmieniać tylko jeden ogólny plik.'),
+        p(strong('Nie da się ustawić paczką: '), 'bloomu, ekspozycji, odbić w przestrzeni ekranu, oświetlenia chmur, samej krzywej tone mappingu, zasięgu widzenia i wygładzania krawędzi. To wszystko siedzi w rendererze gry, a nie w paczkach zasobów.'),
+      ],
+    },
+    {
+      id: 'devices',
+      title: 'Które urządzenia je obsługują',
+      body: [
+        ul(['Komputery z Windowsem i DirectX 12.', 'Xbox Series i PlayStation 5; na Xbox One i PS4 jest domyślnie wyłączone.', 'iPhone i iPad od układu A12.', 'Wiele nowych urządzeń z Androidem.']),
+        p('Nie ma go na pierwszym Nintendo Switch, Chromebookach i tabletach Fire. Serwery mogą je wyłączyć, a na podzielonym ekranie używana jest zamiast tego klasyczna grafika (Dokładna).'),
+      ],
+    },
+    {
+      id: 'enable',
+      title: 'Włączanie z paczką',
+      body: [
+        steps(VV_STEPS),
+        callout(
+          'warn',
+          'Vibrant Visuals jest wyszarzone?',
+          'Minecraft pozwala je włączyć tylko wtedy, gdy każda aktywna paczka zasobów je obsługuje. Klasyczne paczki tekstur je wyłączają, więc je dezaktywuj (albo użyj paczki zrobionej pod Vibrant Visuals). Opcja wymaga też obsługiwanego urządzenia.',
+        ),
+        figure(SHOTS.vibrantVisuals),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'what', q: 'Czym jest Vibrant Visuals w Minecrafcie?', a: [p(`Wbudowany nowoczesny tryb grafiki w Bedrocku (w polskiej wersji gry „${BEDROCK.vibrantVisuals}”), wydany w 1.21.90. Daje kierunkowe światło, cienie, mgłę wolumetryczną, odbicia na wodzie i materiały PBR, zupełnie bez dodatków.`)] },
+    { id: 'textures', q: 'Czy Vibrant Visuals potrzebuje specjalnej paczki tekstur?', a: [p('Nie, działa ze zwykłymi teksturami. Ale klasyczna paczka tekstur, która nie deklaruje obsługi Vibrant Visuals, wyłącza ten tryb, dopóki jest aktywna.')] },
+    { id: 'classic-fog', q: 'Czy zmiany mgły działają bez Vibrant Visuals?', a: [p('Klasyczną mgłę odległości możesz zmienić w każdym trybie grafiki. Mgła wolumetryczna i ustawienia światła działają tylko z Vibrant Visuals.')] },
+  ],
+  ctaLabel: 'Zbuduj paczkę Vibrant Visuals',
+};
+
+// ---------------------------------------------------------------- convert java to bedrock
+
+const CONVERT_STEPS: Child[] = [
+  ['Otwórz ', link('/texture-pack-converter', 'konwerter paczek tekstur'), ' i wybierz paczkę: ', code('.zip'), ' z Javy, ', code('.mcpack'), ' z Bedrocka albo tekstury PNG.'],
+  ['Wybierz cel: ', strong('Bedrock Edition'), ' albo ', strong('Java Edition'), ' z wersją.'],
+  ['Kliknij ', strong('Konwertuj'), '. Twoja przeglądarka pobierze listę tekstur edycji docelowej i przekonwertuje każdą teksturę, którą da się przekonwertować.'],
+  'Przeczytaj raport: ile tekstur przekonwertowano, które pominięto i dlaczego.',
+  'Pobierz przekonwertowaną paczkę albo otwórz ją w edytorze, żeby najpierw pomalować pominięte tekstury.',
+];
+
+const convertJavaToBedrock: GuideText = {
+  image: SHOTS.convertResult,
+  intro: [
+    p(
+      'Paczka tekstur z Javy nie działa w Bedrocku, a zmiana rozszerzenia z ',
+      code('.zip'),
+      ' na ',
+      code('.mcpack'),
+      ' nie pomaga: obie edycje używają innych folderów, nazw plików i plików z opisem. Żeby przekonwertować paczkę, każdą teksturę trzeba przenieść do folderu Bedrocka, zmienić jej nazwę na nazwę z Bedrocka i dodać ',
+      code('manifest.json'),
+      '. Darmowy ',
+      link('/texture-pack-converter', 'konwerter paczek tekstur'),
+      ' robi to w kilka sekund w twojej przeglądarce i działa też w drugą stronę.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Otwórz ', link('/texture-pack-converter', 'konwerter paczek tekstur'), ' i wybierz swój ', code('.zip'), ' z Javy.'],
+      ['Wybierz ', strong('Bedrock Edition'), ' i kliknij ', strong('Konwertuj na Bedrocka'), '.'],
+      ['Pobierz ', code('.mcpack'), ' i go otwórz: Minecraft go zaimportuje.'],
+    ],
+  },
+  howto: { name: 'Jak zamienić paczkę tekstur z Javy na Bedrock', steps: CONVERT_STEPS },
+  sections: [
+    { id: 'steps', title: 'Krok po kroku', body: [steps(CONVERT_STEPS), figure(SHOTS.convertPack), figure(SHOTS.convertResult)] },
+    {
+      id: 'what',
+      title: 'Co się konwertuje, a co nie',
+      body: [
+        p('Konwerter wie, która tekstura z Javy pełni tę samą rolę co która tekstura z Bedrocka – ustalone na podstawie plików gry obu edycji. Większość tekstur pokazuje w obu ten sam obrazek i można ją po prostu przenieść.'),
+        table(
+          ['Konwertuje się', 'Nie konwertuje się'],
+          [
+            ['Większość tekstur bloków i przedmiotów (mniej więcej cztery na pięć)', 'Tekstury, które są tylko w jednej edycji'],
+            ['Wiele tekstur mobów i otoczenia (słońce, księżyc, chmury)', 'Inaczej zbudowane tekstury: skrzynie, wiele skinów mobów, sztandary, menu i cząsteczki'],
+            ['Animowane tekstury: z .png.mcmeta powstaje wpis flipbooka', 'Modele, dźwięki, czcionki, napisy powitalne i shadery'],
+            ['Ikona, nazwa i opis paczki', 'Dodatki z OptiFine, takie jak połączone tekstury i własne tekstury przedmiotów'],
+          ],
+        ),
+        p('Wszystko, co pominięto, jest w raporcie z powodem, więc wiesz dokładnie, co trzeba pomalować od nowa. Otwórz przekonwertowaną paczkę w ', link('/textures', 'edytorze paczek tekstur'), ', żeby poprawić te tekstury na ich modelach 3D przed pobraniem.'),
+        callout('tip', 'Jedna paczka, dwie edycje', `Trzymaj paczkę do Javy jako oryginał i konwertuj ją od nowa po każdej zmianie. Zanim zaimportujesz nową wersję do Bedrocka, usuń starą w „${BEDROCK.settings} › ${BEDROCK.storage}”, żeby nie mieć dwóch kopii.`),
+      ],
+    },
+    {
+      id: 'bedrock-to-java',
+      title: 'Zamiana paczki z Bedrocka na Javę',
+      body: [
+        p(
+          'Wybierz ',
+          code('.mcpack'),
+          ' z Bedrocka (albo ',
+          code('.mcaddon'),
+          '), a potem ',
+          strong('Java Edition'),
+          ' i wersję, w którą grasz. Tekstury trafiają do folderów i pod nazwy z Javy, obrazki ',
+          code('.tga'),
+          ' stają się plikami PNG, animacje z flipbooka stają się plikami ',
+          code('.png.mcmeta'),
+          ', a paczka dostaje pasujący ',
+          code('pack.mcmeta'),
+          ' dla tej wersji.',
+        ),
+      ],
+    },
+    {
+      id: 'old-java',
+      title: 'Aktualizacja starej paczki do Javy do nowej wersji',
+      body: [
+        p(
+          'Ten sam konwerter aktualizuje paczki do Javy między wersjami. Wiele tekstur zmieniło nazwy przez lata, zwłaszcza w 1.13, kiedy ',
+          code('textures/blocks'),
+          ' zmienił się w ',
+          code('textures/block'),
+          ', a setki plików dostały nowe nazwy. Wybierz starą paczkę, potem ',
+          strong('Javę'),
+          ' i swoją wersję, a każda tekstura ze zmienioną nazwą dostanie nową nazwę. Nazwy tekstur we własnych modelach paczki też są poprawiane.',
+        ),
+        p(`Działa to także wstecz, na przykład żeby zrobić z paczki do ${LATEST} paczkę do 1.8.9.`),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Instalacja przekonwertowanej paczki',
+      body: [
+        ul([
+          ['Bedrock: otwórz ', code('.mcpack'), ' (dwukrotnym kliknięciem na Windowsie, „Otwórz w Minecraft” na telefonie) i aktywuj go w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+          ['Java: wrzuć ', code('.zip'), ' do folderu ', code('resourcepacks'), ` i przenieś go do „${JAVA.selected}”.`],
+        ]),
+        p('Więcej w poradniku ', link('/guides/install-resource-packs', 'Jak zainstalować paczki tekstur'), '. Jeśli coś wygląda źle, pomoże ', link('/guides/texture-pack-not-working', 'Paczka tekstur nie działa'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'free', q: 'Czy konwerter jest darmowy?', a: [p('Tak, bez konta i bez limitów. Paczka jest konwertowana w twojej przeglądarce i nigdy nie jest wysyłana.')] },
+    { id: 'look', q: 'Czy paczka w Bedrocku wygląda tak samo?', a: [p('Przekonwertowane tekstury wyglądają tak samo. W miejsce pominiętych tekstur wchodzą tekstury z Bedrocka, a oświetlenie Bedrocka i Vibrant Visuals mogą sprawić, że kolory wyglądają trochę inaczej.')] },
+    { id: 'shaders', q: 'Mogę zamienić paczkę shaderów z Javy na Bedrock?', a: [p('Nie. Bedrock nie wczytuje własnego kodu shaderów. Zamiast tego użyj paczki ', link('/guides/bedrock-vibrant-visuals-settings', 'Vibrant Visuals'), ', którą zrobisz w ', link('/shaders', 'kreatorze shaderów'), '.')] },
+    { id: 'png', q: 'Mogę zamienić pliki PNG w .mcpack?', a: [p('Tak. Wybierz PNG albo zip z plikami PNG nazwanymi tak jak tekstury gry (na przykład ', code('stone.png'), ') i przekonwertuj je na Bedrocka.')] },
+    { id: 'console', q: 'Mogę używać przekonwertowanej paczki na konsoli?', a: [p('Konsole nie mogą importować plików. Dodaj paczkę do świata na PC albo telefonie i dołącz do tego świata albo użyj Realmu lub serwera, który ją ma.')] },
+  ],
+  ctaLabel: 'Otwórz konwerter paczek tekstur',
+};
