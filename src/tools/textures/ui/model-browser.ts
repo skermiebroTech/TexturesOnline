@@ -185,8 +185,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     for (const t of toks) {
       if (name === t) s += 120;
       else if (name.startsWith(t)) s += 70;
-      else if (new RegExp(`(^|\\s)${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(name)) s += 55;
-      else if (name.includes(t)) s += 40;
+      // (only names that have it are tested for a word that starts with it)
+      else if (name.includes(t)) s += new RegExp(`(^|\\s)${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(name) ? 55 : 40;
       else if (id.includes(t)) s += 22;
       else return -1;
     }
