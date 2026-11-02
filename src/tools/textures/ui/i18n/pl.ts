@@ -784,7 +784,7 @@ const PL: EditorLanguage = {
     },
   },
   'textures.modelRules': {
-    cube: 'Sześcian {n}',
+    cube: 'Kostka {n}',
     named: '„{name}”',
     noCubes: 'Ten model nie ma sześcianów, więc w grze jest niewidoczny.',
     notNumber: '{cube} ma pozycję, która nie jest liczbą.',
@@ -850,7 +850,7 @@ const PL: EditorLanguage = {
     dragFrom: 'Od {values}',
     dragSize: 'Rozmiar {values}',
     panels: 'Panele edytora modeli',
-    tabs: { cubes: 'Sześciany', cube: 'Sześcian', faces: 'Ściany', display: 'Wyświetlanie', model: 'Model' },
+    tabs: { cubes: 'Sześciany', cube: 'Kostka', faces: 'Ściany', display: 'Widok', model: 'Model' },
     pickCube: 'Wybierz sześcian z listy albo kliknij go w widoku 3D.',
     pickCubeTouch: 'Wybierz sześcian z listy albo stuknij go w widoku 3D.',
     noCubes: 'Ten model nie ma jeszcze sześcianów.',

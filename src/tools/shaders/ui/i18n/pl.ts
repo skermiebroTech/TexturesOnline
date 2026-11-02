@@ -119,7 +119,7 @@ const PL: ShadersEditorLanguage = {
       name: 'Nazwa paczki',
       description: 'Opis',
       descriptionHint: 'Widoczny w Minecrafcie pod nazwą paczki',
-      needsMod: 'Wymaga Irisa albo OptiFine',
+      needsMod: 'Wymaga Irisa / OptiFine',
       noMods: 'Bez modów',
     },
     exportDialog: {
@@ -170,7 +170,7 @@ const PL: ShadersEditorLanguage = {
       rotate: 'Automatyczny obrót (R)',
       resetView: 'Resetuj widok (Home)',
       screenshot: 'Zapisz zrzut ekranu (P)',
-      compare: 'Przytrzymaj, żeby porównać',
+      compare: 'Porównaj',
       compareTip: 'Przytrzymaj, żeby zobaczyć „{label}” (albo przytrzymaj C)',
       timeOfDay: 'Pora dnia',
       play: 'Odtwórz cykl dnia (D)',

@@ -369,7 +369,7 @@ export const HELP: HelpText = {
           '. Edytor modeli otworzy model, którego używa gra, złożony z jego modeli nadrzędnych. Dodawaj sześciany, kopiuj je i usuwaj, wpisuj pozycję i rozmiar albo przeciągaj strzałki i uchwyty w 3D, przyciągane do siatki 16 × 16 albo drobniejszej, i obracaj sześcian wokół osi (przed Minecraftem 1.21.6 co 22,5°). W ',
           strong('Ściany'),
           ' każda ściana dostaje teksturę z twojej paczki albo nową, którą pomalujesz później, i przeciągasz fragment tekstury, który pokazuje; do tego obrót, kiedy jest ukrywana i czy jest barwiona. ',
-          strong('Wyświetlanie'),
+          strong('Widok'),
           ' ustala, jak model wygląda w ekwipunku, w widoku z pierwszej i trzeciej osoby, na ziemi, w ramce i na głowie, każde z podglądem. Każdą zmianę można cofnąć.',
         ),
         p(

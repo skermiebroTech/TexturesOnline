@@ -1755,7 +1755,7 @@ const MODEL_STEPS: Child[] = [
   ['Przełącz listę na ', strong('Rzeczy'), ' i otwórz przedmiot, na przykład diamentowy miecz. W zakładce ', strong('Podgląd'), ' naciśnij ', strong('Edytuj kształt'), '.'],
   ['Wybierz ', strong('Przedmiot 3D ze sprite’a'), '. Każdy piksel płaskiego obrazka staje się częścią sześcianu o głębokości 1 piksela.'],
   ['Zmień kształt: kliknij sześcian w widoku 3D albo na liście i przesuń go, powiększ albo skopiuj, albo dodaj nowe. W ', strong('Ściany'), ' ściana dostaje inną teksturę albo inny fragment tekstury.'],
-  ['Otwórz ', strong('Wyświetlanie'), ' i sprawdź model w ekwipunku, w widoku z pierwszej i trzeciej osoby, na ziemi, w ramce i na głowie. Popraw obrót, pozycję albo rozmiar tam, gdzie nie pasuje.'],
+  ['Otwórz ', strong('Widok'), ' i sprawdź model w ekwipunku, w widoku z pierwszej i trzeciej osoby, na ziemi, w ramce i na głowie. Popraw obrót, pozycję albo rozmiar tam, gdzie nie pasuje.'],
   ['Jeśli chcesz, od 1.21.4: w zakładce ', strong('Model'), ' włącz opcję ', strong('Płaski w ekwipunku'), ', żeby płaska ikona została w ekwipunku, a model 3D pokazywał się w ręce.'],
   ['Naciśnij ', strong('Gotowe'), ', wyeksportuj paczkę jako ', code('.zip'), ', wrzuć ją do folderu ', code('resourcepacks'), ' i przetestuj w grze.'],
 ];
@@ -1843,9 +1843,9 @@ const make3dItems: GuideText = {
     },
     {
       id: 'display',
-      title: 'Jak przedmiot jest trzymany: Display',
+      title: 'Jak przedmiot jest trzymany: Widok',
       body: [
-        p('Zakładka ', strong('Wyświetlanie'), ' pokazuje model w podglądzie w sześciu miejscach. Każde ma obrót w stopniach, pozycję w pikselach (do ±80) i rozmiar (1 to normalny, najwyżej 4).'),
+        p('Zakładka ', strong('Widok'), ' pokazuje model w podglądzie w sześciu miejscach. Każde ma obrót w stopniach, pozycję w pikselach (do ±80) i rozmiar (1 to normalny, najwyżej 4).'),
         table(
           ['W edytorze', 'Gdzie go widać', 'Nazwa w pliku'],
           [
