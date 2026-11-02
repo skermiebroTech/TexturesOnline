@@ -57,7 +57,7 @@ export const SHOTS = localShots({
     caption: 'Malowanie prosto na piecu 3D: każda ściana maluje teksturę, którą pokazuje.',
   },
   mobGear: {
-    alt: 'Model konia w edytorze tekstur z siodłem i skórzaną zbroją dla konia, obok wybór umaszczenia, znaczeń, wieku, siodła i zbroi.',
+    alt: 'Model konia w edytorze tekstur z siodłem i skórzaną zbroją końską, obok wybór umaszczenia, znaczeń, wieku, siodła i zbroi.',
     caption: 'Moby pokazują się na własnych modelach 3D, z siodłami i zbrojami, które też możesz pomalować.',
   },
   mobParts: {
@@ -117,7 +117,7 @@ export const SHOTS = localShots({
     caption: 'Rysowanie własnego celownika: do Javy 1.20.1 celownik to lewy górny róg pliku icons.png.',
   },
   pvpBedrock: {
-    alt: 'Paczka PvP do Bedrocka: tekstura czerwonego barwionego szkła, przezroczysta w środku, z zachowaną ramką, i zakładka „PvP” z wyłączonym niskim ogniem i powodem, a pod nim włączone czyste szkło.',
+    alt: 'Paczka PvP do Bedrocka: tekstura czerwonego szkła, przezroczysta w środku, z zachowaną ramką, i zakładka „PvP” z wyłączonym niskim ogniem i powodem, a pod nim włączone czyste szkło.',
     caption: 'W Bedrocku opcje, których paczka nie może zrobić, są wyłączone, z podanym powodem.',
   },
 });
