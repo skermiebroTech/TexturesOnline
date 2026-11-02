@@ -35,6 +35,8 @@ const table = (head: string[], rows: Child[][], cls = 'guide-table'): ElNode =>
   );
 /** English text quoted on purpose (a game message's English original) */
 const en = (text: string): ElNode => el('span', { lang: 'en' }, text);
+/** A label of the editors, which show English for now */
+const enLabel = (text: string): ElNode => el('strong', { lang: 'en' }, text);
 const FOLDER = UI_FR.folderTable;
 
 export const GUIDES_INDEX: GuidesIndexText = {
@@ -1874,6 +1876,542 @@ const mergePacks: GuideText = {
     { id: 'upload', q: 'Mes packs sont-ils envoyés quelque part ?', a: [p('Non. Les packs sont fusionnés dans ton navigateur et restent sur ton appareil.')] },
   ],
   ctaLabel: 'Ouvrir Merge Texture Packs',
+};
+
+const make3dItems: GuideText = {
+  image: SHOTS.model3dSword,
+  intro: [
+    p(
+      'La forme d’un bloc ou d’un objet dans Minecraft Java Edition vient de son ',
+      strong('modèle'),
+      ' : un petit fichier JSON de cubes dans le pack de ressources. Mets un nouveau modèle dans ton pack de textures et la forme change, sans mods et sans OptiFine : une épée plate devient une épée en 3D, un bloc devient une dalle ou une marche. Le ',
+      link('/textures', 'Texture Pack Maker'),
+      ' a un éditeur de modèles qui fait ça dans ton navigateur. Il transforme le sprite plat d’un objet en cubes 3D en un clic, te laisse changer chaque cube et écrit les fichiers dont ta version du jeu a besoin. Bedrock fonctionne autrement, comme expliqué plus bas.',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Dans le Texture Pack Maker, affiche l’objet dans l’onglet ', strong('Preview'), ' et appuie sur ', strong('Edit shape'), '.'],
+      ['Choisis ', strong('3D item from sprite'), ', puis affine les cubes et la façon dont l’objet est tenu.'],
+      ['Exporte le pack. Il contient le modèle dans ', code('models/item/'), ' et, en 1.21.4 et plus récent, une définition d’objet dans ', code('items/'), ' quand il en faut une.'],
+    ],
+  },
+  howto: { name: 'Comment faire un objet 3D dans un pack de textures Minecraft', steps: MODEL_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Ce qu’est un modèle Minecraft',
+      body: [
+        p('Java Edition 1.8 et plus récent dessine la plupart des blocs et des objets à partir de fichiers de modèles dans le pack de ressources :'),
+        ul([
+          [code('assets/minecraft/models/block/'), ' contient les modèles de blocs, comme ', code('oak_slab.json'), '. Un fichier d’', strong('états de bloc'), ' (blockstate) dans ', code('blockstates/'), ' dit quel modèle un bloc utilise dans chaque état : une dalle en bas ou en haut, une bûche couchée.'],
+          [code('assets/minecraft/models/item/'), ' contient les modèles d’objets. La plupart des objets utilisent un modèle plat (', code('item/generated'), ') : le jeu transforme lui-même le sprite 16×16 en forme fine. Depuis la 1.21.4, une ', strong('définition de modèle d’objet'), ' dans ', code('assets/minecraft/items/'), ' dit quel modèle un objet affiche.'],
+        ]),
+        p('Un fichier de modèle a quatre parties principales :'),
+        ul([
+          [code('textures'), ' : des noms pour les textures que le modèle utilise, comme ', code('"oak_planks": "minecraft:block/oak_planks"'), '. ', code('particle'), ' est la texture des particules quand le bloc se casse.'],
+          [code('elements'), ' : les cubes. Chacun va ', code('from'), ' (de) un coin ', code('to'), ' (à) le coin opposé, mesurés en pixels d’un bloc de 16 × 16 × 16, et peut aller de -16 à 32 sur chaque axe. Un cube peut être tourné avec ', code('rotation'), '.'],
+          [code('faces'), ' : pour chaque côté d’un cube (', code('down'), ', ', code('up'), ', ', code('north'), ', ', code('south'), ', ', code('west'), ', ', code('east'), '), la texture qu’il montre, la partie de la texture (', code('uv'), '), et ', code('cullface'), ', qui saute la face quand un bloc plein couvre ce côté.'],
+          [code('display'), ' : comment le modèle est tourné, déplacé et mis à l’échelle dans l’inventaire (', code('gui'), '), dans les mains, au sol, dans un cadre (', code('fixed'), ') et sur la tête.'],
+        ]),
+        p('Voici un modèle d’un seul cube en forme de dalle, écrit comme l’éditeur de modèles l’écrit. Un fichier fait dans l’éditeur liste l’affichage de chaque emplacement, pas seulement celui de l’inventaire :'),
+        pre(MODEL_BLOCK_EXAMPLE.trimEnd()),
+        p(
+          'Les modèles faits à la main utilisent souvent ',
+          code('"parent"'),
+          ' pour emprunter les textures, les cubes ou l’affichage d’un autre modèle. L’éditeur de modèles écrit plutôt des fichiers autonomes : tout ce qu’il a lu dans les modèles parents est recopié, donc ton fichier ne dépend d’aucun autre.',
+        ),
+        callout('tip', 'Les coordonnées sont des pixels', 'Un bloc fait 16 unités sur chaque axe, donc 8 c’est un demi-bloc. L’éditeur de modèles s’aligne sur cette grille, ou sur ½ ou ¼ de pixel, et affiche les tailles comme « 16 = one block ».'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Faire un objet 3D pas à pas',
+      body: [steps(MODEL_STEPS), figure(SHOTS.modelEditShape), figure(SHOTS.modelSpriteStart), figure(SHOTS.model3dSword)],
+    },
+    {
+      id: 'sprite',
+      title: 'Comment marche « 3D item from sprite »',
+      body: [
+        p(
+          'Un objet plat est une seule image, son sprite, en général de 16×16 pixels. Ce point de départ prend chaque pixel qui n’est pas transparent et en fait des cubes d’un pixel d’épaisseur, centrés comme le jeu centre ses propres objets plats (de 7,5 à 8,5 sur l’axe z). Les pixels d’une même ligne sont réunis en un long cube, et les lignes identiques les unes sous les autres en un rectangle : l’épée en diamant devient donc 19 cubes au lieu d’un cube par pixel. Les faces complètement cachées par un pixel voisin sont laissées de côté.',
+        ),
+        p('Chaque face montre les pixels correspondants du sprite. Trois pixels à la suite, dans les colonnes 5 à 7 de la ligne 3, deviennent ce cube :'),
+        pre(MODEL_SPRITE_CUBE.trimEnd()),
+        p(
+          'L’avant (',
+          code('south'),
+          ') montre les pixels tels quels et l’arrière (',
+          code('north'),
+          ') les montre en miroir, comme quand tu regardes une image de derrière. Les cubes continuent d’utiliser la texture de l’objet (',
+          code('#layer0'),
+          '), donc repeindre le sprite recolore l’objet 3D. Les pixels que tu ajoutes ou effaces ne changent la forme que si tu choisis à nouveau ',
+          strong('3D item from sprite'),
+          '. Les objets à plusieurs couches, comme les potions ou l’armure en cuir, reçoivent des cubes pour chaque couche, et le jeu les colore toujours.',
+        ),
+        p('Ensuite, personnalise-le :'),
+        ul([
+          'Rends la lame plus épaisse : sélectionne ses cubes et change leur position Z et leur taille, par exemple de 7,5 et 1 à 7 et 2.',
+          ['Ajoute un cube pour une garde ou une gemme avec le bouton ', strong('+'), ' (ou N), et donne à ses faces une autre texture dans ', uiPath('Faces', 'Change'), '.'],
+          ['Tourne un cube dans ', strong('Rotation'), '. Avant Minecraft 1.21.6, un cube ne tourne que sur un axe, de -45°, -22,5°, 0°, 22,5° ou 45° ; l’éditeur propose ce que ta version accepte.'],
+          'Annule n’importe quel changement avec Ctrl+Z.',
+        ]),
+      ],
+    },
+    {
+      id: 'display',
+      title: 'Régler la façon dont il est tenu : Display',
+      body: [
+        p(
+          'L’onglet ',
+          strong('Display'),
+          ' montre le modèle à six endroits. Chacun a une rotation en degrés, une position en pixels (jusqu’à ±80) et une taille (1 est normal, 4 au maximum).',
+        ),
+        table(
+          ['Dans l’éditeur', 'Où il s’affiche', 'Nom dans le fichier'],
+          [
+            ['Inventory', 'Inventaire et barre d’action', code('gui')],
+            ['First person', 'Dans ta propre main', [code('firstperson_righthand'), ' (la main gauche est une image miroir)']],
+            ['Third person', 'Dans la main d’un joueur que tu regardes, ou en vue F5', code('thirdperson_righthand')],
+            ['Ground', 'Jeté au sol', code('ground')],
+            ['Item frame', 'Dans un cadre', code('fixed')],
+            ['Head', 'Porté sur la tête', code('head')],
+          ],
+        ),
+        p(
+          strong('3D item from sprite'),
+          ' garde les réglages d’affichage de l’objet, donc une épée 3D est tenue comme la plate. ',
+          strong('Game’s default'),
+          ' remet un emplacement aux valeurs du jeu, et ',
+          strong('No change'),
+          ' supprime le réglage. Java 1.21.9 a ajouté un emplacement ',
+          code('on_shelf'),
+          ' pour les étagères ; l’éditeur garde la valeur du modèle du jeu.',
+        ),
+        figure(SHOTS.modelDisplay),
+      ],
+    },
+    {
+      id: 'flat',
+      title: 'Garder l’icône plate dans l’inventaire (1.21.4+)',
+      body: [
+        p(
+          'Beaucoup de packs 3D gardent l’icône plate habituelle dans l’inventaire et ne montrent le modèle 3D qu’en main. Depuis Java 1.21.4, une définition de modèle d’objet peut choisir un modèle selon l’endroit où l’objet s’affiche. Active ',
+          strong('Flat in the inventory'),
+          ' dans l’onglet ',
+          strong('Model'),
+          ' et l’éditeur :',
+        ),
+        ul([
+          ['enregistre ta forme comme deuxième modèle, ', code('models/item/diamond_sword_3d.json'), ', et laisse le ', code('diamond_sword.json'), ' plat tel quel ;'],
+          ['écrit ', code('items/diamond_sword.json'), ', qui montre le modèle plat dans l’inventaire (', code('gui'), '), au sol et dans les cadres (', code('fixed'), '), et le modèle 3D partout ailleurs :'],
+        ]),
+        pre(MODEL_FLAT_DEFINITION.trimEnd()),
+        p('Les versions avant la 1.21.4 n’ont pas de définitions d’objets : un objet y montre le même modèle partout et l’option n’est pas proposée.'),
+        figure(SHOTS.modelFlatInventory),
+      ],
+    },
+    {
+      id: 'blocks',
+      title: 'Changer la forme d’un bloc',
+      body: [
+        p(
+          'Les blocs marchent de la même façon. Affiche un bloc dans l’onglet Preview et appuie sur ',
+          strong('Edit shape'),
+          '. L’éditeur ouvre le modèle que le bloc utilise dans l’état que tu regardes, et le menu en haut liste ses autres modèles, comme les versions haute et double d’une dalle. Garde le modèle du jeu ou pars de ',
+          strong('Full cube'),
+          ', ',
+          strong('Slab'),
+          ', ',
+          strong('Cross (plant)'),
+          ' ou ',
+          strong('Empty'),
+          ', puis ajoute, déplace et redimensionne des cubes. Pour transformer la roche en marche, il suffit du point de départ Slab et d’un cube de plus :',
+        ),
+        figure(SHOTS.modelBlock),
+        ul([
+          [strong('Modèles partagés : '), 'certains blocs utilisent le même fichier de modèle. Quand un autre bloc utilise le modèle que tu modifies, l’éditeur te dit lequel ; il change aussi.'],
+          [strong('Les objets restent à part : '), 'un objet qui montre un modèle de bloc, comme une dalle dans ta main, reçoit son propre modèle d’objet quand tu modifies l’objet, donc le bloc garde sa forme.'],
+          [strong('Seule l’apparence change : '), 'la hitbox, les collisions et la lumière viennent du code du jeu. Un bloc de roche en forme de marche t’arrête toujours comme un bloc plein, et les blocs voisins cachent toujours les faces qui le touchent, ce qui peut laisser des trous transparents.'],
+          [strong('Les blocs dessinés par le code : '), 'les coffres, les lits, les pancartes, les bannières et les autres blocs que le jeu dessine lui-même n’ont pas de modèle de bloc, donc Edit shape n’est pas proposé pour eux. Les objets dessinés par le code, comme le bouclier, peuvent recevoir un modèle, qui remplace cet aspect.'],
+        ]),
+        p(
+          'La roche et quelques autres blocs choisissent au hasard entre deux modèles : la roche et une copie en miroir, chacune aussi retournée. ',
+          strong('Use for every random variant'),
+          ' dans l’onglet Model met ta forme sur toutes en écrivant le fichier d’états du bloc. L’entrée ',
+          code('"y": 180'),
+          ' garde la rotation au hasard, et ',
+          code('weight'),
+          ' règle la fréquence à laquelle chaque entrée est choisie :',
+        ),
+        pre(MODEL_STONE_BLOCKSTATE.trimEnd()),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Quels fichiers vont dans le pack',
+      body: [
+        table(
+          ['Ce que tu changes', 'Fichiers dans le pack'],
+          [
+            ['Un objet 3D', code(MODEL_FILES.sword.latest[0])],
+            ['Un objet 3D, plat dans l’inventaire (1.21.4+)', [code(MODEL_FILES.swordFlat.latest[0]), ' et ', code(MODEL_FILES.swordFlat.latest[1])]],
+            ['La forme d’un bloc', code(MODEL_FILES.slab.latest[0])],
+            ['La forme d’un bloc sur chaque variante au hasard', [code(MODEL_FILES.stoneEvery.latest[0]), ' et ', code(MODEL_FILES.stoneEvery.latest[1])]],
+          ],
+        ),
+        p(
+          'Chaque chemin est dans ',
+          code('assets/minecraft/'),
+          '. Chaque version de Java depuis la 1.8 reçoit les mêmes fichiers ; seul « plat dans l’inventaire » a besoin de la 1.21.4 ou plus récent. L’éditeur n’ajoute une définition d’objet ou un fichier d’états de bloc que quand le jeu en a besoin, et les fichiers de modèles déjà présents dans un pack que tu ouvres sont gardés et peuvent être modifiés. À l’export, chaque modèle est vérifié pour ta version du jeu, et tu reçois un avertissement pour tout ce qui ne se chargerait pas.',
+        ),
+        h3('Ce qui a changé entre les versions'),
+        table(
+          ['Version', 'Ce qui a changé pour les modèles'],
+          [
+            ['1.8', 'Les modèles de blocs et d’objets sont devenus des fichiers JSON que les packs de ressources peuvent remplacer. Les cubes tournent sur un axe de -45°, -22,5°, 0°, 22,5° ou 45°.'],
+            ['1.13', ['Les dossiers de textures ont été renommés de ', code('blocks'), ' et ', code('items'), ' en ', code('block'), ' et ', code('item'), ', donc les noms de textures dans les modèles ont changé aussi.']],
+            ['1.15.2', [code('gui_light'), ' règle si l’icône de l’inventaire est éclairée de côté (blocs) ou de face (objets).']],
+            ['1.19.3', ['Les textures des modèles doivent être dans un dossier que les atlas de textures du jeu lisent, comme ', code('textures/block/'), ' ou ', code('textures/item/'), '.']],
+            ['1.21.4', ['Les définitions de modèles d’objets dans ', code('items/'), ' choisissent le modèle d’un objet, aussi selon l’endroit où il s’affiche.']],
+            ['1.21.6', 'Les cubes peuvent tourner de n’importe quel angle entre -45° et 45°.'],
+            ['1.21.9', ['Nouvel emplacement d’affichage ', code('on_shelf'), '.']],
+            ['1.21.11', 'Les cubes peuvent tourner sur plusieurs axes à la fois, de n’importe quel angle.'],
+          ],
+        ),
+        p('L’éditeur de modèles suit ces règles pour la version pour laquelle ton pack est fait.'),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'L’installer et le tester',
+      body: [
+        steps([
+          ['Appuie sur ', strong('Done'), ' pour quitter l’éditeur de modèles, puis exporte le pack (', strong('Export'), ') en ', code('.zip'), '.'],
+          ['Dans Minecraft, ouvre ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', dépose le zip dedans (sans le décompresser) et passe le pack dans ', strong(JAVA.selected), ', au-dessus des autres packs.'],
+          'Prends l’objet en main, appuie sur F5 pour la troisième personne, jette-le au sol et mets-le dans un cadre pour vérifier chaque affichage.',
+          'Après avoir changé le modèle, exporte à nouveau, remplace le zip et appuie sur F3 + T dans le jeu pour recharger les packs.',
+        ]),
+        p('Plus d’aide : ', link('/guides/install-resource-packs', 'Comment installer des packs de ressources'), ' et ', link('/guides/texture-pack-not-working', 'Pack de textures qui ne marche pas'), '.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Les packs Bedrock marchent autrement, et l’éditeur de modèles ne fait que des modèles Java :'),
+        ul([
+          [strong('Blocs : '), 'un pack de ressources Bedrock ne peut pas changer la forme des blocs du jeu. Un bloc de forme perso est un nouveau bloc, ajouté par un add-on avec un pack de comportements et un fichier de géométrie.'],
+          [strong('Objets en main : '), 'Bedrock donne aux objets un modèle 3D en main avec des attachables, des fichiers de pack de ressources qui utilisent la géométrie et les animations de Bedrock. Le Texture Pack Maker ne les fait pas ; ', ext('https://www.blockbench.net/', 'Blockbench'), ' oui.'],
+          [strong('Un point de départ : '), 'dans le menu de l’éditeur de modèles, ', strong('Download as Bedrock geometry'), ' enregistre ton modèle dans un fichier ', code('.geo.json'), ' (format 1.12.0, un seul os, tous les cubes) à importer dans Blockbench ou un add-on. La géométrie Bedrock utilise une seule texture, donc chaque face garde sa place sur sa propre texture.'],
+        ]),
+        p('Dans un pack Bedrock, ', strong('Edit shape'), ' explique ça au lieu d’ouvrir l’éditeur. Peindre les textures marche comme d’habitude.'),
+      ],
+    },
+    {
+      id: 'problems',
+      title: 'Problèmes courants',
+      body: [
+        ul([
+          [strong('Des faces violettes et noires : '), 'une face utilise une texture que le jeu ne trouve pas : un nom (', code('#…'), ') qui n’est pas défini dans ', code('textures'), ', un fichier qui n’est ni dans le jeu ni dans le pack, ou, depuis la 1.19.3, une texture hors des dossiers d’atlas. L’onglet Model liste ces problèmes avec le cube concerné.'],
+          [strong('Un cube violet et noir à la place du modèle : '), 'le fichier ne s’est pas chargé. Les causes habituelles sont un JSON cassé, un cube hors de -16 à 32, ou une rotation que la version n’autorise pas. Le journal du jeu donne le nom du fichier.'],
+          [strong('Le modèle ne s’affiche pas du tout : '), 'vérifie que le pack est sélectionné et au-dessus des autres packs, que le fichier a exactement le nom et le dossier du modèle qu’il remplace, et, en 1.21.4 et plus récent, qu’un nouveau modèle (comme une copie ', code('_3d'), ') a une définition d’objet qui pointe vers lui.'],
+          [strong('Bien en main, bizarre dans l’inventaire : '), ['règle l’affichage Inventory, essaie l’autre éclairage d’inventaire (de côté ou de face), ou active ', strong('Flat in the inventory'), '.']],
+          [strong('Trop de cubes : '), 'chaque cube ajoute des faces à dessiner. Ça compte peu pour un objet dans ta main, mais un bloc posé des milliers de fois doit rester simple. Garde les cubes réunis que fait 3D item from sprite au lieu de les découper.'],
+          [strong('Un angle n’est pas autorisé : '), 'avant la 1.21.6, un cube tourne par pas de 22,5° jusqu’à 45°, sur un seul axe. Pour un quart de tour, échange plutôt la taille du cube sur deux axes ; pour d’autres formes, construis-les avec plus de cubes.'],
+        ]),
+        p('D’autres solutions pour les packs en général : ', link('/guides/texture-pack-not-working', 'Ton pack de textures ne marche pas ? Solutions'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'mods',
+      q: 'Faut-il OptiFine ou un mod pour les objets 3D ?',
+      a: [p('Non. Les packs de ressources Java peuvent remplacer les modèles de blocs et d’objets depuis la 1.8, donc un pack avec des fichiers de modèles marche dans le jeu normal. Il change chaque objet de ce type.')],
+    },
+    {
+      id: 'renamed',
+      q: 'Seul un objet renommé peut être en 3D ?',
+      a: [
+        p(
+          'Pas avec un simple changement de modèle. Les packs qui ne changent que les objets renommés utilisent les textures d’objets perso (CIT) d’OptiFine ou un mod qui les lit. Depuis la 1.21.4, les définitions d’objets peuvent aussi choisir un modèle selon ',
+          code('custom_model_data'),
+          ', que les serveurs et les créateurs de cartes règlent avec des commandes. L’éditeur de modèles change chaque objet d’un type.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      q: 'Je peux faire des objets 3D sur Bedrock ?',
+      a: [p('Oui, avec des attachables dans un pack de ressources Bedrock, faits dans un outil comme Blockbench. Cet éditeur de modèles fait des modèles Java, mais il peut télécharger un modèle en géométrie Bedrock pour partir de là. Les packs de ressources Bedrock ne peuvent pas changer la forme des blocs du jeu.')],
+    },
+    {
+      id: 'blockbench',
+      q: 'Je peux utiliser des modèles faits dans Blockbench ?',
+      a: [p('Oui. Les modèles de blocs et d’objets Java exportés depuis Blockbench sont des fichiers de modèles ordinaires. Mets-les dans ton pack sous le nom du modèle qu’ils remplacent et ouvre le pack avec ', strong('Open a pack'), ' : les fichiers sont gardés, et l’éditeur de modèles peut les ouvrir et les changer.')],
+    },
+    {
+      id: 'undo',
+      q: 'Comment revenir à la forme d’origine ?',
+      a: [p('Dans le menu de l’éditeur de modèles, choisis ', strong('Put back the original model'), '. Tes fichiers pour ce modèle sont retirés du pack et le modèle du jeu est à nouveau utilisé.')],
+    },
+    {
+      id: 'phone',
+      q: 'Je peux faire des objets 3D sur téléphone ?',
+      a: [p('Oui. Sur un téléphone, la vue 3D est au-dessus des panneaux et tu travailles au toucher. Le pack doit quand même être un pack Java, donc tu y joues sur un ordinateur.')],
+    },
+  ],
+  ctaLabel: 'Ouvrir le Texture Pack Maker',
+};
+
+const pvpPack: GuideText = {
+  image: SHOTS.pvpTweaks,
+  intro: [
+    p(
+      'Un pack de textures PvP change ce qui te gêne pendant un combat : le feu qui couvre la moitié de l’écran quand tu brûles, le verre à travers lequel tu ne vois rien, la vue sombre de la citrouille, un gros viseur et une épée qui cache le joueur que tu frappes. Les packs FPS vont plus loin et rendent les textures plus petites et immobiles, pour que les ordinateurs moins puissants suivent. Tout ça, ce sont des fichiers de pack de ressources ordinaires, sans mods. Le ',
+      link('/textures', 'Texture Pack Maker'),
+      ' les fait dans ton navigateur avec un interrupteur pour chacun, pour Java 1.8.9 (la version autour de laquelle beaucoup de serveurs PvP sont construits) jusqu’à la ',
+      LATEST,
+      ', et en partie pour Bedrock.',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Dans le Texture Pack Maker, choisis ', strong('PvP / FPS pack'), ' et la version de Minecraft à laquelle tu joues, puis ', strong('Create PvP pack'), '.'],
+      ['Dans l’onglet ', strong('PvP'), ', choisis la hauteur du feu, le viseur, la taille des épées et les options FPS que tu veux.'],
+      ['Exporte le pack et sélectionne-le dans Minecraft au-dessus de tes autres packs.'],
+    ],
+  },
+  howto: { name: 'Comment faire un pack de textures PvP avec Texture Pack Maker', steps: PVP_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Ce qu’un pack PvP change',
+      body: [
+        p('La plupart des packs PvP et FPS, des packs Bedwars aux packs « FPS boost », sont un mélange des mêmes quelques changements. Chacun ci-dessous est un interrupteur dans l’onglet PvP de l’éditeur :'),
+        table(
+          ['Changement', 'Ce qu’il fait', 'Java', 'Bedrock'],
+          [
+            ['Feu bas', 'Les flammes sur ton écran quand tu brûles sont plus basses.', 'Toutes les versions', 'Non'],
+            ['Verre transparent', 'Le verre, le verre teinté et les vitres sont transparents à l’intérieur et gardent leur bordure.', 'Toutes les versions', 'Oui'],
+            ['Sans le flou de la citrouille', 'Une citrouille sculptée sur ta tête n’assombrit plus l’écran.', 'Toutes les versions', 'Oui'],
+            ['Viseur perso', 'Un viseur plus petit : un point, une petite croix, une croix avec un trou, un cercle ou un X, ou un que tu dessines.', 'Toutes les versions', 'Oui'],
+            ['Épées plus petites', 'Les épées, ou toutes les armes, ont l’air plus petites et plus basses à la première personne.', '1.8 et plus récent', 'Non'],
+            ['Bouclier plus bas', 'Le bouclier est plus bas à la première personne, aussi quand tu te protèges.', '1.9 et plus récent', 'Non'],
+            ['Textures 8×', 'Les blocs (et les objets) en 8 × 8 pixels.', 'Toutes les versions', 'Oui'],
+            ['Sans animations', 'L’eau, la lave, le feu et les portails restent immobiles.', 'Toutes les versions', 'Non'],
+          ],
+        ),
+        p('Chaque interrupteur écrit des fichiers de pack normaux, donc tu peux toujours peindre par-dessus. En désactiver un remet les fichiers qu’il a changés, sauf ceux que tu as peints ou modifiés depuis. Le tableau à la fin liste les fichiers exacts pour chaque version.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'Faire un pack PvP pas à pas',
+      body: [steps(PVP_STEPS), figure(SHOTS.pvpStart), figure(SHOTS.pvpTweaks)],
+    },
+    {
+      id: 'fire',
+      title: 'Feu bas',
+      body: [
+        p(
+          'Java dessine le feu sur l’écran avec une seule texture : ',
+          code('textures/block/fire_1.png'),
+          ' (',
+          code('textures/blocks/fire_layer_1.png'),
+          ' avant la 1.13). C’est une bande animée de 32 images, et Low fire descend les flammes de chaque image de 5, 8 ou 11 pixels sur 16 (',
+          strong('Low'),
+          ', ',
+          strong('Lower'),
+          ', ',
+          strong('Lowest'),
+          '), pour que le haut de ton écran reste dégagé. L’animation continue de tourner.',
+        ),
+        p(
+          'Les blocs de feu utilisent la même texture, donc un simple pack de feu bas donne aussi l’impression que le feu dans le monde est coupé. Avec ',
+          enLabel('Keep fire blocks as they are'),
+          ' (Java 1.8 et plus récent), le pack reçoit une copie de la texture d’origine, ',
+          code('fire_1_world.png'),
+          ', et les modèles des blocs de feu pointent vers elle. Les joueurs et les créatures en feu montrent toujours les flammes plus basses.',
+        ),
+      ],
+    },
+    {
+      id: 'glass',
+      title: 'Verre transparent et sans le flou de la citrouille',
+      body: [
+        p(
+          'Clear glass garde l’anneau de pixels extérieur, un pixel en 16× et deux en 32×, et rend tout l’intérieur transparent. Ça concerne ',
+          code('glass.png'),
+          ' et les 16 textures de verre teinté (',
+          code('red_stained_glass.png'),
+          ', etc. ; avant la 1.13 ',
+          code('glass_red.png'),
+          ', avec ',
+          code('glass_silver.png'),
+          ' pour le gris clair). Les vitres utilisent les mêmes textures, donc elles deviennent transparentes aussi. Choisis ',
+          strong('Light tint'),
+          ' pour garder une légère couleur dans le verre teinté, pour que les équipes puissent toujours distinguer les couleurs.',
+        ),
+        p('No pumpkin blur remplace ', code('textures/misc/pumpkinblur.png'), ', l’image que le jeu pose sur ta vue quand tu portes une citrouille sculptée, par une image complètement transparente de la même taille. Sur Bedrock, le fichier est aussi ', code('textures/misc/pumpkinblur.png'), '.'),
+      ],
+    },
+    {
+      id: 'crosshair',
+      title: 'Viseur perso',
+      body: [
+        p('L’endroit où se trouve le viseur dépend de la version :'),
+        ul([
+          [strong('Java 1.20.1 et avant, et Bedrock : '), 'le carré de 16 × 16 en haut à gauche de ', code('textures/gui/icons.png'), ', une planche qui contient aussi les icônes des cœurs, de la faim et de l’armure. Seul ce carré change.'],
+          [strong('Java 1.20.2 et plus récent : '), 'son propre fichier de 15 × 15, ', code('textures/gui/sprites/hud/crosshair.png'), '.'],
+        ]),
+        p(
+          'Choisis l’un des cinq dessins faits pour l’éditeur, ou appuie sur ',
+          strong('Draw your own'),
+          ' : l’éditeur ouvre la texture du viseur et, sur une planche, sélectionne le carré du viseur pour toi. Java dessine le viseur en inversant ce qu’il y a derrière, donc peins-le en blanc ou en gris ; les autres couleurs sortent changées. Le jeu le centre sur le pixel du milieu, (7, 7).',
+        ),
+        figure(SHOTS.pvpCrosshair),
+      ],
+    },
+    {
+      id: 'swords',
+      title: 'Des épées plus petites et un bouclier plus bas',
+      body: [
+        p(
+          'La façon dont un objet est tenu en main vient de la partie ',
+          code('display'),
+          ' de son fichier de modèle : une rotation, une position et une taille pour chaque endroit où il s’affiche. Smaller swords ne règle que les emplacements à la première personne, à 80, 65 ou 50 % de la taille et un peu plus bas, pour que la poignée reste près de ta main. Les autres joueurs, la troisième personne et l’inventaire montrent toujours l’épée normale. ',
+          strong('All weapons'),
+          ' fait la même chose pour les haches, la masse et les lances, quand ta version les a.',
+        ),
+        p('Java 1.8 a un seul emplacement, ', code('firstperson'), ', dans le fichier de chaque épée. Voici l’épée en diamant en ', strong('Smaller'), ' :'),
+        pre(PVP_SWORD_189.trimEnd()),
+        p(
+          'Depuis la 1.9, il y a deux emplacements, ',
+          code('firstperson_righthand'),
+          ' et ',
+          code('firstperson_lefthand'),
+          ', et les épées les empruntent à ',
+          code('item/handheld'),
+          '. Le fichier garde son parent, donc l’épée reste un objet plat, et reçoit les deux emplacements :',
+        ),
+        pre(PVP_SWORD_LATEST.trimEnd()),
+        p(
+          'Lower shield descend le bouclier de 3 ou 6 pixels dans ',
+          code('models/item/shield.json'),
+          ' et ',
+          code('shield_blocking.json'),
+          ' (Java 1.9 et plus récent ; depuis la 1.21.4, le jeu lit toujours la position du bouclier en main dans ces fichiers). Si tu as fait ton propre modèle d’épée ou de bouclier dans l’',
+          link('/guides/make-3d-items-texture-pack', 'éditeur de modèles'),
+          ', seuls ses emplacements à la première personne changent et ta forme reste.',
+        ),
+      ],
+    },
+    {
+      id: 'fps',
+      title: 'FPS boost : textures 8× et sans animations',
+      body: [
+        p(
+          strong('8× textures'),
+          ' réduit les textures des blocs, et des objets si tu veux, à 8 × 8 pixels à l’export. Les feuilles, le verre et les plantes gardent des bords nets. ',
+          strong('No animations'),
+          ' ne garde que la première image des textures animées et retire leur animation du fichier ',
+          code('.mcmeta'),
+          ', donc le jeu ne les met plus à jour à chaque tick (Java ; les boussoles et les montres marchent toujours). Les deux sont des couches d’effets, listées aussi dans l’onglet Effects, donc tes propres textures ne sont pas modifiées.',
+        ),
+        callout(
+          'info',
+          'C’est plus rapide de combien ?',
+          'Des textures plus petites et immobiles utilisent moins de mémoire vidéo et moins de travail par image, ce qui aide surtout les vieux ordinateurs et les puces graphiques intégrées. Les plus gros gains de FPS viennent de la distance d’affichage, des particules et de mods comme Sodium ou OptiFine, qu’un pack de textures ne peut pas changer.',
+        ),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Quels fichiers vont dans le pack',
+      body: [
+        table(
+          ['', ...PVP_EXAMPLE_FILES.map((e) => e.label)],
+          [
+            ['Feu bas', ...PVP_EXAMPLE_FILES.map((e) => (e.files.lowFire ? code(e.files.lowFire) : '—'))],
+            ['Verre transparent', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.glass))],
+            ['Sans le flou de la citrouille', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.pumpkin))],
+            ['Viseur', ...PVP_EXAMPLE_FILES.map((e) => code(e.files.crosshair))],
+            ['Épées plus petites', ...PVP_EXAMPLE_FILES.map((e) => (e.files.sword ? code(e.files.sword) : '—'))],
+            ['Bouclier plus bas', ...PVP_EXAMPLE_FILES.map((e) => (e.files.shield ? code(e.files.shield) : '—'))],
+          ],
+        ),
+        p('Le verre représente chaque texture de verre à côté, et l’épée chaque épée. L’éditeur trouve les chemins pour la version de ton pack, donc tu n’as pas à le faire.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Le verre transparent, l’absence de flou de citrouille, le viseur et les textures 8× marchent dans un pack Bedrock. Les autres y sont désactivés, avec la raison :'),
+        ul([
+          [strong('Feu bas : '), 'Bedrock dessine le feu sur ton écran à sa façon, qu’un pack de textures ne peut pas abaisser de manière fiable.'],
+          [strong('Épées et bouclier : '), 'Bedrock place les objets en main avec des fichiers attachables, comme les add-ons, que l’éditeur ne fait pas.'],
+          [strong('Sans animations : '), 'Bedrock joue les textures animées à partir d’une liste d’images dans ', code('flipbook_textures.json'), ' qu’un pack ne peut pas retirer.'],
+        ]),
+        figure(SHOTS.pvpBedrock),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'L’installer et le tester',
+      body: [
+        steps([
+          ['Appuie sur ', strong('Export'), ' et télécharge le ', code('.zip'), ' (Java) ou le ', code('.mcpack'), ' (Bedrock).'],
+          ['Java : ouvre ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', dépose le zip dedans et passe le pack tout en haut de ', strong(JAVA.selected), '. Bedrock : ouvre le .mcpack et active le pack dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+          'Mets-toi le feu, regarde à travers du verre, porte une citrouille et prends une épée et un bouclier en main pour vérifier chaque changement.',
+        ]),
+        p(
+          'Pas ce que tu attendais ? Un autre pack au-dessus du tien remplace peut-être les mêmes fichiers. Plus d’aide : ',
+          link('/guides/install-resource-packs', 'Comment installer des packs de ressources'),
+          ' et ',
+          link('/guides/texture-pack-not-working', 'Pack de textures qui ne marche pas'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'allowed',
+      q: 'Les packs de textures PvP sont autorisés sur les serveurs ?',
+      a: [p('Un pack de textures ne change que l’apparence du jeu, et les changements d’ici (feu plus bas, verre transparent, épée plus petite) sont du genre que la plupart des serveurs autorisent. Les packs qui montrent des choses que tu ne pourrais pas voir autrement, comme les minerais à travers la roche, sont en général interdits. Chaque serveur a ses propres règles, donc vérifie-les.')],
+    },
+    {
+      id: 'fps',
+      q: 'Un pack FPS donne vraiment plus de FPS ?',
+      a: [p('Un peu, surtout sur les ordinateurs moins puissants : les textures 8× utilisent moins de mémoire vidéo et les textures immobiles économisent du travail à chaque tick. Sur un PC rapide, la différence est faible. La distance d’affichage, les particules et des mods comme Sodium ou OptiFine comptent beaucoup plus.')],
+    },
+    {
+      id: 'version',
+      q: 'Pour quelle version faire mon pack PvP ?',
+      a: [p('La version à laquelle tu joues. Beaucoup de serveurs PvP tournent en 1.8.9, et un pack 1.8.9 a des noms de fichiers différents d’un pack récent. Pour utiliser un pack sur plusieurs versions, règle une plage dans l’onglet ', strong('Pack'), ' : le jeu l’affiche comme compatible, mais les fichiers ne marchent que là où les noms correspondent.')],
+    },
+    {
+      id: 'short',
+      q: 'Je peux faire une épée courte au lieu d’une petite épée ?',
+      a: [p('Oui : peins une lame plus courte sur la texture de l’épée, comme beaucoup de packs 1.8.9. Ça change l’épée partout, aussi dans l’inventaire et dans les mains des autres joueurs. Smaller swords ne change que la taille qu’elle a l’air d’avoir dans ta propre main. Tu peux faire les deux.')],
+    },
+    {
+      id: 'crosshair',
+      q: 'Pourquoi mon viseur coloré n’a pas la bonne couleur ?',
+      a: [p('Java dessine le viseur en inversant ce qu’il y a derrière, donc un viseur blanc paraît sombre sur un ciel clair et clair sur un sol sombre. Les couleurs se mélangent avec le fond de la même façon. Utilise du blanc ou du gris.')],
+    },
+    {
+      id: 'mods',
+      q: 'Un pack de textures peut ajouter un zoom, un compteur de FPS ou enlever le brouillard ?',
+      a: [p('Non. Le zoom, l’affichage des FPS et des touches, le sprint automatique, enlever le brouillard et le flou de mouvement demandent un mod (OptiFine, Sodium et d’autres), un client PvP ou les réglages du jeu. Un pack ne change que les textures, les modèles, les sons et les fichiers de ce genre.')],
+    },
+  ],
+  ctaLabel: 'Faire un pack PvP',
 };
 
 export const GUIDES: Record<string, GuideText> = {
