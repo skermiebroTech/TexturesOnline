@@ -1,5 +1,6 @@
 // The translated editors in Chromium: the converter in German, the merger in Japanese and
-// Portuguese, the totem maker in Spanish, and all three in Russian. Each is driven through its main states (pack opened,
+// Portuguese, the totem maker in Spanish, all three in Russian, and all three plus Pack Doctor and
+// the font maker in French. Each is driven through its main states (pack opened,
 // version list, conversion or merge report, skin chosen, pixel editor) and every state is checked
 // for English left in the visible text and labels, for content wider than the screen or clipped
 // labels, and for console errors, at 1280 and 390 px wide in the dark and the light theme.
