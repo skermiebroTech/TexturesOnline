@@ -6,10 +6,10 @@ const FR: PvpLanguage = {
   'textures.pvp': {
     intro: 'Ce que changent les packs PvP et FPS, en un clic chacun, pour {version}. Chaque réglage écrit des fichiers normaux dans ton pack : tu peux toujours les peindre, et en désactiver un remet les fichiers comme avant.',
     preset: {
-      button: 'Activer le preset PvP',
+      button: 'Activer le préréglage PvP',
       hint: 'Feu bas, verre transparent, pas de flou de citrouille, un viseur plus net, des épées plus petites et un bouclier plus bas, là où cette version les a.',
-      applied: 'Preset PvP : {count, plural, one {# réglage activé} other {# réglages activés}}',
-      none: 'Tous les réglages du preset sont déjà activés.',
+      applied: 'Préréglage PvP : {count, plural, one {# réglage activé} other {# réglages activés}}',
+      none: 'Tous les réglages du préréglage sont déjà activés.',
     },
     groups: { pvp: 'PvP', fps: 'FPS' },
     switchLabel: '{name} : activé ou désactivé',
