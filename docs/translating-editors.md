@@ -4,6 +4,8 @@ The public pages (home, help, guides, tool introductions) are translated in `src
 The editors themselves (start screens, panels, dialogs, toasts, tooltips, aria-labels, errors) use
 a separate, lighter system: `src/i18n/editor-text.ts`. Languages: `de` (du), `es` (tú), `pt-br`
 (você), `ja` (です/ます), `ru` (ты). English is the source of truth and stays byte-identical.
+`fr` (tu) has its public pages but no editor files yet: its editors show English until they come
+(the unit tests skip a language whose `src/ui/i18n/<lang>.ts` does not exist).
 
 ## Layout
 
@@ -146,7 +148,10 @@ still share one language file. English pages never load a language file. Check w
   ru_ru names for blocks, items and mobs (Броня, Отделка, Тотем бессмертия, Гардеробная). In-game menu
   paths use the game's own names (de Optionen → Ressourcenpakete, es Opciones → Paquetes de
   recursos, pt-br Opções → Pacotes de recursos, ja 設定 → リソースパック, ru Настройки → Наборы
-  ресурсов; Bedrock Настройки → Глобальные ресурсы).
+  ресурсов; Bedrock Настройки → Глобальные ресурсы). fr (public pages, `src/i18n/fr/game-ui.ts`):
+  "pack de textures", "pack de ressources", "un skin" (masculine, as the game's fr_FR "Skins
+  classiques"), "pack de shaders", Graphismes éclatants, Vestiaire, Totem d'immortalité, Élytres;
+  menus Options... → Packs de ressources..., Bedrock Paramètres → Ressources globales.
 - **Touch screens**: a hint that says "Click", "Double-click" or names a key gets a twin ending in
   `Touch` (`partsHint` / `partsHintTouch`) with "Tap" / "Double-tap" and no keyboard. The code picks
   one when the text is shown (`byPointer(mouse, touch)` in `textures/ui/media.ts`, by
