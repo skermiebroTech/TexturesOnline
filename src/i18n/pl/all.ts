@@ -60,7 +60,7 @@ export const ALL: AllText = {
     presets: { title: 'Presety i podgląd na żywo', desc: 'Zacznij od stylu takiego jak kinowy albo noir i od razu zobacz każdą zmianę.' },
     packEditor: { title: 'Edycja paczki shaderów', desc: 'Otwórz gotową paczkę shaderów, zmień jej opcje albo pliki i pobierz ją znowu.' },
     app: { title: 'Zainstaluj jako aplikację', desc: 'Dodaj ją do ekranu początkowego albo na pulpit i używaj offline.' },
-    languages: { title: 'W siedmiu językach', desc: 'Po angielsku, niemiecku, hiszpańsku, portugalsku, japońsku, rosyjsku i polsku. Edytory po polsku już wkrótce.' },
+    languages: { title: 'W siedmiu językach', desc: 'Po angielsku, niemiecku, hiszpańsku, portugalsku, japońsku, rosyjsku i polsku, razem z edytorami.' },
     privacy: { title: 'Nic nie jest wysyłane', desc: 'Bez kont, bez reklam, bez śledzenia. Twoja praca zostaje na twoim urządzeniu.' },
     backup: { title: 'Kopie zapasowe projektów', desc: 'Zapisz jeden projekt albo wszystkie do pliku i otwórz je w innej przeglądarce albo na innym urządzeniu.' },
     openSource: { title: 'Open source', desc: 'Kod jest publiczny na GitHubie, gdzie możesz zgłaszać problemy i proponować pomysły.' },

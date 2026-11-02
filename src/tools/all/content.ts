@@ -246,7 +246,7 @@ export const ALL_EN: AllText = {
     presets: { title: 'Presets and live preview', desc: 'Start from a look such as Cinematic or Noir and see every change straight away.' },
     packEditor: { title: 'Edit a shader pack', desc: 'Open an existing shader pack, change its options or files and download it again.' },
     app: { title: 'Install it as an app', desc: 'Add it to your home screen or desktop and use it offline.' },
-    languages: { title: 'In six languages', desc: 'English, German, Spanish, Portuguese, Japanese and Russian, editors included.' },
+    languages: { title: 'In seven languages', desc: 'English, German, Spanish, Portuguese, Japanese, Russian and Polish, editors included.' },
     privacy: { title: 'Nothing is uploaded', desc: 'No accounts, ads or tracking. Your work stays on your device.' },
     backup: { title: 'Back up your projects', desc: 'Save one project or all of them as a file, and open it in another browser or on another device.' },
     openSource: { title: 'Open source', desc: 'The code is public on GitHub, where you can report problems and suggest ideas.' },
