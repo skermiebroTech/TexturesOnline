@@ -9,6 +9,7 @@ import { UI_ES } from './es/ui';
 import { UI_PT_BR } from './pt-br/ui';
 import { UI_JA } from './ja/ui';
 import { UI_RU } from './ru/ui';
+import { UI_FR } from './fr/ui';
 
 export interface UiText {
   nav: { home: string; textures: string; convert: string; skins: string; shaders: string; help: string; all: string };
@@ -198,7 +199,7 @@ export const UI_EN: UiText = {
   ogImageAlt: OG_IMAGE.alt,
 };
 
-const UI: Record<Locale, UiText> = { en: UI_EN, de: UI_DE, es: UI_ES, 'pt-br': UI_PT_BR, ja: UI_JA, ru: UI_RU };
+const UI: Record<Locale, UiText> = { en: UI_EN, de: UI_DE, es: UI_ES, 'pt-br': UI_PT_BR, ja: UI_JA, ru: UI_RU, fr: UI_FR };
 
 /** Interface texts for a language. */
 export function ui(locale: Locale): UiText {

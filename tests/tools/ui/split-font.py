@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Splits a full Texel build into the file every page loads and an extension loaded on demand.
 
-  <out_base>.woff2      Basic Latin, Latin-1, general punctuation, arrows and the few symbols the UI
-                        uses (about 4 KB: preloaded by every page)
+  <out_base>.woff2      Basic Latin, Latin-1 and French œ Œ Ÿ, general punctuation, arrows and the
+                        few symbols the UI uses (about 4 KB: preloaded by every page)
   <out_base>-ext.woff2  everything else (Latin Extended, Greek, Cyrillic, symbols); the browser only
                         downloads it for text that needs one of those characters (unicode-range)
 
@@ -18,7 +18,7 @@ from fontTools import subset
 from fontTools.ttLib import TTFont
 
 # Keep in step with the first @font-face rules in src/styles/tokens.css.
-CORE = [(0x0000, 0x00FF), (0x2000, 0x206F), (0x20AC, 0x20AC), (0x2122, 0x2122), (0x2190, 0x21FF), (0x2212, 0x2212), (0x2318, 0x2318)]
+CORE = [(0x0000, 0x00FF), (0x0152, 0x0153), (0x0178, 0x0178), (0x2000, 0x206F), (0x20AC, 0x20AC), (0x2122, 0x2122), (0x2190, 0x21FF), (0x2212, 0x2212), (0x2318, 0x2318)]
 
 
 def in_core(cp: int) -> bool:

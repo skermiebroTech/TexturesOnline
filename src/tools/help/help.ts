@@ -50,13 +50,14 @@ export default async function help(root: HTMLElement, ctx: ViewContext): Promise
     });
   };
 
-  // The address keeps the section's fragment (/help/#iris), so it can be copied and shared.
+  // The address keeps the section’s fragment (/help/#iris), so it can be copied and shared; other
+  // query parameters (?ref=…) stay.
   const jump = (id: string, smooth = true) => {
     const target = sectionEl(id);
     if (!target) return;
     const top = target.getBoundingClientRect().top + window.scrollY - 88;
     window.scrollTo({ top, behavior: behavior(smooth) });
-    replacePath(`/help#${id}`);
+    replacePath(`/help${location.search}#${id}`);
     setActive(id);
   };
 
@@ -67,7 +68,7 @@ export default async function help(root: HTMLElement, ctx: ViewContext): Promise
     // On a page load the browser may already have scrolled to it (the fragment is its id): no jump then.
     const top = d.getBoundingClientRect().top;
     if (smooth || top < 0 || top > window.innerHeight / 2) d.scrollIntoView({ block: 'center', behavior: behavior(smooth) });
-    replacePath(`/help#${id}`);
+    replacePath(`/help${location.search}#${id}`);
     setActive('faq');
   };
 

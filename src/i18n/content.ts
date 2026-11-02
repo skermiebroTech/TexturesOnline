@@ -58,6 +58,7 @@ const LOADERS: Record<TranslatedLocale, () => Promise<{ CONTENT: LocaleContent }
   'pt-br': () => import('./pt-br/content'),
   ja: () => import('./ja/content'),
   ru: () => import('./ru/content'),
+  fr: () => import('./fr/content'),
 };
 
 /**
@@ -86,4 +87,5 @@ export const CONTENT_MODULES: Record<TranslatedLocale, string> = {
   'pt-br': 'src/i18n/pt-br/content.ts',
   ja: 'src/i18n/ja/content.ts',
   ru: 'src/i18n/ru/content.ts',
+  fr: 'src/i18n/fr/content.ts',
 };

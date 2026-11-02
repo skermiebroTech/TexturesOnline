@@ -379,7 +379,7 @@ test('interface texts exist for every language and differ from English', () => {
   const flat = (o: unknown, prefix = ''): [string, string][] =>
     Object.entries(o as Record<string, unknown>).flatMap(([k, v]) => (typeof v === 'object' && v ? flat(v, `${prefix}${k}.`) : typeof v === 'function' ? [[`${prefix}${k}`, String((v as (x: never) => string)('2026-10-12' as never))]] : [[`${prefix}${k}`, String(v)]]));
   const en = new Map(flat(UI_EN));
-  const SAME_OK = /^(nav\.(skins|shaders)|footer\.faq|notFound\.help|nav\.help|menu|guides|footer\.guides|toolIntro\.guides|guide|folderTable\.system)$/;
+  const SAME_OK = /^(nav\.(skins|shaders|textures)|footer\.faq|notFound\.help|nav\.help|menu|guides|footer\.guides|toolIntro\.guides|guide|folderTable\.system)$/;
   for (const l of TRANSLATED_LOCALES) {
     const t = new Map(flat(ui(l)));
     assert.deepEqual([...t.keys()].sort(), [...en.keys()].sort(), `${l} has every key`);

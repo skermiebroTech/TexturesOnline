@@ -77,7 +77,8 @@ test('bundled table covers every manifest release since 1.6.1', { skip: !existsS
   for (const v of releases) assert.ok(bundledPackFormat(v.id, v.releaseTime, v.type), `missing ${v.id}`);
   const all = filterResourcePackVersions(manifest, true);
   assert.ok(all.length > 800);
-  assert.equal(all[0].id, '26.4-snapshot-1');
+  // newest first: the manifest's own newest entry (the fixture is refreshed as snapshots come out)
+  assert.equal(all[0].id, manifest.versions[0].id);
   assert.ok(!all.some((v) => v.type === 'old_alpha' || v.type === 'old_beta'));
   assert.equal(all[all.length - 1].id, '13w24a');
 });
