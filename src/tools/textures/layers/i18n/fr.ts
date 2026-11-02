@@ -1,0 +1,55 @@
+// French text of the paint layers of the texture pack editor (English source: ./text.ts).
+
+import type { LayersLanguage } from './load';
+
+const FR: LayersLanguage = {
+  'textures.layers': {
+    button: 'Calques',
+    buttonHint: 'Calques : peins sur des calques séparés, comme dans un logiciel de dessin',
+    buttonActive: 'Calques ({count}) : tu peins sur « {name} »',
+    title: 'Calques',
+    close: 'Fermer',
+    list: 'Calques, du haut vers le bas',
+    layerName: 'Calque {n}',
+    gameName: 'Texture du jeu',
+    copyName: '{name} copie',
+    add: 'Nouveau calque',
+    duplicate: 'Dupliquer le calque',
+    delete: 'Supprimer le calque',
+    mergeDown: 'Fusionner vers le bas',
+    flatten: 'Aplatir en un seul calque',
+    moveUp: 'Monter',
+    moveDown: 'Descendre',
+    rename: 'Renommer',
+    nameLabel: 'Nom du calque',
+    show: 'Afficher le calque',
+    hide: 'Masquer le calque',
+    lock: 'Verrouiller le calque',
+    unlock: 'Déverrouiller le calque',
+    locked: 'Verrouillé',
+    hiddenTag: 'Masqué',
+    fromGame: 'Nouveau calque à partir de la texture du jeu',
+    more: 'Plus d’actions sur le calque',
+    opacity: 'Opacité',
+    blend: 'Fusion',
+    blends: {
+      normal: 'Normal',
+      multiply: 'Produit',
+      screen: 'Superposition claire',
+      lighten: 'Éclaircir',
+      overlay: 'Incrustation',
+    },
+    rowHint: 'Double-clique pour renommer, fais glisser pour changer l’ordre',
+    note: 'Le pack reçoit les calques aplatis en une seule image.',
+    noteFrames: 'Les calques passent sur toutes les images. Le pack les reçoit aplatis.',
+    lockedToast: '« {name} » est verrouillé. Déverrouille-le pour peindre dessus.',
+    hiddenToast: '« {name} » est masqué. Affiche-le pour peindre dessus.',
+    pickLayer: 'Ce calque seulement',
+    pickLayerHint: 'Prendre les couleurs du calque sur lequel tu peins plutôt que de ce qui s’affiche',
+    replacedLayer: 'Les pixels de « {name} » ont été remplacés.',
+    dropped: 'Cette texture a été changée en dehors des calques, elle n’a donc plus qu’un calque.',
+    importFlattens: 'Les images importées remplacent tous les calques.',
+  },
+};
+
+export default FR;
