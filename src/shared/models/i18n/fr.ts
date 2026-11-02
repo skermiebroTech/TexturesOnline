@@ -254,8 +254,8 @@ const FR: ModelsLanguage = {
       bedrockNoTextures: 'Ce bloc n’a pas de textures à lui.',
       bedrockCube: 'Bedrock construit la forme de ce bloc dans le jeu et il n’y a pas de modèle de bloc correspondant : il est montré comme un simple cube avec les textures que blocks.json donne à chaque face.',
       bedrockEngine: 'Bedrock construit la forme de ce bloc dans le jeu. Les formes sont lues dans les modèles de blocs du jeu, qui n’ont pas pu être chargés (il faut une connexion Internet la première fois) : il est donc montré comme un simple cube avec les textures que blocks.json donne à chaque face.',
-      oldJava: 'Minecraft {version} dessine les blocs avec son propre code : les fichiers de modèles de blocs sont arrivés en 1.8. Utilise Toutes les textures pour les modifier.',
-      bedrockList: 'La liste des blocs de cette version de Bedrock n’a pas pu être chargée. Vérifie ta connexion, ou utilise Toutes les textures.',
+      oldJava: 'Minecraft {version} dessine les blocs avec son propre code : les fichiers de modèles de blocs sont arrivés en 1.8. Ouvre-les avec Toutes, la liste de toutes les textures.',
+      bedrockList: 'La liste des blocs de cette version de Bedrock n’a pas pu être chargée. Vérifie ta connexion, ou ouvre Toutes, la liste de toutes les textures.',
       bedrockLiquid: 'Les liquides sont dessinés par le jeu à partir de leurs textures immobile et en mouvement, montrés ici comme un bloc source immobile.',
     },
     labels: {

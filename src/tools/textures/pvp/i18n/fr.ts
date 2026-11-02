@@ -23,7 +23,7 @@ const FR: PvpLanguage = {
       crosshair: { title: 'Viseur perso', text: 'Un viseur plus petit et plus net. Le jeu le dessine en inversant ce qui est derrière, le blanc marche donc le mieux.' },
       swords: { title: 'Épées plus petites', text: 'Les épées (ou toutes les armes) paraissent plus petites et plus basses dans ta main à la première personne. Les autres joueurs, la vue à la troisième personne et l’inventaire ne changent pas.' },
       shield: { title: 'Bouclier plus bas', text: 'Ton bouclier est plus bas à l’écran à la première personne, même quand tu pares.' },
-      lowRes: { title: 'Textures 8×', text: 'Les textures des blocs (et des objets, si tu veux) en 8 × 8 pixels : un look plat et net, et moins de mémoire vidéo. Appliqué à l’export.' },
+      lowRes: { title: 'Textures 8×', text: 'Les textures des blocs (et des objets, si tu veux) en 8 × 8 pixels : un look plat et net, et moins de mémoire vidéo. Appliqué à l’export.' },
       still: { title: 'Pas d’animations', text: 'L’eau, la lave, le feu, les portails et les autres textures animées restent immobiles. Appliqué à l’export.' },
     },
     support: {
@@ -65,7 +65,7 @@ const FR: PvpLanguage = {
       blocksItems: 'Blocs et objets',
     },
     draw: {
-      sheet: 'Le viseur est le carré de 16 × 16 dans le coin en haut à gauche, maintenant sélectionné. Peins à l’intérieur.',
+      sheet: 'Le viseur est le carré de 16 × 16 dans le coin en haut à gauche, maintenant sélectionné. Peins à l’intérieur.',
       sprite: 'Voici le viseur. Peins-le en blanc : le jeu l’inverse par-dessus ce qui est derrière.',
     },
     toasts: {

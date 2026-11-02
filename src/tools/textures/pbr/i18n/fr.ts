@@ -98,7 +98,7 @@ const FR: PbrLanguage = {
       areaTouch: 'Sélectionne une zone avec l’outil de sélection dans l’éditeur de pixels, puis utilise-la ici.',
       useSelection: 'Utiliser la zone sélectionnée',
       noSelection: 'Sélectionne d’abord une zone dans l’éditeur de pixels.',
-      areaSize: '{w} × {h} pixels à partir de {x}, {y}',
+      areaSize: '{w} × {h} pixels à partir de {x}, {y}',
       covers: '{count, plural, =0 {Aucun pixel} one {# pixel} other {# pixels}}',
       maskHint: 'Les pixels que cette partie couvre (les autres sont assombris)',
       mapNote: 'Cette texture a une carte venant du pack ou du jeu. Bouger un curseur ici donne plutôt une seule valeur à toute la texture.',

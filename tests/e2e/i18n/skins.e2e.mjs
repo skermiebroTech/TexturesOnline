@@ -565,7 +565,7 @@ try {
       await page.mouse.click(px, py);
       await hoverPixel(page, 18, 20);
       const tip = (await page.textContent('.sk-status-text')) ?? '';
-      check(`fr skins ${tag}: hover names part, face and layer in French`, /Tête · Devant · Couche de base/.test(tip), tip);
+      check(`fr skins ${tag}: hover names part, face and layer in French`, /Tête · Devant · Base/.test(tip), tip);
       await inspect(page, `fr-skins-3-editor-${tag}`, 'fr');
       await showPanel(page, phone, 'left');
       await inspect(page, `fr-skins-4-left-${tag}`, 'fr');

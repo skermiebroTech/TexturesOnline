@@ -39,7 +39,7 @@ const FR: TexturesLanguage = {
       pvp: 'Pack PvP / FPS',
       pvpHint: 'Feu bas, verre transparent, viseur net, épées plus petites',
       fps: 'Aussi un pack FPS',
-      fpsHint: 'Textures de blocs en 8 × 8 et pas d’animations (Java), pour les ordinateurs moins puissants.',
+      fpsHint: 'Textures de blocs en 8 × 8 et pas d’animations (Java), pour les ordinateurs moins puissants.',
       pvpButton: 'Créer le pack PvP',
       pvpName: 'Mon pack PvP',
       failed: 'Impossible de créer le pack',

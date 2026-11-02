@@ -70,7 +70,7 @@ const FR: BiomesLanguage = {
     ignores: 'n’utilise pas cette image',
     inBiome: 'Dans : {biome}',
     onCanvas: 'Afficher les biomes sur le canevas',
-    size: 'Le jeu lit les cartes de couleurs en 256 × 256 pixels. Celle-ci fait {width} × {height}, le jeu prendrait donc les mauvais pixels.',
+    size: 'Le jeu lit les cartes de couleurs en 256 × 256 pixels. Celle-ci fait {width} × {height}, le jeu prendrait donc les mauvais pixels.',
     notesTitle: 'Là où le jeu n’utilise pas cette image',
     notes: {
       swampNoise: 'Herbe des marais et des marais à mangroves : deux verts propres au jeu qui changent selon l’endroit.',

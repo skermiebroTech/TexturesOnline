@@ -88,7 +88,7 @@ const FR: TotemLanguage = {
       title: 'Ton totem',
       text: 'En grand, quand le totem se déclenche et dans une barre d’action.',
       empty: 'Choisis un skin et ton totem apparaît ici.',
-      texture: 'Texture 16 × 16',
+      texture: 'Texture 16 × 16',
       pop: 'Quand il te sauve',
       play: 'Lire',
       playLabel: 'Lire l’animation du totem',
