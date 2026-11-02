@@ -131,6 +131,8 @@ const KEEP = [
   'Olas', 'Bajo', 'Alto', 'OK', 'PNG', 'GPU', 'UUID', 'EV', 'HD', 'MB', 'KB', 'GB', 'Ctrl', 'Shift', 'Alt', 'Esc', 'Enter', 'Home', 'Arrows', 'Tab', 'Mod', 'Low',
 ];
 const ENGLISH = /(?<!\p{L})(the|and|your|with|you|to|of|is|are|this|that|from|can|it|its|were|has|have|not|or|on|by|be|will|choose|drop|download|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo|shadows|preview|settings|fog|water|night|sky|light|lighting)(?!\p{L})/iu;
+/** The same for Polish, where "to" (it, this) and "on" (he) are Polish words too. */
+const ENGLISH_PL = /(?<!\p{L})(the|and|your|with|you|of|is|are|this|that|from|can|it|its|were|has|have|not|or|by|be|will|choose|drop|download|upload|cancel|loading|reading|saving|getting|starting|open|change|remove|keep|pick|try|add|click|browse|edit|undo|redo|shadows|preview|settings|fog|water|night|sky|light|lighting)(?!\p{L})/iu;
 
 function english(texts, locale) {
   const found = [];
@@ -139,7 +141,7 @@ function english(texts, locale) {
     for (const k of KEEP) s = s.split(k).join(' ');
     s = s.replace(/\S*[./_\\0-9:#×]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
-    if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
+    if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : (locale === 'pl' ? ENGLISH_PL : ENGLISH).test(s)) found.push(text);
     // Russian: two Latin words and no Cyrillic is English (or another language) left over.
     else if (locale === 'ru' && words.length >= 2 && !/\p{Script=Cyrillic}/u.test(text)) found.push(text);
   }
@@ -147,16 +149,16 @@ function english(texts, locale) {
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', pl: 'pl' };
 /** A word of each language's start screen, to see the translation arrived. */
-const START = { de: 'Starten', es: 'Empezar', 'pt-br': 'Começar', ja: '始める', ru: 'Начать' };
+const START = { de: 'Starten', es: 'Empezar', 'pt-br': 'Começar', ja: '始める', ru: 'Начать', pl: 'Zacznij' };
 const PLAN = {
   iris: { slider: { key: 'sunStrength', value: '2.35' }, toggle: 'cloudShadows', preset: 'noir' },
   'java-vanilla': { slider: { key: 'contrast', value: '1.37' }, toggle: 'bloom', preset: 'cinematic' },
   'bedrock-vibrant': { slider: { key: 'saturation', value: '1.8' }, toggle: 'waves', preset: 'cinematic' },
 };
 const TARGETS = Object.keys(PLAN);
-const LOCALES = argv.includes('--locales') ? argv[argv.indexOf('--locales') + 1].split(',') : ['de', 'ja', 'es', 'pt-br', 'ru'];
+const LOCALES = argv.includes('--locales') ? argv[argv.indexOf('--locales') + 1].split(',') : ['de', 'ja', 'es', 'pt-br', 'ru', 'pl'];
 
 /** Builds the app and serves it like the shader harness does (tests/harness/shaders-view/serve.sh). */
 async function startPreview() {

@@ -118,7 +118,7 @@ const PL: SkinsLanguage = {
       left: 'Lewy bok',
       back: 'Tył',
     },
-    layers: { base: 'Warstwa podstawowa', outer: 'Warstwa zewnętrzna' },
+    layers: { base: 'Baza', outer: 'Wierzch' },
   },
   'skins.editor': {
     missing: {
@@ -148,8 +148,8 @@ const PL: SkinsLanguage = {
     },
     canvas: {
       layerLabel: 'Warstwa do malowania',
-      base: 'Podstawa',
-      outer: 'Zewnętrzna',
+      base: 'Baza',
+      outer: 'Wierzch',
       both: 'Obie',
       layerTip: 'Na której warstwie malujesz (1 / 2 / 3)',
       paintOn: 'Maluj na',
@@ -189,7 +189,7 @@ const PL: SkinsLanguage = {
     tips: {
       hover: 'Najedź na szablon, żeby zobaczyć, którą część i ścianę malujesz.',
       mirror: 'Włącz Lustro, żeby malować obie ręce albo obie nogi naraz.',
-      outer: 'Czapki, kurtki i rękawy maluj na warstwie zewnętrznej — może być przezroczysta.',
+      outer: 'Czapki, kurtki i rękawy maluj na warstwie zewnętrznej (Wierzch) — może być przezroczysta.',
       lock: 'Zablokuj część na liście Części ciała, żeby nie malować poza nią.',
       shading: 'Rada do cieniowania: Rozjaśnianie i Przyciemnianie dodają głębi.',
       keys: 'Naciśnij ?, żeby zobaczyć wszystkie skróty klawiszowe.',
@@ -223,7 +223,7 @@ const PL: SkinsLanguage = {
       template: 'Szablon 2D',
       model: 'Model 3D',
       animation: 'Animacja',
-      animations: { idle: 'Stoi', walk: 'Chodzi', run: 'Biega', none: 'Bez ruchu' },
+      animations: { idle: 'Luz', walk: 'Chód', run: 'Bieg', none: 'Stop' },
       spin: 'Obracaj automatycznie',
       resetView: 'Resetuj widok (0)',
       picture: 'Zapisz obrazek widoku 3D',
@@ -236,8 +236,8 @@ const PL: SkinsLanguage = {
       hd: 'HD 128',
       sizeTip: 'Skiny HD 128×128 mają dwa razy więcej szczegółów i działają tylko w Bedrocku',
       show: 'Pokaż',
-      base: 'Podstawa',
-      outer: 'Zewnętrzna',
+      base: 'Baza',
+      outer: 'Wierzch',
       backdrop: 'Tło',
       background: 'Tło: {name}',
       backdrops: { studio: 'Studio (przezroczyste)', sky: 'Niebo', night: 'Noc', paper: 'Jasne' },
@@ -541,7 +541,7 @@ const PL: SkinsLanguage = {
       wingEdgeInner: 'Brzeg elytr',
       wingEdgeOuter: 'Brzeg elytr',
     },
-    tags: { outside: 'Zewnątrz', inside: 'Środek', elytra: 'Elytry' },
+    tags: { outside: 'Wierzch', inside: 'Środek', elytra: 'Elytry' },
     canvas: {
       label: 'Tekstura peleryny, 64×32. Maluj bieżącym narzędziem.',
       tools: 'Narzędzia do rysowania',
@@ -559,7 +559,7 @@ const PL: SkinsLanguage = {
       wearLabel: 'Pokaż jako',
       wear: { cape: 'Peleryna', elytra: 'Elytry' },
       animation: 'Animacja',
-      animations: { idle: 'Stoi', walk: 'Chodzi', run: 'Biega', fly: 'Leci' },
+      animations: { idle: 'Luz', walk: 'Chód', run: 'Bieg', fly: 'Lot' },
       skin: 'Skin',
       skinLabel: 'Skin, na którym widać pelerynę',
       yourSkins: 'Twoje skiny',
@@ -682,7 +682,7 @@ const PL: SkinsLanguage = {
     capeLift: 'Unieś pelerynę',
     resetPart: 'Resetuj: {part}',
     resetWhole: 'Resetuj',
-    copyTo: 'Kopiuj na {part}',
+    copyTo: 'Kopiuj do: {part}',
     adjustHint: 'Możesz też przeciągnąć model, żeby obrócić kamerę. Suwaki poruszają jedną częścią naraz.',
     camera: 'Kamera',
     views: {
@@ -708,7 +708,7 @@ const PL: SkinsLanguage = {
     saved: 'Zapisano {file}',
     failed: 'Nie udało się zrobić obrazka.',
     reduced: 'To urządzenie robi obrazki do {size} px, więc obrazek jest trochę mniejszy.',
-    fileSuffix: 'poza',
+    fileSuffix: 'pose',
   },
 };
 
