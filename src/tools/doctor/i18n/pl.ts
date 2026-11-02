@@ -1,0 +1,532 @@
+// Polish text of Pack Doctor (English source: ./text.ts and ./report.ts). Menu names follow the
+// game's pl_pl.json and Bedrock's pl_PL.lang (Paczki zasobów…, Zasoby globalne, Przebieralnia).
+
+import type { DoctorLanguage } from './load';
+
+const PL: DoctorLanguage = {
+  doctor: {
+    hero: {
+      eyebrow: 'Pack Doctor',
+      title: 'Napraw zepsutą {pack} do Minecrafta',
+      pack: 'paczkę tekstur',
+      lead: 'Wrzuć paczkę, która nie działa. Pack Doctor znajdzie, co ją psuje, wyjaśni każdy problem, naprawi to, co da się bezpiecznie naprawić, i da ci naprawioną paczkę. Wszystko dzieje się w twojej przeglądarce: nic nie jest wysyłane.',
+      broken: 'Zepsuta',
+      fixed: 'Naprawiona',
+    },
+    step1: {
+      title: 'Twoja paczka',
+      text: 'Plik .zip, .mcpack albo .mcaddon, który nie działa, albo jego folder.',
+      drop: 'Upuść tu paczkę albo kliknij, żeby wybrać',
+      dropHint: '.zip · .mcpack · .mcaddon · albo folder',
+      folder: 'Wybierz folder',
+      reading: 'Odczytywanie paczki…',
+      change: 'Sprawdź inną',
+      changeTitle: 'Sprawdź inną paczkę',
+      untitled: 'Paczka bez nazwy',
+      files: '{count, plural, one {# plik} few {# pliki} many {# plików} other {# pliku}}',
+      textures: '{count, plural, one {# tekstura} few {# tekstury} many {# tekstur} other {# tekstury}}',
+      emptyFolder: 'Ten folder jest pusty.',
+    },
+    step2: {
+      title: 'Gdzie grasz',
+      text: 'To, co psuje paczkę, zależy od gry, więc wybierz swoją.',
+      java: 'Java Edition',
+      javaDevices: 'PC, Mac i Linux',
+      bedrock: 'Bedrock Edition',
+      bedrockDevices: 'Telefony, tablety, konsole i Windows',
+      version: 'Twoja wersja Javy',
+      hint: 'Sprawdzono dla {target}. Zmień, żeby sprawdzić jeszcze raz.',
+      hintNone: 'Dodaj paczkę, a zostanie od razu sprawdzona.',
+      reset: 'Poprawki dla poprzedniego wyboru zostały cofnięte.',
+    },
+  },
+  'doctor.report': {
+    progress: {
+      title: 'Sprawdzanie paczki…',
+      inBrowser: 'Wszystko dzieje się w twojej przeglądarce.',
+      reading: 'Odczytywanie paczki',
+      gameFiles: 'Pobieranie listy plików: {target}',
+      checking: 'Sprawdzanie każdego pliku',
+      fixing: 'Naprawianie…',
+      round: 'Naprawianie, runda {n}…',
+      building: 'Budowanie naprawionej paczki…',
+      cancelled: 'Sprawdzanie anulowane.',
+    },
+    head: {
+      checkedFor: 'Sprawdzono dla {target}',
+      good: 'Wygląda dobrze',
+      goodText: 'W tej paczce nie ma problemów. Jeśli dalej nie pojawia się w grze, poradnik niżej mówi, co jeszcze sprawdzić.',
+      problems: '{count, plural, one {Znaleziono # problem} few {Znaleziono # problemy} many {Znaleziono # problemów} other {Znaleziono # problemu}}',
+      fixedTitle: 'Naprawiona paczka gotowa',
+      fixedGood: 'Każdy problem, który dało się naprawić, jest naprawiony.',
+      fixedLeft: '{count, plural, one {Został # problem: potrzebuje ciebie.} few {Zostały # problemy: potrzebują ciebie.} many {Zostało # problemów: potrzebują ciebie.} other {Zostało # problemu: potrzebują ciebie.}}',
+      notesOnly: '{count, plural, one {# uwaga} few {# uwagi} many {# uwag} other {# uwagi}} do zapamiętania',
+    },
+    severity: {
+      error: 'Nie wczyta się',
+      broken: 'Częściowo zepsuta',
+      warning: 'Ostrzeżenie',
+      info: 'Uwaga',
+    },
+    groups: {
+      error: 'Paczka się przez to nie wczytuje',
+      broken: 'Psuje część paczki',
+      warning: 'Może sprawiać kłopoty',
+      info: 'Warto wiedzieć',
+    },
+    actions: {
+      fixAll: '{count, plural, one {Napraw # problem} few {Napraw wszystko (#)} many {Napraw wszystko (#)} other {Napraw wszystko (#)}}',
+      fixAllHint: 'Stosuje każdą bezpieczną poprawkę, a potem sprawdza paczkę jeszcze raz.',
+      nothingToFix: 'Żadnego z nich nie da się naprawić automatycznie: zobacz kroki pod każdym.',
+      fix: 'Napraw',
+      applyAnyway: 'Napraw ten',
+      download: 'Pobierz {file}',
+      again: 'Sprawdź inną paczkę',
+      undo: 'Cofnij poprawki',
+      files: '{count, plural, one {# plik} few {# pliki} many {# plików} other {# pliku}}',
+      more: '{count, plural, one {…i # więcej} few {…i # więcej} many {…i # więcej} other {…i # więcej}}',
+      safe: 'Bezpieczna automatyczna poprawka',
+      unsafe: 'Napraw tylko, jeśli tego właśnie chcesz',
+      manual: 'Jak to naprawić',
+      gameSays: 'Co mówi gra',
+      working: 'Pracuję…',
+      failed: 'Nie udało się tego naprawić: {message}',
+    },
+    affects: {
+      label: 'Dotyczy',
+      all: '{edition}, każda wersja',
+      from: '{edition} {from} i nowsze',
+      upTo: '{edition} {to} i starsze',
+      target: '{edition} {version}',
+      mobile: 'Bedrock na Androidzie, iPhonie, iPadzie i konsolach',
+      some: 'Niektóre urządzenia',
+    },
+    after: {
+      title: 'Przed i po',
+      before: 'Przed',
+      after: 'Po',
+      changes: 'Co się zmieniło',
+      nothing: 'Nic nie trzeba było zmieniać.',
+    },
+    change: {
+      rebuilt: 'Zapisano czysty zip ze zwykłymi ścieżkami',
+      extracted: 'Wyjęto paczkę z „{file}”',
+      junk: '{count, plural, one {Pominięto # zbędny plik} few {Pominięto # zbędne pliki} many {Pominięto # zbędnych plików} other {Pominięto # zbędnego pliku}}',
+      created: 'Utworzono {file}',
+      createdMany: '{count, plural, one {Utworzono # plik} few {Utworzono # pliki} many {Utworzono # plików} other {Utworzono # pliku}}',
+      rewritten: 'Zapisano od nowa {file}',
+      rewrittenMany: '{count, plural, one {Zapisano od nowa # plik} few {Zapisano od nowa # pliki} many {Zapisano od nowa # plików} other {Zapisano od nowa # pliku}}',
+      renamed: '{count, plural, one {Zmieniono nazwę # pliku} few {Zmieniono nazwy # plików} many {Zmieniono nazwy # plików} other {Zmieniono nazwy # pliku}}',
+      moved: '{count, plural, one {Przeniesiono # plik} few {Przeniesiono # pliki} many {Przeniesiono # plików} other {Przeniesiono # pliku}}',
+      converted: '{count, plural, one {Zamieniono # obrazek na PNG} few {Zamieniono # obrazki na PNG} many {Zamieniono # obrazków na PNG} other {Zamieniono # obrazka na PNG}}',
+      uuids: 'Paczka dostała nowe UUID',
+      refs: '{count, plural, one {Zaktualizowano ścieżki w # pliku} few {Zaktualizowano ścieżki w # plikach} many {Zaktualizowano ścieżki w # plikach} other {Zaktualizowano ścieżki w # pliku}}',
+      extension: 'Zapisano jako {ext}',
+    },
+    checked: {
+      title: 'Co sprawdzono',
+      zip: 'Plik otwiera się jako zip',
+      layout: 'Paczka jest na samej górze pliku',
+      mcmeta: 'pack.mcmeta jest prawidłowy',
+      format: 'Zrobiona dla {target}',
+      folders: 'Foldery i nazwy tekstur pasują do {target}',
+      names: 'Nazwy plików, które Java akceptuje',
+      images: '{count, plural, one {# obrazek, który gra odczyta} few {# obrazki, które gra odczyta} many {# obrazków, które gra odczyta} other {# obrazka, które gra odczyta}}',
+      json: '{count, plural, one {# plik JSON bez błędów} few {# pliki JSON bez błędów} many {# plików JSON bez błędów} other {# pliku JSON bez błędów}}',
+      refs: '{count, plural, one {# odwołanie między plikami} few {# odwołania między plikami} many {# odwołań między plikami} other {# odwołania między plikami}}',
+      animations: '{count, plural, one {# animowana tekstura} few {# animowane tekstury} many {# animowanych tekstur} other {# animowanej tekstury}}',
+      sounds: '{count, plural, one {# plik dźwiękowy} few {# pliki dźwiękowe} many {# plików dźwiękowych} other {# pliku dźwiękowego}}',
+      manifest: 'manifest.json jest prawidłowy',
+      uuids: 'UUID paczki należą tylko do niej',
+      textureLists: '{count, plural, one {# ścieżka na listach tekstur} few {# ścieżki na listach tekstur} many {# ścieżek na listach tekstur} other {# ścieżki na listach tekstur}}',
+      offline: 'Nie udało się pobrać listy plików samej gry, więc ścieżek do jej tekstur i modeli nie sprawdzono.',
+    },
+    download: {
+      java: 'Wrzuć plik .zip do folderu resourcepacks (Ustawienia… › Paczki zasobów… › Otwórz folder z paczkami), a potem go wybierz. Nie rozpakowuj go. ',
+      bedrock: 'Otwórz plik .mcpack na swoim urządzeniu: Minecraft go zaimportuje. Potem aktywuj go w Ustawienia › Zasoby globalne. ',
+      help: 'Instalowanie paczek',
+      saved: '{count, plural, one {# plik} few {# pliki} many {# plików} other {# pliku}}',
+      failed: 'Nie udało się zbudować naprawionej paczki.',
+    },
+    error: {
+      title: 'Nie udało się sprawdzić paczki',
+      text: 'Spróbuj ponownie albo pobierz paczkę jeszcze raz, na wypadek gdyby plik był uszkodzony.',
+    },
+    links: {
+      converter: 'Otwórz Konwerter paczek tekstur',
+      install: 'Jak zainstalować paczki',
+      shadersHelp: 'Instalowanie paczek shaderów',
+      formats: 'Formaty paczek każdej wersji',
+      textures: 'Otwórz Edytor paczek tekstur',
+      sounds: 'O edytorze dźwięków',
+      skins: 'Otwórz Kreator paczek skinów',
+      notWorking: 'Więcej rozwiązań',
+      bedrockPacks: 'Instalowanie paczek do Bedrocka',
+    },
+    issues: {
+      'zip-damaged': {
+        title: { rar: 'To plik RAR, a nie zip', '7z': 'To plik 7-Zip, a nie zip', other: 'To nie jest plik zip', damaged: 'Zip jest uszkodzony' },
+        text: {
+          rar: 'Minecraft czyta tylko pliki zip (.zip w Javie, .mcpack w Bedrocku).',
+          '7z': 'Minecraft czyta tylko pliki zip (.zip w Javie, .mcpack w Bedrocku).',
+          other: 'Paczki do Minecrafta to pliki zip (.zip w Javie, .mcpack w Bedrocku), a ten plik jest czymś innym.',
+          damaged: 'Pobieranie pewnie zostało przerwane albo plik się uszkodził.',
+        },
+        steps: 'Pobierz paczkę jeszcze raz stamtąd, skąd ją masz. Jeśli przyszła jako .rar albo .7z, najpierw ją rozpakuj i sprawdź .zip, .mcpack albo folder w środku.',
+      },
+      'zip-method': {
+        title: { encrypted: 'Pliki zablokowane hasłem', method: 'Pliki skompresowane tak, że Minecraft ich nie odczyta', damaged: 'Uszkodzone pliki w zipie' },
+        text: {
+          encrypted: '{count, plural, one {# plik jest zablokowany} few {# pliki są zablokowane} many {# plików jest zablokowanych} other {# pliku jest zablokowane}} hasłem i Minecraft nie może ich otworzyć.',
+          method: '{count, plural, one {# plik skompresowano} few {# pliki skompresowano} many {# plików skompresowano} other {# pliku skompresowano}} metodą taką jak LZMA, BZip2 albo Deflate64. Minecraft czyta tylko standardowe zipy Deflate.',
+          damaged: '{count, plural, one {Nie da się odczytać # pliku} few {Nie da się odczytać # plików} many {Nie da się odczytać # plików} other {Nie da się odczytać # pliku}}. Pobieranie mogło zostać przerwane.',
+        },
+        steps: 'Rozpakuj paczkę i spakuj pliki jeszcze raz wbudowanym narzędziem do zipów w komputerze albo 7-Zipem z ustawieniem „Deflate” i bez hasła. Potem sprawdź tu nowy zip.',
+      },
+      'zip-backslash': {
+        title: 'Ścieżki plików używają ukośników wstecznych',
+        text: 'Zip zapisuje ścieżki jak assets\\minecraft\\textures zamiast assets/minecraft/textures. Robią tak niektóre programy do zipów na Windowsie, a wtedy Java nie znajduje ani jednego pliku.',
+        fix: 'Naprawiona paczka jest zapisana ze zwykłymi ukośnikami.',
+      },
+      zip64: {
+        title: 'Zip używa formatu ZIP64',
+        text: 'ZIP64 jest do ogromnych archiwów. Niektóre urządzenia nie zaimportują paczki do Bedrocka zapisanej w ten sposób.',
+        fix: 'Naprawiona paczka jest zapisana jako standardowy zip.',
+      },
+      junk: {
+        title: 'Zbędne pliki z Maca i Windowsa',
+        text: '{count, plural, one {# plik} few {# pliki} many {# plików} other {# pliku}} w stylu __MACOSX, .DS_Store albo Thumbs.db trafiło do paczki przy pakowaniu. Gra ich nie potrzebuje, a mogą zepsuć import w Bedrocku.',
+        fix: 'W naprawionej paczce ich nie ma.',
+      },
+      'nested-folder': {
+        title: 'Paczka jest w dodatkowym folderze',
+        text: {
+          java: 'Wszystko jest w „{folder}”, a nie na samej górze zipa. Java pokazuje paczkę tylko wtedy, gdy pack.mcmeta jest na górze, więc ta się nie pojawia.',
+          bedrock: 'Wszystko jest w „{folder}”. manifest.json powinien być na samej górze pliku .mcpack, inaczej niektóre urządzenia nie zaimportują paczki.',
+        },
+        fix: 'Naprawiona paczka ma pliki na samej górze.',
+      },
+      'nested-archive': {
+        title: 'Paczka to zip w zipie',
+        text: {
+          java: 'W pobranym pliku jest „{inner}”, czyli sama paczka. Java nie zagląda do zipa w zipie.',
+          bedrock: 'W pobranym pliku jest „{inner}”, czyli sama paczka. Bedrock potrzebuje tego pliku, a nie zipa dookoła niego.',
+        },
+        fix: 'Naprawiona paczka to ta ze środka, wyjęta na zewnątrz.',
+      },
+      'several-packs': {
+        title: 'W tym pliku jest kilka paczek ({count})',
+        text: 'Wygląda to na zestaw z paczką dla każdej wersji albo edycji. Pack Doctor sprawdził „{checked}”, najlepiej pasującą do wybranej gry, a naprawiony plik zawiera tylko ją.',
+      },
+      'no-pack': {
+        title: 'Nie znaleziono paczki',
+        text: 'W tym pliku nie ma pack.mcmeta, manifest.json, folderu assets ani folderu textures, więc to nie jest paczka zasobów Minecrafta.',
+        steps: 'Masz tylko luźne tekstury PNG? Konwerter paczek tekstur zrobi z nich paczkę. Możesz też zrobić nową paczkę w Edytorze paczek tekstur.',
+      },
+      'shader-pack': {
+        title: 'To paczka shaderów, a nie paczka zasobów',
+        text: 'Ma folder shaders, tak jak paczki shaderów do Irisa i OptiFine. One wymagają moda Iris albo OptiFine i nie trafiają do folderu resourcepacks.',
+        steps: 'Zainstaluj Irisa (albo OptiFine), a potem wrzuć zip do folderu shaderpacks: Ustawienia… › Ustawienia graficzne… › Pakiety Shaderów... › Otwórz folder z pakietem Shaderów... Nie rozpakowuj go.',
+      },
+      'data-pack': {
+        title: 'To paczka danych, a nie paczka zasobów',
+        text: 'Ma folder data, a nie ma folderu assets. Paczki danych zmieniają receptury, łupy i światy i dodaje się je do świata, a nie do listy paczek zasobów.',
+        steps: 'Wrzuć zip do folderu datapacks świata (Stwórz nowy świat › Więcej › Paczki danych albo saves/<świat>/datapacks), a potem otwórz świat ponownie.',
+      },
+      'other-bedrock-pack': {
+        title: { behavior: 'To paczka zachowań', skin: 'To paczka skinów', world: 'To szablon świata' },
+        text: {
+          behavior: 'Paczki zachowań zmieniają działanie gry (moby, przedmioty, skrypty), a nie tekstury, więc Pack Doctor nie ma tu czego sprawdzać.',
+          skin: 'Paczki skinów dodają skiny do Przebieralni, więc Pack Doctor nie ma tu czego sprawdzać. Otwórz plik .mcpack, żeby ją zaimportować.',
+          world: 'Szablony świata tworzą nowe światy, więc Pack Doctor nie ma tu czego sprawdzać. Otwórz plik, żeby go zaimportować.',
+        },
+      },
+      'bedrock-zip': {
+        title: 'Paczka do Bedrocka w pliku .zip',
+        text: 'Telefony, tablety i konsole importują paczki do Bedrocka tylko z plików .mcpack: stuknięcie w .zip nie otwiera Minecrafta.',
+        fix: 'Naprawiona paczka jest zapisana jako .mcpack.',
+      },
+      'java-mcpack': {
+        title: 'Paczka do Javy nazwana {ext}',
+        text: 'Java pokazuje w folderze resourcepacks tylko pliki .zip i foldery. Plik .mcpack jest z Bedrocka.',
+        fix: 'Naprawiona paczka jest zapisana jako .zip.',
+      },
+      'wrong-edition': {
+        title: { java: 'To paczka do Javy, a grasz w Bedrocka', bedrock: 'To paczka do Bedrocka, a grasz w Javę' },
+        text: {
+          java: 'Paczki do Javy i Bedrocka używają innych plików i folderów, więc Bedrock nie użyje tej paczki w takiej postaci. Konwerter paczek tekstur zamieni ją na plik .mcpack do Bedrocka.',
+          bedrock: 'Paczki do Javy i Bedrocka używają innych plików i folderów, więc Java nie użyje tej paczki w takiej postaci. Konwerter paczek tekstur zamieni ją na plik .zip do Javy w twojej wersji.',
+        },
+        steps: 'Przekonwertuj ją w Konwerterze paczek tekstur albo wybierz wyżej drugą edycję, jeśli to w nią grasz.',
+      },
+      'mcmeta-missing': {
+        title: 'Brakuje pack.mcmeta',
+        text: 'Każda paczka zasobów do Javy potrzebuje pliku pack.mcmeta na samej górze. Bez niego paczka nie pojawia się na liście.',
+        fix: 'Tworzy pack.mcmeta dla Javy {version}.',
+      },
+      'mcmeta-name': {
+        title: 'pack.mcmeta ma złą nazwę',
+        text: 'Nazywa się „{file}”. Windows często ukrywa „.txt” na końcu nazw plików, więc plik zapisany w Notatniku staje się pack.mcmeta.txt.',
+        fix: 'Zmienia nazwę na pack.mcmeta.',
+      },
+      'mcmeta-json': {
+        title: 'pack.mcmeta nie jest prawidłowym JSON-em',
+        text: 'Brakujący przecinek, cudzysłów albo nawias psuje plik, a Java pomija całą paczkę.',
+        fix: 'Zapisuje nowy pack.mcmeta dla Javy {version}, z zachowaniem opisu.',
+      },
+      'mcmeta-strict': {
+        title: { bom: 'pack.mcmeta zaczyna się od niewidocznego znaku', comments: 'pack.mcmeta ma komentarze albo dodatkowe przecinki' },
+        text: {
+          bom: 'Plik zaczyna się od znacznika kolejności bajtów (BOM), który dodają niektóre edytory. Java przestaje tam czytać i pomija paczkę.',
+          comments: 'Java czyta pack.mcmeta bardzo ściśle: komentarze albo przecinek przed nawiasem zamykającym sprawiają, że pomija paczkę.',
+        },
+        fix: 'Zapisuje go jeszcze raz jako czysty JSON dla Javy {version}.',
+      },
+      'mcmeta-invalid': {
+        title: 'Java nie może odczytać pack.mcmeta',
+        text: 'Plik jest prawidłowym JSON-em, ale jego pola łamią zasady Javy {version}, więc paczka jest pokazana jako zepsuta albo w ogóle się nie pojawia.',
+        fix: 'Zapisuje pack.mcmeta tak, jak oczekuje Java {version}, z zachowaniem opisu.',
+      },
+      'format-mismatch': {
+        title: { old: 'Zrobiona dla starszej wersji', new: 'Zrobiona dla nowszej wersji' },
+        text: 'Paczka podaje, że jest do Javy {packVersions} (format paczki {packFormats}), a Java {version} używa formatu {format}. Gra oznacza ją jako niekompatybilną i pyta przed użyciem, a tekstury, które między tymi wersjami zmieniły nazwę, wyglądają źle.',
+        fix: 'Aktualizuje pack.mcmeta dla Javy {version}.',
+      },
+      'old-folders': {
+        title: 'Foldery tekstur sprzed 1.13',
+        text: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} w textures/blocks albo textures/items. Od 1.13 Java używa textures/block i textures/item, a wiele plików dostało nowe nazwy, więc Java {version} je pomija.',
+        fix: 'Zmienia ich nazwy dla Javy {version} i aktualizuje modele, które ich używają.',
+        steps: 'Otwórz paczkę w Konwerterze paczek tekstur i przekonwertuj ją na Javę {version}.',
+      },
+      'new-folders': {
+        title: 'Foldery tekstur z 1.13 i nowszych',
+        text: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} w textures/block albo textures/item, ale Java {version} używa jeszcze textures/blocks i textures/items, więc je pomija.',
+        fix: 'Zmienia ich nazwy dla Javy {version}.',
+        steps: 'Otwórz paczkę w Konwerterze paczek tekstur i przekonwertuj ją na Javę {version}.',
+      },
+      'renamed-textures': {
+        title: 'Tekstury ze starymi nazwami',
+        text: '{count, plural, one {# tekstura ma} few {# tekstury mają} many {# tekstur ma} other {# tekstury ma}} nazwę z Javy {from}. Java {version} używa innej nazwy, więc tekstura jest pomijana.',
+        fix: 'Zmienia ich nazwy dla Javy {version} i aktualizuje modele, które ich używają.',
+      },
+      'bad-names': {
+        title: 'Nazwy plików, których Java nie przyjmie',
+        text: '{count, plural, one {# plik ma} few {# pliki mają} many {# plików ma} other {# pliku ma}} w ścieżce wielkie litery, spacje albo inne znaki. Java przyjmuje w nazwach plików tylko a–z, 0–9, _ - . i /, a resztę pomija.',
+        fix: 'Zmienia ich nazwy na małe litery, z _ zamiast spacji, i aktualizuje pliki, które do nich prowadzą.',
+        steps: 'Pozostałym plikom zmień nazwy ręcznie: małe litery, bez spacji.',
+      },
+      'misplaced-textures': {
+        title: 'Tekstury w złym folderze',
+        text: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} poza assets/minecraft/textures, gdzie szuka ich Java.',
+        fix: 'Przenosi je do assets/minecraft/textures.',
+      },
+      'atlas-missing': {
+        title: 'Tekstury modeli poza atlasem bloków',
+        text: 'Od 1.19.3 modele mogą używać tylko tekstur z folderów, które są w atlasie gry, jak block i item. {count, plural, one {# tekstura} few {# tekstury} many {# tekstur} other {# tekstury}} w {folders} wyświetla się na fioletowo-czarno.',
+        fix: 'Dodaje te foldery do plików atlasu paczki.',
+      },
+      'missing-texture-ref': {
+        title: 'Modele wskazują tekstury, których nie ma',
+        text: '{count, plural, one {# ścieżki tekstury nie ma} few {# ścieżek tekstur nie ma} many {# ścieżek tekstur nie ma} other {# ścieżki tekstury nie ma}} w paczce ani w Javie {version}, więc zamiast nich widać fioletowo-czarną brakującą teksturę.',
+        fix: 'Kieruje stare nazwy tekstur na ich nazwy w Javie {version}.',
+        steps: 'Sprawdź pisownię i folder każdej ścieżki albo dodaj brakujące obrazki.',
+      },
+      'missing-model-ref': {
+        title: 'Modele, których nie ma',
+        text: '{count, plural, one {# odwołanie wskazuje} few {# odwołania wskazują} many {# odwołań wskazuje} other {# odwołania wskazuje}} model, którego nie ma w paczce ani w Javie {version}, więc blok albo przedmiot staje się fioletowo-czarnym sześcianem.',
+        steps: 'Sprawdź pisownię każdej nazwy modelu albo dodaj brakujące pliki modeli.',
+      },
+      'anim-strip': {
+        title: 'Animowane tekstury bez pliku .mcmeta',
+        text: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} wysokim paskiem klatek bez pliku .png.mcmeta obok, więc Java ściska cały pasek na jednej ścianie.',
+        fix: 'Dodaje .png.mcmeta, który odtwarza klatki. Zrób to tylko wtedy, gdy tekstura ma się ruszać.',
+      },
+      'anim-size': {
+        title: 'Klatki animacji nie pasują do obrazka',
+        text: '{count, plural, one {# animowana tekstura ma} few {# animowane tekstury mają} many {# animowanych tekstur ma} other {# animowanej tekstury ma}} rozmiar, który nie jest całkowitą liczbą klatek. Java nie umie pociąć jej na klatki i pokazuje brakującą teksturę.',
+        steps: 'Niech wysokość obrazka będzie wielokrotnością jego szerokości albo rozmiaru klatki ustawionego w .mcmeta.',
+      },
+      'anim-frames': {
+        title: 'Ustawienia animacji, które nie działają',
+        text: '{count, plural, one {# plik .mcmeta wymienia} few {# pliki .mcmeta wymieniają} many {# plików .mcmeta wymienia} other {# pliku .mcmeta wymienia}} klatki, których obrazek nie ma, albo czas klatki poniżej 1.',
+        fix: 'Usuwa brakujące klatki i ustawia czasy klatek na co najmniej 1.',
+      },
+      'sound-format': {
+        title: 'Dźwięki, które nie są w Ogg Vorbis',
+        text: '{count, plural, one {# plik dźwiękowy jest} few {# pliki dźwiękowe są} many {# plików dźwiękowych jest} other {# pliku dźwiękowego jest}} w MP3, WAV albo innym formacie, czasem tylko ze zmienioną nazwą na .ogg. Java odtwarza tylko prawdziwe pliki Ogg Vorbis.',
+        steps: 'Przekonwertuj je na .ogg, na przykład edytorem dźwięków w Edytorze paczek tekstur, który importuje dźwięk i zapisuje Ogg Vorbis.',
+      },
+      'overlay-missing': {
+        title: 'Foldery nakładek, których nie ma',
+        text: 'pack.mcmeta wymienia {count, plural, one {# folder nakładki, którego nie ma} few {# foldery nakładek, których nie ma} many {# folderów nakładek, których nie ma} other {# folderu nakładek, których nie ma}} w paczce. Nic się nie psuje, ale te wersje nie dostają nakładki.',
+        steps: 'Usuń te wpisy z overlays w pack.mcmeta albo dodaj foldery.',
+      },
+      'core-shaders': {
+        title: 'Shadery rdzenia dla jednej wersji',
+        text: 'Paczka zastępuje własne shadery gry ({count, plural, one {# plik} few {# pliki} many {# plików} other {# pliku}}). Mojang często zmienia te pliki, więc działają tylko w wersji, dla której je napisano; w innej Java może wyłączyć wszystkie paczki zasobów.',
+        steps: 'Używaj paczki w wersji, dla której powstała, albo zrób nowy shader dla swojej wersji w Kreatorze shaderów.',
+      },
+      optifine: {
+        title: 'Części, które wymagają OptiFine',
+        text: '{count, plural, one {# plik jest} few {# pliki są} many {# plików jest} other {# pliku jest}} w folderze optifine: połączone tekstury, własne tekstury przedmiotów albo niebo. Bez OptiFine (albo moda, który czyta te pliki) gra je pomija; reszta paczki dalej działa.',
+      },
+      'json-strict': {
+        title: 'JSON z komentarzami albo dodatkowymi przecinkami',
+        text: '{count, plural, one {# plik ma} few {# pliki mają} many {# plików ma} other {# pliku ma}} komentarze, przecinek przed nawiasem zamykającym albo niewidoczny znak na początku. Ścisły czytnik Javy może odrzucić takie pliki.',
+        fix: 'Zapisuje je jeszcze raz jako czysty JSON.',
+      },
+      'json-syntax': {
+        title: 'Pliki JSON z błędami',
+        text: '{count, plural, one {# plik ma} few {# pliki mają} many {# plików ma} other {# pliku ma}} błąd składni, np. brakujący przecinek, cudzysłów albo nawias. Gra pomija taki plik: znikają modele, a dźwięki i teksty są pomijane.',
+        steps: 'Otwórz plik w edytorze tekstu, popraw pokazaną linię i sprawdź go jeszcze raz.',
+      },
+      'manifest-missing': {
+        title: 'Brakuje manifest.json',
+        text: 'Każda paczka do Bedrocka potrzebuje na samej górze pliku manifest.json z nazwą, dwoma identyfikatorami (UUID) i wersją. Bez niego import się nie udaje.',
+        fix: 'Tworzy manifest.json z nowymi identyfikatorami.',
+      },
+      'manifest-name': {
+        title: 'manifest.json ma złą nazwę',
+        text: 'Nazywa się „{file}”. Bedrock czyta tylko manifest.json, małymi literami, bez „.txt”.',
+        fix: 'Zmienia nazwę na manifest.json.',
+      },
+      'manifest-json': {
+        title: 'manifest.json nie jest prawidłowym JSON-em',
+        text: 'Brakujący przecinek, cudzysłów albo nawias psuje plik, więc import się nie udaje.',
+        fix: 'Zapisuje nowy manifest.json, z zachowaniem nazwy, opisu i identyfikatorów, które da się jeszcze odczytać.',
+      },
+      'manifest-format': {
+        title: 'Nieznany format_version',
+        text: 'manifest.json podaje format_version {value}. Bedrock rozumie 1, 2 i 3.',
+        fix: 'Ustawia format_version 2 i naprawia resztę pliku.',
+      },
+      'manifest-header': {
+        title: { missing: 'Manifest nie ma nagłówka', version: 'Wersja paczki jest nieprawidłowa', name: 'Paczka nie ma nazwy' },
+        text: {
+          missing: 'Nagłówek zawiera nazwę, identyfikator i wersję paczki. Bez niego Bedrock nie zaimportuje paczki.',
+          version: 'header.version musi mieć trzy liczby całkowite, np. [1, 0, 0].',
+          name: 'Bedrock potrzebuje nazwy, żeby pokazać paczkę na liście.',
+        },
+        fix: 'Naprawia manifest.json, z zachowaniem wszystkiego, co jest prawidłowe.',
+      },
+      'manifest-uuid': {
+        title: { invalid: 'Brakujące albo nieprawidłowe UUID', same: 'Nagłówek i moduł mają to samo UUID' },
+        text: {
+          invalid: 'Paczka potrzebuje dwóch unikalnych identyfikatorów (UUID), jednego w nagłówku i jednego w module, zapisanych jak 8f0b5a0e-6c55-4d3b-9b1e-0a4c2f9d7e11.',
+          same: 'Oba identyfikatory muszą się różnić, inaczej Bedrock odrzuci paczkę.',
+        },
+        fix: 'Dodaje nowe UUID tam, gdzie ich brakuje albo się powtarzają.',
+      },
+      'manifest-modules': {
+        title: 'Brak modułu „resources”',
+        text: 'Bedrock rozpoznaje paczkę zasobów po module typu "resources". Ta ma: {found}.',
+        fix: 'Ustawia typ modułu na "resources".',
+      },
+      'manifest-engine': {
+        title: { missing: 'Brak min_engine_version', invalid: 'min_engine_version jest nieprawidłowe', new: 'Wymaga Minecrafta, którego jeszcze nie ma' },
+        text: {
+          missing: 'Bez niego Bedrock traktuje paczkę jak zrobioną dla bardzo starych wersji i może czytać niektóre jej pliki po staremu.',
+          invalid: 'Muszą to być trzy liczby, np. [1, 21, 0].',
+          new: 'min_engine_version to {value}, a więc więcej niż w jakimkolwiek wydaniu (najnowsze to {newest}), więc Bedrock mówi, że paczka wymaga nowszej gry.',
+        },
+        fix: 'Ustawia min_engine_version na {engine}.',
+      },
+      'duplicate-uuid': {
+        title: 'Dwie paczki z tym samym UUID',
+        text: 'Kilka paczek w tym pliku ({count}) ma ten sam identyfikator, jak paczka skopiowana i zmieniona. Bedrock widzi je jako jedną paczkę: pojawia się tylko jedna albo jedna zastępuje drugą.',
+        fix: 'Daje tej paczce nowe UUID.',
+      },
+      'known-uuid': {
+        title: 'To samo UUID co inna sprawdzona paczka',
+        text: 'Ta paczka ma ten sam identyfikator co „{other}”, sprawdzona wcześniej na tym urządzeniu. Gdy obie są zainstalowane, Bedrock traktuje je jak jedną paczkę i zostawia tylko jedną.',
+        fix: 'Daje tej paczce nowe UUID. Do światów, które używają starej kopii, trzeba ją wtedy dodać ponownie.',
+      },
+      'texture-list': {
+        title: 'Listy tekstur, których Bedrock nie odczyta',
+        text: '{count, plural, one {# lista tekstur nie ma} few {# listy tekstur nie mają} many {# list tekstur nie ma} other {# listy tekstur nie ma}} sekcji texture_data albo ma wpisy w złym kształcie. Tekstury z tych list wyglądają na brakujące.',
+        steps: 'Porównaj plik z tym samym plikiem z paczki zasobów samego Minecrafta i popraw jego strukturę.',
+      },
+      'bedrock-missing-ref': {
+        title: 'Listy tekstur wskazują brakujące obrazki',
+        text: '{count, plural, one {# ścieżka wskazuje} few {# ścieżki wskazują} many {# ścieżek wskazuje} other {# ścieżki wskazuje}} obrazek, którego nie ma w paczce ani w teksturach samego Bedrocka, więc te bloki albo przedmioty wyglądają na brakujące.',
+        steps: 'Sprawdź każdą ścieżkę (bez rozszerzenia pliku, np. textures/blocks/stone) albo dodaj obrazki.',
+      },
+      'bedrock-case': {
+        title: { files: 'Nazwy plików ze złymi wielkimi literami', refs: 'Ścieżki ze złymi wielkimi literami' },
+        text: {
+          files: '{count, plural, one {# plik różni się} few {# pliki różnią się} many {# plików różni się} other {# pliku różni się}} od nazw z gry tylko wielkością liter. Windowsowi to nie przeszkadza, ale Android, iPhone, iPad i konsole szukają dokładnej nazwy, więc tam tekstura nie zostaje podmieniona.',
+          refs: '{count, plural, one {# ścieżka} few {# ścieżki} many {# ścieżek} other {# ścieżki}} na listach tekstur pasuje tylko do obrazka z innymi wielkimi literami. To działa na Windowsie, ale nie na telefonach, tabletach i konsolach.',
+        },
+        fix: { files: 'Zmienia nazwy plików na pisownię z gry.', refs: 'Zmienia ścieżki na dokładne nazwy obrazków.' },
+      },
+      'java-in-bedrock': {
+        title: 'Tekstury z Javy w paczce do Bedrocka',
+        text: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} w assets/minecraft/textures, folderze z Javy. Bedrock czyta tylko textures/ i je pomija.',
+        steps: 'Przekonwertuj tekstury z Javy w Konwerterze paczek tekstur, a potem dodaj je do tej paczki.',
+      },
+      'tga-png-pair': {
+        title: 'Tekstury i w .png, i w .tga',
+        text: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} dwa razy, jako .png i jako .tga. Gra używa tylko jednej z nich, więc twoja zmiana może się nie pokazać.',
+        steps: 'Zostaw jeden plik na teksturę (tego samego typu co w grze), a drugi usuń.',
+      },
+      'subpack-missing': {
+        title: 'Brakuje folderów podpaczek',
+        text: 'manifest.json wymienia {count, plural, one {# podpaczkę, której folderu nie ma} few {# podpaczki, których folderów nie ma} many {# podpaczek, których folderów nie ma} other {# podpaczki, których folderów nie ma}} w subpacks/, więc wybranie jej w ustawieniach paczki nic nie robi.',
+        steps: 'Dodaj foldery albo usuń te wpisy z subpacks w manifest.json.',
+      },
+      'pack-name-key': {
+        title: 'Nazwa paczki to klucz języka',
+        text: 'Nazwa to „{key}”, klucz do wyszukania w texts/en_US.lang, ale paczka go nie definiuje, więc Bedrock pokazuje sam klucz.',
+        fix: 'Nadaje paczce nazwę „{name}” w manifest.json.',
+      },
+      'long-paths': {
+        title: 'Bardzo długie ścieżki plików',
+        text: '{count, plural, one {# ścieżka jest dłuższa} few {# ścieżki są dłuższe} many {# ścieżek jest dłuższych} other {# ścieżki jest dłuższe}} niż 80 znaków. Xbox i niektóre inne urządzenia nie wczytają takich plików (80 to też limit Microsoftu dla paczek z Marketplace).',
+        steps: 'Skróć nazwy folderów i plików.',
+      },
+      'material-bin': {
+        title: 'Pliki shaderów, które wymagają zmodyfikowanej gry',
+        text: '{count, plural, one {# plik .material.bin zastępuje} few {# pliki .material.bin zastępują} many {# plików .material.bin zastępuje} other {# pliku .material.bin zastępuje}} shadery RenderDragon w Bedrocku. Działają tylko z narzędziami takimi jak BetterRenderDragon albo z załataną grą i psują się przy aktualizacjach.',
+      },
+      'not-png': {
+        title: 'Obrazki, które tak naprawdę nie są PNG',
+        text: '{count, plural, one {# plik ma} few {# pliki mają} many {# plików ma} other {# pliku ma}} nazwę .png, ale zawiera obrazek JPEG, WebP, GIF, BMP albo TGA. Gra czyta tam tylko prawdziwe pliki PNG i pokazuje brakującą teksturę.',
+        fix: 'Zamienia je na prawdziwe pliki PNG.',
+      },
+      'wrong-image-type': {
+        title: 'Obrazki w formacie, którego gra nie czyta',
+        text: {
+          java: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} w formacie .jpg, .webp, .gif, .bmp albo .tga. Java czyta tylko tekstury .png.',
+          bedrock: '{count, plural, one {# tekstura jest} few {# tekstury są} many {# tekstur jest} other {# tekstury jest}} w formacie .webp, .gif albo .bmp. Bedrock czyta .png i .tga.',
+        },
+        fix: 'Zamienia je na .png z tą samą nazwą.',
+      },
+      'broken-image': {
+        title: 'Uszkodzone obrazki',
+        text: '{count, plural, one {# obrazek jest ucięty albo uszkodzony} few {# obrazki są ucięte albo uszkodzone} many {# obrazków jest uciętych albo uszkodzonych} other {# obrazka jest ucięte albo uszkodzone}} i nie da się go odczytać.',
+        steps: 'Otwórz każdy w edytorze grafiki i zapisz jeszcze raz jako PNG albo go zastąp.',
+      },
+      'png-format': {
+        title: 'PNG 16-bitowe albo z przeplotem',
+        text: '{count, plural, one {# obrazek jest zapisany} few {# obrazki są zapisane} many {# obrazków jest zapisanych} other {# obrazka jest zapisane}} z 16 bitami na kanał albo z przeplotem. Gra potrzebuje tylko standardowych obrazków 8-bitowych, a niektóre wersje i urządzenia pokazują takie pliki źle.',
+        fix: 'Zapisuje je jako standardowe 8-bitowe PNG RGBA. Piksele zostają takie same.',
+      },
+      'not-power-of-two': {
+        title: 'Rozmiary, które nie są potęgami dwójki',
+        text: '{count, plural, one {# tekstura bloku albo przedmiotu nie ma} few {# tekstury bloków i przedmiotów nie mają} many {# tekstur bloków i przedmiotów nie ma} other {# tekstury bloków i przedmiotów nie ma}} szerokości 16, 32, 64, 128… pikseli. Gra może obniżyć jakość dalekich bloków (mipmapy) dla całej paczki albo pokazać te tekstury rozmazane.',
+        steps: 'Zmień ich rozmiar na potęgę dwójki, np. 16×16 albo 32×32, ze skalowaniem „najbliższy sąsiad”.',
+      },
+      'pack-icon': {
+        title: '{file} nie jest działającym plikiem PNG',
+        text: 'Ikona paczki jest w innym formacie albo uszkodzona, więc paczka pokazuje się bez obrazka.',
+        fix: 'Zamienia ją na PNG.',
+        steps: 'Zapisz ikonę jako kwadratowy PNG, np. 128×128.',
+      },
+    },
+  },
+};
+
+/** Pack Doctor is the tool's name on the Polish pages too. */
+export const SAME_AS_ENGLISH = ['doctor:hero.eyebrow'];
+
+export default PL;
