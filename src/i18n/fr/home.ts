@@ -34,7 +34,7 @@ export const HOME: HomeText = {
   faq: [
     {
       id: 'how',
-      q: 'Comment créer un pack de textures Minecraft ?',
+      q: 'Comment créer un pack de textures Minecraft ?',
       a: [
         el(
           'p',
@@ -53,23 +53,23 @@ export const HOME: HomeText = {
     },
     {
       id: 'what',
-      q: 'C’est quoi, Texture Pack Maker ?',
+      q: 'C’est quoi, Texture Pack Maker ?',
       a: [
         el(
           'p',
           null,
-          'Texture Pack Maker est un site gratuit pour créer des packs de textures, des skins et des shaders Minecraft. Tout se passe dans ton navigateur : tu choisis une version du jeu, tu modifies avec des aperçus en direct et tu télécharges un pack prêt pour Java ou Bedrock.',
+          'Texture Pack Maker est un site gratuit pour créer des packs de textures, des skins et des shaders Minecraft. Tout se passe dans ton navigateur : tu choisis une version du jeu, tu modifies avec des aperçus en direct et tu télécharges un pack prêt pour Java ou Bedrock.',
         ),
       ],
     },
     {
       id: 'free',
-      q: 'C’est gratuit ? Il faut un compte ?',
+      q: 'C’est gratuit ? Il faut un compte ?',
       a: [el('p', null, 'C’est gratuit, sans compte ni inscription, et le code est open source sous licence MIT. Tes projets restent sur ton propre appareil.')],
     },
     {
       id: 'bedrock',
-      q: 'Ça marche avec Minecraft Bedrock ?',
+      q: 'Ça marche avec Minecraft Bedrock ?',
       a: [
         el(
           'p',
@@ -84,7 +84,7 @@ export const HOME: HomeText = {
     },
     {
       id: 'versions',
-      q: 'Pour quelles versions de Java puis-je créer des packs ?',
+      q: 'Pour quelles versions de Java puis-je créer des packs ?',
       a: [
         el(
           'p',
@@ -99,12 +99,12 @@ export const HOME: HomeText = {
     },
     {
       id: 'resource',
-      q: 'Un pack de textures, c’est la même chose qu’un pack de ressources ?',
+      q: 'Un pack de textures, c’est la même chose qu’un pack de ressources ?',
       a: [
         el(
           'p',
           null,
-          'Presque. Java Edition les appelle packs de ressources : en plus des textures, ils peuvent changer les modèles, les sons, les polices et les shaders. Bedrock aussi les appelle packs de ressources et utilise des fichiers ',
+          'Presque. Java Edition les appelle packs de ressources : en plus des textures, ils peuvent changer les modèles, les sons, les polices et les shaders. Bedrock aussi les appelle packs de ressources et utilise des fichiers ',
           code('.mcpack'),
           '. Cet outil crée les deux.',
         ),
@@ -112,7 +112,7 @@ export const HOME: HomeText = {
     },
     {
       id: 'skinpack',
-      q: 'Je peux créer mon propre pack de skins ?',
+      q: 'Je peux créer mon propre pack de skins ?',
       a: [
         el(
           'p',
@@ -127,7 +127,7 @@ export const HOME: HomeText = {
     },
     {
       id: 'install',
-      q: 'Je dois installer quelque chose ?',
+      q: 'Je dois installer quelque chose ?',
       a: [el('p', null, 'Non. Ça marche dans n’importe quel navigateur récent sur ordinateur, téléphone ou tablette. Après la première visite, l’appli fonctionne même hors ligne.')],
     },
   ],
@@ -136,13 +136,13 @@ export const HOME: HomeText = {
     'Éditeur de skins Minecraft avec aperçu 3D en direct, modèles classique et fin, export PNG pour Java et packs de skins pour Bedrock',
     'Créateur de shaders pour les packs de shaders Iris / OptiFine, les shaders vanilla de Java sans mods et les packs Graphismes éclatants pour Bedrock',
     'Exporte des fichiers .zip et .mcpack prêts à l’emploi avec le bon pack.mcmeta ou manifest.json',
-    'Fonctionne dans le navigateur : sans inscription, sans rien envoyer et hors ligne après la première visite',
+    'Fonctionne dans le navigateur : sans inscription, sans rien envoyer et hors ligne après la première visite',
   ],
   hero: {
     chip: 'Gratuit · Sans inscription',
     chipOffline: ' · Marche hors ligne',
     title: { pre: 'Crée des packs de textures ', accent: 'Minecraft' },
-    lead: 'Crée tes propres packs de textures, skins et shaders directement dans ton navigateur : un créateur de packs de ressources gratuit pour Java et Bedrock, avec des téléchargements prêts à mettre dans le jeu.',
+    lead: 'Crée tes propres packs de textures, skins et shaders directement dans ton navigateur : un créateur de packs de ressources gratuit pour Java et Bedrock, avec des téléchargements prêts à mettre dans le jeu.',
     start: 'Commencer à créer',
     install: 'Comment installer',
     everything: 'Découvre tout ce que tu peux créer',
@@ -153,8 +153,8 @@ export const HOME: HomeText = {
   },
   toolsSection: {
     eyebrow: 'Trois outils, un seul site',
-    title: 'Qu’est-ce que tu veux créer ?',
-    lead: 'Tout ce qu’il te faut pour donner ton propre style à Minecraft. Rien à installer, pas de compte : ouvre un outil et lance-toi.',
+    title: 'Qu’est-ce que tu veux créer ?',
+    lead: 'Tout ce qu’il te faut pour donner ton propre style à Minecraft. Rien à installer, pas de compte : ouvre un outil et lance-toi.',
   },
   converter: {
     title: 'Convertisseur de packs de textures',
@@ -174,7 +174,7 @@ export const HOME: HomeText = {
       'Créateur de shaders, avec ou sans mods',
     ],
     items: [
-      ['Peins chaque bloc, objet et créature de ta version directement sur son vrai modèle 3D : fourneaux, coffres, escaliers et plus de 80 créatures, des creepers aux villageois.'],
+      ['Peins chaque bloc, objet et créature de ta version directement sur son vrai modèle 3D : fourneaux, coffres, escaliers et plus de 80 créatures, des creepers aux villageois.'],
       ['Change le style de tout le jeu d’un coup avec des effets comme Dark Mode, Pastel, Retro 8-bit, Autumn ou Smooth HD, puis fignole à la main.'],
       ['Charge n’importe quel ', code('.zip'), ' Java ou ', code('.mcpack'), ' Bedrock et continue à le modifier, ou passe-le dans l’autre édition avec le ', link('/texture-pack-converter', 'convertisseur de packs'), '.'],
       ['Un générateur de packs de ressources qui écrit le ', code('pack.mcmeta'), ` exact pour Java ${LATEST} jusqu’à 1.6.1, ou un `, code('manifest.json'), ' Bedrock.'],
@@ -184,7 +184,7 @@ export const HOME: HomeText = {
   },
   why: {
     eyebrow: 'Ce qui le rend différent',
-    title: 'Pourquoi Texture Pack Maker ?',
+    title: 'Pourquoi Texture Pack Maker ?',
     lead: ['Gratuit, open source et respectueux de ta vie privée, avec toutes les versions de Java depuis la 1.6.1, Bedrock et dix outils au même endroit. ', link('/about', 'À propos du projet'), '.'],
   },
   how: {
@@ -203,6 +203,6 @@ export const HOME: HomeText = {
   },
   guides: { eyebrow: 'Guides', title: 'Apprends les bases', lead: 'Des guides courts et testés pour créer et installer packs, skins et shaders.', all: 'Tous les guides' },
   faqHead: { eyebrow: 'Questions', title: 'Bon à savoir' },
-  cta: { title: 'Prêt à créer quelque chose ?', text: 'Choisis un outil et ton premier pack peut être dans le jeu en quelques minutes.', button: 'Commencer à créer' },
-  startDialog: 'Qu’est-ce que tu veux créer ?',
+  cta: { title: 'Prêt à créer quelque chose ?', text: 'Choisis un outil et ton premier pack peut être dans le jeu en quelques minutes.', button: 'Commencer à créer' },
+  startDialog: 'Qu’est-ce que tu veux créer ?',
 };

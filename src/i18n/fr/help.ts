@@ -25,19 +25,19 @@ const BEDROCK_PACK_STEPS: Child[] = [
   ['Exporte ton pack. Tu obtiens un fichier comme ', code('Mon pack.mcpack'), '.'],
   ['Double-clique sur le fichier. Minecraft s’ouvre et affiche ', el('em', null, BEDROCK.importStarted), ', puis ', el('em', null, BEDROCK.imported), '.'],
   ['Va dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources, BEDROCK.myPacks), ', choisis ton pack et appuie sur ', strong(BEDROCK.activate), '.'],
-  'Tu utilises plusieurs packs ? Place le tien tout en haut pour qu’il gagne.',
+  'Tu utilises plusieurs packs ? Place le tien tout en haut pour qu’il gagne.',
 ];
 
 const JAVA_SKIN_STEPS: Child[] = [
   ['Ouvre le Minecraft Launcher et choisis ', uiPath('Minecraft: Java Edition', LAUNCHER.skins), '.'],
   ['Clique sur ', strong(LAUNCHER.newSkin), ' (la carte avec le +).'],
-  ['Donne-lui un nom et choisis le modèle de joueur : ', strong(LAUNCHER.classic), ' ou ', strong(LAUNCHER.slim), '.'],
+  ['Donne-lui un nom et choisis le modèle de joueur : ', strong(LAUNCHER.classic), ' ou ', strong(LAUNCHER.slim), '.'],
   ['Clique sur ', strong(LAUNCHER.browse), ', choisis ton PNG, puis ', strong(LAUNCHER.saveAndUse), '.'],
 ];
 
 const BEDROCK_SKIN_STEPS: Child[] = [
   ['Exporte en ', strong('Bedrock skin pack'), '. Tu obtiens un fichier ', code('.mcpack'), '.'],
-  'Ouvre le fichier (double-clic sur Windows, « Ouvrir avec Minecraft » sur téléphone et tablette) pour l’importer.',
+  'Ouvre le fichier (double-clic sur Windows, « Ouvrir avec Minecraft » sur téléphone et tablette) pour l’importer.',
   ['Dans Minecraft, va dans ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), '. Ton pack apparaît avec les packs importés.'],
   ['Choisis ton skin et appuie sur ', strong(BEDROCK.equip), '.'],
 ];
@@ -45,15 +45,15 @@ const BEDROCK_SKIN_STEPS: Child[] = [
 const IRIS_STEPS: Child[] = [
   ['Télécharge l’Iris Installer sur ', ext('https://www.irisshaders.dev/', 'irisshaders.dev'), '. Il installe Fabric Loader, Iris et Sodium pour ta version en une seule fois.'],
   ['Ouvre le Minecraft Launcher, choisis le nouveau profil ', strong('Iris & Sodium'), ' et joue une fois.'],
-  ['Exporte ton pack de shaders depuis le Shader Maker (un ', code('.zip'), ' : ne le décompresse pas).'],
+  ['Exporte ton pack de shaders depuis le Shader Maker (un ', code('.zip'), ' : ne le décompresse pas).'],
   ['Dans le jeu, ouvre ', uiPath(JAVA.options, JAVA.video, IRIS.shaderPacks), ' et clique sur ', strong(IRIS.openFolder), '. Dépose le zip dedans.'],
   ['Choisis ton pack et clique sur ', strong(IRIS.apply), '. Le bouton ', strong(IRIS.settings), ' (en anglais dans Iris) te permet d’affiner les options dans le jeu.'],
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
   ['Exporte avec la cible ', strong('Vanilla Java'), '. Tu obtiens un pack de ressources ', code('.zip'), '.'],
-  ['Installe-le comme un pack de textures : ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', puis dépose le zip dedans.'],
-  `Passe-le dans « ${JAVA.selected} » et clique sur « ${JAVA.done} ». Le nouveau rendu s’applique tout de suite.`,
+  ['Installe-le comme un pack de textures : ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', puis dépose le zip dedans.'],
+  `Passe-le dans « ${JAVA.selected} » et clique sur « ${JAVA.done} ». Le nouveau rendu s’applique tout de suite.`,
 ];
 
 const VIBRANT_STEPS: Child[] = [
@@ -69,14 +69,14 @@ export const HELP: HelpText = {
       short: 'Packs Java',
       howto: { name: 'Comment installer un pack de textures (pack de ressources) dans Minecraft Java Edition', steps: JAVA_PACK_STEPS },
       body: [
-        el('p', { class: 'guide-intro' }, 'Java Edition appelle les packs de textures des ', el('em', null, 'packs de ressources'), '. Ton export est un fichier ', code('.zip'), ' : ne le décompresse pas.'),
+        el('p', { class: 'guide-intro' }, 'Java Edition appelle les packs de textures des ', el('em', null, 'packs de ressources'), '. Ton export est un fichier ', code('.zip'), ' : ne le décompresse pas.'),
         steps(JAVA_PACK_STEPS),
         callout(
           'info',
-          `Tu vois « ${JAVA.madeForOlder} » (ou plus récente) ?`,
+          `Tu vois « ${JAVA.madeForOlder} » (ou plus récente) ?`,
           'Les packs sont écrits pour la version que tu choisis dans l’éditeur. Si tu joues à une autre version, change la version cible ou la plage de compatibilité dans l’onglet ',
           strong('Pack'),
-          ' et exporte à nouveau. Les packs qui ne changent que des textures marchent en général quand même : tu peux cliquer sur ',
+          ' et exporte à nouveau. Les packs qui ne changent que des textures marchent en général quand même : tu peux cliquer sur ',
           strong(JAVA.yes),
           ' pour l’utiliser malgré tout.',
         ),
@@ -101,7 +101,7 @@ export const HELP: HelpText = {
               content: [
                 steps([
                   ['Télécharge le ', code('.mcpack'), ' sur ton téléphone ou ta tablette.'],
-                  [strong('Android : '), 'ouvre-le depuis tes téléchargements ou l’appli Fichiers et choisis ', strong('Minecraft'), '. ', strong('iPhone / iPad : '), 'dans l’appli Fichiers, touche le fichier, puis ', uiPath('Partager', 'Minecraft'), '.'],
+                  [strong('Android : '), 'ouvre-le depuis tes téléchargements ou l’appli Fichiers et choisis ', strong('Minecraft'), '. ', strong('iPhone / iPad : '), 'dans l’appli Fichiers, touche le fichier, puis ', uiPath('Partager', 'Minecraft'), '.'],
                   ['Minecraft importe le pack. Ensuite, ouvre ', uiPath(BEDROCK.settings, BEDROCK.globalResources), ' et active-le.'],
                 ]),
               ],
@@ -121,8 +121,8 @@ export const HELP: HelpText = {
           ],
           UI_FR.platform,
         ),
-        callout('tip', 'Seulement pour un monde ?', `Au lieu de ${BEDROCK.globalResources}, ouvre `, uiPath(BEDROCK.editWorld, BEDROCK.packs), ' et active le pack là.'),
-        callout('info', 'Mettre à jour un pack déjà importé', 'Chaque export garde le même identifiant de pack et augmente son numéro de version : l’importer à nouveau remplace donc l’ancienne copie au lieu d’ajouter un doublon.'),
+        callout('tip', 'Seulement pour un monde ?', `Au lieu de ${BEDROCK.globalResources}, ouvre `, uiPath(BEDROCK.editWorld, BEDROCK.packs), ' et active le pack là.'),
+        callout('info', 'Mettre à jour un pack déjà importé', 'Chaque export garde le même identifiant de pack et augmente son numéro de version : l’importer à nouveau remplace donc l’ancienne copie au lieu d’ajouter un doublon.'),
       ],
     },
     'java-skins': {
@@ -150,7 +150,7 @@ export const HELP: HelpText = {
           ],
           UI_FR.platform,
         ),
-        callout('info', 'Tu joues en 1.7.10 ou avant ?', 'Ces versions ne comprennent que l’ancien format 64×32. Utilise l’option d’export ', strong('Old Java skin (64×32)'), '.'),
+        callout('info', 'Tu joues en 1.7.10 ou avant ?', 'Ces versions ne comprennent que l’ancien format 64×32. Utilise l’option d’export ', strong('Old Java skin (64×32)'), '.'),
       ],
     },
     'bedrock-skins': {
@@ -179,7 +179,7 @@ export const HELP: HelpText = {
         ),
         callout(
           'warn',
-          'Tes amis voient un skin par défaut ?',
+          'Tes amis voient un skin par défaut ?',
           'Les joueurs qui ont activé ',
           strong(BEDROCK.trustedSkins),
           ' voient les skins perso comme un skin par défaut. C’est leur propre réglage. Les consoles ne peuvent pas importer de fichiers de skins.',
@@ -191,7 +191,7 @@ export const HELP: HelpText = {
       short: 'Iris / OptiFine',
       howto: { name: 'Comment installer un pack de shaders avec Iris', steps: IRIS_STEPS },
       body: [
-        el('p', { class: 'guide-intro' }, 'Les packs de shaders classiques ont besoin d’un mod de shaders. ', strong('Iris'), ' est le plus simple et le plus rapide ; OptiFine marche aussi.'),
+        el('p', { class: 'guide-intro' }, 'Les packs de shaders classiques ont besoin d’un mod de shaders. ', strong('Iris'), ' est le plus simple et le plus rapide ; OptiFine marche aussi.'),
         tabbed(
           'iris',
           [
@@ -234,11 +234,11 @@ export const HELP: HelpText = {
       short: 'Graphismes éclatants',
       howto: { name: 'Comment utiliser un pack Graphismes éclatants dans Minecraft Bedrock', steps: VIBRANT_STEPS },
       body: [
-        el('p', { class: 'guide-intro' }, 'Les « shaders » de Bedrock sont des packs de réglages pour les Graphismes éclatants (Vibrant Visuals) : lumière, ciel, étalonnage des couleurs, eau et brouillard.'),
+        el('p', { class: 'guide-intro' }, 'Les « shaders » de Bedrock sont des packs de réglages pour les Graphismes éclatants (Vibrant Visuals) : lumière, ciel, étalonnage des couleurs, eau et brouillard.'),
         steps(VIBRANT_STEPS),
         callout(
           'warn',
-          `Impossible de choisir ${BEDROCK.vibrantVisuals} ?`,
+          `Impossible de choisir ${BEDROCK.vibrantVisuals} ?`,
           'Minecraft ne le permet que si tous les packs actifs le prennent en charge. Les packs de textures classiques (y compris ceux que tu fais dans le Texture Pack Maker) le désactivent, donc désactive les autres packs pendant que tu utilises celui-ci. Certains serveurs le désactivent aussi.',
         ),
         callout(
@@ -254,7 +254,7 @@ export const HELP: HelpText = {
       title: 'Trouver ton dossier Minecraft',
       short: 'Dossiers',
       body: [
-        el('p', { class: 'guide-intro' }, 'Le plus rapide, c’est le bouton ', strong(JAVA.openFolder), ' dans Minecraft. Si tu as besoin du chemin :'),
+        el('p', { class: 'guide-intro' }, 'Le plus rapide, c’est le bouton ', strong(JAVA.openFolder), ' dans Minecraft. Si tu as besoin du chemin :'),
         el(
           'table',
           { class: 'paths-table' },
@@ -276,7 +276,7 @@ export const HELP: HelpText = {
       title: 'Sauvegarder et déplacer tes projets',
       short: 'Sauvegardes',
       body: [
-        el('p', { class: 'guide-intro' }, 'Tes projets sont enregistrés seulement dans ce navigateur. Si tu effaces les données du site ou changes de navigateur ou d’appareil, ils restent derrière : garde donc une copie dans un fichier.'),
+        el('p', { class: 'guide-intro' }, 'Tes projets sont enregistrés seulement dans ce navigateur. Si tu effaces les données du site ou changes de navigateur ou d’appareil, ils restent derrière : garde donc une copie dans un fichier.'),
         backupButtons('Sauvegarder tous les projets', 'Ouvrir une sauvegarde'),
         el(
           'ul',
@@ -287,22 +287,22 @@ export const HELP: HelpText = {
             strong('Fichier de projet'),
             ' (',
             code('.tpmproject'),
-            ') : un projet avec tout ce qu’il faut pour continuer à le modifier, comme les textures, sons et modèles modifiés, les effets, la version et l’édition, les skins d’un pack de skins, les réglages des shaders et les caractères d’une police. Enregistre-le dans l’éditeur avec ',
+            ') : un projet avec tout ce qu’il faut pour continuer à le modifier, comme les textures, sons et modèles modifiés, les effets, la version et l’édition, les skins d’un pack de skins, les réglages des shaders et les caractères d’une police. Enregistre-le dans l’éditeur avec ',
             strong('Save project file'),
             ', ou depuis le menu d’un projet.',
           ),
-          el('li', null, strong('Sauvegarde'), ' (', code('.tpmbackup'), ') : tous les packs de textures, skins et shaders de ce navigateur, plus ta cape et ta police, dans un seul fichier.'),
+          el('li', null, strong('Sauvegarde'), ' (', code('.tpmbackup'), ') : tous les packs de textures, skins et shaders de ce navigateur, plus ta cape et ta police, dans un seul fichier.'),
         ),
         el('h3', { class: 'guide-sub' }, 'Les ouvrir dans un autre navigateur ou sur un autre appareil'),
         steps([
           'Ouvre Texture Pack Maker là-bas (ou l’appli installée).',
-          ['Dépose le fichier sur n’importe quelle zone ', strong('Open'), ' d’un éditeur, ou utilise ', strong('Open a project file'), '. Un projet s’ouvre dans son éditeur comme un nouveau projet : rien de ce que tu as déjà n’est remplacé.'],
+          ['Dépose le fichier sur n’importe quelle zone ', strong('Open'), ' d’un éditeur, ou utilise ', strong('Open a project file'), '. Un projet s’ouvre dans son éditeur comme un nouveau projet : rien de ce que tu as déjà n’est remplacé.'],
           ['Pour une sauvegarde, choisis ce que tu veux restaurer. Les projets déjà présents sont ignorés, ou gardés à côté des tiens avec ', strong('Keep both'), '.'],
         ]),
         callout(
           'info',
           'Ce n’est pas la même chose qu’un export',
-          'Un .zip ou un .mcpack exporté est fait pour le jeu. Un fichier de projet garde aussi l’état de l’éditeur, pour que tu reprennes exactement là où tu t’étais arrêté. Aucun des deux ne contient les fichiers du jeu : ils se téléchargent à nouveau chez Mojang.',
+          'Un .zip ou un .mcpack exporté est fait pour le jeu. Un fichier de projet garde aussi l’état de l’éditeur, pour que tu reprennes exactement là où tu t’étais arrêté. Aucun des deux ne contient les fichiers du jeu : ils se téléchargent à nouveau chez Mojang.',
         ),
       ],
     },
@@ -310,19 +310,19 @@ export const HELP: HelpText = {
   faq: [
     {
       id: 'vanilla-source',
-      q: 'D’où viennent les textures vanilla ?',
+      q: 'D’où viennent les textures vanilla ?',
       a: [
         p(
           'Quand tu commences un projet Java, ton navigateur télécharge le fichier officiel du jeu pour cette version directement depuis les serveurs de Mojang et ne garde sur cet appareil que les textures, les modèles et les shaders. Les textures de Bedrock viennent du dépôt officiel ',
           ext('https://github.com/Mojang/bedrock-samples', 'bedrock-samples'),
           ' de Mojang sur GitHub.',
         ),
-        p('Rien de Mojang n’est stocké sur Texture Pack Maker lui-même : c’est un site web statique, sans serveurs à lui.'),
+        p('Rien de Mojang n’est stocké sur Texture Pack Maker lui-même : c’est un site web statique, sans serveurs à lui.'),
       ],
     },
     {
       id: 'paint-3d',
-      q: 'Je peux peindre sur le modèle 3D plutôt que sur la texture à plat ?',
+      q: 'Je peux peindre sur le modèle 3D plutôt que sur la texture à plat ?',
       a: [
         p(
           'Oui. Dans l’éditeur de textures, utilise l’interrupteur ',
@@ -333,37 +333,37 @@ export const HELP: HelpText = {
     },
     {
       id: 'mobs',
-      q: 'Je peux modifier les textures des créatures ?',
+      q: 'Je peux modifier les textures des créatures ?',
       a: [
         p(
           'Oui. Choisis ',
           strong('Mobs'),
-          ' dans la liste des textures (Blocks · Items · Mobs · All), ou ouvre n’importe quelle texture du dossier entity. La créature apparaît en 3D et se peint comme un bloc. Utilise les choix à côté (variante, âge, couleur de la laine, métier, etc.) pour atteindre chaque texture qu’elle utilise ; les couches comme la laine du mouton, les yeux lumineux et les vêtements des villageois se peignent sur leurs propres textures. Dans la liste Parts, clique sur une partie pour la masquer et peindre ce qu’elle cache, double-clique pour n’afficher que cette partie, et utilise Show all pour tout faire revenir. Les créatures Bedrock utilisent les modèles de Bedrock, et les masques de teinte cachés dans leurs pixels transparents sont gardés.',
+          ' dans la liste des textures (Blocks · Items · Mobs · All), ou ouvre n’importe quelle texture du dossier entity. La créature apparaît en 3D et se peint comme un bloc. Utilise les choix à côté (variante, âge, couleur de la laine, métier, etc.) pour atteindre chaque texture qu’elle utilise ; les couches comme la laine du mouton, les yeux lumineux et les vêtements des villageois se peignent sur leurs propres textures. Dans la liste Parts, clique sur une partie pour la masquer et peindre ce qu’elle cache, double-clique pour n’afficher que cette partie, et utilise Show all pour tout faire revenir. Les créatures Bedrock utilisent les modèles de Bedrock, et les masques de teinte cachés dans leurs pixels transparents sont gardés.',
         ),
       ],
     },
     {
       id: 'gear',
-      q: 'Je peux modifier les selles, les armures et les armures pour cheval ?',
+      q: 'Je peux modifier les selles, les armures et les armures pour cheval ?',
       a: [
         p(
           'Oui. Les créatures qui portent des choses ont un groupe ',
           strong('Wearing'),
-          ' dans leurs choix : mets une selle sur un cochon, un arpenteur, un cheval, un dromadaire ou un nautile ; habille les zombies, les squelettes, les piglins et le porte-armure d’une armure (choisis un matériau pour tout l’ensemble, puis active ou désactive chaque pièce, et teins le cuir avec ',
+          ' dans leurs choix : mets une selle sur un cochon, un arpenteur, un cheval, un dromadaire ou un nautile ; habille les zombies, les squelettes, les piglins et le porte-armure d’une armure (choisis un matériau pour tout l’ensemble, puis active ou désactive chaque pièce, et teins le cuir avec ',
           strong('Dye'),
-          ') ; donne leur armure aux chevaux, aux loups et aux nautiles, un tapis aux lamas et un harnais au ghast heureux. Chaque objet porté se peint sur sa propre texture et a sa propre entrée dans ',
+          ') ; donne leur armure aux chevaux, aux loups et aux nautiles, un tapis aux lamas et un harnais au ghast heureux. Chaque objet porté se peint sur sa propre texture et a sa propre entrée dans ',
           strong('Parts'),
           ', pour que tu puisses le masquer et peindre la créature en dessous. Ouvrir une texture d’armure, de selle ou de tapis la montre portée, et ',
           strong('Used by'),
           ' liste chaque créature qui la porte. Les anciennes versions utilisent les textures d’armure et de selle qu’elles avaient.',
         ),
         p(
-          strong('Ornements d’armure : '),
+          strong('Ornements d’armure : '),
           'avec une armure humanoïde, choisis un motif dans ',
           strong('Trim'),
           ' et un ',
           strong('Material'),
-          ' sous Wearing (Java 1.20 et plus récent, et Bedrock). Le jeu colore le motif gris avec la palette du matériau, et utilise une palette plus sombre quand l’ornement est du même matériau que l’armure, comme un ornement en fer sur une armure en fer. Peins l’ornement sur le modèle ou ouvre son motif : les huit gris prennent la couleur de l’ornement et toute autre couleur reste comme tu la peins. Modifie la palette d’un matériau pour recolorer ce matériau sur tous les ornements, et masque ',
+          ' sous Wearing (Java 1.20 et plus récent, et Bedrock). Le jeu colore le motif gris avec la palette du matériau, et utilise une palette plus sombre quand l’ornement est du même matériau que l’armure, comme un ornement en fer sur une armure en fer. Peins l’ornement sur le modèle ou ouvre son motif : les huit gris prennent la couleur de l’ornement et toute autre couleur reste comme tu la peins. Modifie la palette d’un matériau pour recolorer ce matériau sur tous les ornements, et masque ',
           strong('Trim'),
           ' dans Parts pour atteindre l’armure en dessous.',
         ),
@@ -371,14 +371,14 @@ export const HELP: HelpText = {
     },
     {
       id: 'models',
-      q: 'Je peux changer la forme des blocs et des objets, comme une épée en 3D ?',
+      q: 'Je peux changer la forme des blocs et des objets, comme une épée en 3D ?',
       a: [
         p(
           'Oui, dans les packs Java (Minecraft 1.8 et plus récent). Affiche un bloc ou un objet dans l’aperçu et appuie sur ',
           strong('Edit shape'),
           '. L’éditeur de modèles ouvre le modèle que le jeu utilise, reconstitué à partir de ses modèles parents. Ajoute, copie et supprime des cubes, tape leur position et leur taille ou fais glisser les flèches et les poignées en 3D, alignés sur la grille 16 × 16 ou plus fine, et tourne un cube sur un axe (par pas de 22,5° avant Minecraft 1.21.6). Dans ',
           strong('Faces'),
-          ', donne à chaque face une texture de ton pack, ou une nouvelle que tu peindras plus tard, et fais glisser la partie de la texture qu’elle montre ; règle sa rotation, quand elle est cachée et si elle est teintée. ',
+          ', donne à chaque face une texture de ton pack, ou une nouvelle que tu peindras plus tard, et fais glisser la partie de la texture qu’elle montre ; règle sa rotation, quand elle est cachée et si elle est teintée. ',
           strong('Display'),
           ' règle la position du modèle dans l’inventaire, à la première et à la troisième personne, au sol, dans un cadre et sur la tête, chacune avec son aperçu. Chaque changement peut être annulé.',
         ),
@@ -387,7 +387,7 @@ export const HELP: HelpText = {
           strong('3D item from sprite'),
           ', qui transforme l’image plate en cubes d’un pixel d’épaisseur réunis en aussi peu de cubes que possible. Depuis la 1.21.4, ',
           strong('Flat in the inventory'),
-          ' garde l’icône plate dans l’inventaire et montre le modèle 3D en main. Le pack reçoit le fichier du modèle, plus une définition d’objet ou un fichier d’états de bloc seulement quand le jeu en a besoin ; l’export vérifie les modèles pour ta version, et les fichiers de modèles des packs que tu ouvres sont gardés et peuvent être modifiés. Sur Bedrock, les nouvelles formes de blocs ont besoin d’un add-on et les objets 3D en main de fichiers attachables, que l’éditeur ne fait pas ; tu peux télécharger un modèle en géométrie Bedrock pour partir de là. Pas à pas : ',
+          ' garde l’icône plate dans l’inventaire et montre le modèle 3D en main. Le pack reçoit le fichier du modèle, plus une définition d’objet ou un fichier d’états de bloc seulement quand le jeu en a besoin ; l’export vérifie les modèles pour ta version, et les fichiers de modèles des packs que tu ouvres sont gardés et peuvent être modifiés. Sur Bedrock, les nouvelles formes de blocs ont besoin d’un add-on et les objets 3D en main de fichiers attachables, que l’éditeur ne fait pas ; tu peux télécharger un modèle en géométrie Bedrock pour partir de là. Pas à pas : ',
           link('/guides/make-3d-items-texture-pack', 'Comment faire des objets 3D'),
           '.',
         ),
@@ -395,14 +395,14 @@ export const HELP: HelpText = {
     },
     {
       id: 'pvp',
-      q: 'Je peux faire un pack PvP ou FPS ?',
+      q: 'Je peux faire un pack PvP ou FPS ?',
       a: [
         p(
           'Oui. Quand tu crées un pack, choisis ',
           strong('PvP / FPS pack'),
-          ' : l’éditeur active le feu bas, le verre et les vitres transparents, enlève le flou de la citrouille, rend le viseur plus petit, les épées plus petites et le bouclier plus bas, dans la mesure où ta version a tout ça. L’onglet ',
+          ' : l’éditeur active le feu bas, le verre et les vitres transparents, enlève le flou de la citrouille, rend le viseur plus petit, les épées plus petites et le bouclier plus bas, dans la mesure où ta version a tout ça. L’onglet ',
           strong('PvP'),
-          ` a un interrupteur pour chaque réglage, avec des choix comme la hauteur du feu, cinq viseurs ou ton propre dessin, et la taille des épées, plus des options FPS : textures 8× et sans animations. Chaque réglage écrit des fichiers de pack normaux pour ta version (de Java 1.6.1 à ${LATEST}, noms de fichiers de la 1.8.9 compris) et peut être désactivé ou annulé. Sur Bedrock, le verre transparent, la vue à travers la citrouille, le viseur et les textures 8× marchent ; le feu bas et les objets en main ne peuvent pas y être changés par un pack. Le zoom, un compteur de FPS ou l’absence de brouillard ont besoin de mods. Pas à pas : `,
+          ` a un interrupteur pour chaque réglage, avec des choix comme la hauteur du feu, cinq viseurs ou ton propre dessin, et la taille des épées, plus des options FPS : textures 8× et sans animations. Chaque réglage écrit des fichiers de pack normaux pour ta version (de Java 1.6.1 à ${LATEST}, noms de fichiers de la 1.8.9 compris) et peut être désactivé ou annulé. Sur Bedrock, le verre transparent, la vue à travers la citrouille, le viseur et les textures 8× marchent ; le feu bas et les objets en main ne peuvent pas y être changés par un pack. Le zoom, un compteur de FPS ou l’absence de brouillard ont besoin de mods. Pas à pas : `,
           link('/guides/make-a-pvp-texture-pack', 'Comment faire un pack de textures PvP'),
           '.',
         ),
@@ -410,16 +410,16 @@ export const HELP: HelpText = {
     },
     {
       id: 'fonts',
-      q: 'Je peux changer la police de Minecraft ?',
+      q: 'Je peux changer la police de Minecraft ?',
       a: [
         p(
           'Oui, avec le ',
           link('/font-maker', 'créateur de polices'),
-          ' : dessine tes lettres pixel par pixel, pars d’un style intégré, ou transforme une police TTF, OTF ou WOFF en pixels, et vérifie-les dans le tchat, sur les pancartes et dans les livres. Java 1.13 et plus récent reçoivent un ',
+          ' : dessine tes lettres pixel par pixel, pars d’un style intégré, ou transforme une police TTF, OTF ou WOFF en pixels, et vérifie-les dans le tchat, sur les pancartes et dans les livres. Java 1.13 et plus récent reçoivent un ',
           code('font/default.json'),
-          ' qui ne remplace que les caractères que tu as dessinés (un fichier TrueType peut aussi y aller) ; Java 1.6.1 à 1.12.2 reçoivent ',
+          ' qui ne remplace que les caractères que tu as dessinés (un fichier TrueType peut aussi y aller) ; Java 1.6.1 à 1.12.2 reçoivent ',
           code('textures/font/ascii.png'),
-          ' ; Bedrock reçoit ',
+          ' ; Bedrock reçoit ',
           code('font/default8.png'),
           ' et des pages de caractères. Si le texte a toujours l’air normal sur Java, désactive Police Unicode dans Options... › Langue....',
         ),
@@ -427,14 +427,14 @@ export const HELP: HelpText = {
     },
     {
       id: 'sounds',
-      q: 'Je peux changer les sons dans mon pack ?',
+      q: 'Je peux changer les sons dans mon pack ?',
       a: [
         p(
           'Oui. Dans l’éditeur de packs de textures, appuie sur la note de musique au bout de l’interrupteur Blocks · Items · Mobs · All. Trouve un son par son nom ou sa catégorie et appuie sur lecture pour l’écouter. Ouvre-le, puis ',
           strong('Replace'),
           ' un fichier par ton propre audio (MP3, WAV, OGG, M4A et d’autres) ou enregistre-en un avec ton micro. Fais glisser les poignées sur la forme d’onde pour le couper, règle le volume ou appuie sur ',
           strong('Normalise'),
-          ', et utilise Reset pour revenir au son du jeu. Les sons remplacés sont enregistrés en Ogg Vorbis et exportés avec ton pack : les packs Java les mettent dans ',
+          ', et utilise Reset pour revenir au son du jeu. Les sons remplacés sont enregistrés en Ogg Vorbis et exportés avec ton pack : les packs Java les mettent dans ',
           code('assets/minecraft/sounds'),
           ', les packs Bedrock dans ',
           code('sounds/'),
@@ -443,13 +443,13 @@ export const HELP: HelpText = {
           '.',
         ),
         p(
-          'L’enregistrement ne demande l’accès au micro que quand tu appuies sur Start ; s’il est bloqué, autorise le micro pour ce site depuis l’icône dans la barre d’adresse. Les enregistrements ne quittent jamais ton appareil. Garde la plupart des sons en mono pour qu’ils viennent de l’endroit où ils se passent dans le monde, et utilise la stéréo pour la musique et les sons des menus. Les sons de Java sont lus directement depuis les serveurs de Mojang, qui ne laissent pas les pages web lire l’audio : tu peux donc les écouter, mais tu ne peux couper que les sons que tu importes ou enregistres. La modification des sons marche pour Java 1.7.10 et plus récent, et pour Bedrock.',
+          'L’enregistrement ne demande l’accès au micro que quand tu appuies sur Start ; s’il est bloqué, autorise le micro pour ce site depuis l’icône dans la barre d’adresse. Les enregistrements ne quittent jamais ton appareil. Garde la plupart des sons en mono pour qu’ils viennent de l’endroit où ils se passent dans le monde, et utilise la stéréo pour la musique et les sons des menus. Les sons de Java sont lus directement depuis les serveurs de Mojang, qui ne laissent pas les pages web lire l’audio : tu peux donc les écouter, mais tu ne peux couper que les sons que tu importes ou enregistres. La modification des sons marche pour Java 1.7.10 et plus récent, et pour Bedrock.',
         ),
       ],
     },
     {
       id: 'hd-skins',
-      q: 'Je peux faire un skin HD 128×128 ?',
+      q: 'Je peux faire un skin HD 128×128 ?',
       a: [
         p(
           'Oui, pour Bedrock Edition. Les skins HD ont deux fois plus de pixels qu’un skin normal (128×128 au lieu de 64×64), donc les visages, les ombres et les motifs peuvent être plus fins. Quand tu commences un skin dans le créateur de skins, choisis ',
@@ -460,7 +460,7 @@ export const HELP: HelpText = {
           strong('Size'),
           ' › ',
           strong('HD 128'),
-          ' dans l’éditeur : chaque pixel est doublé, donc il a le même aspect jusqu’à ce que tu ajoutes des détails. Exporte ',
+          ' dans l’éditeur : chaque pixel est doublé, donc il a le même aspect jusqu’à ce que tu ajoutes des détails. Exporte ',
           strong('Bedrock skin (.png)'),
           ` pour l’importer dans le ${BEDROCK.dressingRoom}, ou un `,
           strong('Bedrock skin pack (.mcpack)'),
@@ -475,14 +475,14 @@ export const HELP: HelpText = {
     },
     {
       id: 'poses',
-      q: 'Je peux faire prendre la pose à mon skin et enregistrer une image ?',
+      q: 'Je peux faire prendre la pose à mon skin et enregistrer une image ?',
       a: [
         p(
           'Oui. Dans l’éditeur de skins, appuie sur ',
           strong('Pose & picture'),
           ' sous l’aperçu 3D. Choisis une des douze poses (debout, marche, course, salut, assis, accroupi, vol, pose en T, victoire, dab, combat, doigt pointé), ou ouvre ',
           strong('Adjust'),
-          ' et bouge la tête, le corps, chaque bras et chaque jambe avec des curseurs ; chaque partie a sa propre remise à zéro. Dans ',
+          ' et bouge la tête, le corps, chaque bras et chaque jambe avec des curseurs ; chaque partie a sa propre remise à zéro. Dans ',
           strong('Scene'),
           ', choisis un angle de caméra, le zoom, un fond (ou ',
           strong('Transparent'),
@@ -496,26 +496,26 @@ export const HELP: HelpText = {
     },
     {
       id: 'capes',
-      q: 'Je peux faire une cape perso ?',
+      q: 'Je peux faire une cape perso ?',
       a: [
         p(
           'Tu peux en dessiner une dans le ',
           link('/cape-maker', 'créateur de capes'),
-          ' : peins la texture de cape 64×32 avec un aperçu 3D et télécharge le PNG. Là où elle s’affiche, c’est le jeu qui décide. Java Edition n’affiche que les capes officielles de Mojang, donc une cape perso a besoin d’un mod ou d’un client avec son propre service de capes, et seuls les joueurs qui ont le même mod la voient. Sur Bedrock, les capes sont des objets du Créateur de personnage, et l’outil de vérification des packs de Mojang signale comme une erreur une cape dans tout pack de skins qui n’est pas de Mojang : le créateur de packs de skins laisse donc les capes de côté.',
+          ' : peins la texture de cape 64×32 avec un aperçu 3D et télécharge le PNG. Là où elle s’affiche, c’est le jeu qui décide. Java Edition n’affiche que les capes officielles de Mojang, donc une cape perso a besoin d’un mod ou d’un client avec son propre service de capes, et seuls les joueurs qui ont le même mod la voient. Sur Bedrock, les capes sont des objets du Créateur de personnage, et l’outil de vérification des packs de Mojang signale comme une erreur une cape dans tout pack de skins qui n’est pas de Mojang : le créateur de packs de skins laisse donc les capes de côté.',
         ),
         p(
-          'Ce qui marche sans mods, ce sont les élytres : le créateur de capes télécharge aussi un pack de textures d’élytres (Java 1.9 et plus récent, ou Bedrock) qui montre ton dessin sur les élytres pour tous ceux qui utilisent le pack. Les joueurs qui portent une cape affichent plutôt le dessin de leur cape sur leurs élytres.',
+          'Ce qui marche sans mods, ce sont les élytres : le créateur de capes télécharge aussi un pack de textures d’élytres (Java 1.9 et plus récent, ou Bedrock) qui montre ton dessin sur les élytres pour tous ceux qui utilisent le pack. Les joueurs qui portent une cape affichent plutôt le dessin de leur cape sur leurs élytres.',
         ),
       ],
     },
     {
       id: 'upload',
-      q: 'Est-ce que quelque chose est envoyé ?',
-      a: [p('Non. Tes projets, tes images et tes packs exportés ne quittent jamais ton appareil. L’appli ne fait que télécharger : les fichiers du jeu chez Mojang, la liste des versions et les skins que tu cherches par pseudo.')],
+      q: 'Est-ce que quelque chose est envoyé ?',
+      a: [p('Non. Tes projets, tes images et tes packs exportés ne quittent jamais ton appareil. L’appli ne fait que télécharger : les fichiers du jeu chez Mojang, la liste des versions et les skins que tu cherches par pseudo.')],
     },
     {
       id: 'offline',
-      q: 'Ça marche hors ligne ?',
+      q: 'Ça marche hors ligne ?',
       a: [
         p(
           'Oui, après le premier chargement. L’appli et chaque version que tu as déjà ouverte restent sur cet appareil, donc tu peux continuer à modifier sans internet. Une version que tu n’as pas encore utilisée a besoin d’une connexion, ou choisis ',
@@ -528,7 +528,7 @@ export const HELP: HelpText = {
     },
     {
       id: 'storage',
-      q: 'Où sont enregistrés mes projets ?',
+      q: 'Où sont enregistrés mes projets ?',
       a: [
         p(
           'Dans le stockage de ton navigateur, sur cet appareil. Ils y restent jusqu’à ce que tu les supprimes ou que tu effaces les données de ce site. Pour garder une copie ou les emmener sur un autre ordinateur, enregistre un fichier de projet (',
@@ -543,12 +543,12 @@ export const HELP: HelpText = {
     },
     {
       id: 'versions',
-      q: 'Quelles versions de Minecraft sont prises en charge ?',
+      q: 'Quelles versions de Minecraft sont prises en charge ?',
       a: [p(`Java ${LATEST} est la version par défaut, et toutes les versions de Java jusqu’à la 1.6.1 (quand les packs de ressources sont apparus) marchent, les snapshots aussi si tu les actives. Pour Bedrock, tu peux utiliser la dernière version, la dernière preview et des versions plus anciennes.`)],
     },
     {
       id: 'pack-format',
-      q: `Quel est le format de pack de ressources de Minecraft Java ${LATEST} ?`,
+      q: `Quel est le format de pack de ressources de Minecraft Java ${LATEST} ?`,
       a: [
         p(
           `Java ${LATEST} utilise le format de pack de ressources ${F(LATEST)}. Un pack fait seulement pour ${LATEST} déclare `,
@@ -565,7 +565,7 @@ export const HELP: HelpText = {
     },
     {
       id: 'java-vs-bedrock',
-      q: 'Quelle est la différence entre les packs Java et Bedrock ?',
+      q: 'Quelle est la différence entre les packs Java et Bedrock ?',
       a: [
         p(
           'Un pack Java est un ',
@@ -588,7 +588,7 @@ export const HELP: HelpText = {
     },
     {
       id: 'no-mods',
-      q: 'Je peux faire des shaders sans mods ?',
+      q: 'Je peux faire des shaders sans mods ?',
       a: [
         p(
           `Oui. Sur Java 1.17 et plus récent, un pack de ressources peut changer les shaders de Minecraft lui-même (couleurs, vignette, brouillard, et bloom en ${LATEST}). Sur Bedrock, un pack Graphismes éclatants change la lumière, le ciel, le brouillard et l’eau intégrés. Les vraies ombres et les reflets sur Java ont toujours besoin d’Iris ou d’OptiFine. `,
@@ -599,17 +599,17 @@ export const HELP: HelpText = {
     },
     {
       id: 'phone',
-      q: 'Je peux l’utiliser sur téléphone ou tablette ?',
+      q: 'Je peux l’utiliser sur téléphone ou tablette ?',
       a: [p('Oui. Tous les outils marchent au toucher, y compris le zoom à deux doigts dans les éditeurs de pixels. Un plus grand écran est plus confortable pour du pixel art détaillé.')],
     },
     {
       id: 'official',
-      q: 'C’est gratuit ? C’est officiel ?',
+      q: 'C’est gratuit ? C’est officiel ?',
       a: [p('C’est gratuit et open source, sous licence MIT.'), p('Texture Pack Maker n’est pas un produit officiel de Minecraft. Il n’est ni approuvé par Mojang ou Microsoft, ni associé à eux.')],
     },
     {
       id: 'bug',
-      q: 'Quelque chose ne marche pas. Comment le signaler ?',
+      q: 'Quelque chose ne marche pas. Comment le signaler ?',
       a: [p('Ouvre un ticket (issue) sur ', ext(`${REPO_URL}/issues`, 'GitHub'), ' avec ton navigateur, la version du jeu et ce que tu faisais. Les captures d’écran aident beaucoup.')],
     },
   ],
@@ -631,6 +631,6 @@ export const HELP: HelpText = {
   bothEditions: 'Java et Bedrock',
   eyebrow: 'Guide d’installation et aide',
   title: 'Comment installer des packs de textures, des skins et des shaders',
-  lead: 'Fais entrer tes créations dans Minecraft : des guides pas à pas pour Java et Bedrock sur PC, Mac, téléphones et consoles, et des réponses aux questions courantes.',
+  lead: 'Fais entrer tes créations dans Minecraft : des guides pas à pas pour Java et Bedrock sur PC, Mac, téléphones et consoles, et des réponses aux questions courantes.',
   faqTitle: 'Questions fréquentes',
 };

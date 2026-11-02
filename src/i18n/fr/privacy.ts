@@ -33,7 +33,7 @@ export const PRIVACY: PrivacyText = {
         [
           'Pour savoir quelles pages et quels outils sont utilisés, le site compte les visites avec ',
           ext('https://www.cloudflare.com/web-analytics/', 'Cloudflare Web Analytics'),
-          '. Ce service n’utilise pas de cookies, ne te suit pas sur d’autres sites et ne crée pas de profil de toi : il note la page, le site d’où tu viens, ton pays et ton type de navigateur et d’appareil. Ce que tu crées n’en fait jamais partie.',
+          '. Ce service n’utilise pas de cookies, ne te suit pas sur d’autres sites et ne crée pas de profil de toi : il note la page, le site d’où tu viens, ton pays et ton type de navigateur et d’appareil. Ce que tu crées n’en fait jamais partie.',
         ],
       ],
     },
@@ -81,7 +81,7 @@ export const PRIVACY: PrivacyText = {
       title: 'Hébergement',
       body: [
         [
-          'Le site est hébergé sur GitHub Pages. GitHub peut enregistrer des données techniques comme les adresses IP pour faire tourner et protéger son service ; consulte la ',
+          'Le site est hébergé sur GitHub Pages. GitHub peut enregistrer des données techniques comme les adresses IP pour faire tourner et protéger son service ; consulte la ',
           ext('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement', 'déclaration de confidentialité de GitHub'),
           '.',
         ],
