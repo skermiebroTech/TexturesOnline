@@ -96,7 +96,8 @@ export function searchScore(tokens: string[], e: TextureEntry): number {
   for (const tok of tokens) {
     if (name === tok) score += 120;
     else if (name.startsWith(tok)) score += 70;
-    else if (new RegExp(`(^|_)${escapeRe(tok)}`).test(name)) score += 55;
+    // a word of the name starts with it (the start of the name is the case above)
+    else if (name.includes(`_${tok}`)) score += 55;
     else if (name.includes(tok)) score += 40;
     else if (e.hay.includes(tok)) score += 22;
     else if (tok.length >= 3 && isSubsequence(tok, name)) score += 6;
@@ -112,10 +113,6 @@ export function tokenize(q: string): string[] {
     .split(/\s+/)
     .map((t) => t.trim())
     .filter(Boolean);
-}
-
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isSubsequence(needle: string, hay: string): boolean {
