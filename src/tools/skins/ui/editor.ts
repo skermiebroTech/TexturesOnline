@@ -733,6 +733,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   // =============================================================================================
   // Layout
 
+  // The panels were this task's work: the layout, the pixel canvas and the rest are set up in the
+  // next one. Nothing is on screen yet and nothing scheduled refers to what comes later, so nothing
+  // can run in between.
+  await yieldToMain();
   const layout = editorLayout({
     left,
     center,
@@ -761,9 +765,6 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   sideObserver.observe(layout, { attributes: true, attributeFilter: ['data-side'] });
   const editorRoot = h('div', { class: 'sk-editor' }, bar, layout);
   disposers.push(() => sideObserver.disconnect());
-  // The panels were this task's work: the pixel canvas and the rest are set up in the next one,
-  // before anything is on screen (so nothing can be pressed in between).
-  await yieldToMain();
   root.append(editorRoot);
 
   // =============================================================================================
