@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import type { SkinModel } from '../../core/types';
 import { createStage, FramePacer, prefersReducedMotion, watchDevicePixelRatio } from '../../shared/preview/viewport';
 import { isTypingTarget } from '../../ui/dom';
+import { afterNextPaint } from '../../core/yield';
 import { BOX_FACE_ORDER, texelPlace } from './surface';
 import { faceRect, PARTS, scaleOf, type LayerSelection, type SkinFace, type SkinLayer, type SkinPart } from './templates';
 import { editorText } from './i18n/editor';
@@ -280,7 +281,6 @@ class SkinPreviewImpl implements SkinPreview {
    * picture (and the shader compile it brings) waits for the next frame instead of adding to it.
    */
   private booting = true;
-  private bootRaf = 0;
   private pacer!: FramePacer;
 
   // What the caller asked for; paint mode overrides these while it is on.
@@ -391,16 +391,15 @@ class SkinPreviewImpl implements SkinPreview {
     window.addEventListener('keydown', this.onHeldKey);
     window.addEventListener('keyup', this.onHeldKey);
     window.addEventListener('blur', this.onWindowBlur);
-    // (two frames: this task's frame paints the page, the next one draws the model)
-    this.bootRaf = requestAnimationFrame(() => {
-      this.bootRaf = requestAnimationFrame(() => {
-        this.bootRaf = 0;
-        this.booting = false;
-        // the first picture compiles the shaders: now, also while hidden (a phone's 3D tab), so
-        // showing the preview later is quick
-        if (this.viewer.renderPaused) this.renderNow();
-        this.updatePaused();
-      });
+    // This task's frame paints the page; the model is drawn in a task right after it (not in the
+    // next frame's own work, whose commit would then wait for the GPU to compile the shaders).
+    void afterNextPaint().then(() => {
+      if (this.destroyed) return;
+      this.booting = false;
+      // the first picture compiles the shaders: now, also while hidden (a phone's 3D tab), so
+      // showing the preview later is quick
+      if (this.viewer.renderPaused) this.renderNow();
+      this.updatePaused();
     });
   }
 
@@ -1540,7 +1539,6 @@ class SkinPreviewImpl implements SkinPreview {
     this.destroyed = true;
     if (this.raf) cancelAnimationFrame(this.raf);
     if (this.renderRaf) cancelAnimationFrame(this.renderRaf);
-    if (this.bootRaf) cancelAnimationFrame(this.bootRaf);
     this.stopTween();
     this.ro?.disconnect();
     this.io?.disconnect();
