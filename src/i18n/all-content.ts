@@ -7,9 +7,11 @@ import { CONTENT as ES } from './es/content';
 import { CONTENT as PT_BR } from './pt-br/content';
 import { CONTENT as JA } from './ja/content';
 import { CONTENT as RU } from './ru/content';
+import { CONTENT as PL } from './pl/content';
 
 registerContent('de', DE);
 registerContent('es', ES);
 registerContent('pt-br', PT_BR);
 registerContent('ja', JA);
 registerContent('ru', RU);
+registerContent('pl', PL);
