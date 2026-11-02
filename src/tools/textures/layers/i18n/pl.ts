@@ -1,0 +1,55 @@
+// Polish text of the paint layers (English source: ./text.ts).
+
+import type { LayersLanguage } from './load';
+
+const PL: LayersLanguage = {
+  'textures.layers': {
+    button: 'Warstwy',
+    buttonHint: 'Warstwy: maluj na osobnych warstwach, jak w edytorze grafiki',
+    buttonActive: 'Warstwy ({count}): malujesz na „{name}”',
+    title: 'Warstwy',
+    close: 'Zamknij',
+    list: 'Warstwy, od górnej',
+    layerName: 'Warstwa {n}',
+    gameName: 'Tekstura z gry',
+    copyName: '{name} (kopia)',
+    add: 'Nowa warstwa',
+    duplicate: 'Duplikuj warstwę',
+    delete: 'Usuń warstwę',
+    mergeDown: 'Połącz w dół',
+    flatten: 'Spłaszcz do jednej warstwy',
+    moveUp: 'W górę',
+    moveDown: 'W dół',
+    rename: 'Zmień nazwę',
+    nameLabel: 'Nazwa warstwy',
+    show: 'Pokaż warstwę',
+    hide: 'Ukryj warstwę',
+    lock: 'Zablokuj warstwę',
+    unlock: 'Odblokuj warstwę',
+    locked: 'Zablokowana',
+    hiddenTag: 'Ukryta',
+    fromGame: 'Nowa warstwa z tekstury gry',
+    more: 'Więcej opcji warstwy',
+    opacity: 'Krycie',
+    blend: 'Mieszanie',
+    blends: {
+      normal: 'Zwykłe',
+      multiply: 'Mnożenie',
+      screen: 'Ekran',
+      lighten: 'Rozjaśnianie',
+      overlay: 'Nakładka',
+    },
+    rowHint: 'Kliknij dwa razy, żeby zmienić nazwę, przeciągnij, żeby zmienić kolejność',
+    note: 'Paczka dostaje warstwy połączone w jeden obrazek.',
+    noteFrames: 'Warstwy obejmują każdą klatkę. Paczka dostaje je połączone.',
+    lockedToast: '„{name}” jest zablokowana. Odblokuj ją, żeby na niej malować.',
+    hiddenToast: '„{name}” jest ukryta. Pokaż ją, żeby na niej malować.',
+    pickLayer: 'Tylko ta warstwa',
+    pickLayerHint: 'Bierz kolory z warstwy, na której malujesz, a nie z tego, co widać',
+    replacedLayer: 'Zastąpiono piksele warstwy „{name}”.',
+    dropped: 'Ta tekstura zmieniła się poza warstwami, więc znowu ma jedną warstwę.',
+    importFlattens: 'Zaimportowane klatki zastępują wszystkie warstwy.',
+  },
+};
+
+export default PL;
