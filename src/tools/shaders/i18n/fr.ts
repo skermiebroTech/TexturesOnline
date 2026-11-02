@@ -69,7 +69,7 @@ const FR: ShadersLanguage = {
       defaultIris: 'Mon pack de shaders',
       defaultVanilla: 'Mes shaders vanilla',
       defaultBedrock: 'Mes Graphismes éclatants',
-      description: 'Shaders {préréglage} créés avec Texture Pack Maker',
+      description: 'Shaders {preset} créés avec Texture Pack Maker',
       descriptionCustom: 'Shaders personnalisés créés avec Texture Pack Maker',
     },
     myShaders: 'Mes shaders',
