@@ -9,6 +9,7 @@ import { KNOWN_RELEASES, KNOWN_RELEASE_FORMATS } from './packformats';
 import { fileText } from '../../shared/i18n/files';
 import { isStandIn, realAssetObject } from './asset-objects';
 import { fmt } from '../../i18n/editor-text';
+import { nextTask } from '../../core/yield';
 
 /*
  * Java vanilla assets straight from Mojang's client jar.
@@ -260,14 +261,17 @@ async function fromCache(versionId: string): Promise<JavaAssets | null> {
   const groupKeys = meta.groups.map((g) => key(versionId, `g:${g}`));
   const stored = await cacheGetMany<StoredGroup>(groupKeys);
   if (!isStoredGroup(stored[meta.groups.indexOf('core')])) return null;
+  // (each step is its own task: an editor opening on a phone stays responsive to taps)
+  await nextTask();
   const assets = new JavaAssets(versionId, meta, null);
-  meta.groups.forEach((g, i) => {
+  for (let i = 0; i < meta.groups.length; i++) {
     const s = stored[i];
-    if (!isStoredGroup(s)) return;
+    if (!isStoredGroup(s)) continue;
+    await nextTask();
     const files = new Map<string, Uint8Array>();
     unpackGroup(s, files);
-    assets.addGroup(g, files);
-  });
+    assets.addGroup(meta.groups[i], files);
+  }
   return assets;
 }
 
@@ -309,6 +313,7 @@ async function fromSource(versionId: string, source: ByteSource, info: SourceInf
     label: fmt(fileText.java.readingList, { version: versionId }),
     onProgress,
   });
+  await nextTask();
   const listed = zip.entries.filter((e) => javaGroupOf(e.name) !== null);
   if (!listed.some((e) => e.name.startsWith(JAVA_TEXTURE_ROOT))) {
     throw new Error(info.fromFile ? fileText.java.notClientJar : fmt(fileText.java.noTextures, { version: versionId }));
@@ -322,6 +327,7 @@ async function fromSource(versionId: string, source: ByteSource, info: SourceInf
     onProgress,
   });
   throwIfAborted(signal);
+  await nextTask();
   const everything = eager || !!source.full;
   if (!eager && source.full) {
     // The server sent the whole jar; take the rest from memory too.
@@ -353,9 +359,12 @@ async function fromSource(versionId: string, source: ByteSource, info: SourceInf
   }
   if (!byGroup.core) byGroup.core = new Map();
   if (everything) for (const e of listed) byGroup[javaGroupOf(e.name)!] ??= new Map();
+  await nextTask();
   const assets = new JavaAssets(versionId, meta, everything ? null : zip);
+  await nextTask();
   for (const [g, m] of Object.entries(byGroup)) assets.addGroup(g, m);
   report(fileText.java.savingOffline, null);
+  await nextTask();
   try {
     await persistGroups(versionId, meta, byGroup);
   } catch (err) {

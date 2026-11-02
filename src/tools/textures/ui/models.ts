@@ -92,6 +92,8 @@ export class ModelService {
       }).then(
         async (lib) => {
           await this.readPackFiles(lib);
+          // the lists rebuild on 'ready': in a task of their own
+          await nextTask();
           this.lib = lib;
           this.events.emit('ready');
           // Which blocks use which texture: built in slices so the editor stays responsive.
@@ -210,19 +212,19 @@ export class ModelService {
   async colorMaps(fx: boolean, only?: readonly ColorMap[]): Promise<Partial<Record<ColorMap, MapImage>>> {
     const { edition, version } = this.store.project;
     const out: Partial<Record<ColorMap, MapImage>> = {};
-    await Promise.all(
-      colorMapsOf(edition, version)
-        .filter((m) => !only || only.includes(m))
-        .map(async (m) => {
-          const p = colorMapPath(edition, m);
-          if (!this.store.assets.hasFile(p) && !this.store.isEdited(p)) return;
-          try {
-            out[m] = this.fx(await this.store.getFull(p), p, false, fx);
-          } catch {
-            /* the game's colours */
-          }
-        }),
-    );
+    // one map per task (each is a 256 × 256 picture to decode and maybe restyle)
+    for (const m of colorMapsOf(edition, version).filter((m) => !only || only.includes(m))) {
+      const p = colorMapPath(edition, m);
+      if (!this.store.assets.hasFile(p) && !this.store.isEdited(p)) continue;
+      try {
+        await nextTask();
+        const full = await this.store.getFull(p);
+        await nextTask();
+        out[m] = this.fx(full, p, false, fx);
+      } catch {
+        /* the game's colours */
+      }
+    }
     return out;
   }
 
@@ -427,7 +429,7 @@ export class ModelService {
           const r = await this.renderer();
           // (the first time, setting up WebGL was this task's work: draw in the next one)
           await nextTask();
-          icon = r?.render(built.scene, { mob: built.view === 'mob' }) ?? null;
+          icon = (await r?.renderAsync(built.scene, { mob: built.view === 'mob' })) ?? null;
         }
         if (!icon) {
           const thumb = this.lib.thumbnail(entry);

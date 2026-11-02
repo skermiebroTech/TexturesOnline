@@ -2,7 +2,7 @@
 // Java compatibility range (pack format numbers + warnings), resolution, Bedrock ids, danger zone.
 
 import type { PackFormat } from '../../../core/types';
-import { h } from '../../../ui/dom';
+import { h, whenIdle } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import { button, card, textInput, toggle, tooltip } from '../../../ui/components';
 import { confirmDialog } from '../../../ui/modal';
@@ -452,14 +452,23 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   };
   paintVersionHint();
   paintPreview();
-  void paintIcon();
   paintStats();
-  if (java) void renderCompat();
+  // The icon (decoded from the pack's textures) and the compatibility range wait until the tab is
+  // shown or the page is idle: the editor opens on another tab.
+  let woke = false;
+  const wake = () => {
+    if (woke) return;
+    woke = true;
+    cancelIdle();
+    void paintIcon();
+    if (java) void renderCompat();
+  };
+  const cancelIdle = whenIdle(wake, 3000);
 
   let descTimer: ReturnType<typeof setTimeout> | null = null;
   offs.push(
     store.events.on('meta', () => {
-      void paintIcon();
+      if (woke) void paintIcon();
       paintStats();
       // renamed from the top bar
       const nameEl = (nameField as HTMLElement & { input?: HTMLInputElement }).input;
@@ -467,18 +476,18 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
         nameField.setValue(project.name);
         paintPreview();
       }
-      if (java) {
+      if (java && woke) {
         if (descTimer) clearTimeout(descTimer);
         descTimer = setTimeout(() => void renderCompat(), 400);
       }
     }),
     store.events.on('overrides', ({ path }) => {
       paintStats();
-      if (/grass|stone/.test(path)) void paintIcon();
+      if (woke && /grass|stone/.test(path)) void paintIcon();
     }),
     store.events.on('effects', () => {
       paintStats();
-      void paintIcon();
+      if (woke) void paintIcon();
     }),
   );
 
@@ -486,11 +495,13 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
     el,
     setVisible(v) {
       if (v) {
+        wake();
         paintStats();
         nameField.setValue(project.name);
       }
     },
     destroy() {
+      cancelIdle();
       offs.forEach((f) => f());
       if (descTimer) clearTimeout(descTimer);
     },

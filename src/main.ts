@@ -12,7 +12,7 @@ import { initTheme } from './ui/theme';
 import { initToasts, toast } from './ui/toast';
 import { initPwa } from './pwa';
 import { kit } from './ui/i18n/kit';
-import { fmt } from './i18n/editor-text';
+import { fmt, warmNumberFormats } from './i18n/editor-text';
 
 initTheme();
 
@@ -90,6 +90,11 @@ onViewRendered((state, view) => {
       if (view.isConnected) view.dataset.cv = '';
     }),
   );
+});
+
+// The page's number format is ready before a tap first needs one (its first use is slow).
+onViewRendered((state) => {
+  whenIdle(() => warmNumberFormats(state.locale), 4000);
 });
 
 // A prerendered page that the app renders the same way ("keep" pages: home, help, guides) is shown

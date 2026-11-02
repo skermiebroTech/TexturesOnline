@@ -1,6 +1,7 @@
 // Skin editor: tool rail + 64x64 (or HD 128x128) pixel canvas with part guides, colours and parts on
 // the left, live 3D preview on the right. Autosaves to IndexedDB.
 
+import { afterNextPaint, yieldToMain } from '../../../core/yield';
 import { debounce } from '../../../core/events';
 import { decodeImage, encodePng } from '../../../core/image';
 import { navigate } from '../../../core/router';
@@ -41,7 +42,7 @@ import {
   type SkinPart,
   type SkinScale,
 } from '../templates';
-import { drawFigure, drawHead, drawPaperDoll } from './figure';
+import { drawFigureSoon, drawHead, drawPaperDoll } from './figure';
 import { SKIN_PALETTES } from './palettes';
 import { normalizeSkinImage } from './sources';
 import { setOuterSeeThrough, setPartVisible } from './preview-extras';
@@ -732,6 +733,10 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   // =============================================================================================
   // Layout
 
+  // The panels were this task's work: the layout, the pixel canvas and the rest are set up in the
+  // next one. Nothing is on screen yet and nothing scheduled refers to what comes later, so nothing
+  // can run in between.
+  await yieldToMain();
   const layout = editorLayout({
     left,
     center,
@@ -1180,7 +1185,9 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   };
 
   void import('../skin-preview')
-    .then(({ createSkinPreview }) => {
+    .then(async ({ createSkinPreview }) => {
+      // the editor paints first: setting up WebGL is a long task of its own
+      await afterNextPaint();
       if (destroyed) return;
       stage.replaceChildren();
       preview = createSkinPreview(stage, {
@@ -1615,7 +1622,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   /** A figure of a skin for the size dialogs. */
   function sizeFigure(img: ImageData, label: string): HTMLElement {
     const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
-    requestAnimationFrame(() => drawFigure(c, img, model));
+    drawFigureSoon(c, img, model);
     return h('figure', { class: 'sk-export-figure' }, h('div', { class: 'sk-export-stage' }, c), h('figcaption', null, label));
   }
 

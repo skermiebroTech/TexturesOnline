@@ -12,6 +12,7 @@ import type { PreviewTexturesPref, ShaderPrefs } from './project';
 import { createTexturePicker } from './texture-picker';
 import { et } from './i18n/editor';
 import { fmt } from '../../../i18n/editor-text';
+import { afterNextPaint } from '../../../core/yield';
 
 type TimeId = keyof typeof et.stage.times;
 
@@ -301,9 +302,13 @@ export function createStage(opts: {
     el,
     async mount() {
       if (preview || destroyed) return;
-      const { createShaderPreview } = await import('../../../shared/preview/shader-preview');
-      if (destroyed) return;
-      preview = createShaderPreview(host, { params: currentParams(), autoRotate: prefs.autoRotate && !reduced, assets: null, text: et.stage.preview });
+      const { createShaderPreview, prepareShaderPreview } = await import('../../../shared/preview/shader-preview');
+      // the editor around it paints first; then the island, its textures and WebGL each take a task
+      await afterNextPaint();
+      if (destroyed || preview) return;
+      const prepared = await prepareShaderPreview();
+      if (destroyed || preview) return;
+      preview = createShaderPreview(host, { params: currentParams(), autoRotate: prefs.autoRotate && !reduced, assets: null, text: et.stage.preview, prepared });
       if (prefs.animateDay) setDayAnimation(true);
       resolvePreview(preview);
     },

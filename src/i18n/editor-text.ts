@@ -154,6 +154,16 @@ export function num(n: number, opts?: Intl.NumberFormatOptions, locale: Locale =
   return f.format(n);
 }
 
+/**
+ * Makes the number format and plural rules of the text's language ahead of use: the first of each
+ * loads the browser's locale data (tens of ms on a phone), better spent while nothing happens than
+ * in the tap that first shows a number.
+ */
+export function warmNumberFormats(locale: Locale = active): void {
+  num(1, undefined, locale);
+  pluralCategory(1, locale);
+}
+
 function pluralCategory(n: number, locale: Locale): string {
   let r = pluralRules.get(locale);
   if (!r) pluralRules.set(locale, (r = new Intl.PluralRules(intlLocale(locale))));

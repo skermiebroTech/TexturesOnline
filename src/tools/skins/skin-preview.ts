@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import type { SkinModel } from '../../core/types';
 import { createStage, FramePacer, prefersReducedMotion, watchDevicePixelRatio } from '../../shared/preview/viewport';
 import { isTypingTarget } from '../../ui/dom';
+import { afterNextPaint } from '../../core/yield';
 import { BOX_FACE_ORDER, texelPlace } from './surface';
 import { faceRect, PARTS, scaleOf, type LayerSelection, type SkinFace, type SkinLayer, type SkinPart } from './templates';
 import { editorText } from './i18n/editor';
@@ -275,6 +276,11 @@ class SkinPreviewImpl implements SkinPreview {
   private onScreen = true;
   private dirty = false;
   private destroyed = false;
+  /**
+   * Until the first frame after it was made: setting up WebGL was the task's work, so the first
+   * picture (and the shader compile it brings) waits for the next frame instead of adding to it.
+   */
+  private booting = true;
   private pacer!: FramePacer;
 
   // What the caller asked for; paint mode overrides these while it is on.
@@ -385,7 +391,16 @@ class SkinPreviewImpl implements SkinPreview {
     window.addEventListener('keydown', this.onHeldKey);
     window.addEventListener('keyup', this.onHeldKey);
     window.addEventListener('blur', this.onWindowBlur);
-    this.updatePaused();
+    // This task's frame paints the page; the model is drawn in a task right after it (not in the
+    // next frame's own work, whose commit would then wait for the GPU to compile the shaders).
+    void afterNextPaint().then(() => {
+      if (this.destroyed) return;
+      this.booting = false;
+      // the first picture compiles the shaders: now, also while hidden (a phone's 3D tab), so
+      // showing the preview later is quick
+      if (this.viewer.renderPaused) this.renderNow();
+      this.updatePaused();
+    });
   }
 
   /** Width (= height) of the skin texture: 64, or 128 for HD skins. */
@@ -402,7 +417,7 @@ class SkinPreviewImpl implements SkinPreview {
    * visible; a static pose is re-rendered on demand (edits, camera drags) instead of 60 times a second.
    */
   private updatePaused = (): void => {
-    if (this.destroyed) return;
+    if (this.destroyed || this.booting) return;
     const run = this.visible && (this.viewer.animation !== null || this.viewer.autoRotate);
     if (this.viewer.renderPaused === run) {
       this.pacer.reset();
@@ -424,7 +439,7 @@ class SkinPreviewImpl implements SkinPreview {
   private requestRender = (): void => {
     if (this.destroyed || !this.viewer.renderPaused) return;
     this.dirty = true;
-    if (!this.visible) return;
+    if (!this.visible || this.booting) return;
     if (!this.paint) {
       this.renderNow();
       return;

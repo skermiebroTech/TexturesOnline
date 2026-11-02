@@ -53,6 +53,7 @@ import { PHONE_MQ, TABLET_MQ } from './media';
 import { projectsText } from '../../../shared/i18n/projects';
 import { saveProjectFile } from '../../../shared/project-file/entry';
 import { onMarkersOnCanvas } from '../biomes/markers';
+import { yieldToMain } from '../../../core/yield';
 
 type Side = 'textures' | 'preview' | 'material' | 'effects' | 'pvp' | 'pack';
 type LibMode = 'blocks' | 'items' | 'mobs' | 'textures' | 'gui' | 'sounds';
@@ -138,9 +139,18 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   }
 
   // ---------------------------------------------------------------- state + panels
+  // The editor is built in a few tasks (the loading view stays up meanwhile), so a tap made while it
+  // sets up waits for one piece, not the whole editor.
+  await yieldToMain();
+  if (life.aborted) return () => cleanups.forEach((f) => f());
   const store = new TexStore(proj, assets);
   const thumbs = new ThumbService(store);
   const models = new ModelService(store);
+  await yieldToMain();
+  if (life.aborted) {
+    models.dispose();
+    return () => cleanups.forEach((f) => f());
+  }
   let libMode: LibMode = 'blocks';
   try {
     const saved = localStorage.getItem(LIB_KEY);
@@ -565,6 +575,9 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     return materialLoad;
   }
   cleanups.push(() => materialPanel?.destroy());
+
+  // (a navigation meanwhile: the router runs the cleanup this returns)
+  await yieldToMain();
 
   // ---------------------------------------------------------------- top bar
   const barIcon = h('canvas', { class: 'tx-bar-icon pixelated', width: 32, height: 32 });

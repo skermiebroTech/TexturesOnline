@@ -241,7 +241,8 @@ NODE_PATH=$(npm root -g) node tests/e2e/projects/project-files.e2e.cjs  # projec
 
 Responsiveness on phones (Interaction to Next Paint): `tests/perf/inp.mjs` drives the site with touch on an
 emulated phone or tablet with a slowed-down CPU and lists the slowest taps, strokes and drags with what made
-them slow (usage at the top of the file):
+them slow (usage at the top of the file). It also lists the long animation frames that follow a step, and
+for steps that open a page or build an editor taps made while it sets up ("tap during load"):
 
 ```sh
 npm run build && NODE_PATH=$(npm root -g) TO_FIXTURES=<dir> node tests/perf/inp.mjs dist --cpu 4

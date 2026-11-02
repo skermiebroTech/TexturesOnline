@@ -557,15 +557,26 @@ async function loadJava(assets: AssetIndex, opts: LoadOptions): Promise<ModelLib
   }
   if (opts.prefetch) await opts.prefetch(['blockstates', 'models', 'items', 'lang'], { onProgress: opts.onProgress, signal: opts.signal });
   const texts = new Map<string, string>();
-  await Promise.all(
-    files.map(async (f) => {
-      try {
-        texts.set(f, await assets.readText(f));
-      } catch {
-        /* unreadable file: treated as missing */
-      }
-    }),
-  );
+  // Thousands of files: read in batches of a few ms (a batch's downloads still run side by side),
+  // the page getting a turn between them.
+  let batch: Promise<void>[] = [];
+  let t0 = performance.now();
+  for (const f of files) {
+    batch.push(
+      assets.readText(f).then(
+        (t) => void texts.set(f, t),
+        () => undefined, // unreadable file: treated as missing
+      ),
+    );
+    if (performance.now() - t0 > 4) {
+      await Promise.all(batch);
+      batch = [];
+      await nextTask();
+      t0 = performance.now();
+    }
+  }
+  await Promise.all(batch);
+  await nextTask();
   const parsed = new Map<string, unknown>();
   const json = (path: string): unknown => {
     if (parsed.has(path)) return parsed.get(path);
@@ -586,6 +597,7 @@ async function loadJava(assets: AssetIndex, opts: LoadOptions): Promise<ModelLib
     return v;
   };
   const lang = await readJavaLang(assets);
+  await nextTask();
   const backend = new JavaBackend({ version: assets.version, json, hasFile: (p) => assets.hasFile(p), listFiles: (p) => assets.listFiles(p), animated: animatedSet(assets), lang });
   const lib = new ModelLibrary('java', assets.version, backend);
   lib.setEntities(new JavaEntities({ hasFile: (p) => assets.hasFile(p), listFiles: (p) => assets.listFiles(p) }));

@@ -1029,6 +1029,9 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       if (loadingTimer) clearTimeout(loadingTimer);
     }
     if (my !== token) return;
+    // decoding was this task's work: the editor is set up in the next one
+    await yieldToMain();
+    if (my !== token) return;
     loading.hidden = true;
     stashHistory();
     unbindLayers();
