@@ -277,7 +277,7 @@ export const HELP: HelpText = {
       short: 'Sauvegardes',
       body: [
         el('p', { class: 'guide-intro' }, 'Tes projets sont enregistrés seulement dans ce navigateur. Si tu effaces les données du site ou changes de navigateur ou d’appareil, ils restent derrière : garde donc une copie dans un fichier.'),
-        backupButtons('Sauvegarder tous les projets', 'Ouvrir une sauvegarde'),
+        backupButtons('Tout sauvegarder', 'Ouvrir une sauvegarde'),
         el(
           'ul',
           { class: 'guide-list' },

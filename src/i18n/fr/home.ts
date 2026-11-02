@@ -147,7 +147,7 @@ export const HOME: HomeText = {
     install: 'Comment installer',
     everything: 'Découvre tout ce que tu peux créer',
     editionsLabel: 'Éditions prises en charge',
-    chips: [`Java ${LATEST}`, 'Toutes les versions 1.6.1+', 'Bedrock'],
+    chips: [`Java ${LATEST}`, 'Versions 1.6.1+', 'Bedrock'],
     blockLabel: 'Un bloc d’herbe en pixel art',
     dragHint: 'Fais glisser pour tourner',
   },
