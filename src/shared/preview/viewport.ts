@@ -131,6 +131,7 @@ export class ViewportLoop {
   /** Something asked for a frame (invalidate): it waits for the pacer one frame at most. */
   private dirty = true;
   private waited = false;
+  private first = true;
   private readonly pacer: FramePacer;
   private readonly unwatchDpr: () => void;
 
@@ -196,6 +197,15 @@ export class ViewportLoop {
     if (this.raf) return;
     this.last = performance.now();
     this.pacer.reset();
+    if (this.first) {
+      // The first picture (which compiles the shaders) gets a frame of its own: the frame of the
+      // task that made the preview paints the page around it.
+      this.first = false;
+      this.raf = requestAnimationFrame(() => {
+        this.raf = requestAnimationFrame(this.tick);
+      });
+      return;
+    }
     this.raf = requestAnimationFrame(this.tick);
   }
 

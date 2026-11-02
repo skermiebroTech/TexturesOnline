@@ -12,6 +12,7 @@ import { loadSlotTextures, proceduralSlotTextures, type SlotTexture, type SlotTe
 import { makePixelTexture } from './three-utils';
 import { createStage, OrbitController, prefersReducedMotion, ViewportLoop } from './viewport';
 import { buildDiorama, type DioramaData, type MeshData, type TextureSlot } from './voxel-world';
+import { nextTask } from '../../core/yield';
 
 /** What a setAssets call ended up showing. */
 export interface PreviewTexturesReport {
@@ -54,6 +55,27 @@ export interface ShaderPreviewOptions {
   dayLength?: number;
   /** Words the preview shows and reads out, in the page's language (default: English) */
   text?: ShaderPreviewText;
+  /** The scene's island and textures, made ahead (prepareShaderPreview) instead of in the constructor */
+  prepared?: PreparedScene;
+}
+
+/** The parts of the scene that are plain computation (no WebGL). */
+export interface PreparedScene {
+  diorama: DioramaData;
+  slots: SlotTextures;
+}
+
+/**
+ * Makes the island and the textures of a preview, each in a task of its own, so creating the
+ * preview afterwards (createShaderPreview with `prepared`) is a shorter task.
+ */
+export async function prepareShaderPreview(): Promise<PreparedScene> {
+  await nextTask();
+  const diorama = buildDiorama();
+  await nextTask();
+  const slots = proceduralSlotTextures();
+  await nextTask();
+  return { diorama, slots };
 }
 
 /** What the preview says: its canvas label, and messages when it can't run or is paused. */
@@ -417,9 +439,9 @@ class ShaderPreviewImpl implements ShaderPreview {
       uWaterLevel: 0,
     });
 
-    this.diorama = buildDiorama();
+    this.diorama = opts.prepared?.diorama ?? buildDiorama();
     this.shared.uWaterLevel.value = this.diorama.waterLevel;
-    this.slotInfo = proceduralSlotTextures();
+    this.slotInfo = opts.prepared?.slots ?? proceduralSlotTextures();
     for (const [slot, info] of Object.entries(this.slotInfo) as [TextureSlot, SlotTexture][]) this.textures.set(slot, makePixelTexture(info.image));
     this.buildMeshes();
 

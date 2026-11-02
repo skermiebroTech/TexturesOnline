@@ -302,11 +302,13 @@ export function createStage(opts: {
     el,
     async mount() {
       if (preview || destroyed) return;
-      const { createShaderPreview } = await import('../../../shared/preview/shader-preview');
-      // the editor around it paints first: WebGL and the scene are a long task of their own
+      const { createShaderPreview, prepareShaderPreview } = await import('../../../shared/preview/shader-preview');
+      // the editor around it paints first; then the island, its textures and WebGL each take a task
       await afterNextPaint();
       if (destroyed || preview) return;
-      preview = createShaderPreview(host, { params: currentParams(), autoRotate: prefs.autoRotate && !reduced, assets: null, text: et.stage.preview });
+      const prepared = await prepareShaderPreview();
+      if (destroyed || preview) return;
+      preview = createShaderPreview(host, { params: currentParams(), autoRotate: prefs.autoRotate && !reduced, assets: null, text: et.stage.preview, prepared });
       if (prefs.animateDay) setDayAnimation(true);
       resolvePreview(preview);
     },

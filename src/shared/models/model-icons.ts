@@ -3,7 +3,7 @@
 // a small 2D canvas. Returns null when WebGL isn't available (callers fall back to a flat texture).
 
 import * as THREE from 'three';
-import { ModelMesh } from './model-mesh';
+import { ModelMesh, programKeeper } from './model-mesh';
 import type { ModelScene } from '../preview/block-preview';
 
 export class ModelIconRenderer {
@@ -13,6 +13,8 @@ export class ModelIconRenderer {
   private readonly camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 20);
   private readonly mesh = new ModelMesh();
   private readonly pivot = new THREE.Group();
+  /** Keeps the model shader compiled between icons (each icon's mesh is cleared after it) */
+  private readonly keeper = programKeeper();
   private disposed = false;
 
   constructor(readonly size = 96) {
@@ -32,6 +34,7 @@ export class ModelIconRenderer {
     this.renderer = r;
     this.pivot.add(this.mesh.group);
     this.scene.add(this.pivot);
+    this.scene.add(this.keeper);
   }
 
   get available(): boolean {
@@ -119,6 +122,8 @@ export class ModelIconRenderer {
     if (this.disposed) return;
     this.disposed = true;
     this.mesh.dispose();
+    this.keeper.geometry.dispose();
+    (this.keeper.material as THREE.Material).dispose();
     this.renderer?.dispose();
     this.renderer?.forceContextLoss();
   }

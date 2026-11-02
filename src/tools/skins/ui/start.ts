@@ -101,7 +101,7 @@ async function saveNewProject(opts: { image: ImageData; model: SkinModel; name: 
   navigate(`/skins/${project.id}`);
 }
 
-function figureCanvas(img: ImageData, model: SkinModel, cls = 'sk-figure'): HTMLCanvasElement {
+function figureCanvas(img: ImageData | (() => ImageData), model: SkinModel, cls = 'sk-figure'): HTMLCanvasElement {
   const c = h('canvas', { class: cls, 'aria-hidden': 'true' });
   // Draw once it has a layout size.
   drawFigureSoon(c, img, model);
@@ -317,7 +317,8 @@ export function mountStart(root: HTMLElement): () => void {
   const renderStarters = () => {
     starterGrid.replaceChildren(
       ...STARTERS.map((s) => {
-        const img = atNewSize(createStarterSkin(s.id, model), size).image;
+        // painted when its figure's turn comes (the cards show at once, the figures a few per task)
+        const img = () => atNewSize(createStarterSkin(s.id, model), size).image;
         const text = t.starters[s.id];
         const card = h(
           'button',

@@ -70,7 +70,8 @@ export function drawFigure(canvas: HTMLCanvasElement, img: ImageData, model: Ski
 
 interface FigureJob {
   canvas: HTMLCanvasElement;
-  img: ImageData;
+  /** The skin, or what makes it (made when its turn comes) */
+  img: ImageData | (() => ImageData);
   model: SkinModel;
   opts: FigureOptions;
 }
@@ -84,7 +85,7 @@ const FIGURE_BUDGET_MS = 8;
  * measured together (one layout) and drawn a few per task, yielding between them, so a grid of
  * thumbnails doesn't hold up a tap.
  */
-export function drawFigureSoon(canvas: HTMLCanvasElement, img: ImageData, model: SkinModel, opts: FigureOptions = {}): void {
+export function drawFigureSoon(canvas: HTMLCanvasElement, img: ImageData | (() => ImageData), model: SkinModel, opts: FigureOptions = {}): void {
   figureJobs.push({ canvas, img, model, opts });
   if (figuresQueued) return;
   figuresQueued = true;
@@ -108,7 +109,7 @@ async function drawQueuedFigures(): Promise<void> {
         // left the page while waiting its turn
         if (wasConnected && !j.canvas.isConnected) continue;
         try {
-          drawFigureSized(j.canvas, j.img, j.model, j.opts, w, hgt);
+          drawFigureSized(j.canvas, typeof j.img === 'function' ? j.img() : j.img, j.model, j.opts, w, hgt);
         } catch (err) {
           console.error(err);
         }

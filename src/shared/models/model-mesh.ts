@@ -274,29 +274,7 @@ export class ModelMesh {
       geo.setIndex(index);
       geo.computeBoundingSphere();
       geo.computeBoundingBox();
-      const material = new THREE.ShaderMaterial({
-        vertexShader: VERT,
-        fragmentShader: FRAG,
-        uniforms: {
-          uMap: { value: null },
-          uFrames: { value: 1 },
-          uFrame: { value: 0 },
-          uHalf: { value: new THREE.Vector2(0, 0) },
-          uAlphaTest: { value: 0 },
-          uBlend: { value: 0 },
-          uMissing: { value: path === MISSING ? 1 : 0 },
-          uGlow: { value: 0 },
-          uHoverFace: { value: -1 },
-          uAccent: { value: this.accent },
-          uCursor: { value: null },
-          uCursorSize: { value: this.cursorSize },
-          uCursorOn: { value: 0 },
-          uCursorFill: { value: this.cursorFill },
-          uCursorLine: { value: this.cursorLine },
-        },
-        side: THREE.FrontSide,
-        extensions: { derivatives: true },
-      });
+      const material = modelMaterial(path === MISSING, this.accent, this.cursorSize, this.cursorFill, this.cursorLine);
       const mesh = new THREE.Mesh(geo, material);
       mesh.userData.modelKey = key;
       const g: Group = { key, path, palette, source: tex, mesh, material, texture: null, quads: list, image: null, frames: 1, frametime: 0, firstFace: list[0] };
@@ -561,4 +539,52 @@ export class ModelMesh {
 function firstFrameOf(img: PixelImage, frames: number): PixelImage {
   const h = Math.floor(img.height / frames);
   return { width: img.width, height: h, data: img.data.subarray(0, img.width * h * 4) };
+}
+
+/** The material of a model's faces (one per texture; the shader program is shared). */
+function modelMaterial(missing: boolean, accent: THREE.Color, cursorSize: THREE.Vector2, cursorFill: THREE.Vector4, cursorLine: THREE.Color): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader: VERT,
+    fragmentShader: FRAG,
+    uniforms: {
+      uMap: { value: null },
+      uFrames: { value: 1 },
+      uFrame: { value: 0 },
+      uHalf: { value: new THREE.Vector2(0, 0) },
+      uAlphaTest: { value: 0 },
+      uBlend: { value: 0 },
+      uMissing: { value: missing ? 1 : 0 },
+      uGlow: { value: 0 },
+      uHoverFace: { value: -1 },
+      uAccent: { value: accent },
+      uCursor: { value: null },
+      uCursorSize: { value: cursorSize },
+      uCursorOn: { value: 0 },
+      uCursorFill: { value: cursorFill },
+      uCursorLine: { value: cursorLine },
+    },
+    side: THREE.FrontSide,
+    extensions: { derivatives: true },
+  });
+}
+
+/**
+ * A mesh with the model material that draws nothing (one point-sized triangle). Kept in a scene whose
+ * models come and go (the icon renderer builds and clears one per icon), it keeps the shader program
+ * alive: without it, clearing the last model frees the program and the next model compiles it again.
+ */
+export function programKeeper(): THREE.Mesh {
+  const geo = new THREE.BufferGeometry();
+  const attr = (size: number) => new THREE.BufferAttribute(new Float32Array(3 * size), size);
+  geo.setAttribute('position', attr(3));
+  geo.setAttribute('normal', attr(3));
+  geo.setAttribute('uv', attr(2));
+  geo.setAttribute('aTint', attr(3));
+  geo.setAttribute('aShade', attr(1));
+  geo.setAttribute('aMask', attr(1));
+  geo.setAttribute('aFace', attr(1));
+  geo.setAttribute('aCorner', attr(2));
+  const mesh = new THREE.Mesh(geo, modelMaterial(true, new THREE.Color(), new THREE.Vector2(1, 1), new THREE.Vector4(), new THREE.Color()));
+  mesh.frustumCulled = false;
+  return mesh;
 }
