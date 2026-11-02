@@ -2414,7 +2414,488 @@ const pvpPack: GuideText = {
   ctaLabel: 'Faire un pack PvP',
 };
 
+const pbrPack: GuideText = {
+  intro: [
+    p(
+      'Un pack de textures PBR donne aux blocs plus que des couleurs : à quel point ils brillent, quelles parties sont en métal, lesquelles s’illuminent et à quel point ils ont l’air bosselés dans la lumière. Les Graphismes éclatants de Minecraft Bedrock lisent ces cartes dans des jeux de textures, et sur Java, les shaders PBR pour Iris et OptiFine les lisent au format labPBR. Le ',
+      link('/textures', 'Texture Pack Maker'),
+      ' fait les deux dans ton navigateur à partir de tes textures, avec des matériaux rapides comme le métal, le verre et les points de minerai lumineux.',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Ouvre une texture et l’onglet ', strong('Material'), '.'],
+      ['Choisis un matériau rapide, puis affine la brillance, le métal, la lumière propre et le relief sur le bloc 3D éclairé.'],
+      ['Exporte : l’éditeur écrit les bons fichiers pour ton édition, à côté des textures.'],
+    ],
+  },
+  howto: { name: 'Comment faire un pack de textures PBR avec Texture Pack Maker', steps: PBR_STEPS },
+  sections: [
+    {
+      id: 'maps',
+      title: 'À quoi servent les cartes',
+      body: [
+        p('Chaque pixel d’une texture reçoit quelques nombres en plus. L’onglet Material les appelle par ce que tu vois ; le tableau montre où chacun va dans les fichiers :'),
+        table(
+          ['Dans l’éditeur', 'Ce qu’il fait', 'Java (labPBR)', 'Bedrock (jeu de textures)'],
+          [
+            ['Shine', 'Les surfaces lisses montrent des reflets et des éclats nets, les surfaces rugueuses ont l’air mates.', [code('_s'), ' rouge : lissé'], ['MER bleu : rugosité']],
+            ['Metal', 'Le métal reflète le ciel dans sa propre couleur, comme le fer ou l’or.', [code('_s'), ' vert : 230–255'], ['MER rouge : métal']],
+            ['Glow', 'Émet de la lumière, même la nuit, comme la pierre lumineuse ou les gemmes des minerais.', [code('_s'), ' alpha : 0–254'], ['MER vert : émission']],
+            ['Light through', 'La lumière passe à travers les parties fines, comme les feuilles.', [code('_s'), ' bleu : 65–255'], ['Alpha de MERS (Graphismes éclatants seulement)']],
+            ['Bumps', 'La lumière et l’ombre montrent des bosses et des creux sur une face plate.', [code('_n'), ' rouge et vert, hauteur dans l’alpha'], ['Une carte normale']],
+          ],
+        ),
+        p('Sans matériau, une texture a l’air comme d’habitude. Sur Java, la texture de couleur reste où elle est ; les cartes sont posées à côté.'),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'En faire un pas à pas',
+      body: [steps(PBR_STEPS)],
+    },
+    {
+      id: 'parts',
+      title: 'Les points de minerai lumineux et les autres parties',
+      body: [
+        p(
+          'Une partie donne à certains pixels leurs propres valeurs. ',
+          strong('Colourful pixels'),
+          ' repère les gemmes d’un minerai dans la roche grise qui les entoure, ',
+          strong('Bright pixels'),
+          ' la lumière d’une lampe, ',
+          strong('Pixels of some colours'),
+          ' exactement les couleurs sur lesquelles tu cliques, et ',
+          strong('An area you select'),
+          ' un rectangle que tu as dessiné avec l’outil de sélection. Une petite image montre quels pixels une partie couvre.',
+        ),
+        p(
+          strong('Use on similar textures'),
+          ' copie le matériau sur les autres côtés du même bloc et sur chaque texture dont le nom finit ou commence par le même mot : toutes les textures ',
+          code('*_ore'),
+          ', toutes les ',
+          code('oak_*'),
+          ', etc. Chacune garde ses propres couleurs, donc les parties et le relief suivent ses pixels.',
+        ),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java : des cartes labPBR pour les shaders',
+      body: [
+        p(
+          'Java n’a pas de PBR à lui : c’est un pack de shaders dans Iris ou OptiFine qui le dessine. L’éditeur écrit les deux cartes labPBR à côté de chaque texture, par exemple ',
+          code('assets/minecraft/textures/block/stone_n.png'),
+          ' et ',
+          code('stone_s.png'),
+          ' (',
+          code('textures/blocks/'),
+          ' avant la 1.13), à la taille de la texture telle qu’elle est exportée. Le lissé est perceptuel (1 moins la rugosité), les non-métaux reçoivent un F0 d’environ 4 %, et un pixel sans lumière propre a un alpha de 255 pour que les images sans alpha ne brillent jamais.',
+        ),
+        p(
+          'Active un shader qui lit les cartes labPBR ; dans ses réglages, ça s’appelle souvent labPBR ou prise en charge des packs de ressources, et c’est le shader qui décide de la force des reflets et de la lumière. Les shaders du ',
+          link('/shaders', 'créateur de shaders'),
+          ' de ce site n’utilisent pas encore ces cartes.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock : des jeux de textures pour les Graphismes éclatants',
+      body: [
+        p('Bedrock lit un jeu de textures à côté de la texture de couleur. Les points lumineux et le relief sont des images :'),
+        pre(PBR_TEXTURE_SET.trimEnd()),
+        p('Une seule valeur pour toute la texture n’a pas besoin d’image :'),
+        pre(PBR_UNIFORM_SET.trimEnd()),
+        p(
+          'La lumière traversante est le quatrième canal de ',
+          code('metalness_emissive_roughness_subsurface'),
+          ' (format 1.21.30, Graphismes éclatants seulement), écrit en TGA pour que son alpha reste tel quel. Un jeu de textures ne peut nommer que des images du même pack, donc l’éditeur ajoute aussi la texture de couleur, même si tu ne l’as pas repeinte. Le pack déclare la capacité ',
+          code('pbr'),
+          ', sans laquelle les Graphismes éclatants restent désactivés :',
+        ),
+        pre(PBR_MANIFEST.trimEnd()),
+        p(
+          'Le jeu a ses propres jeux de textures pour la plupart des blocs. Avec les Graphismes éclatants activés, un jeu de textures du jeu afficherait la texture de couleur du jeu au lieu de la tienne : chaque texture que tu changes sans matériau reçoit donc une copie du jeu de textures du jeu dans ton pack. ',
+          link('/guides/bedrock-vibrant-visuals-settings', 'Les réglages des Graphismes éclatants expliqués'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Ouvrir un pack qui a des cartes PBR',
+      body: [
+        p('Ouvre un pack Java avec des cartes labPBR ou un pack Bedrock avec des jeux de textures, et ses cartes s’affichent dans l’onglet Material de leurs textures. Elles sont exportées exactement comme elles étaient tant que tu ne changes pas ce matériau.'),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'rtx',
+      q: 'Ai-je besoin d’une carte graphique RTX ?',
+      a: [p('Non. Les Graphismes éclatants tournent sur beaucoup de PC, de consoles et de téléphones récents, et les shaders labPBR tournent sur la plupart des cartes graphiques capables de faire tourner des shaders. L’ancien mode de ray tracing de Bedrock lit les mêmes jeux de textures, sauf les matériaux qui laissent passer la lumière : ceux-là utilisent une couche que seuls les Graphismes éclatants lisent.')],
+    },
+    {
+      id: 'same',
+      q: 'Pourquoi mon pack a le même aspect dans le jeu ?',
+      a: [p(`Bedrock : règle le mode graphique sur ${BEDROCK.vibrantVisuals} et place le pack en haut de tes ressources globales. Java : active un shader qui prend en charge le labPBR et vérifie son réglage de matériaux ou de packs de ressources. Sans l’un de ces deux, Minecraft ne montre que les couleurs.`)],
+    },
+    {
+      id: 'items',
+      q: 'Les matériaux marchent sur les objets et les créatures ?',
+      a: [p('Oui, avec les Graphismes éclatants et dans la plupart des shaders labPBR. L’éditeur écrit toujours des cartes normales, jamais des cartes de hauteur, parce que les Graphismes éclatants ne peuvent pas utiliser de cartes de hauteur sur les objets.')],
+    },
+    {
+      id: 'metal',
+      q: 'Pourquoi le métal doit être à 0 ou à 100 ?',
+      a: [p('Les vraies choses sont en métal ou pas, et le labPBR comme les Graphismes éclatants traitent un pixel comme l’un ou l’autre. Les valeurs entre les deux ont l’air grises et ternes. Pour une pierre brillante, monte Shine et garde Metal à 0.')],
+    },
+  ],
+  ctaLabel: 'Ouvrir le Texture Pack Maker',
+};
+
+const renameItems: GuideText = {
+  intro: [
+    p(
+      'Dans Minecraft, tu peux renommer n’importe quel objet sur une enclume. Un pack de ressources peut donner sa propre texture à un objet renommé : une épée en diamant appelée « Excalibur » peut briller en or pendant que toutes les autres épées en diamant restent pareilles. Java 1.21.5 et plus récent le font sans mods ; les versions plus anciennes ont besoin d’OptiFine ou du mod CIT Resewn. Le ',
+      link('/textures', 'Texture Pack Maker'),
+      ' écrit les bons fichiers pour ta version.',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Ouvre la texture d’un objet et choisis ', strong('Name-based textures'), '.'],
+      ['Tape le nom et peins la nouvelle texture.'],
+      ['Exporte, puis renomme l’objet sur une enclume avec exactement ce nom.'],
+    ],
+  },
+  howto: { name: 'Comment donner sa propre texture à un objet renommé avec Texture Pack Maker', steps: NAMES_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'En faire un pas à pas',
+      body: [steps(NAMES_STEPS)],
+    },
+    {
+      id: 'names',
+      title: 'Comment les noms correspondent',
+      body: [
+        ul([
+          ['Le nom doit être exactement le même, majuscules comprises : ', strong('Excalibur'), ' et ', strong('excalibur'), ' sont des noms différents. Ajoute les deux si tu veux que les deux marchent.'],
+          'Plusieurs noms peuvent partager une texture, et un objet peut avoir beaucoup de textures selon le nom.',
+          'Une enclume accepte des noms jusqu’à 50 caractères, sans codes de couleur. Un nom mis en couleur ou en gras avec des commandes ne correspond pas à un nom simple.',
+          'Ça change l’objet en main, dans l’inventaire, au sol et dans les cadres. Un bloc posé à partir d’un objet renommé a l’air comme d’habitude.',
+        ]),
+      ],
+    },
+    {
+      id: 'vanilla',
+      title: 'Java 1.21.5 et plus récent : sans mods',
+      body: [
+        p(
+          'Depuis la 1.21.5, une définition d’objet (',
+          code('assets/minecraft/items/<item>.json'),
+          ') peut choisir un modèle selon le nom de l’objet avec un ',
+          code('minecraft:select'),
+          ' sur la propriété ',
+          code('minecraft:component'),
+          ' et le composant ',
+          code('minecraft:custom_name'),
+          '. Tout le reste revient au modèle normal de l’objet :',
+        ),
+        pre(NAMES_DEFINITION.trimEnd()),
+        p('Le modèle nommé est le modèle de l’objet avec la nouvelle image, donc l’épée est toujours tenue comme une épée :'),
+        pre(NAMES_MODEL.trimEnd()),
+        p(
+          'Si le pack change déjà cette définition d’objet, par exemple avec un modèle 3D fait dans l’éditeur de modèles, les noms passent devant. Java 1.21.4 a aussi des définitions d’objets, mais ne sait pas encore lire le nom d’un objet, donc il reçoit les fichiers OptiFine ci-dessous. ',
+          link('/guides/make-3d-items-texture-pack', 'Comment marchent les définitions d’objets et les objets 3D'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'optifine',
+      title: 'Avant la 1.21.5 : OptiFine ou CIT Resewn',
+      body: [
+        p(
+          'Les versions plus anciennes ne savent pas choisir une texture selon le nom toutes seules. Les Custom Item Textures (CIT) d’OptiFine le peuvent, et le mod CIT Resewn pour Fabric aussi. L’éditeur écrit un fichier ',
+          code('.properties'),
+          ' par texture selon le nom dans ',
+          code('assets/minecraft/optifine/cit/'),
+          ' :',
+        ),
+        pre(NAMES_CIT.trimEnd()),
+        p(
+          'Un seul nom est écrit tel quel ; plusieurs deviennent une règle ',
+          code('regex:'),
+          '. Depuis la 1.20.5, l’éditeur écrit ',
+          code('components.custom_name'),
+          ' au lieu de ',
+          code('nbt.display.Name'),
+          ' ; les deux mods lisent l’un ou l’autre. Une texture avec une forme 3D utilise ',
+          code('model='),
+          ' au lieu de ',
+          code('texture='),
+          '. Un pack dont la plage de versions va d’avant la 1.21.5 à après reçoit les deux sortes de fichiers.',
+        ),
+        callout('warn', 'Les joueurs ont besoin du mod', 'Sans OptiFine ni CIT Resewn, Minecraft avant la 1.21.5 affiche la texture normale, quel que soit le nom de l’objet.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition',
+      body: [
+        p('Les packs de ressources Bedrock ne peuvent pas changer l’apparence d’un objet selon son nom. Les noms d’objets du jeu dans Molang (comme ', code('query.is_item_name_any'), ') sont des identifiants d’objets comme ', code('minecraft:diamond_sword'), ', pas les noms que les joueurs leur donnent sur une enclume, donc l’éditeur ne propose pas de textures selon le nom pour les packs Bedrock.'),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Ouvrir un pack qui en a',
+      body: [
+        p(
+          'Ouvre un pack Java et ses textures selon le nom s’affichent sous la texture de l’objet et dans la fenêtre : les règles CIT d’OptiFine pour un objet avec un nom et une texture ou un modèle, et les définitions d’objets 1.21.5+ qui choisissent un modèle selon le nom. Les règles qui vérifient plus que le nom (dégâts, enchantements, plusieurs objets) restent dans le pack telles quelles. Une règle avec un motif OptiFine comme ',
+          code('ipattern:*sword*'),
+          ' le garde, et ne continue de marcher qu’avec OptiFine et CIT Resewn.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-working',
+      q: 'Mon objet renommé a toujours l’air normal. Pourquoi ?',
+      a: [p('Vérifie que le nom est exactement le même, majuscules et espaces compris, que le pack est activé et au-dessus des autres packs, et que tu joues en 1.21.5 ou plus récent, ou que tu as OptiFine ou CIT Resewn sur une version plus ancienne. Un objet renommé avant d’ajouter le pack marche aussi : le nom est vérifié chaque fois que l’objet est dessiné.')],
+    },
+    {
+      id: 'case',
+      q: 'Un nom peut ignorer les majuscules ?',
+      a: [p('Pas dans Minecraft vanilla : le nom doit correspondre exactement. Ajoute chaque orthographe que tu veux comme un nom à part. Les packs OptiFine peuvent utiliser des motifs qui ignorent les majuscules ; les packs ouverts gardent les leurs.')],
+    },
+    {
+      id: 'shape',
+      q: 'Un objet renommé peut être en 3D ?',
+      a: [p('Oui. Appuie sur 3D shape sur une texture selon le nom pour ouvrir l’éditeur de modèles, et pars d’un objet 3D fait à partir de ta nouvelle image.')],
+    },
+    {
+      id: 'servers',
+      q: 'Les autres joueurs le voient ?',
+      a: [p('Les joueurs qui utilisent ton pack le voient, sur les serveurs aussi. Le nom lui-même fait partie de l’objet, donc tout le monde voit le nom ; seule la texture a besoin du pack.')],
+    },
+  ],
+  ctaLabel: 'Ouvrir le Texture Pack Maker',
+};
+
+const animatedTextures: GuideText = {
+  intro: [
+    p(
+      'Une texture animée est une grande image d’images, les unes sous les autres, que le jeu montre l’une après l’autre. L’eau, la lave, le feu et les portails marchent comme ça, et un pack peut aussi animer d’autres blocs et objets. Le ',
+      link('/textures', 'Texture Pack Maker'),
+      ' transforme n’importe quel bloc ou objet en animation, la joue à la vitesse du jeu pendant que tu peins, importe des GIF et écrit les fichiers dont chaque édition a besoin : un fichier ',
+      code('.png.mcmeta'),
+      ' pour Java et une entrée de flipbook pour Bedrock.',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Ouvre une texture et choisis ', strong('Make animated'), ' dans son menu.'],
+      ['Peins les images, ajoutes-en avec ', strong('+'), ', et règle la vitesse en ticks.'],
+      ['Exporte : l’éditeur écrit les fichiers d’animation pour ton édition.'],
+    ],
+  },
+  howto: { name: 'Comment faire une texture animée avec Texture Pack Maker', steps: ANIM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'En faire une pas à pas',
+      body: [steps(ANIM_STEPS)],
+    },
+    {
+      id: 'frames',
+      title: 'Les images, la pelure d’oignon et la bande',
+      body: [
+        ul([
+          ['Fais glisser une image à une nouvelle place avec la souris. Sur un téléphone ou une tablette, utilise ', strong('Move earlier'), ' et ', strong('Move later'), ' dans le menu ⋯.'],
+          ['Après avoir cliqué sur une image : Alt + flèches la déplace, Suppr la supprime, et Ctrl+C et Ctrl+V la copient et la collent comme nouvelle image, dans n’importe quelle animation du pack. Les touches virgule et point font défiler les images pendant que tu peins.'],
+          ['La pelure d’oignon montre l’image précédente en transparence par-dessus celle que tu peins, pour que les mouvements s’alignent. Le menu ⋯ montre aussi l’image suivante.'],
+          ['Supprimer des images jusqu’à n’en garder qu’une, ou ', strong('Stop animating'), ', rend la texture à nouveau immobile. Les deux peuvent être annulés.'],
+        ]),
+      ],
+    },
+    {
+      id: 'ticks',
+      title: 'Les durées en ticks',
+      body: [
+        p('Minecraft compte le temps en ticks : 20 ticks font 1 seconde, donc un tick dure 0,05 seconde. Chaque image s’affiche pendant un nombre entier de ticks :'),
+        table(
+          ['Ticks par image', 'Secondes', 'Images par seconde'],
+          [
+            ['1', '0,05 s', '20'],
+            ['2', '0,1 s', '10'],
+            ['4', '0,2 s', '5'],
+            ['10', '0,5 s', '2'],
+            ['20', '1 s', '1'],
+          ],
+        ),
+        ul([
+          [strong('Each frame shows for'), ' règle la vitesse de chaque image. Une nouvelle animation commence à 4 ticks.'],
+          [strong('Frame times'), ' donne à certaines images leur propre durée, pour une pause ou un flash rapide.'],
+          [strong('Blend frames'), ' fond chaque image dans la suivante tick par tick, comme de l’eau qui coule. Ça rend mieux avec des images lentes.'],
+          [strong('Play order'), ' joue les images dans n’importe quel ordre et aussi souvent que tu veux : ', code('1, 2, 3, 2'), ' fait un aller-retour, ', code('1-8'), ' joue une série, et ', code('3:40'), ' garde l’image 3 pendant 40 ticks.'],
+        ]),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'Java Edition : le fichier .png.mcmeta',
+      body: [
+        p(
+          'Java lit une animation dans un fichier qui porte le nom de la texture plus ',
+          code('.mcmeta'),
+          ', juste à côté : ',
+          code('stone.png'),
+          ' reçoit ',
+          code('stone.png.mcmeta'),
+          '. Les images vont de haut en bas, ',
+          code('frametime'),
+          ' est la vitesse en ticks (1 quand il manque) et ',
+          code('frames'),
+          ' liste l’ordre de lecture, avec un ',
+          code('time'),
+          ' pour les images montrées plus longtemps :',
+        ),
+        pre(ANIM_MCMETA.trimEnd()),
+        p('Les images qui ne sont pas carrées ont besoin de leur taille, depuis la 1.13. Le jeu les lit alors en lignes, de gauche à droite :'),
+        pre(ANIM_MCMETA_WIDE.trimEnd()),
+        table(
+          ['Version', 'Ce que l’animation peut faire'],
+          [
+            ['1.6.1 – 1.7.10', ['La vitesse (', code('frametime'), ') et l’ordre de lecture avec des durées (', code('frames'), '). Les images sont des carrés aussi larges que l’image.']],
+            ['1.8 – 1.12.2', ['Le fondu (', code('interpolate'), ') aussi.']],
+            ['1.13 et plus récent', ['Des images de n’importe quelle taille (', code('width'), ', ', code('height'), ').']],
+            ['1.21.2 et plus récent', 'Le fondu concerne aussi les pixels transparents. Avant, seules les couleurs se fondaient et chaque image gardait sa propre transparence.'],
+          ],
+        ),
+        p(
+          'L’éditeur écrit ce que la plus ancienne version de ton pack lit et te prévient à l’export quand une version de sa plage ne peut pas en jouer une partie. Java anime les textures qu’il rassemble sur un atlas de textures : les blocs et les objets dans toutes les versions, les particules, les tableaux et les icônes d’effets depuis la 1.14, les coffres, les lits, les pancartes, les bannières, les boucliers et les boîtes de Shulker depuis la 1.15, et les sprites de l’interface de la 1.20.2 et plus récent. Les skins des créatures, les armures, les polices, les cartes de couleurs et l’icône du pack sont dessinés à part et restent immobiles, donc l’éditeur le dit au lieu de les animer.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock Edition : les textures flipbook',
+      body: [
+        p(
+          'Bedrock liste ses animations dans ',
+          code('textures/flipbook_textures.json'),
+          '. Chaque entrée nomme la texture et la case de bloc de ',
+          code('terrain_texture.json'),
+          ' qui la montre :',
+        ),
+        pre(ANIM_FLIPBOOK.trimEnd()),
+        table(
+          ['Champ', 'À quoi il sert'],
+          [
+            [code('flipbook_texture'), 'Le chemin de la texture, sans l’extension du fichier.'],
+            [code('atlas_tile'), ['La case de bloc dans ', code('terrain_texture.json'), ' à animer.']],
+            [[code('atlas_index'), ', ', code('atlas_tile_variant')], 'Quelle texture d’une case qui en a plusieurs (à partir de 0).'],
+            [code('ticks_per_frame'), 'Les ticks pendant lesquels chaque image s’affiche (20 ticks = 1 seconde). Une seule vitesse pour toutes les images.'],
+            [code('frames'), 'L’ordre de lecture. Une image montrée plus longtemps est listée à nouveau.'],
+            [code('blend_frames'), ['Fond les images les unes dans les autres ; activé quand il manque. L’éditeur écrit ', code('false'), ' sauf si tu actives Blend frames.']],
+            [code('replicate'), 'Utilisé par l’eau et la lave qui coulent dans le jeu ; gardé tel quel.'],
+          ],
+        ),
+        p(
+          'Les images sont des carrés aussi larges que l’image, de haut en bas. L’éditeur écrit les entrées du jeu avec les tiennes, pour que l’eau, la lave, le feu et les autres blocs animés continuent de bouger.',
+        ),
+        callout(
+          'info',
+          'Bedrock n’anime que les blocs',
+          'Les packs de ressources Bedrock n’ont pas d’animations pour les objets : ',
+          code('item_texture.json'),
+          ' n’a rien de comparable à un flipbook. L’éditeur le dit quand tu essaies d’animer un objet dans un pack Bedrock. Les packs Java peuvent animer les objets.',
+        ),
+      ],
+    },
+    {
+      id: 'gif',
+      title: 'Importer un GIF, enregistrer en GIF',
+      body: [
+        ul([
+          [strong('Import GIF or frames…'), ' dans le menu de la texture ou le menu ⋯ prend un GIF animé, une planche de sprites (des images de la taille de la texture côte à côte, ou une bande de carrés) ou plusieurs images, dans l’ordre de leurs noms. Tu peux aussi déposer un GIF sur la zone de dessin.'],
+          'Chaque image est redimensionnée à la taille de la texture sans lissage, donc le pixel art reste net.',
+          'Les durées des GIF sont en centièmes de seconde : 5 centièmes font un tick, donc le minutage du GIF devient des ticks, arrondis. Tu peux aussi garder la vitesse actuelle.',
+          [strong('Save as GIF…'), ' enregistre l’animation pour la partager, jusqu’à 16 fois plus grande. Les images en fondu sont enregistrées tick par tick, comme le jeu les montre. Les GIF n’ont pas de pixels à moitié transparents : ceux-là deviennent pleins ou transparents.'],
+        ]),
+      ],
+    },
+    {
+      id: 'open',
+      title: 'Ouvrir un pack avec des animations',
+      body: [
+        p(
+          'Ouvre un ',
+          code('.zip'),
+          ' Java ou un ',
+          code('.mcpack'),
+          ' Bedrock et ses animations se jouent dans l’éditeur, prêtes à être changées : les images, la vitesse, les durées et le fondu viennent de ses fichiers ',
+          code('.png.mcmeta'),
+          ' ou de sa liste de flipbooks. Les animations sont enregistrées avec le projet, donc les fichiers de projet et les sauvegardes les gardent aussi.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'not-moving',
+      q: 'Mon animation ne bouge pas dans le jeu. Pourquoi ?',
+      a: [
+        p(
+          'Sur Java, le ',
+          code('.png.mcmeta'),
+          ' doit être à côté de l’image avec exactement son nom plus ',
+          code('.mcmeta'),
+          ', et la texture doit être une de celles que le jeu anime (blocs, objets et autres textures d’atlas). Sur Bedrock, seules les textures de blocs avec une entrée de flipbook bougent. Vérifie que le pack est activé et au-dessus des autres packs qui changent la même texture.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock-items',
+      q: 'Je peux animer des objets sur Bedrock ?',
+      a: [p('Non. Les packs de ressources Bedrock ne peuvent animer que les textures de blocs, avec flipbook_textures.json. Les packs Java peuvent animer les objets.')],
+    },
+    {
+      id: 'speed',
+      q: 'Une animation peut aller à quelle vitesse ?',
+      a: [p('Le plus rapide, c’est une image par tick : 20 images par seconde. L’éditeur accepte jusqu’à 12 000 ticks (10 minutes) pour une image.')],
+    },
+    {
+      id: 'sizes',
+      q: 'Toutes les images doivent avoir la même taille ?',
+      a: [p('Oui. Les images sont découpées dans une seule grande image, donc elles partagent sa largeur et la hauteur d’image. Les images que tu importes sont redimensionnées à la taille des images de l’animation.')],
+    },
+  ],
+  ctaLabel: 'Ouvrir le Texture Pack Maker',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
+  'install-resource-packs': install,
+  'minecraft-pack-format-versions': packFormats,
+  'make-a-skin': makeASkin,
+  'make-shaders-without-mods': shadersWithoutMods,
+  'java-vs-bedrock-packs': javaVsBedrock,
+  'bedrock-vibrant-visuals-settings': vibrantVisuals,
+  'convert-java-to-bedrock-texture-pack': convertJavaToBedrock,
+  'merge-texture-packs': mergePacks,
+  'make-a-bedrock-skin-pack': bedrockSkinPack,
+  'make-3d-items-texture-pack': make3dItems,
+  'make-a-pvp-texture-pack': pvpPack,
+  'make-a-pbr-texture-pack': pbrPack,
+  'rename-items-texture-pack': renameItems,
+  'make-animated-textures': animatedTextures,
 };
