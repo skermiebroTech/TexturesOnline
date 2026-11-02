@@ -39,7 +39,7 @@ const PL: SkinsLanguage = {
     },
     starters: {
       blank: { name: 'Pusty', description: 'Zwykły manekin do malowania od zera.' },
-      template: { name: 'Szablon', description: 'Każda część ciała w innym kolorze, z podpisaną każdą ścianą.', badge: 'Zacznij tutaj' },
+      template: { name: 'Szablon', description: 'Każda część ciała w innym kolorze, z podpisaną każdą ścianą.', badge: 'Polecany' },
       explorer: { name: 'Odkrywca', description: 'Kapelusz safari, kamizelka, plecak i buty.' },
       knight: { name: 'Rycerz', description: 'Hełm z pióropuszem, tunika i kolczuga.' },
       robot: { name: 'Robot', description: 'Metalowe panele, świecące oczy i światełka na piersi.' },
@@ -275,7 +275,7 @@ const PL: SkinsLanguage = {
       filled: 'Wypełniono {part}',
       copyTo: 'Kopiuj na {part}',
       copied: 'Skopiowano {part} na {other}',
-      clear: 'Wyczyść {part} (warstwa zewnętrzna)',
+      clear: 'Wyczyść {part}',
       cleared: 'Wyczyszczono {part}',
       showOnly: 'Pokaż w 3D tylko {part}',
       showAll: 'Pokaż w 3D wszystkie części',

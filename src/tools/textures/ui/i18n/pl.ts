@@ -19,7 +19,7 @@ const PL: EditorLanguage = {
     texturePack: 'Paczka tekstur',
     untitled: 'Paczka bez nazwy',
     browseBy: 'Przeglądaj według',
-    lib: { blocks: 'Bloki', items: 'Przedmioty', mobs: 'Moby', all: 'Wszystko', allTextures: 'Wszystkie tekstury', gui: 'Interfejs i menu', sounds: 'Dźwięki' },
+    lib: { blocks: 'Bloki', items: 'Rzeczy', mobs: 'Moby', all: 'Całość', allTextures: 'Wszystkie', gui: 'Interfejs i menu', sounds: 'Dźwięki' },
     soundsFailed: 'Nie udało się otworzyć dźwięków. Sprawdź połączenie i spróbuj ponownie.',
     guiFailed: 'Nie udało się otworzyć sekcji interfejsu. Sprawdź połączenie i spróbuj ponownie.',
     pvpFailed: 'Nie udało się otworzyć poprawek PvP. Sprawdź połączenie i spróbuj ponownie.',

@@ -1752,7 +1752,7 @@ const bedrockSkinPack: GuideText = {
 
 const MODEL_STEPS: Child[] = [
   ['Otwórz ', link('/textures', 'edytor paczek tekstur'), ' i zrób paczkę do ', strong('Javy'), ' dla swojej wersji: 1.8 albo nowszej, albo 1.21.4 albo nowszej, jeśli przedmiot ma zostać płaski w ekwipunku.'],
-  ['Przełącz listę na ', strong('Przedmioty'), ' i otwórz przedmiot, na przykład diamentowy miecz. W zakładce ', strong('Podgląd'), ' naciśnij ', strong('Edytuj kształt'), '.'],
+  ['Przełącz listę na ', strong('Rzeczy'), ' i otwórz przedmiot, na przykład diamentowy miecz. W zakładce ', strong('Podgląd'), ' naciśnij ', strong('Edytuj kształt'), '.'],
   ['Wybierz ', strong('Przedmiot 3D ze sprite’a'), '. Każdy piksel płaskiego obrazka staje się częścią sześcianu o głębokości 1 piksela.'],
   ['Zmień kształt: kliknij sześcian w widoku 3D albo na liście i przesuń go, powiększ albo skopiuj, albo dodaj nowe. W ', strong('Ściany'), ' ściana dostaje inną teksturę albo inny fragment tekstury.'],
   ['Otwórz ', strong('Wyświetlanie'), ' i sprawdź model w ekwipunku, w widoku z pierwszej i trzeciej osoby, na ziemi, w ramce i na głowie. Popraw obrót, pozycję albo rozmiar tam, gdzie nie pasuje.'],
