@@ -807,6 +807,1075 @@ const notWorking: GuideText = {
   ctaLabel: 'Réparer mon pack avec Pack Doctor',
 };
 
+const install: GuideText = {
+  intro: [
+    p(
+      'Sur ',
+      strong('Java'),
+      ', mets le ',
+      code('.zip'),
+      ' du pack dans le dossier ',
+      code('resourcepacks'),
+      ` et active-le dans ${JAVA.options} › ${JAVA.packs} Sur `,
+      strong('Bedrock'),
+      ', ouvre le fichier ',
+      code('.mcpack'),
+      ` et Minecraft l’importe ; active-le ensuite dans ${BEDROCK.settings} › ${BEDROCK.globalResources}. Les packs de shaders pour Java ont besoin d’Iris ou d’OptiFine.`,
+    ),
+  ],
+  quick: {
+    title: 'Réponse rapide',
+    items: [
+      ['Java : ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', dépose le ', code('.zip'), ` dedans, puis passe le pack dans « ${JAVA.selected} » et clique sur « ${JAVA.done} ».`],
+      ['Bedrock : ouvre le fichier ', code('.mcpack'), ', puis active-le dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+      ['Shaders (Java) : installe Iris ou OptiFine et mets le zip du shader dans le dossier ', code('shaderpacks'), '.'],
+    ],
+  },
+  howto: { name: 'Comment installer un pack de ressources dans Minecraft Java Edition', steps: INSTALL_JAVA_STEPS },
+  sections: [
+    {
+      id: 'java',
+      title: 'Installer un pack de ressources sur Java',
+      body: [steps(INSTALL_JAVA_STEPS), h3('Où est le dossier resourcepacks ?'), folderTable('resourcepacks', FOLDER)],
+    },
+    {
+      id: 'order',
+      title: 'Utiliser plusieurs packs',
+      body: [
+        p(
+          'Tu peux activer autant de packs que tu veux. Quand deux packs changent la même texture, celui qui est le plus haut dans la liste ',
+          strong(JAVA.selected),
+          ' (Java) ou dans la liste des packs actifs (Bedrock) gagne, et tout ce qu’il ne change pas passe aux packs en dessous. Une configuration courante : un petit pack avec tes propres retouches en haut, et un pack complet en dessous.',
+        ),
+        p(
+          'Pour transformer une telle pile en un seul pack, pour le partager ou pour un serveur qui envoie un seul pack de ressources, utilise ',
+          link('/merge-texture-packs', 'la fusion de packs de textures'),
+          ' : elle suit la même règle, donc le pack du haut de sa liste gagne.',
+        ),
+        p(
+          'Les launchers tiers comme Lunar Client et Badlion Client utilisent par défaut le même dossier ',
+          code('resourcepacks'),
+          ' dans ',
+          code('.minecraft'),
+          ' et ont leur propre menu de packs de ressources pour activer les packs.',
+        ),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Installer un .mcpack sur Bedrock',
+      body: [
+        tabbed(
+          'install-bedrock',
+          [
+            {
+              value: 'windows',
+              label: 'Windows',
+              icon: 'monitor',
+              content: [
+                steps([
+                  ['Double-clique sur le ', code('.mcpack'), '. Minecraft s’ouvre et affiche ', el('em', null, BEDROCK.importStarted), ', puis ', el('em', null, BEDROCK.imported), '.'],
+                  ['Va dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources, BEDROCK.myPacks), ', choisis le pack et appuie sur ', strong(BEDROCK.activate), '.'],
+                ]),
+              ],
+            },
+            {
+              value: 'mobile',
+              label: 'Android et iOS',
+              icon: 'smartphone',
+              content: [
+                steps([
+                  ['Télécharge le ', code('.mcpack'), ' sur le téléphone ou la tablette.'],
+                  [strong('Android : '), 'ouvre-le depuis les téléchargements ou Fichiers et choisis Minecraft. ', strong('iPhone / iPad : '), 'touche-le dans l’appli Fichiers, puis ', uiPath('Partager', 'Minecraft'), '.'],
+                  ['Active-le dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+                ]),
+              ],
+            },
+            {
+              value: 'console',
+              label: 'Consoles',
+              icon: 'gamepad',
+              content: [p('Xbox, PlayStation et Switch ne peuvent pas importer de fichiers. Ajoute le pack à un monde sur un PC ou un téléphone et rejoins ce monde, ou joue sur un Realm ou un serveur qui le contient.')],
+            },
+          ],
+          UI_FR.platform,
+        ),
+        callout('tip', 'Juste pour un monde ?', 'Ouvre ', uiPath(BEDROCK.editWorld, BEDROCK.packs), ` et active le pack là plutôt que dans ${BEDROCK.globalResources}.`),
+      ],
+    },
+    {
+      id: 'shaders',
+      title: 'Installer un pack de shaders',
+      body: [
+        ul([
+          [strong('Iris (Java) :'), ' installe Iris avec l’installateur de ', ext('https://www.irisshaders.dev/', 'irisshaders.dev'), ', joue une fois avec le profil Iris, puis ouvre ', uiPath(JAVA.options, JAVA.video, IRIS.shaderPacks), ', clique sur ', strong(IRIS.openFolder), ' et dépose le zip dedans.'],
+          [strong('OptiFine (Java) :'), ' ', uiPath(JAVA.options, JAVA.video, OPTIFINE.shaders), ', puis ', strong(OPTIFINE.folder), '.'],
+          [strong('Shaders vanilla (Java, sans mods) :'), ' ce sont des packs de ressources. Installe-les dans le dossier ', code('resourcepacks'), ' comme n’importe quel autre pack.'],
+          [strong('Graphismes éclatants (Bedrock) :'), ' ouvre le ', code('.mcpack'), ', active-le, puis règle ', uiPath(BEDROCK.settings, BEDROCK.video, BEDROCK.graphicsMode), ` sur ${BEDROCK.vibrantVisuals}.`],
+        ]),
+        folderTable('shaderpacks', FOLDER),
+      ],
+    },
+    {
+      id: 'skins',
+      title: 'Installer un skin',
+      body: [
+        ul([
+          [strong('Java :'), ` Minecraft Launcher › ${LAUNCHER.skins} › ${LAUNCHER.newSkin}, choisis « ${LAUNCHER.classic} » ou « ${LAUNCHER.slim} », va chercher le PNG et clique sur « ${LAUNCHER.saveAndUse} ». Ou mets-le en ligne sur ton profil sur minecraft.net.`],
+          [strong('Bedrock :'), ' ouvre un pack de skins ', code('.mcpack'), ` et choisis le skin dans ${BEDROCK.dressingRoom} › ${BEDROCK.classicSkins}, ou importe-y un seul PNG.`],
+        ]),
+        p('Plus de détails dans ', link('/guides/make-a-skin', 'Comment faire un skin Minecraft perso'), '.'),
+      ],
+    },
+    {
+      id: 'troubleshooting',
+      title: 'Le pack ne marche pas ?',
+      body: [
+        p('Voici les problèmes les plus courants. ', link('/guides/texture-pack-not-working', 'Toutes les solutions, avec les explications'), '.'),
+        table(
+          ['Ce que tu vois', 'Pourquoi', 'Solution'],
+          [
+            [`« ${JAVA.madeForOlder} » (ou plus récente)`, 'Le pack format dans pack.mcmeta n’est pas celui de ton jeu.', `Exporte à nouveau pour ta version, ou élargis la plage de compatibilité. Les packs qui ne changent que des textures marchent en général quand même si tu cliques sur « ${JAVA.yes} ».`],
+            [`« ${JAVA.incompatible} » (Java 1.21.9+)`, 'pack.mcmeta n’a que pack_format, ou ses champs ne respectent pas les règles.', 'Exporte à nouveau depuis le Texture Pack Maker, qui écrit min_format et max_format.'],
+            ['Le pack n’est pas du tout dans la liste', 'pack.mcmeta manque, n’est pas à la racine du zip, n’est pas du JSON valide ou n’a pas de description.', 'Vérifie que le zip s’ouvre directement sur pack.mcmeta et assets, pas sur un dossier.'],
+            ['Bedrock dit que l’importation a échoué', 'manifest.json manque, n’est pas à la racine du fichier ou n’est pas valide.', 'Exporte à nouveau en .mcpack et ouvre le nouveau fichier.'],
+            ['Le pack Bedrock ne change rien', 'Un autre pack au-dessus remplace les mêmes textures.', 'Place ton pack en haut de la liste des packs actifs.'],
+          ],
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'unzip',
+      q: 'Faut-il décompresser un pack de ressources ?',
+      a: [p('Non. Java charge directement les packs compressés. Un dossier décompressé marche aussi si pack.mcmeta est directement dedans, mais garder le zip est plus simple.')],
+    },
+    {
+      id: 'order',
+      q: 'Quel pack gagne quand deux packs changent la même texture ?',
+      a: [p(`Celui qui est le plus haut dans la liste « ${JAVA.selected} » (Java) ou dans la liste des packs actifs (Bedrock). `, link('/merge-texture-packs', 'La fusion de packs de textures'), ' utilise le même ordre pour réunir plusieurs packs en un seul.')],
+    },
+    {
+      id: 'realms',
+      q: 'Les joueurs sur console peuvent utiliser des packs perso ?',
+      a: [p('Pas en important des fichiers. Ils peuvent rejoindre un monde, un Realm ou un serveur qui contient le pack.')],
+    },
+  ],
+  ctaLabel: 'Le guide d’installation complet pour chaque plateforme',
+};
+
+const packFormats: GuideText = {
+  intro: [
+    p(
+      'Chaque pack de ressources Java Edition indique un ',
+      strong('pack format'),
+      ' dans son fichier ',
+      code('pack.mcmeta'),
+      ', et Minecraft le compare au sien pour décider si le pack convient. ',
+      strong(`Minecraft Java ${LATEST} utilise le format de pack de ressources ${F(LATEST)}.`),
+      ' Les packs de ressources sont arrivés avec la 1.6.1 ; les versions plus anciennes utilisaient des packs de textures, qui fonctionnent autrement.',
+    ),
+  ],
+  quick: {
+    title: `Réponse rapide : Minecraft ${LATEST}`,
+    items: [
+      ['Format de pack de ressources : ', strong(F(LATEST)), '.'],
+      ['Dans ', code('pack.mcmeta'), ', écris ', code(`"min_format": ${minFormat(LATEST)}`), ' et ', code(`"max_format": ${maxFormat(LATEST)}`), ' (le format est séparé en un numéro majeur et un numéro mineur depuis la 1.21.9).'],
+      ['Un pack qui vise aussi des versions plus anciennes a besoin en plus de ', code('pack_format'), ' et de ', code('supported_formats'), '. Le tableau ci-dessous liste chaque version.'],
+    ],
+  },
+  sections: [
+    {
+      id: 'table',
+      title: 'Le format de pack de ressources de chaque version Java',
+      body: [
+        p('Chaque version complète de 1.6.1 à ', LATEST, '. Les snapshots, pré-versions et release candidates ont leurs propres numéros.'),
+        table(
+          ['Pack format', 'Versions de Minecraft Java'],
+          formatGroups()
+            .reverse()
+            .map((g) => [g.format, g.versions.join(', ')]),
+          'guide-table formats-table',
+        ),
+        p(
+          'Depuis le cycle de la 1.21.9, un format peut aussi avoir un numéro mineur : ',
+          F(LATEST),
+          ` veut dire majeur ${formatParts(LATEST).major}, mineur ${formatParts(LATEST).minor}. Mojang augmente le numéro mineur pour les ajouts qui ne cassent pas les anciens packs. Au moment où ce guide est écrit, le premier snapshot de la ${NEXT_SNAPSHOT.version} utilise ${NEXT_SNAPSHOT.format}.`,
+        ),
+      ],
+    },
+    {
+      id: 'eras',
+      title: 'Comment pack.mcmeta a changé',
+      body: [
+        table(
+          ['Versions du jeu', 'Champs que le jeu lit'],
+          [
+            ['1.6.1 – 1.8.7', [code('pack_format'), ' et ', code('description'), '. Il n’y a aucune vérification de version, donc n’importe quel numéro se charge.']],
+            ['1.8.8 – 1.20.1', [code('pack_format'), ' seulement. Le pack est compatible quand il est égal au numéro du jeu ; sinon, Minecraft prévient mais te laisse l’utiliser.']],
+            ['1.20.2 – 1.21.8', [code('pack_format'), ' (obligatoire) plus une plage ', code('supported_formats'), ' en option, comme ', code('[15, 64]'), '.']],
+            [`1.21.9 – ${LATEST}`, [code('min_format'), ' et ', code('max_format'), ' (obligatoires ensemble). Un pack dont la plage remonte jusqu’au format 64 ou plus bas doit aussi avoir ', code('pack_format'), ' et ', code('supported_formats'), ' ; un pack seulement pour la 1.21.9+ ne doit pas utiliser ', code('supported_formats'), '.']],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'examples',
+      title: 'Exemples',
+      body: [
+        h3(`Seulement Java ${LATEST}`),
+        pre(mcmetaFor(LATEST, `Mon pack pour Minecraft ${LATEST}`)),
+        p('Un nombre seul dans ', code('max_format'), ` veut dire « n’importe quelle version mineure », donc ${maxFormat(LATEST)} couvre ${maxFormat(LATEST)}.0 et ${F(LATEST)}. Écrire `, code(`[${maxFormat(LATEST)}, 0]`), ` à cet endroit rendrait le pack trop vieux pour la ${LATEST}.`),
+        h3(`De 1.20.1 à ${LATEST}`),
+        pre(mcmetaRange('1.20.1', LATEST, `Mon pack pour Minecraft 1.20.1 - ${LATEST}`)),
+        p('La 1.20.1 lit ', code('pack_format'), ', les versions 1.20.2 – 1.21.8 lisent ', code('supported_formats'), ' et la 1.21.9 et plus récent lisent ', code('min_format'), ' et ', code('max_format'), '.'),
+        h3('Seulement 1.20.1 (et 1.20)'),
+        pre(mcmetaLegacy('1.20.1', 'Mon pack pour Minecraft 1.20.1')),
+        callout('tip', 'Laisse l’outil s’en charger', 'Dans le Texture Pack Maker, choisis ta version et, si tu veux, une plage de compatibilité dans l’onglet Pack. L’export reçoit exactement les champs dont chaque version a besoin.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Et Bedrock ?',
+      body: [
+        p(
+          'Les packs Bedrock n’ont pas de numéro de pack format. Leur ',
+          code('manifest.json'),
+          ' utilise ',
+          code('"format_version": 2'),
+          ' et un ',
+          code('min_engine_version'),
+          ' comme ',
+          code(MIN_ENGINE),
+          '. Les numéros de version de Bedrock suivent maintenant l’année (la 26.0 est sortie en février 2026), mais les manifestes gardent l’ancien style, donc la 26.50 s’écrit ',
+          code('[1, 26, 50]'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'latest',
+      q: `Quel est le format de pack de ressources de Minecraft ${LATEST} ?`,
+      a: [p(`${F(LATEST)}. Écris "min_format": ${minFormat(LATEST)} et "max_format": ${maxFormat(LATEST)} dans pack.mcmeta pour un pack seulement pour la ${LATEST}.`)],
+    },
+    {
+      id: '1211',
+      q: 'Quel est le pack format de la 1.21.1 et de la 1.20.1 ?',
+      a: [p(`La 1.21 et la 1.21.1 utilisent ${F('1.21.1')} ; la 1.20 et la 1.20.1 utilisent ${F('1.20.1')}. La 1.8.9 et les versions 1.x plus anciennes depuis la 1.6.1 utilisent ${F('1.8.9')}.`)],
+    },
+    {
+      id: 'broken',
+      q: `Pourquoi mon pack indique « ${JAVA.incompatible} » ?`,
+      a: [p('En 1.21.9 et plus récent, un pack qui n’a qu’un pack_format élevé (au-dessus de 64) et pas de min_format / max_format échoue à la vérification. Il peut quand même être activé, mais il vaut mieux ajouter les deux champs.')],
+    },
+  ],
+  ctaLabel: 'Faire un pack avec le bon format',
+};
+
+const makeASkin: GuideText = {
+  image: SHOTS.skin2d,
+  intro: [
+    p(
+      'Un skin Minecraft est une image PNG de 64×64 pixels qui s’enroule autour du modèle du joueur ; Bedrock accepte aussi des skins HD de 128×128 pixels. Tu peux en dessiner un dans ton navigateur : peins sur le modèle, vérifie-le sur un modèle 3D, puis mets-le en ligne dans le Minecraft Launcher (Java) ou importe-le en pack de skins (Bedrock).',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: ['Ouvre le Skin Maker et choisis un modèle ou un skin de départ.', 'Peins-le en regardant l’aperçu 3D.', 'Exporte un PNG pour Java ou un .mcpack pour Bedrock et mets-le en jeu.'],
+  },
+  howto: { name: 'Comment faire un skin Minecraft perso en ligne', steps: SKIN_STEPS },
+  sections: [
+    { id: 'steps', title: 'Pas à pas', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d), figure(SHOTS.skin3d)] },
+    {
+      id: 'template',
+      title: 'Comment marche le modèle de skin',
+      body: [
+        ul([
+          ['L’image fait ', strong('64×64'), ' pixels. Java 1.7.10 et avant utilisent l’ancien format ', strong('64×32'), ', qui n’a pas de bras et de jambe gauches séparés ; Bedrock accepte aussi des skins HD ', strong('128×128'), '.'],
+          ['Il y a deux couches. La ', strong('couche de base'), ' est le corps ; la ', strong('couche extérieure'), ' (chapeau, veste, manches et jambes de pantalon) flotte juste au-dessus et peut être transparente.'],
+          ['Les bras ', strong('classiques'), ' (Steve) font 4 pixels de large et les bras ', strong('fins'), ' (Alex) 3 pixels. Mets le skin en ligne avec le même modèle que celui que tu as peint.'],
+          'Les parties inutilisées du modèle doivent rester complètement transparentes.',
+        ]),
+      ],
+    },
+    {
+      id: 'hd-skins',
+      title: 'Les skins HD 128×128',
+      body: [
+        p(
+          'Un skin HD, c’est le même modèle en deux fois plus grand : 128×128 pixels au lieu de 64×64, donc chaque visage, manche et chaussure a quatre fois plus de pixels pour les ombres, les yeux et les motifs fins. Là où ça marche :',
+        ),
+        ul([
+          [strong('Bedrock Edition'), ` (Windows, Android, iPhone et iPad) : importe le PNG dans le ${BEDROCK.dressingRoom}, ou mets-le dans un pack de skins. Un pack peut mélanger des skins 64×64 et HD.`],
+          [strong('Java Edition'), ' : le Minecraft Launcher et minecraft.net n’acceptent que des skins 64×64. Un skin HD a besoin d’un mod qui charge les skins HD, comme CustomSkinLoader.'],
+        ]),
+        h3('En faire un dans le Skin Maker'),
+        steps([
+          ['Sur l’écran de départ, règle ', strong('Size'), ' sur ', strong('HD 128×128'), ', puis choisis un point de départ. Les modèles et les skins de départ sont doublés en 128×128, et un PNG 128×128 que tu importes reste en HD.'],
+          ['Tu peins déjà un skin 64×64 ? Passe ', strong('Size'), ' sur ', strong('HD 128'), ' dans l’éditeur et confirme avec ', strong('Make HD'), '. Chaque pixel devient un bloc de 2×2, donc le skin a le même aspect jusqu’à ce que tu peignes des détails plus fins. ', strong('Size'), ' › ', strong('64×64'), ' et ', strong('Reduce to 64×64'), ' reviennent en arrière.'],
+          ['Exporte ', strong('Bedrock skin (.png)'), ` pour l’importer dans le ${BEDROCK.dressingRoom}, ou un `, strong('Bedrock skin pack (.mcpack)'), '. Les deux gardent le 128×128.'],
+          ['Pour Java, ', strong('Java skin (.png)'), ' télécharge une copie 64×64, où chaque bloc de 2×2 devient un pixel ; ton skin HD reste tel quel. Tu utilises un mod de skins HD ? Choisis plutôt ', strong('128×128 for mods'), '.'],
+        ]),
+        callout('warn', 'Limites', `Les consoles ne peuvent importer aucun fichier de skin, quelle que soit sa taille. Les skins plus grands que 128×128 ne sont pas pris en charge. Les joueurs qui activent « ${BEDROCK.trustedSkins} » voient tous les skins perso, HD ou non, comme un skin par défaut.`),
+      ],
+    },
+    {
+      id: 'java',
+      title: 'L’utiliser sur Java',
+      body: [
+        steps([
+          ['Ouvre le Minecraft Launcher et va dans ', uiPath('Minecraft: Java Edition', LAUNCHER.skins), '.'],
+          ['Clique sur ', strong(LAUNCHER.newSkin), ', donne-lui un nom et choisis ', strong(LAUNCHER.classic), ' ou ', strong(LAUNCHER.slim), '.'],
+          ['Clique sur ', strong(LAUNCHER.browse), ', choisis ton PNG, puis ', strong(LAUNCHER.saveAndUse), '.'],
+        ]),
+        p('Tu peux aussi le mettre en ligne sur ton profil sur ', ext('https://www.minecraft.net/', 'minecraft.net'), '.'),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Faire un pack de skins Bedrock perso',
+      body: [
+        p(
+          'Un pack de skins est un ',
+          code('.mcpack'),
+          ' qui contient un ou plusieurs skins. Le Skin Maker le construit pour toi ; à l’intérieur, il y a un ',
+          code('manifest.json'),
+          ' (type de module ',
+          code('skin_pack'),
+          '), un ',
+          code('skins.json'),
+          ' qui liste chaque skin avec le modèle classique (',
+          code('geometry.humanoid.custom'),
+          ') ou fin (',
+          code('geometry.humanoid.customSlim'),
+          ') et ',
+          code('"type": "free"'),
+          ', les PNG des skins à la racine, et les noms dans ',
+          code('texts/en_US.lang'),
+          '.',
+        ),
+        steps([
+          ['Peins chaque skin comme un projet à part. Les skins classiques et fins peuvent partager un pack.'],
+          ['Choisis ', strong('Export'), ' › ', strong('Bedrock skin pack'), ', donne un nom au pack et coche les autres skins à inclure.'],
+          'Ouvre le .mcpack (double-clic sur Windows, Ouvrir avec Minecraft sur Android, Partager › Minecraft sur iPhone et iPad).',
+          ['Dans Minecraft, va dans ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ', trouve ton pack, choisis le skin et appuie sur ', strong(BEDROCK.equip), '.'],
+        ]),
+        figure(SHOTS.skinPack),
+        callout('warn', 'Bon à savoir', `Les consoles ne peuvent pas importer de fichiers de skins. Les joueurs qui activent « ${BEDROCK.trustedSkins} » voient les skins perso comme des skins par défaut. Les modèles perso ne sont pas autorisés dans les packs de skins importés, seulement classique et fin.`),
+        p('L’installation, les mises à jour et les fichiers à l’intérieur, pas à pas : ', link('/guides/make-a-bedrock-skin-pack', 'Comment faire un pack de skins Minecraft Bedrock'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'size', q: 'Quelle taille doit faire un skin Minecraft ?', a: [p('64×64 pixels, enregistré en PNG. Utilise le 64×32 seulement pour Java 1.7.10 et avant. Bedrock accepte aussi des skins HD de 128×128 pixels.')] },
+    {
+      id: 'hd',
+      q: 'Je peux faire un skin Minecraft 128×128 ?',
+      a: [
+        p(
+          'Oui, pour Bedrock Edition. Dans le Skin Maker, règle ',
+          strong('Size'),
+          ' sur ',
+          strong('HD 128×128'),
+          ' avant de commencer, ou passe un skin existant en ',
+          strong('HD 128'),
+          ', puis exporte un PNG Bedrock ou un pack de skins. Java Edition n’affiche que les skins 64×64 sans mods, donc l’export Java fait une copie 64×64 ; les mods de skins HD comme CustomSkinLoader peuvent utiliser le fichier 128×128.',
+        ),
+      ],
+    },
+    { id: 'username', q: 'Je peux partir du skin de quelqu’un ?', a: [p('Oui. Le Skin Maker peut charger le skin actuel de n’importe quel joueur Java avec son pseudo, pour que tu le remixes. Respecte le travail des autres.')] },
+    { id: 'phone', q: 'Je peux faire un skin sur mon téléphone ?', a: [p('Oui. L’éditeur marche au toucher, avec le zoom à deux doigts.')] },
+    {
+      id: 'slim-pack',
+      q: 'Un pack de skins peut mélanger skins classiques et fins ?',
+      a: [p('Oui. Chaque skin d’un pack a son propre modèle, donc un pack de skins perso peut contenir des skins classiques (bras de 4 pixels) et fins (bras de 3 pixels) côte à côte.')],
+    },
+    {
+      id: 'update-pack',
+      q: 'Comment mettre à jour un pack de skins que j’ai déjà importé ?',
+      a: [p('Exporte-le à nouveau depuis le même projet et ouvre le nouveau .mcpack. Le pack garde ses identifiants et reçoit un numéro de version plus élevé, donc Minecraft remplace l’ancien au lieu d’ajouter une copie.')],
+    },
+  ],
+  ctaLabel: 'Ouvrir le Skin Maker',
+};
+
+const bedrockSkinPack: GuideText = {
+  image: SHOTS.skinPack,
+  intro: [
+    p(
+      strong('Oui, tu peux faire ton propre pack de skins pour Minecraft Bedrock, gratuitement.'),
+      ' Un pack de skins est un fichier ',
+      code('.mcpack'),
+      ' qui contient un ou plusieurs skins et deux petits fichiers de description, ',
+      code('manifest.json'),
+      ' et ',
+      code('skins.json'),
+      '. Peins ou importe tes skins dans le ',
+      link('/skin-pack-maker', 'Skin Pack Maker'),
+      `, télécharge le pack, ouvre-le sur Windows, Android, iPhone ou iPad, et porte tes skins depuis le ${BEDROCK.dressingRoom}. Vendre un pack sur le Marketplace de Minecraft, c’est autre chose : seuls les partenaires Marketplace approuvés par Mojang peuvent y publier.`,
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Peins ou importe chaque skin dans le ', link('/skin-pack-maker', 'Skin Pack Maker'), ', avec des bras classiques ou fins.'],
+      ['Choisis ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', donne un nom au pack et coche les autres skins.'],
+      ['Ouvre le ', code('.mcpack'), ' et équipe un skin dans ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), '.'],
+    ],
+  },
+  howto: { name: 'Comment faire un pack de skins Minecraft Bedrock', steps: SKIN_PACK_STEPS },
+  sections: [
+    {
+      id: 'what',
+      title: 'Qu’y a-t-il dans un pack de skins ?',
+      body: [
+        p('Un pack de skins est un fichier zip renommé en ', code('.mcpack'), '. Ces fichiers sont à sa racine :'),
+        table(
+          ['Fichier', 'À quoi il sert'],
+          [
+            [code('manifest.json'), ['Le nom du pack, deux identifiants uniques (UUID) et un numéro de version. Son type de module ', code('skin_pack'), ' dit à Minecraft que c’est un pack de skins, pas un pack de textures.']],
+            [code('skins.json'), ['La liste des skins : pour chacun, sa clé de nom, son PNG, le modèle (', code('geometry.humanoid.custom'), ' pour les bras classiques, ', code('geometry.humanoid.customSlim'), ' pour les bras fins) et ', code('"type": "free"'), '.']],
+            ['Images des skins', ['Un PNG 64×64 par skin, à côté de ', code('manifest.json'), '.']],
+            [code('texts/en_US.lang'), [`Les noms affichés dans le ${BEDROCK.dressingRoom}, pour le pack et pour chaque skin. `, code('texts/languages.json'), ' liste les fichiers de langue.']],
+          ],
+        ),
+        p(
+          code('"type": "free"'),
+          ' veut dire que toute personne qui a le pack peut porter le skin. Les packs du Marketplace marquent la plupart des skins comme ',
+          code('"paid"'),
+          ', qui ne se débloquent qu’une fois le pack acheté : un pack que tu fais toi-même utilise donc toujours free.',
+        ),
+      ],
+    },
+    {
+      id: 'steps',
+      title: 'En faire un avec le Skin Pack Maker',
+      body: [
+        steps(SKIN_PACK_STEPS),
+        figure(SHOTS.skinPack),
+        p(
+          'L’outil écrit ',
+          code('manifest.json'),
+          ', ',
+          code('skins.json'),
+          ' et le fichier de langue pour toi, avec de nouveaux identifiants pour chaque pack. Les skins classiques et fins peuvent partager un pack, chaque skin garde son nom, et le nom de pack que tu tapes est le titre que les joueurs voient au-dessus des skins.',
+        ),
+        figure(SHOTS.skin3d),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'L’installer sur Windows, Android et iOS',
+      body: [
+        tabbed(
+          'install-skin-pack',
+          [
+            {
+              value: 'windows',
+              label: 'Windows',
+              icon: 'monitor',
+              content: [
+                steps([
+                  ['Double-clique sur le ', code('.mcpack'), '. Minecraft s’ouvre et affiche ', el('em', null, BEDROCK.importStarted), ', puis ', el('em', null, BEDROCK.imported), '.'],
+                  ['Ouvre ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ', choisis un skin de ton pack et appuie sur ', strong(BEDROCK.equip), '.'],
+                ]),
+              ],
+            },
+            {
+              value: 'mobile',
+              label: 'Android et iOS',
+              icon: 'smartphone',
+              content: [
+                steps([
+                  ['Télécharge le ', code('.mcpack'), ' sur le téléphone ou la tablette.'],
+                  [strong('Android : '), 'ouvre-le depuis les téléchargements ou Fichiers et choisis Minecraft. ', strong('iPhone / iPad : '), 'touche-le dans l’appli Fichiers, puis ', uiPath('Partager', 'Minecraft'), '.'],
+                  ['Ouvre ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ' et équipe un skin de ton pack.'],
+                ]),
+              ],
+            },
+            {
+              value: 'console',
+              label: 'Consoles',
+              icon: 'gamepad',
+              content: [p('Xbox, PlayStation et Switch ne peuvent importer ni packs de skins ni fichiers de skins. Sur console, les looks perso viennent du Créateur de personnage ou des packs de skins du Marketplace.')],
+            },
+          ],
+          UI_FR.platform,
+        ),
+        callout(
+          'tip',
+          'Juste un skin ?',
+          `Pas besoin d’un pack pour un seul skin : dans ${BEDROCK.classicSkins}, ouvre tes skins possédés, choisis ${BEDROCK.import} et prends un PNG 64×64. Un pack est plus pratique pour plusieurs skins, garde leurs noms et s’installe de la même façon sur chaque appareil.`,
+        ),
+      ],
+    },
+    {
+      id: 'update',
+      title: 'Mettre à jour ou supprimer un pack de skins',
+      body: [
+        p(
+          'Pour changer un pack déjà importé, modifie les skins, exporte à nouveau le pack depuis le même projet et ouvre le nouveau fichier. L’outil garde les deux identifiants du pack et augmente sa version (1.0.0, puis 1.0.1, etc.), donc Minecraft remplace le pack installé au lieu de l’afficher deux fois.',
+        ),
+        p(
+          'Tu as fait le pack à la main ? Garde les deux UUID et augmente la version dans ',
+          code('manifest.json'),
+          ', dans l’en-tête et dans le module. De nouveaux UUID te donnent un deuxième pack, et la même version n’est pas importée à nouveau parce que ce pack est déjà installé.',
+        ),
+        p('Pour supprimer un pack, va dans ', uiPath(BEDROCK.settings, BEDROCK.storage), ', choisis-le et supprime-le.'),
+      ],
+    },
+    {
+      id: 'arms',
+      title: 'Bras classiques ou fins',
+      body: [
+        p(
+          'Chaque skin d’un pack a son propre modèle, donc un même pack peut mélanger les deux. Les bras ',
+          strong('classiques'),
+          ' (Steve) font 4 pixels de large et utilisent ',
+          code('geometry.humanoid.custom'),
+          ' ; les bras ',
+          strong('fins'),
+          ' (Alex) font 3 pixels de large et utilisent ',
+          code('geometry.humanoid.customSlim'),
+          '. Le modèle doit correspondre à la façon dont le skin a été peint, sinon les bras ont l’air coupés ou ont une bande transparente.',
+        ),
+        p('Les packs importés ne peuvent utiliser que ces deux modèles. Les formes perso, comme une tête énorme, ne sont pas autorisées dans un pack de skins que tu importes toi-même.'),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'Faire un pack de skins à la main',
+      body: [
+        p('Tu peux aussi écrire les fichiers toi-même dans n’importe quel éditeur de texte. Un pack avec deux skins ressemble à ça :'),
+        pre(SKIN_PACK_TREE),
+        p(
+          code('manifest.json'),
+          ' a besoin de deux UUID différents. Crée les tiens avec n’importe quel générateur d’UUID au lieu de copier ceux ci-dessous, et garde-les pour les mises à jour :',
+        ),
+        pre(SKIN_PACK_MANIFEST.trimEnd()),
+        p(
+          code('skins.json'),
+          ' liste les skins. ',
+          code('serialize_name'),
+          ' et ',
+          code('localization_name'),
+          ' sont l’identifiant du pack : un seul mot sans espaces qu’aucun autre pack n’utilise. Le Skin Pack Maker y ajoute le début de l’UUID du pack pour en être sûr.',
+        ),
+        pre(SKIN_PACK_SKINS_JSON.trimEnd()),
+        p(code('texts/en_US.lang'), ' contient les noms affichés dans le jeu, et ', code('texts/languages.json'), ' contient ', code('["en_US"]'), ' :'),
+        pre(SKIN_PACK_LANG.trimEnd()),
+        steps([
+          ['Range les fichiers dans un dossier comme ci-dessus, avec les PNG à côté de ', code('manifest.json'), '.'],
+          'Sélectionne les fichiers à l’intérieur du dossier, pas le dossier lui-même, et ajoute-les à un zip.',
+          ['Renomme le zip de ', code('.zip'), ' en ', code('.mcpack'), ' et ouvre-le.'],
+        ]),
+        p(
+          'Si l’importation échoue, la cause habituelle est un dossier autour des fichiers dans le zip, une faute de frappe dans le JSON ou deux UUID identiques. Le ',
+          link('/skin-pack-maker', 'Skin Pack Maker'),
+          ' écrit exactement ces fichiers : tu peux donc aussi exporter un pack, le renommer en ',
+          code('.zip'),
+          ' et regarder dedans.',
+        ),
+      ],
+    },
+    {
+      id: 'marketplace',
+      title: 'Packs du Marketplace et packs perso',
+      body: [
+        p(
+          'Tu veux faire un pack de skins pour le Marketplace de Minecraft ? Seuls les partenaires Marketplace peuvent y publier : des studios et des créateurs que Mojang a acceptés dans son programme de partenaires, et qui soumettent chaque pack à une vérification. Il n’y a aucun moyen de mettre un pack sur le Marketplace depuis le jeu ou depuis un site web.',
+        ),
+        ul([
+          [strong('Pack de skins perso : '), 'gratuit, fait par n’importe qui, importé depuis un ', code('.mcpack'), ' sur Windows, Android, iPhone et iPad. Tu peux partager le fichier avec tes amis.'],
+          [strong('Pack de skins du Marketplace : '), 'fait par un partenaire approuvé, acheté avec des Minecoins ou gratuit, disponible sur chaque appareil, consoles comprises.'],
+        ]),
+        p('Ne mets dans un pack que des skins que tu as faits toi-même ou que tu as le droit de partager.'),
+      ],
+    },
+    {
+      id: 'trusted',
+      title: 'Pourquoi tes amis peuvent voir un skin par défaut',
+      body: [
+        p(
+          'Bedrock a un réglage appelé ',
+          strong(BEDROCK.trustedSkins),
+          '. Les joueurs qui l’activent voient tous les skins perso, y compris ceux des packs importés, comme un skin par défaut comme Steve ou Alex. C’est un réglage de leur côté, donc tu ne peux pas le changer pour eux. Tous les autres voient ton skin comme tu l’as fait.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'free',
+      q: 'On peut faire des packs de skins Minecraft pour Bedrock gratuitement ?',
+      a: [p('Oui. Les packs de skins perso sont gratuits à faire et à utiliser sur Windows, Android, iPhone et iPad. Le Skin Pack Maker n’a pas besoin de compte, et tes skins restent sur ton appareil.')],
+    },
+    {
+      id: 'java',
+      q: 'Les packs de skins marchent sur Java Edition ?',
+      a: [p('Non. Les packs de skins sont une fonction de Bedrock. Sur Java, tu portes un skin à la fois, mis en ligne en PNG dans le Minecraft Launcher. ', link('/guides/make-a-skin', 'Comment faire un skin'), '.')],
+    },
+    {
+      id: 'console',
+      q: 'Je peux utiliser un pack de skins perso sur Xbox, PlayStation ou Switch ?',
+      a: [p('Non. Les consoles ne peuvent importer ni packs de skins ni fichiers de skins. Windows, Android, iPhone et iPad, oui.')],
+    },
+    {
+      id: 'marketplace',
+      q: 'Je peux vendre mon pack de skins sur le Marketplace ?',
+      a: [p('Seulement en tant que partenaire Minecraft Marketplace approuvé. Un pack perso peut être partagé en fichier .mcpack, mais pas vendu dans le jeu.')],
+    },
+    {
+      id: 'failed',
+      q: 'Pourquoi l’importation échoue ?',
+      a: [p('En général, le zip a un dossier autour des fichiers, le JSON a une faute de frappe, les deux UUID sont identiques, ou un pack avec les mêmes identifiants et la même version est déjà installé. Les packs exportés depuis le Skin Pack Maker évitent ces quatre problèmes.')],
+    },
+  ],
+  ctaLabel: 'Ouvrir le Skin Pack Maker',
+};
+
+const shadersWithoutMods: GuideText = {
+  image: SHOTS.shaderVanilla,
+  intro: [
+    p(
+      strong('Oui, dans certaines limites.'),
+      ` Tu n’as pas besoin d’OptiFine, d’Iris ni d’aucun autre mod pour des effets de shaders simples. Sur Java 1.17 et plus récent, un simple pack de ressources peut remplacer certains fichiers de shaders de Minecraft, donc tu obtiens un étalonnage des couleurs, une vignette, un brouillard modifié et, en ${LATEST}, du bloom sans rien installer. Sur Bedrock, le code de shader perso n’est pas autorisé, mais un pack Graphismes éclatants règle la lumière, le ciel, le brouillard et l’eau intégrés. Les vraies ombres et les reflets sur Java ont toujours besoin d’Iris ou d’OptiFine.`,
+    ),
+  ],
+  howto: { name: 'Comment faire un pack de shaders Minecraft Java sans mods', steps: VANILLA_SHADER_STEPS },
+  sections: [
+    {
+      id: 'java',
+      title: 'Java : des shaders dans un pack de ressources',
+      body: [
+        p('Depuis la 1.17, Minecraft dessine le monde avec des fichiers de shaders qu’un pack de ressources peut remplacer. Ce qu’un pack de shaders vanilla peut faire dépend de la version :'),
+        table(
+          ['Effet', 'Marche sur'],
+          [
+            ['Étalonnage des couleurs (luminosité, contraste, saturation, chaleur, noir et blanc, sépia)', 'Java 1.17 et plus récent'],
+            ['Vignette', 'Java 1.17 et plus récent'],
+            ['Distance et couleur du brouillard', 'Java 1.17 et plus récent'],
+            ['Bloom (halo lumineux sur tout l’écran)', `Java ${LATEST} et plus récent`],
+            ['Plantes qui ondulent', 'Seulement 1.17 – 1.21.4 et 1.21.6 – 1.21.10'],
+            ['Vraies ombres, reflets, rayons de lumière', 'Impossible sans Iris ou OptiFine'],
+          ],
+        ),
+        p(`Java ${LATEST} a ajouté un point d’accroche pour un effet plein écran toujours actif, c’est pour ça que le bloom et un étalonnage des couleurs plus propre y marchent. Les versions 1.16.5 et plus anciennes n’ont pas de shaders du monde remplaçables.`),
+        callout('warn', 'Une version précise', 'Mojang change souvent ces fichiers de shaders, donc un pack de shaders vanilla ne marche que dans la version pour laquelle il a été fait. Un shader cassé peut faire désactiver tous tes packs de ressources par Minecraft, c’est pour ça que chaque shader que le Shader Maker écrit est d’abord vérifié à la compilation.'),
+        h3('En faire un'),
+        steps(VANILLA_SHADER_STEPS),
+        figure(SHOTS.shaderVanilla),
+      ],
+    },
+    {
+      id: 'bedrock',
+      title: 'Bedrock : les Graphismes éclatants plutôt que des shaders',
+      body: [
+        p(
+          'Bedrock a arrêté de charger du code de shader perso quand il est passé au moteur RenderDragon (1.16.200 sur Windows et consoles, 1.18.30 sur les autres appareils). Les outils qui échangent les fichiers de shaders compilés du jeu ont besoin d’installations du jeu modifiées et cassent à chaque mise à jour.',
+        ),
+        p(
+          'La méthode officielle, ce sont les ',
+          strong(BEDROCK.vibrantVisuals),
+          ' (Vibrant Visuals) : le moteur de rendu moderne de Bedrock, dans le jeu stable depuis la 1.21.90 (juin 2025). Un pack de ressources peut changer ses réglages : la lumière du soleil et de la lune, les couleurs du ciel, le brouillard, l’eau, les ombres et l’étalonnage des couleurs, selon le moment de la journée et selon le biome. ',
+          link('/guides/bedrock-vibrant-visuals-settings', 'Les réglages des Graphismes éclatants expliqués'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'mods',
+      title: 'Des shaders sans OptiFine : utilise Iris',
+      body: [
+        p(
+          `Si « sans mods » veut dire « sans OptiFine », la réponse, c’est Iris. Il charge les mêmes packs de shaders (vraies ombres du soleil, feuilles qui ondulent, eau qui reflète, rayons de lumière), tourne avec le mod d’optimisation Sodium et existe pour Java de 1.16.5 à ${LATEST}. Au moment où ce guide est écrit, OptiFine va jusqu’à la 26.2.`,
+        ),
+        steps([
+          ['Télécharge l’installateur d’Iris sur ', ext('https://www.irisshaders.dev/', 'irisshaders.dev'), ' et lance-le. Il installe Iris et Sodium pour la version que tu choisis.'],
+          'Lance le jeu une fois avec le nouveau profil Iris dans le Minecraft Launcher.',
+          ['Ouvre ', uiPath(JAVA.options, JAVA.video, IRIS.shaderPacks), ', clique sur ', strong(IRIS.openFolder), ' et dépose le zip d’un pack de shaders dedans.'],
+          `Choisis le pack dans la liste et clique sur « ${IRIS.apply} ». Les packs légers conviennent aux ordinateurs portables ; les plus lourds ont besoin d’une bonne carte graphique.`,
+        ]),
+        figure(SHOTS.shaderIris),
+        p(
+          'Sur Forge ou NeoForge, cherche un portage d’Iris pour ce loader. Tu peux aussi créer ton propre pack de shaders Iris / OptiFine, avec des préréglages et un aperçu en direct, dans le ',
+          link('/shaders', 'Shader Maker'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'optifine', q: 'Faut-il OptiFine pour les shaders vanilla ?', a: [p('Non. Les packs de shaders vanilla sont des packs de ressources normaux. Ils marchent sans aucun mod dans la version pour laquelle ils ont été faits.')] },
+    { id: 'servers', q: 'Les packs de shaders vanilla marchent sur les serveurs ?', a: [p('Oui. Les packs de ressources sont appliqués par ton propre jeu, donc ils marchent aussi quand tu joues sur un serveur.')] },
+    { id: 'bedrock', q: 'Je peux utiliser des shaders Java sur Bedrock ?', a: [p('Non. Bedrock ne peut pas charger de code de shader depuis des packs. Utilise plutôt un pack Graphismes éclatants.')] },
+  ],
+  ctaLabel: 'Ouvrir le Shader Maker',
+};
+
+const vibrantVisuals: GuideText = {
+  image: SHOTS.vibrantVisuals,
+  intro: [
+    p(
+      'Les ',
+      strong(BEDROCK.vibrantVisuals),
+      ' (Vibrant Visuals en anglais) sont le mode graphique moderne de Minecraft Bedrock, avec une lumière du soleil directionnelle, des ombres douces, un brouillard volumétrique, de l’eau qui reflète et des matériaux physiques. Ils sont sortis des expériences avec la 1.21.90 (juin 2025) et sont le mode graphique par défaut sur les appareils compatibles. Un pack de ressources peut régler leurs paramètres ; il ne peut pas ajouter de nouveau code de shader.',
+    ),
+  ],
+  howto: { name: 'Comment utiliser un pack Graphismes éclatants dans Minecraft Bedrock', steps: VV_STEPS },
+  sections: [
+    {
+      id: 'settings',
+      title: 'Ce qu’un pack Graphismes éclatants peut changer',
+      body: [
+        table(
+          ['Dossier du pack', 'Ce qu’il règle'],
+          [
+            [code('lighting/'), 'La luminosité, la couleur et l’inclinaison de la course du soleil et de la lune, la lumière ambiante (des grottes), la lumière du ciel et l’intensité des couleurs des blocs lumineux.'],
+            [code('atmospherics/'), 'Les couleurs du ciel au-dessus de toi et à l’horizon, et la façon dont la lumière se diffuse dans l’air (densité du ciel, lueur du coucher de soleil).'],
+            [code('color_grading/'), 'L’opérateur de tone mapping, le contraste, la saturation, le gain, le gamma et la température de couleur : le rendu « film ».'],
+            [code('water/'), 'La couleur de l’eau, les vagues et les caustiques (les motifs de lumière sous l’eau).'],
+            [code('shadows/'), 'Des ombres en blocs ou douces.'],
+            [code('fogs/'), 'La densité et la couleur du brouillard volumétrique, et le brouillard de distance classique.'],
+            [code('local_lighting/'), 'La couleur de la lumière des blocs comme les torches et les lanternes.'],
+          ],
+        ),
+        p('Les réglages peuvent changer selon le moment de la journée, et les valeurs de Minecraft lui-même diffèrent selon le biome : un bon pack règle donc chaque biome au lieu de remplacer un seul fichier global.'),
+        p(strong('Non réglable par les packs : '), 'le bloom, l’exposition, les reflets en espace écran, l’éclairage des nuages, la courbe de tone mapping elle-même, la distance d’affichage et l’anticrénelage. Tout ça vit dans le moteur de rendu du jeu, pas dans les packs de ressources.'),
+      ],
+    },
+    {
+      id: 'devices',
+      title: 'Quels appareils les prennent en charge',
+      body: [
+        ul([
+          'Les PC Windows avec DirectX 12.',
+          'Les Xbox Series et la PlayStation 5 ; sur Xbox One et PS4, ils sont désactivés par défaut.',
+          'Les iPhone et iPad avec une puce A12 ou plus récente.',
+          'Beaucoup d’appareils Android récents.',
+        ]),
+        p(`Ils ne sont pas disponibles sur la première Nintendo Switch, les Chromebooks et les tablettes Fire. Les serveurs peuvent les désactiver, et le jeu en écran partagé utilise plutôt les graphismes ${'Élaborés'}.`),
+      ],
+    },
+    {
+      id: 'enable',
+      title: 'Les activer avec un pack',
+      body: [
+        steps(VV_STEPS),
+        callout(
+          'warn',
+          `${BEDROCK.vibrantVisuals} grisés ?`,
+          'Minecraft ne les autorise que si tous les packs de ressources actifs les prennent en charge. Les packs de textures classiques les désactivent, donc désactive ces packs (ou utilise un pack fait pour les Graphismes éclatants). L’option a aussi besoin d’un appareil compatible.',
+        ),
+        figure(SHOTS.vibrantVisuals),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'what', q: 'C’est quoi, les Graphismes éclatants dans Minecraft ?', a: [p('Le mode graphique moderne intégré à Bedrock, sorti avec la 1.21.90. Il ajoute une lumière directionnelle, des ombres, un brouillard volumétrique, des reflets dans l’eau et des matériaux PBR sans add-ons.')] },
+    { id: 'textures', q: 'Les Graphismes éclatants ont besoin d’un pack de textures spécial ?', a: [p('Non, ils marchent avec les textures par défaut. Mais un pack de textures classique qui ne déclare pas prendre en charge les Graphismes éclatants désactive ce mode tant qu’il est actif.')] },
+    { id: 'classic-fog', q: 'Les changements de brouillard marchent sans les Graphismes éclatants ?', a: [p('Le brouillard de distance classique peut être changé dans tous les modes graphiques. Le brouillard volumétrique et les réglages de lumière ne s’appliquent qu’avec les Graphismes éclatants.')] },
+  ],
+  ctaLabel: 'Créer un pack Graphismes éclatants',
+};
+
+const javaVsBedrock: GuideText = {
+  intro: [
+    p(
+      'Java et Bedrock ont tous les deux des packs de ressources, mais les fichiers ne sont pas interchangeables. Un pack ',
+      strong('Java'),
+      ' est un ',
+      code('.zip'),
+      ' avec ',
+      code('pack.mcmeta'),
+      ' et des textures PNG dans ',
+      code('assets/minecraft/textures/'),
+      '. Un pack ',
+      strong('Bedrock'),
+      ' est un ',
+      code('.mcpack'),
+      ' avec ',
+      code('manifest.json'),
+      ' et des textures dans ',
+      code('textures/'),
+      '. Pour prendre en charge les deux, tu fais le pack deux fois.',
+    ),
+  ],
+  quick: {
+    title: 'Réponse rapide : les packs de textures Java marchent sur Bedrock ?',
+    items: [
+      'Non. Bedrock ne peut pas charger un .zip Java, et le renommer en .mcpack n’aide pas.',
+      'Les deux éditions utilisent des dossiers, des noms de fichiers et des fichiers de description différents.',
+      'Tu peux convertir un pack en déplaçant et renommant ses images et en ajoutant un manifest.json, ou le refaire dans un projet Bedrock.',
+    ],
+  },
+  sections: [
+    {
+      id: 'compare',
+      title: 'Côte à côte',
+      body: [
+        table(
+          ['', 'Java Edition', 'Bedrock Edition'],
+          [
+            ['Fichier', [code('.zip'), ' (ou un dossier)'], [code('.mcpack'), ' (un zip renommé)']],
+            ['Fichier de description', [code('pack.mcmeta')], [code('manifest.json'), ' avec deux UUID et un numéro de version']],
+            ['Version visée', ['Un numéro de pack format, par ex. ', F(LATEST), ' pour la ', LATEST], ['Une version minimale du moteur, par ex. ', code(MIN_ENGINE)]],
+            ['Exemple de chemin de texture', [code('assets/minecraft/textures/block/stone.png')], [code('textures/blocks/stone.png')]],
+            ['Formats d’image', 'PNG', 'PNG ou TGA (garde l’extension du fichier vanilla)'],
+            ['Icône', [code('pack.png')], [code('pack_icon.png')]],
+            ['Installation', ['À déposer dans le dossier ', code('resourcepacks')], 'Ouvre le fichier ; Minecraft l’importe'],
+            ['Shaders', 'Packs de shaders Iris / OptiFine, ou packs de ressources de shaders vanilla (1.17+)', 'Pas de code de shader perso ; des packs de réglages Graphismes éclatants'],
+            ['Skins', 'Un PNG mis en ligne dans le launcher ou sur minecraft.net', `Un pack de skins (.mcpack) ou un PNG importé dans le ${BEDROCK.dressingRoom}`],
+            ['Consoles', 'Sans objet', 'Impossible d’importer des fichiers ; utilise un monde, un Realm ou un serveur qui a le pack'],
+          ],
+        ),
+      ],
+    },
+    {
+      id: 'textures',
+      title: 'Les différences de textures à surveiller',
+      body: [
+        ul([
+          'Les noms de fichiers diffèrent entre les éditions, par exemple block/grass_block_top.png sur Java et blocks/grass_top.png sur Bedrock.',
+          'Beaucoup de textures Bedrock utilisent leurs pixels transparents pour stocker des masques de teinte ou de teinture : les éditeurs ne doivent donc jamais jeter la couleur des pixels invisibles. Le Texture Pack Maker garde les pixels exacts.',
+          'Java peut mélanger plusieurs versions dans un pack avec une plage de compatibilité ; les packs Bedrock déclarent une seule version minimale.',
+        ]),
+      ],
+    },
+    {
+      id: 'convert',
+      title: 'Peut-on convertir un pack de textures Java en Bedrock ?',
+      body: [
+        p('Oui, mais pas en renommant le fichier. Convertir, c’est reconstruire le pack avec l’organisation de Bedrock :'),
+        steps([
+          ['Copie les images de ', code('assets/minecraft/textures/'), ' dans les dossiers ', code('textures/'), ' de Bedrock (', code('block'), ' → ', code('blocks'), ', ', code('item'), ' → ', code('items'), ').'],
+          ['Renomme les fichiers dont les noms diffèrent, par exemple ', code('grass_block_top.png'), ' → ', code('grass_top.png'), '. Les textures sans équivalent sur Bedrock sont ignorées.'],
+          ['Écris un ', code('manifest.json'), ' avec deux nouveaux UUID, une version et un ', code('min_engine_version'), ', et renomme ', code('pack.png'), ' en ', code('pack_icon.png'), '.'],
+          ['Vérifie les cas particuliers : les animations de Bedrock sont listées dans ', code('textures/flipbook_textures.json'), ' au lieu de fichiers ', code('.png.mcmeta'), ', et certaines textures sont des fichiers ', code('.tga'), ' qui stockent des masques de teinte dans leurs pixels transparents.'],
+          ['Compresse le contenu et renomme le zip en ', code('.mcpack'), '.'],
+        ]),
+        p(
+          'La référence de Mojang elle-même est ',
+          el('span', { lang: 'en' }, ext('https://learn.microsoft.com/en-us/minecraft/creator/documents/convertingtexturepacks', 'Converting Texture Packs from Java Edition to Bedrock Edition')),
+          ' (en anglais). Le chemin rapide, c’est le ',
+          link('/texture-pack-converter', 'convertisseur de packs de textures'),
+          ' : il déplace et renomme chaque texture, transforme les animations en entrées de flipbook, écrit le manifeste et liste tout ce qu’il n’a pas pu convertir.',
+        ),
+      ],
+    },
+    {
+      id: 'mcpack',
+      title: 'Un .mcpack, c’est juste un fichier zip ?',
+      body: [
+        p(
+          'Oui. Un ',
+          code('.mcpack'),
+          ' est un zip ordinaire avec une autre extension, pour que Bedrock sache qu’il doit l’importer. Renomme-le en ',
+          code('.zip'),
+          ' pour regarder dedans. Ce qui en fait un pack Bedrock, c’est son contenu : ',
+          code('manifest.json'),
+          ' à la racine et l’organisation des dossiers de Bedrock. Les fichiers ',
+          code('.mcaddon'),
+          ' regroupent plusieurs packs, et les fichiers ',
+          code('.mcworld'),
+          ' contiennent un monde entier.',
+        ),
+      ],
+    },
+    {
+      id: 'both',
+      title: 'Faire un pack pour les deux',
+      body: [
+        steps([
+          ['Crée un projet Java dans le ', link('/textures', 'Texture Pack Maker'), ' et peins tes textures.'],
+          'Crée un projet Bedrock et repeins (ou importe) les mêmes textures ; la liste des fichiers est celle de Bedrock.',
+          'Exporte chacun et partage les deux fichiers.',
+        ]),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'convert', q: 'Je peux convertir un pack Java en Bedrock ?', a: [p('Pas en renommant le fichier. Les dossiers, les noms et le fichier de description diffèrent, donc les images doivent être déplacées, renommées et recevoir un manifest.json. Le ', link('/texture-pack-converter', 'convertisseur de packs de textures'), ' le fait pour toi.')] },
+    { id: 'back', q: 'Je peux convertir un pack Bedrock en Java ?', a: [p('De la même façon, à l’envers : déplace les images dans ', code('assets/minecraft/textures/'), ', renomme-les avec les noms de Java, convertis les fichiers .tga en PNG et ajoute un ', code('pack.mcmeta'), '.')] },
+    { id: 'missing', q: 'Pourquoi certaines textures manquent après la conversion ?', a: [p('Chaque édition a des textures que l’autre n’a pas, et certaines sont découpées ou regroupées différemment (par exemple les coffres, les tableaux et l’interface). Celles-là doivent être repeintes pour l’autre édition.')] },
+    { id: 'which', q: 'À quelle édition je joue ?', a: [p('Si tu joues sur console, téléphone ou tablette, ou si tu as eu Minecraft sur le Microsoft Store sous le nom « Minecraft for Windows », c’est Bedrock. Java tourne sur Windows, macOS et Linux avec le Minecraft Launcher.')] },
+  ],
+  ctaLabel: 'Ouvrir le Texture Pack Maker',
+};
+
+const convertJavaToBedrock: GuideText = {
+  image: SHOTS.convertResult,
+  intro: [
+    p(
+      'Un pack de textures Java ne marche pas sur Bedrock, et renommer le ',
+      code('.zip'),
+      ' en ',
+      code('.mcpack'),
+      ' n’aide pas : les deux éditions utilisent des dossiers, des noms de fichiers et des fichiers de description différents. Pour convertir un pack, chaque texture doit être déplacée dans le dossier de Bedrock, renommée avec le nom de fichier de Bedrock et recevoir un ',
+      code('manifest.json'),
+      '. Le ',
+      link('/texture-pack-converter', 'convertisseur de packs de textures'),
+      ' gratuit le fait dans ton navigateur en quelques secondes, et marche aussi dans l’autre sens.',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Ouvre le ', link('/texture-pack-converter', 'convertisseur de packs de textures'), ' et choisis ton ', code('.zip'), ' Java.'],
+      ['Choisis ', strong('Bedrock Edition'), ' et clique sur ', strong('Convert to Bedrock'), '.'],
+      ['Télécharge le ', code('.mcpack'), ' et ouvre-le : Minecraft l’importe.'],
+    ],
+  },
+  howto: { name: 'Comment convertir un pack de textures Java en Bedrock', steps: CONVERT_STEPS },
+  sections: [
+    { id: 'steps', title: 'Pas à pas', body: [steps(CONVERT_STEPS), figure(SHOTS.convertPack), figure(SHOTS.convertResult)] },
+    {
+      id: 'what',
+      title: 'Ce qui est converti, et ce qui ne l’est pas',
+      body: [
+        p('Le convertisseur sait quelle texture Java joue le même rôle que quelle texture Bedrock, d’après les fichiers du jeu des deux éditions. La plupart des textures ont la même image dans les deux, donc elles peuvent être copiées telles quelles.'),
+        table(
+          ['Converti', 'Pas converti'],
+          [
+            ['La plupart des textures de blocs et d’objets (environ quatre sur cinq)', 'Les textures qui n’existent que dans une seule édition'],
+            ['Beaucoup de textures de créatures et d’environnement (soleil, lune, nuages)', 'Les textures organisées autrement : coffres, beaucoup de skins de créatures, bannières, menus et particules'],
+            ['Les textures animées : .png.mcmeta devient une entrée de flipbook', 'Les modèles, les sons, les polices, les messages d’accueil et les shaders'],
+            ['L’icône, le nom et la description du pack', 'Les extras d’OptiFine comme les textures connectées et les textures d’objets perso'],
+          ],
+        ),
+        p('Tout ce qui est ignoré est listé dans le rapport avec la raison, pour que tu saches exactement quoi repeindre. Ouvre le pack converti dans le ', link('/textures', 'Texture Pack Maker'), ' pour corriger ces textures sur leurs modèles 3D avant de le télécharger.'),
+        callout('tip', 'Un même pack, deux éditions', `Garde ton pack Java comme original et convertis-le à nouveau après chaque changement. Avant d’importer la nouvelle version sur Bedrock, supprime l’ancienne dans ${BEDROCK.settings} › ${BEDROCK.storage} pour ne pas te retrouver avec deux copies.`),
+      ],
+    },
+    {
+      id: 'bedrock-to-java',
+      title: 'Convertir un pack Bedrock en Java',
+      body: [
+        p(
+          'Choisis un ',
+          code('.mcpack'),
+          ' Bedrock (ou un ',
+          code('.mcaddon'),
+          ') et choisis ',
+          strong('Java Edition'),
+          ' et la version à laquelle tu joues. Les textures vont dans les dossiers et les noms de Java, les images ',
+          code('.tga'),
+          ' deviennent des PNG, les animations en flipbook deviennent des fichiers ',
+          code('.png.mcmeta'),
+          ' et le pack reçoit le bon ',
+          code('pack.mcmeta'),
+          ' pour cette version.',
+        ),
+      ],
+    },
+    {
+      id: 'old-java',
+      title: 'Mettre à jour un vieux pack Java vers une nouvelle version',
+      body: [
+        p(
+          'Le même convertisseur met à jour les packs Java d’une version à l’autre. Beaucoup de textures ont été renommées au fil des années, surtout dans la 1.13, quand ',
+          code('textures/blocks'),
+          ' est devenu ',
+          code('textures/block'),
+          ' et que des centaines de fichiers ont changé de nom. Choisis le vieux pack, choisis ',
+          strong('Java'),
+          ' et ta version, et chaque texture renommée prend son nouveau nom. Les noms de textures dans les modèles du pack sont mis à jour aussi.',
+        ),
+        p(`Ça marche aussi à l’envers, par exemple pour faire d’un pack ${LATEST} un pack pour la 1.8.9.`),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Installer le pack converti',
+      body: [
+        ul([
+          ['Bedrock : ouvre le ', code('.mcpack'), ' (double-clic sur Windows, Ouvrir avec Minecraft sur téléphone), puis active-le dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+          ['Java : mets le ', code('.zip'), ' dans le dossier ', code('resourcepacks'), ` et passe-le dans « ${JAVA.selected} ».`],
+        ]),
+        p('Plus de détails dans ', link('/guides/install-resource-packs', 'Comment installer des packs de textures'), '. Si quelque chose ne va pas, regarde ', link('/guides/texture-pack-not-working', 'Pack de textures qui ne marche pas'), '.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'free', q: 'Le convertisseur est gratuit ?', a: [p('Oui, sans compte et sans limites. Le pack est converti dans ton navigateur et n’est jamais envoyé.')] },
+    { id: 'look', q: 'Le pack aura le même aspect sur Bedrock ?', a: [p('Les textures converties ont le même aspect. Les textures ignorées reprennent celles de Bedrock, et l’éclairage de Bedrock et les Graphismes éclatants peuvent faire paraître les couleurs un peu différentes.')] },
+    { id: 'shaders', q: 'Je peux convertir un pack de shaders Java en Bedrock ?', a: [p('Non. Bedrock ne charge pas de code de shader perso. Utilise plutôt un pack ', link('/guides/bedrock-vibrant-visuals-settings', 'Graphismes éclatants'), ', que tu peux faire avec le ', link('/shaders', 'Shader Maker'), '.')] },
+    { id: 'png', q: 'Je peux transformer des fichiers PNG en .mcpack ?', a: [p('Oui. Choisis un PNG, ou un zip de PNG, nommés comme les textures du jeu (par exemple ', code('stone.png'), '), et convertis-le pour Bedrock.')] },
+    { id: 'console', q: 'Je peux utiliser le pack converti sur console ?', a: [p('Les consoles ne peuvent pas importer de fichiers. Ajoute le pack à un monde sur un PC ou un téléphone et rejoins ce monde, ou utilise un Realm ou un serveur qui l’a.')] },
+  ],
+  ctaLabel: 'Ouvrir le convertisseur de packs de textures',
+};
+
+const mergePacks: GuideText = {
+  image: SHOTS.mergeResult,
+  intro: [
+    p(
+      'Minecraft sait déjà empiler les packs de textures : actives-en plusieurs, et celui qui est le plus haut dans la liste gagne partout où deux packs changent la même texture. Fusionner, c’est construire un seul pack à partir de plusieurs, avec ce même ordre intégré. C’est pratique pour un serveur ou un Realm qui n’accepte qu’un pack, pour partager ta combinaison préférée, ou pour garder une liste de packs courte. L’outil gratuit ',
+      link('/merge-texture-packs', 'Merge Texture Packs'),
+      ' le fait dans ton navigateur.',
+    ),
+  ],
+  quick: {
+    title: 'En bref',
+    items: [
+      ['Ouvre ', link('/merge-texture-packs', 'Merge Texture Packs'), ' et ajoute de deux à huit packs de la même édition.'],
+      'Fais-les glisser dans l’ordre : le pack du haut gagne chaque conflit.',
+      'Clique sur Merge, vérifie la liste des conflits, puis télécharge le pack.',
+    ],
+  },
+  howto: { name: 'Comment fusionner des packs de textures Minecraft', steps: MERGE_STEPS },
+  sections: [
+    { id: 'steps', title: 'Pas à pas', body: [steps(MERGE_STEPS), figure(SHOTS.mergeSettings), figure(SHOTS.mergeResult)] },
+    {
+      id: 'wins',
+      title: 'Quel pack gagne ?',
+      body: [
+        p('La même règle que celle de Minecraft : pour chaque fichier, le pack le plus haut dans la liste gagne. Une texture et son fichier d’animation voyagent toujours ensemble, donc l’animation d’un pack plus bas n’est jamais collée à l’image d’un pack plus haut.'),
+        p('Certains fichiers sont combinés au lieu d’être remplacés, pour que rien d’utile ne soit perdu :'),
+        ul([
+          [strong('Java : '), 'les fichiers de langue (clé par clé), ', code('sounds.json'), ' (son par son), les atlas de textures et les polices.'],
+          [strong('Bedrock : '), code('terrain_texture.json'), ', ', code('item_texture.json'), ', ', code('flipbook_textures.json'), ', ', code('blocks.json'), ', les définitions de sons et les fichiers de langue.'],
+        ]),
+        p('Le résultat liste chaque conflit, comme « block/stone.png du pack A, qui remplace le pack B », et combien de fichiers chaque pack a ajoutés.'),
+      ],
+    },
+    {
+      id: 'versions',
+      title: 'Des packs pour des versions différentes',
+      body: [
+        p(
+          'Les packs Java faits pour des versions différentes peuvent être fusionnés : choisis la version à laquelle tu joues et les packs plus anciens reçoivent d’abord ses noms de textures (les mêmes renommages que ceux du ',
+          link('/texture-pack-converter', 'convertisseur'),
+          `), donc un pack 1.12 et un pack ${LATEST} vont ensemble. Les packs Java et Bedrock ne peuvent pas être fusionnés directement : convertis d’abord l’un des deux.`,
+        ),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'Fusionner des packs à la main',
+      body: [
+        steps([
+          'Décompresse chaque pack dans son propre dossier.',
+          'Crée un nouveau dossier et copies-y d’abord le pack le moins prioritaire, puis chaque pack plus haut par-dessus, en remplaçant les fichiers quand on te le demande.',
+          ['Fusionne à la main les fichiers qui doivent être combinés (', code('sounds.json'), ', fichiers de langue, atlas), sinon c’est la dernière copie qui gagne.'],
+          ['Garde un seul ', code('pack.mcmeta'), ' (Java) ou écris un nouveau ', code('manifest.json'), ' avec de nouveaux identifiants (Bedrock), puis compresse le contenu.'],
+        ]),
+        p('L’outil fait tout ça, y compris les fichiers combinés et le bon pack format : fusionner à la main ne vaut donc le coup que pour des packs inhabituels.'),
+      ],
+    },
+  ],
+  faq: [
+    { id: 'how-many', q: 'Combien de packs je peux fusionner ?', a: [p('De deux à huit à la fois. Pour en combiner plus, fusionne à nouveau le résultat avec les packs suivants.')] },
+    { id: 'shaders', q: 'Je peux fusionner des packs de shaders ?', a: [p('Non. Les packs de shaders Iris et OptiFine ne tournent qu’un à la fois. Les packs de ressources de shaders vanilla peuvent être fusionnés comme n’importe quel pack de ressources, mais deux packs qui changent le même fichier de shader ne combineront pas leurs effets.')] },
+    { id: 'server', q: 'Je peux utiliser un pack fusionné comme pack de ressources de serveur ?', a: [p('Oui. Mets le ', code('.zip'), ' fusionné en ligne là où tu héberges les packs du serveur et indique-le dans ', code('server.properties'), ' comme n’importe quel autre pack.')] },
+    { id: 'upload', q: 'Mes packs sont-ils envoyés quelque part ?', a: [p('Non. Les packs sont fusionnés dans ton navigateur et restent sur ton appareil.')] },
+  ],
+  ctaLabel: 'Ouvrir Merge Texture Packs',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
