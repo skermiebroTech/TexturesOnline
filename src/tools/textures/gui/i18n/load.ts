@@ -14,4 +14,5 @@ export const loadGuiText = textLoader<GuiLanguage>({
   'pt-br': () => import('./pt-br'),
   ja: () => import('./ja'),
   ru: () => import('./ru'),
+  pl: () => import('./pl'),
 });

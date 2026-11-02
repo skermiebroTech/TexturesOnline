@@ -13,7 +13,7 @@ const PL: AnimLanguage = {
     cant: {
       title: 'Tej tekstury nie da się animować',
       icon: 'Ikony paczki nie da się animować.',
-      javaNoAtlas: 'Java Edition animuje tylko bloki, przedmioty i inne tekstury, które zbiera w atlasie tekstur (cząsteczki, obrazy, skrzynie, sztandary, sprite’y interfejsu w 1.20.2 i nowszych…). Tę gra rysuje osobno, więc stałaby w miejscu.',
+      javaNoAtlas: 'Java Edition animuje tylko bloki, przedmioty i inne tekstury, które zbiera w atlasie tekstur (cząstki, obrazy, skrzynie, sztandary, sprite’y interfejsu w 1.20.2 i nowszych…). Tę gra rysuje osobno, więc stałaby w miejscu.',
       javaSquare: 'Minecraft przed 1.13 animuje tylko kwadratowe klatki. Wybierz 1.13 albo nowszą w zakładce Paczka, żeby animować tę teksturę.',
       bedrockItem: 'Bedrock Edition nie animuje przedmiotów: animacje flipbook mają tylko tekstury bloków. Paczki do Java Edition mogą animować przedmioty.',
       bedrockUnused: 'Bedrock animuje tylko tekstury, których używają bloki (terrain_texture.json), a żaden blok nie używa tej.',

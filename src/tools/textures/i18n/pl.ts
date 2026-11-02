@@ -103,7 +103,7 @@ const PL: TexturesLanguage = {
       entity: { label: 'Moby', short: 'Mob' },
       armor: { label: 'Zbroje', short: 'Zbroja' },
       gui: { label: 'Interfejs', short: 'Interfejs' },
-      particle: { label: 'Cząsteczki', short: 'Cząsteczka' },
+      particle: { label: 'Cząstki', short: 'Cząstki' },
       environment: { label: 'Niebo', short: 'Niebo' },
       painting: { label: 'Obrazy', short: 'Obraz' },
       effect: { label: 'Efekty', short: 'Ikona efektu' },

@@ -157,7 +157,7 @@ const PL: ConvertLanguage = {
       subpack: 'Plik podpaczki',
       pbr: 'Plik Vibrant Visuals (PBR)',
       menu: 'Układ menu',
-      particle: 'Definicja cząsteczki',
+      particle: 'Definicja cząstek',
       textureSettings: 'Ustawienia tekstur',
     },
     loose: {
