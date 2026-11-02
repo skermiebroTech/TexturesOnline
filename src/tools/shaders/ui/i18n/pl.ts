@@ -584,7 +584,7 @@ const PL: ShadersEditorLanguage = {
         },
         fogEnvironment: {
           label: 'Zasięg mgły w wodzie i przy pogodzie',
-          description: 'Jak daleko widać pod wodą, w deszczu, w mglistych biomach i podczas walk z bossami. Wyższa wartość pozwala widzieć dalej. Ślepota, Ciemność, lawa i sypki śnieg zachowują zwykłą mgłę. Wymaga Minecrafta 1.21.6 albo nowszego.',
+          description: 'Jak daleko widać pod wodą, w deszczu, w mglistych biomach i podczas walk z bossami. Wyższa wartość pozwala widzieć dalej. Oślepienie, Mrok, lawa i sypki śnieg zachowują zwykłą mgłę. Wymaga Minecrafta 1.21.6 albo nowszego.',
         },
         fogTint: {
           label: 'Zabarwienie mgły',
@@ -821,8 +821,8 @@ const PL: ShadersEditorLanguage = {
       notes: {
         what: { title: 'Co to robi', text: 'Paczka Vibrant Visuals: zmienia wbudowany shader Minecrafta oficjalnymi ustawieniami światła słońca, nieba, mgły, wody, cieni i korekcji kolorów. Bez modów.' },
         devices: { title: 'Wymaga urządzenia z Vibrant Visuals', text: 'Vibrant Visuals działa na obsługiwanych komputerach z Windowsem, konsolach Xbox i PlayStation oraz nowszych telefonach i tabletach (nie na Nintendo Switch 1, Chromebookach ani tabletach Fire). Serwery mogą je wyłączyć.' },
-        graphics: { title: 'Zmień tryb grafiki', text: 'W Ustawienia > Wideo ustaw Tryb grafiki na Odświeżona szata graficzna (Vibrant Visuals). W trybie prostym albo szczegółowym widać tylko zmiany klasycznej mgły.' },
-        stacking: { title: 'Inne paczki mogą je wyłączyć', text: 'Każda aktywna paczka zasobów musi obsługiwać Vibrant Visuals. Zwykła paczka tekstur na liście przełącza tryb grafiki z powrotem na szczegółowy.' },
+        graphics: { title: 'Zmień tryb grafiki', text: 'W Ustawienia > Wideo ustaw Tryb grafiki na Odświeżona szata graficzna (Vibrant Visuals). W trybie grafiki Prosta albo Dokładna widać tylko zmiany klasycznej mgły.' },
+        stacking: { title: 'Inne paczki mogą je wyłączyć', text: 'Każda aktywna paczka zasobów musi obsługiwać Vibrant Visuals. Zwykła paczka tekstur na liście przełącza tryb grafiki z powrotem na Dokładna.' },
         limits: { title: 'Czego nie da się zmienić', text: 'Bedrock nie pozwala na własny kod shaderów (GLSL) w paczkach, więc efekty takie jak siła bloomu, ekspozycja, odbicia, chmury czy falujące liście zostają takie, jak rysuje je Minecraft.' },
         fog: { title: 'Klasyczna mgła działa wszędzie', text: 'Zmiany mgły w oddali i widoczności pod wodą działają w każdym trybie grafiki, nie tylko w Vibrant Visuals.' },
       },

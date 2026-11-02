@@ -1,5 +1,5 @@
 // Polish text of the font maker (English source: ./text.ts). Game texts in the previews follow the
-// game's pl_pl.json (Tryb jednoosobowy, W głównej ręce:, Obrażenia od ataku).
+// game's pl_pl.json (Tryb jednoosobowy, Kiedy w głównej ręce:, obrażeń).
 
 import type { FontsLanguage } from './load';
 
@@ -127,7 +127,7 @@ const PL: FontsLanguage = {
       sample: 'Przykładowy tekst',
       sampleDefault: 'Pchnąć w tę łódź jeża lub ośm skrzyń fig!',
       reply: 'Fajna czcionka! Skąd ją masz?',
-      joined: 'Alex dołączył(a) do gry',
+      joined: 'Gracz Alex dołączył do gry',
       player: 'Steve',
       friend: 'Alex',
       page: 'Strona 1 z 1',
@@ -135,9 +135,9 @@ const PL: FontsLanguage = {
       multiplayer: 'Tryb wieloosobowy',
       options: 'Ustawienia...',
       itemName: 'Diamentowy miecz',
-      mainHand: 'W głównej ręce:',
-      damage: '7 Obrażenia od ataku',
-      speed: '1.6 Szybkość ataku',
+      mainHand: 'Kiedy w głównej ręce:',
+      damage: '7 obrażeń',
+      speed: '1.6 szybkości ataku',
       missing: 'Tych znaków nie ma w twojej czcionce: {chars}. Gra pokazuje je swoją czcionką (tu zaznaczone na różowo).',
       allThere: 'Każdy znak przykładowego tekstu jest w twojej czcionce.',
       legacy: 'Java {version} czyta jedną siatkę 16 × 16 (ascii.png): litery są ściśnięte w 8 wierszach, a inne znaki zostają z czcionki Unicode gry.',

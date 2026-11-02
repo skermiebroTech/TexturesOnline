@@ -1,6 +1,6 @@
 // Polish text of the skin editor, the skin pack maker, the cape maker and the pose maker (English
 // source: the other files in this folder). Part names follow the game's skin customisation
-// (Czapka, Kurtka, Lewy rękaw, Prawa nogawka); install steps follow the game's own Polish menus
+// (Nakrycie głowy, Kurtka, Lewy rękaw, Prawa nogawka); install steps follow the game's own Polish menus
 // (Przebieralnia, Klasyczne skórki, Załóż) and the Minecraft Launcher (Skórki, Nowa skórka). The
 // Polish pages call the arm models Szerokie / Wąskie.
 
@@ -104,7 +104,7 @@ const PL: SkinsLanguage = {
     },
   },
   'skins.parts': {
-    head: part('Głowa', 'Czapka', 'Głowa', 'Czapka', 'czapka', 'głowę', 'czapkę'),
+    head: part('Głowa', 'Nakrycie głowy', 'Głowa', 'Czapka', 'nakrycie', 'głowę', 'nakrycie głowy'),
     body: part('Tułów', 'Kurtka', 'Tułów', 'Kurtka', 'kurtka', 'tułów', 'kurtkę'),
     rightArm: part('Prawa ręka', 'Prawy rękaw', 'P. ręka', 'P. rękaw', 'rękaw', 'prawą rękę', 'prawy rękaw'),
     leftArm: part('Lewa ręka', 'Lewy rękaw', 'L. ręka', 'L. rękaw', 'rękaw', 'lewą rękę', 'lewy rękaw'),
@@ -480,7 +480,7 @@ const PL: SkinsLanguage = {
       download: 'Pobierz PNG 64×32',
       leftArm: 'Lewa ręka staje się lustrzaną kopią prawej ręki.',
       leftLeg: 'Lewa noga staje się lustrzaną kopią prawej nogi.',
-      outer: 'Kurtka, rękawy i nogawki (warstwa zewnętrzna poniżej głowy) znikają. Zostaje tylko warstwa czapki.',
+      outer: 'Kurtka, rękawy i nogawki (warstwa zewnętrzna poniżej głowy) znikają. Zostaje tylko warstwa nakrycia głowy.',
       slim: 'Stare wersje mają tylko szerokie ręce 4-pikselowe, więc wąskie ręce są poszerzane przez powtórzenie kolumny przy tułowiu.',
     },
     hd: {
