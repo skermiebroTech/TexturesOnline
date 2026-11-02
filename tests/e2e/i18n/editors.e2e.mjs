@@ -454,7 +454,7 @@ try {
         await inspect(c.page, `fr-convert-1-start-${tag}`, 'fr');
         await c.page.setInputFiles('.cv-dz input[type=file]', files.legacy);
         await c.page.waitForSelector('.cv-pack:not([hidden]) .cv-pack-name');
-        check(`fr converter ${tag}: pack summary in French (plural form for 4)`, /4 textures/.test(await c.page.textContent('.cv-pack-info')), (await c.page.textContent('.cv-pack-info')).trim());
+        check(`fr converter ${tag}: pack summary in French (plural form for 4)`, /4\stextures/.test(await c.page.textContent('.cv-pack-info')), (await c.page.textContent('.cv-pack-info')).trim());
         await c.page.click('.cv-ed[data-value="java"]');
         await c.page.waitForFunction(() => /Les textures renommées entre Java/.test(document.querySelector('.cv-hint')?.textContent ?? ''));
         await c.page.$$eval('.cv-pack details', (ds) => ds.forEach((d) => (d.open = true)));
@@ -471,7 +471,7 @@ try {
           await c.page.click('.cv-go');
           await c.page.waitForSelector('.cv-result .cv-dl-btn, .cv-result .cv-res-icon.is-error', { timeout: 300000 });
           const head = (await c.page.textContent('.cv-res-titles h2')).trim();
-          check(`fr converter ${tag}: report headline in French`, /\d+ sur 4 textures converties|Les 4 textures converties/.test(head), head);
+          check(`fr converter ${tag}: report headline in French`, /\d+ sur 4\stextures converties|Les 4\stextures converties/.test(head), head);
           await c.page.$$eval('.cv-result details', (ds) => ds.forEach((d) => (d.open = true)));
           await inspect(c.page, `fr-convert-5-report-${tag}`, 'fr');
         }
@@ -496,7 +496,7 @@ try {
         await m.page.click('.mg-go');
         await m.page.waitForSelector('.mg-result .mg-dl-btn, .mg-result .cv-res-icon.is-error', { timeout: 120000 });
         const head = (await m.page.textContent('.mg-result h2')).trim();
-        check(`fr merge ${tag}: report in French`, /3 packs fusionnés en «/.test(head), head);
+        check(`fr merge ${tag}: report in French`, /3\spacks fusionnés en\s«/.test(head), head);
         await m.page.$$eval('.mg-result details', (ds) => ds.forEach((d) => (d.open = true)));
         await inspect(m.page, `fr-merge-3-report-${tag}`, 'fr');
         check(`fr merge ${tag}: no console errors`, m.errors.length === 0, m.errors.slice(0, 3).join(' | '));
