@@ -19,7 +19,7 @@ const argv = process.argv.slice(2);
 const baseArg = argv.find((a) => /^https?:/.test(a));
 const shotsDir = argv.includes('--shots') ? argv[argv.indexOf('--shots') + 1] : null;
 /** --langs de,ru: run some languages only */
-const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,pt-br,es,ru').split(',');
+const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,pt-br,es,ru,fr').split(',');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 const tmp = mkdtempSync(join(tmpdir(), 'i18n-editors-'));
 const J = 'assets/minecraft/textures/';
@@ -85,7 +85,15 @@ async function makeFiles() {
     if (x >= 20 && x < 28 && y >= 20 && y < 32) return [40, 120, 220, 255];
     return [90, 90, 120, 255];
   });
+  // A broken Java pack for Pack Doctor: inside an extra folder, old texture folders, a capital letter.
+  const broken = zipSync({
+    'Cassé/pack.mcmeta': enc({ pack: { pack_format: 3, description: 'Cassé' } }),
+    [`Cassé/${J}blocks/Stone.png`]: await encodePng(16, 16, checker(RED, GREY)),
+    [`Cassé/${J}blocks/dirt.png`]: await encodePng(16, 16, checker([120, 80, 40, 255], GREY)),
+    '__MACOSX/._pack.mcmeta': new Uint8Array([0, 5, 22, 7]),
+  });
   const files = {
+    broken: join(tmp, 'Casse.zip'),
     legacy: join(tmp, 'Pixelwelt.zip'),
     modern: join(tmp, 'Bloco.zip'),
     modern2: join(tmp, 'Kachel.zip'),
@@ -99,6 +107,7 @@ async function makeFiles() {
   writeFileSync(files.bedrock, bedrock);
   writeFileSync(files.loose, loose);
   writeFileSync(files.skin, skin);
+  writeFileSync(files.broken, broken);
   return files;
 }
 
@@ -184,6 +193,8 @@ function english(texts, locale) {
   for (const text of texts) {
     let s = text;
     for (const k of KEEP) s = s.split(k).join(' ');
+    // French "on" (one), "or" (gold) and "change" are French words too.
+    if (locale === 'fr') s = s.replace(/(?<!\p{L})(on|or|change)(?!\p{L})/giu, ' ');
     s = s.replace(/\S*[./_\\0-9:#×]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
     if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
@@ -194,7 +205,7 @@ function english(texts, locale) {
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', fr: 'fr' };
 
 const files = await makeFiles();
 const server = baseArg ? null : await startVite();
@@ -434,6 +445,137 @@ try {
         await page.waitForSelector('.tt-ed-modal', { state: 'detached' });
         check(`ru totem ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
         await page.close();
+      }
+      // ---------------------------------------------------------- French converter, merger and totem maker
+      if (LANGS.includes('fr')) {
+        const c = await openPage(ctx, 'fr/texture-pack-converter/', '.cv-dz');
+        check(`fr converter ${tag}: page is French`, (await c.page.getAttribute('html', 'lang')) === LANG.fr && (await c.page.textContent('.cv-step h2')).trim() === 'Choisis un pack', (await c.page.textContent('.cv-step h2')).trim());
+        await inspect(c.page, `fr-convert-1-start-${tag}`, 'fr');
+        await c.page.setInputFiles('.cv-dz input[type=file]', files.legacy);
+        await c.page.waitForSelector('.cv-pack:not([hidden]) .cv-pack-name');
+        check(`fr converter ${tag}: pack summary in French (plural form for 4)`, /4 textures/.test(await c.page.textContent('.cv-pack-info')), (await c.page.textContent('.cv-pack-info')).trim());
+        await c.page.click('.cv-ed[data-value="java"]');
+        await c.page.waitForFunction(() => /Les textures renommées entre Java/.test(document.querySelector('.cv-hint')?.textContent ?? ''));
+        await c.page.$$eval('.cv-pack details', (ds) => ds.forEach((d) => (d.open = true)));
+        await inspect(c.page, `fr-convert-2-pack-${tag}`, 'fr');
+        await c.page.click('.cv-version .vp-trigger');
+        await c.page.waitForSelector('.vp-pop .vp-item, .vp-pop .vp-status', { timeout: 60000 });
+        check(`fr converter ${tag}: version search in French`, (await c.page.getAttribute('.vp-pop input[type=search]', 'placeholder')) === 'Cherche une version, ex. 1.20');
+        await inspect(c.page, `fr-convert-3-versions-${tag}`, 'fr');
+        await c.page.keyboard.press('Escape');
+        await c.page.click('.cv-ed[data-value="bedrock"]');
+        await inspect(c.page, `fr-convert-4-bedrock-${tag}`, 'fr');
+        if (fx) {
+          await c.page.click('.cv-ed[data-value="java"]');
+          await c.page.click('.cv-go');
+          await c.page.waitForSelector('.cv-result .cv-dl-btn, .cv-result .cv-res-icon.is-error', { timeout: 300000 });
+          const head = (await c.page.textContent('.cv-res-titles h2')).trim();
+          check(`fr converter ${tag}: report headline in French`, /\d+ sur 4 textures converties|Les 4 textures converties/.test(head), head);
+          await c.page.$$eval('.cv-result details', (ds) => ds.forEach((d) => (d.open = true)));
+          await inspect(c.page, `fr-convert-5-report-${tag}`, 'fr');
+        }
+        check(`fr converter ${tag}: no console errors`, c.errors.length === 0, c.errors.slice(0, 3).join(' | '));
+        await c.page.close();
+
+        const l = await openPage(ctx, 'fr/texture-pack-converter/', '.cv-dz');
+        await l.page.setInputFiles('.cv-dz input[type=file]', files.loose);
+        await l.page.waitForSelector('.cv-pack:not([hidden]) .cv-pack-name');
+        await l.page.$$eval('.cv-pack details', (ds) => ds.forEach((d) => (d.open = true)));
+        check(`fr converter ${tag}: loose PNG notes in French`, /image ne correspondait à aucun nom de texture/.test(await l.page.textContent('.cv-pack')), (await l.page.textContent('.cv-pack')).trim().slice(0, 160));
+        await inspect(l.page, `fr-convert-6-loose-${tag}`, 'fr');
+        check(`fr converter loose ${tag}: no console errors`, l.errors.length === 0, l.errors.slice(0, 3).join(' | '));
+        await l.page.close();
+
+        const m = await openPage(ctx, 'fr/merge-texture-packs/', '.mg-dz');
+        await inspect(m.page, `fr-merge-1-start-${tag}`, 'fr');
+        await m.page.setInputFiles('.mg-dz input[type=file]', [files.modern, files.modern2, files.legacy]);
+        await m.page.waitForFunction(() => document.querySelectorAll('.mg-list .mg-row').length === 3 && !document.querySelector('.mg-dz.is-busy'), null, { timeout: 60000 });
+        check(`fr merge ${tag}: merge button counts in French`, /Fusionner 3 packs/.test(await m.page.textContent('.mg-go')), (await m.page.textContent('.mg-go')).trim());
+        await inspect(m.page, `fr-merge-2-packs-${tag}`, 'fr');
+        await m.page.click('.mg-go');
+        await m.page.waitForSelector('.mg-result .mg-dl-btn, .mg-result .cv-res-icon.is-error', { timeout: 120000 });
+        const head = (await m.page.textContent('.mg-result h2')).trim();
+        check(`fr merge ${tag}: report in French`, /3 packs fusionnés en «/.test(head), head);
+        await m.page.$$eval('.mg-result details', (ds) => ds.forEach((d) => (d.open = true)));
+        await inspect(m.page, `fr-merge-3-report-${tag}`, 'fr');
+        check(`fr merge ${tag}: no console errors`, m.errors.length === 0, m.errors.slice(0, 3).join(' | '));
+        await m.page.close();
+
+        const x = await openPage(ctx, 'fr/merge-texture-packs/', '.mg-dz');
+        await x.page.setInputFiles('.mg-dz input[type=file]', [files.modern, files.bedrock]);
+        await x.page.waitForSelector('.mg-hint.is-alert a');
+        const hint = await x.page.textContent('.mg-hint');
+        check(`fr merge ${tag}: mixed editions explained in French, with the converter link`, /ne peuvent pas être fusionnés/.test(hint) && (await x.page.textContent('.mg-hint a')) === 'Convertisseur de packs', hint.trim().slice(0, 160));
+        await inspect(x.page, `fr-merge-4-mixed-${tag}`, 'fr');
+        check(`fr merge mixed ${tag}: no console errors`, x.errors.length === 0, x.errors.slice(0, 3).join(' | '));
+        await x.page.close();
+
+        const { page, errors } = await openPage(ctx, 'fr/totem-maker/', '.tt-tabs');
+        check(`fr totem ${tag}: page is French`, (await page.getAttribute('html', 'lang')) === LANG.fr && /Choisis un skin/.test(await page.textContent('.tt-step h2, .cv-step h2')));
+        await inspect(page, `fr-totem-1-start-${tag}`, 'fr');
+        await page.click('.tt-tab[data-source="upload"]');
+        await page.setInputFiles('.tt-dz input[type=file]', files.skin);
+        await page.waitForSelector('.tt-chosen:not([hidden]) .tt-chosen-name');
+        await page.waitForSelector('.tt-big-canvas');
+        check(`fr totem ${tag}: style names kept, descriptions in French`, /Classic/.test(await page.textContent('.tt-styles')) && /les bras écartés/.test(await page.textContent('.tt-styles')));
+        await inspect(page, `fr-totem-2-skin-${tag}`, 'fr');
+        if (fx) {
+          await page.locator('.tt-opt-outline .switch').click();
+          await page.waitForSelector('.tt-shape.is-ready', { timeout: 300000 });
+          check(`fr totem ${tag}: vanilla outline status in French`, /Ajusté au totem d’origine de Java 26\.3/.test(await page.textContent('.tt-shape')));
+          await inspect(page, `fr-totem-3-outline-${tag}`, 'fr');
+        }
+        check(`fr totem ${tag}: edit button in French`, (await page.textContent('.tt-edit-btn')).trim() === 'Modifier les pixels', (await page.textContent('.tt-edit-btn')).trim());
+        await page.click('.tt-edit-btn');
+        await page.waitForSelector('.tt-ed-modal .pc-canvas');
+        check(`fr totem ${tag}: pixel editor in French`, /Modifier les pixels du totem/.test(await page.textContent('.tt-ed-modal')));
+        await inspect(page, `fr-totem-4-editor-${tag}`, 'fr');
+        await page.click('.tt-ed-modal .modal-footer .btn-secondary');
+        await page.waitForSelector('.tt-ed-modal', { state: 'detached' });
+        check(`fr totem ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
+        await page.close();
+      }
+      // ---------------------------------------------------------- French Pack Doctor and font maker
+      if (LANGS.includes('fr')) {
+        const d = await openPage(ctx, 'fr/pack-doctor/', '.dr-dz');
+        check(`fr doctor ${tag}: page is French`, (await d.page.getAttribute('html', 'lang')) === LANG.fr && /Répare un pack de textures/.test(await d.page.textContent('.cv-hero h1')), (await d.page.textContent('.cv-hero h1')).trim());
+        await inspect(d.page, `fr-doctor-1-start-${tag}`, 'fr');
+        await d.page.setInputFiles('.dr-dz input[type=file]', files.broken);
+        await d.page.waitForSelector('.dr-result:not([hidden]) .dr-headline', { timeout: 300000 });
+        await d.page.$$eval('.dr-result details', (ds) => ds.forEach((x) => (x.open = true)));
+        const head = (await d.page.textContent('.dr-headline')).trim();
+        check(`fr doctor ${tag}: report in French`, /problèmes? trouvés?|Tout a l’air bon/.test(head), head);
+        await inspect(d.page, `fr-doctor-2-report-${tag}`, 'fr');
+        if (await d.page.$('.dr-fix-all')) {
+          await d.page.click('.dr-fix-all');
+          await d.page.waitForSelector('.dr-ba', { timeout: 300000 });
+          await d.page.$$eval('.dr-result details', (ds) => ds.forEach((x) => (x.open = true)));
+          check(`fr doctor ${tag}: fixed pack in French`, /Pack réparé prêt/.test(await d.page.textContent('.dr-headline')), (await d.page.textContent('.dr-headline')).trim());
+          await inspect(d.page, `fr-doctor-3-fixed-${tag}`, 'fr');
+        }
+        await d.page.click('.cv-ed[data-value="bedrock"]');
+        await d.page.waitForSelector('.dr-result:not([hidden]) .dr-headline', { timeout: 300000 });
+        await inspect(d.page, `fr-doctor-4-bedrock-${tag}`, 'fr');
+        check(`fr doctor ${tag}: no console errors`, d.errors.length === 0, d.errors.slice(0, 3).join(' | '));
+        await d.page.close();
+
+        const f = await openPage(ctx, 'fr/font-maker/', '.fm-tabs');
+        check(`fr fonts ${tag}: page is French`, (await f.page.getAttribute('html', 'lang')) === LANG.fr && /Créateur de polices Minecraft/.test(await f.page.textContent('h1')), (await f.page.textContent('h1')).trim());
+        await inspect(f.page, `fr-fonts-1-start-${tag}`, 'fr');
+        for (const source of ['file', 'pack', 'game']) {
+          const tab = f.page.locator(`.fm-tab[data-source="${source}"]`);
+          if (!(await tab.count())) continue;
+          await tab.click();
+          await inspect(f.page, `fr-fonts-2-${source}-${tag}`, 'fr');
+        }
+        for (const scene of ['sign', 'book', 'title', 'tooltip']) {
+          const b = f.page.locator(`.fm-scene[data-scene="${scene}"]`);
+          if (!(await b.count())) continue;
+          await b.click();
+          await inspect(f.page, `fr-fonts-3-${scene}-${tag}`, 'fr');
+        }
+        check(`fr fonts ${tag}: no console errors`, f.errors.length === 0, f.errors.slice(0, 3).join(' | '));
+        await f.page.close();
       }
       await ctx.close();
     }

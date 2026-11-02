@@ -1,7 +1,7 @@
 // The translated Shader Maker in Chromium: the start screen, the "New pack" dialog, the editor of
 // each target (Iris / OptiFine, vanilla Java, Bedrock Vibrant Visuals) with presets and settings
 // changed, the preview textures menu, the keyboard help and the export dialog, plus the pack editor
-// of an opened Iris pack, in German, Japanese, Spanish, Portuguese and Russian. Every state is checked for
+// of an opened Iris pack, in German, Japanese, Spanish, Portuguese, Russian and French. Every state is checked for
 // English left in the visible text and labels, for content wider than the screen or clipped labels,
 // and for console errors, at 1280 and 390 px wide in the dark and the light theme.
 //
@@ -137,6 +137,8 @@ function english(texts, locale) {
   for (const text of texts) {
     let s = text;
     for (const k of KEEP) s = s.split(k).join(' ');
+    // French "on" (one), "or" (gold) and "change" are French words too.
+    if (locale === 'fr') s = s.replace(/(?<!\p{L})(on|or|change)(?!\p{L})/giu, ' ');
     s = s.replace(/\S*[./_\\0-9:#×]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
     if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
@@ -147,16 +149,16 @@ function english(texts, locale) {
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', fr: 'fr' };
 /** A word of each language's start screen, to see the translation arrived. */
-const START = { de: 'Starten', es: 'Empezar', 'pt-br': 'Começar', ja: '始める', ru: 'Начать' };
+const START = { de: 'Starten', es: 'Empezar', 'pt-br': 'Começar', ja: '始める', ru: 'Начать', fr: 'Commencer' };
 const PLAN = {
   iris: { slider: { key: 'sunStrength', value: '2.35' }, toggle: 'cloudShadows', preset: 'noir' },
   'java-vanilla': { slider: { key: 'contrast', value: '1.37' }, toggle: 'bloom', preset: 'cinematic' },
   'bedrock-vibrant': { slider: { key: 'saturation', value: '1.8' }, toggle: 'waves', preset: 'cinematic' },
 };
 const TARGETS = Object.keys(PLAN);
-const LOCALES = argv.includes('--locales') ? argv[argv.indexOf('--locales') + 1].split(',') : ['de', 'ja', 'es', 'pt-br', 'ru'];
+const LOCALES = argv.includes('--locales') ? argv[argv.indexOf('--locales') + 1].split(',') : ['de', 'ja', 'es', 'pt-br', 'ru', 'fr'];
 
 /** Builds the app and serves it like the shader harness does (tests/harness/shaders-view/serve.sh). */
 async function startPreview() {

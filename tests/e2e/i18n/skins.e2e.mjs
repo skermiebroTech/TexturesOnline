@@ -3,7 +3,8 @@
 // 64×64, the shortcut list), Japanese (a starter skin, the export menu and the skin pack maker),
 // Spanish (/skin-pack-maker: a pack of two skins and its ready dialog), Portuguese (saved skins,
 // the default skins dialog, the old Java export) and Russian (all of it: the editor, every export
-// dialog, the skin pack maker and the start screen's saved skins, lookup and default skins), and in
+// dialog, the skin pack maker and the start screen's saved skins, lookup and default skins), French (the
+// same as Russian), and in
 // every language the cape maker (/cape-maker) and the pose maker's three tabs and saved picture. Every state is checked for English left in the
 // visible text and labels, content wider than the screen or clipped labels, and console errors, at
 // 1280 and 390 px (the editor also at 360 px) in the dark and the light theme.
@@ -24,7 +25,7 @@ const shotsDir = argv.includes('--shots') ? argv[argv.indexOf('--shots') + 1] : 
 /** --only 390-dark: run one width and theme (while fixing something) */
 const only = argv.includes('--only') ? argv[argv.indexOf('--only') + 1] : null;
 /** --langs de,ru: run some languages only */
-const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,es,pt-br,ru').split(',');
+const LANGS = (argv.includes('--langs') ? argv[argv.indexOf('--langs') + 1] : 'de,ja,es,pt-br,ru,fr').split(',');
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 
 let failures = 0;
@@ -130,6 +131,8 @@ function english(texts, locale) {
   for (const text of texts) {
     let s = text;
     for (const k of KEEP) s = s.split(k).join(' ');
+    // French "on" (one), "or" (gold) and "change" are French words too.
+    if (locale === 'fr') s = s.replace(/(?<!\p{L})(on|or|change)(?!\p{L})/giu, ' ');
     s = s.replace(/\S*[./_\\0-9:#×]\S*/g, ' ');
     const words = s.match(/[A-Za-z]{2,}/g) ?? [];
     if (locale === 'ja' ? words.length >= 2 && !/[぀-ヿ一-鿿]/.test(text) : ENGLISH.test(s)) found.push(text);
@@ -140,7 +143,7 @@ function english(texts, locale) {
 }
 
 // ------------------------------------------------------------------ run
-const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru' };
+const LANG = { de: 'de', es: 'es', 'pt-br': 'pt-BR', ja: 'ja', ru: 'ru', fr: 'fr' };
 /** Headings of the cape maker and the pose maker in each language. */
 const CAPE_POSE = {
   de: { cape: 'Mach deinen eigenen Minecraft-Umhang', pose: 'Posen-Editor' },
@@ -148,6 +151,7 @@ const CAPE_POSE = {
   'pt-br': { cape: 'Faça a sua própria capa de Minecraft', pose: 'Criador de poses' },
   ja: { cape: 'Minecraftのマントを自分で作ろう', pose: 'ポーズメーカー' },
   ru: { cape: 'Создай свой плащ для Minecraft', pose: 'Редактор поз' },
+  fr: { cape: 'Crée ta propre cape Minecraft', pose: 'Créateur de poses' },
 };
 
 const server = baseArg ? null : await startVite();
@@ -532,6 +536,136 @@ try {
         await closeLayers(page);
       }
       check(`ru skins ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
+      await page.close();
+    }
+    // ---------------------------------------------------------- French: the whole editor, the exports and the pack maker
+    if (LANGS.includes('fr')) {
+      const { page, errors } = await openPage(ctx, 'fr/skins/', '.sk-starter-template');
+      check(`fr skins ${tag}: page is French`, (await page.getAttribute('html', 'lang')) === LANG.fr && /Crée ton propre skin/.test(await page.textContent('.sk-hero h1')));
+      // A second saved skin first, so the skin pack maker has something to choose from.
+      await page.click('.sk-starter-ninja');
+      await waitEditor(page);
+      await api(page, (e) => e.flush());
+      await page.goto(`${base}fr/skins/`);
+      await page.waitForSelector('.sk-starter-template');
+      if (full) await inspect(page, `fr-skins-1-start-${tag}`, 'fr', { full: true });
+      await page.click('.sk-model-pick .segmented-item[data-value="128"]');
+      check(`fr skins ${tag}: HD note in French`, /Skin HD, Bedrock uniquement/.test(await page.textContent('.sk-size-note')));
+      if (full) await inspect(page, `fr-skins-2-hd-${tag}`, 'fr');
+      await page.click('.sk-starter-template');
+      await waitEditor(page);
+      check(`fr skins ${tag}: the editor stays in French`, /^\/fr\/skins\/[\w-]+\/?$/.test(await page.evaluate(() => location.pathname)), await page.evaluate(() => location.pathname));
+      // A Latin name: headless Chromium without a UTF-8 locale saves other file names as "download".
+      await page.fill('.sk-name', 'Kubik');
+      await page.locator('.sk-name').press('Enter');
+      await page.evaluate(() => document.activeElement?.blur());
+      await api(page, (e) => e.flush());
+      await page.keyboard.press('b');
+      const [px, py] = await api(page, (e) => e.imageToClient(90, 44));
+      await page.mouse.click(px, py);
+      await hoverPixel(page, 18, 20);
+      const tip = (await page.textContent('.sk-status-text')) ?? '';
+      check(`fr skins ${tag}: hover names part, face and layer in French`, /Tête · Devant · Couche de base/.test(tip), tip);
+      await inspect(page, `fr-skins-3-editor-${tag}`, 'fr');
+      await showPanel(page, phone, 'left');
+      await inspect(page, `fr-skins-4-left-${tag}`, 'fr');
+      await page.click('.sk-part[data-part="rightArm"] .sk-part-actions button:last-child');
+      await page.waitForSelector('.popover [role="menuitem"]');
+      const menu = await page.textContent('.popover');
+      check(`fr skins ${tag}: part menu in French`, /Remplir le bras droit de couleur/.test(menu) && /Copier sur le bras gauche/.test(menu), menu.slice(0, 160));
+      await inspect(page, `fr-skins-5-parts-${tag}`, 'fr');
+      await closeLayers(page);
+      await showPanel(page, phone, 'center');
+      await page.click('.sk-workspace [data-value="3d"]');
+      await page.waitForTimeout(400);
+      await page.click('.sk-3d-mode [data-value="paint"]');
+      await page.waitForTimeout(700);
+      await inspect(page, `fr-skins-6-paint3d-${tag}`, 'fr', { wait: 400 });
+      await page.click('.sk-workspace [data-value="2d"]');
+      await showPanel(page, phone, 'right');
+      await inspect(page, `fr-skins-7-preview-${tag}`, 'fr', { wait: 400 });
+      await page.click('.sk-size-seg [data-value="64"]');
+      await page.waitForSelector('dialog[open] .sk-export-compare');
+      check(`fr skins ${tag}: reduce dialog in French`, /Réduire en 64×64/.test(await page.textContent('dialog[open]')));
+      await inspect(page, `fr-skins-8-reduce-${tag}`, 'fr', { wait: 400 });
+      await page.click('dialog[open] .modal-footer .btn-ghost');
+      await page.waitForSelector('dialog[open]', { state: 'detached' }).catch(() => undefined);
+      await showPanel(page, phone, 'center');
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="java"]');
+      const exportMenu = await page.textContent('.sk-export-menu');
+      check(`fr skins ${tag}: export menu in French`, /Pack de skins Bedrock \(\.mcpack\)/.test(exportMenu) && /Skin Bedrock \(\.png\)/.test(exportMenu) && /Ancien skin Java \(64×32\)/.test(exportMenu), exportMenu.slice(0, 160));
+      await inspect(page, `fr-skins-9-export-menu-${tag}`, 'fr');
+      await page.click('.sk-export-item[data-kind="java"]');
+      await page.waitForSelector('.sk-java-hd-note');
+      const hdDialog = await page.textContent('dialog[open]');
+      check(`fr skins ${tag}: Java HD dialog in French`, /128×128 pour les mods/.test(hdDialog) && /Télécharger en 64×64/.test(hdDialog), hdDialog.slice(0, 120));
+      await inspect(page, `fr-skins-10-java-hd-${tag}`, 'fr', { wait: 400 });
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.click('dialog[open] .modal-footer .btn-primary')]);
+      check(`fr skins ${tag}: Java download keeps the file name`, /\.png$/.test(dl.suggestedFilename()), dl.suggestedFilename());
+      await page.waitForSelector('dialog[open] .sk-export-done');
+      check(`fr skins ${tag}: ready dialog in French`, /Ton skin Java est prêt/.test(await page.textContent('dialog[open]')));
+      await inspect(page, `fr-skins-11-java-ready-${tag}`, 'fr', { wait: 400 });
+      await closeLayers(page);
+      // Bedrock .png and its Dressing Room steps
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="bedrock-png"]');
+      await page.click('.sk-export-item[data-kind="bedrock-png"]');
+      await page.waitForSelector('dialog[open] .sk-export-done', { timeout: 30000 }).catch(() => undefined);
+      if (await page.$('dialog[open]')) {
+        await inspect(page, `fr-skins-12-bedrock-png-${tag}`, 'fr', { wait: 400 });
+        await closeLayers(page);
+      }
+      // The skin pack maker with this skin and another saved one, and its ready dialog
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="bedrock-pack"]');
+      await page.click('.sk-export-item[data-kind="bedrock-pack"]');
+      await page.waitForSelector('dialog[open] .sk-pack-list .sk-pack-skin:not(.is-current)');
+      const other = await page.$('dialog[open] .sk-pack-skin:not(.is-current) input');
+      if (other) await other.check();
+      check(`fr skins ${tag}: pack maker in French`, /Créer un pack de skins/.test(await page.textContent('dialog[open]')) && /Télécharger le pack/.test(await page.textContent('dialog[open] .modal-footer')));
+      await inspect(page, `fr-skins-13-pack-${tag}`, 'fr', { wait: 400 });
+      const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('dialog[open] .modal-footer .btn-primary')]);
+      check(`fr skins ${tag}: downloads a .mcpack`, /\.mcpack$/.test(dl2.suggestedFilename()), dl2.suggestedFilename());
+      await page.waitForSelector('dialog[open] .sk-export-done');
+      const ready = await page.textContent('dialog[open]');
+      check(`fr skins ${tag}: pack ready dialog in French`, /Vestiaire/.test(ready) && /Équiper/.test(ready), ready.slice(0, 160));
+      await inspect(page, `fr-skins-14-pack-ready-${tag}`, 'fr', { wait: 400 });
+      await closeLayers(page);
+      // The old Java export
+      await page.click('.sk-export-btn');
+      await page.waitForSelector('.sk-export-item[data-kind="java-legacy"]');
+      await page.click('.sk-export-item[data-kind="java-legacy"]');
+      await page.waitForSelector('dialog[open] .sk-export-compare');
+      check(`fr skins ${tag}: old Java dialog in French`, /Exporter pour les anciennes versions de Java/.test(await page.textContent('dialog[open]')));
+      await inspect(page, `fr-skins-15-legacy-${tag}`, 'fr', { wait: 400 });
+      await closeLayers(page);
+      if (!phone) {
+        await page.keyboard.press('?');
+        await page.waitForSelector('dialog[open] .shortcuts');
+        await inspect(page, `fr-skins-16-shortcuts-${tag}`, 'fr');
+        await closeLayers(page);
+      }
+      // Back on the start screen: saved skins, the username lookup and the default skins
+      await page.goto(`${base}fr/skins/`);
+      await page.waitForSelector('.sk-recent-grid .sk-recent');
+      await page.click('.sk-recent-menu');
+      await page.waitForSelector('.popover [role="menuitem"]');
+      check(`fr skins ${tag}: saved skin menu in French`, /Renommer/.test(await page.textContent('.popover')));
+      if (full) await inspect(page, `fr-skins-17-saved-${tag}`, 'fr');
+      await closeLayers(page);
+      await page.fill('#sk-username', 'Notch');
+      await page.click('.sk-user-row .btn-primary');
+      await page.waitForSelector('.sk-field-error:not([hidden])', { timeout: 30000 });
+      if (full) await inspect(page, `fr-skins-18-lookup-${tag}`, 'fr');
+      if (fx) {
+        await page.click('.sk-game-actions .btn');
+        await page.waitForSelector('dialog[open] .sk-default', { timeout: 300000 });
+        check(`fr skins ${tag}: default skins in French`, /Les skins par défaut de Minecraft/.test(await page.textContent('dialog[open]')));
+        await inspect(page, `fr-skins-19-defaults-${tag}`, 'fr', { wait: 600 });
+        await closeLayers(page);
+      }
+      check(`fr skins ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
       await page.close();
     }
     // ---------------------------------------------------------- every language: the cape maker and the pose maker
