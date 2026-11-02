@@ -4,6 +4,7 @@
 
 import type { SkinModel } from '../../../core/types';
 import { boxFaces, isHdSkin, partBox, partOrigin, scaleOf, type SkinFace, type SkinLayer, type SkinPart } from '../templates';
+import { yieldToMain } from '../../../core/yield';
 
 /** 64x64 or 128x128: the sizes the figures can draw. */
 const drawable = (img: ImageData): boolean => (img.width === 64 && img.height === 64) || isHdSkin(img);
@@ -64,9 +65,64 @@ export interface FigureOptions {
  * with CSS; the backing store is set here for the device pixel ratio.
  */
 export function drawFigure(canvas: HTMLCanvasElement, img: ImageData, model: SkinModel, opts: FigureOptions = {}): void {
+  drawFigureSized(canvas, img, model, opts, canvas.clientWidth, canvas.clientHeight);
+}
+
+interface FigureJob {
+  canvas: HTMLCanvasElement;
+  img: ImageData;
+  model: SkinModel;
+  opts: FigureOptions;
+}
+const figureJobs: FigureJob[] = [];
+let figuresQueued = false;
+/** Drawing time per task: a grid of figures is drawn over a few frames, not in one long one. */
+const FIGURE_BUDGET_MS = 8;
+
+/**
+ * drawFigure once the canvas has its layout size (the next frame). Figures queued together are
+ * measured together (one layout) and drawn a few per task, yielding between them, so a grid of
+ * thumbnails doesn't hold up a tap.
+ */
+export function drawFigureSoon(canvas: HTMLCanvasElement, img: ImageData, model: SkinModel, opts: FigureOptions = {}): void {
+  figureJobs.push({ canvas, img, model, opts });
+  if (figuresQueued) return;
+  figuresQueued = true;
+  requestAnimationFrame(() => void drawQueuedFigures());
+}
+
+async function drawQueuedFigures(): Promise<void> {
+  try {
+    let until = performance.now() + FIGURE_BUDGET_MS;
+    while (figureJobs.length) {
+      const batch = figureJobs.splice(0);
+      // every size first (one layout), then the drawing (which reads no layout)
+      const sizes = batch.map((j) => [j.canvas.clientWidth, j.canvas.clientHeight, j.canvas.isConnected] as const);
+      for (let i = 0; i < batch.length; i++) {
+        if (performance.now() > until) {
+          await yieldToMain();
+          until = performance.now() + FIGURE_BUDGET_MS;
+        }
+        const j = batch[i];
+        const [w, hgt, wasConnected] = sizes[i];
+        // left the page while waiting its turn
+        if (wasConnected && !j.canvas.isConnected) continue;
+        try {
+          drawFigureSized(j.canvas, j.img, j.model, j.opts, w, hgt);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
+  } finally {
+    figuresQueued = false;
+  }
+}
+
+function drawFigureSized(canvas: HTMLCanvasElement, img: ImageData, model: SkinModel, opts: FigureOptions, clientW: number, clientH: number): void {
   const dpr = Math.min(3, window.devicePixelRatio || 1);
-  const cssW = canvas.clientWidth || Number(canvas.getAttribute('width')) || 120;
-  const cssH = canvas.clientHeight || Number(canvas.getAttribute('height')) || 160;
+  const cssW = clientW || Number(canvas.getAttribute('width')) || 120;
+  const cssH = clientH || Number(canvas.getAttribute('height')) || 160;
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
   const ctx = canvas.getContext('2d');

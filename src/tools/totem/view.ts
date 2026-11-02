@@ -22,7 +22,7 @@ import { decodeImage, loadImageCodecs } from '../../core/image-lazy';
 import { BEDROCK_LATEST_ID, DEFAULT_JAVA_VERSION, loadAssets } from '../../editions/versions';
 import { siteFooter } from '../../app/footer';
 import type { SkinProjectData } from '../skins/export';
-import { drawFigure } from '../skins/ui/figure';
+import { drawFigureSoon } from '../skins/ui/figure';
 import { createStarterSkin } from '../skins/starters';
 import { fetchSkinByUsername, isHdKeptNote, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from '../skins/ui/sources';
 import { t } from './i18n/text';
@@ -102,7 +102,7 @@ function pixelCanvas(img: ImageData | null, cls: string): HTMLCanvasElement {
 
 function figureCanvas(img: ImageData, model: SkinModel, cls: string): HTMLCanvasElement {
   const c = h('canvas', { class: cls, 'aria-hidden': 'true' });
-  requestAnimationFrame(() => drawFigure(c, img, model));
+  drawFigureSoon(c, img, model);
   return c;
 }
 

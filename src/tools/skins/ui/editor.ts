@@ -41,7 +41,7 @@ import {
   type SkinPart,
   type SkinScale,
 } from '../templates';
-import { drawFigure, drawHead, drawPaperDoll } from './figure';
+import { drawFigureSoon, drawHead, drawPaperDoll } from './figure';
 import { SKIN_PALETTES } from './palettes';
 import { normalizeSkinImage } from './sources';
 import { setOuterSeeThrough, setPartVisible } from './preview-extras';
@@ -1615,7 +1615,7 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   /** A figure of a skin for the size dialogs. */
   function sizeFigure(img: ImageData, label: string): HTMLElement {
     const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
-    requestAnimationFrame(() => drawFigure(c, img, model));
+    drawFigureSoon(c, img, model);
     return h('figure', { class: 'sk-export-figure' }, h('div', { class: 'sk-export-stage' }, c), h('figcaption', null, label));
   }
 

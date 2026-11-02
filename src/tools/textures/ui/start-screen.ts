@@ -49,16 +49,16 @@ function hashHue(s: string): number {
 const proc = (n: ProceduralTextureName) => firstSquare(toImageData(proceduralTexture(n)));
 
 /** An original iso block (procedural art), optionally restyled by a preset. */
-function isoBlock(top: ProceduralTextureName, side: ProceduralTextureName, preset: string | null, size: number): HTMLCanvasElement {
+function paintIsoBlock(c: HTMLCanvasElement, top: ProceduralTextureName, side: ProceduralTextureName, preset: string | null, size: number): void {
   const layers = preset ? getPreset(preset)?.layers ?? [] : [];
   const fx = (n: ProceduralTextureName) => applyEffects(proc(n), layers, { path: `assets/minecraft/textures/block/${n}.png`, category: 'block', animated: false });
-  const c = document.createElement('canvas');
-  c.className = 'pixelated';
   paintCanvas(c, renderIsoCube(fx(top), fx(side), size));
-  return c;
 }
 
-function heroArt(): HTMLElement {
+/** Phones and tablets don't show the hero's blocks (view.css): they are drawn when the page is wide enough. */
+const HERO_HIDDEN = '(max-width: 960px)';
+
+function heroArt(): { el: HTMLElement; destroy(): void } {
   const items: [ProceduralTextureName, ProceduralTextureName, string | null][] = [
     ['grass_top', 'grass_side', null],
     ['grass_top', 'grass_side', 'autumn'],
@@ -67,11 +67,28 @@ function heroArt(): HTMLElement {
     ['cobblestone', 'cobblestone', 'cartoon'],
     ['oak_log_top', 'oak_log', 'game-boy'],
   ];
-  return h(
+  const canvases = items.map(() => h('canvas', { class: 'pixelated' }));
+  const el = h(
     'div',
     { class: 'tx-hero-art', 'aria-hidden': 'true' },
-    items.map(([top, sd, preset], i) => h('figure', { class: 'tx-hero-cube', style: { '--i': i } }, isoBlock(top, sd, preset, 64), h('figcaption', null, preset ? getPreset(preset)?.label ?? preset : t.hero.original))),
+    items.map(([, , preset], i) => h('figure', { class: 'tx-hero-cube', style: { '--i': i } }, canvases[i], h('figcaption', null, preset ? getPreset(preset)?.label ?? preset : t.hero.original))),
   );
+  let painted = false;
+  const paint = () => {
+    if (painted) return;
+    painted = true;
+    items.forEach(([top, sd, preset], i) => paintIsoBlock(canvases[i], top, sd, preset, 64));
+  };
+  const mq = typeof matchMedia === 'function' ? matchMedia(HERO_HIDDEN) : null;
+  const onMq = () => {
+    if (mq && !mq.matches) {
+      paint();
+      mq.removeEventListener('change', onMq);
+    }
+  };
+  if (!mq || !mq.matches) paint();
+  else mq.addEventListener('change', onMq);
+  return { el, destroy: () => mq?.removeEventListener('change', onMq) };
 }
 
 /** Up to four of the pack's own edited textures, or an original block restyled with the pack's effects. */
@@ -500,6 +517,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   }
 
   // ---------------------------------------------------------------- page
+  const hero = heroArt();
   const page = h(
     'div',
     { class: 'tx-start accent-green' },
@@ -520,7 +538,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
           icon('arrow-right'),
         ),
       ),
-      heroArt(),
+      hero.el,
     ),
     h('div', { class: 'container tx-start-grid' }, newCard, h('div', { class: 'tx-start-side' }, openCard, h('section', { class: 'card tx-howto-card' }, h('h3', { class: 'section-title' }, icon('info'), t.howto.title), steps))),
     recent,
@@ -532,6 +550,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
 
   return () => {
     alive = false;
+    hero.destroy();
     offProjects();
     urls.forEach((u) => URL.revokeObjectURL(u));
   };

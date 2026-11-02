@@ -19,11 +19,18 @@
 //   --json <file>      also write every step's numbers as JSON (to compare two builds)
 //   --profile          sample the CPU during each step and list its hottest functions (an unminified
 //                      build, `npx vite build --minify false`, gives readable names)
+//   --hot <n>          with --profile: how many of the app's functions to list by total time (default 6)
 //   --only <regex>     report only the steps whose name matches (the others still run)
 //   --trace <regex>    record a DevTools trace of the matching steps and list the main thread's
 //                      rendering work during the slowest interaction (style, layout, paint, commit)
 //   --until <regex>    end each flow after the first step whose name matches
 //   --headed           show the browser
+//   --no-probe         don't tap during load (see below)
+// Tap during load: 100 ms after each step that opens a page or builds an editor (marked `probe`), and
+// then every 250 ms until the page goes quiet (at most 5 s), a finger taps a tiny transparent spot at
+// the screen's left edge (on top of the page; its events reach no listener of the page) and the slowest
+// of those taps is reported as its own row, "<step> → tap during load": what a tap made while the next
+// screen sets up waits for.
 // With a build that has source maps (`npx vite build --sourcemap`), script positions are mapped back to
 // the source files. Each step's latency is the slowest interaction it caused (a tap's pointerdown,
 // pointerup and click are one interaction). Times are from headless Chromium with SwiftShader WebGL, so
@@ -43,7 +50,7 @@ const { startPagesServer } = await import('../e2e/seo/pages-server.mjs');
 const argv = process.argv.slice(2);
 const opt = (name, def) => (argv.includes(`--${name}`) ? argv[argv.indexOf(`--${name}`) + 1] : def);
 const flag = (name) => argv.includes(`--${name}`);
-const positional = argv.filter((a, i) => !a.startsWith('--') && !(i > 0 && argv[i - 1].startsWith('--') && !['--profile', '--headed'].includes(argv[i - 1])));
+const positional = argv.filter((a, i) => !a.startsWith('--') && !(i > 0 && argv[i - 1].startsWith('--') && !['--profile', '--headed', '--no-probe'].includes(argv[i - 1])));
 const target = positional[0] ?? path.join(ROOT, 'dist');
 const CPU = Number(opt('cpu', '4'));
 const DEVICE = opt('device', 'phone');
@@ -53,6 +60,8 @@ const JSON_OUT = opt('json', null);
 const PROFILE = flag('profile');
 const TRACE = opt('trace', null) ? new RegExp(opt('trace', ''), 'i') : null;
 const UNTIL = opt('until', null) ? new RegExp(opt('until', ''), 'i') : null;
+const PROBE = !flag('no-probe');
+const HOT = Number(opt('hot', '6'));
 const ONLY = opt('only', null) ? new RegExp(opt('only', ''), 'i') : null;
 const ALL_FLOWS = ['home', 'start', 'editor', 'skins', 'shaders', 'converter', 'totem'];
 const FLOWS = (opt('flows', ALL_FLOWS.join(',')) ?? '').split(',').filter(Boolean);
@@ -151,13 +160,14 @@ function where(url, { char, line, col } = {}) {
 // ------------------------------------------------------------------------------- in-page recorder
 /** Installed before any page script: buffers event and long-animation-frame entries. */
 function recorder() {
-  const rec = { events: [], loafs: [] };
+  const rec = { events: [], loafs: [], probeTimes: [] };
   window.__inp = rec;
   try {
     new PerformanceObserver((l) => {
       for (const e of l.getEntries()) {
         if (!e.interactionId) continue;
-        rec.events.push({ id: e.interactionId, name: e.name, start: e.startTime, dur: e.duration, ps: e.processingStart, pe: e.processingEnd, target: e.target ? describe(e.target) : '' });
+        const probe = rec.probeTimes.some((t) => Math.abs(t - e.startTime) < 1);
+        rec.events.push({ id: e.interactionId, name: e.name, start: e.startTime, dur: e.duration, ps: e.processingStart, pe: e.processingEnd, target: e.target ? describe(e.target) : '', probe });
       }
     }).observe({ type: 'event', durationThreshold: 16, buffered: true });
   } catch {}
@@ -185,6 +195,26 @@ function recorder() {
       }
     }).observe({ type: 'long-animation-frame', buffered: true });
   } catch {}
+  // the tap-during-load target: a transparent spot over the page whose events reach no app listener
+  // (told by where the finger is, so a tap on a modal dialog's backdrop there doesn't close it either)
+  const PROBE = '__inp-probe';
+  const atProbe = (e) => e.clientX >= 0 && e.clientX < 10 && Math.abs(e.clientY - (Math.round(innerHeight * 0.4) + 4)) < 6;
+  for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'click'])
+    window.addEventListener(type, (e) => {
+      const pt = e.changedTouches?.[0] ?? e;
+      if (!atProbe(pt)) return;
+      e.stopImmediatePropagation();
+      rec.probeTimes.push(e.timeStamp);
+    }, true);
+  const addProbe = () => {
+    if (document.querySelector(`.${PROBE}`)) return;
+    const p = document.createElement('div');
+    p.className = PROBE;
+    p.style.cssText = 'position:fixed;left:0;top:40%;width:8px;height:8px;z-index:2147483647;opacity:0;touch-action:none;contain:strict';
+    document.documentElement.appendChild(p);
+  };
+  if (document.documentElement) addProbe();
+  document.addEventListener('DOMContentLoaded', addProbe);
   function describe(el) {
     if (!(el instanceof Element)) return '';
     const cls = [...el.classList].slice(0, 2).join('.');
@@ -242,7 +272,8 @@ class Session {
   }
   /** Runs `fn` as the named step and records the slowest interaction it caused. */
   /** `busy`: don't wait for the page to go quiet first (a tap while it is still working). */
-  async step(name, fn, { quiet = 400, busy = false } = {}) {
+  /** `probe`: tap 100 ms after `fn` (a step that opens a page or builds an editor) and report it on its own. */
+  async step(name, fn, { quiet = 400, busy = false, probe = false } = {}) {
     const page = this.page;
     try {
       if (!busy) await this.settle(250, 6000);
@@ -250,7 +281,25 @@ class Session {
       if (PROFILE) await this.cdp.send('Profiler.start');
       const tracing = TRACE?.test(name) ? await this.startTrace() : null;
       await fn(page);
+      const probing = probe && PROBE;
+      let probeLoop = null;
+      let probeStop = false;
+      if (probing) {
+        const vp = page.viewportSize();
+        const y = Math.round(vp.height * 0.4) + 4;
+        probeLoop = (async () => {
+          const until = Date.now() + 5000;
+          await page.waitForTimeout(100);
+          while (!probeStop && Date.now() < until) {
+            await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 4, y, id: 7 }] });
+            await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+            await page.waitForTimeout(250);
+          }
+        })().catch(() => {});
+      }
       await this.settle(quiet);
+      probeStop = true;
+      await probeLoop;
       // event entries are queued after the next paint: give them a moment
       await page.waitForTimeout(120);
       const prof = PROFILE ? (await this.cdp.send('Profiler.stop')).profile : null;
@@ -259,6 +308,9 @@ class Session {
         const r = window.__inp;
         return { events: r.events.filter((e) => e.start >= from - 1), loafs: r.loafs.filter((l) => l.start + l.dur >= from - 1) };
       }, t0);
+      const isProbe = (e) => e.probe;
+      const probeEvents = data.events.filter(isProbe);
+      data.events = data.events.filter((e) => !isProbe(e));
       const byId = new Map();
       for (const e of data.events) {
         const cur = byId.get(e.id);
@@ -271,7 +323,7 @@ class Session {
       if (worst) att = attribute(worst, data.events.filter((e) => e.id === worst.id), data.loafs);
       // a long frame anywhere in the step delays whatever the user taps next
       const longest = data.loafs.reduce((m, l) => (l.blocking > (m?.blocking ?? 0) ? l : m), null);
-      const blocker = longest && longest.dur > 200 ? { dur: Math.round(longest.dur), scripts: longest.scripts.sort((a, b) => b.dur - a.dur).slice(0, 2).map((sc) => `${Math.round(sc.dur)} ms ${sc.invoker || sc.type}${sc.fn ? ` → ${sc.fn}` : ''} ${where(sc.url, { char: sc.char })}`) } : null;
+      const blocker = longest && longest.dur > 100 ? { dur: Math.round(longest.dur), scripts: longest.scripts.sort((a, b) => b.dur - a.dur).slice(0, 3).map((sc) => `${Math.round(sc.dur)} ms ${sc.invoker || sc.type}${sc.fn ? ` → ${sc.fn}` : ''} ${where(sc.url, { char: sc.char })}`) } : null;
       const hot = prof ? hotFunctions(prof) : null;
       if (trace && worst) {
         // the trace clock and performance.now() share no origin: line them up on the event dispatches
@@ -298,6 +350,13 @@ class Session {
       }
       results.push({ flow: this.flow, step: name, run: this.run, ms: worst ? worst.dur : 0, n: inter.length, worst: worst && { target: worst.target, names: [...worst.names], ...att, trace: worst.trace }, blocker, hot });
       process.stdout.write(`  ${worst ? String(Math.round(worst.dur)).padStart(4) : '  <16'} ms  ${this.flow} › ${name}${inter.length > 1 ? `  (${inter.length} interactions)` : ''}${blocker ? `  [long frame after it: ${blocker.dur} ms]` : ''}\n`);
+      if (probing) {
+        const pw = probeEvents.sort((a, b) => b.dur - a.dur)[0] ?? null;
+        const patt = pw ? attribute(pw, probeEvents.filter((e) => e.id === pw.id), data.loafs) : null;
+        const taps = new Set(probeEvents.map((e) => e.id)).size;
+        results.push({ flow: this.flow, step: `${name} → tap during load`, run: this.run, ms: pw ? pw.dur : 0, n: taps, probe: true, worst: pw && { target: pw.target, names: [pw.name], ...patt }, blocker: null, hot: null });
+        process.stdout.write(`  ${pw ? String(Math.round(pw.dur)).padStart(4) : '  <16'} ms  ${this.flow} › ${name} → tap during load (slowest${taps ? ` of ${taps} measured` : ''})\n`);
+      }
     } catch (err) {
       if (PROFILE) await this.cdp.send('Profiler.stop').catch(() => {});
       console.log(`  SKIP ${this.flow} › ${name}: ${String(err.message).split('\n')[0]}`);
@@ -394,7 +453,7 @@ function hotFunctions(profile) {
     }
   }
   const top = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
-  return [...top(self, 5).map(([k, v]) => `${v.toFixed(0).padStart(5)} ms  ${k}`), ...top(total, 6).map(([k, v]) => `${v.toFixed(0).padStart(5)} ms  total in ${k}`)];
+  return [...top(self, 5).map(([k, v]) => `${v.toFixed(0).padStart(5)} ms  ${k}`), ...top(total, HOT).map(([k, v]) => `${v.toFixed(0).padStart(5)} ms  total in ${k}`)];
 }
 
 async function session(flow, run, body) {
@@ -438,12 +497,12 @@ async function flowHome(s, page) {
   await s.step('tap "Start creating" (a dialog)', () => s.tap('a.btn-primary.btn-lg'));
   await s.step('close the dialog', () => page.keyboard.press('Escape'));
   await page.waitForTimeout(400);
-  await s.step('tap the Texture Packs card (to /textures/)', () => s.tap('a.tool-card.accent-green'), { quiet: 800 });
+  await s.step('tap the Texture Packs card (to /textures/)', () => s.tap('a.tool-card.accent-green'), { quiet: 800, probe: true });
   await page.waitForSelector('.tx-new');
   await page.goBack();
   await page.waitForSelector('a.tool-card.accent-blue');
   await page.waitForTimeout(1500);
-  await s.step('tap the Skins card (to /skins/)', () => s.tap('a.tool-card.accent-blue'), { quiet: 800 });
+  await s.step('tap the Skins card (to /skins/)', () => s.tap('a.tool-card.accent-blue'), { quiet: 800, probe: true });
 }
 
 async function newPack(s, page) {
@@ -465,7 +524,7 @@ async function flowStart(s, page) {
   await s.step('tap vanilla start', () => s.tap('.tx-start-opt:nth-child(1)'));
   await s.step('open version picker', () => s.tap('.vp-trigger'));
   await s.step('close version picker', () => page.keyboard.press('Escape'));
-  await s.step('tap Create pack', () => s.tap('.tx-create-btn'), { quiet: 800 });
+  await s.step('tap Create pack', () => s.tap('.tx-create-btn'), { quiet: 800, probe: true });
   // the editor is still loading the game's files: a tap as soon as the first textures show
   await page.waitForSelector('.tx-pick', { timeout: 120000 });
   await s.step('tap a quick pick while the editor loads', () => s.tap('.tx-pick:nth-child(2)'), { busy: true, quiet: 800 });
@@ -592,7 +651,7 @@ async function flowSkins(s, page) {
   await page.waitForLoadState('load');
   await page.waitForTimeout(1500);
   await s.throttle();
-  await s.step('tap a starter skin', () => s.tap('.sk-starter-explorer, .sk-starter'), { quiet: 1000 });
+  await s.step('tap a starter skin', () => s.tap('.sk-starter-explorer, .sk-starter'), { quiet: 1000, probe: true });
   await page.waitForSelector('.sk-editor .pc-root', { timeout: 30000 });
   await page.waitForTimeout(1500);
   const cv = page.locator('.sk-editor .pc-root canvas').first();
@@ -618,10 +677,10 @@ async function flowShaders(s, page) {
   await page.waitForSelector('.sh-card');
   await page.waitForTimeout(1500);
   await s.throttle();
-  await s.step('tap "Start" on the Iris card', () => s.tap('.sh-card[data-target="iris"] .sh-card-start'), { quiet: 800 });
+  await s.step('tap "Start" on the Iris card', () => s.tap('.sh-card[data-target="iris"] .sh-card-start'), { quiet: 800, probe: true });
   await page.waitForSelector('.sh-new .sh-preset');
   await s.step('tap a preset in the new pack dialog', () => s.tap('.sh-new .sh-preset:nth-child(2)'));
-  await s.step('tap Create pack', () => page.getByRole('button', { name: 'Create pack' }).tap(), { quiet: 1200 });
+  await s.step('tap Create pack', () => page.getByRole('button', { name: 'Create pack' }).tap(), { quiet: 1200, probe: true });
   await page.waitForSelector('.sh-editor', { timeout: 30000 });
   await page.waitForTimeout(3000);
   const ranges = page.locator('.sh-editor input[type="range"]').filter({ visible: true });
@@ -672,7 +731,7 @@ async function flowTotem(s, page) {
   const n = Math.min(await btns.count(), 6);
   for (let i = 0; i < n; i++) {
     const label = ((await btns.nth(i).getAttribute('aria-label')) || (await btns.nth(i).textContent()) || '').trim().slice(0, 30);
-    await s.step(`tap "${label}"`, () => btns.nth(i).tap(), { quiet: 600 });
+    await s.step(`tap "${label}"`, () => btns.nth(i).tap(), { quiet: 600, probe: true });
     if (await page.locator('[role="dialog"]:visible').count()) await page.keyboard.press('Escape');
   }
 }
@@ -729,6 +788,25 @@ for (const r of rows.slice(0, TOP)) {
   for (const line of w?.trace ?? []) console.log(`${' '.repeat(26)}${line}`);
   if (r.worst.blocker) console.log(`${' '.repeat(26)}long frame in the step: ${r.worst.blocker.dur} ms (${r.worst.blocker.scripts.join('; ')})`);
   if (PROFILE && r.worst.hot) for (const hline of r.worst.hot) console.log(`${' '.repeat(26)}${hline}`);
+}
+// long frames after each step (they delay whatever is tapped next), and the taps made during load
+const frames = [...groups.entries()]
+  .filter(([k]) => !ONLY || ONLY.test(k))
+  .map(([k, rs]) => ({ k, ms: rs.map((r) => r.blocker?.dur ?? 0).sort((a, b) => b - a), worst: rs.filter((r) => r.blocker).sort((a, b) => b.blocker.dur - a.blocker.dur)[0] }))
+  .filter((r) => r.ms[0] > 0)
+  .sort((a, b) => b.ms[0] - a.ms[0]);
+if (frames.length) {
+  console.log(`\nLong animation frames (over 100 ms) during or right after a step: worst${RUNS > 1 ? ' / each run' : ''}`);
+  for (const f of frames) {
+    console.log(`${String(f.ms[0]).padStart(5)}${RUNS > 1 ? ` (${f.ms.join(', ')})` : ''}  ${f.k}`);
+    for (const sc of f.worst.blocker.scripts) console.log(`${' '.repeat(12)}${sc}`);
+    if (PROFILE && f.worst.hot) for (const hline of f.worst.hot) console.log(`${' '.repeat(12)}${hline}`);
+  }
+}
+const probes = rows.filter((r) => r.worst.probe);
+if (probes.length) {
+  console.log(`\nTap during load (taps from 100 ms after a step that opens a page or builds an editor until it is quiet): slowest${RUNS > 1 ? ' (median)' : ''}`);
+  for (const r of probes) console.log(`${String(Math.round(r.max)).padStart(5)}${RUNS > 1 ? ` (${String(Math.round(r.med)).padStart(3)})` : ''}  ${r.k}${r.worst.worst ? `  (input delay ${r.worst.worst.inputDelay} ms)` : ''}`);
 }
 const over200 = rows.filter((r) => r.max > 200).length;
 console.log(`\n${all.length} steps measured; p75 ${Math.round(p75)} ms, p98 ${Math.round(p98)} ms, worst ${Math.round(all.at(-1) ?? 0)} ms; ${over200} step(s) over 200 ms.`);

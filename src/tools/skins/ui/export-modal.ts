@@ -30,7 +30,7 @@ import {
   type SkinProjectData,
 } from '../export';
 import { isHdSkin } from '../templates';
-import { drawFigure } from './figure';
+import { drawFigureSoon } from './figure';
 import { fmt, fmtNodes } from '../../../i18n/editor-text';
 import { kit } from '../../../ui/i18n/kit';
 import { exportText as t } from '../i18n/export';
@@ -191,7 +191,7 @@ async function runExport(kind: ExportKind, project: SkinProjectData, img: ImageD
 
 function figure(img: ImageData, model: SkinModel, label: string): HTMLElement {
   const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
-  requestAnimationFrame(() => drawFigure(c, img, model));
+  drawFigureSoon(c, img, model);
   return h('figure', { class: 'sk-export-figure' }, h('div', { class: 'sk-export-stage' }, c), h('figcaption', null, label));
 }
 
@@ -208,7 +208,7 @@ function packRow(opts: { name: string; model: SkinModel; image: ImageData | Blob
     else if (img.width !== 64 || img.height !== 64) return;
     const c = h('canvas', { class: 'sk-figure', 'aria-hidden': 'true' });
     thumb.appendChild(c);
-    requestAnimationFrame(() => drawFigure(c, img, opts.model));
+    drawFigureSoon(c, img, opts.model);
   };
   if (opts.image instanceof Blob) {
     void decodeImage(opts.image, 'png')

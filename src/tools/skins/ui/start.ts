@@ -19,7 +19,7 @@ import type { SkinProjectData } from '../export';
 import { upscaleSkin, type SkinSize } from '../hd';
 import { createStarterSkin, STARTERS } from '../starters';
 import { isHdSkin } from '../templates';
-import { drawFigure } from './figure';
+import { drawFigureSoon } from './figure';
 import { fetchSkinByUsername, listDefaultSkins, readDefaultSkin, readSkinFile, SkinSourceError, validateUsername, type DefaultSkin } from './sources';
 import { fmt } from '../../../i18n/editor-text';
 import { t } from '../i18n/text';
@@ -104,7 +104,7 @@ async function saveNewProject(opts: { image: ImageData; model: SkinModel; name: 
 function figureCanvas(img: ImageData, model: SkinModel, cls = 'sk-figure'): HTMLCanvasElement {
   const c = h('canvas', { class: cls, 'aria-hidden': 'true' });
   // Draw once it has a layout size.
-  requestAnimationFrame(() => drawFigure(c, img, model));
+  drawFigureSoon(c, img, model);
   return c;
 }
 
