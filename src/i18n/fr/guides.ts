@@ -35,8 +35,6 @@ const table = (head: string[], rows: Child[][], cls = 'guide-table'): ElNode =>
   );
 /** English text quoted on purpose (a game message's English original) */
 const en = (text: string): ElNode => el('span', { lang: 'en' }, text);
-/** A label of the editors, which show English for now */
-const enLabel = (text: string): ElNode => el('strong', { lang: 'en' }, text);
 const FOLDER = UI_FR.folderTable;
 
 export const GUIDES_INDEX: GuidesIndexText = {
@@ -49,9 +47,9 @@ export const GUIDES_INDEX: GuidesIndexText = {
 // ---------------------------------------------------------------- shared steps
 
 const MAKE_PACK_STEPS: Child[] = [
-  ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ', donne un nom à ton pack et choisis Java ou Bedrock, la version du jeu à laquelle tu joues et une résolution, puis clique sur ', strong('Create pack'), '.'],
+  ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ', donne un nom à ton pack et choisis Java ou Bedrock, la version du jeu à laquelle tu joues et une résolution, puis clique sur ', strong('Créer le pack'), '.'],
   'Trouve une texture avec la recherche ou les catégories et repeins-la dans l’éditeur de pixels, ou importe ton propre PNG.',
-  'En option : change le style de tout le pack avec des effets en un clic comme Dark Mode, Pastel ou Retro 8-bit.',
+  'En option : change le style de tout le pack avec des effets en un clic comme Mode sombre, Rêve pastel ou Rétro 8 bits.',
   ['Ouvre l’onglet ', strong('Pack'), ' pour régler la description et l’icône, puis exporte un ', code('.zip'), ' (Java) ou un ', code('.mcpack'), ' (Bedrock).'],
   ['Installe le pack dans Minecraft et teste-le. ', link('/guides/install-resource-packs', 'Comment l’installer'), '.'],
 ];
@@ -76,13 +74,13 @@ const SKIN_PACK_STEPS: Child[] = [
   ['Ouvre le ', link('/skin-pack-maker', 'Skin Pack Maker'), ' et commence un skin : un modèle vide ou en couleurs, un PNG que tu as déjà, le skin d’un joueur Java grâce à son pseudo, ou l’un des skins par défaut. Choisis des bras classiques (4 pixels) ou fins (3 pixels).'],
   'Peins-le sur le modèle 64×64 ou directement sur le modèle 3D. Chaque skin est enregistré sur ton appareil comme un projet à part, et son nom est celui que les joueurs voient dans le jeu.',
   'Fais de la même façon les autres skins du pack.',
-  ['Ouvre l’un d’eux, choisis ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', donne un nom au pack, coche les autres skins à inclure et appuie sur ', strong('Download pack'), '.'],
+  ['Ouvre l’un d’eux, choisis ', strong('Exporter'), ' › ', strong('Pack de skins Bedrock (.mcpack)'), ', donne un nom au pack, coche les autres skins à inclure et appuie sur ', strong('Télécharger le pack'), '.'],
   ['Ouvre le ', code('.mcpack'), ' sur Windows, Android, iPhone ou iPad. Minecraft l’importe.'],
   ['Dans Minecraft, va dans ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ', trouve ton pack, choisis un skin et appuie sur ', strong(BEDROCK.equip), '.'],
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
-  ['Ouvre le ', link('/shaders', 'Shader Maker'), ' et choisis ', strong('Vanilla Java'), '.'],
+  ['Ouvre le ', link('/shaders', 'Créateur de shaders'), ' et choisis ', strong('Java vanilla'), '.'],
   `Choisis la version exacte de Minecraft à laquelle tu joues (Java 1.17 ou plus récent ; ${LATEST} est la version par défaut).`,
   'Pars d’un préréglage et règle la luminosité, le contraste, les couleurs, la vignette et le brouillard pendant que l’aperçu se met à jour.',
   ['Exporte le ', code('.zip'), ' et installe-le comme n’importe quel pack de ressources : ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), '.'],
@@ -91,21 +89,21 @@ const VANILLA_SHADER_STEPS: Child[] = [
 const CONVERT_STEPS: Child[] = [
   ['Ouvre le ', link('/texture-pack-converter', 'convertisseur de packs de textures'), ' et choisis ton pack : un ', code('.zip'), ' Java, un ', code('.mcpack'), ' Bedrock ou des textures PNG.'],
   ['Choisis en quoi le convertir : ', strong('Bedrock Edition'), ', ou ', strong('Java Edition'), ' et une version.'],
-  ['Clique sur ', strong('Convert'), '. Ton navigateur charge la liste des textures de l’édition cible et convertit chaque texture qu’il peut.'],
+  ['Clique sur ', strong('Convertir en …'), '. Ton navigateur charge la liste des textures de l’édition cible et convertit chaque texture qu’il peut.'],
   'Lis le rapport : combien de textures ont été converties, lesquelles ont été ignorées et pourquoi.',
   ['Télécharge le pack converti, ou ouvre-le d’abord dans l’éditeur pour repeindre les textures ignorées.'],
 ];
 
 const MERGE_STEPS: Child[] = [
-  ['Ouvre ', link('/merge-texture-packs', 'Merge Texture Packs'), ' et ajoute de deux à huit packs ', code('.zip'), ' Java ou ', code('.mcpack'), ' Bedrock.'],
+  ['Ouvre ', link('/merge-texture-packs', 'Fusionner des packs'), ' et ajoute de deux à huit packs ', code('.zip'), ' Java ou ', code('.mcpack'), ' Bedrock.'],
   'Range-les en les faisant glisser, ou avec les flèches. Le pack du haut gagne partout où deux packs changent le même fichier.',
   'Donne un nom au pack fusionné et choisis son icône. Pour Java, choisis la version à laquelle tu joues.',
-  ['Clique sur ', strong('Merge'), ' et vérifie la liste des conflits.'],
+  ['Clique sur ', strong('Fusionner … packs'), ' et vérifie la liste des conflits.'],
   'Télécharge le pack fusionné, ou ouvre-le dans l’éditeur pour continuer à travailler dessus.',
 ];
 
 const VV_STEPS: Child[] = [
-  ['Fais un pack avec le ', link('/shaders', 'Shader Maker'), ' (choisis ', strong('Bedrock Vibrant Visuals'), ') et exporte le ', code('.mcpack'), '.'],
+  ['Fais un pack avec le ', link('/shaders', 'Créateur de shaders'), ' (choisis ', strong('Graphismes éclatants de Bedrock'), ') et exporte le ', code('.mcpack'), '.'],
   'Ouvre le fichier. Minecraft l’importe automatiquement.',
   ['Va dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources, BEDROCK.myPacks), ' et active le pack. Désactive les packs de textures classiques qui ne prennent pas en charge les Graphismes éclatants.'],
   ['Ouvre ', uiPath(BEDROCK.settings, BEDROCK.video), ' et règle ', strong(BEDROCK.graphicsMode), ' sur ', strong(BEDROCK.vibrantVisuals), '.'],
@@ -113,46 +111,46 @@ const VV_STEPS: Child[] = [
 
 const MODEL_STEPS: Child[] = [
   ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ' et crée un pack ', strong('Java'), ' pour la version à laquelle tu joues : 1.8 ou plus récent, ou 1.21.4 ou plus récent pour garder l’objet plat dans l’inventaire.'],
-  ['Passe la liste sur ', strong('Items'), ' et ouvre l’objet, par exemple l’épée en diamant. Dans l’onglet ', strong('Preview'), ', appuie sur ', strong('Edit shape'), '.'],
-  ['Choisis ', strong('3D item from sprite'), '. Chaque pixel de l’image plate devient une partie d’un cube d’un pixel d’épaisseur.'],
+  ['Passe la liste sur ', strong('Objets'), ' et ouvre l’objet, par exemple l’épée en diamant. Dans l’onglet ', strong('Aperçu'), ', appuie sur ', strong('Modifier la forme'), '.'],
+  ['Choisis ', strong('Objet 3D à partir du sprite'), '. Chaque pixel de l’image plate devient une partie d’un cube d’un pixel d’épaisseur.'],
   ['Change la forme : clique sur un cube dans la vue 3D ou dans la liste, puis déplace-le, redimensionne-le, copie-le ou ajoutes-en de nouveaux. Dans ', strong('Faces'), ', donne à une face une autre texture ou une autre partie de texture.'],
-  ['Ouvre ', strong('Display'), ' et vérifie le modèle dans l’inventaire, à la première et à la troisième personne, au sol, dans un cadre et sur la tête. Change la rotation, la position ou la taille là où ça ne va pas.'],
-  ['En option, en 1.21.4 et plus récent : dans l’onglet ', strong('Model'), ', active ', strong('Flat in the inventory'), ' pour y garder l’icône plate et montrer le modèle 3D en main.'],
-  ['Appuie sur ', strong('Done'), ', exporte le pack en ', code('.zip'), ', mets-le dans ton dossier ', code('resourcepacks'), ' et teste-le dans le jeu.'],
+  ['Ouvre ', strong('Affichage'), ' et vérifie le modèle dans l’inventaire, à la première et à la troisième personne, au sol, dans un cadre et sur la tête. Change la rotation, la position ou la taille là où ça ne va pas.'],
+  ['En option, en 1.21.4 et plus récent : dans l’onglet ', strong('Modèle'), ', active ', strong('À plat dans l’inventaire'), ' pour y garder l’icône plate et montrer le modèle 3D en main.'],
+  ['Appuie sur ', strong('Terminé'), ', exporte le pack en ', code('.zip'), ', mets-le dans ton dossier ', code('resourcepacks'), ' et teste-le dans le jeu.'],
 ];
 
 const PVP_STEPS: Child[] = [
-  ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ', donne un nom à ton pack et choisis ', strong('PvP / FPS pack'), '. Active ', strong('Also an FPS pack'), ' pour avoir des textures 8× et pas d’animations.'],
-  ['Choisis Java ou Bedrock et la version à laquelle tu joues, par exemple Java 1.8.9 pour les serveurs PvP 1.8, puis appuie sur ', strong('Create PvP pack'), '.'],
+  ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ', donne un nom à ton pack et choisis ', strong('Pack PvP / FPS'), '. Active ', strong('Aussi un pack FPS'), ' pour avoir des textures 8× et pas d’animations.'],
+  ['Choisis Java ou Bedrock et la version à laquelle tu joues, par exemple Java 1.8.9 pour les serveurs PvP 1.8, puis appuie sur ', strong('Créer le pack PvP'), '.'],
   ['L’éditeur charge les textures de cette version et active le préréglage PvP : feu bas, verre transparent, sans le flou de la citrouille, un viseur plus net, des épées plus petites et un bouclier plus bas, quand la version les a.'],
   ['Dans l’onglet ', strong('PvP'), ', change ce que tu veux : la hauteur du feu, le dessin du viseur, la taille des épées, la hauteur du bouclier. Chaque changement peut être annulé depuis son message.'],
   'En option : peins autre chose, comme des couleurs de laine plus claires ou une texture d’épée plus courte.',
-  ['Appuie sur ', strong('Export'), ', mets le pack dans Minecraft et place-le au-dessus de tes autres packs.'],
+  ['Appuie sur ', strong('Exporter'), ', mets le pack dans Minecraft et place-le au-dessus de tes autres packs.'],
 ];
 
 const PBR_STEPS: Child[] = [
   ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ' et fais un pack pour Java ou Bedrock, ou ouvre un pack que tu as déjà.'],
-  'Choisis une texture de bloc ou d’objet, par exemple le minerai de diamant, et ouvre l’onglet Material à côté de Preview.',
-  ['Choisis un matériau rapide comme ', strong('Metal'), ', ', strong('Glass'), ' ou ', strong('Glowing spots'), '. Le bloc 3D éclairé le montre sous un soleil qui bouge.'],
-  ['Affine ', strong('Shine'), ', ', strong('Metal'), ', ', strong('Glow'), ' et ', strong('Light through'), ' pour toute la texture, ou ajoute une partie (pixels colorés, clairs ou sombres, certaines couleurs ou une zone que tu sélectionnes) avec ses propres valeurs.'],
-  ['Active ', enLabel('Bumps from the colours'), ' et règle la force, puis utilise ', enLabel('Use on similar textures'), ' pour donner le même matériau à chaque minerai, planche ou bûche.'],
-  ['Appuie sur ', strong('Export'), '. Java reçoit ', code('_n.png'), ' et ', code('_s.png'), ' à côté de chaque texture, Bedrock reçoit des jeux de textures et la capacité ', code('pbr'), '.'],
+  'Choisis une texture de bloc ou d’objet, par exemple le minerai de diamant, et ouvre l’onglet Matériau à côté d’Aperçu.',
+  ['Choisis un matériau rapide comme ', strong('Métal'), ', ', strong('Verre'), ' ou ', strong('Points lumineux'), '. Le bloc 3D éclairé le montre sous un soleil qui bouge.'],
+  ['Affine ', strong('Brillance'), ', ', strong('Métal'), ', ', strong('Lueur'), ' et ', strong('Translucidité'), ' pour toute la texture, ou ajoute une partie (pixels colorés, clairs ou sombres, certaines couleurs ou une zone que tu sélectionnes) avec ses propres valeurs.'],
+  ['Active ', strong('Relief d’après les couleurs'), ' et règle la force, puis utilise ', strong('Utiliser sur des textures similaires'), ' pour donner le même matériau à chaque minerai, planche ou bûche.'],
+  ['Appuie sur ', strong('Exporter'), '. Java reçoit ', code('_n.png'), ' et ', code('_s.png'), ' à côté de chaque texture, Bedrock reçoit des jeux de textures et la capacité ', code('pbr'), '.'],
 ];
 
 const NAMES_STEPS: Child[] = [
   ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ' et fais un pack Java, ou ouvre un pack que tu as déjà.'],
-  ['Ouvre la texture d’un objet, par exemple l’épée en diamant, et choisis ', strong('Name-based textures'), ' dans son menu (⋮), ou ', strong('Names'), ' sous l’aperçu 3D.'],
+  ['Ouvre la texture d’un objet, par exemple l’épée en diamant, et choisis ', strong('Textures selon le nom'), ' dans son menu (⋮), ou ', strong('Noms'), ' sous l’aperçu 3D.'],
   ['Tape le nom, par exemple ', strong('Excalibur'), '. Ajoute d’autres noms s’ils doivent partager la texture.'],
-  ['Appuie sur ', strong('Create and paint'), '. La nouvelle texture commence comme une copie de celle de l’objet : peins par-dessus. ', strong('3D shape'), ' lui donne aussi son propre modèle.'],
-  ['Appuie sur ', strong('Export'), ', installe le pack, renomme l’objet sur une enclume avec exactement ce nom, et prends-le en main.'],
+  ['Appuie sur ', strong('Créer et peindre'), '. La nouvelle texture commence comme une copie de celle de l’objet : peins par-dessus. ', strong('Forme 3D'), ' lui donne aussi son propre modèle.'],
+  ['Appuie sur ', strong('Exporter'), ', installe le pack, renomme l’objet sur une enclume avec exactement ce nom, et prends-le en main.'],
 ];
 
 const ANIM_STEPS: Child[] = [
   ['Ouvre le ', link('/textures', 'Texture Pack Maker'), ' et fais un pack, ou ouvre un pack que tu as déjà.'],
-  ['Ouvre la texture d’un bloc ou d’un objet et choisis ', strong('Make animated'), ' dans son menu (⋮). Elle reçoit deux images, et une bande d’images apparaît sous la zone de dessin.'],
+  ['Ouvre la texture d’un bloc ou d’un objet et choisis ', strong('Animer'), ' dans son menu (⋮). Elle reçoit deux images, et une bande d’images apparaît sous la zone de dessin.'],
   ['Peins chaque image. ', strong('+'), ' ajoute une copie de l’image sélectionnée ; le menu ⋯ duplique, copie, colle, déplace et supprime des images. Active la pelure d’oignon pour voir l’image précédente en transparence pendant que tu peins.'],
-  ['Appuie sur l’horloge pour ', strong('Timing'), ' : combien de ticks chaque image s’affiche (20 ticks font 1 seconde), des durées pour des images précises et ', strong('Blend frames'), '. Appuie sur lecture pour la regarder à la vitesse du jeu.'],
-  ['Appuie sur ', strong('Export'), '. Les packs Java reçoivent la bande avec son ', code('.png.mcmeta'), ', les packs Bedrock une entrée dans ', code('flipbook_textures.json'), '.'],
+  ['Appuie sur l’horloge pour ', strong('Durée'), ' : combien de ticks chaque image s’affiche (20 ticks font 1 seconde), des durées pour des images précises et ', strong('Fondu entre les images'), '. Appuie sur lecture pour la regarder à la vitesse du jeu.'],
+  ['Appuie sur ', strong('Exporter'), '. Les packs Java reçoivent la bande avec son ', code('.png.mcmeta'), ', les packs Bedrock une entrée dans ', code('flipbook_textures.json'), '.'],
 ];
 
 // ---------------------------------------------------------------- guides
@@ -213,12 +211,12 @@ const makeATexturePack: GuideText = {
         ),
         p(
           'Sur Java, tu peux aussi changer les formes : appuie sur ',
-          strong('Edit shape'),
-          ' dans l’onglet Preview pour transformer un objet plat en objet 3D ou changer la forme d’un bloc. ',
+          strong('Modifier la forme'),
+          ' dans l’onglet Aperçu pour transformer un objet plat en objet 3D ou changer la forme d’un bloc. ',
           link('/guides/make-3d-items-texture-pack', 'Comment faire des objets 3D'),
           '.',
         ),
-        p('Tu fais un pack pour le PvP ou pour plus de FPS ? Choisis ', strong('PvP / FPS pack'), ' quand tu le crées, et l’éditeur active pour toi le feu bas, le verre transparent, un viseur plus net et des épées plus petites. ', link('/guides/make-a-pvp-texture-pack', 'Comment faire un pack de textures PvP'), '.'),
+        p('Tu fais un pack pour le PvP ou pour plus de FPS ? Choisis ', strong('Pack PvP / FPS'), ' quand tu le crées, et l’éditeur active pour toi le feu bas, le verre transparent, un viseur plus net et des épées plus petites. ', link('/guides/make-a-pvp-texture-pack', 'Comment faire un pack de textures PvP'), '.'),
         ul([
           'Commence par les blocs que tu vois tout le temps : herbe, terre, roche, bûches et planches.',
           'L’herbe, les feuilles, les lianes et l’eau sont enregistrées en gris et colorées par le jeu selon le biome. Garde-les en gris clair.',
@@ -233,7 +231,7 @@ const makeATexturePack: GuideText = {
       title: 'Étape 3 — Change le style de tout le pack en un clic (en option)',
       body: [
         p(MAKE_PACK_STEPS[2]),
-        p('Les effets s’empilent les uns sur les autres et sur ta propre peinture sans la changer, et sont appliqués à chaque texture à l’export. Combine Autumn avec Smooth HD, ou Dark Mode avec un Neon Outline, puis continue à peindre à la main.'),
+        p('Les effets s’empilent les uns sur les autres et sur ta propre peinture sans la changer, et sont appliqués à chaque texture à l’export. Combine Automne avec HD lisse, ou Mode sombre avec Contours néon, puis continue à peindre à la main.'),
         figure(SHOTS.effects),
       ],
     },
@@ -395,7 +393,7 @@ const makeATexturePack: GuideText = {
     {
       id: 'edit',
       q: 'Je peux modifier un pack de textures existant ?',
-      a: [p('Oui. Dans le Texture Pack Maker, choisis ', strong('Open a pack'), ' et sélectionne un ', code('.zip'), ' ou un ', code('.mcpack'), '. Tu peux continuer à le modifier et l’exporter à nouveau.'), figure(SHOTS.openPack)],
+      a: [p('Oui. Dans le Texture Pack Maker, choisis ', strong('Ouvrir un pack'), ' et sélectionne un ', code('.zip'), ' ou un ', code('.mcpack'), '. Tu peux continuer à le modifier et l’exporter à nouveau.'), figure(SHOTS.openPack)],
     },
     {
       id: 'code',
@@ -420,7 +418,7 @@ const makeATexturePack: GuideText = {
     {
       id: 'time',
       q: 'Combien de temps faut-il pour faire un pack de textures ?',
-      a: [p('Quelques minutes pour un petit pack qui change une poignée de blocs, ou pour un effet sur tout le pack comme Dark Mode. Un pack complet peint à la main avec des centaines de textures peut prendre des semaines ; tu peux l’exporter et le tester à tout moment en cours de route.')],
+      a: [p('Quelques minutes pour un petit pack qui change une poignée de blocs, ou pour un effet sur tout le pack comme Mode sombre. Un pack complet peint à la main avec des centaines de textures peut prendre des semaines ; tu peux l’exporter et le tester à tout moment en cours de route.')],
     },
     {
       id: 'hd',
@@ -565,7 +563,7 @@ const notWorking: GuideText = {
       body: [
         p(
           'Quand un pack de ressources contient un shader qui ne compile pas, Java désactive tous les packs et revient aux réglages par défaut. Ça arrive avec les packs de shaders vanilla faits pour une autre version, parce que Mojang change souvent ces fichiers de shaders. Enlève le pack ou exporte-le à nouveau pour ta version exacte ; chaque shader que le ',
-          link('/shaders', 'Shader Maker'),
+          link('/shaders', 'Créateur de shaders'),
           ' écrit est d’abord vérifié à la compilation.',
         ),
       ],
@@ -1116,10 +1114,10 @@ const makeASkin: GuideText = {
         ]),
         h3('En faire un dans le Skin Maker'),
         steps([
-          ['Sur l’écran de départ, règle ', strong('Size'), ' sur ', strong('HD 128×128'), ', puis choisis un point de départ. Les modèles et les skins de départ sont doublés en 128×128, et un PNG 128×128 que tu importes reste en HD.'],
-          ['Tu peins déjà un skin 64×64 ? Passe ', strong('Size'), ' sur ', strong('HD 128'), ' dans l’éditeur et confirme avec ', strong('Make HD'), '. Chaque pixel devient un bloc de 2×2, donc le skin a le même aspect jusqu’à ce que tu peignes des détails plus fins. ', strong('Size'), ' › ', strong('64×64'), ' et ', strong('Reduce to 64×64'), ' reviennent en arrière.'],
-          ['Exporte ', strong('Bedrock skin (.png)'), ` pour l’importer dans le ${BEDROCK.dressingRoom}, ou un `, strong('Bedrock skin pack (.mcpack)'), '. Les deux gardent le 128×128.'],
-          ['Pour Java, ', strong('Java skin (.png)'), ' télécharge une copie 64×64, où chaque bloc de 2×2 devient un pixel ; ton skin HD reste tel quel. Tu utilises un mod de skins HD ? Choisis plutôt ', strong('128×128 for mods'), '.'],
+          ['Sur l’écran de départ, règle ', strong('Taille'), ' sur ', strong('HD 128×128'), ', puis choisis un point de départ. Les modèles et les skins de départ sont doublés en 128×128, et un PNG 128×128 que tu importes reste en HD.'],
+          ['Tu peins déjà un skin 64×64 ? Passe ', strong('Taille'), ' sur ', strong('HD 128'), ' dans l’éditeur et confirme avec ', strong('Passer en HD'), '. Chaque pixel devient un bloc de 2×2, donc le skin a le même aspect jusqu’à ce que tu peignes des détails plus fins. ', strong('Taille'), ' › ', strong('64×64'), ' et ', strong('Réduire en 64×64'), ' reviennent en arrière.'],
+          ['Exporte ', strong('Skin Bedrock (.png)'), ` pour l’importer dans le ${BEDROCK.dressingRoom}, ou un `, strong('Pack de skins Bedrock (.mcpack)'), '. Les deux gardent le 128×128.'],
+          ['Pour Java, ', strong('Skin Java (.png)'), ' télécharge une copie 64×64, où chaque bloc de 2×2 devient un pixel ; ton skin HD reste tel quel. Tu utilises un mod de skins HD ? Choisis plutôt ', strong('128×128 pour les mods'), '.'],
         ]),
         callout('warn', 'Limites', `Les consoles ne peuvent importer aucun fichier de skin, quelle que soit sa taille. Les skins plus grands que 128×128 ne sont pas pris en charge. Les joueurs qui activent « ${BEDROCK.trustedSkins} » voient tous les skins perso, HD ou non, comme un skin par défaut.`),
       ],
@@ -1161,7 +1159,7 @@ const makeASkin: GuideText = {
         ),
         steps([
           ['Peins chaque skin comme un projet à part. Les skins classiques et fins peuvent partager un pack.'],
-          ['Choisis ', strong('Export'), ' › ', strong('Bedrock skin pack'), ', donne un nom au pack et coche les autres skins à inclure.'],
+          ['Choisis ', strong('Exporter'), ' › ', strong('Pack de skins Bedrock'), ', donne un nom au pack et coche les autres skins à inclure.'],
           'Ouvre le .mcpack (double-clic sur Windows, Ouvrir avec Minecraft sur Android, Partager › Minecraft sur iPhone et iPad).',
           ['Dans Minecraft, va dans ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), ', trouve ton pack, choisis le skin et appuie sur ', strong(BEDROCK.equip), '.'],
         ]),
@@ -1179,7 +1177,7 @@ const makeASkin: GuideText = {
       a: [
         p(
           'Oui, pour Bedrock Edition. Dans le Skin Maker, règle ',
-          strong('Size'),
+          strong('Taille'),
           ' sur ',
           strong('HD 128×128'),
           ' avant de commencer, ou passe un skin existant en ',
@@ -1224,7 +1222,7 @@ const bedrockSkinPack: GuideText = {
     title: 'En bref',
     items: [
       ['Peins ou importe chaque skin dans le ', link('/skin-pack-maker', 'Skin Pack Maker'), ', avec des bras classiques ou fins.'],
-      ['Choisis ', strong('Export'), ' › ', strong('Bedrock skin pack (.mcpack)'), ', donne un nom au pack et coche les autres skins.'],
+      ['Choisis ', strong('Exporter'), ' › ', strong('Pack de skins Bedrock (.mcpack)'), ', donne un nom au pack et coche les autres skins.'],
       ['Ouvre le ', code('.mcpack'), ' et équipe un skin dans ', uiPath(BEDROCK.dressingRoom, BEDROCK.classicSkins), '.'],
     ],
   },
@@ -1504,7 +1502,7 @@ const shadersWithoutMods: GuideText = {
         figure(SHOTS.shaderIris),
         p(
           'Sur Forge ou NeoForge, cherche un portage d’Iris pour ce loader. Tu peux aussi créer ton propre pack de shaders Iris / OptiFine, avec des préréglages et un aperçu en direct, dans le ',
-          link('/shaders', 'Shader Maker'),
+          link('/shaders', 'Créateur de shaders'),
           '.',
         ),
       ],
@@ -1515,7 +1513,7 @@ const shadersWithoutMods: GuideText = {
     { id: 'servers', q: 'Les packs de shaders vanilla marchent sur les serveurs ?', a: [p('Oui. Les packs de ressources sont appliqués par ton propre jeu, donc ils marchent aussi quand tu joues sur un serveur.')] },
     { id: 'bedrock', q: 'Je peux utiliser des shaders Java sur Bedrock ?', a: [p('Non. Bedrock ne peut pas charger de code de shader depuis des packs. Utilise plutôt un pack Graphismes éclatants.')] },
   ],
-  ctaLabel: 'Ouvrir le Shader Maker',
+  ctaLabel: 'Ouvrir le Créateur de shaders',
 };
 
 const vibrantVisuals: GuideText = {
@@ -1727,7 +1725,7 @@ const convertJavaToBedrock: GuideText = {
     title: 'En bref',
     items: [
       ['Ouvre le ', link('/texture-pack-converter', 'convertisseur de packs de textures'), ' et choisis ton ', code('.zip'), ' Java.'],
-      ['Choisis ', strong('Bedrock Edition'), ' et clique sur ', strong('Convert to Bedrock'), '.'],
+      ['Choisis ', strong('Bedrock Edition'), ' et clique sur ', strong('Convertir en Bedrock'), '.'],
       ['Télécharge le ', code('.mcpack'), ' et ouvre-le : Minecraft l’importe.'],
     ],
   },
@@ -1804,7 +1802,7 @@ const convertJavaToBedrock: GuideText = {
   faq: [
     { id: 'free', q: 'Le convertisseur est gratuit ?', a: [p('Oui, sans compte et sans limites. Le pack est converti dans ton navigateur et n’est jamais envoyé.')] },
     { id: 'look', q: 'Le pack aura le même aspect sur Bedrock ?', a: [p('Les textures converties ont le même aspect. Les textures ignorées reprennent celles de Bedrock, et l’éclairage de Bedrock et les Graphismes éclatants peuvent faire paraître les couleurs un peu différentes.')] },
-    { id: 'shaders', q: 'Je peux convertir un pack de shaders Java en Bedrock ?', a: [p('Non. Bedrock ne charge pas de code de shader perso. Utilise plutôt un pack ', link('/guides/bedrock-vibrant-visuals-settings', 'Graphismes éclatants'), ', que tu peux faire avec le ', link('/shaders', 'Shader Maker'), '.')] },
+    { id: 'shaders', q: 'Je peux convertir un pack de shaders Java en Bedrock ?', a: [p('Non. Bedrock ne charge pas de code de shader perso. Utilise plutôt un pack ', link('/guides/bedrock-vibrant-visuals-settings', 'Graphismes éclatants'), ', que tu peux faire avec le ', link('/shaders', 'Créateur de shaders'), '.')] },
     { id: 'png', q: 'Je peux transformer des fichiers PNG en .mcpack ?', a: [p('Oui. Choisis un PNG, ou un zip de PNG, nommés comme les textures du jeu (par exemple ', code('stone.png'), '), et convertis-le pour Bedrock.')] },
     { id: 'console', q: 'Je peux utiliser le pack converti sur console ?', a: [p('Les consoles ne peuvent pas importer de fichiers. Ajoute le pack à un monde sur un PC ou un téléphone et rejoins ce monde, ou utilise un Realm ou un serveur qui l’a.')] },
   ],
@@ -1816,16 +1814,16 @@ const mergePacks: GuideText = {
   intro: [
     p(
       'Minecraft sait déjà empiler les packs de textures : actives-en plusieurs, et celui qui est le plus haut dans la liste gagne partout où deux packs changent la même texture. Fusionner, c’est construire un seul pack à partir de plusieurs, avec ce même ordre intégré. C’est pratique pour un serveur ou un Realm qui n’accepte qu’un pack, pour partager ta combinaison préférée, ou pour garder une liste de packs courte. L’outil gratuit ',
-      link('/merge-texture-packs', 'Merge Texture Packs'),
+      link('/merge-texture-packs', 'Fusionner des packs'),
       ' le fait dans ton navigateur.',
     ),
   ],
   quick: {
     title: 'En bref',
     items: [
-      ['Ouvre ', link('/merge-texture-packs', 'Merge Texture Packs'), ' et ajoute de deux à huit packs de la même édition.'],
+      ['Ouvre ', link('/merge-texture-packs', 'Fusionner des packs'), ' et ajoute de deux à huit packs de la même édition.'],
       'Fais-les glisser dans l’ordre : le pack du haut gagne chaque conflit.',
-      'Clique sur Merge, vérifie la liste des conflits, puis télécharge le pack.',
+      'Clique sur Fusionner … packs, vérifie la liste des conflits, puis télécharge le pack.',
     ],
   },
   howto: { name: 'Comment fusionner des packs de textures Minecraft', steps: MERGE_STEPS },
@@ -1875,7 +1873,7 @@ const mergePacks: GuideText = {
     { id: 'server', q: 'Je peux utiliser un pack fusionné comme pack de ressources de serveur ?', a: [p('Oui. Mets le ', code('.zip'), ' fusionné en ligne là où tu héberges les packs du serveur et indique-le dans ', code('server.properties'), ' comme n’importe quel autre pack.')] },
     { id: 'upload', q: 'Mes packs sont-ils envoyés quelque part ?', a: [p('Non. Les packs sont fusionnés dans ton navigateur et restent sur ton appareil.')] },
   ],
-  ctaLabel: 'Ouvrir Merge Texture Packs',
+  ctaLabel: 'Ouvrir Fusionner des packs',
 };
 
 const make3dItems: GuideText = {
@@ -1892,8 +1890,8 @@ const make3dItems: GuideText = {
   quick: {
     title: 'En bref',
     items: [
-      ['Dans le Texture Pack Maker, affiche l’objet dans l’onglet ', strong('Preview'), ' et appuie sur ', strong('Edit shape'), '.'],
-      ['Choisis ', strong('3D item from sprite'), ', puis affine les cubes et la façon dont l’objet est tenu.'],
+      ['Dans le Texture Pack Maker, affiche l’objet dans l’onglet ', strong('Aperçu'), ' et appuie sur ', strong('Modifier la forme'), '.'],
+      ['Choisis ', strong('Objet 3D à partir du sprite'), ', puis affine les cubes et la façon dont l’objet est tenu.'],
       ['Exporte le pack. Il contient le modèle dans ', code('models/item/'), ' et, en 1.21.4 et plus récent, une définition d’objet dans ', code('items/'), ' quand il en faut une.'],
     ],
   },
@@ -1947,7 +1945,7 @@ const make3dItems: GuideText = {
           ') les montre en miroir, comme quand tu regardes une image de derrière. Les cubes continuent d’utiliser la texture de l’objet (',
           code('#layer0'),
           '), donc repeindre le sprite recolore l’objet 3D. Les pixels que tu ajoutes ou effaces ne changent la forme que si tu choisis à nouveau ',
-          strong('3D item from sprite'),
+          strong('Objet 3D à partir du sprite'),
           '. Les objets à plusieurs couches, comme les potions ou l’armure en cuir, reçoivent des cubes pour chaque couche, et le jeu les colore toujours.',
         ),
         p('Ensuite, personnalise-le :'),
@@ -1965,7 +1963,7 @@ const make3dItems: GuideText = {
       body: [
         p(
           'L’onglet ',
-          strong('Display'),
+          strong('Affichage'),
           ' montre le modèle à six endroits. Chacun a une rotation en degrés, une position en pixels (jusqu’à ±80) et une taille (1 est normal, 4 au maximum).',
         ),
         table(
@@ -1980,11 +1978,11 @@ const make3dItems: GuideText = {
           ],
         ),
         p(
-          strong('3D item from sprite'),
+          strong('Objet 3D à partir du sprite'),
           ' garde les réglages d’affichage de l’objet, donc une épée 3D est tenue comme la plate. ',
-          strong('Game’s default'),
+          strong('Par défaut du jeu'),
           ' remet un emplacement aux valeurs du jeu, et ',
-          strong('No change'),
+          strong('Aucun changement'),
           ' supprime le réglage. Java 1.21.9 a ajouté un emplacement ',
           code('on_shelf'),
           ' pour les étagères ; l’éditeur garde la valeur du modèle du jeu.',
@@ -1998,9 +1996,9 @@ const make3dItems: GuideText = {
       body: [
         p(
           'Beaucoup de packs 3D gardent l’icône plate habituelle dans l’inventaire et ne montrent le modèle 3D qu’en main. Depuis Java 1.21.4, une définition de modèle d’objet peut choisir un modèle selon l’endroit où l’objet s’affiche. Active ',
-          strong('Flat in the inventory'),
+          strong('À plat dans l’inventaire'),
           ' dans l’onglet ',
-          strong('Model'),
+          strong('Modèle'),
           ' et l’éditeur :',
         ),
         ul([
@@ -2017,16 +2015,16 @@ const make3dItems: GuideText = {
       title: 'Changer la forme d’un bloc',
       body: [
         p(
-          'Les blocs marchent de la même façon. Affiche un bloc dans l’onglet Preview et appuie sur ',
-          strong('Edit shape'),
+          'Les blocs marchent de la même façon. Affiche un bloc dans l’onglet Aperçu et appuie sur ',
+          strong('Modifier la forme'),
           '. L’éditeur ouvre le modèle que le bloc utilise dans l’état que tu regardes, et le menu en haut liste ses autres modèles, comme les versions haute et double d’une dalle. Garde le modèle du jeu ou pars de ',
-          strong('Full cube'),
+          strong('Cube plein'),
           ', ',
-          strong('Slab'),
+          strong('Dalle'),
           ', ',
-          strong('Cross (plant)'),
+          strong('Croix (plante)'),
           ' ou ',
-          strong('Empty'),
+          strong('Vide'),
           ', puis ajoute, déplace et redimensionne des cubes. Pour transformer la roche en marche, il suffit du point de départ Slab et d’un cube de plus :',
         ),
         figure(SHOTS.modelBlock),
@@ -2034,11 +2032,11 @@ const make3dItems: GuideText = {
           [strong('Modèles partagés : '), 'certains blocs utilisent le même fichier de modèle. Quand un autre bloc utilise le modèle que tu modifies, l’éditeur te dit lequel ; il change aussi.'],
           [strong('Les objets restent à part : '), 'un objet qui montre un modèle de bloc, comme une dalle dans ta main, reçoit son propre modèle d’objet quand tu modifies l’objet, donc le bloc garde sa forme.'],
           [strong('Seule l’apparence change : '), 'la hitbox, les collisions et la lumière viennent du code du jeu. Un bloc de roche en forme de marche t’arrête toujours comme un bloc plein, et les blocs voisins cachent toujours les faces qui le touchent, ce qui peut laisser des trous transparents.'],
-          [strong('Les blocs dessinés par le code : '), 'les coffres, les lits, les pancartes, les bannières et les autres blocs que le jeu dessine lui-même n’ont pas de modèle de bloc, donc Edit shape n’est pas proposé pour eux. Les objets dessinés par le code, comme le bouclier, peuvent recevoir un modèle, qui remplace cet aspect.'],
+          [strong('Les blocs dessinés par le code : '), 'les coffres, les lits, les pancartes, les bannières et les autres blocs que le jeu dessine lui-même n’ont pas de modèle de bloc, donc Modifier la forme n’est pas proposé pour eux. Les objets dessinés par le code, comme le bouclier, peuvent recevoir un modèle, qui remplace cet aspect.'],
         ]),
         p(
           'La roche et quelques autres blocs choisissent au hasard entre deux modèles : la roche et une copie en miroir, chacune aussi retournée. ',
-          strong('Use for every random variant'),
+          strong('Utiliser pour chaque variante aléatoire'),
           ' dans l’onglet Model met ta forme sur toutes en écrivant le fichier d’états du bloc. L’entrée ',
           code('"y": 180'),
           ' garde la rotation au hasard, et ',
@@ -2088,7 +2086,7 @@ const make3dItems: GuideText = {
       title: 'L’installer et le tester',
       body: [
         steps([
-          ['Appuie sur ', strong('Done'), ' pour quitter l’éditeur de modèles, puis exporte le pack (', strong('Export'), ') en ', code('.zip'), '.'],
+          ['Appuie sur ', strong('Terminé'), ' pour quitter l’éditeur de modèles, puis exporte le pack (', strong('Exporter'), ') en ', code('.zip'), '.'],
           ['Dans Minecraft, ouvre ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', dépose le zip dedans (sans le décompresser) et passe le pack dans ', strong(JAVA.selected), ', au-dessus des autres packs.'],
           'Prends l’objet en main, appuie sur F5 pour la troisième personne, jette-le au sol et mets-le dans un cadre pour vérifier chaque affichage.',
           'Après avoir changé le modèle, exporte à nouveau, remplace le zip et appuie sur F3 + T dans le jeu pour recharger les packs.',
@@ -2104,9 +2102,9 @@ const make3dItems: GuideText = {
         ul([
           [strong('Blocs : '), 'un pack de ressources Bedrock ne peut pas changer la forme des blocs du jeu. Un bloc de forme perso est un nouveau bloc, ajouté par un add-on avec un pack de comportements et un fichier de géométrie.'],
           [strong('Objets en main : '), 'Bedrock donne aux objets un modèle 3D en main avec des attachables, des fichiers de pack de ressources qui utilisent la géométrie et les animations de Bedrock. Le Texture Pack Maker ne les fait pas ; ', ext('https://www.blockbench.net/', 'Blockbench'), ' oui.'],
-          [strong('Un point de départ : '), 'dans le menu de l’éditeur de modèles, ', strong('Download as Bedrock geometry'), ' enregistre ton modèle dans un fichier ', code('.geo.json'), ' (format 1.12.0, un seul os, tous les cubes) à importer dans Blockbench ou un add-on. La géométrie Bedrock utilise une seule texture, donc chaque face garde sa place sur sa propre texture.'],
+          [strong('Un point de départ : '), 'dans le menu de l’éditeur de modèles, ', strong('Télécharger en géométrie Bedrock'), ' enregistre ton modèle dans un fichier ', code('.geo.json'), ' (format 1.12.0, un seul os, tous les cubes) à importer dans Blockbench ou un add-on. La géométrie Bedrock utilise une seule texture, donc chaque face garde sa place sur sa propre texture.'],
         ]),
-        p('Dans un pack Bedrock, ', strong('Edit shape'), ' explique ça au lieu d’ouvrir l’éditeur. Peindre les textures marche comme d’habitude.'),
+        p('Dans un pack Bedrock, ', strong('Modifier la forme'), ' explique ça au lieu d’ouvrir l’éditeur. Peindre les textures marche comme d’habitude.'),
       ],
     },
     {
@@ -2117,7 +2115,7 @@ const make3dItems: GuideText = {
           [strong('Des faces violettes et noires : '), 'une face utilise une texture que le jeu ne trouve pas : un nom (', code('#…'), ') qui n’est pas défini dans ', code('textures'), ', un fichier qui n’est ni dans le jeu ni dans le pack, ou, depuis la 1.19.3, une texture hors des dossiers d’atlas. L’onglet Model liste ces problèmes avec le cube concerné.'],
           [strong('Un cube violet et noir à la place du modèle : '), 'le fichier ne s’est pas chargé. Les causes habituelles sont un JSON cassé, un cube hors de -16 à 32, ou une rotation que la version n’autorise pas. Le journal du jeu donne le nom du fichier.'],
           [strong('Le modèle ne s’affiche pas du tout : '), 'vérifie que le pack est sélectionné et au-dessus des autres packs, que le fichier a exactement le nom et le dossier du modèle qu’il remplace, et, en 1.21.4 et plus récent, qu’un nouveau modèle (comme une copie ', code('_3d'), ') a une définition d’objet qui pointe vers lui.'],
-          [strong('Bien en main, bizarre dans l’inventaire : '), ['règle l’affichage Inventory, essaie l’autre éclairage d’inventaire (de côté ou de face), ou active ', strong('Flat in the inventory'), '.']],
+          [strong('Bien en main, bizarre dans l’inventaire : '), ['règle l’affichage Inventory, essaie l’autre éclairage d’inventaire (de côté ou de face), ou active ', strong('À plat dans l’inventaire'), '.']],
           [strong('Trop de cubes : '), 'chaque cube ajoute des faces à dessiner. Ça compte peu pour un objet dans ta main, mais un bloc posé des milliers de fois doit rester simple. Garde les cubes réunis que fait 3D item from sprite au lieu de les découper.'],
           [strong('Un angle n’est pas autorisé : '), 'avant la 1.21.6, un cube tourne par pas de 22,5° jusqu’à 45°, sur un seul axe. Pour un quart de tour, échange plutôt la taille du cube sur deux axes ; pour d’autres formes, construis-les avec plus de cubes.'],
         ]),
@@ -2150,12 +2148,12 @@ const make3dItems: GuideText = {
     {
       id: 'blockbench',
       q: 'Je peux utiliser des modèles faits dans Blockbench ?',
-      a: [p('Oui. Les modèles de blocs et d’objets Java exportés depuis Blockbench sont des fichiers de modèles ordinaires. Mets-les dans ton pack sous le nom du modèle qu’ils remplacent et ouvre le pack avec ', strong('Open a pack'), ' : les fichiers sont gardés, et l’éditeur de modèles peut les ouvrir et les changer.')],
+      a: [p('Oui. Les modèles de blocs et d’objets Java exportés depuis Blockbench sont des fichiers de modèles ordinaires. Mets-les dans ton pack sous le nom du modèle qu’ils remplacent et ouvre le pack avec ', strong('Ouvrir un pack'), ' : les fichiers sont gardés, et l’éditeur de modèles peut les ouvrir et les changer.')],
     },
     {
       id: 'undo',
       q: 'Comment revenir à la forme d’origine ?',
-      a: [p('Dans le menu de l’éditeur de modèles, choisis ', strong('Put back the original model'), '. Tes fichiers pour ce modèle sont retirés du pack et le modèle du jeu est à nouveau utilisé.')],
+      a: [p('Dans le menu de l’éditeur de modèles, choisis ', strong('Remettre le modèle d’origine'), '. Tes fichiers pour ce modèle sont retirés du pack et le modèle du jeu est à nouveau utilisé.')],
     },
     {
       id: 'phone',
@@ -2180,7 +2178,7 @@ const pvpPack: GuideText = {
   quick: {
     title: 'En bref',
     items: [
-      ['Dans le Texture Pack Maker, choisis ', strong('PvP / FPS pack'), ' et la version de Minecraft à laquelle tu joues, puis ', strong('Create PvP pack'), '.'],
+      ['Dans le Texture Pack Maker, choisis ', strong('Pack PvP / FPS'), ' et la version de Minecraft à laquelle tu joues, puis ', strong('Créer le pack PvP'), '.'],
       ['Dans l’onglet ', strong('PvP'), ', choisis la hauteur du feu, le viseur, la taille des épées et les options FPS que tu veux.'],
       ['Exporte le pack et sélectionne-le dans Minecraft au-dessus de tes autres packs.'],
     ],
@@ -2223,16 +2221,16 @@ const pvpPack: GuideText = {
           ' (',
           code('textures/blocks/fire_layer_1.png'),
           ' avant la 1.13). C’est une bande animée de 32 images, et Low fire descend les flammes de chaque image de 5, 8 ou 11 pixels sur 16 (',
-          strong('Low'),
+          strong('Bas'),
           ', ',
-          strong('Lower'),
+          strong('Plus bas'),
           ', ',
-          strong('Lowest'),
+          strong('Tout en bas'),
           '), pour que le haut de ton écran reste dégagé. L’animation continue de tourner.',
         ),
         p(
           'Les blocs de feu utilisent la même texture, donc un simple pack de feu bas donne aussi l’impression que le feu dans le monde est coupé. Avec ',
-          enLabel('Keep fire blocks as they are'),
+          strong('Garder les blocs de feu tels quels'),
           ' (Java 1.8 et plus récent), le pack reçoit une copie de la texture d’origine, ',
           code('fire_1_world.png'),
           ', et les modèles des blocs de feu pointent vers elle. Les joueurs et les créatures en feu montrent toujours les flammes plus basses.',
@@ -2253,7 +2251,7 @@ const pvpPack: GuideText = {
           ', avec ',
           code('glass_silver.png'),
           ' pour le gris clair). Les vitres utilisent les mêmes textures, donc elles deviennent transparentes aussi. Choisis ',
-          strong('Light tint'),
+          strong('Légère teinte'),
           ' pour garder une légère couleur dans le verre teinté, pour que les équipes puissent toujours distinguer les couleurs.',
         ),
         p('No pumpkin blur remplace ', code('textures/misc/pumpkinblur.png'), ', l’image que le jeu pose sur ta vue quand tu portes une citrouille sculptée, par une image complètement transparente de la même taille. Sur Bedrock, le fichier est aussi ', code('textures/misc/pumpkinblur.png'), '.'),
@@ -2270,7 +2268,7 @@ const pvpPack: GuideText = {
         ]),
         p(
           'Choisis l’un des cinq dessins faits pour l’éditeur, ou appuie sur ',
-          strong('Draw your own'),
+          strong('Dessiner le tien'),
           ' : l’éditeur ouvre la texture du viseur et, sur une planche, sélectionne le carré du viseur pour toi. Java dessine le viseur en inversant ce qu’il y a derrière, donc peins-le en blanc ou en gris ; les autres couleurs sortent changées. Le jeu le centre sur le pixel du milieu, (7, 7).',
         ),
         figure(SHOTS.pvpCrosshair),
@@ -2284,10 +2282,10 @@ const pvpPack: GuideText = {
           'La façon dont un objet est tenu en main vient de la partie ',
           code('display'),
           ' de son fichier de modèle : une rotation, une position et une taille pour chaque endroit où il s’affiche. Smaller swords ne règle que les emplacements à la première personne, à 80, 65 ou 50 % de la taille et un peu plus bas, pour que la poignée reste près de ta main. Les autres joueurs, la troisième personne et l’inventaire montrent toujours l’épée normale. ',
-          strong('All weapons'),
+          strong('Toutes les armes'),
           ' fait la même chose pour les haches, la masse et les lances, quand ta version les a.',
         ),
-        p('Java 1.8 a un seul emplacement, ', code('firstperson'), ', dans le fichier de chaque épée. Voici l’épée en diamant en ', strong('Smaller'), ' :'),
+        p('Java 1.8 a un seul emplacement, ', code('firstperson'), ', dans le fichier de chaque épée. Voici l’épée en diamant en ', strong('Plus petite'), ' :'),
         pre(PVP_SWORD_189.trimEnd()),
         p(
           'Depuis la 1.9, il y a deux emplacements, ',
@@ -2315,12 +2313,12 @@ const pvpPack: GuideText = {
       title: 'FPS boost : textures 8× et sans animations',
       body: [
         p(
-          strong('8× textures'),
+          strong('Textures 8×'),
           ' réduit les textures des blocs, et des objets si tu veux, à 8 × 8 pixels à l’export. Les feuilles, le verre et les plantes gardent des bords nets. ',
-          strong('No animations'),
+          strong('Pas d’animations'),
           ' ne garde que la première image des textures animées et retire leur animation du fichier ',
           code('.mcmeta'),
-          ', donc le jeu ne les met plus à jour à chaque tick (Java ; les boussoles et les montres marchent toujours). Les deux sont des couches d’effets, listées aussi dans l’onglet Effects, donc tes propres textures ne sont pas modifiées.',
+          ', donc le jeu ne les met plus à jour à chaque tick (Java ; les boussoles et les montres marchent toujours). Les deux sont des couches d’effets, listées aussi dans l’onglet Effets, donc tes propres textures ne sont pas modifiées.',
         ),
         callout(
           'info',
@@ -2365,7 +2363,7 @@ const pvpPack: GuideText = {
       title: 'L’installer et le tester',
       body: [
         steps([
-          ['Appuie sur ', strong('Export'), ' et télécharge le ', code('.zip'), ' (Java) ou le ', code('.mcpack'), ' (Bedrock).'],
+          ['Appuie sur ', strong('Exporter'), ' et télécharge le ', code('.zip'), ' (Java) ou le ', code('.mcpack'), ' (Bedrock).'],
           ['Java : ouvre ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', dépose le zip dedans et passe le pack tout en haut de ', strong(JAVA.selected), '. Bedrock : ouvre le .mcpack et active le pack dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
           'Mets-toi le feu, regarde à travers du verre, porte une citrouille et prends une épée et un bouclier en main pour vérifier chaque changement.',
         ]),
@@ -2425,7 +2423,7 @@ const pbrPack: GuideText = {
   quick: {
     title: 'En bref',
     items: [
-      ['Ouvre une texture et l’onglet ', strong('Material'), '.'],
+      ['Ouvre une texture et l’onglet ', strong('Matériau'), '.'],
       ['Choisis un matériau rapide, puis affine la brillance, le métal, la lumière propre et le relief sur le bloc 3D éclairé.'],
       ['Exporte : l’éditeur écrit les bons fichiers pour ton édition, à côté des textures.'],
     ],
@@ -2436,7 +2434,7 @@ const pbrPack: GuideText = {
       id: 'maps',
       title: 'À quoi servent les cartes',
       body: [
-        p('Chaque pixel d’une texture reçoit quelques nombres en plus. L’onglet Material les appelle par ce que tu vois ; le tableau montre où chacun va dans les fichiers :'),
+        p('Chaque pixel d’une texture reçoit quelques nombres en plus. L’onglet Matériau les appelle par ce que tu vois ; le tableau montre où chacun va dans les fichiers :'),
         table(
           ['Dans l’éditeur', 'Ce qu’il fait', 'Java (labPBR)', 'Bedrock (jeu de textures)'],
           [
@@ -2461,17 +2459,17 @@ const pbrPack: GuideText = {
       body: [
         p(
           'Une partie donne à certains pixels leurs propres valeurs. ',
-          strong('Colourful pixels'),
+          strong('Pixels colorés'),
           ' repère les gemmes d’un minerai dans la roche grise qui les entoure, ',
-          strong('Bright pixels'),
+          strong('Pixels clairs'),
           ' la lumière d’une lampe, ',
-          strong('Pixels of some colours'),
+          strong('Pixels de certaines couleurs'),
           ' exactement les couleurs sur lesquelles tu cliques, et ',
-          strong('An area you select'),
+          strong('Une zone que tu sélectionnes'),
           ' un rectangle que tu as dessiné avec l’outil de sélection. Une petite image montre quels pixels une partie couvre.',
         ),
         p(
-          enLabel('Use on similar textures'),
+          strong('Utiliser sur des textures similaires'),
           ' copie le matériau sur les autres côtés du même bloc et sur chaque texture dont le nom finit ou commence par le même mot : toutes les textures ',
           code('*_ore'),
           ', toutes les ',
@@ -2527,7 +2525,7 @@ const pbrPack: GuideText = {
       id: 'open',
       title: 'Ouvrir un pack qui a des cartes PBR',
       body: [
-        p('Ouvre un pack Java avec des cartes labPBR ou un pack Bedrock avec des jeux de textures, et ses cartes s’affichent dans l’onglet Material de leurs textures. Elles sont exportées exactement comme elles étaient tant que tu ne changes pas ce matériau.'),
+        p('Ouvre un pack Java avec des cartes labPBR ou un pack Bedrock avec des jeux de textures, et ses cartes s’affichent dans l’onglet Matériau de leurs textures. Elles sont exportées exactement comme elles étaient tant que tu ne changes pas ce matériau.'),
       ],
     },
   ],
@@ -2567,7 +2565,7 @@ const renameItems: GuideText = {
   quick: {
     title: 'En bref',
     items: [
-      ['Ouvre la texture d’un objet et choisis ', strong('Name-based textures'), '.'],
+      ['Ouvre la texture d’un objet et choisis ', strong('Textures selon le nom'), '.'],
       ['Tape le nom et peins la nouvelle texture.'],
       ['Exporte, puis renomme l’objet sur une enclume avec exactement ce nom.'],
     ],
@@ -2701,7 +2699,7 @@ const animatedTextures: GuideText = {
   quick: {
     title: 'En bref',
     items: [
-      ['Ouvre une texture et choisis ', strong('Make animated'), ' dans son menu.'],
+      ['Ouvre une texture et choisis ', strong('Animer'), ' dans son menu.'],
       ['Peins les images, ajoutes-en avec ', strong('+'), ', et règle la vitesse en ticks.'],
       ['Exporte : l’éditeur écrit les fichiers d’animation pour ton édition.'],
     ],
@@ -2718,10 +2716,10 @@ const animatedTextures: GuideText = {
       title: 'Les images, la pelure d’oignon et la bande',
       body: [
         ul([
-          ['Fais glisser une image à une nouvelle place avec la souris. Sur un téléphone ou une tablette, utilise ', strong('Move earlier'), ' et ', strong('Move later'), ' dans le menu ⋯.'],
+          ['Fais glisser une image à une nouvelle place avec la souris. Sur un téléphone ou une tablette, utilise ', strong('Avancer'), ' et ', strong('Reculer'), ' dans le menu ⋯.'],
           ['Après avoir cliqué sur une image : Alt + flèches la déplace, Suppr la supprime, et Ctrl+C et Ctrl+V la copient et la collent comme nouvelle image, dans n’importe quelle animation du pack. Les touches virgule et point font défiler les images pendant que tu peins.'],
           ['La pelure d’oignon montre l’image précédente en transparence par-dessus celle que tu peins, pour que les mouvements s’alignent. Le menu ⋯ montre aussi l’image suivante.'],
-          ['Supprimer des images jusqu’à n’en garder qu’une, ou ', strong('Stop animating'), ', rend la texture à nouveau immobile. Les deux peuvent être annulés.'],
+          ['Supprimer des images jusqu’à n’en garder qu’une, ou ', strong('Arrêter l’animation'), ', rend la texture à nouveau immobile. Les deux peuvent être annulés.'],
         ]),
       ],
     },
@@ -2741,10 +2739,10 @@ const animatedTextures: GuideText = {
           ],
         ),
         ul([
-          [enLabel('Each frame shows for'), ' règle la vitesse de chaque image. Une nouvelle animation commence à 4 ticks.'],
-          [strong('Frame times'), ' donne à certaines images leur propre durée, pour une pause ou un flash rapide.'],
-          [strong('Blend frames'), ' fond chaque image dans la suivante tick par tick, comme de l’eau qui coule. Ça rend mieux avec des images lentes.'],
-          [strong('Play order'), ' joue les images dans n’importe quel ordre et aussi souvent que tu veux : ', code('1, 2, 3, 2'), ' fait un aller-retour, ', code('1-8'), ' joue une série, et ', code('3:40'), ' garde l’image 3 pendant 40 ticks.'],
+          [strong('Chaque image dure'), ' règle la vitesse de chaque image. Une nouvelle animation commence à 4 ticks.'],
+          [strong('Durée des images'), ' donne à certaines images leur propre durée, pour une pause ou un flash rapide.'],
+          [strong('Fondu entre les images'), ' fond chaque image dans la suivante tick par tick, comme de l’eau qui coule. Ça rend mieux avec des images lentes.'],
+          [strong('Ordre de lecture'), ' joue les images dans n’importe quel ordre et aussi souvent que tu veux : ', code('1, 2, 3, 2'), ' fait un aller-retour, ', code('1-8'), ' joue une série, et ', code('3:40'), ' garde l’image 3 pendant 40 ticks.'],
         ]),
       ],
     },
@@ -2825,10 +2823,10 @@ const animatedTextures: GuideText = {
       title: 'Importer un GIF, enregistrer en GIF',
       body: [
         ul([
-          [strong('Import GIF or frames…'), ' dans le menu de la texture ou le menu ⋯ prend un GIF animé, une planche de sprites (des images de la taille de la texture côte à côte, ou une bande de carrés) ou plusieurs images, dans l’ordre de leurs noms. Tu peux aussi déposer un GIF sur la zone de dessin.'],
+          [strong('Importer un GIF ou des images…'), ' dans le menu de la texture ou le menu ⋯ prend un GIF animé, une planche de sprites (des images de la taille de la texture côte à côte, ou une bande de carrés) ou plusieurs images, dans l’ordre de leurs noms. Tu peux aussi déposer un GIF sur la zone de dessin.'],
           'Chaque image est redimensionnée à la taille de la texture sans lissage, donc le pixel art reste net.',
           'Les durées des GIF sont en centièmes de seconde : 5 centièmes font un tick, donc le minutage du GIF devient des ticks, arrondis. Tu peux aussi garder la vitesse actuelle.',
-          [strong('Save as GIF…'), ' enregistre l’animation pour la partager, jusqu’à 16 fois plus grande. Les images en fondu sont enregistrées tick par tick, comme le jeu les montre. Les GIF n’ont pas de pixels à moitié transparents : ceux-là deviennent pleins ou transparents.'],
+          [strong('Enregistrer en GIF…'), ' enregistre l’animation pour la partager, jusqu’à 16 fois plus grande. Les images en fondu sont enregistrées tick par tick, comme le jeu les montre. Les GIF n’ont pas de pixels à moitié transparents : ceux-là deviennent pleins ou transparents.'],
         ]),
       ],
     },

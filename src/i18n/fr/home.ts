@@ -76,7 +76,7 @@ export const HOME: HomeText = {
           null,
           'Oui. Les packs de textures et les skins s’exportent en fichiers ',
           code('.mcpack'),
-          ' que Bedrock importe quand tu les ouvres, et le Shader Maker crée des packs Graphismes éclatants. Découvre ',
+          ' que Bedrock importe quand tu les ouvres, et le Créateur de shaders crée des packs Graphismes éclatants. Découvre ',
           link('/guides/java-vs-bedrock-packs', 'ce qui change entre les packs Java et Bedrock'),
           '.',
         ),
@@ -175,7 +175,7 @@ export const HOME: HomeText = {
     ],
     items: [
       ['Peins chaque bloc, objet et créature de ta version directement sur son vrai modèle 3D : fourneaux, coffres, escaliers et plus de 80 créatures, des creepers aux villageois.'],
-      ['Change le style de tout le jeu d’un coup avec des effets comme Dark Mode, Pastel, Retro 8-bit, Autumn ou Smooth HD, puis fignole à la main.'],
+      ['Change le style de tout le jeu d’un coup avec des effets comme Mode sombre, Rêve pastel, Rétro 8 bits, Automne ou HD lisse, puis fignole à la main.'],
       ['Charge n’importe quel ', code('.zip'), ' Java ou ', code('.mcpack'), ' Bedrock et continue à le modifier, ou passe-le dans l’autre édition avec le ', link('/texture-pack-converter', 'convertisseur de packs'), '.'],
       ['Un générateur de packs de ressources qui écrit le ', code('pack.mcmeta'), ` exact pour Java ${LATEST} jusqu’à 1.6.1, ou un `, code('manifest.json'), ' Bedrock.'],
       ['Dessine des skins en 2D ou en 3D avec des bras classiques ou fins et réunis-les avec le ', link('/skin-pack-maker', 'créateur de packs de skins'), ' dans un seul .mcpack Bedrock.'],

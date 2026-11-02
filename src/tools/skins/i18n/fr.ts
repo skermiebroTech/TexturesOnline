@@ -146,7 +146,7 @@ const FR: SkinsLanguage = {
     canvas: {
       layerLabel: 'Couche sur laquelle peindre',
       base: 'Base',
-      outer: 'Extérieure',
+      outer: 'Externe',
       both: 'Les deux',
       layerTip: 'Sur quelle couche peindre (1 / 2 / 3)',
       paintOn: 'Peindre sur',
@@ -186,7 +186,7 @@ const FR: SkinsLanguage = {
     tips: {
       hover: 'Survole le patron pour voir quelle partie et quelle face tu peins.',
       mirror: 'Active Miroir pour peindre les deux bras ou les deux jambes à la fois.',
-      outer: 'Peins les chapeaux, vestes et manches sur la couche Extérieure : elle peut être transparente.',
+      outer: 'Peins les chapeaux, vestes et manches sur la couche Externe : elle peut être transparente.',
       lock: 'Verrouille une partie dans la liste Parties du corps pour ne pas déborder.',
       shading: 'Astuce d’ombrage : utilise Éclaircir et Assombrir pour donner du relief.',
       keys: 'Appuie sur ? pour voir tous les raccourcis clavier.',
@@ -234,7 +234,7 @@ const FR: SkinsLanguage = {
       sizeTip: 'Les skins HD 128×128 ont deux fois plus de détails et ne marchent que sur Bedrock',
       show: 'Afficher',
       base: 'Base',
-      outer: 'Extérieure',
+      outer: 'Externe',
       backdrop: 'Fond',
       background: 'Fond : {name}',
       backdrops: { studio: 'Studio (transparent)', sky: 'Ciel', night: 'Nuit', paper: 'Clair' },

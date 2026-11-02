@@ -699,7 +699,7 @@ const FR: ShadersEditorLanguage = {
           description: 'Plus haut, la lueur du brouillard et les rayons de lumière se regroupent autour du soleil ; plus bas, la lueur s’étale dans le ciel.',
         },
         classicFog: {
-          label: 'Modifier le brouillard classique',
+          label: 'Personnaliser le brouillard classique',
           description: 'Change aussi le brouillard au loin et le brouillard sous l’eau. Ça marche dans tous les modes graphiques, pas seulement avec les Graphismes éclatants.',
         },
         fogDistance: {
