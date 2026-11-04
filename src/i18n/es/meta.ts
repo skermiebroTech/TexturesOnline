@@ -102,9 +102,10 @@ export const META_ES: MetaTranslation = {
       blurb: 'Paquetes de recursos de Java, archivos .mcpack de Bedrock y shader packs, con soluciones.',
     },
     'texture-pack-not-working': {
-      title: '¿Tu texture pack de Minecraft no funciona? Soluciones',
-      h1: '¿Tu texture pack de Minecraft no funciona? Cómo arreglarlo',
-      description: 'El pack no sale, «versión anterior», bloques morados y negros, hierba gris, errores del manifiesto del pack: qué significa cada mensaje y cómo arreglarlo.',
+      title: 'Texture pack de Minecraft no funciona: errores y soluciones',
+      h1: '¿Tu texture pack de Minecraft no funciona? Cómo arreglar cada error',
+      // Searchers paste Bedrock's messages word for word: the description quotes the two most searched.
+      description: '«No se puede encontrar manifiesto en el pack», «pack.name tiene un valor no válido», bloques morados y negros: qué significa cada error y cómo arreglarlo.',
       label: '¿No funciona el pack? Soluciones',
       blurb: 'Packs que no aparecen, avisos de versión, bloques morados y negros y más.',
     },

@@ -579,7 +579,7 @@ const notWorking: GuideText = {
           code('resource-pack-sha1'),
           ' tiene que coincidir con el archivo o quedarse vacío.',
         ),
-        h3('Bedrock Edition'),
+        h3('Bedrock Edition: errores de importación y del manifiesto del pack'),
         p(
           'Los problemas de importación salen arriba en la pantalla. Los mensajes sobre ',
           code('manifest.json'),
