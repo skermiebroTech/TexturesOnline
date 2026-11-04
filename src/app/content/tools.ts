@@ -8,13 +8,14 @@ import { el, ic, type Child, type ElNode } from '../markup';
 import { breadcrumbs, code, figure, link, steps, strong, faqList, type FaqItem } from './blocks';
 import { SHOTS } from './shots';
 import { guideCards } from './guide-cards';
+import { discLengths } from './discs';
 import { TOOL_META, pageMeta } from '../seo/meta';
 import { KNOWN_RELEASE_FORMATS, formatPackFormat } from '../../editions/java/packformats';
 import type { Locale } from '../../i18n/locales';
 import { ui } from '../../i18n/ui';
 import { contentOf, hasContent } from '../../i18n/content';
 
-export type IntroTool = 'textures' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts' | 'skins' | 'skinpack' | 'cape' | 'shaders';
+export type IntroTool = 'textures' | 'painting' | 'gui' | 'disc' | 'glint' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts' | 'skins' | 'skinpack' | 'cape' | 'shaders';
 
 export interface ToolIntro {
   tool: IntroTool;
@@ -240,7 +241,359 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
     ],
     extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
     guides: ['make-a-texture-pack', 'make-3d-items-texture-pack', 'make-a-pvp-texture-pack', 'make-a-pbr-texture-pack', 'rename-items-texture-pack', 'make-animated-textures', 'texture-pack-not-working', 'install-resource-packs', 'java-vs-bedrock-packs', 'minecraft-pack-format-versions'],
+    related: ['/painting-maker', '/gui-maker', '/music-disc-maker', '/enchantment-glint-maker'],
     cta: 'Start a texture pack',
+  },
+  painting: {
+    tool: 'painting',
+    base: 'textures',
+    accent: 'accent-green',
+    icon: 'image',
+    eyebrow: 'Painting maker',
+    heading: 'Minecraft Custom Painting Maker',
+    appName: 'Minecraft Painting Maker',
+    lead: [
+      'Put your own pictures on Minecraft’s walls: pick one of the game’s paintings, upload a photo or a drawing (it is resized to fit) or paint it pixel by pixel, then download a resource pack. For ',
+      strong('Java Edition'),
+      ' and ',
+      strong('Bedrock Edition'),
+      ', free, and nothing is uploaded.',
+    ],
+    featureList: [
+      'Every painting of the chosen Java or Bedrock version, opened at its own size',
+      'Upload any picture: resized to the painting, stretched, fitted or filled, with sharp or smooth pixels',
+      'Pixel editor with layers, stamps, colour swap and mirror painting',
+      'HD paintings at 32×, 64× or 128×',
+      'Animated paintings for Java 1.14 and newer, with the .png.mcmeta written for you',
+      'Exports a Java .zip or a Bedrock .mcpack',
+    ],
+    features: [
+      ['Every painting of your version in one list, each opening at its own size: a 1×1 painting is 16×16 pixels at 16×, a 4×4 one 64×64.'],
+      ['Upload a photo, a drawing or a screenshot (PNG, JPG, GIF, WebP or TGA). It is resized to the painting: choose ', strong('Stretch'), ', ', strong('Fit'), ' or ', strong('Fill'), ', sharp pixels or smooth, and see the result before it replaces anything.'],
+      ['Touch it up with the full pixel editor: layers, stamps, colour swap, shapes, fill and mirror painting, with undo.'],
+      ['HD paintings: make the pack at 32×, 64× or 128× and every painting opens with that many pixels per block, so your picture keeps its detail. The painting maker starts at 64×.'],
+      ['Animated paintings (Java 1.14 and newer): choose ', strong('Make animated'), ' in the painting’s menu, paint the frames or import a GIF, and set the timing. The pack gets the painting’s ', code('.png.mcmeta'), '.'],
+      ['Download a ', code('.zip'), ' for Java or a ', code('.mcpack'), ' for Bedrock, with every painting in the folder the game reads it from.'],
+    ],
+    howTitle: 'How to make a custom painting',
+    steps: [
+      ['Choose ', strong('Java'), ' or ', strong('Bedrock'), ', your version and a resolution, then press ', strong('Create painting pack'), '. The editor opens on the paintings.'],
+      'Pick the painting to replace. Its size in blocks stays the same, so choose one with the shape of your picture: wide, tall or square.',
+      ['Press ', strong('Upload'), ' (the arrow above the canvas), choose your picture and how it fits, then ', strong('Replace texture'), '.'],
+      'Touch it up in the pixel editor if you like, and do the same for more paintings.',
+      ['Export, then put the ', code('.zip'), ' in the ', code('resourcepacks'), ' folder (Java) or open the ', code('.mcpack'), ' (Bedrock), turn the pack on and hang the painting.'],
+    ],
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-grid' },
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Where each version keeps its paintings'),
+          el('p', null, strong('Java 1.14 and newer:'), ' every painting is a file of its own in ', code('textures/painting/'), ', named after it (', code('kebab.png'), ', ', code('wither.png'), ', ', code('meditative.png'), '…), and ', code('back.png'), ' is the back of them all. The game stretches each picture over the painting’s blocks, so any resolution works as long as the shape stays: a 2×1 painting needs a picture twice as wide as it is tall.'),
+          el('p', null, strong('Java 1.6.1 to 1.13.2:'), ' all paintings share one sheet, ', code('textures/painting/paintings_kristoffer_zetterstrand.png'), '. Paint each one where it sits on the sheet.'),
+          el('p', null, strong('Bedrock:'), ' the original paintings and their back share one sheet, ', code('textures/painting/kz.png'), ', and the paintings added in 1.21 have files of their own (', code('backyard.png'), ', ', code('meditative.png'), '…). On the sheet, paint each painting in its own spot, or paste a picture already at the right size (Ctrl+V) and move it into place.'),
+        ),
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Replacing a painting, not adding one'),
+          el('p', null, 'A resource pack changes how the game’s paintings look; how many there are and their sizes stay the same. Java 1.21 and newer can add brand-new paintings with a data pack (a ', code('painting_variant'), ' file for each one), which this tool doesn’t make. So pick the painting whose size matches your picture and replace it: everyone who uses the pack sees your art wherever that painting hangs.'),
+        ),
+      ),
+    ],
+    faq: [
+      {
+        id: 'size',
+        q: 'What size should my picture be?',
+        a: [el('p', null, 'Any size with the shape of the painting: the editor resizes it for you. At 16× a painting has 16 pixels per block (a 2×1 painting is 32×16), at 64× it has 64 (128×64). For photos and detailed art, pick a higher resolution when you create the pack.')],
+      },
+      {
+        id: 'new',
+        q: 'Can I add a new painting instead of replacing one?',
+        a: [el('p', null, 'Not with a resource pack: it only repaints the paintings the game has. Java 1.21 and newer can add paintings with a data pack, which this tool doesn’t make. Replace a painting of the same size instead.')],
+      },
+      {
+        id: 'place',
+        q: 'How do I get my painting on a wall?',
+        a: [el('p', null, 'Place a painting as usual. The game picks one that fits the free space, so leave a gap exactly the size of yours (a 2×1 painting needs a space 2 blocks wide and 1 high), or keep placing until yours comes up.')],
+      },
+      {
+        id: 'animated',
+        q: 'Can a painting be animated?',
+        a: [el('p', null, 'Yes, on Java 1.14 and newer: open the painting, choose Make animated in its menu, paint the frames and set the timing, and the pack gets a .png.mcmeta for it. Bedrock only animates block textures, so its paintings stay still. ', link('/guides/make-animated-textures', 'How to make animated textures'), '.')],
+      },
+      {
+        id: 'others',
+        q: 'Will other players see my painting?',
+        a: [el('p', null, 'Only players who use the pack, since a resource pack changes what each player sees. On a Java server it can be the server’s resource pack; on Bedrock, add it to the world’s resource packs so everyone who joins gets it.')],
+      },
+    ],
+    guides: ['make-animated-textures', 'install-resource-packs', 'texture-pack-not-working', 'make-a-texture-pack'],
+    related: ['/textures', '/gui-maker'],
+    cta: 'Make a painting pack',
+  },
+  gui: {
+    tool: 'gui',
+    base: 'textures',
+    accent: 'accent-green',
+    icon: 'layout',
+    eyebrow: 'GUI maker',
+    heading: 'Minecraft GUI & HUD Maker',
+    appName: 'Minecraft GUI Maker',
+    lead: [
+      'Make a custom Minecraft GUI: repaint the hotbar, hearts, hunger, crosshair, inventory, buttons and menu backgrounds while a live preview shows them in place, as in the game. For ',
+      strong('Java Edition'),
+      ' (1.6.1 to 26.3) and ',
+      strong('Bedrock Edition'),
+      ', free and in your browser.',
+    ],
+    featureList: [
+      'The HUD: hotbar, selected slot, crosshair, hearts in every state, hunger, armour, air bubbles and the experience bar',
+      'Inventory, chest, large chest, furnace and crafting table windows',
+      'Buttons, menu backgrounds, the title screen logo and its turning panorama',
+      'Your own splash texts on the title screen',
+      'Live preview of the HUD, the inventory and containers, the title screen and menus, at any GUI scale',
+      'Java before 1.20.2: each piece selected on gui/icons.png or gui/widgets.png for you',
+      'Exports a Java .zip or a Bedrock .mcpack',
+    ],
+    features: [
+      ['The HUD, piece by piece: the hotbar, its selected slot and the off-hand slot, the crosshair, hearts (normal, poisoned, withered, frozen, absorption, hardcore and a mount’s), hunger, armour, air bubbles and the experience bar.'],
+      ['Inventory and containers: the inventory, the chest and large chest, the furnace with its flame and arrow, and the crafting table.'],
+      ['Buttons as they look normally, pointed at and greyed out, the menu backgrounds, the Minecraft logo and the six pictures of the title screen panorama.'],
+      ['A live preview on the Preview tab: the HUD, the inventory and containers, the title screen with its turning panorama, and the menus. Show poisoned, frozen or hardcore hearts, the HUD under water or riding, change the GUI scale, and click any part to paint it.'],
+      ['Splash texts: write the yellow lines of the title screen yourself or, on Java, start from the game’s list and change it.'],
+      ['The pixel editor with layers, stamps, colour swap and HD resolutions. On Java before 1.20.2, where the HUD and buttons share ', code('gui/icons.png'), ' and ', code('gui/widgets.png'), ', picking a heart selects just its area.'],
+    ],
+    howTitle: 'How to make a custom GUI',
+    steps: [
+      ['Choose ', strong('Java'), ' or ', strong('Bedrock'), ' and your version, then press ', strong('Create GUI pack'), '. The editor opens on the GUI list with the hotbar.'],
+      'Pick a part in the list (the hotbar, hearts, the inventory…) and paint it, or upload a picture for it.',
+      'Watch the Preview tab: it shows the part in place and follows what you open. Click a part of the preview to paint that one.',
+      'Add your splash texts and a menu background if you like.',
+      ['Export a ', code('.zip'), ' (Java) or an ', code('.mcpack'), ' (Bedrock) and turn the pack on in the game.'],
+    ],
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-card' },
+        el(sub, null, 'Where the GUI lives in each version'),
+        el('p', null, strong('Java 1.20.2 and newer:'), ' every HUD icon and button is a sprite of its own in ', code('textures/gui/sprites/'), ' (', code('hud/hotbar.png'), ', ', code('hud/heart/full.png'), ', ', code('widget/button.png'), '…). Buttons come with a ', code('.mcmeta'), ' that says how they stretch, so keep their borders where they are.'),
+        el('p', null, strong('Java 1.6.1 to 1.20.1:'), ' the HUD is one 256×256 picture, ', code('textures/gui/icons.png'), ', and the hotbar and buttons another, ', code('textures/gui/widgets.png'), '. Each piece sits at a fixed spot; the editor selects it when you pick it.'),
+        el('p', null, strong('Containers'), ' are whole pictures in every Java version (', code('gui/container/inventory.png'), ', ', code('generic_54.png'), ' for chests…), with the window in the top-left corner of a 256×256 image.'),
+        el('p', null, strong('Bedrock:'), ' the HUD is single files in ', code('textures/ui/'), ' (', code('heart.png'), ', ', code('hotbar_0.png'), ' to ', code('hotbar_8.png'), '…), the crosshair is the top-left corner of ', code('textures/gui/icons.png'), ', and the classic buttons and windows are small pictures the game stretches.'),
+        el('p', null, 'A texture pack changes how the GUI looks, not where things are: slots, bars and buttons stay where the game puts them. (Bedrock’s JSON UI files can move things; this tool doesn’t edit them.)'),
+      ),
+    ],
+    faq: [
+      {
+        id: 'crosshair',
+        q: 'Can I make a custom crosshair?',
+        a: [el('p', null, 'Yes. Pick Crosshair under HUD and paint it: Java 1.20.2 and newer use ', code('gui/sprites/hud/crosshair.png'), ', older Java versions and Bedrock the top-left 15×15 pixels of ', code('gui/icons.png'), '. Java draws it by inverting the colours behind it, so white shows best. The PvP tab has ready-made crosshairs too. ', link('/guides/make-a-pvp-texture-pack', 'How to make a PvP pack'), '.')],
+      },
+      {
+        id: 'hd',
+        q: 'Can the GUI be HD?',
+        a: [el('p', null, 'Yes. Create the pack at 32× or more and every GUI texture opens with more pixels, while the game still draws it at the same size on screen. Keep each picture’s shape: the 182×22 hotbar becomes 364×44 at 32×.')],
+      },
+      {
+        id: 'layout',
+        q: 'Can I move the hotbar or change the inventory layout?',
+        a: [el('p', null, 'No. A texture pack changes the pictures, not the layout: slots, bars and buttons stay where the game puts them, so paint your design around them.')],
+      },
+      {
+        id: 'atlas',
+        q: 'Why is the whole HUD one picture in my version?',
+        a: [el('p', null, 'Java before 1.20.2 keeps the HUD in ', code('gui/icons.png'), ' and the hotbar and buttons in ', code('gui/widgets.png'), '. Pick a piece in the GUI list and the editor selects its area, so you only paint that part.')],
+      },
+      {
+        id: 'title',
+        q: 'Can I change the title screen?',
+        a: [el('p', null, 'Yes: the Minecraft logo, the six panorama pictures behind it (front, right, back, left, top and bottom), the buttons and the yellow splash texts. The preview turns the panorama like the game does.')],
+      },
+    ],
+    guides: ['make-a-pvp-texture-pack', 'make-a-texture-pack', 'install-resource-packs', 'texture-pack-not-working'],
+    related: ['/enchantment-glint-maker', '/font-maker'],
+    cta: 'Make a GUI pack',
+  },
+  disc: {
+    tool: 'disc',
+    base: 'textures',
+    accent: 'accent-green',
+    icon: 'music',
+    eyebrow: 'Music disc maker',
+    heading: 'Custom Minecraft Music Disc Maker',
+    appName: 'Minecraft Music Disc Maker',
+    lead: [
+      'Put your own song on a Minecraft music disc: pick a disc, upload an audio file or record one with your microphone, trim it on its waveform and repaint the disc if you like. The jukebox then plays your song in ',
+      strong('Java Edition'),
+      ' and ',
+      strong('Bedrock Edition'),
+      '. Free, in your browser, with nothing uploaded.',
+    ],
+    featureList: [
+      'Every music disc of the chosen version, listed under Records',
+      'Upload MP3, WAV, OGG or M4A audio up to 15 minutes long, or record with the microphone',
+      'Trim on the waveform, set the volume, normalise, stereo or mono',
+      'Saved as Ogg Vorbis, the format Minecraft plays; Bedrock packs get their sound_definitions.json entries',
+      'Repaint the disc item in the pixel editor',
+      'Exports a Java .zip or a Bedrock .mcpack',
+    ],
+    features: [
+      ['Every music disc of your version in the Sounds list under ', strong('Records'), ', from 13 and cat to Pigstep, Relic, Precipice and Lava Chicken.'],
+      ['Upload your song (MP3, WAV, OGG or M4A, up to 15 minutes) or record it with your microphone. A recording is trimmed and levelled for you.'],
+      ['Trim the start and the end on the waveform, set the volume or press ', strong('Normalise'), ', and keep it in stereo or make it mono. Parts that would distort show in red.'],
+      ['Saved as Ogg Vorbis, the only format Java plays, under the disc’s own file name. Bedrock packs also get the disc’s entry in ', code('sound_definitions.json'), '.'],
+      ['Give the disc a new look: its picture is open in the pixel editor, so switch from Sounds to the textures to repaint it or upload one.'],
+      ['Replace any other sound while you are there: mobs, blocks, menu clicks or the background music.'],
+    ],
+    howTitle: 'How to put your own song on a music disc',
+    steps: [
+      ['Choose ', strong('Java'), ' or ', strong('Bedrock'), ' and your version, then press ', strong('Create music disc pack'), '. The editor opens on the records, with cat picked.'],
+      'Pick the disc to replace. On Java 1.21 and newer, choose one whose song is at least as long as yours (see the lengths below).',
+      ['Press ', strong('Replace'), ', then ', strong('Upload a sound file…'), ' or ', strong('Record with the microphone…')],
+      'Trim it on the waveform and set the volume, then play it to check.',
+      ['Repaint the disc if you like and export. On Java put the ', code('.zip'), ' in the ', code('resourcepacks'), ' folder, on Bedrock open the ', code('.mcpack'), ', then turn the pack on and put the disc in a jukebox.'],
+    ],
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-grid' },
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'How long can the song be?'),
+          el('p', null, 'In Java 1.21 and newer every disc has a set length: the jukebox stops it one second after the original song would end, even when your file is longer. Pick a disc at least as long as your song. The lengths in Java 26.3:'),
+          discLengths('Disc lengths in Java 26.3'),
+        ),
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Good to know'),
+          el('p', null, strong('Stereo or mono:'), ' Java plays a stereo sound at the same loudness wherever you stand. Turn ', strong('Stereo'), ' off if your song should come from the jukebox and fade as you walk away.'),
+          el('p', null, strong('Where the file goes:'), ' Java reads the song from ', code('assets/minecraft/sounds/records/'), ' (', code('cat.ogg'), ' for cat). Bedrock reads it from the path its ', code('sound_definitions.json'), ' names, and the pack gets that entry too.'),
+          el('p', null, strong('The disc’s picture:'), ' Java 1.13 and newer read ', code('textures/item/music_disc_cat.png'), ' and so on; Bedrock reads ', code('textures/items/record_cat.png'), ' for the older discs and ', code('music_disc_relic.png'), ' and the like for the newer ones.'),
+        ),
+      ),
+    ],
+    faq: [
+      {
+        id: 'format',
+        q: 'Which audio files can I use?',
+        a: [el('p', null, 'MP3, WAV, OGG and M4A work in most browsers, up to 15 minutes long. The editor turns your file into Ogg Vorbis, the format Minecraft needs, so you don’t have to convert it first.')],
+      },
+      {
+        id: 'length',
+        q: 'Why does my song stop early?',
+        a: [el('p', null, 'In Java 1.21 and newer the jukebox stops a disc one second after the original song’s length, whatever the length of your file. Replace a longer disc: blocks (5:45) and Precipice (4:59) are the longest.')],
+      },
+      {
+        id: 'distance',
+        q: 'Why do I hear the disc at the same volume everywhere?',
+        a: [el('p', null, 'Your song is in stereo. Java plays stereo sounds without a direction, so they don’t fade with distance. Turn Stereo off for the disc in the editor and it comes from the jukebox again.')],
+      },
+      {
+        id: 'name',
+        q: 'Can I change the disc’s name?',
+        a: [el('p', null, 'Not here: the disc and the “Now Playing” line keep the original title. They come from the game’s language files, which this tool doesn’t edit.')],
+      },
+      {
+        id: 'new',
+        q: 'Can I add a new disc instead of replacing one?',
+        a: [el('p', null, 'Not with a resource pack alone. Java 1.21 and newer can add songs with a data pack, which this tool doesn’t make. Replacing a disc works in every version.')],
+      },
+      {
+        id: 'others',
+        q: 'Will other players hear my song?',
+        a: [el('p', null, 'Only players who have the pack. On a Java server it can be the server’s resource pack; on Bedrock, add it to the world’s resource packs so everyone who joins gets it. ', link('/guides/install-resource-packs', 'How to install packs'), '.')],
+      },
+    ],
+    guides: ['install-resource-packs', 'texture-pack-not-working', 'make-a-texture-pack'],
+    related: ['/textures', '/painting-maker'],
+    cta: 'Make a music disc pack',
+  },
+  glint: {
+    tool: 'glint',
+    base: 'textures',
+    accent: 'accent-green',
+    icon: 'sparkles',
+    eyebrow: 'Enchantment glint',
+    heading: 'Custom Enchantment Glint Maker',
+    appName: 'Minecraft Enchantment Glint Maker',
+    lead: [
+      'Change the purple shimmer on enchanted swords, tools, books and armour: recolour the glint texture or paint your own, and watch it move over enchanted items as you work. For ',
+      strong('Java Edition'),
+      ' and ',
+      strong('Bedrock Edition'),
+      ', free and in your browser.',
+    ],
+    featureList: [
+      'The glint textures of your version: for items, and for armour where the version has its own',
+      'Moving preview of the glint over an enchanted sword, book and pickaxe, blended the way the game blends it',
+      'Colour swap: move the glint’s whole shade ramp to a new colour in one step',
+      'Pixel editor with layers, stamps and HD resolutions',
+      'Java before 1.15 previewed with its two-layer glint',
+      'Exports a Java .zip or a Bedrock .mcpack',
+    ],
+    features: [
+      ['The glint texture of your version opens straight away, with the armour glint next to it in the GUI list where your version has one.'],
+      ['A moving preview on the ', strong('Glint'), ' screen: an enchanted sword, book and pickaxe with your glint scrolling over them, blended like the game blends it, and the texture itself sliding underneath. The hotbar and inventory previews show it too.'],
+      ['Recolour it in one step: ', strong('Swap a colour'), ' can move the glint’s whole shade ramp to a new colour, so a red, gold or green glint keeps its light and dark streaks.'],
+      ['Or paint your own pattern with the pixel editor: layers, stamps such as sparkles, and HD resolutions.'],
+      ['Java before 1.15 drew two glint layers sliding sideways; the preview shows that too when you make a pack for those versions.'],
+      ['Download a ', code('.zip'), ' for Java or a ', code('.mcpack'), ' for Bedrock. Every enchanted item gets your glint, for everyone who uses the pack.'],
+    ],
+    howTitle: 'How to change the enchantment glint',
+    steps: [
+      ['Choose ', strong('Java'), ' or ', strong('Bedrock'), ' and your version, then press ', strong('Create glint pack'), '. The editor opens on the glint with its preview.'],
+      ['Recolour it with ', strong('Swap a colour'), ' (tick the whole shade ramp), or paint over it.'],
+      'Watch the preview: bright colours shine, dark ones fade and black adds nothing.',
+      'Do the same for the armour glint if your version has one.',
+      ['Export, turn the pack on in the game and look at an enchanted item. ', link('/guides/install-resource-packs', 'How to install packs'), '.'],
+    ],
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-card' },
+        el(sub, null, 'How the glint works'),
+        el('p', null, 'The game doesn’t paint the glint on: it adds the light of the glint picture on top of the item, tilted, scrolling and repeated. So bright colours shine, dark ones barely show, and black adds nothing. One flat colour gives an even shine; streaks give the moving stripes.'),
+        el('p', null, strong('Java, older versions:'), ' one picture for everything, ', code('textures/misc/enchanted_item_glint.png'), '.'),
+        el('p', null, strong('Java, newer versions:'), ' ', code('misc/enchanted_glint_item.png'), ' for items, and a second picture for armour: ', code('misc/enchanted_glint_entity.png'), ', or ', code('misc/enchanted_glint_armor.png'), ' in 26.3.'),
+        el('p', null, strong('Bedrock:'), ' ', code('textures/misc/enchanted_item_glint.png'), ' for items and ', code('textures/misc/enchanted_actor_glint.png'), ' for armour and mobs.'),
+        el('p', null, 'The editor opens whichever your version has. On Java 1.19 and newer, players can also slow the glint down or dim it with Glint Speed and Glint Strength in Accessibility Settings.'),
+      ),
+    ],
+    faq: [
+      {
+        id: 'colour',
+        q: 'How do I change the glint colour?',
+        a: [el('p', null, 'Open the glint (the glint maker does that for you), choose Swap a colour, pick one of its purples and your new colour, and tick the whole shade ramp. Bright colours work best: the game adds the glint’s light to the item, so dark colours look faint.')],
+      },
+      {
+        id: 'each',
+        q: 'Can each enchantment or item have its own glint?',
+        a: [el('p', null, 'Not with a vanilla pack: one picture is used for every enchanted item, and one for armour where the version has it. Mods such as OptiFine can do more, but this tool doesn’t make their files.')],
+      },
+      {
+        id: 'remove',
+        q: 'Can I remove the glint?',
+        a: [el('p', null, 'Paint the glint texture black: the game then adds nothing, and enchanted items look plain. On Java 1.19 and newer you can also turn Glint Strength down in Accessibility Settings, for yourself only.')],
+      },
+      {
+        id: 'armour',
+        q: 'Does it change enchanted armour too?',
+        a: [el('p', null, 'In older Java versions the one glint covers everything. Newer Java versions and Bedrock have a second picture for armour (on Bedrock also for mobs), listed next to the item glint in the GUI list, so you can change them together or apart.')],
+      },
+      {
+        id: 'speed',
+        q: 'Can I change how fast it moves?',
+        a: [el('p', null, 'Not in the pack: the game scrolls the glint itself. Players on Java 1.19 and newer can change Glint Speed in Accessibility Settings.')],
+      },
+    ],
+    guides: ['install-resource-packs', 'make-a-texture-pack', 'texture-pack-not-working'],
+    related: ['/gui-maker', '/textures'],
+    cta: 'Make a glint pack',
   },
   converter: {
     tool: 'converter',

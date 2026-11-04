@@ -94,6 +94,9 @@
   line-height: var(--lh-md);
   font-weight: 700;
   color: var(--text);
+  /* One long compound (German "Verzauberungsglanz") is wider than a phone card: hyphenate it rather than spill. */
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 .guide-card-desc {
   color: var(--text-2);
@@ -462,6 +465,24 @@
 }
 .tool-intro-list strong {
   color: var(--text);
+}
+/* The music disc maker's disc lengths: name and time, in columns where there is room */
+.disc-lengths {
+  columns: 3 10rem;
+  column-gap: 24px;
+  list-style: none;
+}
+.disc-lengths li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 2px solid var(--border);
+  break-inside: avoid;
+}
+.disc-time {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 .tool-intro-faq,
 .tool-intro-guides {

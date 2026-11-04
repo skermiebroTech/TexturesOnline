@@ -40,6 +40,9 @@ export type AllCardId =
   | 'models'
   | 'pvp'
   | 'gui'
+  | 'paintings'
+  | 'discs'
+  | 'glint'
   | 'pbr'
   | 'names'
   | 'openPack'
@@ -128,7 +131,10 @@ const SECTIONS: Section[] = [
       { id: 'sounds', icon: 'music', to: '/help#sounds' },
       { id: 'models', icon: 'shapes', to: '/guides/make-3d-items-texture-pack' },
       { id: 'pvp', icon: 'sword', to: '/guides/make-a-pvp-texture-pack' },
-      { id: 'gui', icon: 'layout', to: '/textures' },
+      { id: 'gui', icon: 'layout', to: '/gui-maker' },
+      { id: 'paintings', icon: 'image', to: '/painting-maker' },
+      { id: 'discs', icon: 'music', to: '/music-disc-maker' },
+      { id: 'glint', icon: 'sparkles', to: '/enchantment-glint-maker' },
       { id: 'pbr', icon: 'diamond-gem', to: '/guides/make-a-pbr-texture-pack' },
       { id: 'names', icon: 'label', to: '/guides/rename-items-texture-pack' },
       { id: 'openPack', icon: 'folder', to: '/guides/make-a-texture-pack' },
@@ -228,6 +234,9 @@ export const ALL_EN: AllText = {
     models: { title: '3D items and block shapes', desc: 'Change the shape of blocks and items, or turn a flat item into a 3D model.' },
     pvp: { title: 'PvP and FPS packs', desc: 'Low fire, clear glass, a custom crosshair, smaller swords and 8× textures, one switch each.' },
     gui: { title: 'GUI and menus', desc: 'Hotbar, hearts, inventory, buttons, the title screen, splash texts and the glint, with a live in-game preview.' },
+    paintings: { title: 'Custom paintings', desc: 'Turn your own pictures into the game’s paintings, resized to fit, with HD and animated paintings on Java.' },
+    discs: { title: 'Custom music discs', desc: 'Put your own song on a music disc from an audio file or a recording, and repaint the disc.' },
+    glint: { title: 'Enchantment glint', desc: 'Recolour or repaint the shimmer on enchanted items and armour, with a moving preview.' },
     pbr: { title: 'PBR materials', desc: 'Shine, metal, glow and bumps for Bedrock Vibrant Visuals and Java labPBR shaders, on a lit 3D block.' },
     names: { title: 'Name-based textures', desc: 'Rename an item in an anvil and it gets its own texture, like a sword named “Excalibur”.' },
     openPack: { title: 'Open any pack', desc: 'Start from scratch or open an existing .zip or .mcpack and keep working on it.' },

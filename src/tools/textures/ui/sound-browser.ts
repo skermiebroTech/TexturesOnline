@@ -29,6 +29,8 @@ export interface SoundBrowserApi {
   /** Starts loading the sound list (first time Sounds is shown) */
   activate(): void;
   setSelected(id: string | null, reveal?: boolean): void;
+  /** Shows one kind of sound (a feature's page opens the records) */
+  setCategory(c: SoundCategory | 'all'): void;
   focusSearch(): void;
   destroy(): void;
 }
@@ -478,6 +480,11 @@ export function createSoundBrowser(opts: SoundBrowserOptions): SoundBrowserApi {
     el,
     activate() {
       void sounds.load();
+    },
+    setCategory(c) {
+      if (c === cat) return;
+      cat = c;
+      refilter(true);
     },
     setSelected(id, doReveal = true) {
       selected = id;

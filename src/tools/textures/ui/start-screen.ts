@@ -1,6 +1,6 @@
 // Start screen at #/textures: new pack form, open an existing pack, and the recent texture packs.
 
-import type { Edition, TexturePackProject } from '../../../core/types';
+import type { Edition, TextureFocus, TexturePackProject } from '../../../core/types';
 import { h, timeAgo } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import { badge, button, emptyState, openMenu, segmented, spinner, textInput, toggle } from '../../../ui/components';
@@ -33,6 +33,15 @@ import { onProjectsChanged } from '../../../shared/project-file/handoff';
 import { openProjectButton, saveProjectFile } from '../../../shared/project-file/entry';
 
 const START_RES = [16, 32, 64, 128];
+
+/** Pages of one feature that show this start screen: their new packs open on it (TexturePackProject.focus). */
+const FOCUS_PAGES: Record<string, TextureFocus> = {
+  '/painting-maker': 'painting',
+  '/gui-maker': 'gui',
+  '/music-disc-maker': 'disc',
+  '/enchantment-glint-maker': 'glint',
+};
+const FOCUS_ICONS = { painting: 'image', gui: 'layout', disc: 'music', glint: 'sparkles' } as const;
 
 /** "Java 1.21.11", "Bedrock latest", "Bedrock 1.21.50" (also the editor's badge and export summary) */
 export function versionLabel(p: { edition: Edition; version: string }): string {
@@ -143,11 +152,15 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const urls: string[] = [];
   let edition: Edition = ctx.query.get('edition') === 'bedrock' ? 'bedrock' : 'java';
   let version = edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest';
-  let resolution = 16;
+  /** A feature's page (painting maker, GUI maker…): the new pack opens on that feature */
+  const focus: TextureFocus | null = FOCUS_PAGES[ctx.path] ?? null;
+  const ft = focus ? t.focus[focus] : null;
+  // a picture made into a painting keeps more of its detail at a higher resolution
+  let resolution = focus === 'painting' ? 64 : 16;
   let name = '';
   let description = '';
   /** 'pvp': the editor switches the PvP preset on when the pack opens (?start=pvp preselects it) */
-  let start: 'blank' | 'pvp' = ctx.query.get('start') === 'pvp' ? 'pvp' : 'blank';
+  let start: 'blank' | 'pvp' = !focus && ctx.query.get('start') === 'pvp' ? 'pvp' : 'blank';
   let fps = false;
   let alive = true;
 
@@ -250,19 +263,20 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
       }),
     );
     fpsField.hidden = start !== 'pvp';
-    createBtn.querySelector('.btn-label')!.textContent = start === 'pvp' ? t.create.pvpButton : t.create.button;
+    createBtn.querySelector('.btn-label')!.textContent = start === 'pvp' ? t.create.pvpButton : (ft?.button ?? t.create.button);
   };
 
   const descField = textInput({ label: t.create.description, value: '', placeholder: t.create.descriptionPlaceholder, multiline: true, maxLength: 200, onInput: (v) => (description = v) });
-  const createBtn = button({ label: t.create.button, icon: 'arrow-right', variant: 'primary', size: 'lg', class: 'tx-create-btn', onClick: () => void create() });
+  const createBtn = button({ label: ft?.button ?? t.create.button, icon: 'arrow-right', variant: 'primary', size: 'lg', class: 'tx-create-btn', onClick: () => void create() });
 
   async function create() {
     if (createBtn.disabled) return;
     createBtn.disabled = true;
     try {
-      const p = newTextureProject({ name: name.trim() || (start === 'pvp' ? t.create.pvpName : t.create.defaultName), edition, version: version || (edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest'), resolution, description: description.trim() || t.create.descriptionPlaceholder });
+      const p = newTextureProject({ name: name.trim() || (start === 'pvp' ? t.create.pvpName : (ft?.name ?? t.create.defaultName)), edition, version: version || (edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest'), resolution, description: description.trim() || t.create.descriptionPlaceholder });
       // the PvP tweaks need the game's files: the editor switches them on when it has them
       if (start === 'pvp') p.pvp = { tweaks: {}, pending: { fps } };
+      if (focus) p.focus = focus;
       await saveProject(p);
       navigate(`/textures/${p.id}`);
     } catch (err) {
@@ -276,12 +290,13 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const newCard = h(
     'section',
     { class: 'card tx-new', 'aria-labelledby': 'tx-new-title' },
-    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('plus')), h('div', null, h('h2', { id: 'tx-new-title' }, t.create.title), h('p', { class: 'muted' }, t.create.text))),
+    h('div', { class: 'tx-card-head' }, h('span', { class: 'tx-card-icon' }, icon('plus')), h('div', null, h('h2', { id: 'tx-new-title' }, ft?.newTitle ?? t.create.title), h('p', { class: 'muted' }, ft?.newText ?? t.create.text))),
     h(
       'div',
       { class: 'tx-new-body' },
       nameField,
-      field(t.create.startWith, startCards, fpsField),
+      // a feature's page makes a plain pack: the PvP start is the texture maker's own
+      focus ? null : field(t.create.startWith, startCards, fpsField),
       field(t.create.edition, editionSeg, editionHint),
       picker,
       field(t.create.resolution, resChips, resText),
@@ -520,16 +535,16 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const hero = heroArt();
   const page = h(
     'div',
-    { class: 'tx-start accent-green' },
+    { class: 'tx-start accent-green', dataset: focus ? { focus } : {} },
     h(
       'header',
       { class: 'container tx-start-hero' },
       h(
         'div',
         { class: 'tx-hero-text' },
-        h('span', { class: 'eyebrow' }, icon('image'), t.hero.eyebrow),
-        h('h1', { class: 'pixel-shadow' }, fmtNodes(t.hero.title, { your: h('span', { class: 'accent' }, t.hero.your) })),
-        h('p', { class: 'lead' }, t.hero.lead),
+        h('span', { class: 'eyebrow' }, icon(focus ? FOCUS_ICONS[focus] : 'image'), ft?.eyebrow ?? t.hero.eyebrow),
+        h('h1', { class: 'pixel-shadow' }, ft ? ft.title : fmtNodes(t.hero.title, { your: h('span', { class: 'accent' }, t.hero.your) })),
+        h('p', { class: 'lead' }, ft?.lead ?? t.hero.lead),
         h(
           'a',
           { class: 'tx-hero-convert', href: routeHref('/texture-pack-converter') },

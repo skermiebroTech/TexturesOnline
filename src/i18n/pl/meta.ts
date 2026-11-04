@@ -15,6 +15,26 @@ export const META_PL: MetaTranslation = {
       description: 'Edytuj każdą teksturę Minecrafta: maluj bloki, przedmioty i moby na modelach 3D, wgraj własne PNG albo zmień styl paczki. Eksport do .zip lub .mcpack.',
       label: 'Paczki tekstur',
     },
+    '/painting-maker': {
+      title: 'Kreator obrazów do Minecrafta – twoje grafiki jako obrazy',
+      description: 'Zamień dowolną grafikę w obraz z Minecrafta: wybierz obraz, wgraj grafikę (dopasowaną do rozmiaru) albo ją namaluj i pobierz .zip lub .mcpack.',
+      label: 'Kreator obrazów',
+    },
+    '/gui-maker': {
+      title: 'Kreator GUI i HUD do Minecrafta – pasek, serca i menu',
+      description: 'Zrób paczkę GUI do Minecrafta: przemaluj pasek szybkiego wyboru, serca, głód, celownik, ekwipunek i przyciski z podglądem na żywo. Java i Bedrock.',
+      label: 'Kreator GUI',
+    },
+    '/music-disc-maker': {
+      title: 'Kreator płyt muzycznych – twój utwór w Minecrafcie',
+      description: 'Zamień płytę muzyczną w Minecrafcie na swój utwór: wgraj MP3, WAV albo OGG lub nagraj go, przytnij, przemaluj płytę i pobierz paczkę do Javy lub Bedrocka.',
+      label: 'Kreator płyt',
+    },
+    '/enchantment-glint-maker': {
+      title: 'Kreator połysku zaklęć – Minecraft Java i Bedrock',
+      description: 'Zmień kolor połysku zaklęć w Minecrafcie: przemaluj albo zmień kolor połysku przedmiotów i zbroi z ruchomym podglądem, a potem pobierz paczkę.',
+      label: 'Połysk zaklęć',
+    },
     '/texture-pack-converter': {
       title: 'Konwerter paczek tekstur – z Javy na Bedrock i z powrotem',
       description: 'Zamień paczkę tekstur Minecrafta z Javy na Bedrock, z Bedrocka na Javę albo między wersjami Javy, lub zrób .mcpack z plików PNG. Za darmo w przeglądarce.',

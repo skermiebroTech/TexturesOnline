@@ -71,6 +71,10 @@ export interface PrerenderPage {
 export const SCREENSHOTS: Record<IntroTool | 'home', Screenshot> = {
   home: DEFAULT_SCREENSHOT,
   textures: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker texture tool: one-click styles and a new pack for Java 26.3 or Bedrock' },
+  painting: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker painting maker: a new pack that opens on the game’s paintings, for Java or Bedrock' },
+  gui: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker GUI maker: a new pack that opens on the hotbar, hearts and menus with a live preview' },
+  disc: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker music disc maker: a new pack that opens on the music discs, ready for your own song' },
+  glint: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker glint maker: a new pack that opens on the enchantment glint and its moving preview' },
   converter: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker texture pack converter: Java to Bedrock, Bedrock to Java and Java version updates' },
   merge: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker pack merger: several Java or Bedrock texture packs combined into one, top pack first' },
   doctor: { path: 'screenshots/textures.jpg', width: 1280, height: 800, caption: 'Texture Pack Maker Pack Doctor: a broken texture pack checked, every problem explained and fixed' },
@@ -84,6 +88,10 @@ export const SCREENSHOTS: Record<IntroTool | 'home', Screenshot> = {
 
 const TOOL_ROUTE_MODULE: Record<IntroTool, string> = {
   textures: 'src/tools/textures/view.ts',
+  painting: 'src/tools/textures/view.ts',
+  gui: 'src/tools/textures/view.ts',
+  disc: 'src/tools/textures/view.ts',
+  glint: 'src/tools/textures/view.ts',
   skins: 'src/tools/skins/view.ts',
   skinpack: 'src/tools/skins/view.ts',
   cape: 'src/tools/skins/cape/view.ts',
@@ -173,7 +181,7 @@ function toolEntry(tool: IntroTool, locale: Locale): PrerenderPage | null {
   const intro = toolIntroIn(tool, locale);
   const url = absoluteUrl(meta.path);
   const crumbs = crumbsFor(locale, { label: meta.label });
-  const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'skinpack' | 'cape' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts'>);
+  const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'painting' | 'gui' | 'disc' | 'glint' | 'skinpack' | 'cape' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts'>);
   const startImage = TOOL_START_IMAGE[tool];
   return {
     ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts']),
@@ -361,7 +369,7 @@ function hasText(locale: Locale, pick: (c: ReturnType<typeof contentOf>) => unkn
 
 /** Every page of one language, in sitemap order (pages it has no translation for are left out). */
 export function pagesIn(locale: Locale): PrerenderPage[] {
-  const tools: IntroTool[] = ['textures', 'converter', 'merge', 'doctor', 'totem', 'fonts', 'skins', 'skinpack', 'cape', 'shaders'];
+  const tools: IntroTool[] = ['textures', 'painting', 'gui', 'disc', 'glint', 'converter', 'merge', 'doctor', 'totem', 'fonts', 'skins', 'skinpack', 'cape', 'shaders'];
   return [homeEntry(locale), ...tools.map((t) => toolEntry(t, locale)), helpEntry(locale), aboutEntry(locale), allEntry(locale), guidesIndexEntry(locale), ...GUIDES.map((g) => guideEntry(g.slug, locale)), privacyEntry(locale)].filter(
     (p): p is PrerenderPage => !!p,
   );

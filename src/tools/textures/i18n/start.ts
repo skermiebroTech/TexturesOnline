@@ -52,6 +52,49 @@ export const t = defineText('textures', {
     pvpName: 'My PvP Pack',
     failed: "Couldn't create the pack",
   },
+  /**
+   * The start screen on a feature's page (/painting-maker, /gui-maker, /music-disc-maker,
+   * /enchantment-glint-maker): its heading, the new pack card and the name of a pack left unnamed.
+   * The pack then opens on that feature.
+   */
+  focus: {
+    painting: {
+      eyebrow: 'Painting maker',
+      title: 'Make your own Minecraft paintings',
+      lead: 'Turn your pictures into the paintings on Minecraft’s walls: pick a painting, upload a picture or paint it pixel by pixel, then download the pack. Java and Bedrock.',
+      newTitle: 'New painting pack',
+      newText: 'Opens on the paintings of your version. A higher resolution keeps more of your pictures’ detail.',
+      button: 'Create painting pack',
+      name: 'My Paintings',
+    },
+    gui: {
+      eyebrow: 'GUI maker',
+      title: 'Design your own Minecraft GUI',
+      lead: 'Restyle the hotbar, hearts, hunger, crosshair, inventory, buttons and menus, and watch them change in a live in-game preview. Java and Bedrock.',
+      newTitle: 'New GUI pack',
+      newText: 'Opens on the GUI list with the hotbar ready to paint.',
+      button: 'Create GUI pack',
+      name: 'My GUI Pack',
+    },
+    disc: {
+      eyebrow: 'Music disc maker',
+      title: 'Put your own music on a disc',
+      lead: 'Replace a music disc’s song with your own audio file or a recording, trim it, give the disc a new look, then download the pack. Java and Bedrock.',
+      newTitle: 'New music disc pack',
+      newText: 'Opens on the music discs, ready for your song.',
+      button: 'Create music disc pack',
+      name: 'My Music Discs',
+    },
+    glint: {
+      eyebrow: 'Enchantment glint',
+      title: 'Change the enchantment glint',
+      lead: 'Recolour or repaint the shimmer on enchanted items and armour, and watch it move over a sword, a book and a pickaxe as you paint. Java and Bedrock.',
+      newTitle: 'New glint pack',
+      newText: 'Opens on the glint texture with its moving preview.',
+      button: 'Create glint pack',
+      name: 'My Glint Pack',
+    },
+  },
   open: {
     title: 'Open a pack',
     text: 'Keep editing a pack you made here or anywhere else.',

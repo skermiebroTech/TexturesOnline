@@ -15,6 +15,26 @@ export const META_FR: MetaTranslation = {
       description: 'Modifie n’importe quelle texture Minecraft : peins blocs, objets et créatures en 3D, importe des PNG ou change le style en un clic. Export .zip ou .mcpack.',
       label: 'Packs de textures',
     },
+    '/painting-maker': {
+      title: 'Créateur de tableaux Minecraft : tes images en tableaux',
+      description: 'Transforme une image en tableau Minecraft : choisis un tableau, importe ton image (redimensionnée) ou peins-le, puis télécharge un .zip ou un .mcpack.',
+      label: 'Créateur de tableaux',
+    },
+    '/gui-maker': {
+      title: 'Créateur d’interface et de HUD Minecraft : cœurs, menus',
+      description: 'Crée un pack d’interface Minecraft : repeins la barre d’action, les cœurs, la faim, le viseur, l’inventaire et les boutons, avec un aperçu en direct.',
+      label: 'Créateur d’interface',
+    },
+    '/music-disc-maker': {
+      title: 'Créateur de disques de musique : ta chanson dans Minecraft',
+      description: 'Remplace un disque de musique Minecraft par ta chanson : importe un MP3, WAV ou OGG ou enregistre-la, coupe-la, repeins le disque et télécharge le pack.',
+      label: 'Créateur de disques',
+    },
+    '/enchantment-glint-maker': {
+      title: 'Créateur d’éclat d’enchantement : Minecraft Java et Bedrock',
+      description: 'Change la couleur de l’éclat d’enchantement de Minecraft : repeins le reflet des objets et armures avec un aperçu animé, puis télécharge le pack.',
+      label: 'Éclat d’enchantement',
+    },
     '/texture-pack-converter': {
       title: 'Convertisseur de packs de textures : Java vers Bedrock',
       description: 'Convertis un pack de textures Minecraft de Java vers Bedrock, de Bedrock vers Java ou entre versions de Java, ou des PNG en .mcpack. Gratuit.',

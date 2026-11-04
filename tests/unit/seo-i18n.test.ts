@@ -84,6 +84,10 @@ const REQUIRED_ROUTES = [
   '/guides/rename-items-texture-pack',
   '/guides/make-animated-textures',
   '/guides/make-a-custom-totem',
+  '/painting-maker',
+  '/gui-maker',
+  '/music-disc-maker',
+  '/enchantment-glint-maker',
 ];
 
 /** A public page that exists only in English, if there is one (every page is translated otherwise). */

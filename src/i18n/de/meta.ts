@@ -15,6 +15,26 @@ export const META_DE: MetaTranslation = {
       description: 'Jede Minecraft-Textur bearbeiten: Blöcke, Items und Mobs auf 3D-Modellen bemalen, PNGs hochladen oder alles per Klick umstylen. Export: .zip oder .mcpack.',
       label: 'Texture Packs',
     },
+    '/painting-maker': {
+      title: 'Minecraft Gemälde erstellen – eigene Bilder als Gemälde',
+      description: 'Mach jedes Bild zum Minecraft-Gemälde: Gemälde wählen, Bild hochladen (passend skaliert) oder malen und als Java-.zip oder Bedrock-.mcpack laden.',
+      label: 'Gemälde-Ersteller',
+    },
+    '/gui-maker': {
+      title: 'Minecraft GUI & HUD erstellen – Schnellleiste, Herzen, Menüs',
+      description: 'Eigenes Minecraft-GUI-Pack: Schnellleiste, Herzen, Hunger, Fadenkreuz, Inventar und Knöpfe neu bemalen, mit Live-Vorschau wie im Spiel. Java und Bedrock.',
+      label: 'GUI-Ersteller',
+    },
+    '/music-disc-maker': {
+      title: 'Eigene Minecraft-Schallplatte erstellen – dein eigenes Lied',
+      description: 'Ersetze eine Minecraft-Schallplatte durch dein eigenes Lied: MP3, WAV oder OGG hochladen oder aufnehmen, zuschneiden, Platte bemalen, Pack laden.',
+      label: 'Schallplatten-Ersteller',
+    },
+    '/enchantment-glint-maker': {
+      title: 'Eigenen Verzauberungsglanz erstellen – Java & Bedrock',
+      description: 'Ändere die Farbe des Verzauberungsglanzes in Minecraft: Schimmer auf Items und Rüstungen umfärben oder bemalen, mit bewegter Vorschau, dann Pack laden.',
+      label: 'Verzauberungsglanz',
+    },
     '/texture-pack-converter': {
       title: 'Minecraft Texture Pack Konverter – Java zu Bedrock & zurück',
       description: 'Minecraft Texture Packs von Java zu Bedrock, von Bedrock zu Java oder zwischen Java-Versionen umwandeln oder PNGs zum .mcpack machen. Gratis im Browser.',

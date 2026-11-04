@@ -17,6 +17,26 @@ export const META_RU: MetaTranslation = {
       description: 'Меняй любые текстуры Minecraft: рисуй блоки, предметы и мобов на 3D-моделях, загружай PNG или меняй стиль игры в один клик. Экспорт в .zip или .mcpack.',
       label: 'Текстурпаки',
     },
+    '/painting-maker': {
+      title: 'Создание картин Minecraft — свои изображения как картины',
+      description: 'Преврати любое изображение в картину Minecraft: выбери картину, загрузи изображение (подгоняется по размеру) или нарисуй и скачай .zip или .mcpack.',
+      label: 'Редактор картин',
+    },
+    '/gui-maker': {
+      title: 'Редактор интерфейса и HUD Minecraft — сердца, панель, меню',
+      description: 'Сделай свой пак интерфейса Minecraft: перерисуй панель быстрого доступа, сердца, голод, прицел, инвентарь и кнопки с живым предпросмотром. Java и Bedrock.',
+      label: 'Редактор интерфейса',
+    },
+    '/music-disc-maker': {
+      title: 'Своя пластинка в Minecraft — запиши свою песню',
+      description: 'Замени пластинку Minecraft своей песней: загрузи MP3, WAV или OGG или запиши, обрежь, перерисуй пластинку и скачай пак для Java или Bedrock.',
+      label: 'Редактор пластинок',
+    },
+    '/enchantment-glint-maker': {
+      title: 'Свой блеск зачарования — Minecraft Java и Bedrock',
+      description: 'Измени цвет блеска зачарования в Minecraft: перекрась или перерисуй переливы на предметах и броне с движущимся предпросмотром и скачай пак.',
+      label: 'Блеск зачарования',
+    },
     '/texture-pack-converter': {
       title: 'Конвертер текстурпаков Minecraft: Java в Bedrock и обратно',
       description: 'Переведи текстурпак Minecraft из Java в Bedrock, из Bedrock в Java или на другую версию Java, либо собери .mcpack из PNG. Бесплатно, прямо в браузере.',
