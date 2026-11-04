@@ -1,5 +1,5 @@
 // The example files in the guides are what the app writes: the skin pack of the "make a Bedrock skin
-// pack" guide, and the model files of the "make 3D items" guide.
+// pack" guide, the model files of the "make 3D items" guide and the packs of the "custom totem" guide.
 // Run: npx tsx --test tests/unit/seo-guide-files.test.ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,6 +11,11 @@ import { planBlock, planFiles, planItem } from '../../src/tools/textures/models/
 import { modelRules } from '../../src/tools/textures/models/rules';
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../src/tools/guides/model-files';
 import { javaJarAssets } from '../tools/models/fixtures';
+import { createImageData } from '../../src/core/pixels';
+import { buildTotemPack } from '../../src/tools/totem/pack';
+import { TOTEM_BEDROCK_TREE, TOTEM_EXAMPLE, TOTEM_JAVA_TREE, totemManifest } from '../../src/tools/guides/totem-files';
+import { LATEST, mcmetaFor, mcmetaLegacy } from '../../src/app/content/facts';
+import { json, unzipBlob } from '../tools/texlogic/fixtures';
 
 test('the skin pack guide shows the files the Skin Pack Maker writes', () => {
   const e = SKIN_PACK_EXAMPLE;
@@ -98,4 +103,40 @@ test('the 3D items guide starts from the real game files', { skip: !javaJarAsset
     assert.deepEqual(await read('assets/minecraft/blockstates/stone.json'), STONE_BLOCKSTATE, `${version} stone blockstate`);
     if (modelRules(version).itemDefinitions) assert.deepEqual(await read('assets/minecraft/items/diamond_sword.json'), SWORD_DEFINITION, `${version} sword definition`);
   }
+});
+
+// ---------------------------------------------------------------- custom totem guide
+
+/** Paths of a folder tree as the guides draw it ('└── assets/x/' then '    └── y.png' -> 'assets/x/y.png'). */
+function treePaths(tree: string): string[] {
+  const out: string[] = [];
+  let dir = '';
+  for (const line of tree.split('\n').slice(1)) {
+    const name = line.replace(/^[│├└─\s]+/, '');
+    if (name.endsWith('/')) dir = name;
+    else out.push(/^\s{4}/.test(line) ? dir + name : name);
+  }
+  return out.sort();
+}
+
+test('the custom totem guide shows the files the Totem Maker writes', async () => {
+  const totem = createImageData(16, 16);
+  const description = 'A custom Totem of Undying';
+  const java = await buildTotemPack(totem, { name: TOTEM_EXAMPLE.name, description, edition: 'java', version: LATEST });
+  assert.equal(java.filename, TOTEM_JAVA_TREE.split('\n')[0]);
+  const jz = await unzipBlob(java.blob);
+  assert.deepEqual(Object.keys(jz).sort(), treePaths(TOTEM_JAVA_TREE));
+  assert.deepEqual(json(jz['pack.mcmeta']), JSON.parse(mcmetaFor(LATEST, description)));
+  const old = await unzipBlob((await buildTotemPack(totem, { name: TOTEM_EXAMPLE.name, description, edition: 'java', version: '1.12.2' })).blob);
+  assert.ok(old['assets/minecraft/textures/items/totem.png'], 'the guide names the 1.11 - 1.12.2 path');
+  assert.deepEqual(json(old['pack.mcmeta']), JSON.parse(mcmetaLegacy('1.12.2', description)));
+
+  const bedrock = await buildTotemPack(totem, { name: TOTEM_EXAMPLE.name, description, edition: 'bedrock', version: LATEST, uuids: TOTEM_EXAMPLE.uuids });
+  assert.equal(bedrock.filename, TOTEM_BEDROCK_TREE.split('\n')[0]);
+  const bz = await unzipBlob(bedrock.blob);
+  assert.deepEqual(Object.keys(bz).sort(), treePaths(TOTEM_BEDROCK_TREE));
+  // The maker also names itself in "metadata"; a pack made by hand doesn't need that.
+  const { metadata, ...manifest } = json(bz['manifest.json']);
+  assert.ok(metadata);
+  assert.deepEqual(manifest, JSON.parse(totemManifest(description)));
 });

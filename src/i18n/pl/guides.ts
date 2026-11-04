@@ -15,6 +15,7 @@ import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
+import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2799,6 +2800,178 @@ const animatedTextures: GuideText = {
   ctaLabel: 'Otwórz edytor paczek tekstur',
 };
 
+// ---------------------------------------------------------------- custom totem
+
+const TOTEM_STEPS: Child[] = [
+  ['Otwórz ', link('/totem-maker', 'Kreator totemów'), ' i wybierz skina: wpisz swój nick z Javy, wgraj PNG 64×64 albo w starym układzie 64×32, albo weź jeden ze swoich zapisanych skinów lub domyślną postać, taką jak Steve czy Alex.'],
+  ['Wybierz styl: ', strong('Classic'), ', ', strong('Big head'), ' albo ', strong('Full body'), '. Włącz albo wyłącz opcje ', strong('Warstwa zewnętrzna'), ', ', strong('Złota ramka'), ' i ', strong('Złote skrzydła'), '.'],
+  ['Sprawdź podglądy: teksturę 16×16, animację, kiedy totem cię ratuje, i swój pasek szybkiego wyboru. Przyciskiem ', strong('Edytuj piksele'), ' zmienisz pojedyncze piksele.'],
+  ['Wybierz ', strong('Java Edition'), ' i wersję, w którą grasz, albo ', strong('Bedrock Edition'), ', a potem kliknij ', strong('Pobierz .zip'), ' albo ', strong('Pobierz .mcpack'), '.'],
+  ['Zainstaluj paczkę i przesuń ją na samą górę listy paczek. ', link('/guides/install-resource-packs', 'Jak ją zainstalować'), '.'],
+];
+
+const customTotem: GuideText = {
+  image: SHOTS.totemMaker,
+  intro: [
+    p(
+      'Totem nieśmiertelności ratuje cię przed śmiercią, kiedy trzymasz go w ręce, a wtedy na ekranie pojawia się jego złota figurka. Paczka zasobów może zamienić ten obrazek 16×16 na twój, a najczęściej robi się własny totem, który wygląda jak ty albo jak znajomy. Darmowy ',
+      link('/totem-maker', 'Kreator totemów'),
+      ' zamienia dowolnego skina z Minecrafta w totem i pakuje go do Javy (od 1.11) albo Bedrocka, prosto w przeglądarce.',
+    ),
+  ],
+  quick: {
+    title: 'W skrócie',
+    items: [
+      ['Otwórz ', link('/totem-maker', 'Kreator totemów'), ' i wybierz skina.'],
+      'Wybierz styl, sprawdź podglądy i pobierz .zip (Java) albo .mcpack (Bedrock).',
+      'Zainstaluj paczkę i przesuń ją na samą górę listy paczek.',
+    ],
+  },
+  howto: { name: 'Jak zrobić własny Totem nieśmiertelności w Kreatorze totemów', steps: TOTEM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Krok po kroku',
+      body: [steps(TOTEM_STEPS), figure(SHOTS.totemMaker)],
+    },
+    {
+      id: 'styles',
+      title: 'Style, warstwa zewnętrzna i złoto',
+      body: [
+        ul([
+          [strong('Classic'), ' ustawia całą twarz na górze i rozkłada ręce jak skrzydła totemu, a tułów i nogi są niżej. ', strong('Big head'), ' rysuje ogromną głowę na małym ciele. ', strong('Full body'), ' pokazuje całego gracza na stojąco, z opuszczonymi rękami, żeby było widać strój.'],
+          [strong('Warstwa zewnętrzna'), ' rysuje kapelusz, kurtkę, rękawy i spodnie na wierzchu skina. Wyłącz ją, jeśli duży kapelusz zasłania twarz.'],
+          [strong('Złota ramka'), ' zostawia obrys zwykłego totemu i przycina postać do jego kształtu. ', strong('Złote skrzydła'), ' pokazują zwykły totem wszędzie tam, gdzie postać zostawia lukę, na przykład na końcach skrzydeł. Oba pochodzą ze zwykłego totemu wersji, którą wybierasz do pobrania.'],
+          [strong('Edytuj piksele'), ' otwiera ołówek, gumkę, wiadro z farbą, pipetę i malowanie lustrzane. Zmiana stylu później zastępuje twoje poprawki, więc najpierw wybierz styl.'],
+        ]),
+        p('Nick znajomego z Javy działa tak samo jak twój: wczytuje się jego obecny skin. Gamertagów z Bedrocka nie da się wyszukać, więc skina znajomego z Bedrocka wgraj jako PNG. Skiny HD 128×128 są czytane w rozmiarze 64×64, bo totem ma tylko 16×16.'),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Który plik zmienia paczka',
+      body: [
+        p('Paczka z totemem podmienia jedną teksturę. Jej ścieżka zależy od edycji, a w Javie także od wersji, bo 1.13 zmieniła nazwy tekstur przedmiotów:'),
+        table(
+          ['Edycja i wersja', 'Tekstura totemu'],
+          [
+            ['Java 1.11 – 1.12.2', code('assets/minecraft/textures/items/totem.png')],
+            ['Java 1.13 i nowsze', code('assets/minecraft/textures/item/totem_of_undying.png')],
+            ['Bedrock', code('textures/items/totem.png')],
+          ],
+        ),
+        p('Animacja, kiedy totem cię ratuje, pokazuje tę samą teksturę, więc też się zmienia. Kreator totemów zapisuje właściwą ścieżkę dla wybranej wersji. Skoro zmienia się tylko totem, paczka działa obok każdej innej: ustaw ją nad pozostałymi.'),
+      ],
+    },
+    {
+      id: 'names',
+      title: 'Kilka totemów o różnych nazwach',
+      body: [
+        p(
+          'W Javie 1.21.5 i nowszych paczka może dać totemowi własną teksturę po zmianie nazwy na kowadle, bez modów: totem o nazwie „Steve” i drugi o nazwie „Alex”, każdy z własną twarzą. Starsze wersje Javy potrzebują do tego OptiFine albo moda CIT Resewn. Paczki do Bedrocka nie potrafią wybrać tekstury po nazwie, więc tam wszystkie totemy wyglądają tak samo.',
+        ),
+        steps([
+          ['W Kreatorze totemów wybierz Javę i swoją wersję, a potem kliknij ', strong('Otwórz w Texture Pack Maker'), '.'],
+          ['Otwórz teksturę totemu i wybierz w jej menu (⋮) ', strong('Tekstury po nazwie'), '. Wpisz nazwę i kliknij ', strong('Utwórz i maluj'), '.'],
+          ['Pomaluj nową teksturę albo zrób drugi totem w Kreatorze totemów, kliknij ', strong('Pobierz PNG'), ' i wstaw go przyciskiem ', strong('Wgraj'), '.'],
+          'Wyeksportuj paczkę, zmień nazwę totemu na kowadle dokładnie na tę samą i weź go do ręki.',
+        ]),
+        p('Nazwa musi się zgadzać dokładnie, łącznie z wielkimi literami. ', link('/guides/rename-items-texture-pack', 'Jak zmienić teksturę przedmiotu zmianą nazwy'), '.'),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'Paczka zrobiona ręcznie',
+      body: [
+        p('Paczkę z totemem możesz też zrobić w dowolnym programie graficznym. Narysuj PNG 16×16 z przezroczystym tłem, a potem:'),
+        h3('Java Edition'),
+        steps([
+          ['Zrób folder z plikiem PNG w ', code('assets/minecraft/textures/item/totem_of_undying.png'), ' i plikiem ', code('pack.mcmeta'), ' obok folderu ', code('assets'), '. Ikona ', code('pack.png'), ' jest opcjonalna.'],
+          ['Spakuj do zipa ', strong('zawartość'), ' folderu, a nie sam folder, żeby ', code('pack.mcmeta'), ' leżał na samej górze archiwum.'],
+        ]),
+        pre(TOTEM_JAVA_TREE),
+        p(`Paczka do Javy ${LATEST} (format paczki zasobów ${F(LATEST)}) ma taki pack.mcmeta:`),
+        pre(mcmetaFor(LATEST, 'Własny Totem nieśmiertelności')),
+        p(
+          'W Javie od 1.11 do 1.12.2 tekstura trafia do ',
+          code('assets/minecraft/textures/items/totem.png'),
+          ', a pack.mcmeta ma jedno pole ',
+          code('pack_format'),
+          '. ',
+          link('/guides/minecraft-pack-format-versions', 'Format paczki każdej wersji'),
+          '.',
+        ),
+        pre(mcmetaLegacy('1.12.2', 'Własny Totem nieśmiertelności')),
+        h3('Bedrock Edition'),
+        steps([
+          ['Włóż PNG do ', code('textures/items/totem.png'), ' i napisz ', code('manifest.json'), ' z dwoma nowymi, własnymi UUID (zrobi je każdy generator UUID). Ikona ', code('pack_icon.png'), ' jest opcjonalna.'],
+          ['Spakuj zawartość folderu do zipa i zmień rozszerzenie pliku z ', code('.zip'), ' na ', code('.mcpack'), '.'],
+        ]),
+        pre(TOTEM_BEDROCK_TREE),
+        pre(totemManifest('Własny Totem nieśmiertelności')),
+        callout('tip', 'Nowa paczka, nowe UUID', 'Bedrock rozróżnia paczki po ich UUID. Jeśli użyjesz identyfikatorów innej paczki, obie się pomieszają: jedna zastąpi drugą albo nowa się nie zaimportuje.'),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Instalacja i rozwiązywanie problemów',
+      body: [
+        ul([
+          ['Java: otwórz ', uiPath(JAVA.options, JAVA.packs, JAVA.openFolder), ', wrzuć tam ', code('.zip'), ' bez rozpakowywania, przenieś paczkę do listy ', strong(JAVA.selected), ' i na samą górę, a potem kliknij ', strong(JAVA.done), '.'],
+          ['Bedrock: otwórz ', code('.mcpack'), '. Minecraft go zaimportuje; potem aktywuj go w ', uiPath(BEDROCK.settings, BEDROCK.globalResources, BEDROCK.myPacks), ' i przesuń na górę. Ponowne pobranie z Kreatora totemów, póki strona jest otwarta, aktualizuje tę samą paczkę zamiast dodawać drugą.'],
+        ]),
+        p('Wciąż zwykły totem?'),
+        ul([
+          'Inna paczka nad twoją też zmienia totem: przesuń swoją na samą górę.',
+          'Paczka jest zrobiona dla innej wersji Javy: przed 1.13 plik ma inną nazwę. Zrób ją jeszcze raz dla wersji, w którą grasz.',
+          ['W zipie jest folder zamiast plików: ', code('pack.mcmeta'), ' albo ', code('manifest.json'), ' musi leżeć na samej górze archiwum.'],
+        ]),
+        p(link('/guides/install-resource-packs', 'Jak zainstalować paczki zasobów'), ' · ', link('/guides/texture-pack-not-working', 'Paczka tekstur nie działa: rozwiązania')),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'others',
+      q: 'Czy inni gracze zobaczą mój własny totem?',
+      a: [p('Nie. Paczki zasobów zmieniają tylko to, co widzisz ty, więc inni widzą zwykły totem, chyba że używają tej samej paczki. Serwer może wysłać paczkę wszystkim jako paczkę zasobów serwera (Java) albo wymaganą paczkę (Bedrock) – wtedy widzą ją wszyscy.')],
+    },
+    {
+      id: 'bedrock',
+      q: 'Czy to działa w Bedrocku i na konsolach?',
+      a: [p('W Bedrocku tak: Windows, Android, iPhone i iPad importują plik .mcpack, kiedy go otworzysz. Xbox, PlayStation i Switch nie importują plików paczek, ale widać tam paczkę w świecie, na Realmie albo serwerze, który ją ma.')],
+    },
+    {
+      id: 'versions',
+      q: 'Które wersje mogą mieć własny totem?',
+      a: [p('Java od 1.11, w której dodano Totem nieśmiertelności, i każda aktualna wersja Bedrocka. Wybierz swoją wersję Javy w Kreatorze totemów, a paczka dostanie właściwą nazwę pliku i pack.mcmeta.')],
+    },
+    {
+      id: 'normal',
+      q: 'Dlaczego mój totem dalej wygląda zwyczajnie?',
+      a: [
+        p(
+          'Zwykle inna paczka nad twoją też zmienia totem albo paczka jest dla innej wersji Javy (plik zmienił nazwę w 1.13). Totem z nazwą zmienia się tylko przy dokładnie tej nazwie, w Javie 1.21.5 i nowszych albo z OptiFine lub CIT Resewn w starszych wersjach. ',
+          link('/guides/texture-pack-not-working', 'Więcej rozwiązań'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'animated',
+      q: 'Czy totem może być animowany?',
+      a: [
+        p(
+          'W Javie tak: tekstury przedmiotów można animować plikiem .png.mcmeta. Otwórz swój totem w Texture Pack Maker i wybierz Animuj w menu tekstury. Paczki zasobów do Bedrocka nie animują tekstur przedmiotów, tylko bloki. ',
+          link('/guides/make-animated-textures', 'Jak zrobić animowane tekstury'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  ctaLabel: 'Otwórz Kreator totemów',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2816,4 +2989,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-pbr-texture-pack': pbrPack,
   'rename-items-texture-pack': renameItems,
   'make-animated-textures': animatedTextures,
+  'make-a-custom-totem': customTotem,
 };

@@ -215,6 +215,13 @@ export const SHOTS = {
     'A Bedrock PvP pack: the red stained glass texture open, clear inside with its border kept, and the PvP tab with Low fire switched off and the reason Bedrock can’t have it, above Clear glass switched on.',
     'On Bedrock the tweaks a pack can’t make are switched off, with the reason.',
   ),
+  totemMaker: shot(
+    'totem-maker',
+    1280,
+    800,
+    'The Totem Maker with the default Steve skin chosen in step 1 and the Classic style in step 2, next to the preview: Steve as a 16×16 totem texture, the totem pop over grass and the totem in a hotbar, with Edit pixels and Download PNG buttons.',
+    'Steve’s skin as a Classic totem, with previews of the texture, the pop and the hotbar.',
+  ),
 } satisfies Record<string, Shot>;
 
 export type ShotKey = keyof typeof SHOTS;

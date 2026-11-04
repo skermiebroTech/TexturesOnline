@@ -120,4 +120,8 @@ export const SHOTS = localShots({
     alt: 'Um pack de PvP do Bedrock: a textura do vidro vermelho, transparente por dentro e com a borda, e a aba PvP com Fogo baixo desligado e o motivo, acima de Vidro transparente ligado.',
     caption: 'No Bedrock, os ajustes que um pack não consegue fazer ficam desligados, com o motivo.',
   },
+  totemMaker: {
+    alt: 'O Criador de totens com a skin padrão do Steve escolhida no passo 1 e o estilo Classic no passo 2, ao lado da prévia: Steve como textura de totem de 16×16, a animação do totem sobre a grama e o totem na barra de atalhos, com os botões “Edit pixels” e “Download PNG”.',
+    caption: 'A skin do Steve como totem Classic, com as prévias da textura, da animação e da barra de atalhos.',
+  },
 });

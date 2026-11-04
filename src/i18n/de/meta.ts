@@ -199,5 +199,12 @@ export const META_DE: MetaTranslation = {
       label: 'Animierte Texturen',
       blurb: 'Jeden Block und jedes Item animieren: Bilder, Ticks, GIFs, .mcmeta und Flipbooks.',
     },
+    'make-a-custom-totem': {
+      title: 'Eigenes Totem der Unsterblichkeit in Minecraft erstellen',
+      h1: 'So erstellst du ein eigenes Totem der Unsterblichkeit',
+      description: 'Mach aus jedem Minecraft-Skin ein eigenes Totem für Java oder Bedrock: welche Datei es ersetzt, Totems mit eigenem Namen, Installation und Lösungen.',
+      label: 'Eigenes Totem erstellen',
+      blurb: 'Mach aus jedem Skin ein Totem, oder gib jedem Totem mit Namen sein eigenes Aussehen.',
+    },
   },
 };

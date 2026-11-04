@@ -119,4 +119,8 @@ export const SHOTS = localShots({
     alt: 'Ein Bedrock-PvP-Pack: die Textur von rotem Glas, innen durchsichtig und mit Rand, und der Tab „PvP“ mit ausgeschaltetem „Niedriges Feuer“ samt Grund, darunter eingeschaltetes „Klares Glas“.',
     caption: 'In Bedrock sind die Optionen, die ein Pack nicht machen kann, ausgeschaltet, mit dem Grund.',
   },
+  totemMaker: {
+    alt: 'Der Totem-Ersteller mit dem Standard-Skin Steve in Schritt 1 und dem Stil Classic in Schritt 2, daneben die Vorschau: Steve als 16×16-Totem-Textur, die Totem-Animation über Gras und das Totem in der Schnellzugriffsleiste, mit den Knöpfen „Edit pixels“ und „Download PNG“.',
+    caption: 'Steves Skin als Classic-Totem, mit Vorschau der Textur, der Animation und der Schnellzugriffsleiste.',
+  },
 });

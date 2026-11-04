@@ -120,4 +120,8 @@ export const SHOTS = localShots({
     alt: 'Paczka PvP do Bedrocka: tekstura czerwonego szkła, przezroczysta w środku, z zachowaną ramką, i zakładka „PvP” z wyłączonym niskim ogniem i powodem, a pod nim włączone czyste szkło.',
     caption: 'W Bedrocku opcje, których paczka nie może zrobić, są wyłączone, z podanym powodem.',
   },
+  totemMaker: {
+    alt: 'Kreator totemów z domyślnym skinem Steve’a wybranym w kroku 1 i stylem Classic w kroku 2, obok podgląd: Steve jako tekstura totemu 16×16, animacja totemu nad trawą i totem na pasku szybkiego wyboru, z przyciskami „Edit pixels” i „Download PNG”.',
+    caption: 'Skin Steve’a jako totem w stylu Classic, z podglądem tekstury, animacji i paska szybkiego wyboru.',
+  },
 });

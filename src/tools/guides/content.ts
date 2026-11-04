@@ -22,6 +22,7 @@ import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from './pvp-files'
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from './pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from './names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from './anim-files';
+import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from './totem-files';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -197,6 +198,14 @@ const ANIM_STEPS: Child[] = [
   ['Paint each frame. ', strong('+'), ' adds a copy of the selected frame; the ⋯ menu duplicates, copies, pastes, moves and deletes frames. Turn on the onion skin to see the frame before faintly while you paint.'],
   ['Press the clock for ', strong('Timing'), ': how many ticks each frame shows (20 ticks are 1 second), times for single frames and ', strong('Blend frames'), '. Press play to watch it at game speed.'],
   ['Press ', strong('Export'), '. Java packs get the strip with its ', code('.png.mcmeta'), ', Bedrock packs a ', code('flipbook_textures.json'), ' entry.'],
+];
+
+const TOTEM_STEPS: Child[] = [
+  ['Open the ', link('/totem-maker', 'Totem Maker'), ' and choose a skin: type your Java username, upload a 64×64 or old 64×32 PNG, or pick one of your saved skins or a default character such as Steve or Alex.'],
+  ['Pick a style: ', strong('Classic'), ', ', strong('Big head'), ' or ', strong('Full body'), '. Turn the ', strong('Outer layer'), ', the ', strong('Gold outline'), ' and the ', strong('Gold wings'), ' on or off.'],
+  ['Check the previews: the 16×16 texture, the pop when the totem saves you, and your hotbar. Press ', strong('Edit pixels'), ' to change single pixels.'],
+  ['Choose ', strong('Java Edition'), ' and the version you play, or ', strong('Bedrock Edition'), ', then press ', strong('Download .zip'), ' or ', strong('Download .mcpack'), '.'],
+  ['Install the pack and move it to the top of your pack list. ', link('/guides/install-resource-packs', 'How to install it'), '.'],
 ];
 
 export const GUIDE_CONTENT: Guide[] = [
@@ -1252,7 +1261,7 @@ export const GUIDE_CONTENT: Guide[] = [
         a: [p('Export it again from the same project and open the new .mcpack. The pack keeps its IDs and gets a higher version number, so Minecraft replaces the old one instead of adding a copy.')],
       },
     ],
-    related: ['make-a-bedrock-skin-pack', 'install-resource-packs', 'java-vs-bedrock-packs'],
+    related: ['make-a-bedrock-skin-pack', 'make-a-custom-totem', 'install-resource-packs', 'java-vs-bedrock-packs'],
     cta: { label: 'Open the Skin Maker', to: '/skins', icon: 'human' },
   },
 
@@ -2758,7 +2767,7 @@ export const GUIDE_CONTENT: Guide[] = [
         a: [p('Players who use your pack see it, on servers too. The name itself is part of the item, so everyone sees the name; only the texture needs the pack.')],
       },
     ],
-    related: ['make-3d-items-texture-pack', 'make-a-texture-pack', 'install-resource-packs'],
+    related: ['make-3d-items-texture-pack', 'make-a-custom-totem', 'make-a-texture-pack', 'install-resource-packs'],
     cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'label' },
   },
   // ------------------------------------------------------------ animated textures
@@ -2955,6 +2964,170 @@ export const GUIDE_CONTENT: Guide[] = [
     ],
     related: ['make-a-texture-pack', 'texture-pack-not-working', 'java-vs-bedrock-packs'],
     cta: { label: 'Open the Texture Pack Maker', to: '/textures', icon: 'play' },
+  },
+  // ------------------------------------------------------------ custom totem
+  {
+    meta: meta('make-a-custom-totem'),
+    image: SHOTS.totemMaker,
+    intro: [
+      p(
+        'A Totem of Undying saves you from dying while you hold it, and its golden figure pops up on the screen when it does. A resource pack can swap that 16×16 picture for your own, and the favourite is a totem that looks like you or a friend. The free ',
+        link('/totem-maker', 'Totem Maker'),
+        ' turns any Minecraft skin into a totem and packs it for Java (1.11 and newer) or Bedrock, right in your browser.',
+      ),
+    ],
+    quick: {
+      title: 'The short version',
+      items: [
+        ['Open the ', link('/totem-maker', 'Totem Maker'), ' and choose a skin.'],
+        'Pick a style, check the previews and download a .zip (Java) or .mcpack (Bedrock).',
+        'Install the pack and move it to the top of your pack list.',
+      ],
+    },
+    howto: { name: 'How to make a custom Totem of Undying with the Totem Maker', steps: TOTEM_STEPS },
+    sections: [
+      {
+        id: 'steps',
+        title: 'Make one step by step',
+        body: [steps(TOTEM_STEPS), figure(SHOTS.totemMaker)],
+      },
+      {
+        id: 'styles',
+        title: 'Styles, outer layer and gold',
+        body: [
+          ul([
+            [strong('Classic'), ' puts the whole face on top and spreads the arms like the totem’s wings, with the body and legs below. ', strong('Big head'), ' draws an oversized head on a small body. ', strong('Full body'), ' shows the whole player standing with the arms down, so the outfit shows.'],
+            [strong('Outer layer'), ' draws the hat, jacket, sleeves and trousers over the skin. Turn it off if a big hat hides the face.'],
+            [strong('Gold outline'), ' keeps the vanilla totem’s outline and trims the figure to its shape. ', strong('Gold wings'), ' lets the vanilla totem show wherever the figure leaves a gap, such as the wing tips. Both come from the vanilla totem of the version you pick for the download.'],
+            [strong('Edit pixels'), ' opens a pencil, an eraser, a fill bucket, a colour picker and mirror painting. Changing the style afterwards replaces your edits, so pick the style first.'],
+          ]),
+          p('A friend’s Java username works as well as your own: their current skin is fetched. Bedrock gamertags can’t be looked up, so upload a Bedrock friend’s skin as a PNG. HD 128×128 skins are read at 64×64, since the totem is only 16×16.'),
+        ],
+      },
+      {
+        id: 'files',
+        title: 'Which file the pack changes',
+        body: [
+          p('A totem pack replaces one texture. Its path depends on the edition and, on Java, on the version, because 1.13 renamed the item textures:'),
+          table(
+            ['Edition and version', 'Totem texture'],
+            [
+              ['Java 1.11 – 1.12.2', code('assets/minecraft/textures/items/totem.png')],
+              ['Java 1.13 and newer', code('assets/minecraft/textures/item/totem_of_undying.png')],
+              ['Bedrock', code('textures/items/totem.png')],
+            ],
+          ),
+          p('The pop when a totem saves you shows the same texture, so it changes too. The Totem Maker writes the right path for the version you pick. Because only the totem changes, the pack works next to any other pack: put it above the others.'),
+        ],
+      },
+      {
+        id: 'names',
+        title: 'Several totems with different names',
+        body: [
+          p(
+            'On Java 1.21.5 and newer a pack can give a totem its own texture when it is renamed in an anvil, without mods: one totem named “Steve” and another named “Alex”, each with its own face. Older Java versions need OptiFine or the CIT Resewn mod for this. Bedrock packs can’t pick a texture by name, so every totem looks the same there.',
+          ),
+          steps([
+            ['In the Totem Maker, choose Java and your version, and press ', strong('Open in Texture Pack Maker'), '.'],
+            ['Open the totem’s texture and choose ', strong('Name-based textures'), ' in its menu (⋮). Type the name and press ', strong('Create and paint'), '.'],
+            ['Paint the new texture, or make a second totem in the Totem Maker, press ', strong('Download PNG'), ' and put it in with ', strong('Upload'), '.'],
+            'Export the pack, rename a totem in an anvil to exactly that name and hold it.',
+          ]),
+          p('The name must match exactly, capital letters too. ', link('/guides/rename-items-texture-pack', 'How renaming items to change their texture works'), '.'),
+        ],
+      },
+      {
+        id: 'by-hand',
+        title: 'Make the pack by hand',
+        body: [
+          p('You can also build a totem pack with any image editor. Draw a 16×16 PNG with a see-through background, then:'),
+          el('h3', { class: 'guide-sub' }, 'Java Edition'),
+          steps([
+            ['Make a folder with the PNG at ', code('assets/minecraft/textures/item/totem_of_undying.png'), ' and a ', code('pack.mcmeta'), ' next to ', code('assets'), '. A ', code('pack.png'), ' icon is optional.'],
+            ['Zip the ', strong('contents'), ' of the folder, not the folder itself, so ', code('pack.mcmeta'), ' sits at the top of the zip.'],
+          ]),
+          pre(TOTEM_JAVA_TREE),
+          p(`A pack for Java ${LATEST} (resource pack format ${F(LATEST)}) has this pack.mcmeta:`),
+          pre(mcmetaFor(LATEST, 'A custom Totem of Undying')),
+          p(
+            'For Java 1.11 to 1.12.2 the texture goes in ',
+            code('assets/minecraft/textures/items/totem.png'),
+            ' and pack.mcmeta has a single ',
+            code('pack_format'),
+            '. ',
+            link('/guides/minecraft-pack-format-versions', 'Every version’s pack format'),
+            '.',
+          ),
+          pre(mcmetaLegacy('1.12.2', 'A custom Totem of Undying')),
+          el('h3', { class: 'guide-sub' }, 'Bedrock Edition'),
+          steps([
+            ['Put the PNG at ', code('textures/items/totem.png'), ' and write a ', code('manifest.json'), ' with two new UUIDs of your own (any UUID generator makes them). A ', code('pack_icon.png'), ' is optional.'],
+            ['Zip the folder’s contents and rename the file from ', code('.zip'), ' to ', code('.mcpack'), '.'],
+          ]),
+          pre(TOTEM_BEDROCK_TREE),
+          pre(totemManifest('A custom Totem of Undying')),
+          callout('tip', 'New pack, new UUIDs', 'Bedrock tells packs apart by their UUIDs. Reuse the IDs of another pack and the two get mixed up: one replaces the other, or the new one won’t import.'),
+        ],
+      },
+      {
+        id: 'install',
+        title: 'Install it and fix problems',
+        body: [
+          ul([
+            ['Java: open ', uiPath('Options…', 'Resource Packs…', 'Open Pack Folder'), ', drop the ', code('.zip'), ' in without unzipping it, move the pack to ', strong('Selected'), ' and to the top of the list, then click ', strong('Done'), '.'],
+            ['Bedrock: open the ', code('.mcpack'), '. Minecraft imports it; then activate it under ', uiPath('Settings', 'Global Resources', 'My Packs'), ' and move it to the top. Downloading it again from the Totem Maker while the page is open updates the same pack instead of adding a second one.'],
+          ]),
+          p('Still the normal totem?'),
+          ul([
+            'Another pack above yours changes the totem too: move yours to the top.',
+            'The pack was made for another Java version: before 1.13 the file has another name. Make it again for the version you play.',
+            ['The zip holds a folder instead of the files: ', code('pack.mcmeta'), ' or ', code('manifest.json'), ' must be at the top of the zip.'],
+          ]),
+          p(link('/guides/install-resource-packs', 'How to install resource packs'), ' · ', link('/guides/texture-pack-not-working', 'Texture pack not working: fixes')),
+        ],
+      },
+    ],
+    faq: [
+      {
+        id: 'others',
+        q: 'Will other players see my custom totem?',
+        a: [p('No. Resource packs only change what you see, so other players see the normal totem unless they use the same pack. A server can send the pack to everyone as its server resource pack (Java) or a required pack (Bedrock); then they all see it.')],
+      },
+      {
+        id: 'bedrock',
+        q: 'Does it work on Bedrock and on consoles?',
+        a: [p('Yes on Bedrock: Windows, Android, iPhone and iPad import the .mcpack when you open it. Xbox, PlayStation and Switch can’t import pack files, but players there see the pack in a world, Realm or server that carries it.')],
+      },
+      {
+        id: 'versions',
+        q: 'Which versions can have a custom totem?',
+        a: [p('Java 1.11 and newer, where the Totem of Undying was added, and every current Bedrock version. Pick your Java version in the Totem Maker and the pack gets the right file name and pack.mcmeta.')],
+      },
+      {
+        id: 'normal',
+        q: 'Why does my totem still look normal?',
+        a: [
+          p(
+            'Usually another pack above yours changes the totem too, or the pack is for another Java version (the file was renamed in 1.13). A named totem only changes with the exact name, on Java 1.21.5 and newer, or with OptiFine or CIT Resewn on older versions. ',
+            link('/guides/texture-pack-not-working', 'More fixes'),
+            '.',
+          ),
+        ],
+      },
+      {
+        id: 'animated',
+        q: 'Can a totem be animated?',
+        a: [
+          p(
+            'On Java, yes: item textures can be animated with a .png.mcmeta file. Open your totem in the Texture Pack Maker and choose Make animated in the texture’s menu. Bedrock resource packs can’t animate item textures, only blocks. ',
+            link('/guides/make-animated-textures', 'How to make animated textures'),
+            '.',
+          ),
+        ],
+      },
+    ],
+    related: ['rename-items-texture-pack', 'make-a-skin', 'install-resource-packs'],
+    cta: { label: 'Open the Totem Maker', to: '/totem-maker', icon: 'human-arms-up' },
   },
 ];
 

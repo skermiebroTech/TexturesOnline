@@ -199,5 +199,12 @@ export const META_PL: MetaTranslation = {
       label: 'Animowane tekstury',
       blurb: 'Animuj każdy blok i przedmiot: klatki, ticki, GIF-y, .mcmeta i flipbooki.',
     },
+    'make-a-custom-totem': {
+      title: 'Jak zrobić własny Totem nieśmiertelności w Minecrafcie',
+      h1: 'Jak zrobić własny Totem nieśmiertelności',
+      description: 'Zamień dowolnego skina we własny totem do Javy lub Bedrocka: który plik podmienia, totemy z własną nazwą, instalacja i rozwiązania problemów.',
+      label: 'Własny totem',
+      blurb: 'Zamień dowolnego skina w totem albo daj każdemu totemowi z nazwą własny wygląd.',
+    },
   },
 };

@@ -268,6 +268,17 @@ export const GUIDES: GuideMeta[] = [
     accent: 'accent-green',
   }),
   guide({
+    slug: 'make-a-custom-totem',
+    blurb: 'Turn any skin into a Totem of Undying, or give each named totem its own look.',
+    title: 'How to Make a Custom Totem of Undying (Java & Bedrock)',
+    h1: 'How to make a custom Totem of Undying',
+    description:
+      'Turn any Minecraft skin into a custom Totem of Undying for Java or Bedrock: the file it replaces, totems with their own names, installing it and fixes.',
+    label: 'Make a custom totem',
+    icon: 'human-arms-up',
+    accent: 'accent-gold',
+  }),
+  guide({
     slug: 'install-resource-packs',
     blurb: 'Java resource packs, Bedrock .mcpack files and shader packs, plus fixes.',
     title: 'How to Install a Minecraft Texture Pack (Java & Bedrock)',

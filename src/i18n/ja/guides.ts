@@ -13,6 +13,7 @@ import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
+import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2783,6 +2784,178 @@ const animatedTextures: GuideText = {
   ctaLabel: 'Texture Pack Makerを開く',
 };
 
+// ---------------------------------------------------------------- custom totem
+
+const TOTEM_STEPS: Child[] = [
+  [link('/totem-maker', 'トーテム作成'), 'を開き、スキンを選びます。Java版のユーザー名を入力する、64×64か旧形式の64×32のPNGを読み込む、保存したスキンやスティーブ、アレックスなどのデフォルトキャラクターを選ぶ、のどれかです。'],
+  ['スタイルを', strong('Classic'), '、', strong('Big head'), '、', strong('Full body'), 'から選びます。', strong('外側のレイヤー'), '、', strong('金色のふち'), '、', strong('金色の翼'), 'はそれぞれオンとオフを切り替えられます。'],
+  ['プレビューを確認します。16×16のテクスチャ、トーテムに助けられたときのアニメーション、ホットバーで見られます。1ピクセルずつ直すときは', strong('ピクセルを編集'), 'を押します。'],
+  [strong('Java版'), 'と遊んでいるバージョン、または', strong('統合版'), 'を選び、', strong('.zipをダウンロード'), 'か', strong('.mcpackをダウンロード'), 'を押します。'],
+  ['パックを入れて、パック一覧のいちばん上に移します。', link('/guides/install-resource-packs', '入れ方'), '。'],
+];
+
+const customTotem: GuideText = {
+  image: SHOTS.totemMaker,
+  intro: [
+    p(
+      '不死のトーテムは、手に持っている間は死なずにすむアイテムで、発動すると金色の像が画面に飛び出します。リソースパックを使えばこの16×16の画像を好きな絵に変えられ、特に人気なのが自分や友だちの見た目のオリジナルのトーテムです。無料の',
+      link('/totem-maker', 'トーテム作成'),
+      'なら、どのMinecraftのスキンからでもトーテムを作り、Java版（1.11以降）か統合版のパックにまとめられます。すべてブラウザの中で行います。',
+    ),
+  ],
+  quick: {
+    title: '短く言うと',
+    items: [
+      [link('/totem-maker', 'トーテム作成'), 'を開いてスキンを選びます。'],
+      'スタイルを選んでプレビューを確認し、.zip（Java版）か.mcpack（統合版）をダウンロードします。',
+      'パックを入れて、パック一覧のいちばん上に移します。',
+    ],
+  },
+  howto: { name: 'トーテム作成でオリジナルの不死のトーテムを作る方法', steps: TOTEM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: '手順',
+      body: [steps(TOTEM_STEPS), figure(SHOTS.totemMaker)],
+    },
+    {
+      id: 'styles',
+      title: 'スタイル、外側のレイヤー、金色',
+      body: [
+        ul([
+          [strong('Classic'), 'は顔全体を上に置き、腕をトーテムの翼のように広げ、その下に体と脚を描きます。', strong('Big head'), 'は小さな体に大きな頭を描きます。', strong('Full body'), 'は腕を下ろして立つプレイヤーの全身を描くので、服がよく見えます。'],
+          [strong('外側のレイヤー'), 'は、帽子、上着、袖、ズボンをスキンの上に重ねます。大きな帽子で顔が隠れるならオフにします。'],
+          [strong('金色のふち'), 'はバニラのトーテムのふちを残し、像をその形に切り抜きます。', strong('金色の翼'), 'は、翼の先など像がすき間を残したところにバニラのトーテムを見せます。どちらも、ダウンロード用に選んだバージョンのバニラのトーテムから取ります。'],
+          [strong('ピクセルを編集'), 'では、鉛筆、消しゴム、塗りつぶし、スポイト、左右対称に描く機能が使えます。あとでスタイルを変えると手直しが置き換わるので、先にスタイルを決めておきます。'],
+        ]),
+        p('友だちのJava版のユーザー名も、自分のと同じように使えます。その人の今のスキンを読み込みます。統合版のゲーマータグは調べられないので、統合版の友だちのスキンはPNGで読み込みます。128×128のHDスキンは、トーテムが16×16しかないため64×64として読み込みます。'),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'パックが変えるファイル',
+      body: [
+        p('トーテムのパックが置き換えるテクスチャは1枚だけです。そのパスはエディションによって、Java版ではさらにバージョンによって変わります。1.13でアイテムのテクスチャの名前が変わったためです。'),
+        table(
+          ['エディションとバージョン', 'トーテムのテクスチャ'],
+          [
+            ['Java版 1.11〜1.12.2', code('assets/minecraft/textures/items/totem.png')],
+            ['Java版 1.13以降', code('assets/minecraft/textures/item/totem_of_undying.png')],
+            ['統合版', code('textures/items/totem.png')],
+          ],
+        ),
+        p('トーテムに助けられたときのアニメーションも同じテクスチャを使うので、そちらも変わります。トーテム作成は、選んだバージョンに合ったパスで書き出します。変わるのはトーテムだけなので、ほかのどのパックとも一緒に使えます。ほかのパックより上に置いてください。'),
+      ],
+    },
+    {
+      id: 'names',
+      title: '名前ごとに違うトーテム',
+      body: [
+        p(
+          'Java版1.21.5以降では、金床で名前を変えたトーテムに専用のテクスチャをMODなしで付けられます。「Steve」という名前のトーテムと「Alex」という名前のトーテムに、それぞれの顔を付けるといったことができます。それより前のJava版ではOptiFineかCIT Resewn MODが必要です。統合版のパックは名前でテクスチャを選べないので、統合版ではどのトーテムも同じ見た目です。',
+        ),
+        steps([
+          ['トーテム作成でJava版とバージョンを選び、', strong('Texture Pack Makerで開く'), 'を押します。'],
+          ['トーテムのテクスチャを開き、メニュー（⋮）の', strong('名前で変わるテクスチャ'), 'を選びます。名前を入力して', strong('作って描く'), 'を押します。'],
+          ['新しいテクスチャを描きます。または、トーテム作成で2つ目のトーテムを作って', strong('PNGをダウンロード'), 'を押し、', strong('アップロード'), 'で入れます。'],
+          'パックを書き出し、金床でトーテムにまったく同じ名前を付けて手に持ちます。',
+        ]),
+        p('名前は大文字と小文字まで完全に一致する必要があります。', link('/guides/rename-items-texture-pack', '名前を変えてアイテムのテクスチャを変えるしくみ'), '。'),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'パックを手作業で作る',
+      body: [
+        p('トーテムのパックは、どの画像編集ソフトでも作れます。背景が透明な16×16のPNGを描いてから、次のようにします。'),
+        h3('Java版'),
+        steps([
+          ['フォルダーを作り、PNGを', code('assets/minecraft/textures/item/totem_of_undying.png'), 'に、', code('pack.mcmeta'), 'を', code('assets'), 'と同じ場所に置きます。アイコンの', code('pack.png'), 'はなくてもかまいません。'],
+          ['フォルダーそのものではなく、フォルダーの', strong('中身'), 'をzipにします。', code('pack.mcmeta'), 'がzipのいちばん上に来るようにするためです。'],
+        ]),
+        pre(TOTEM_JAVA_TREE),
+        p(`Java版${LATEST}（リソースパックのフォーマット${F(LATEST)}）用のパックのpack.mcmetaは次のとおりです。`),
+        pre(mcmetaFor(LATEST, 'オリジナルの不死のトーテム')),
+        p(
+          'Java版1.11〜1.12.2では、テクスチャは',
+          code('assets/minecraft/textures/items/totem.png'),
+          'に置き、pack.mcmetaには',
+          code('pack_format'),
+          'を1つだけ書きます。',
+          link('/guides/minecraft-pack-format-versions', '全バージョンのパックフォーマット'),
+          '。',
+        ),
+        pre(mcmetaLegacy('1.12.2', 'オリジナルの不死のトーテム')),
+        h3('統合版'),
+        steps([
+          ['PNGを', code('textures/items/totem.png'), 'に置き、自分で作った新しいUUIDを2つ入れた', code('manifest.json'), 'を書きます（UUIDはどのUUID生成ツールでも作れます）。', code('pack_icon.png'), 'はなくてもかまいません。'],
+          ['フォルダーの中身をzipにし、ファイルの拡張子を', code('.zip'), 'から', code('.mcpack'), 'に変えます。'],
+        ]),
+        pre(TOTEM_BEDROCK_TREE),
+        pre(totemManifest('オリジナルの不死のトーテム')),
+        callout('tip', '新しいパックには新しいUUID', '統合版はUUIDでパックを見分けます。ほかのパックのIDを使い回すと2つが混ざり、片方がもう片方を置き換えたり、新しいほうが読み込めなかったりします。'),
+      ],
+    },
+    {
+      id: 'install',
+      title: '入れ方と困ったとき',
+      body: [
+        ul([
+          ['Java版：', uiPath(OPTIONS, PACKS, OPEN_FOLDER), 'を開いて', code('.zip'), 'を解凍せずに入れ、パックを', strong('選択中'), 'のいちばん上に移して', strong('完了'), 'をクリックします。'],
+          ['統合版：', code('.mcpack'), 'を開くとMinecraftが読み込みます。そのあと', uiPath('設定', 'グローバル リソース', 'マイ パック'), 'で有効にして、いちばん上に移します。ページを開いたままトーテム作成からもう一度ダウンロードすると、パックが2つに増えずに同じパックが更新されます。'],
+        ]),
+        p('それでも普通のトーテムのままなら：'),
+        ul([
+          '自分のパックより上にある別のパックもトーテムを変えています。自分のパックをいちばん上に移します。',
+          'パックが別のJava版のバージョン用です。1.13より前はファイル名が違います。遊んでいるバージョン用に作り直します。',
+          ['zipの中にファイルではなくフォルダーが入っています。', code('pack.mcmeta'), 'か', code('manifest.json'), 'がzipのいちばん上にある必要があります。'],
+        ]),
+        p(link('/guides/install-resource-packs', 'リソースパックの入れ方'), '・', link('/guides/texture-pack-not-working', 'テクスチャパックが反映されないときの直し方')),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'others',
+      q: 'ほかのプレイヤーにもオリジナルのトーテムが見えますか？',
+      a: [p('いいえ。リソースパックが変えるのは自分の画面だけなので、同じパックを使っていない人には普通のトーテムに見えます。サーバーがサーバーリソースパック（Java版）や必須パック（統合版）として全員にパックを配れば、全員に見えます。')],
+    },
+    {
+      id: 'bedrock',
+      q: '統合版やゲーム機でも使えますか？',
+      a: [p('統合版では使えます。Windows、Android、iPhone、iPadは、.mcpackを開くと読み込みます。Xbox、PlayStation、Switchはパックのファイルを読み込めませんが、パックが入ったワールド、Realm、サーバーに入ればそのパックで表示されます。')],
+    },
+    {
+      id: 'versions',
+      q: 'どのバージョンでオリジナルのトーテムを使えますか？',
+      a: [p('不死のトーテムが追加されたJava版1.11以降と、現在のすべての統合版です。トーテム作成でJava版のバージョンを選ぶと、パックに正しいファイル名とpack.mcmetaが入ります。')],
+    },
+    {
+      id: 'normal',
+      q: 'トーテムが普通のままなのはなぜですか？',
+      a: [
+        p(
+          'たいていは、自分のパックより上にある別のパックもトーテムを変えているか、パックが別のJava版のバージョン用です（1.13でファイル名が変わりました）。名前を付けたトーテムは、名前が完全に一致したときだけ変わります。Java版1.21.5以降か、それより前のバージョンならOptiFineかCIT Resewnが必要です。',
+          link('/guides/texture-pack-not-working', 'ほかの直し方'),
+          '。',
+        ),
+      ],
+    },
+    {
+      id: 'animated',
+      q: 'トーテムをアニメーションにできますか？',
+      a: [
+        p(
+          'Java版ならできます。アイテムのテクスチャは.png.mcmetaファイルでアニメーションにできます。Texture Pack Makerでトーテムを開き、テクスチャのメニューから「アニメーションにする」を選びます。統合版のリソースパックはアイテムのテクスチャをアニメーションにできず、できるのはブロックだけです。',
+          link('/guides/make-animated-textures', 'アニメーションテクスチャの作り方'),
+          '。',
+        ),
+      ],
+    },
+  ],
+  ctaLabel: 'トーテム作成を開く',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2800,4 +2973,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-pbr-texture-pack': pbrPack,
   'rename-items-texture-pack': renameItems,
   'make-animated-textures': animatedTextures,
+  'make-a-custom-totem': customTotem,
 };

@@ -727,7 +727,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
         a: [el('p', null, 'No. The totem and the pack are made in your browser. Only a username lookup asks a skin server for that player’s skin.')],
       },
     ],
-    guides: ['install-resource-packs', 'make-a-skin', 'texture-pack-not-working'],
+    guides: ['make-a-custom-totem', 'install-resource-packs', 'make-a-skin', 'texture-pack-not-working'],
     cta: 'Make a totem',
   },
   fonts: {

@@ -1,6 +1,6 @@
 // Renders the screenshots used by the SEO guide pages (public/screenshots/guides/*.jpg, 1280x800
 // viewport, dark theme; the model editor and PvP shots in the light theme) by driving the real app: texture
-// pack maker, model editor, PvP tab, skin editor and shader maker.
+// pack maker, model editor, PvP tab, skin editor, shader maker and totem maker.
 //
 // Game files are served offline from local fixtures through route interception:
 //   TO_FIXTURES  folder with client-26.3.jar, manifest.json and v263.json (required)
@@ -727,6 +727,30 @@ async function pvpFlow(browser, base, fx, jar) {
 // The helpers are shared with tests/harness/seo/store-screenshots.cjs.
 module.exports = { fixtures, routeMojang, startDevServer, waitIdle, hideToastsOnLoad, txWaitEditor, txStrokes, skOpenStarter, skApi, skRename, skColor, skStroke, waitPreview };
 
+// ------------------------------------------------------------------------------------- totem maker
+/** The Totem Maker with the default Steve skin and the Classic style: the skin and style steps next to the previews. */
+async function totemFlow(browser, base, fx, jar) {
+  const ctx = await newCtx(browser, fx, jar);
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => console.log('  pageerror', e.message));
+  await hideToastsOnLoad(page);
+  await page.goto(`${base}totem-maker/`);
+  await page.click('.tt-tab[data-source="default"]');
+  const steve = page.locator('.tt-skin-opt[data-skin]', { hasText: /^Steve$/ }).first();
+  await steve.waitFor({ timeout: 120000 });
+  await steve.click();
+  await page.waitForSelector('.tt-big-canvas', { timeout: 60000 });
+  await waitIdle(page, 1500);
+  // the style step and the preview side by side, below the sticky header
+  await page.evaluate(() => {
+    const r = document.querySelector('.tt-grid').getBoundingClientRect();
+    window.scrollTo(0, r.top + window.scrollY - 76);
+  });
+  await page.waitForTimeout(500);
+  await shot(page, 'totem-maker');
+  await ctx.close();
+}
+
 // ------------------------------------------------------------------------------------- main
 if (require.main === module) (async () => {
   const { fx, jar } = fixtures();
@@ -744,6 +768,7 @@ if (require.main === module) (async () => {
     if (want('bedrock-vibrant-visuals')) await shaderShot(browser, base, fx, jar, 'bedrock-vibrant', 'vivid', 'Bright Vibrant', 'bedrock-vibrant-visuals', { scroll: 'half' });
     if (MODEL_SHOTS.some(want)) await modelsFlow(browser, base, fx, jar);
     if (PVP_SHOTS.some(want)) await pvpFlow(browser, base, fx, jar);
+    if (want('totem-maker')) await totemFlow(browser, base, fx, jar);
   } finally {
     await browser.close();
     await server?.stop();

@@ -13,6 +13,7 @@ import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
+import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2795,6 +2796,178 @@ const animatedTextures: GuideText = {
   ctaLabel: 'Texture Pack Maker öffnen',
 };
 
+// ---------------------------------------------------------------- custom totem
+
+const TOTEM_STEPS: Child[] = [
+  ['Öffne den ', link('/totem-maker', 'Totem-Ersteller'), ' und wähl einen Skin: Gib deinen Java-Benutzernamen ein, lade ein PNG mit 64×64 oder im alten 64×32-Format hoch, oder nimm einen deiner gespeicherten Skins oder einen Standard-Charakter wie Steve oder Alex.'],
+  ['Wähl einen Stil: ', strong('Classic'), ', ', strong('Big head'), ' oder ', strong('Full body'), '. Schalte ', strong('Außenebene'), ', ', strong('Goldener Rand'), ' und ', strong('Goldene Flügel'), ' ein oder aus.'],
+  ['Prüf die Vorschauen: die 16×16-Textur, die Animation, wenn dich das Totem rettet, und deine Schnellzugriffsleiste. Mit ', strong('Pixel bearbeiten'), ' änderst du einzelne Pixel.'],
+  ['Wähl ', strong('Java Edition'), ' und die Version, die du spielst, oder ', strong('Bedrock Edition'), ', und klick dann auf ', strong('.zip herunterladen'), ' oder ', strong('.mcpack herunterladen'), '.'],
+  ['Installiere das Pack und schieb es in deiner Pack-Liste nach ganz oben. ', link('/guides/install-resource-packs', 'So installierst du es'), '.'],
+];
+
+const customTotem: GuideText = {
+  image: SHOTS.totemMaker,
+  intro: [
+    p(
+      'Ein Totem der Unsterblichkeit rettet dich vor dem Tod, solange du es in der Hand hältst, und dabei taucht seine goldene Figur auf dem Bildschirm auf. Ein Ressourcenpaket kann dieses 16×16-Bild durch dein eigenes ersetzen, und am beliebtesten ist ein eigenes Totem, das aussieht wie du oder ein Freund. Der kostenlose ',
+      link('/totem-maker', 'Totem-Ersteller'),
+      ' macht aus jedem Minecraft-Skin ein Totem und packt es für Java (ab 1.11) oder Bedrock, direkt in deinem Browser.',
+    ),
+  ],
+  quick: {
+    title: 'Die Kurzfassung',
+    items: [
+      ['Öffne den ', link('/totem-maker', 'Totem-Ersteller'), ' und wähl einen Skin.'],
+      'Wähl einen Stil, prüf die Vorschauen und lade eine .zip (Java) oder ein .mcpack (Bedrock) herunter.',
+      'Installiere das Pack und schieb es in deiner Pack-Liste nach ganz oben.',
+    ],
+  },
+  howto: { name: 'Ein eigenes Totem der Unsterblichkeit mit dem Totem-Ersteller machen', steps: TOTEM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Schritt für Schritt',
+      body: [steps(TOTEM_STEPS), figure(SHOTS.totemMaker)],
+    },
+    {
+      id: 'styles',
+      title: 'Stile, Außenebene und Gold',
+      body: [
+        ul([
+          [strong('Classic'), ' setzt das ganze Gesicht nach oben und breitet die Arme wie die Flügel des Totems aus, mit Körper und Beinen darunter. ', strong('Big head'), ' zeichnet einen übergroßen Kopf auf einen kleinen Körper. ', strong('Full body'), ' zeigt den ganzen Spieler im Stehen mit hängenden Armen, damit das Outfit zu sehen ist.'],
+          [strong('Außenebene'), ' zeichnet Hut, Jacke, Ärmel und Hose über den Skin. Schalte sie aus, wenn ein großer Hut das Gesicht verdeckt.'],
+          [strong('Goldener Rand'), ' behält den Rand des Vanilla-Totems und schneidet die Figur auf seine Form zu. ', strong('Goldene Flügel'), ' lässt das Vanilla-Totem überall durchscheinen, wo die Figur eine Lücke lässt, etwa an den Flügelspitzen. Beides kommt vom Vanilla-Totem der Version, die du für den Download wählst.'],
+          [strong('Pixel bearbeiten'), ' öffnet Stift, Radierer, Füllen, Farbpipette und gespiegeltes Malen. Wechselst du danach den Stil, werden deine Änderungen ersetzt, also wähl den Stil zuerst.'],
+        ]),
+        p('Der Java-Benutzername eines Freundes funktioniert genauso wie deiner: Sein aktueller Skin wird geladen. Bedrock-Gamertags lassen sich nicht nachschlagen, also lad den Skin eines Bedrock-Freundes als PNG hoch. HD-Skins mit 128×128 werden mit 64×64 gelesen, weil das Totem nur 16×16 groß ist.'),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Welche Datei das Pack ändert',
+      body: [
+        p('Ein Totem-Pack ersetzt eine einzige Textur. Ihr Pfad hängt von der Edition und bei Java von der Version ab, weil 1.13 die Item-Texturen umbenannt hat:'),
+        table(
+          ['Edition und Version', 'Totem-Textur'],
+          [
+            ['Java 1.11 – 1.12.2', code('assets/minecraft/textures/items/totem.png')],
+            ['Java 1.13 und neuer', code('assets/minecraft/textures/item/totem_of_undying.png')],
+            ['Bedrock', code('textures/items/totem.png')],
+          ],
+        ),
+        p('Die Animation, wenn dich ein Totem rettet, zeigt dieselbe Textur, also ändert sie sich mit. Der Totem-Ersteller schreibt den richtigen Pfad für die Version, die du wählst. Weil sich nur das Totem ändert, funktioniert das Pack neben jedem anderen Pack: Setz es über die anderen.'),
+      ],
+    },
+    {
+      id: 'names',
+      title: 'Mehrere Totems mit verschiedenen Namen',
+      body: [
+        p(
+          'Ab Java 1.21.5 kann ein Pack einem Totem ohne Mods eine eigene Textur geben, wenn du es am Amboss umbenennst: ein Totem namens „Steve“ und eins namens „Alex“, jedes mit seinem eigenen Gesicht. Ältere Java-Versionen brauchen dafür OptiFine oder die Mod CIT Resewn. Bedrock-Packs können keine Textur nach dem Namen wählen, dort sehen also alle Totems gleich aus.',
+        ),
+        steps([
+          ['Wähl im Totem-Ersteller Java und deine Version und klick auf ', strong('Im Texture Pack Maker öffnen'), '.'],
+          ['Öffne die Textur des Totems und wähl in ihrem Menü (⋮) ', strong('Namenstexturen'), '. Tipp den Namen ein und klick auf ', strong('Erstellen und malen'), '.'],
+          ['Mal die neue Textur, oder mach im Totem-Ersteller ein zweites Totem, klick auf ', strong('PNG herunterladen'), ' und setz es mit ', strong('Hochladen'), ' ein.'],
+          'Exportiere das Pack, benenne ein Totem am Amboss genau so um und nimm es in die Hand.',
+        ]),
+        p('Der Name muss genau stimmen, auch die Großschreibung. ', link('/guides/rename-items-texture-pack', 'So ändern umbenannte Items ihre Textur'), '.'),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'Das Pack von Hand bauen',
+      body: [
+        p('Du kannst ein Totem-Pack auch mit jedem Bildprogramm bauen. Zeichne ein 16×16-PNG mit durchsichtigem Hintergrund, dann:'),
+        h3('Java Edition'),
+        steps([
+          ['Leg einen Ordner an, mit dem PNG unter ', code('assets/minecraft/textures/item/totem_of_undying.png'), ' und einer ', code('pack.mcmeta'), ' neben ', code('assets'), '. Ein Symbol ', code('pack.png'), ' ist optional.'],
+          ['Pack den ', strong('Inhalt'), ' des Ordners in eine Zip, nicht den Ordner selbst, damit ', code('pack.mcmeta'), ' ganz oben in der Zip liegt.'],
+        ]),
+        pre(TOTEM_JAVA_TREE),
+        p(`Ein Pack für Java ${LATEST} (Ressourcenpaket-Format ${F(LATEST)}) hat diese pack.mcmeta:`),
+        pre(mcmetaFor(LATEST, 'Ein eigenes Totem der Unsterblichkeit')),
+        p(
+          'Für Java 1.11 bis 1.12.2 kommt die Textur nach ',
+          code('assets/minecraft/textures/items/totem.png'),
+          ', und die pack.mcmeta hat ein einzelnes ',
+          code('pack_format'),
+          '. ',
+          link('/guides/minecraft-pack-format-versions', 'Das Pack-Format jeder Version'),
+          '.',
+        ),
+        pre(mcmetaLegacy('1.12.2', 'Ein eigenes Totem der Unsterblichkeit')),
+        h3('Bedrock Edition'),
+        steps([
+          ['Leg das PNG unter ', code('textures/items/totem.png'), ' ab und schreib eine ', code('manifest.json'), ' mit zwei eigenen, neuen UUIDs (jeder UUID-Generator macht sie). Ein ', code('pack_icon.png'), ' ist optional.'],
+          ['Pack den Inhalt des Ordners in eine Zip und benenne die Datei von ', code('.zip'), ' in ', code('.mcpack'), ' um.'],
+        ]),
+        pre(TOTEM_BEDROCK_TREE),
+        pre(totemManifest('Ein eigenes Totem der Unsterblichkeit')),
+        callout('tip', 'Neues Pack, neue UUIDs', 'Bedrock unterscheidet Packs an ihren UUIDs. Nimmst du die IDs eines anderen Packs, kommen die beiden durcheinander: Eins ersetzt das andere, oder das neue lässt sich nicht importieren.'),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Installieren und Probleme lösen',
+      body: [
+        ul([
+          ['Java: Öffne ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), ', leg die ', code('.zip'), ' ungeöffnet hinein, verschieb das Pack nach ', strong('Ausgewählt'), ' und ganz nach oben in der Liste, dann klick auf ', strong('Fertig'), '.'],
+          ['Bedrock: Öffne das ', code('.mcpack'), '. Minecraft importiert es; aktiviere es dann unter ', uiPath('Einstellungen', 'Globale Ressourcen', 'Meine Pakete'), ' und schieb es nach oben. Lädst du es im Totem-Ersteller bei offener Seite erneut herunter, wird dasselbe Pack aktualisiert, statt ein zweites hinzuzufügen.'],
+        ]),
+        p('Immer noch das normale Totem?'),
+        ul([
+          'Ein anderes Pack über deinem ändert das Totem auch: Schieb deins nach ganz oben.',
+          'Das Pack ist für eine andere Java-Version: Vor 1.13 hat die Datei einen anderen Namen. Mach es noch mal für die Version, die du spielst.',
+          ['Die Zip enthält einen Ordner statt der Dateien: ', code('pack.mcmeta'), ' oder ', code('manifest.json'), ' muss ganz oben in der Zip liegen.'],
+        ]),
+        p(link('/guides/install-resource-packs', 'Ressourcenpakete installieren'), ' · ', link('/guides/texture-pack-not-working', 'Texture Pack funktioniert nicht: Lösungen')),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'others',
+      q: 'Sehen andere Spieler mein eigenes Totem?',
+      a: [p('Nein. Ressourcenpakete ändern nur, was du siehst, deshalb sehen andere das normale Totem, solange sie nicht dasselbe Pack nutzen. Ein Server kann das Pack als Server-Ressourcenpaket (Java) oder als Pflicht-Pack (Bedrock) an alle schicken; dann sehen es alle.')],
+    },
+    {
+      id: 'bedrock',
+      q: 'Funktioniert es auf Bedrock und auf Konsolen?',
+      a: [p('Auf Bedrock ja: Windows, Android, iPhone und iPad importieren das .mcpack, wenn du es öffnest. Xbox, PlayStation und Switch können keine Pack-Dateien importieren, zeigen das Pack aber in einer Welt, einem Realm oder auf einem Server, die es mitbringen.')],
+    },
+    {
+      id: 'versions',
+      q: 'Welche Versionen können ein eigenes Totem haben?',
+      a: [p('Java ab 1.11, wo das Totem der Unsterblichkeit dazukam, und jede aktuelle Bedrock-Version. Wähl im Totem-Ersteller deine Java-Version, dann bekommt das Pack den richtigen Dateinamen und die richtige pack.mcmeta.')],
+    },
+    {
+      id: 'normal',
+      q: 'Warum sieht mein Totem immer noch normal aus?',
+      a: [
+        p(
+          'Meist ändert ein anderes Pack über deinem das Totem auch, oder das Pack ist für eine andere Java-Version (die Datei wurde in 1.13 umbenannt). Ein Totem mit Namen ändert sich nur mit genau diesem Namen, ab Java 1.21.5 oder auf älteren Versionen mit OptiFine oder CIT Resewn. ',
+          link('/guides/texture-pack-not-working', 'Mehr Lösungen'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'animated',
+      q: 'Kann ein Totem animiert sein?',
+      a: [
+        p(
+          'Auf Java ja: Item-Texturen lassen sich mit einer .png.mcmeta-Datei animieren. Öffne dein Totem im Texture Pack Maker und wähl Animieren im Menü der Textur. Bedrock-Ressourcenpakete können Item-Texturen nicht animieren, nur Blöcke. ',
+          link('/guides/make-animated-textures', 'Animierte Texturen erstellen'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  ctaLabel: 'Totem-Ersteller öffnen',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2812,4 +2985,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-pbr-texture-pack': pbrPack,
   'rename-items-texture-pack': renameItems,
   'make-animated-textures': animatedTextures,
+  'make-a-custom-totem': customTotem,
 };

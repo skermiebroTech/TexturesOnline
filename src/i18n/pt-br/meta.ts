@@ -200,5 +200,12 @@ export const META_PT_BR: MetaTranslation = {
       label: 'Texturas animadas',
       blurb: 'Anime qualquer bloco ou item: quadros, ticks, GIFs, .mcmeta e flipbooks.',
     },
+    'make-a-custom-totem': {
+      title: 'Como fazer um totem personalizado no Minecraft',
+      h1: 'Como fazer um totem da imortalidade personalizado',
+      description: 'Transforme qualquer skin em um totem personalizado para Java ou Bedrock: qual arquivo muda, totens com nome próprio, como instalar e soluções.',
+      label: 'Fazer um totem personalizado',
+      blurb: 'Transforme qualquer skin em um totem, ou dê a cada totem com nome a sua própria cara.',
+    },
   },
 };

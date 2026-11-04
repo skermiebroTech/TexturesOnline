@@ -13,6 +13,7 @@ import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
+import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
 const p = (...c: Child[]): ElNode => el('p', null, ...c);
 const ul = (items: Child[]): ElNode => el('ul', { class: 'guide-list' }, items.map((i) => el('li', null, i)));
@@ -2800,6 +2801,178 @@ const animatedTextures: GuideText = {
   ctaLabel: 'Abrir o Texture Pack Maker',
 };
 
+// ---------------------------------------------------------------- custom totem
+
+const TOTEM_STEPS: Child[] = [
+  ['Abra o ', link('/totem-maker', 'Criador de totens'), ' e escolha uma skin: digite seu nome de usuário do Java, envie um PNG de 64×64 ou do antigo formato 64×32, ou escolha uma das suas skins salvas ou um personagem padrão como Steve ou Alex.'],
+  ['Escolha um estilo: ', strong('Classic'), ', ', strong('Big head'), ' ou ', strong('Full body'), '. Ligue ou desligue a ', strong('Camada externa'), ', o ', strong('Contorno dourado'), ' e as ', strong('Asas douradas'), '.'],
+  ['Confira as prévias: a textura de 16×16, a animação de quando o totem te salva e a sua barra de atalhos. Clique em ', strong('Editar pixels'), ' para mudar pixels soltos.'],
+  ['Escolha ', strong('Java Edition'), ' e a versão que você joga, ou ', strong('Bedrock Edition'), ', e clique em ', strong('Baixar .zip'), ' ou ', strong('Baixar .mcpack'), '.'],
+  ['Instale o pack e coloque no topo da sua lista de packs. ', link('/guides/install-resource-packs', 'Como instalar'), '.'],
+];
+
+const customTotem: GuideText = {
+  image: SHOTS.totemMaker,
+  intro: [
+    p(
+      'O totem da imortalidade salva você da morte enquanto você segura ele, e quando isso acontece a figura dourada dele aparece na tela. Um pacote de recursos pode trocar essa imagem de 16×16 pela sua, e o mais pedido é um totem personalizado com a sua cara ou a de um amigo. O ',
+      link('/totem-maker', 'Criador de totens'),
+      ' gratuito transforma qualquer skin de Minecraft em um totem e empacota tudo para o Java (1.11 e mais novos) ou o Bedrock, direto no navegador.',
+    ),
+  ],
+  quick: {
+    title: 'A versão curta',
+    items: [
+      ['Abra o ', link('/totem-maker', 'Criador de totens'), ' e escolha uma skin.'],
+      'Escolha um estilo, confira as prévias e baixe um .zip (Java) ou um .mcpack (Bedrock).',
+      'Instale o pack e coloque no topo da sua lista de packs.',
+    ],
+  },
+  howto: { name: 'Como fazer um totem da imortalidade personalizado com o Criador de totens', steps: TOTEM_STEPS },
+  sections: [
+    {
+      id: 'steps',
+      title: 'Passo a passo',
+      body: [steps(TOTEM_STEPS), figure(SHOTS.totemMaker)],
+    },
+    {
+      id: 'styles',
+      title: 'Estilos, camada externa e dourado',
+      body: [
+        ul([
+          [strong('Classic'), ' coloca o rosto inteiro em cima e abre os braços como as asas do totem, com o corpo e as pernas embaixo. ', strong('Big head'), ' desenha uma cabeça enorme em um corpo pequeno. ', strong('Full body'), ' mostra o jogador inteiro de pé com os braços para baixo, para a roupa aparecer.'],
+          [strong('Camada externa'), ' desenha o chapéu, a jaqueta, as mangas e a calça por cima da skin. Desligue se um chapéu grande cobrir o rosto.'],
+          [strong('Contorno dourado'), ' mantém o contorno do totem vanilla e recorta a figura no formato dele. ', strong('Asas douradas'), ' deixa o totem vanilla aparecer onde a figura deixa um buraco, como nas pontas das asas. Os dois vêm do totem vanilla da versão que você escolhe para o download.'],
+          [strong('Editar pixels'), ' abre um lápis, uma borracha, um balde de tinta, um conta-gotas e a pintura espelhada. Mudar o estilo depois substitui os seus retoques, então escolha o estilo primeiro.'],
+        ]),
+        p('O nome de usuário do Java de um amigo funciona igual ao seu: a skin atual dele é carregada. Gamertags do Bedrock não podem ser buscadas, então envie a skin do seu amigo do Bedrock como PNG. Skins HD de 128×128 são lidas em 64×64, já que o totem tem só 16×16.'),
+      ],
+    },
+    {
+      id: 'files',
+      title: 'Qual arquivo o pack muda',
+      body: [
+        p('Um pack de totem substitui uma única textura. O caminho dela depende da edição e, no Java, da versão, porque a 1.13 renomeou as texturas dos itens:'),
+        table(
+          ['Edição e versão', 'Textura do totem'],
+          [
+            ['Java 1.11 – 1.12.2', code('assets/minecraft/textures/items/totem.png')],
+            ['Java 1.13 e mais novos', code('assets/minecraft/textures/item/totem_of_undying.png')],
+            ['Bedrock', code('textures/items/totem.png')],
+          ],
+        ),
+        p('A animação de quando um totem te salva mostra a mesma textura, então ela muda também. O Criador de totens escreve o caminho certo para a versão que você escolher. Como só o totem muda, o pack funciona junto com qualquer outro: coloque ele acima dos outros.'),
+      ],
+    },
+    {
+      id: 'names',
+      title: 'Vários totens com nomes diferentes',
+      body: [
+        p(
+          'No Java 1.21.5 e mais novos, um pack pode dar a um totem a própria textura quando ele é renomeado numa bigorna, sem mods: um totem chamado “Steve” e outro chamado “Alex”, cada um com o seu rosto. Versões mais antigas do Java precisam do OptiFine ou do mod CIT Resewn para isso. Packs do Bedrock não conseguem escolher uma textura pelo nome, então lá todos os totens ficam iguais.',
+        ),
+        steps([
+          ['No Criador de totens, escolha Java e a sua versão e clique em ', strong('Abrir no Texture Pack Maker'), '.'],
+          ['Abra a textura do totem e escolha ', strong('Texturas por nome'), ' no menu dela (⋮). Digite o nome e clique em ', strong('Criar e pintar'), '.'],
+          ['Pinte a nova textura, ou faça um segundo totem no Criador de totens, clique em ', strong('Baixar PNG'), ' e coloque com ', strong('Enviar'), '.'],
+          'Exporte o pack, renomeie um totem numa bigorna exatamente com esse nome e segure-o.',
+        ]),
+        p('O nome tem que ser exatamente igual, maiúsculas também. ', link('/guides/rename-items-texture-pack', 'Como mudar a textura de um item renomeando'), '.'),
+      ],
+    },
+    {
+      id: 'by-hand',
+      title: 'Fazer o pack à mão',
+      body: [
+        p('Você também pode montar um pack de totem com qualquer editor de imagens. Desenhe um PNG de 16×16 com fundo transparente e depois:'),
+        h3('Java Edition'),
+        steps([
+          ['Crie uma pasta com o PNG em ', code('assets/minecraft/textures/item/totem_of_undying.png'), ' e um ', code('pack.mcmeta'), ' ao lado de ', code('assets'), '. Um ícone ', code('pack.png'), ' é opcional.'],
+          ['Compacte o ', strong('conteúdo'), ' da pasta, não a pasta em si, para o ', code('pack.mcmeta'), ' ficar no topo do zip.'],
+        ]),
+        pre(TOTEM_JAVA_TREE),
+        p(`Um pack para o Java ${LATEST} (formato de pacote de recursos ${F(LATEST)}) tem este pack.mcmeta:`),
+        pre(mcmetaFor(LATEST, 'Um totem da imortalidade personalizado')),
+        p(
+          'Para o Java 1.11 a 1.12.2 a textura vai em ',
+          code('assets/minecraft/textures/items/totem.png'),
+          ' e o pack.mcmeta tem um único ',
+          code('pack_format'),
+          '. ',
+          link('/guides/minecraft-pack-format-versions', 'O pack format de cada versão'),
+          '.',
+        ),
+        pre(mcmetaLegacy('1.12.2', 'Um totem da imortalidade personalizado')),
+        h3('Bedrock Edition'),
+        steps([
+          ['Coloque o PNG em ', code('textures/items/totem.png'), ' e escreva um ', code('manifest.json'), ' com dois UUIDs novos seus (qualquer gerador de UUID faz). Um ', code('pack_icon.png'), ' é opcional.'],
+          ['Compacte o conteúdo da pasta em um zip e troque a extensão do arquivo de ', code('.zip'), ' para ', code('.mcpack'), '.'],
+        ]),
+        pre(TOTEM_BEDROCK_TREE),
+        pre(totemManifest('Um totem da imortalidade personalizado')),
+        callout('tip', 'Pack novo, UUIDs novos', 'O Bedrock diferencia os packs pelos UUIDs. Se você reaproveitar os IDs de outro pack, os dois se misturam: um substitui o outro ou o novo não é importado.'),
+      ],
+    },
+    {
+      id: 'install',
+      title: 'Instalar e resolver problemas',
+      body: [
+        ul([
+          ['Java: abra ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), ', coloque o ', code('.zip'), ' lá sem descompactar, mova o pack para ', strong('Selecionados'), ' e para o topo da lista, e clique em ', strong('Concluído'), '.'],
+          ['Bedrock: abra o ', code('.mcpack'), '. O Minecraft importa; depois ative em ', uiPath('Opções', 'Recursos globais', 'Meus Pacotes'), ' e coloque no topo. Baixar de novo no Criador de totens com a página aberta atualiza o mesmo pack em vez de adicionar outro.'],
+        ]),
+        p('Ainda aparece o totem normal?'),
+        ul([
+          'Outro pack acima do seu também muda o totem: coloque o seu no topo.',
+          'O pack foi feito para outra versão do Java: antes da 1.13 o arquivo tem outro nome. Faça de novo para a versão que você joga.',
+          ['O zip tem uma pasta em vez dos arquivos: o ', code('pack.mcmeta'), ' ou o ', code('manifest.json'), ' precisa ficar no topo do zip.'],
+        ]),
+        p(link('/guides/install-resource-packs', 'Como instalar pacotes de recursos'), ' · ', link('/guides/texture-pack-not-working', 'Texture pack não funciona: soluções')),
+      ],
+    },
+  ],
+  faq: [
+    {
+      id: 'others',
+      q: 'Os outros jogadores vão ver o meu totem personalizado?',
+      a: [p('Não. Pacotes de recursos só mudam o que você vê, então os outros veem o totem normal, a não ser que usem o mesmo pack. Um servidor pode mandar o pack para todo mundo como pacote de recursos do servidor (Java) ou pack obrigatório (Bedrock); aí todos veem.')],
+    },
+    {
+      id: 'bedrock',
+      q: 'Funciona no Bedrock e nos consoles?',
+      a: [p('No Bedrock, sim: Windows, Android, iPhone e iPad importam o .mcpack quando você abre o arquivo. Xbox, PlayStation e Switch não importam arquivos de packs, mas lá o pack aparece ao entrar em um mundo, Realm ou servidor que tenha ele.')],
+    },
+    {
+      id: 'versions',
+      q: 'Quais versões podem ter um totem personalizado?',
+      a: [p('Java 1.11 e mais novos, quando o totem da imortalidade foi adicionado, e todas as versões atuais do Bedrock. Escolha a sua versão do Java no Criador de totens e o pack recebe o nome de arquivo e o pack.mcmeta certos.')],
+    },
+    {
+      id: 'normal',
+      q: 'Por que o meu totem continua normal?',
+      a: [
+        p(
+          'Normalmente outro pack acima do seu também muda o totem, ou o pack é para outra versão do Java (o arquivo foi renomeado na 1.13). Um totem com nome só muda com o nome exato, no Java 1.21.5 e mais novos, ou com OptiFine ou CIT Resewn em versões mais antigas. ',
+          link('/guides/texture-pack-not-working', 'Mais soluções'),
+          '.',
+        ),
+      ],
+    },
+    {
+      id: 'animated',
+      q: 'Dá para animar um totem?',
+      a: [
+        p(
+          'No Java, sim: texturas de itens podem ser animadas com um arquivo .png.mcmeta. Abra o seu totem no Texture Pack Maker e escolha Animar no menu da textura. Pacotes de recursos do Bedrock não animam texturas de itens, só de blocos. ',
+          link('/guides/make-animated-textures', 'Como fazer texturas animadas'),
+          '.',
+        ),
+      ],
+    },
+  ],
+  ctaLabel: 'Abrir o Criador de totens',
+};
+
 export const GUIDES: Record<string, GuideText> = {
   'make-a-texture-pack': makeATexturePack,
   'texture-pack-not-working': notWorking,
@@ -2817,4 +2990,5 @@ export const GUIDES: Record<string, GuideText> = {
   'make-a-pbr-texture-pack': pbrPack,
   'rename-items-texture-pack': renameItems,
   'make-animated-textures': animatedTextures,
+  'make-a-custom-totem': customTotem,
 };
