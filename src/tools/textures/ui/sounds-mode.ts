@@ -6,7 +6,7 @@ import type { TexStore } from './store';
 import { SoundState } from './sound-store';
 import { createSoundBrowser } from './sound-browser';
 import { createSoundPanel } from './sound-panel';
-import type { SoundEvent } from '../sounds/catalog';
+import type { SoundCategory, SoundEvent } from '../sounds/catalog';
 
 export interface SoundsMode {
   state: SoundState;
@@ -19,6 +19,11 @@ export interface SoundsMode {
   focusSearch(): void;
   /** Selects an event by id (tests, links) */
   select(id: string): boolean;
+  /**
+   * Once the game's sounds are loaded: lists one category and selects the first of `prefer` the
+   * version has, else the category's first sound (a feature's page: the records). False when none.
+   */
+  showCategory(cat: SoundCategory, prefer: string[]): Promise<boolean>;
   destroy(): void;
 }
 
@@ -56,6 +61,15 @@ export function createSoundsMode(opts: {
     focusSearch: () => browser.focusSearch(),
     select(id) {
       const e = state.catalog?.byId.get(id);
+      if (e) pick(e, 'enter');
+      return !!e;
+    },
+    async showCategory(cat, prefer) {
+      await state.load();
+      const c = state.catalog;
+      if (!c) return false;
+      browser.setCategory(cat);
+      const e = prefer.map((id) => c.byId.get(id)).find((x) => !!x) ?? c.events.find((x) => x.category === cat);
       if (e) pick(e, 'enter');
       return !!e;
     },

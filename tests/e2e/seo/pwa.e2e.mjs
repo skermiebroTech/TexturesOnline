@@ -114,6 +114,8 @@ async function offlineRoutes(label, page, base) {
     { path: 'fr/guides/texture-pack-not-working/', ready: READY.guide, lang: 'fr', note: 'French guide (never visited)' },
     { path: 'pl/guides/make-a-texture-pack/', ready: READY.guide, lang: 'pl', note: 'Polish guide (never visited)' },
     { path: 'skins/', ready: '[data-tool-intro="skins"]', lang: 'en', note: 'skin tool (never visited)' },
+    { path: 'gui-maker/', ready: '[data-tool-intro="gui"]', lang: 'en', note: 'GUI maker, a texture tool page (never visited)' },
+    { path: 'de/music-disc-maker/', ready: '[data-tool-intro="disc"]', lang: 'de', note: 'German music disc maker (never visited)' },
     { path: 'privacy/', ready: READY.privacy, lang: 'en', note: 'privacy page (never visited)' },
     { path: 'help', ready: READY.help, lang: 'en', note: 'folder path without its slash' },
     { path: 'de/help/#iris', ready: READY.help, lang: 'de', hash: '#iris', note: 'German help section by fragment' },

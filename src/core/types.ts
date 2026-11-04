@@ -160,6 +160,11 @@ export interface TexturePackProject extends ProjectBase {
   /** PvP / FPS tweaks switched on in the editor, with what each one changed (to put it back) */
   pvp?: PvpState;
   /**
+   * A new pack made on a feature's page (/painting-maker, /gui-maker…): the editor opens on that
+   * feature the first time, then removes this.
+   */
+  focus?: TextureFocus;
+  /**
    * PBR materials made in the Material tab, by the pack path of the colour texture they belong to.
    * Their maps (Java labPBR _n / _s, Bedrock texture sets) are made from these on export.
    */
@@ -322,6 +327,9 @@ export interface PbrMaterial {
   original?: Record<string, Blob>;
   updatedAt: number;
 }
+
+/** What a new texture pack opens on: its paintings, the GUI, a music disc's sound or the enchantment glint. */
+export type TextureFocus = 'painting' | 'gui' | 'disc' | 'glint';
 
 /** The PvP tweaks of a texture pack (src/tools/textures/pvp). */
 export interface PvpState {

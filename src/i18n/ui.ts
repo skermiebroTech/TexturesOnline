@@ -40,6 +40,11 @@ export interface UiText {
     skins: string;
     skinpack: string;
     cape: string;
+    /** The texture maker's feature pages */
+    painting: string;
+    gui: string;
+    disc: string;
+    glint: string;
     totem: string;
     fonts: string;
     shaders: string;
@@ -128,6 +133,10 @@ export const UI_EN: UiText = {
     skins: 'Skin editor',
     skinpack: 'Skin pack maker',
     cape: 'Cape maker',
+    painting: 'Painting maker',
+    gui: 'GUI maker',
+    disc: 'Music disc maker',
+    glint: 'Enchantment glint',
     totem: 'Totem maker',
     fonts: 'Font maker',
     shaders: 'Shader maker',

@@ -29,6 +29,10 @@ if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const PAGES = [
   { path: '', tool: 'home', ready: '.home .hero-title' },
   { path: 'textures/', tool: 'textures', ready: '[data-tool-intro="textures"].is-below' },
+  { path: 'painting-maker/', tool: 'textures', ready: '[data-tool-intro="painting"].is-below' },
+  { path: 'gui-maker/', tool: 'textures', ready: '[data-tool-intro="gui"].is-below' },
+  { path: 'music-disc-maker/', tool: 'textures', ready: '[data-tool-intro="disc"].is-below' },
+  { path: 'enchantment-glint-maker/', tool: 'textures', ready: '[data-tool-intro="glint"].is-below' },
   { path: 'texture-pack-converter/', tool: 'convert', ready: '[data-tool-intro="converter"].is-below' },
   { path: 'merge-texture-packs/', tool: 'merge', ready: '[data-tool-intro="merge"].is-below' },
   { path: 'pack-doctor/', tool: 'doctor', ready: '[data-tool-intro="doctor"].is-below' },
@@ -66,6 +70,10 @@ const LANGS = [
 const LOCALIZED = LANGS.flatMap((l) => [
   { lang: l, path: `${l.code}/`, tool: 'home', ready: '.home .hero-title' },
   { lang: l, path: `${l.code}/textures/`, tool: 'textures', ready: '[data-tool-intro="textures"].is-below' },
+  { lang: l, path: `${l.code}/painting-maker/`, tool: 'textures', ready: '[data-tool-intro="painting"].is-below' },
+  { lang: l, path: `${l.code}/gui-maker/`, tool: 'textures', ready: '[data-tool-intro="gui"].is-below' },
+  { lang: l, path: `${l.code}/music-disc-maker/`, tool: 'textures', ready: '[data-tool-intro="disc"].is-below' },
+  { lang: l, path: `${l.code}/enchantment-glint-maker/`, tool: 'textures', ready: '[data-tool-intro="glint"].is-below' },
   { lang: l, path: `${l.code}/skin-pack-maker/`, tool: 'skins', ready: '[data-tool-intro="skinpack"].is-below' },
   { lang: l, path: `${l.code}/cape-maker/`, tool: 'skins', ready: '[data-tool-intro="cape"].is-below' },
   { lang: l, path: `${l.code}/help/`, tool: 'help', ready: '.help .help-section' },

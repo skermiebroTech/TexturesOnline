@@ -19,6 +19,8 @@ export interface BrowserApi {
   focusList(): void;
   /** Visible entries in display order (for prev/next navigation) */
   visible(): TextureEntry[];
+  /** Shows one category (a feature's page opens the paintings) */
+  setCategory(c: TextureCategory | 'all'): void;
   destroy(): void;
 }
 
@@ -815,6 +817,11 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
 
   return {
     el,
+    setCategory(c) {
+      if (c === cat) return;
+      cat = c;
+      refilter(true);
+    },
     setSelected(path, doReveal = true) {
       selected = path;
       active = path ? items.findIndex((e) => e.path === path) : -1;

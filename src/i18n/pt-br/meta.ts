@@ -16,6 +16,26 @@ export const META_PT_BR: MetaTranslation = {
       description: 'Edite qualquer textura do Minecraft: pinte blocos, itens e mobs em modelos 3D, envie PNGs ou mude o estilo do jogo com um clique. Exporte .zip ou .mcpack.',
       label: 'Texture packs',
     },
+    '/painting-maker': {
+      title: 'Criador de pinturas do Minecraft: suas imagens como pinturas',
+      description: 'Transforme qualquer imagem numa pintura do Minecraft: escolha uma pintura, envie sua imagem (ajustada ao tamanho) ou pinte e baixe um .zip ou um .mcpack.',
+      label: 'Criador de pinturas',
+    },
+    '/gui-maker': {
+      title: 'Criador de GUI e HUD do Minecraft: barra de atalhos e mais',
+      description: 'Crie um pack de GUI para o Minecraft: repinte a barra de atalhos, os corações, a fome, a mira, o inventário e os botões com prévia ao vivo. Java e Bedrock.',
+      label: 'Criador de GUI',
+    },
+    '/music-disc-maker': {
+      title: 'Criador de discos de música: sua própria música no Minecraft',
+      description: 'Troque um disco de música do Minecraft pela sua música: envie um MP3, WAV ou OGG ou grave, corte, repinte o disco e baixe o pack para Java ou Bedrock.',
+      label: 'Criador de discos de música',
+    },
+    '/enchantment-glint-maker': {
+      title: 'Criador de brilho de encantamento: Minecraft Java e Bedrock',
+      description: 'Mude a cor do brilho de encantamento do Minecraft: recolora ou repinte o brilho de itens e armaduras com prévia em movimento e depois baixe o pack.',
+      label: 'Brilho de encantamento',
+    },
     '/texture-pack-converter': {
       title: 'Conversor de texture pack de Minecraft: Java para Bedrock',
       description: 'Converta um texture pack de Minecraft de Java para Bedrock, de Bedrock para Java ou entre versões do Java, ou transforme PNGs em .mcpack. Grátis e online.',

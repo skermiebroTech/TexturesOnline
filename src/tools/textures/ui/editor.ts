@@ -3,7 +3,7 @@
 // top bar (name, save state, undo/redo, export), keyboard shortcuts and autosave. The 2D / 3D
 // workspace switch swaps the pixel editor and the 3D model between the centre and the side panel.
 
-import type { AssetIndex, TexturePackProject } from '../../../core/types';
+import type { AssetIndex, TextureFocus, TexturePackProject } from '../../../core/types';
 import { h, isTypingTarget } from '../../../ui/dom';
 import { icon, setIcon, type IconName } from '../../../ui/icons';
 import { badge, button, emptyState, iconButton, segmented, spinner, tabs, tooltip } from '../../../ui/components';
@@ -1125,6 +1125,44 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     if (isPhone()) showMobile('pvp');
     else setSide('pvp');
     void ensurePvp().then((p) => p?.applyPreset(pending.fps));
+  }
+
+  // A new pack made on a feature's page (painting maker, GUI maker…) opens on that feature, once.
+  const focus = proj.focus;
+  if (focus) {
+    delete proj.focus;
+    store.touch();
+    void openFocus(focus).catch((err) => console.error(err));
+  }
+
+  /** Shows a feature in the library (kept like a mode picked by hand) with its first texture or sound open. */
+  async function openFocus(f: TextureFocus): Promise<void> {
+    const mode: LibMode = f === 'painting' ? 'textures' : f === 'disc' ? 'sounds' : 'gui';
+    setLibMode(mode);
+    try {
+      localStorage.setItem(LIB_KEY, mode);
+    } catch {
+      /* storage blocked */
+    }
+    if (f === 'painting') {
+      browser.setCategory('painting');
+      const paintings = store.entries.filter((e) => e.category === 'painting' && !/\/back\.png$/.test(e.path));
+      const first = paintings.find((e) => /\/(kebab|kz)\.png$/.test(e.path)) ?? paintings[0];
+      if (first) await canvas.open(first.path);
+      return;
+    }
+    if (f === 'disc') {
+      // the disc's picture waits in the pixel editor for when you switch to the items
+      const disc = store.entries.find((e) => /\/(music_disc_cat|record_cat)\.png$/.test(e.path));
+      if (disc) void canvas.open(disc.path);
+      const m = await ensureSounds();
+      if (m && libMode === 'sounds') await m.showCategory('records', ['music_disc.cat', 'record.cat']);
+      return;
+    }
+    const m = await ensureGui();
+    if (!m || libMode !== 'gui') return;
+    const piece = f === 'glint' ? m.cat.piece('glint.item') : (m.cat.piece('hotbar.bar') ?? m.cat.piece('hotbar.slot1'));
+    if (piece) await openGuiPiece(piece, 'keyboard');
   }
 
   if (import.meta.env.DEV) {

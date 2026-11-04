@@ -55,7 +55,7 @@ export const HOME_META: PageMeta = {
   label: 'Home',
 };
 
-export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts' | 'skins' | 'skinpack' | 'cape' | 'shaders', PageMeta> = {
+export const TOOL_META: Record<'textures' | 'painting' | 'gui' | 'disc' | 'glint' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts' | 'skins' | 'skinpack' | 'cape' | 'shaders', PageMeta> = {
   textures: {
     path: '/textures',
     kind: 'tool',
@@ -64,6 +64,42 @@ export const TOOL_META: Record<'textures' | 'converter' | 'merge' | 'doctor' | '
     description:
       'Edit any Minecraft texture: repaint blocks, items and mobs on real 3D models, upload PNGs or restyle the game in one click, then export a .zip or .mcpack.',
     label: 'Texture packs',
+  },
+  painting: {
+    path: '/painting-maker',
+    kind: 'tool',
+    tool: 'textures',
+    title: 'Minecraft Custom Painting Maker — Your Pictures as Paintings',
+    description:
+      'Turn any picture into a Minecraft painting: pick a painting, upload your image (resized to fit) or paint it, then download a Java .zip or Bedrock .mcpack.',
+    label: 'Painting maker',
+  },
+  gui: {
+    path: '/gui-maker',
+    kind: 'tool',
+    tool: 'textures',
+    title: 'Minecraft GUI & HUD Maker — Custom Hotbar, Hearts & Menus',
+    description:
+      'Make a custom Minecraft GUI pack: repaint the hotbar, hearts, hunger, crosshair, inventory and buttons with a live in-game preview. Java and Bedrock.',
+    label: 'GUI maker',
+  },
+  disc: {
+    path: '/music-disc-maker',
+    kind: 'tool',
+    tool: 'textures',
+    title: 'Custom Music Disc Maker — Put Your Own Song in Minecraft',
+    description:
+      'Replace a Minecraft music disc with your own song: upload an MP3, WAV or OGG or record one, trim it, repaint the disc and download a Java or Bedrock pack.',
+    label: 'Music disc maker',
+  },
+  glint: {
+    path: '/enchantment-glint-maker',
+    kind: 'tool',
+    tool: 'textures',
+    title: 'Custom Enchantment Glint Maker — Minecraft Java & Bedrock',
+    description:
+      'Change the colour of Minecraft’s enchantment glint: recolour or repaint the shimmer on items and armour with a moving preview, then download the pack.',
+    label: 'Enchantment glint maker',
   },
   converter: {
     path: '/texture-pack-converter',
@@ -380,7 +416,7 @@ export const GUIDES: GuideMeta[] = [
 ];
 
 /** Every page that is prerendered, listed in the sitemap and open to search engines. */
-export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.converter, TOOL_META.merge, TOOL_META.doctor, TOOL_META.totem, TOOL_META.fonts, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.cape, TOOL_META.shaders, HELP_META, ABOUT_META, ALL_META, GUIDES_META, ...GUIDES, PRIVACY_META];
+export const PUBLIC_PAGES: PageMeta[] = [HOME_META, TOOL_META.textures, TOOL_META.painting, TOOL_META.gui, TOOL_META.disc, TOOL_META.glint, TOOL_META.converter, TOOL_META.merge, TOOL_META.doctor, TOOL_META.totem, TOOL_META.fonts, TOOL_META.skins, TOOL_META.skinpack, TOOL_META.cape, TOOL_META.shaders, HELP_META, ABOUT_META, ALL_META, GUIDES_META, ...GUIDES, PRIVACY_META];
 
 // ---------------------------------------------------------------- translations
 

@@ -15,6 +15,26 @@ export const META_ES: MetaTranslation = {
       description: 'Edita cualquier textura de Minecraft: pinta bloques, ítems y criaturas en 3D, sube PNG o cambia el estilo del juego con un clic. Exporta .zip o .mcpack.',
       label: 'Texture packs',
     },
+    '/painting-maker': {
+      title: 'Creador de cuadros de Minecraft: tus imágenes como cuadros',
+      description: 'Convierte cualquier imagen en un cuadro de Minecraft: elige un cuadro, sube tu imagen (ajustada a su tamaño) o píntala y descarga un .zip o un .mcpack.',
+      label: 'Creador de cuadros',
+    },
+    '/gui-maker': {
+      title: 'Creador de GUI y HUD de Minecraft: barra rápida y corazones',
+      description: 'Crea un pack de GUI para Minecraft: repinta la barra rápida, los corazones, el hambre, el punto de mira, el inventario y los botones con vista previa.',
+      label: 'Creador de GUI',
+    },
+    '/music-disc-maker': {
+      title: 'Creador de discos de música: tu propia canción en Minecraft',
+      description: 'Cambia un disco de música de Minecraft por tu canción: sube un MP3, WAV u OGG o grábala, recórtala, repinta el disco y descarga el pack de Java o Bedrock.',
+      label: 'Creador de discos de música',
+    },
+    '/enchantment-glint-maker': {
+      title: 'Creador de brillo de encantamiento: Minecraft Java y Bedrock',
+      description: 'Cambia el color del brillo de encantamiento de Minecraft: repinta el brillo de ítems y armaduras con vista previa en movimiento y descarga el pack.',
+      label: 'Brillo de encantamiento',
+    },
     '/texture-pack-converter': {
       title: 'Convertidor de texture packs de Minecraft: Java a Bedrock',
       description: 'Convierte un texture pack de Minecraft de Java a Bedrock, de Bedrock a Java o entre versiones de Java, o pasa PNG a .mcpack. Gratis, en el navegador.',

@@ -16,6 +16,26 @@ export const META_JA: MetaTranslation = {
       description: 'Minecraftのあらゆるテクスチャを編集。ブロック・アイテム・モブを3Dモデル上で塗り、PNGを読み込み、ワンクリックで全体を変更して.zip/.mcpackで書き出せます。',
       label: 'テクスチャパック',
     },
+    '/painting-maker': {
+      title: 'Minecraft 絵画メーカー：自分の画像を絵画に',
+      description: 'どんな画像もMinecraftの絵画にできます。絵画を選び、画像をアップロード（サイズは自動調整）するか描いて、Java版の.zipか統合版の.mcpackをダウンロード。',
+      label: '絵画作成',
+    },
+    '/gui-maker': {
+      title: 'Minecraft GUI・HUDメーカー：ホットバーやハート',
+      description: 'MinecraftのGUIパックを作成：ホットバー、ハート、満腹度、照準、インベントリ、ボタンを、ゲーム内のようなライブプレビューで描き直せます。',
+      label: 'GUI作成',
+    },
+    '/music-disc-maker': {
+      title: 'Minecraft レコードメーカー：自分の曲をレコードに',
+      description: 'Minecraftのレコードを自分の曲に：MP3・WAV・OGGをアップロードか録音して、トリミングし、レコードも描き直して、Java版・統合版のパックに。',
+      label: 'レコード作成',
+    },
+    '/enchantment-glint-maker': {
+      title: 'エンチャントの輝きメーカー：Java版・統合版',
+      description: 'Minecraftのエンチャントの輝きの色を変えられます。アイテムや防具の輝きを、動くプレビューを見ながら塗り替えたり描き直したりして、パックに。',
+      label: 'エンチャントの輝き',
+    },
     '/texture-pack-converter': {
       title: 'テクスチャパック変換ツール｜Java版⇔統合版（Bedrock）',
       description: 'MinecraftのテクスチャパックをJava版から統合版へ、統合版からJava版へ、Java版のバージョン間で変換。PNGを.mcpackにもできます。ブラウザで無料。',

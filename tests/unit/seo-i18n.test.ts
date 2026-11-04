@@ -83,6 +83,10 @@ const REQUIRED_ROUTES = [
   '/guides/make-a-pbr-texture-pack',
   '/guides/rename-items-texture-pack',
   '/guides/make-animated-textures',
+  '/painting-maker',
+  '/gui-maker',
+  '/music-disc-maker',
+  '/enchantment-glint-maker',
 ];
 
 /** A public page that exists only in English, if there is one (every page is translated otherwise). */
