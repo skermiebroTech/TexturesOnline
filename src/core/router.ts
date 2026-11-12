@@ -15,6 +15,7 @@ import { loadContent } from '../i18n/content';
 import { setTextLocale } from '../i18n/editor-text';
 import { loadKitText } from '../ui/i18n/load';
 import { loadSharedText } from '../shared/i18n/load';
+import { afterNextPaint } from './yield';
 
 export interface RouteContext {
   params: Record<string, string>;
@@ -444,6 +445,12 @@ async function render(force = false): Promise<void> {
   }
   currentKey = key;
   const my = ++token;
+  // A tap on a link paints its own response first (the pressed link, a menu closing): the old view's
+  // cleanup and the new view (often a whole screen built at once) come after that frame.
+  if (!firstRender) {
+    await afterNextPaint();
+    if (my !== token) return;
+  }
   const match = resolveRoute(path);
   // Pages rendered at build time stay on screen until the real view replaces them.
   const prerendered = firstRender && outlet.hasChildNodes();

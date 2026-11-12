@@ -11,6 +11,7 @@ import { versionLabel } from '../ui/start-screen';
 import { GUI_SECTIONS, pieceRect, type GuiCatalog, type GuiPart, type GuiPiece, type GuiSectionId } from './catalog';
 import type { GuiSources } from './sources';
 import { tg } from './i18n/text';
+import { nextTask } from '../../../core/yield';
 
 export interface GuiLibrary {
   el: HTMLElement;
@@ -179,6 +180,9 @@ export function createGuiLibrary(opts: GuiLibraryOptions): GuiLibrary {
     const b = tiles.get(piece.id);
     if (!b) return;
     const img = await sources.load(piece.path);
+    // a task per thumbnail: a search that brings many tiles into view at once doesn't hold up the
+    // next key (the images are usually read already, so this would all run in one go)
+    await nextTask();
     const c = b.querySelector('canvas')!;
     const g = c.getContext('2d')!;
     g.clearRect(0, 0, THUMB, THUMB);
@@ -191,7 +195,7 @@ export function createGuiLibrary(opts: GuiLibraryOptions): GuiLibrary {
     g.imageSmoothingEnabled = s < 1;
     g.drawImage(img.canvas, r.x, r.y, r.w, r.h, Math.round((THUMB - w) / 2), Math.round((THUMB - hh) / 2), w, hh);
     b.classList.toggle('is-edited', await pieceEdited(piece));
-    paintCounts();
+    queueCounts();
   }
 
   /** Whether the pack changed a piece (on an atlas: its own area, not just the file). */
@@ -220,6 +224,16 @@ export function createGuiLibrary(opts: GuiLibraryOptions): GuiLibrary {
     return !same;
   }
 
+  /** The parts' "edited" counts, once per frame however many thumbnails were painted for it. */
+  let countsQueued = false;
+  function queueCounts() {
+    if (countsQueued) return;
+    countsQueued = true;
+    requestAnimationFrame(() => {
+      countsQueued = false;
+      paintCounts();
+    });
+  }
   function paintCounts() {
     for (const partEl of list.querySelectorAll<HTMLElement>('.gui-part')) {
       const n = partEl.querySelectorAll('.gui-tile.is-edited').length;
@@ -247,6 +261,8 @@ export function createGuiLibrary(opts: GuiLibraryOptions): GuiLibrary {
     for (const t of tiles.values()) io.observe(t);
   }
 
+  /** Each tile's search text (its section, part and name, its file), made on the first search. */
+  const hays = new WeakMap<HTMLElement, string>();
   function refilter() {
     const toks = query.toLowerCase().split(/\s+/).filter(Boolean);
     let shown = 0;
@@ -261,16 +277,21 @@ export function createGuiLibrary(opts: GuiLibraryOptions): GuiLibrary {
           partShown = toks.every((t) => partName.includes(t) || 'splashes.txt splashes.json'.includes(t)) ? 1 : 0;
         }
         for (const t of partEl.querySelectorAll<HTMLElement>('.gui-tile')) {
-          const p = cat.piece(t.dataset.piece!);
-          const hay = `${partName} ${p ? pieceName(p) : ''} ${t.dataset.path}`.toLowerCase();
+          let hay = hays.get(t);
+          if (hay === undefined) {
+            const p = cat.piece(t.dataset.piece!);
+            hay = `${partName} ${p ? pieceName(p) : ''} ${t.dataset.path}`.toLowerCase();
+            hays.set(t, hay);
+          }
           const ok = toks.every((k) => hay.includes(k));
-          t.hidden = !ok;
+          // (only the tiles that change: each change restyles)
+          if (t.hidden === ok) t.hidden = !ok;
           if (ok) partShown++;
         }
-        partEl.hidden = !partShown;
+        if (partEl.hidden !== !partShown) partEl.hidden = !partShown;
         secShown += partShown;
       }
-      sec.hidden = !secShown;
+      if (sec.hidden !== !secShown) sec.hidden = !secShown;
       shown += secShown;
     }
     list.querySelector<HTMLElement>('.gui-lib-note')!.hidden = !!toks.length;

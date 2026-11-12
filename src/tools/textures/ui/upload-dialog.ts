@@ -125,6 +125,7 @@ export function openUploadDialog(opts: UploadOptions): void {
     body,
     width: 620,
     class: 'tx-upload-modal',
+    afterPaint: true,
     actions: [
       { label: te.upload.cancel, variant: 'secondary' },
       {
@@ -186,6 +187,8 @@ export function openUploadDialog(opts: UploadOptions): void {
       dz.setError(te.upload.unreadable);
       return;
     }
+    // (the boxes are measured: a file dropped on the editor may arrive before the dialog shows)
+    await modal.shown;
     if (my !== loadId || !modal.el.isConnected) return;
     reading.hidden = true;
     if (img.width * img.height > MAX_PIXELS) {

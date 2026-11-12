@@ -178,10 +178,16 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   };
 
   const tokens = (q: string) => q.toLowerCase().replace(/[_/]+/g, ' ').split(/\s+/).filter(Boolean);
+  /** Lower-case name and id of each entry, made once (every entry is scored on every keystroke). */
+  const hays = new WeakMap<ModelEntry, { name: string; id: string }>();
+  const hayOf = (e: ModelEntry) => {
+    let v = hays.get(e);
+    if (!v) hays.set(e, (v = { name: e.name.toLowerCase(), id: e.id.toLowerCase().replace(/_/g, ' ') }));
+    return v;
+  };
   function score(toks: string[], e: ModelEntry): number {
     let s = 0;
-    const name = e.name.toLowerCase();
-    const id = e.id.toLowerCase().replace(/_/g, ' ');
+    const { name, id } = hayOf(e);
     for (const t of toks) {
       if (name === t) s += 120;
       else if (name.startsWith(t)) s += 70;
@@ -352,8 +358,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   }
   let loadingBar: ReturnType<typeof progressBar> | null = null;
 
-  /** `lean`: a tap changed the list (see leanLayout); typing in the search box isn't one. */
-  function refilter(resetScroll: boolean, lean = true) {
+  /** A tap or a search changed the list: the rows on screen first (see leanLayout). */
+  function refilter(resetScroll: boolean) {
     computeItems();
     renderCats();
     paintMeta();
@@ -362,8 +368,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     for (const t of tiles.values()) t.remove();
     tiles.clear();
     if (resetScroll) scroller.scrollTop = 0;
-    if (lean) leanLayout(layout);
-    else layout();
+    leanLayout(layout);
   }
 
   // ---- virtual list ----
@@ -623,7 +628,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       query = input.value.trim();
-      refilter(true, false);
+      refilter(true);
     }, 110);
   });
   input.addEventListener('keydown', (ev) => {

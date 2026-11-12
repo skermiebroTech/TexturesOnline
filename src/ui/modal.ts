@@ -7,6 +7,7 @@ import { closeAllPopovers, firstFocusable } from './popover';
 import { hideTooltip } from './tooltip';
 import { setButtonBusy } from './components';
 import { kit } from './i18n/kit';
+import { afterNextPaint } from '../core/yield';
 
 export interface ModalAction {
   label: string;
@@ -26,6 +27,22 @@ export interface ModalOptions {
   class?: string;
   /** Element to focus first (default: first field in the body, else the main action) */
   initialFocus?: HTMLElement;
+  /**
+   * Shows the dialog in the frame after the next one: for a dialog a tap opens, so the tap's own
+   * response (the pressed button) paints at once. Showing a modal dialog makes the rest of the page
+   * inert, which restyles all of it: on a big page (an editor) that is a long frame of its own. The
+   * dialog is in the document straight away (built, not shown); focus and measuring inside it wait
+   * for `shown`.
+   */
+  afterPaint?: boolean;
+}
+
+export interface ModalHandle {
+  close(): void;
+  el: HTMLElement;
+  setBusy(busy: boolean): void;
+  /** Resolves once the dialog is on screen (at once without `afterPaint`), or when it closed first. */
+  shown: Promise<void>;
 }
 
 let openCount = 0;
@@ -53,7 +70,7 @@ export function closeAllModals(): void {
   for (const m of Array.from(openHandles).reverse()) m.close();
 }
 
-export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement; setBusy(busy: boolean): void } {
+export function openModal(opts: ModalOptions): ModalHandle {
   const dismissible = opts.dismissible ?? true;
   const titleId = uid('modal-title');
   const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -75,6 +92,9 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
 
   let closed = false;
   let busy = false;
+  let isShown = false;
+  let markShown = () => {};
+  const shown = new Promise<void>((resolve) => (markShown = resolve));
   const buttons: HTMLButtonElement[] = [];
 
   function close(): void {
@@ -97,9 +117,11 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
       if (openCount === 0) setScrollLock(false);
       if (previouslyFocused?.isConnected) previouslyFocused.focus({ preventScroll: true });
       opts.onClose?.();
+      markShown();
     };
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) finish();
+    // (closed before it was shown: nothing to animate)
+    if (reduce || !isShown) finish();
     else {
       dlg.addEventListener('animationend', (e) => {
         if (e.target === dlg) finish();
@@ -172,22 +194,30 @@ export function openModal(opts: ModalOptions): { close(): void; el: HTMLElement;
   });
 
   const handle = { close };
-  // (the scrollbar is measured before the dialog joins the page: no extra layout for it)
-  setScrollLock(true);
+  const show = () => {
+    if (closed) return;
+    setScrollLock(true);
+    dlg.showModal();
+    isShown = true;
+    syncToastLayer();
+    const body = dlg.querySelector('.modal-body') as HTMLElement;
+    const field = body.querySelector<HTMLElement>('input:not([type=hidden]):not([disabled]), textarea, select');
+    const main = buttons.length ? (opts.actions?.[opts.actions.length - 1]?.variant === 'danger' ? buttons[0] : buttons[buttons.length - 1]) : null;
+    const target = opts.initialFocus ?? field ?? main ?? firstFocusable(dlg);
+    target?.focus({ preventScroll: true });
+    if (target instanceof HTMLInputElement && target.type === 'text') target.select();
+    markShown();
+  };
+  // (the scrollbar is measured before the dialog joins the page: no extra layout for it; after the
+  // paint the page is laid out anyway)
+  if (!opts.afterPaint) setScrollLock(true);
   document.body.appendChild(dlg);
   openCount += 1;
   openHandles.add(handle);
-  dlg.showModal();
-  syncToastLayer();
+  if (opts.afterPaint) void afterNextPaint().then(show);
+  else show();
 
-  const body = dlg.querySelector('.modal-body') as HTMLElement;
-  const field = body.querySelector<HTMLElement>('input:not([type=hidden]):not([disabled]), textarea, select');
-  const main = buttons.length ? (opts.actions?.[opts.actions.length - 1]?.variant === 'danger' ? buttons[0] : buttons[buttons.length - 1]) : null;
-  const target = opts.initialFocus ?? field ?? main ?? firstFocusable(dlg);
-  target?.focus({ preventScroll: true });
-  if (target instanceof HTMLInputElement && target.type === 'text') target.select();
-
-  return { close, el: dlg, setBusy };
+  return { close, el: dlg, setBusy, shown };
 }
 
 export function confirmDialog(title: string, text: string, confirmLabel = kit.confirm, danger = false): Promise<boolean> {

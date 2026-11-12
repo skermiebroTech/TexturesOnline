@@ -110,6 +110,8 @@ const partChips = (page) =>
     // the Mobs list
     await page.locator('.tx-libbar .segmented-item[data-value="mobs"]:visible').first().click();
     await page.waitForFunction(() => document.querySelectorAll('.tx-mb-tile').length > 10, null, { timeout: 30000 });
+    // (the switch answers the tap at once; the list changes after that paint)
+    await page.waitForFunction(() => document.querySelector('.tx-mb-tile')?.dataset.id === 'allay', null, { timeout: 10000 }).catch(() => null);
     const tiles = await page.evaluate(() => [...document.querySelectorAll('.tx-mb-tile')].map((t) => t.dataset.id));
     check('the Mobs list shows mobs', tiles[0] === 'allay', tiles.slice(0, 4).join(', '));
     const count = await page.evaluate(() => document.querySelector('.tx-mb')?.textContent.match(/(\d+) mobs/)?.[1]);
