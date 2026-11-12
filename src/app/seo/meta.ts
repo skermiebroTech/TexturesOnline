@@ -339,10 +339,11 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'minecraft-pack-format-versions',
     blurb: 'The pack format of every Java release from 1.6.1 to 26.3.',
-    title: 'Minecraft Pack Format 26.3 (97.1) and Every Java Version',
+    // Searchers type "26.3 pack format" / "pack.mcmeta 26.3": the number alone no longer makes a working file, so the title offers the file.
+    title: 'Minecraft 26.3 Pack Format & pack.mcmeta (Every Version)',
     h1: 'Minecraft pack format for every Java version (26.3 uses 97.1)',
     description:
-      'Every Minecraft Java release from 1.6.1 to 26.3 and its resource pack format (26.3 uses 97.1), plus how pack.mcmeta has changed over the years.',
+      '26.3 uses 97.1, but pack.mcmeta now needs min_format and max_format. Copy a working file for 26.3 or a 1.20–26.3 range, plus every version’s format.',
     label: 'Pack format versions',
     icon: 'bulletlist',
     accent: 'accent-gold',
@@ -382,11 +383,12 @@ export const GUIDES: GuideMeta[] = [
   }),
   guide({
     slug: 'bedrock-vibrant-visuals-settings',
-    blurb: 'Sun, sky, fog, water and colour settings, and supported devices.',
-    title: 'Minecraft Bedrock Vibrant Visuals Settings Explained',
-    h1: 'Bedrock Vibrant Visuals settings explained',
+    blurb: 'Turn it on, fix it when it’s greyed out, and change sun, fog and water.',
+    // Almost every search that shows this page is "how to turn on / get / use vibrant visuals".
+    title: 'How to Turn On Vibrant Visuals in Minecraft Bedrock',
+    h1: 'How to turn on Vibrant Visuals and change its settings',
     description:
-      'What a Vibrant Visuals pack can change in Minecraft Bedrock (sun, sky, fog, water, shadows and colour grading), supported devices and how to turn it on.',
+      'Turn on Vibrant Visuals in Minecraft Bedrock, fix it when it is greyed out or missing, check supported devices and change the sun, fog, water and shadows.',
     label: 'Vibrant Visuals settings',
     icon: 'cloud-sun',
     accent: 'accent-purple',

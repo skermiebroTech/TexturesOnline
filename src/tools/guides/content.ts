@@ -1591,6 +1591,14 @@ export const GUIDE_CONTENT: Guide[] = [
         ' is Minecraft Bedrock’s modern graphics mode, with directional sunlight, soft shadows, volumetric fog, reflective water and physically based materials. It left the experiments in 1.21.90 (June 2025) and is the default graphics mode on supported devices. A resource pack can adjust its settings; it cannot add new shader code.',
       ),
     ],
+    quick: {
+      title: 'Quick answer: how to turn on Vibrant Visuals',
+      items: [
+        ['Open ', uiPath('Settings', 'Video'), ' and set ', strong('Graphics Mode'), ' to ', strong('Vibrant Visuals'), '.'],
+        ['Greyed out? Every active resource pack must support it: deactivate classic texture packs in ', uiPath('Settings', 'Global Resources'), '.'],
+        'Not there at all? It needs a supported device: a DirectX 12 PC, Xbox Series, PS5, an iPhone or iPad with an A12 chip or newer, or a recent Android phone.',
+      ],
+    },
     howto: { name: 'How to use a Vibrant Visuals pack in Minecraft Bedrock', steps: VV_STEPS },
     sections: [
       {

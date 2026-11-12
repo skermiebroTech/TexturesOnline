@@ -1316,6 +1316,14 @@ const vibrantVisuals: GuideText = {
       ' (im deutschen Spiel „Lebendige Grafik“) ist der moderne Grafikmodus von Minecraft Bedrock, mit gerichtetem Sonnenlicht, weichen Schatten, Volumennebel, spiegelndem Wasser und physikalisch basierten Materialien. Seit 1.21.90 (Juni 2025) ist er kein Experiment mehr und auf unterstützten Geräten der Standard-Grafikmodus. Ein Ressourcenpaket kann seine Einstellungen anpassen, aber keinen neuen Shader-Code hinzufügen.',
     ),
   ],
+  quick: {
+    title: 'Kurz gesagt: Vibrant Visuals einschalten',
+    items: [
+      ['Öffne ', uiPath('Einstellungen', 'Grafik'), ' und stelle den ', strong('Grafikmodus'), ' auf ', strong('Lebendige Grafik'), ' (Vibrant Visuals).'],
+      ['Ausgegraut? Jedes aktive Ressourcenpaket muss den Modus unterstützen: Deaktiviere klassische Texture Packs unter ', uiPath('Einstellungen', 'Globale Ressourcen'), '.'],
+      'Fehlt die Option ganz? Dann braucht es ein unterstütztes Gerät: einen PC mit DirectX 12, Xbox Series, PS5, ein iPhone oder iPad ab A12-Chip oder ein aktuelles Android-Gerät.',
+    ],
+  },
   howto: { name: 'Vibrant-Visuals-Paket in Minecraft Bedrock nutzen', steps: VV_STEPS },
   sections: [
     {

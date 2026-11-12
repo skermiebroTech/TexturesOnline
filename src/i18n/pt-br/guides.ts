@@ -1321,6 +1321,14 @@ const vibrantVisuals: GuideText = {
       ' (Vibrant Visuals) é o modo gráfico moderno do Minecraft Bedrock, com luz do sol direcional, sombras suaves, neblina volumétrica, água com reflexos e materiais com renderização física (PBR). Saiu dos experimentos na 1.21.90 (junho de 2025) e é o modo gráfico padrão nos aparelhos compatíveis. Um pacote de recursos pode ajustar as configurações dele, mas não pode adicionar código de shader novo.',
     ),
   ],
+  quick: {
+    title: 'Resposta rápida: como ativar os Visuais Vibrantes',
+    items: [
+      ['Abra ', uiPath('Opções', 'Vídeo'), ' e coloque ', strong('Modos de Gráfico'), ' em ', strong('Visuais Vibrantes'), '.'],
+      ['Está cinza? Todos os pacotes de recursos ativos precisam suportar: desative os texture packs clássicos em ', uiPath('Opções', 'Recursos globais'), '.'],
+      'A opção nem aparece? Ela precisa de um aparelho compatível: PC com DirectX 12, Xbox Series, PS5, iPhone ou iPad com chip A12 ou mais novo, ou um Android recente.',
+    ],
+  },
   howto: { name: 'Como usar um pacote de Visuais Vibrantes no Minecraft Bedrock', steps: VV_STEPS },
   sections: [
     {

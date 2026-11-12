@@ -1526,6 +1526,14 @@ const vibrantVisuals: GuideText = {
       ' (Vibrant Visuals en anglais) sont le mode graphique moderne de Minecraft Bedrock, avec une lumière du soleil directionnelle, des ombres douces, un brouillard volumétrique, de l’eau qui reflète et des matériaux physiques. Ils sont sortis des expériences avec la 1.21.90 (juin 2025) et sont le mode graphique par défaut sur les appareils compatibles. Un pack de ressources peut régler leurs paramètres ; il ne peut pas ajouter de nouveau code de shader.',
     ),
   ],
+  quick: {
+    title: 'En bref : activer les Graphismes éclatants',
+    items: [
+      ['Ouvre ', uiPath(BEDROCK.settings, BEDROCK.video), ' et règle ', strong(BEDROCK.graphicsMode), ' sur ', strong(BEDROCK.vibrantVisuals), '.'],
+      ['Option grisée ? Tous les packs de ressources actifs doivent les prendre en charge : désactive les packs de textures classiques dans ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+      'L’option n’apparaît pas ? Il faut un appareil compatible : un PC avec DirectX 12, une Xbox Series, une PS5, un iPhone ou un iPad avec une puce A12 ou plus récente, ou un Android récent.',
+    ],
+  },
   howto: { name: 'Comment utiliser un pack Graphismes éclatants dans Minecraft Bedrock', steps: VV_STEPS },
   sections: [
     {

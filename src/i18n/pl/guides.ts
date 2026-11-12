@@ -1314,6 +1314,14 @@ const vibrantVisuals: GuideText = {
       ` (w polskiej wersji gry „${BEDROCK.vibrantVisuals}”) to nowoczesny tryb grafiki w Minecraft Bedrock, z kierunkowym światłem słońca, miękkimi cieniami, mgłą wolumetryczną, odbijającą wodą i materiałami opartymi na fizyce. Od 1.21.90 (czerwiec 2025) nie jest już eksperymentem i na obsługiwanych urządzeniach jest domyślnym trybem grafiki. Paczka zasobów może zmieniać jego ustawienia, ale nie może dodać nowego kodu shaderów.`,
     ),
   ],
+  quick: {
+    title: 'W skrócie: jak włączyć Vibrant Visuals',
+    items: [
+      ['Otwórz ', uiPath(BEDROCK.settings, BEDROCK.video), ' i ustaw ', strong(BEDROCK.graphicsMode), ' na ', strong(BEDROCK.vibrantVisuals), ' (Vibrant Visuals).'],
+      ['Opcja jest szara? Muszą ją obsługiwać wszystkie aktywne paczki zasobów: wyłącz klasyczne paczki tekstur w ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+      'Nie ma jej wcale? Potrzebne jest obsługiwane urządzenie: komputer z DirectX 12, Xbox Series, PS5, iPhone lub iPad od układu A12 albo nowy telefon z Androidem.',
+    ],
+  },
   howto: { name: 'Jak używać paczki Vibrant Visuals w Minecraft Bedrock', steps: VV_STEPS },
   sections: [
     {

@@ -1480,6 +1480,14 @@ const vibrantVisuals: GuideText = {
       ' (в русской версии игры — «Яркие визуальные эффекты») — современный графический режим Minecraft Bedrock с направленным солнечным светом, мягкими тенями, объёмным туманом, отражающей водой и физически корректными материалами. Он вышел из экспериментов в 1.21.90 (июнь 2025 года) и включён по умолчанию на поддерживаемых устройствах. Ресурспак может менять его настройки, но не может добавить новый код шейдеров.',
     ),
   ],
+  quick: {
+    title: 'Коротко: как включить Vibrant Visuals',
+    items: [
+      ['Открой ', uiPath(BEDROCK.settings, BEDROCK.video), ' и поставь ', strong(BEDROCK.graphicsMode), ' на ', strong(BEDROCK.vibrantVisuals), '.'],
+      ['Пункт серый? Его должны поддерживать все активные ресурспаки: отключи классические текстурпаки в ', uiPath(BEDROCK.settings, BEDROCK.globalResources), '.'],
+      'Пункта нет совсем? Нужно поддерживаемое устройство: ПК с DirectX 12, Xbox Series, PS5, iPhone или iPad с чипом A12 или новее либо современный Android.',
+    ],
+  },
   howto: { name: 'Как включить набор Vibrant Visuals в Minecraft Bedrock', steps: VV_STEPS },
   sections: [
     {
