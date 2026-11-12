@@ -103,9 +103,12 @@ const isEdited = (page, p) => page.evaluate((pp) => window.__tx.store.isEdited(p
     check('the 3D model fills the main stage', await page.evaluate(() => !!document.querySelector('.tx-stage3d .tx-pv-hero .preview-stage canvas')));
     check('the pixel editor moves to the side panel', await page.evaluate(() => !!document.querySelector('.tx-pv-canvasslot .tx-canvas-box .pc-root')));
     check('shape and selection tools are hidden in 3D', await page.evaluate(() => getComputedStyle(document.querySelector('.tx-tool[data-tool="line"]')).display === 'none' && getComputedStyle(document.querySelector('.tx-tool[data-tool="fill"]')).display !== 'none'));
+    // (the switch answers the tap at once; the workspace follows after that paint)
     await page.click('.tx-ws-switch .segmented-item[data-value="2d"]');
+    await page.waitForFunction(() => window.__tx.workspace() === '2d', null, { timeout: 5000 }).catch(() => null);
     check('the 2D button goes back to the flat texture', (await page.evaluate(() => window.__tx.workspace())) === '2d' && (await page.evaluate(() => !!document.querySelector('.tx-stage > .tx-canvas-box .pc-root'))));
     await page.click('.tx-ws-switch .segmented-item[data-value="3d"]');
+    await page.waitForFunction(() => window.__tx.workspace() === '3d', null, { timeout: 5000 }).catch(() => null);
     check('the 3D button opens the 3D workspace', (await page.evaluate(() => window.__tx.workspace())) === '3d');
 
     // grass block side: a click paints that texel

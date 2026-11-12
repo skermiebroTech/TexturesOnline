@@ -53,13 +53,15 @@ function startDialog(locale: Locale): void {
       icon('chevron-right', { class: 'start-option-go' }),
     ),
   );
+  // (shown after the tap's own paint, see afterPaint)
   const m = openModal({
     title: homeText(locale).startDialog,
     width: 560,
     body: h('div', { class: 'start-options' }, options),
+    initialFocus: options[0],
+    afterPaint: true,
   });
   options.forEach((a) => a.addEventListener('click', () => m.close()));
-  options[0]?.focus();
 }
 
 const KIND_INFO: Record<Project['kind'], { label: string; icon: IconName; route: ToolKey; accent: string }> = {

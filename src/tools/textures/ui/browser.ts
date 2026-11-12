@@ -159,20 +159,9 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
   );
 
   // ---- filtering ----
-  const counts = (): Map<Cat, number> => {
-    const m = new Map<Cat, number>();
-    const edited = store.editedPaths();
-    const toks = tokenize(query);
-    let all = 0;
-    for (const e of store.entries) {
-      if (editedOnly && !edited.has(e.path)) continue;
-      if (toks.length && searchScore(toks, e) < 0) continue;
-      all++;
-      m.set(e.category, (m.get(e.category) ?? 0) + 1);
-    }
-    m.set('all', all);
-    return m;
-  };
+  /** Matches per category for the search and the Edited filter (counted with the list, in one pass). */
+  let catCounts = new Map<Cat, number>();
+  const counts = (): Map<Cat, number> => catCounts;
 
   const catName = (c: Cat) => (c === 'all' ? te.lib.allTextures : CATEGORY_INFO[c].label);
   const renderCats = () => {
@@ -234,17 +223,25 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     });
   }
 
+  /** The list for the search, category and Edited filter, and every category's count (each texture scored once). */
   const computeItems = () => {
-    const edited = store.editedPaths();
+    const edited = editedOnly ? store.editedPaths() : null;
     const toks = tokenize(query);
     const scored: { e: TextureEntry; s: number; i: number }[] = [];
-    store.entries.forEach((e, i) => {
-      if (cat !== 'all' && e.category !== cat) return;
-      if (editedOnly && !edited.has(e.path)) return;
+    const m = new Map<Cat, number>();
+    let all = 0;
+    const entries = store.entries;
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (edited && !edited.has(e.path)) continue;
       const s = toks.length ? searchScore(toks, e) : 0;
-      if (s < 0) return;
-      scored.push({ e, s, i });
-    });
+      if (s < 0) continue;
+      all++;
+      m.set(e.category, (m.get(e.category) ?? 0) + 1);
+      if (cat === 'all' || e.category === cat) scored.push({ e, s, i });
+    }
+    m.set('all', all);
+    catCounts = m;
     if (toks.length) scored.sort((a, b) => b.s - a.s || a.i - b.i);
     items = scored.map((x) => x.e);
   };
@@ -297,8 +294,8 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     }
   };
 
-  /** `lean`: a tap changed the list (see leanLayout); typing in the search box isn't one. */
-  function refilter(resetScroll: boolean, lean = true) {
+  /** A tap or a search changed the list: the rows on screen first (see leanLayout). */
+  function refilter(resetScroll: boolean) {
     computeItems();
     renderCats();
     paintMeta();
@@ -306,8 +303,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     active = selected ? items.findIndex((e) => e.path === selected) : -1;
     recycleTiles();
     if (resetScroll) scrollListTo(0);
-    if (lean) leanLayout(layout);
-    else layout();
+    leanLayout(layout);
   }
 
   // ---- virtual grid ----
@@ -737,7 +733,7 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
     if (searchTimer) clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       query = input.value.trim();
-      refilter(true, false);
+      refilter(true);
     }, 110);
   });
   input.addEventListener('keydown', (ev) => {

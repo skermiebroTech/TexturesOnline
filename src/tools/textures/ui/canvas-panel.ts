@@ -362,6 +362,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const emptyEl = h('div', { class: 'tx-stage-empty' });
   const canvasBox = h('div', { class: 'tx-canvas-box' }, host, compareCanvas, compareTag);
   const stage3d = h('div', { class: 'tx-stage3d', hidden: true });
+  let wsTap = 0;
   const wsSwitch = segmented<Workspace>({
     value: ws,
     size: 'sm',
@@ -371,8 +372,15 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       { value: '3d', label: '3D', icon: 'cube' },
     ],
     onChange: (v) => {
-      wsSwitch.setValue(ws);
-      opts.onWorkspace?.(v);
+      // The switch shows the tap at once; the workspace (the 3D model or the flat canvas, the panels
+      // around them) changes after that paint. The last tap wins, and the switch ends on the
+      // workspace the editor took (GUI mode stays flat).
+      const my = ++wsTap;
+      void afterNextPaint().then(() => {
+        if (my !== wsTap) return;
+        opts.onWorkspace?.(v);
+        wsSwitch.setValue(ws);
+      });
     },
   });
   wsSwitch.classList.add('tx-ws-switch');

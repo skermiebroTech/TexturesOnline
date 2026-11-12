@@ -13,7 +13,8 @@
 // Options:
 //   --cpu <n>          CPU slowdown through the DevTools protocol (default 4; a mid-range phone; try 6)
 //   --device <d>       phone (390 × 844, DPR 3; default) or tablet (820 × 1180, DPR 2)
-//   --flows <a,b>      some of: home, start, editor, skins, shaders, converter, totem (default all)
+//   --flows <a,b>      some of: home, start, editor, skins, shaders, converter, totem (default all), and
+//                      rum: the interactions field data names as the slowest on phones, in one pass
 //   --top <n>          rows in the slowest-interactions table (default 25)
 //   --runs <n>         repeat every flow n times and report the worst / median of each step (default 1)
 //   --json <file>      also write every step's numbers as JSON (to compare two builds)
@@ -160,8 +161,14 @@ function where(url, { char, line, col } = {}) {
 // ------------------------------------------------------------------------------- in-page recorder
 /** Installed before any page script: buffers event and long-animation-frame entries. */
 function recorder() {
-  const rec = { events: [], loafs: [], probeTimes: [] };
+  const rec = { events: [], loafs: [], probeTimes: [], shifts: [] };
   window.__inp = rec;
+  try {
+    // layout shifts (CLS counts the ones without recent input)
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) rec.shifts.push({ value: e.value, recent: e.hadRecentInput });
+    }).observe({ type: 'layout-shift', buffered: true });
+  } catch {}
   try {
     new PerformanceObserver((l) => {
       for (const e of l.getEntries()) {
@@ -478,6 +485,9 @@ async function session(flow, run, body) {
   const s = new Session(page, cdp, flow, run);
   try {
     await body(s, page);
+    // the page on screen at the end of the flow (an earlier page's shifts went with it)
+    const cls = await page.evaluate(() => window.__inp.shifts.reduce((a, x) => (x.recent ? a : a + x.value), 0)).catch(() => null);
+    if (cls !== null) console.log(`  layout shift (CLS) of the last page: ${cls.toFixed(4)}`);
   } catch (err) {
     console.log(`  flow ${flow} stopped: ${String(err.message).split('\n')[0]}`);
   } finally {
@@ -741,7 +751,73 @@ async function flowTotem(s, page) {
   }
 }
 
-const FLOW_FNS = { home: flowHome, start: flowStart, editor: flowEditor, skins: flowSkins, shaders: flowShaders, converter: flowConverter, totem: flowTotem };
+/**
+ * The interactions field data (RUM, phones) names as the slowest, one after the other: the home page's
+ * hero button, then in the texture editor the tab bar, the 2D / 3D switch, the library switch, the
+ * search box, the texture header's upload, the layers button and export.
+ */
+async function flowRum(s, page) {
+  await page.goto(base);
+  await page.waitForLoadState('load');
+  await page.waitForTimeout(1500);
+  await s.throttle();
+  await s.step('home: hero "Start creating"', () => s.tap('section.hero .hero-cta > a.btn-primary'), { quiet: 800, probe: true });
+  if (await page.locator('.start-option').first().isVisible().catch(() => false)) {
+    await s.step('home: start dialog → Texture packs (to /textures/)', () => s.tap('.start-option.accent-green'), { quiet: 800, probe: true });
+  }
+  await page.waitForSelector('.tx-new');
+  await s.throttle(false);
+  await page.waitForTimeout(800);
+  await page.fill('.tx-name-field input', 'Perf');
+  await page.locator('.tx-create-btn').tap();
+  await editorReady(page);
+  await s.throttle();
+  const tab = (v) => s.tap(`.tx-tabbar-btn[data-v="${v}"]`);
+  await s.step('quick pick: first texture', () => s.tap('.tx-pick'), { quiet: 800 });
+  if (phone && (await page.locator('.tx-editor').getAttribute('data-mobile')) !== 'editor') await s.step('tab bar: Paint', () => tab('editor'));
+  await page.waitForSelector('.tx-canvas-host canvas');
+  await s.step('2D / 3D switch: 3D', () => s.tap('.tx-ws-switch .segmented-item[data-value="3d"]'), { quiet: 800 });
+  await s.step('2D / 3D switch: 2D', () => s.tap('.tx-ws-switch .segmented-item[data-value="2d"]'), { quiet: 800 });
+  await s.step('texture header: upload', () => s.tap('.tx-texhead .tx-act-upload'), { quiet: 600 });
+  await s.step('close upload dialog', () => page.keyboard.press('Escape'));
+  await s.step('layers button', () => s.tap('.tx-pl-btn'));
+  await s.step('layers: close', () => s.tap('.tx-pl-close'));
+  if (phone) for (const v of ['textures', 'preview', 'pack', 'editor', 'textures']) await s.step(`tab bar: ${v}`, () => tab(v), { quiet: 600 });
+  const lib = (v) => s.tap(`.tx-libbar .segmented-item[data-value="${v}"]`);
+  for (const v of ['items', 'mobs', 'blocks', 'textures']) await s.step(`library bar: ${v}`, () => lib(v), { quiet: 800 });
+  await s.step('texture search: typing', async () => {
+    await s.tap('.tx-browser:not(.tx-mb) .tx-search-input');
+    await page.keyboard.type('stone', { delay: 120 });
+  }, { quiet: 600 });
+  await s.step('texture search: backspace ×5', async () => {
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Backspace');
+      await page.waitForTimeout(120);
+    }
+  }, { quiet: 600 });
+  await s.step('library bar: blocks (again)', () => lib('blocks'), { quiet: 800 });
+  await s.step('block search: typing', async () => {
+    await s.tap('.tx-mb .tx-search-input');
+    await page.keyboard.type('oak', { delay: 120 });
+  }, { quiet: 600 });
+  await s.step('library bar: sounds', () => lib('sounds'), { quiet: 1200 });
+  await page.waitForSelector('.snd-browser .tx-search-input, [class*="snd"] .tx-search-input', { timeout: 15000 }).catch(() => {});
+  await s.step('sound search: typing', async () => {
+    await s.tap('.tx-search-input');
+    await page.keyboard.type('step', { delay: 120 });
+  }, { quiet: 600 });
+  await s.step('library bar: gui', () => lib('gui'), { quiet: 1200 });
+  await s.step('gui search: typing', async () => {
+    await s.tap('.tx-search-input');
+    await page.keyboard.type('chest', { delay: 120 });
+  }, { quiet: 600 });
+  await s.step('library bar: blocks (from gui)', () => lib('blocks'), { quiet: 1200 });
+  if (phone) await s.step('tab bar: Paint (last)', () => tab('editor'), { quiet: 600 });
+  await s.step('export button', () => s.tap('.tx-export-btn'), { quiet: 600 });
+  await s.step('close export dialog', () => page.keyboard.press('Escape'));
+}
+
+const FLOW_FNS = { home: flowHome, start: flowStart, editor: flowEditor, skins: flowSkins, shaders: flowShaders, converter: flowConverter, totem: flowTotem, rum: flowRum };
 
 // ------------------------------------------------------------------------------------------- main
 console.log(`INP harness: ${DEVICE}, CPU ${CPU}× slower, ${base}${fx ? '' : '  (no TO_FIXTURES: the texture editor flows need the game files)'}`);

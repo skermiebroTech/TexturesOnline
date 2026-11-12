@@ -159,6 +159,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     /* storage blocked */
   }
   const switches: (HTMLElement & { setValue(v: LibMode): void })[] = [];
+  let libTap = 0;
   const makeSwitch = () => {
     const sw = segmented<LibMode>({
       value: libMode,
@@ -172,7 +173,14 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
         { value: 'gui', label: '', icon: 'layout' },
         { value: 'sounds', label: '', icon: 'music' },
       ],
-      onChange: (v) => setLibMode(v, true),
+      // The switch shows the tap at once; the list for it (built, or brought back and laid out) after
+      // that paint. The last tap wins.
+      onChange: (v) => {
+        const my = ++libTap;
+        void afterNextPaint().then(() => {
+          if (my === libTap && v !== libMode) setLibMode(v, true);
+        });
+      },
     });
     // "All" keeps four labels apart in the narrow side panel; say in full what it lists
     const all = sw.querySelector<HTMLElement>('[data-value="textures"]');
@@ -304,13 +312,11 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       preview.dock(null, null);
     }
     // The Preview tab holds the flat texture in 3D.
+    let renamed = false;
     for (const tab of [tabbarButtons.get('preview'), sideTabs.querySelector<HTMLElement>('.tab[data-value="preview"]')]) {
-      const label = tab?.querySelector('span:not(.icon)');
-      const ic = tab?.querySelector<HTMLElement>('.icon');
-      if (label) label.textContent = ws === '3d' ? te.tabs.texture : te.tabs.preview;
-      if (ic) setIcon(ic, ws === '3d' ? 'grid' : 'cube');
+      renamed = setTabLabel(tab, ws === '3d' ? te.tabs.texture : te.tabs.preview, ws === '3d' ? 'grid' : 'cube') || renamed;
     }
-    fitTabbar();
+    if (renamed) fitTabbar();
     notifyVisibility();
     if (user && isPhone() && mobile !== 'editor') showMobile('editor');
   }
@@ -833,23 +839,29 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     tabbarButtons.set(t.v, b);
     tabbar.appendChild(b);
   }
+  /**
+   * A tab's name and icon; true when its name changed (only then do the tabs need measuring again:
+   * measuring lays the page out, in the middle of a tap's work).
+   */
+  function setTabLabel(tab: HTMLElement | null | undefined, text: string, name: IconName): boolean {
+    const label = tab?.querySelector('span:not(.icon)');
+    const ic = tab?.querySelector<HTMLElement>('.icon');
+    if (ic) setIcon(ic, name);
+    if (!label || label.textContent === text) return false;
+    label.textContent = text;
+    return true;
+  }
   /** In Sounds mode the list and editor tabs are about sounds. */
   function paintTabbar() {
     const sounds = libMode === 'sounds';
+    let renamed = false;
     for (const tab of [tabbarButtons.get('textures'), sideTabs.querySelector<HTMLElement>('.tab[data-value="textures"]')]) {
-      const label = tab?.querySelector('span:not(.icon)');
-      const ic = tab?.querySelector<HTMLElement>('.icon');
-      if (label) label.textContent = sounds ? te.tabs.sounds : te.tabs.textures;
-      if (ic) setIcon(ic, sounds ? 'music' : 'bulletlist');
+      renamed = setTabLabel(tab, sounds ? te.tabs.sounds : te.tabs.textures, sounds ? 'music' : 'bulletlist') || renamed;
     }
-    const ed = tabbarButtons.get('editor');
-    const label = ed?.querySelector('span:not(.icon)');
-    const ic = ed?.querySelector<HTMLElement>('.icon');
     // the splash texts are edited, not painted
     const splashes = libMode === 'gui' && !!guiMode?.splashesShown();
-    if (label) label.textContent = sounds || splashes ? te.tabs.edit : te.tabs.paint;
-    if (ic) setIcon(ic, sounds ? 'volume-2' : splashes ? 'notes' : 'pencil');
-    fitTabbar();
+    renamed = setTabLabel(tabbarButtons.get('editor'), sounds || splashes ? te.tabs.edit : te.tabs.paint, sounds ? 'volume-2' : splashes ? 'notes' : 'pencil') || renamed;
+    if (renamed) fitTabbar();
   }
   /**
    * Seven names don't fit every phone in every language (Russian at 3x): then only the open tab
@@ -877,9 +889,11 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     const col = sideTabs.parentElement;
     if (!col?.isConnected) return;
     col.classList.remove('is-snug', 'is-tight');
-    // phones have the tab bar; tablets already show icons and the open tab's name
+    // phones have the tab bar (asked first: the media query needs no layout, the sizes below do);
+    // tablets already show icons and the open tab's name
+    if (isPhone()) return;
     const ic = sideTabs.querySelector<HTMLElement>('.tab .icon');
-    if (!col.offsetWidth || isPhone() || (ic && getComputedStyle(ic).display !== 'none')) return;
+    if (!col.offsetWidth || (ic && getComputedStyle(ic).display !== 'none')) return;
     const crowded = () =>
       [...sideTabs.querySelectorAll<HTMLElement>('.tab')].some((tab) => {
         const sp = tab.querySelector<HTMLElement>('span:not(.icon)');

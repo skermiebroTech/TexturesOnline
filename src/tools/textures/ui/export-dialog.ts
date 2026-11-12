@@ -66,6 +66,7 @@ export function openExportDialog(store: TexStore): void {
     width: 560,
     class: 'tx-export-modal',
     onClose: stop,
+    afterPaint: true,
   });
   modal.el.appendChild(footer);
   // The dialog finishes closing on a timer, and a running export can hold timers back until it ends.
@@ -131,7 +132,8 @@ export function openExportDialog(store: TexStore): void {
       button({ label: te.export.cancel, variant: 'secondary', onClick: () => modal.close() }),
       button({ label: fmt(te.export.exportButton, { ext: java ? '.zip' : '.mcpack' }), icon: 'download', variant: 'primary', onClick: () => void run() }),
     );
-    (footer.lastElementChild as HTMLElement).focus();
+    const main = footer.lastElementChild as HTMLElement;
+    void modal.shown.then(() => main.focus());
   }
 
   // ---------------------------------------------------------------- progress

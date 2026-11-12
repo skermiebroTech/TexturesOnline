@@ -13,8 +13,9 @@ import { t } from '../i18n/start';
 export interface TextureEntry extends TextureInfo {
   /** Not a vanilla texture of this version (imported or from another version) */
   custom?: boolean;
-  /** Lower-case search haystacks */
+  /** Lower-case search haystacks: the id and name, and the name alone */
   hay: string;
+  lname: string;
   pretty: string;
 }
 
@@ -65,7 +66,8 @@ export function prettyName(name: string): string {
 
 export function makeEntry(t: TextureInfo, custom = false): TextureEntry {
   const pretty = prettyName(t.name);
-  return { ...t, custom: custom || undefined, pretty, hay: `${t.id.toLowerCase().replace(/[_/]+/g, ' ')} ${t.name.toLowerCase()}` };
+  const lname = t.name.toLowerCase();
+  return { ...t, custom: custom || undefined, pretty, hay: `${t.id.toLowerCase().replace(/[_/]+/g, ' ')} ${lname}`, lname };
 }
 
 /** Vanilla textures plus the pack's own textures that aren't in this version (saved or `unsaved`). */
@@ -91,14 +93,14 @@ export function buildEntries(project: TexturePackProject, assets: AssetIndex, ca
 
 /** Search score (higher is better), -1 when a token doesn't match. */
 export function searchScore(tokens: string[], e: TextureEntry): number {
+  // (runs for every texture on every keystroke: the lower-case name is made once, in makeEntry)
+  const name = e.lname;
   let score = 0;
-  const name = e.name.toLowerCase();
   for (const tok of tokens) {
     if (name === tok) score += 120;
     else if (name.startsWith(tok)) score += 70;
-    // a word of the name starts with it (the start of the name is the case above)
-    else if (name.includes(`_${tok}`)) score += 55;
-    else if (name.includes(tok)) score += 40;
+    // more when a word of the name starts with it (the start of the name is the case above)
+    else if (name.includes(tok)) score += name.includes(`_${tok}`) ? 55 : 40;
     else if (e.hay.includes(tok)) score += 22;
     else if (tok.length >= 3 && isSubsequence(tok, name)) score += 6;
     else return -1;

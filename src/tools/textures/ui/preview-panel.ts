@@ -10,6 +10,7 @@ import type { BlockPreview, ModelCameraView, ModelHit, ModelPaintHandler, ModelS
 import type { BlockState, ModelEntry, ModelTexture, ModelView, StateProperty } from '../../../shared/models/index';
 import { paletteSwatches } from '../../../shared/models/trims';
 import { cloneImageData } from '../../../core/image';
+import { afterNextPaint } from '../../../core/yield';
 import { h } from '../../../ui/dom';
 import { icon } from '../../../ui/icons';
 import { badge, emptyState, iconButton, openPopover, segmented, select, spinner, toggle, tooltip, type PopoverHandle } from '../../../ui/components';
@@ -191,6 +192,8 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
 
   // model header
   const headIcon = h('canvas', { class: 'tx-pv-headicon', 'aria-hidden': 'true' });
+  /** The icon the head shows (drawn again only for another one) */
+  let headIconOf: HTMLCanvasElement | ImageData | null = null;
   const headName = h('h2', { class: 'tx-pv-name truncate' });
   const headSub = h('span', { class: 'tx-pv-sub truncate' });
   const closeBtn = iconButton('close', te.preview.backToTexture, () => {
@@ -477,6 +480,10 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     head.title = entry.id;
     const cached = models.peekIcon(entry, fxOn());
     const draw = (img: HTMLCanvasElement | ImageData) => {
+      // (every render paints the head: the icon only when it is another one, copying a rendered
+      // icon is slow on phones)
+      if (img === headIconOf) return;
+      headIconOf = img;
       if (img instanceof HTMLCanvasElement) {
         headIcon.width = img.width;
         headIcon.height = img.height;
@@ -1219,8 +1226,15 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
       void render({ keepView: true, sameScene: entry === before && JSON.stringify(state) === beforeState });
     },
     setVisible(v) {
+      const was = visible;
       visible = v;
-      if (v) void render({ keepView: true });
+      // Shown (a tab, the 3D workspace): the panel's text is kept up to date while hidden, so the tap
+      // that showed it paints first and the 3D view catches up after that frame.
+      if (v && !was) {
+        void afterNextPaint().then(() => {
+          if (visible) void render({ keepView: true });
+        });
+      } else if (v) void render({ keepView: true });
     },
     showEntry(e, s) {
       pinned = false;
