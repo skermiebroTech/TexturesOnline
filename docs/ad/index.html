@@ -2,7 +2,7 @@
 <title>Says Who? Ad</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: one dark screening room. The 16:9 spot sits on top, the shot list reads under it. */
+/* Layout: one dark screening room. The film sits on top, the shot list reads under it. */
 @font-face { font-family: 'Texel'; src: url('assets/texel-regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Texel'; src: url('assets/texel-bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
 :root {
@@ -14,7 +14,6 @@
   --text-2: #b4bccb;
   --text-3: #8c95a8;
   --green: #5bd35b;
-  --on-green: #08120a;
   --focus: #8fd0ff;
   --font: 'Texel', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 }
@@ -30,25 +29,10 @@ header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; }
 h1 { font-size: 32px; line-height: 40px; margin: 0; font-weight: 700; }
 h1 em { font-style: normal; color: var(--green); }
 .meta { color: var(--text-3); }
-.stage { position: relative; background: #000; border: 2px solid var(--border); aspect-ratio: 16 / 9; max-width: 100%; }
-.stage canvas { display: block; width: 100%; height: 100%; }
-.stage:fullscreen { border: 0; display: grid; place-items: center; aspect-ratio: auto; }
-.stage:fullscreen canvas { width: 100vw; height: auto; max-height: 100vh; object-fit: contain; }
-.bigplay {
-  position: absolute; inset: 0; margin: auto; width: max-content; height: max-content;
-  font: 700 24px/32px var(--font); color: var(--on-green); background: var(--green);
-  border: 0; padding: 16px 32px; cursor: pointer; box-shadow: 0 8px 0 #2c7a2c, 0 0 0 4px rgba(0,0,0,.5);
-}
-.bigplay:hover { transform: translateY(2px); box-shadow: 0 6px 0 #2c7a2c, 0 0 0 4px rgba(0,0,0,.5); }
-.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.bar button {
-  font: 400 16px/24px var(--font); color: var(--text); background: var(--surface); border: 2px solid var(--border);
-  padding: 6px 14px; cursor: pointer;
-}
-.bar button:hover { border-color: var(--green); }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.bar input[type=range] { flex: 1 1 200px; min-width: 0; accent-color: var(--green); }
-.bar output { color: var(--text-2); font-variant-numeric: tabular-nums; min-width: 96px; text-align: right; }
+.stage { background: #000; border: 2px solid var(--border); aspect-ratio: 16 / 9; max-width: 100%; }
+.stage video { display: block; width: 100%; height: 100%; background: #000; }
+video:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.note { color: var(--text-2); margin: 0; }
 h2 { font-size: 24px; line-height: 32px; margin: 16px 0 0; }
 .shots { display: grid; grid-template-columns: max-content 1fr 1fr; gap: 0 24px; margin: 0; }
 .shots > div { display: contents; }
@@ -67,408 +51,33 @@ h2 { font-size: 24px; line-height: 32px; margin: 16px 0 0; }
 <div class="wrap">
   <header>
     <h1>Says <em>Who?</em></h1>
-    <span class="meta">Texture Pack Maker · big game spot · 0:45 · 1920×1080</span>
+    <span class="meta">Texture Pack Maker · big game spot · 0:45 · 1920×1080 · stereo</span>
   </header>
 
-  <div class="stage" id="stage">
-    <canvas id="c" width="1920" height="1080" aria-label="The 45-second ad"></canvas>
-    <button class="bigplay" id="bigplay" type="button">▶ Play with sound</button>
+  <div class="stage">
+    <video id="film" src="says-who.mp4" poster="assets/poster.jpg" controls playsinline preload="metadata" aria-label="The 45-second ad"></video>
   </div>
-
-  <div class="bar">
-    <button id="play" type="button">Play</button>
-    <button id="restart" type="button">Restart</button>
-    <button id="mute" type="button" aria-pressed="false">Sound on</button>
-    <input id="seek" type="range" min="0" max="45" step="0.01" value="0" aria-label="Position in the ad">
-    <output id="time" for="seek">0:00 / 0:45</output>
-    <button id="full" type="button">Fullscreen</button>
-  </div>
+  <p class="note" id="note" hidden>The video did not load here. The file is says-who.mp4, next to this page.</p>
 
   <h2>Shot list</h2>
   <dl class="shots">
-    <div><dt>0:00</dt><dd class="say">“Grass is green.”</dd><dd class="see">The whole screen is one green pixel. The camera starts pulling back.</dd></div>
-    <div><dt>0:04</dt><dd class="say">“Dirt is brown.” “Stone is… stone.”</dd><dd class="see">One block, then a whole floating island. Quiet music, nothing moves.</dd></div>
-    <div><dt>0:10</dt><dd class="say">“It has always looked like this.”</dd><dd class="see">The wide shot holds. A cursor drifts in.</dd></div>
-    <div><dt>0:13</dt><dd class="say">“Says who?”</dd><dd class="see">The music cuts out. The cursor clicks one block.</dd></div>
-    <div><dt>0:15</dt><dd class="say">MAKE IT PINK. MAKE IT AUTUMN. MAKE IT YOURS.</dd><dd class="see">The beat drops and a wave of colour repaints the island, block by block.</dd></div>
-    <div><dt>0:19</dt><dd class="say">REPAINT EVERY BLOCK.</dd><dd class="see">The real editor: a smiley painted onto stone, live on the 3D block.</dd></div>
-    <div><dt>0:24</dt><dd class="say">RESTYLE IT IN ONE CLICK.</dd><dd class="see">Six one-click styles of the same block land on the beat.</dd></div>
-    <div><dt>0:28</dt><dd class="say">RESKIN YOURSELF.</dd><dd class="see">The skin editor with a knight in 3D.</dd></div>
-    <div><dt>0:32</dt><dd class="say">RELIGHT THE SKY.</dd><dd class="see">The shader preview from sunrise to night.</dd></div>
-    <div><dt>0:36</dt><dd class="say">MOBS. SOUNDS. FONTS. CAPES. 3D MODELS. PVP. JAVA. BEDROCK.</dd><dd class="see">One word per half beat while the island keeps changing.</dd></div>
-    <div><dt>0:38</dt><dd class="say">Make it look your way. texturepackmaker.com</dd><dd class="see">End card: logo, line, “Free. No sign-up. Right in your browser.”</dd></div>
+    <div><dt>0:00</dt><dd class="say">“Grass is green.”</dd><dd class="see">The screen is one green pixel of a grass block. A grey, flat world; a clock ticks under a slow piano.</dd></div>
+    <div><dt>0:04</dt><dd class="say">“Stone is… stone.” “Dirt is brown.”</dd><dd class="see">The camera cranes back past a hero in grey, his sheep and his cottage, out to the whole floating island.</dd></div>
+    <div><dt>0:12</dt><dd class="say">“It has always looked like this.”</dd><dd class="see">Close on the hero, head down.</dd></div>
+    <div><dt>0:14</dt><dd class="say">“Says who?”</dd><dd class="see">The music stops. He looks up. A cursor drops in and clicks the block at his feet.</dd></div>
+    <div><dt>0:15</dt><dd class="say">MAKE IT PINK. MAKE IT AUTUMN. MAKE IT YOURS.</dd><dd class="see">The drop. Colour tears across the island block by block, the hero is thrown into the air and lands dancing.</dd></div>
+    <div><dt>0:19</dt><dd class="say">REPAINT EVERY BLOCK.</dd><dd class="see">The real texture editor: a smiley painted onto stone, one pixel per sixteenth note.</dd></div>
+    <div><dt>0:22</dt><dd class="say">SEE IT EVERYWHERE.</dd><dd class="see">Back in the world, that smiley pops onto every stone block of the crag.</dd></div>
+    <div><dt>0:24</dt><dd class="say">RESTYLE IT IN ONE CLICK.</dd><dd class="see">One orbit, eight looks, one per beat: autumn, frost, neon, pastel, retro, noir, pink, vivid.</dd></div>
+    <div><dt>0:28</dt><dd class="say">RESKIN YOURSELF.</dd><dd class="see">The real skin editor, then the hero jumps through four outfits: knight, robot, wizard, green hoodie.</dd></div>
+    <div><dt>0:32</dt><dd class="say">RELIGHT THE SKY.</dd><dd class="see">The real shader maker, then the island's own sun sets in four beats and the cottage windows light up.</dd></div>
+    <div><dt>0:36</dt><dd class="say">MOBS. SOUNDS. FONTS. CAPES. 3D MODELS. PVP. JAVA. BEDROCK.</dd><dd class="see">Eight cuts in one bar, a word on each.</dd></div>
+    <div><dt>0:38</dt><dd class="say">Make it look your way. texturepackmaker.com</dd><dd class="see">Golden hour. The hero waves, the camera pulls away, the logo lands with a three-note sign-off.</dd></div>
   </dl>
 
-  <p class="legal">Product shots are the live app, captured from the current build. The island, the animation and the music are made for this spot. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
+  <p class="legal">Product shots are the live app, captured from the current build. The island, the character, the animation and the music are made for this spot. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
 </div>
 
 <script>
-(() => {
-'use strict';
-const W = 1920, H = 1080, DUR = 45, BEAT = 60 / 128, BAR = BEAT * 4;
-const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
-const lerp = (a, b, t) => a + (b - a) * t;
-const smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
-const outCubic = t => 1 - Math.pow(1 - clamp(t), 3);
-const outBack = t => { t = clamp(t); const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
-const hash = (a, b = 0, c = 0) => { let h = (a * 374761393 + b * 668265263 + c * 2147483647) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
-const FONT = "'Texel', ui-monospace, Menlo, Consolas, monospace";
-
-/* ---------- assets ---------- */
-const IMG = {};
-const names = ['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'skin', 'sky-sunrise', 'sky-noon', 'sky-sunset', 'sky-night'].map(n => [n, `assets/${n}.jpg`])
-  .concat([0, 1, 2, 3, 4, 5].map(i => ['style' + i, `assets/style${i}.png`]), [['logo', 'assets/logo.svg']]);
-const loadImg = ([k, src]) => new Promise(res => { const im = new Image(); im.onload = () => { IMG[k] = im; res(); }; im.onerror = () => res(); im.src = src; });
-
-/* ---------- the island ---------- */
-const TW = 64, BH = 40, N = 30, C = N / 2;
-const THEMES = {
-  plain:  { grass: '#6aaa40', dirt: '#7a553a', stone: '#808080', sand: '#dccf9a', water: '#3f76e4', log: '#6b4f2d', leaves: '#3f8a2e', sky: ['#39445c', '#77849c'] },
-  pink:   { grass: '#ff4fa3', dirt: '#7b3fa0', stone: '#b79cff', sand: '#ffe0f0', water: '#48e0e0', log: '#fff4fa', leaves: '#ffd23f', sky: ['#ff8cc6', '#ffe9a8'] },
-  autumn: { grass: '#d9772b', dirt: '#6a3f24', stone: '#8a7f76', sand: '#e7c98f', water: '#2f7f8f', log: '#4b2f1c', leaves: '#c7301f', sky: ['#e8843a', '#ffe1b0'] },
-  frost:  { grass: '#eaf6ff', dirt: '#6f7f93', stone: '#9fb4c8', sand: '#d7ecf5', water: '#7fd0ff', log: '#4d5b6e', leaves: '#7fd6c8', sky: ['#7fbcff', '#f0faff'] },
-  neon:   { grass: '#171b30', dirt: '#0e1122', stone: '#1c2138', sand: '#221a3a', water: '#00e5ff', log: '#ff2bd6', leaves: '#39ff88', sky: ['#05060d', '#22104a'], outline: '#35f0ff' },
-  vivid:  { grass: '#5bd35b', dirt: '#8a5a38', stone: '#8e96a8', sand: '#f2e2a4', water: '#4fb3ff', log: '#7a5530', leaves: '#2fa84a', sky: ['#2f93e0', '#bfe6ff'] },
-};
-const TYPES = ['grass', 'dirt', 'stone', 'sand', 'water', 'log', 'leaves'];
-const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-const rgb = (c, m) => `rgb(${Math.min(255, c[0] * m) | 0},${Math.min(255, c[1] * m) | 0},${Math.min(255, c[2] * m) | 0})`;
-function faceTex(theme, type, face) { // 8x8 texels, same pattern in every theme so a repaint keeps the grain
-  const c = document.createElement('canvas'); c.width = c.height = 8; const g = c.getContext('2d');
-  const shade = face === 'top' ? 1 : face === 'left' ? 0.8 : 0.62, ti = TYPES.indexOf(type);
-  for (let v = 0; v < 8; v++) for (let u = 0; u < 8; u++) {
-    let col = hex(theme[type]), r = hash(u, v, ti * 7 + (face === 'top' ? 0 : 3)), m = 0.86 + Math.floor(r * 4) * 0.07;
-    if (type === 'grass' && face !== 'top' && v >= 2 + (hash(u, 99) > 0.5 ? 1 : 0)) col = hex(theme.dirt);
-    if (type === 'log' && face !== 'top') m = (u % 3 === 0 ? 0.78 : 1) * (0.94 + r * 0.1);
-    if (type === 'log' && face === 'top') m = (Math.max(Math.abs(u - 3.5), Math.abs(v - 3.5)) | 0) % 2 ? 1.25 : 0.95;
-    if (type === 'leaves' && r > 0.72) m = 0.62;
-    if (type === 'stone' && r > 0.8) m = 0.72;
-    if (type === 'water') m = 0.94 + r * 0.16;
-    g.fillStyle = rgb(col, m * shade); g.fillRect(u, v, 1, 1);
-  }
-  return c;
-}
-function makeSprite(theme, type) {
-  const c = document.createElement('canvas'); c.width = TW; c.height = 32 + BH; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
-  const k = BH / 8;
-  g.setTransform(4, 2, 0, k, 0, 16); g.drawImage(faceTex(theme, type, 'left'), 0, 0);
-  g.setTransform(4, -2, 0, k, 32, 32); g.drawImage(faceTex(theme, type, 'right'), 0, 0);
-  g.setTransform(4, 2, -4, 2, 32, 0); g.drawImage(faceTex(theme, type, 'top'), 0, 0);
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  if (theme.outline && type !== 'water') {
-    g.strokeStyle = theme.outline; g.lineWidth = 2; g.globalAlpha = 0.9; g.beginPath();
-    g.moveTo(32, 1); g.lineTo(63, 16); g.lineTo(32, 31); g.lineTo(1, 16); g.closePath();
-    g.moveTo(32, 31); g.lineTo(32, 31 + BH); g.stroke(); g.globalAlpha = 1;
-  }
-  return c;
-}
-const SPR = {}; let FLASH;
-function buildSprites() {
-  for (const t in THEMES) { SPR[t] = {}; for (const ty of TYPES) SPR[t][ty] = makeSprite(THEMES[t], ty); }
-  FLASH = document.createElement('canvas'); FLASH.width = TW; FLASH.height = 32 + BH; const g = FLASH.getContext('2d');
-  g.drawImage(SPR.plain.stone, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(0, 0, TW, 32 + BH);
-}
-const VOX = []; let HERO;
-function buildWorld() {
-  const h = [], inside = (i, j) => i >= 0 && j >= 0 && i < N && j < N && Math.hypot(i - C, j - C) < 13.2 + 1.6 * Math.sin(Math.atan2(j - C, i - C) * 5);
-  for (let i = 0; i < N; i++) { h[i] = []; for (let j = 0; j < N; j++) {
-    let v = 2.7 + 1.2 * Math.sin(i * 0.38 + 1.3) + 1.0 * Math.cos(j * 0.33 + 0.4) + 0.7 * Math.sin((i + j) * 0.21);
-    v -= Math.max(0, 3.4 - Math.hypot(i - (C + 6), j - (C - 4)) * 0.6) * 1.4;
-    v += Math.max(0, 3 - Math.hypot(i - (C - 7), j - (C - 6)) * 0.5) * 1.3;
-    h[i][j] = Math.max(1, Math.round(v));
-  } }
-  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { h[i][j] = Math.min(h[i][j], 5); if (i >= C && j >= C && Math.abs(i - j) <= 4) h[i][j] = Math.min(h[i][j], 3); }
-  h[C][C] = 3; // the block the cursor clicks: nothing in front may hide it
-  const push = (i, j, k, type) => VOX.push({ i, j, k, type, d: Math.hypot(i - C, j - C), x: (i - j) * 32 - 32, y: (i + j) * 16 - k * BH, key: (i + j) * 64 + k + 16 });
-  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
-    if (!inside(i, j)) continue;
-    const hh = h[i][j], depth = Math.round(1 + (14 - Math.hypot(i - C, j - C)) * 0.55 + hash(i, j, 5) * 1.6);
-    const wet = hh <= 1, nearWet = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => inside(i + a, j + b) && h[i + a][j + b] <= 1);
-    const top = wet ? 'water' : nearWet && hh <= 2 ? 'sand' : 'grass';
-    for (let k = -depth; k <= hh; k++) push(i, j, k, k === hh ? top : k >= hh - 2 && k >= 0 ? 'dirt' : 'stone');
-  }
-  for (const [ti, tj] of [[C - 7, C - 6], [C - 3, C + 7], [C + 8, C + 3], [C - 9, C + 2], [C + 2, C - 9]]) {
-    const b = h[ti][tj];
-    for (let k = 1; k <= 3; k++) push(ti, tj, b + k, 'log');
-    for (let a = -1; a <= 1; a++) for (let c2 = -1; c2 <= 1; c2++) { if (a || c2) push(ti + a, tj + c2, b + 3, 'leaves'); push(ti + a, tj + c2, b + 4, 'leaves'); }
-    push(ti, tj, b + 5, 'leaves');
-  }
-  VOX.sort((a, b) => a.key - b.key);
-  HERO = { x: 0, y: C * 32 - 3 * BH + 16 }; // centre of the hero block's top face, in world pixels
-}
-const WORLD = document.createElement('canvas'); WORLD.width = 1600; WORLD.height = 1400;
-const wctx = WORLD.getContext('2d'); const WOX = 800, WOY = 60;
-const WAVES = [ // [start time, theme]
-  [15, 'pink'], [15 + BAR, 'autumn'],
-  [35.625, 'frost'], [35.625 + BEAT, 'neon'], [35.625 + 2 * BEAT, 'pink'], [35.625 + 3 * BEAT, 'vivid'],
-];
-const WSPEED = 17;
-function themeAt(t, d) { let th = 'plain', since = 99; for (const [t0, name] of WAVES) { const s = t - t0 - d / WSPEED; if (s >= 0) { th = name; since = s; } } return [th, since]; }
-function drawWorld(t) {
-  wctx.clearRect(0, 0, WORLD.width, WORLD.height);
-  for (const v of VOX) {
-    const [th, s] = themeAt(t, v.d);
-    const lift = s < 0.6 ? 26 * Math.exp(-5 * s) * Math.abs(Math.cos(s * 9)) : 0;
-    const X = WOX + v.x, Y = WOY + v.y - lift;
-    wctx.drawImage(SPR[th][v.type], X, Y);
-    if (s < 0.1) { wctx.globalAlpha = 0.8 * (1 - s / 0.1); wctx.drawImage(FLASH, X, Y); wctx.globalAlpha = 1; }
-  }
-}
-function skyAt(t) { let a = 'plain', b = 'plain', k = 1; for (const [t0, name] of WAVES) if (t >= t0) { a = b; b = name; k = clamp((t - t0) / 0.5); } return [a, b, k]; }
-function mix(c1, c2, k) { const a = hex(c1), b = hex(c2); return `rgb(${lerp(a[0], b[0], k) | 0},${lerp(a[1], b[1], k) | 0},${lerp(a[2], b[2], k) | 0})`; }
-function drawSky(t) {
-  const [a, b, k] = skyAt(t), g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, mix(THEMES[a].sky[0], THEMES[b].sky[0], k)); g.addColorStop(1, mix(THEMES[a].sky[1], THEMES[b].sky[1], k));
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-}
-function blitWorld(camX, camY, zoom) { // camX/camY in world pixels land on the centre of the frame
-  ctx.imageSmoothingEnabled = zoom < 1.5;
-  ctx.drawImage(WORLD, W / 2 - (camX + WOX) * zoom, H / 2 - (camY + WOY) * zoom, WORLD.width * zoom, WORLD.height * zoom);
-  ctx.imageSmoothingEnabled = true;
-}
-const WIDE = { x: 0, y: C * 32 - 40 };
-
-/* ---------- type ---------- */
-function caption(text, t, t0, t1, y = 900) { // quiet line for the first act
-  if (t < t0 || t > t1) return;
-  const a = Math.min(clamp((t - t0) / 0.35), clamp((t1 - t) / 0.35));
-  ctx.save(); ctx.globalAlpha = a; ctx.font = `400 64px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(text, W / 2 + 4, y + 4);
-  ctx.fillStyle = '#fff'; ctx.fillText(text, W / 2, y); ctx.restore();
-}
-function slam(text, t, t0, t1, o = {}) { // loud line on a solid slab
-  if (t < t0 || t >= t1) return;
-  let size = o.size || 128; const x = o.x ?? W / 2, y = o.y ?? 880, s = lerp(1.6, 1, outBack((t - t0) / 0.16));
-  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
-  ctx.font = `700 ${size}px ${FONT}`;
-  while (ctx.measureText(text).width > W - 360 && size > 48) { size -= 8; ctx.font = `700 ${size}px ${FONT}`; } // Texel stays crisp in steps of 8
-  const w = ctx.measureText(text).width, padX = size * 0.3, hh = size * 1.25;
-  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(-w / 2 - padX + 12, -hh / 2 + 12, w + padX * 2, hh);
-  ctx.fillStyle = o.bg || '#5bd35b'; ctx.fillRect(-w / 2 - padX, -hh / 2, w + padX * 2, hh);
-  ctx.fillStyle = o.fg || '#08120a'; ctx.fillText(text, 0, size * 0.04);
-  ctx.restore();
-}
-function cover(img, r, alpha = 1) { if (!img) return; const k = img.naturalWidth / 1920; ctx.globalAlpha = alpha; ctx.drawImage(img, r[0] * k, r[1] * k, r[2] * k, r[3] * k, 0, 0, W, H); ctx.globalAlpha = 1; }
-const rectLerp = (a, b, k) => a.map((v, i) => lerp(v, b[i], k));
-function cursor(x, y, pressed) {
-  ctx.save(); ctx.translate(x, y); const s = pressed ? 5 : 6; ctx.scale(s, s);
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 16); ctx.lineTo(4, 12); ctx.lineTo(7, 18); ctx.lineTo(10, 17); ctx.lineTo(7, 11); ctx.lineTo(12, 11); ctx.closePath();
-  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.4; ctx.lineJoin = 'miter'; ctx.fill(); ctx.stroke(); ctx.restore();
-}
-function vignette(strength) {
-  const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 1.05);
-  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${strength})`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-}
-function flash(t, t0, len = 0.12) { if (t >= t0 && t < t0 + len) { ctx.fillStyle = `rgba(255,255,255,${0.85 * (1 - (t - t0) / len)})`; ctx.fillRect(0, 0, W, H); } }
-
-/* ---------- scenes ---------- */
-const T = { drop: 15, editor: 15 + 2 * BAR, styles: 15 + 5 * BAR, skins: 15 + 7 * BAR, sky: 15 + 9 * BAR, words: 15 + 11 * BAR, end: 15 + 12 * BAR };
-const WORDS = ['MOBS', 'SOUNDS', 'FONTS', 'CAPES', '3D MODELS', 'PVP', 'JAVA', 'BEDROCK'];
-const ACCENT = ['#5bd35b', '#ffcf4a', '#4fb3ff', '#b07cff', '#ff5b5b', '#5bd35b', '#ffcf4a', '#4fb3ff'];
-
-function sceneWorld(t) {
-  drawWorld(t); drawSky(t);
-  let zoom, cx, cy;
-  if (t < T.drop) {
-    const e = smooth(t / 11.5); zoom = Math.exp(lerp(Math.log(340), 0, e));
-    const k = smooth((e - 0.55) / 0.45); cx = lerp(HERO.x + 2, WIDE.x, k); cy = lerp(HERO.y + 1, WIDE.y, k);
-    if (t > 11.5) zoom = 1 + (t - 11.5) * 0.012;
-  } else {
-    const base = t >= T.words ? T.words : T.drop, beatPhase = ((t - base) / BEAT) % 1;
-    const since = Math.min(...WAVES.filter(w => t >= w[0]).map(w => t - w[0]));
-    zoom = 1.04 + 0.16 * Math.exp(-since * 4) + 0.012 * (1 - beatPhase);
-    cx = WIDE.x + 9 * Math.exp(-since * 7) * Math.sin(since * 70); cy = WIDE.y + 7 * Math.exp(-since * 7) * Math.cos(since * 61);
-  }
-  blitWorld(cx, cy, zoom);
-  vignette(t < T.drop ? 0.62 : 0.3);
-  if (t < T.drop) { // flat, grey mood before the click
-    ctx.fillStyle = `rgba(20,24,34,${0.2 * smooth(t / 6)})`; ctx.fillRect(0, 0, W, H);
-    caption('Grass is green.', t, 0.7, 3.4, 540);
-    caption('Dirt is brown.', t, 4.3, 6.7);
-    caption('Stone is\u2026 stone.', t, 7.3, 9.7);
-    caption('It has always looked like this.', t, 10.2, 12.7);
-    if (t > 13.1) { ctx.save(); ctx.font = `700 160px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.globalAlpha = clamp((t - 13.1) / 0.2); ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText('Says who?', W / 2 + 8, 228); ctx.fillStyle = '#fff'; ctx.fillText('Says who?', W / 2, 220); ctx.restore(); }
-    if (t > 12.4) { // the cursor walks in and clicks the middle block
-      const k = outCubic((t - 12.4) / 1.9), hx = W / 2 + (HERO.x - cx) * zoom, hy = H / 2 + (HERO.y - cy) * zoom;
-      cursor(lerp(1700, hx, k), lerp(1150, hy, k), t > 14.86);
-    }
-  } else if (t < T.editor) {
-    const hx = W / 2 + (HERO.x - cx) * zoom, hy = H / 2 + (HERO.y - cy) * zoom;
-    if (t < T.drop + 0.5) cursor(hx, hy, t < T.drop + 0.12);
-    flash(t, T.drop, 0.18); flash(t, T.drop + BAR, 0.1);
-    slam('MAKE IT PINK.', t, T.drop + 0.15, T.drop + BAR, { bg: '#ff4fa3', fg: '#2a0618', size: 160 });
-    slam('MAKE IT AUTUMN.', t, T.drop + BAR, T.drop + BAR + 2 * BEAT, { bg: '#ffcf4a', fg: '#2a1a04', size: 160 });
-    slam('MAKE IT YOURS.', t, T.drop + BAR + 2 * BEAT, T.editor, { bg: '#fff', fg: '#0d0f14', size: 160 });
-  } else {
-    const i = Math.min(7, Math.floor((t - T.words) / (BEAT / 2)));
-    flash(t, T.words + Math.floor((t - T.words) / BEAT) * BEAT, 0.08);
-    slam(WORDS[i], t, T.words + i * BEAT / 2, T.words + (i + 1) * BEAT / 2 + 0.001, { bg: ACCENT[i], y: 540, size: 256 });
-  }
-}
-function lower(text, sub, t, t0, t1, bg) {
-  slam(text, t, t0 + 0.05, t1, { bg, y: 900, size: 128 });
-  if (sub && t > t0 + BEAT) { ctx.save(); ctx.font = `400 48px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const w = ctx.measureText(sub).width; ctx.fillStyle = '#0d0f14'; ctx.fillRect(W / 2 - w / 2 - 24, 1002 - 36, w + 48, 72);
-    ctx.fillStyle = '#fff'; ctx.fillText(sub, W / 2, 1004); ctx.restore(); }
-}
-function sceneEditor(t) {
-  const s = t - T.editor, len = T.styles - T.editor, frame = Math.min(5, Math.floor(s / BEAT));
-  const A = [352, 124, 1568, 882], B = [840, 150, 1080, 607.5];
-  const k = smooth((s - 5.5 * BEAT) / (2.5 * BEAT)), punch = 1 - 0.02 * Math.exp(-((s / BEAT) % 1) * 6);
-  let r = rectLerp(A, B, k); r = [r[0] + r[2] * (1 - punch) / 2, r[1] + r[3] * (1 - punch) / 2, r[2] * punch, r[3] * punch];
-  ctx.fillStyle = '#0d0f14'; ctx.fillRect(0, 0, W, H); cover(IMG['p' + frame], r);
-  vignette(0.35); flash(t, T.editor);
-  lower('REPAINT EVERY BLOCK.', '3,964 textures. Pixel by pixel.', t, T.editor, T.editor + len, '#5bd35b');
-}
-function sceneStyles(t) {
-  const s = t - T.styles;
-  ctx.fillStyle = '#0d0f14'; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#12151c'; for (let x = 0; x < W; x += 96) for (let y = (x / 96 % 2) * 96; y < H; y += 192) ctx.fillRect(x, y, 96, 96);
-  for (let i = 0; i < 6; i++) {
-    const t0 = i * BEAT / 2, im = IMG['style' + i]; if (s < t0 || !im) continue;
-    const pop = outBack((s - t0) / 0.22), bounce = s > 3 * BEAT ? 22 * Math.abs(Math.sin(((s - 3 * BEAT) / BEAT) * Math.PI)) * Math.exp(-(((s - 3 * BEAT) / BEAT) % 1) * 2.2) : 0;
-    const size = 400 * pop, x = 480 + (i % 3) * 480, y = (i < 3 ? 235 : 590) - bounce, sh = im.naturalHeight * 0.93;
-    ctx.drawImage(im, 0, 0, im.naturalWidth, sh, x - size / 2, y - size / 2, size, size * 0.93);
-  }
-  vignette(0.4); flash(t, T.styles);
-  slam('RESTYLE IT IN ONE CLICK.', t, T.styles + 0.05, T.skins, { bg: '#ffcf4a', y: 940, size: 128 });
-}
-function sceneSkins(t) {
-  const s = t - T.skins, k = smooth(s / (T.sky - T.skins));
-  ctx.fillStyle = '#0d0f14'; ctx.fillRect(0, 0, W, H);
-  cover(IMG.skin, rectLerp([330, 110, 1590, 894], [560, 130, 1360, 765], k));
-  vignette(0.35); flash(t, T.skins);
-  lower('RESKIN YOURSELF.', null, t, T.skins, T.sky, '#4fb3ff');
-}
-function sceneSky(t) {
-  const s = t - T.sky, len = T.words - T.sky, order = ['sky-sunrise', 'sky-noon', 'sky-sunset', 'sky-night'], f = clamp(s / len) * 3.999;
-  const i = Math.floor(f), z = 1.06 + 0.06 * (s / len), r = [960 - 960 / z, 560 - 540 / z, 1920 / z, 1080 / z];
-  cover(IMG[order[i]], r); if (i < 3) cover(IMG[order[i + 1]], r, smooth((f - i - 0.45) / 0.55));
-  vignette(0.3); flash(t, T.sky);
-  lower('RELIGHT THE SKY.', null, t, T.sky, T.words, '#b07cff');
-}
-function sceneEnd(t) {
-  const s = t - T.end;
-  drawWorld(t); drawSky(t); blitWorld(WIDE.x, WIDE.y + 40, 1.3 - 0.05 * smooth(s / 7));
-  ctx.fillStyle = `rgba(13,15,20,${lerp(0.55, 0.9, smooth(s / 1.2))})`; ctx.fillRect(0, 0, W, H); vignette(0.5);
-  flash(t, T.end, 0.25);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  if (IMG.logo) { const p = outBack(s / 0.35), sz = 220 * p; ctx.drawImage(IMG.logo, W / 2 - sz / 2, 250 - sz / 2 - 60 * (1 - outCubic(s / 0.3)), sz, sz); }
-  if (s > 0.25) { // wordmark in the brand's two colours
-    ctx.save(); ctx.globalAlpha = clamp((s - 0.25) / 0.25); ctx.font = `700 96px ${FONT}`;
-    const a = 'TexturePack', b = 'Maker', wa = ctx.measureText(a).width, wb = ctx.measureText(b).width, x0 = W / 2 - (wa + wb) / 2;
-    ctx.textAlign = 'left'; ctx.fillStyle = '#eef1f7'; ctx.fillText(a, x0, 440); ctx.fillStyle = '#5bd35b'; ctx.fillText(b, x0 + wa, 440); ctx.restore();
-  }
-  if (s > 3 * BEAT) slam('MAKE IT LOOK YOUR WAY.', t, T.end + 3 * BEAT, 99, { y: 620, size: 128, bg: '#5bd35b' });
-  if (s > 6 * BEAT) { ctx.save(); ctx.globalAlpha = clamp((s - 6 * BEAT) / 0.3); ctx.font = `400 48px ${FONT}`; ctx.fillStyle = '#eef1f7';
-    ctx.fillText('Free.  No sign-up.  Right in your browser.', W / 2, 790); ctx.restore(); }
-  if (s > 8 * BEAT) { ctx.save(); ctx.globalAlpha = clamp((s - 8 * BEAT) / 0.3); ctx.font = `700 64px ${FONT}`; ctx.fillStyle = '#5bd35b';
-    ctx.fillText('texturepackmaker.com', W / 2, 890); ctx.restore(); }
-  ctx.font = `400 24px ${FONT}`; ctx.fillStyle = 'rgba(180,188,203,.8)';
-  ctx.fillText('Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.', W / 2, 1030);
-  if (s > 6.9) { ctx.fillStyle = `rgba(0,0,0,${clamp((s - 6.9) / 0.6)})`; ctx.fillRect(0, 0, W, H); }
-}
-function draw(t) {
-  t = clamp(t, 0, DUR);
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
-  if (t < T.editor) sceneWorld(t);
-  else if (t < T.styles) sceneEditor(t);
-  else if (t < T.skins) sceneStyles(t);
-  else if (t < T.sky) sceneSkins(t);
-  else if (t < T.words) sceneSky(t);
-  else if (t < T.end) sceneWorld(t);
-  else sceneEnd(t);
-  if (t < 0.5) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 0.5})`; ctx.fillRect(0, 0, W, H); }
-}
-
-/* ---------- the score, synthesised sample by sample ---------- */
-function synth(sr = 44100) {
-  const n = Math.floor(sr * (DUR + 0.5)), L = new Float32Array(n), R = new Float32Array(n), SL = new Float32Array(n), SR = new Float32Array(n);
-  const TAU = Math.PI * 2, hz = m => 440 * Math.pow(2, (m - 69) / 12);
-  let seed = 1; const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2147483648) - 1;
-  const add = (t0, dur, fn, pan = 0, send = 0) => {
-    const s = Math.max(0, Math.floor(t0 * sr)), e = Math.min(n, s + Math.floor(dur * sr)), gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4);
-    for (let i = s; i < e; i++) { const v = fn((i - s) / sr); L[i] += v * gl; R[i] += v * gr; if (send) { SL[i] += v * gl * send; SR[i] += v * gr * send; } }
-  };
-  const pluck = (m, t0, amp, pan = 0) => { const f = hz(m); add(t0, 1.8, t => amp * Math.exp(-t * 3.2) * (Math.sin(TAU * f * t) + 0.35 * Math.sin(TAU * 2 * f * t) * Math.exp(-t * 6)) * Math.min(1, t * 400), pan, 0.6); };
-  const pad = (ms, t0, dur, amp) => ms.forEach((m, k) => { const f = hz(m); add(t0, dur + 1.5, t => amp * Math.min(1, t / 1.2) * Math.min(1, Math.max(0, (dur + 1.5 - t) / 1.5)) * (Math.sin(TAU * f * t + 0.6 * Math.sin(TAU * 0.21 * t + k)) + 0.4 * Math.sin(TAU * f * 1.006 * t)), (k % 2 ? 0.5 : -0.5), 0.3); });
-  const kick = (t0, amp = 0.9) => add(t0, 0.4, t => amp * Math.exp(-t * 9) * Math.sin(TAU * (48 * t + (110 / 28) * (1 - Math.exp(-t * 28)))));
-  const snare = (t0, amp = 0.4) => add(t0, 0.25, t => amp * Math.exp(-t * 20) * (rnd() * 0.9 + 0.5 * Math.sin(TAU * 190 * t)), 0, 0.25);
-  const hat = (t0, amp = 0.12, pan = 0.3) => { let p = 0; add(t0, 0.06, t => { const x = rnd(), y = x - p; p = x; return amp * Math.exp(-t * 70) * y; }, pan); };
-  const pulse = (m, t0, dur, amp, pan = 0, duty = 0.25, send = 0.35) => { const f = hz(m); add(t0, dur, t => { const ph = (f * t * (1 + 0.003 * Math.sin(TAU * 5.5 * t))) % 1; return amp * (ph < duty ? 1 : -1) * Math.exp(-t * 2.5) * Math.min(1, t * 300) * Math.min(1, (dur - t) * 200); }, pan, send); };
-  const bass = (m, t0, dur, amp) => { const f = hz(m); add(t0, dur, t => { let v = 0; for (let h = 1; h <= 5; h++) v += Math.sin(TAU * f * h * t) / h; return amp * v * Math.min(1, t * 200) * Math.min(1, (dur - t) * 80) * (0.45 + 0.55 * Math.min(1, t / 0.18)); }); };
-  const boom = (t0, amp) => { add(t0, 2.5, t => amp * Math.exp(-t * 1.8) * Math.sin(TAU * (42 * t + 2.2 * (1 - Math.exp(-t * 12))))); add(t0, 1.2, t => amp * 0.5 * Math.exp(-t * 5) * rnd(), 0, 0.5); };
-
-  // act one: a small, lonely tune
-  pad([57, 64, 69], 0.3, 7.2, 0.05); pad([53, 60, 65], 7.5, 3.75, 0.05); pad([55, 62, 67], 11.25, 1.6, 0.055);
-  [[76, 0.9], [72, 2.8], [76, 4.7], [79, 5.6], [72, 6.6], [77, 8.4], [76, 9.4], [72, 10.3], [74, 11.6]].forEach(([m, t], i) => pluck(m, t, 0.16, i % 2 ? 0.3 : -0.3));
-  { let lp = 0; add(11.25, 1.85, t => { const k = t / 1.85; lp += (rnd() - lp) * (0.02 + 0.5 * k * k); return lp * 0.5 * k * k; }, 0, 0.3); } // riser, then a held breath
-  add(14.86, 0.05, t => 0.5 * Math.exp(-t * 90) * Math.sin(TAU * 1800 * t)); // click
-
-  // the drop: Am F C G, twelve bars
-  const CH = [[45, [69, 72, 76]], [41, [65, 69, 72]], [48, [67, 72, 76]], [43, [67, 71, 74]]];
-  const MEL = [[76, -1, 81, -1, 76, 72, -1, 76], [77, -1, 81, -1, 77, 72, -1, 77], [79, -1, 84, -1, 79, 76, -1, 79], [79, -1, 83, -1, 86, 83, 79, -1]];
-  boom(15, 0.8);
-  for (let b = 0; b < 12; b++) {
-    const t0 = 15 + b * BAR, [root, tri] = CH[b % 4], big = b >= 8, last = b === 11;
-    for (let q = 0; q < 4; q++) { kick(t0 + q * BEAT); if (q % 2) snare(t0 + q * BEAT, big ? 0.5 : 0.4); }
-    for (let e = 0; e < (big ? 16 : 8); e++) hat(t0 + e * BAR / (big ? 16 : 8), e % 2 ? 0.16 : 0.09, e % 2 ? 0.4 : -0.2);
-    for (let e = 0; e < 8; e++) bass(root - (e % 2 ? 0 : 12) + 12, t0 + e * BEAT / 2, BEAT / 2 * 0.9, e % 2 ? 0.2 : 0.26);
-    for (let e = 0; e < 16; e++) pulse(tri[e % 3] + (e % 6 > 2 ? 12 : 0), t0 + e * BEAT / 4, BEAT / 4, 0.045, e % 2 ? 0.7 : -0.7, 0.5, 0.2);
-    MEL[b % 4].forEach((m, e) => { if (m < 0) return; pulse(m, t0 + e * BEAT / 2, BEAT * 0.9, 0.13, 0.1); if (big) pulse(m + 12, t0 + e * BEAT / 2, BEAT * 0.6, 0.05, -0.2, 0.125); });
-    if (last) for (let e = 0; e < 8; e++) snare(t0 + 2 * BEAT + e * BEAT / 4, 0.2 + e * 0.04);
-  }
-  // end card: one big chord and a three-note sign-off
-  boom(T.end, 0.9); kick(T.end, 1); pad([48, 55, 60, 64, 67, 72], T.end, 5, 0.06);
-  [72, 76, 79, 84, 79, 76, 72, 67].forEach((m, i) => pluck(m, T.end + i * BEAT / 2, 0.12, i % 2 ? 0.5 : -0.5));
-  [[76, 0], [79, 1], [84, 2]].forEach(([m, i]) => { pluck(m, T.end + (8 + i * 0.5) * BEAT, 0.24); pulse(m, T.end + (8 + i * 0.5) * BEAT, 0.5, 0.06); });
-
-  const d = Math.floor(sr * BEAT * 0.75); // dotted-eighth echo on the send bus
-  for (let i = d; i < n; i++) { SL[i] += 0.42 * SR[i - d]; SR[i] += 0.42 * SL[i - d]; }
-  for (let i = 0; i < n; i++) {
-    const fade = Math.min(1, (n - i) / (sr * 1.2));
-    L[i] = Math.tanh((L[i] + 0.5 * SL[i]) * 1.15) * 0.92 * fade; R[i] = Math.tanh((R[i] + 0.5 * SR[i]) * 1.15) * 0.92 * fade;
-  }
-  return { L, R, sr };
-}
-
-/* ---------- player ---------- */
-const $ = id => document.getElementById(id);
-let playing = false, pos = 0, wall = 0, ac = null, buf = null, src = null, gain = null, muted = false, ready = false;
-function fmt(t) { const s = Math.floor(t); return `0:${String(s).padStart(2, '0')} / 0:45`; }
-function stopSrc() { if (src) { try { src.stop(); } catch (e) {} src = null; } }
-function startAudio() {
-  if (!ac) {
-    const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
-    ac = new A(); const s = synth(ac.sampleRate); buf = ac.createBuffer(2, s.L.length, s.sr); buf.copyToChannel(s.L, 0); buf.copyToChannel(s.R, 1);
-    gain = ac.createGain(); gain.connect(ac.destination);
-  }
-  if (ac.state === 'suspended') ac.resume();
-  gain.gain.value = muted ? 0 : 1; stopSrc();
-  src = ac.createBufferSource(); src.buffer = buf; src.connect(gain); src.start(0, pos); wall = ac.currentTime - pos;
-}
-const now = () => ac && src ? ac.currentTime - wall : (performance.now() / 1000) - wall;
-function play() { if (!ready) return; if (pos >= DUR - 0.05) pos = 0; playing = true; startAudio(); if (!src) wall = performance.now() / 1000 - pos; $('bigplay').hidden = true; $('play').textContent = 'Pause'; requestAnimationFrame(tick); }
-function pause() { playing = false; stopSrc(); $('play').textContent = 'Play'; }
-function tick() {
-  if (!playing) return;
-  pos = now(); if (pos >= DUR) { pos = DUR; pause(); $('bigplay').hidden = false; $('bigplay').textContent = '\u21bb Play again'; }
-  draw(pos); $('seek').value = pos; $('time').textContent = fmt(pos);
-  if (playing) requestAnimationFrame(tick);
-}
-$('bigplay').onclick = play;
-$('play').onclick = () => playing ? pause() : play();
-$('restart').onclick = () => { pause(); pos = 0; play(); };
-$('mute').onclick = () => { muted = !muted; if (gain) gain.gain.value = muted ? 0 : 1; $('mute').textContent = muted ? 'Sound off' : 'Sound on'; $('mute').setAttribute('aria-pressed', String(muted)); };
-$('seek').oninput = e => { const was = playing; pause(); pos = +e.target.value; draw(pos); $('time').textContent = fmt(pos); $('bigplay').hidden = true; if (was) play(); };
-$('full').onclick = () => { const el = $('stage'); if (document.fullscreenElement) document.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); };
-
-Promise.all([...names.map(loadImg), document.fonts.load(`700 64px Texel`).catch(() => {}), document.fonts.load(`400 64px Texel`).catch(() => {})]).then(() => {
-  buildSprites(); buildWorld(); ready = true;
-  draw(15.9); // poster frame
-  window.__ad = { draw, synth, DUR, ready: true };
-});
-})();
+document.getElementById('film').addEventListener('error', function () { document.getElementById('note').hidden = false; });
 </script>

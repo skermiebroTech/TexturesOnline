@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8">
+<style>
+@font-face { font-family: 'Texel'; src: url('../assets/texel-regular.woff2') format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Texel'; src: url('../assets/texel-bold.woff2') format('woff2'); font-weight: 700; }
+body { margin: 0; background: #000; } canvas { display: block; width: 100vw; }
+</style>
+<canvas id="c"></canvas>
+<script type="module">
+import { init, draw, DUR } from './film.js';
+await init(document.getElementById('c'));
+window.__ad = { draw, DUR, ready: true };
+</script>

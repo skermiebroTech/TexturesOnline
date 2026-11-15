@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8">
+<script type="module">
+import { renderScore, toWav } from './score.js';
+window.__score = async () => { const { bytes, peak } = toWav(await renderScore()); let s = ''; for (let i = 0; i < bytes.length; i += 32768) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 32768)); return { b64: btoa(s), peak }; };
+window.__ready = true;
+</script>
