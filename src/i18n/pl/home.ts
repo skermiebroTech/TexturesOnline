@@ -182,11 +182,6 @@ export const HOME: HomeText = {
       ['Buduj paczki shaderów do Irisa i OptiFine, shadery do Javy zupełnie bez modów albo paczki Vibrant Visuals do Bedrocka.'],
     ],
   },
-  why: {
-    eyebrow: 'Czym się wyróżnia',
-    title: 'Dlaczego Texture Pack Maker?',
-    lead: ['Za darmo, open source i prywatnie, z każdą wersją Javy od 1.6.1, Bedrockiem i dziesięcioma narzędziami w jednym miejscu. ', link('/about', 'O projekcie'), '.'],
-  },
   how: {
     eyebrow: 'Jak to działa',
     title: 'Od pomysłu do gry w kilka minut',
@@ -195,14 +190,8 @@ export const HOME: HomeText = {
       { title: 'Twórz', text: 'Maluj piksele, nakładaj efekty jednym kliknięciem albo przesuwaj suwaki shaderów – z podglądem 3D na żywo.' },
       { title: 'Eksportuj i graj', text: 'Pobierz gotowy .zip albo .mcpack i zainstaluj go w grze według poradnika.' },
     ],
-    values: [
-      { title: 'Prywatność od początku', text: 'Twoja praca nigdy nie opuszcza twojego urządzenia. Pliki gry twoja przeglądarka pobiera prosto od Mojang.' },
-      { title: 'Działa offline', text: 'Po pierwszej wizycie aplikacja i pobrane pliki gry zostają na tym urządzeniu.' },
-      { title: 'Zawsze właściwy format', text: 'Pliki paczki są pisane dokładnie pod wybraną wersję, więc Minecraft wczyta je bez marudzenia.' },
-    ],
   },
   guides: { eyebrow: 'Poradniki', title: 'Poznaj podstawy', lead: 'Krótkie, sprawdzone poradniki o robieniu i instalowaniu paczek, skinów i shaderów.', all: 'Wszystkie poradniki' },
   faqHead: { eyebrow: 'Pytania', title: 'Warto wiedzieć' },
-  cta: { title: 'Masz ochotę coś zbudować?', text: 'Wybierz narzędzie – twoja pierwsza paczka może być w grze już za kilka minut.', button: 'Zaczynamy' },
   startDialog: 'Co chcesz zrobić?',
 };

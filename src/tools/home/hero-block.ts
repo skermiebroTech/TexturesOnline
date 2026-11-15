@@ -2,7 +2,6 @@
 
 import { h, prefersReducedMotion, whenIdle } from '../../ui/dom';
 import { heroBlockFaces } from './art';
-import { createHeroParticles } from './hero-particles';
 
 type FaceName = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right';
 
@@ -41,22 +40,17 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
   });
 
   const reduce = prefersReducedMotion();
-  const particles = reduce ? null : createHeroParticles();
 
   const stage = h('div', { class: 'hb-stage' }, cube);
   const shadow = h('div', { class: 'hb-shadow' });
   const el = h(
     'div',
     { class: 'hero-block', role: 'img', 'aria-label': 'A pixel-art grass block slowly rotating' },
-    h('div', { class: 'hb-glow' }),
-    particles?.canvas ?? null,
     stage,
     shadow,
   );
 
   let yaw = -38;
-  let prevYaw = yaw;
-  let spin = 0; // measured yaw speed (deg/s), covers dragging, flicks and the idle turn
   let pitch = -24;
   let velocity = 0;
   let dragging = false;
@@ -106,11 +100,6 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
       pitch += (-24 - pitch) * Math.min(1, dt * 2);
     }
     render(now);
-    if (dt > 0) {
-      spin += ((yaw - prevYaw) / dt - spin) * Math.min(1, dt * 12);
-      particles?.update(dt, spin);
-    }
-    prevYaw = yaw;
     if (!reduce || dragging || velocity !== 0) raf = requestAnimationFrame(tick);
   };
   // The turning starts once the page has loaded (the first frame is drawn right away).
@@ -182,7 +171,6 @@ export function heroBlock(): { el: HTMLElement; destroy(): void } {
       visible = false;
       io?.disconnect();
       document.removeEventListener('visibilitychange', onVis);
-      particles?.destroy();
       t0 = 0;
     },
   };

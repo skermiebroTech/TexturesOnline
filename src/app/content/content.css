@@ -121,7 +121,6 @@
 .home-guides-more {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 8px 28px;
   margin-top: 20px;
 }
@@ -135,12 +134,9 @@
 }
 .home-faq-box {
   max-width: 880px;
-  margin: 0 auto;
-  margin-left: max(0px, round(down, (100% - 880px) / 2, 1px));
   border: 2px solid var(--border);
   border-radius: var(--r-lg);
   background: var(--surface);
-  box-shadow: var(--inner-hi), var(--shadow-1);
 }
 
 /* ---------- Guide pages ---------- */

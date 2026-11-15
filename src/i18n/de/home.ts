@@ -182,11 +182,6 @@ export const HOME: HomeText = {
       ['Baue Shaderpakete für Iris und OptiFine, Vanilla-Java-Shader ganz ohne Mods oder Vibrant-Visuals-Pakete für Bedrock.'],
     ],
   },
-  why: {
-    eyebrow: 'Was anders ist',
-    title: 'Warum Texture Pack Maker?',
-    lead: ['Kostenlos, Open Source und privat, mit jeder Java-Version seit 1.6.1, Bedrock und zehn Tools an einem Ort. ', link('/about', 'Über das Projekt'), '.'],
-  },
   how: {
     eyebrow: 'So funktioniert’s',
     title: 'Von der Idee ins Spiel in wenigen Minuten',
@@ -195,14 +190,8 @@ export const HOME: HomeText = {
       { title: 'Gestalten', text: 'Pixel malen, Effekte per Klick stapeln oder Shader-Regler verschieben – mit 3D-Live-Vorschau.' },
       { title: 'Exportieren & spielen', text: 'Lade eine fertige .zip oder ein .mcpack herunter und folge der Installationsanleitung, um es im Spiel zu nutzen.' },
     ],
-    values: [
-      { title: 'Privat von Anfang an', text: 'Deine Arbeit verlässt nie dein Gerät. Die Spieldateien lädt dein eigener Browser direkt von Mojang.' },
-      { title: 'Funktioniert offline', text: 'Nach dem ersten Besuch bleiben die App und die geladenen Spieldateien auf diesem Gerät.' },
-      { title: 'Immer das richtige Format', text: 'Die Pack-Dateien werden für genau die gewählte Version geschrieben, damit Minecraft sie ohne Meckern lädt.' },
-    ],
   },
   guides: { eyebrow: 'Anleitungen', title: 'Das Wichtigste lernen', lead: 'Kurze, geprüfte Anleitungen zum Erstellen und Installieren von Packs, Skins und Shadern.', all: 'Alle Anleitungen' },
   faqHead: { eyebrow: 'Fragen', title: 'Gut zu wissen' },
-  cta: { title: 'Bereit, etwas zu bauen?', text: 'Wähle ein Tool – dein erstes Pack kann in wenigen Minuten im Spiel sein.', button: 'Jetzt loslegen' },
   startDialog: 'Was möchtest du erstellen?',
 };

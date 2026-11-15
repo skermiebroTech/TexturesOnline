@@ -308,7 +308,7 @@ body[data-route='shaders'] .topbar {
 .section-head {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: var(--sp-6);
   max-width: 720px;
 }
@@ -323,11 +323,12 @@ body[data-route='shaders'] .topbar {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--tool-accent);
+  color: var(--text-3);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.125em;
+}
+.eyebrow .icon {
+  display: none;
 }
 .lead {
   color: var(--text-2);
