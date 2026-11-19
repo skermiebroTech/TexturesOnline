@@ -11,6 +11,7 @@ import { getTheme, onThemeChange, toggleTheme } from '../ui/theme';
 import { closeAllModals, setScrollLock } from '../ui/modal';
 import { closeAllPopovers } from '../ui/popover';
 import { syncToastLayer } from '../ui/toast';
+import { afterNextPaint } from '../core/yield';
 import { NAV as NAV_ITEMS, brandLink, githubLink as githubTree, languageSwitcher, navLinks as navTree, skipLink, topbar as topbarTree, type NavItem as ChromeNavItem } from './content/chrome';
 import { toDom } from './markup-dom';
 import { REPO_URL } from './site';
@@ -86,7 +87,12 @@ function markActive(links: HTMLAnchorElement[], state: RouteState): void {
   }
 }
 
+/** The menu drawer on screen (or about to be): a second tap on the menu button does nothing. */
+let drawerOpen = false;
+
 function openDrawer(onNavigate: () => void): void {
+  if (drawerOpen) return;
+  drawerOpen = true;
   const t = ui(shellLocale);
   const links = navLinks('drawer-link', currentState?.tool ?? null);
   const langs = languageSwitcher(currentState?.path ?? '/', shellLocale, 'lang-switch drawer-langs');
@@ -110,10 +116,12 @@ function openDrawer(onNavigate: () => void): void {
     ),
   );
   let closed = false;
+  let shown = false;
   const offNav = onNavigation(() => close());
   const close = () => {
     if (closed) return;
     closed = true;
+    drawerOpen = false;
     offNav();
     dlg.classList.add('closing');
     const done = () => {
@@ -122,7 +130,8 @@ function openDrawer(onNavigate: () => void): void {
       dlg.remove();
       setScrollLock(false);
     };
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) done();
+    // (closed before it was shown: nothing to animate)
+    if (!shown || matchMedia('(prefers-reduced-motion: reduce)').matches) done();
     else setTimeout(done, 180);
   };
   [...links, ...Array.from(dlg.querySelectorAll<HTMLAnchorElement>('.drawer-langs a'))].forEach((a) =>
@@ -140,12 +149,18 @@ function openDrawer(onNavigate: () => void): void {
   dlg.addEventListener('click', (e) => {
     if (e.target === dlg) close();
   });
-  // (the scrollbar is measured before the drawer joins the page: no extra layout for it)
-  setScrollLock(true);
+  // Shown in the frame after the tap, so the pressed button paints at once: showing a modal dialog
+  // makes the rest of the page inert, which restyles all of it (on an editor, a long frame of its
+  // own). The page is laid out by then, so the scrollbar is measured without an extra layout.
   document.body.appendChild(dlg);
-  dlg.showModal();
-  syncToastLayer();
-  (links.find((a) => a.hasAttribute('aria-current')) ?? links[0])?.focus();
+  void afterNextPaint().then(() => {
+    if (closed) return;
+    shown = true;
+    setScrollLock(true);
+    dlg.showModal();
+    syncToastLayer();
+    (links.find((a) => a.hasAttribute('aria-current')) ?? links[0])?.focus();
+  });
 }
 
 let currentState: RouteState | null = null;

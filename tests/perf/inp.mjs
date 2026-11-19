@@ -753,8 +753,9 @@ async function flowTotem(s, page) {
 
 /**
  * The interactions field data (RUM, phones) names as the slowest, one after the other: the home page's
- * hero button, then in the texture editor the tab bar, the 2D / 3D switch, the library switch, the
- * search box, the texture header's upload, the layers button and export.
+ * hero button, the new pack page's version picker and the site menu, then in the texture editor the
+ * tab bar, the 2D / 3D switch, the library switch, the search box, the texture header's upload, the
+ * layers button and export.
  */
 async function flowRum(s, page) {
   await page.goto(base);
@@ -766,6 +767,13 @@ async function flowRum(s, page) {
     await s.step('home: start dialog → Texture packs (to /textures/)', () => s.tap('.start-option.accent-green'), { quiet: 800, probe: true });
   }
   await page.waitForSelector('.tx-new');
+  await page.waitForTimeout(800);
+  await s.step('new pack: version picker', () => s.tap('section.card.tx-new .version-picker > button.vp-trigger'), { quiet: 600 });
+  await s.step('close version picker', () => page.keyboard.press('Escape'));
+  if (await page.locator('header.topbar .menu-btn').isVisible()) {
+    await s.step('new pack: site menu', () => s.tap('header.topbar .menu-btn'), { quiet: 600 });
+    await s.step('close site menu', () => page.keyboard.press('Escape'));
+  }
   await s.throttle(false);
   await page.waitForTimeout(800);
   await page.fill('.tx-name-field input', 'Perf');
@@ -782,7 +790,7 @@ async function flowRum(s, page) {
   await s.step('close upload dialog', () => page.keyboard.press('Escape'));
   await s.step('layers button', () => s.tap('.tx-pl-btn'));
   await s.step('layers: close', () => s.tap('.tx-pl-close'));
-  if (phone) for (const v of ['textures', 'preview', 'pack', 'editor', 'textures']) await s.step(`tab bar: ${v}`, () => tab(v), { quiet: 600 });
+  if (phone) for (const v of ['textures', 'preview', 'material', 'effects', 'pvp', 'pack', 'editor', 'textures']) await s.step(`tab bar: ${v}`, () => tab(v), { quiet: 600 });
   const lib = (v) => s.tap(`.tx-libbar .segmented-item[data-value="${v}"]`);
   for (const v of ['items', 'mobs', 'blocks', 'textures']) await s.step(`library bar: ${v}`, () => lib(v), { quiet: 800 });
   await s.step('texture search: typing', async () => {
@@ -813,6 +821,10 @@ async function flowRum(s, page) {
   }, { quiet: 600 });
   await s.step('library bar: blocks (from gui)', () => lib('blocks'), { quiet: 1200 });
   if (phone) await s.step('tab bar: Paint (last)', () => tab('editor'), { quiet: 600 });
+  if (await page.locator('header.topbar .menu-btn').isVisible()) {
+    await s.step('editor: site menu', () => s.tap('header.topbar .menu-btn'), { quiet: 600 });
+    await s.step('editor: close site menu', () => page.keyboard.press('Escape'));
+  }
   await s.step('export button', () => s.tap('.tx-export-btn'), { quiet: 600 });
   await s.step('close export dialog', () => page.keyboard.press('Escape'));
 }

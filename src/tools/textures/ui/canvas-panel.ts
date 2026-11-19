@@ -59,7 +59,7 @@ import { drawMarkers, mapMarkers, markersOnCanvas, type Marker } from '../biomes
 import { StampLibrary } from '../stamps/library';
 import { createStampControls } from '../stamps/picker';
 import { tw } from '../swap/i18n/text';
-import { afterNextPaint, yieldToMain } from '../../../core/yield';
+import { afterNextPaint, nextTask, yieldToMain } from '../../../core/yield';
 
 export interface OpenTexture {
   key: string;
@@ -398,7 +398,14 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const stage = h('div', { class: 'tx-stage' }, canvasBox, stage3d, wsSwitch, layersUi.button, layersUi.el, loading, dropHint, emptyEl);
   // The open layers panel takes its room from the canvas when there is room to spare (the sheet on
   // phones, a column beside a wide canvas), so the texture stays in view and can be painted.
+  // When the panel opens, it paints first and the canvas takes the room after that frame: a canvas
+  // of a new size is a new picture (a new backing store, the texture drawn again).
+  let placedOpen: boolean | null = null;
+  let placeTurn = 0;
   const placeCanvas = () => {
+    const open = !layersUi.el.hidden;
+    const opening = open && placedOpen === false;
+    placedOpen = open;
     let right = 0;
     let bottom = 0;
     // (on phones the panel sits on the tab bar)
@@ -411,8 +418,15 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       if (pr.width >= sr.width - 4) bottom = Math.max(0, Math.min(sr.height - 48, Math.round(sr.bottom - pr.top)));
       else if (pr.left - sr.left >= 360) right = Math.max(0, Math.round(sr.right - pr.left + 6));
     }
-    canvasBox.style.right = right ? `${right}px` : '';
-    canvasBox.style.bottom = bottom ? `${bottom}px` : '';
+    const my = ++placeTurn;
+    const apply = () => {
+      if (my !== placeTurn) return;
+      canvasBox.style.right = right ? `${right}px` : '';
+      canvasBox.style.bottom = bottom ? `${bottom}px` : '';
+    };
+    // (called from the resize observer, in the panel's frame: the next task comes after its paint)
+    if (opening) void nextTask().then(apply);
+    else apply();
   };
   const placeRo = new ResizeObserver(() => placeCanvas());
   placeRo.observe(stage);

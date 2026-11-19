@@ -10,6 +10,7 @@ import { editionName, formatPackFormat, groupVersions, listVersionName, shortDat
 import { kit } from './i18n/kit';
 import { pickers } from '../shared/i18n/pickers';
 import { fmt, fmtNodes } from '../i18n/editor-text';
+import { afterNextPaint } from '../core/yield';
 
 export { editionName, formatPackFormat } from './format';
 
@@ -179,7 +180,12 @@ export function versionPicker(opts: {
       opts.onChange(edition, value);
     };
 
+    // The list shows the rows on screen (and the chosen version's) at once, the rest after that paint:
+    // a few hundred rows to style and lay out would hold up the tap that opened the list.
+    let renderTurn = 0;
+    let fresh = true;
     const render = () => {
+      const my = ++renderTurn;
       const q = search.value.trim().toLowerCase();
       const shown = q ? versions.filter((v) => `${v.id} ${v.name} ${versionName(v.name)}`.toLowerCase().includes(q)) : versions;
       list.replaceChildren();
@@ -190,8 +196,22 @@ export function versionPicker(opts: {
         return;
       }
       const latestRelease = versions.find((v) => v.type === 'release');
-      const frag = document.createDocumentFragment();
-      for (const { label, items: groupItems } of groupVersions(shown)) {
+      const groups = groupVersions(shown);
+      let g = 0;
+      let rows = 0;
+      let chosenIn = !!q || !shown.some((v) => v.id === value);
+      /** Whole groups: the first ones up to a screenful and the chosen version, or all that are left. */
+      const addGroups = (all: boolean) => {
+        const frag = document.createDocumentFragment();
+        for (; g < groups.length && (all || rows < 16 || !chosenIn); g++) {
+          const { label, items: groupItems } = groups[g];
+          rows += groupItems.length;
+          chosenIn ||= groupItems.some((v) => v.id === value);
+          addGroup(frag, label, groupItems);
+        }
+        list.appendChild(frag);
+      };
+      function addGroup(frag: DocumentFragment, label: string, groupItems: GameVersion[]) {
         const groupEl = h('div', { role: 'group', 'aria-label': label }, h('div', { class: 'vp-group', 'aria-hidden': 'true' }, label));
         frag.appendChild(groupEl);
         for (const v of groupItems) {
@@ -220,9 +240,18 @@ export function versionPicker(opts: {
           groupEl.appendChild(item);
         }
       }
-      list.appendChild(frag);
+      addGroups(false);
       const sel = items.findIndex((it) => it.v.id === value);
-      setActive(sel >= 0 && !q ? sel : 0);
+      // (in the list just opened, a version near the top is in view already: scrolling to it would
+      // only lay the list out early)
+      const first = sel >= 0 && !q ? sel : 0;
+      setActive(first, !fresh || first >= 6);
+      fresh = false;
+      if (g < groups.length) {
+        void afterNextPaint().then(() => {
+          if (my === renderTurn && pop?.open) addGroups(true);
+        });
+      }
     };
 
     const fill = async () => {

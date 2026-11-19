@@ -835,7 +835,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   const tabbar = h('nav', { class: 'tx-tabbar', 'aria-label': te.sections });
   for (const t of tabbarItems) {
     const b = h('button', { type: 'button', class: 'tx-tabbar-btn', dataset: { v: t.v } }, icon(t.ic), h('span', null, t.label));
-    b.addEventListener('click', () => showMobile(t.v));
+    b.addEventListener('click', () => tapTab(t.v));
     tabbarButtons.set(t.v, b);
     tabbar.appendChild(b);
   }
@@ -951,10 +951,29 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     notifyVisibility();
   }
 
+  /** The tab bar's open tab (its highlight). */
+  function markTab(v: Mobile) {
+    tabbarButtons.forEach((b, k) => b.setAttribute('aria-current', k === v ? 'page' : 'false'));
+  }
+  /**
+   * A tap on the tab bar: the tab lights up at once, its panel shows after that paint (showing a
+   * panel styles, lays out and draws all of it, and what it holds catches up: the 3D view's size).
+   * The last tap wins; the editor opening a tab itself (showMobile) wins over a tap still waiting.
+   */
+  let tabTap = 0;
+  function tapTab(v: Mobile) {
+    const my = ++tabTap;
+    markTab(v);
+    void afterNextPaint().then(() => {
+      if (my === tabTap && !life.aborted) showMobile(v);
+    });
+  }
+
   function showMobile(v: Mobile, focusSearch = false) {
+    tabTap++;
     mobile = v;
     shell.dataset.mobile = v;
-    tabbarButtons.forEach((b, k) => b.setAttribute('aria-current', k === v ? 'page' : 'false'));
+    markTab(v);
     if (v !== 'editor') setSide(v);
     else notifyVisibility();
     if (!isPhone() && !isTablet() && v === 'textures') setSide('preview');
