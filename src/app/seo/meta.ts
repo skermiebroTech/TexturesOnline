@@ -150,18 +150,20 @@ export const TOOL_META: Record<'textures' | 'painting' | 'gui' | 'disc' | 'glint
     path: '/skins',
     kind: 'tool',
     tool: 'skins',
-    title: 'Minecraft Skin Editor & Custom Skin Pack Maker',
+    // One skin. Searches for skin packs belong to /skin-pack-maker, which this page links prominently.
+    title: 'Minecraft Skin Editor — Make Your Own Skin in 2D & 3D',
     description:
-      'Paint a custom Minecraft skin in 2D or 3D, classic or slim arms, then export a Java PNG or bundle your skins into a Bedrock skin pack (.mcpack). Free.',
+      'Make a custom Minecraft skin online: paint the 64×64 or HD template in 2D or on the 3D model, pick classic or slim arms, get a PNG for Java or Bedrock.',
     label: 'Skins',
   },
   skinpack: {
     path: '/skin-pack-maker',
     kind: 'tool',
     tool: 'skins',
-    title: 'Minecraft Skin Pack Maker — Free Bedrock .mcpack Creator',
+    // The page for "skin pack maker" / "custom skin pack maker" searches.
+    title: 'Minecraft Custom Skin Pack Maker — Free Bedrock .mcpack',
     description:
-      'Make a custom Minecraft skin pack online: paint or upload skins, mix classic and slim arms, and download one Bedrock .mcpack that opens in the game. Free.',
+      'Free custom skin pack maker: paint or upload as many skins as you like, mix classic and slim arms and get one Bedrock .mcpack that opens in Minecraft.',
     label: 'Skin pack maker',
   },
   cape: {
@@ -338,12 +340,14 @@ export const GUIDES: GuideMeta[] = [
   }),
   guide({
     slug: 'minecraft-pack-format-versions',
-    blurb: 'The pack format of every Java release from 1.6.1 to 26.3.',
-    // Searchers type "26.3 pack format" / "pack.mcmeta 26.3": the number alone no longer makes a working file, so the title offers the file.
-    title: 'Minecraft 26.3 Pack Format & pack.mcmeta (Every Version)',
+    blurb: 'Every Java pack format from 1.6.1 to 26.3, and a pack.mcmeta maker.',
+    // Searchers type "26.3 pack format" / "pack.mcmeta 26.3". The number alone no longer makes a
+    // working file, and a snippet that gives it away gets no click: the title and description offer
+    // the generator on the page (a copyable pack.mcmeta for any version or range) instead.
+    title: 'Minecraft 26.3 Pack Format & pack.mcmeta Generator',
     h1: 'Minecraft pack format for every Java version (26.3 uses 97.1)',
     description:
-      '26.3 uses 97.1, but pack.mcmeta now needs min_format and max_format. Copy a working file for 26.3 or a 1.20–26.3 range, plus every version’s format.',
+      'Pick a version or a range and copy a pack.mcmeta that loads with no “made for an older version” warning, 1.6.1 to 26.3, plus every pack format.',
     label: 'Pack format versions',
     icon: 'bulletlist',
     accent: 'accent-gold',
@@ -354,7 +358,7 @@ export const GUIDES: GuideMeta[] = [
     title: 'How to Make a Custom Minecraft Skin (Java & Bedrock)',
     h1: 'How to make a custom Minecraft skin',
     description:
-      'Make a Minecraft skin free online: paint the 64×64 or HD 128×128 template in 2D or 3D, pick classic or slim arms, use it on Java or in a Bedrock skin pack.',
+      'Step by step in a free online skin editor: classic or slim arms, the 64×64 or HD template painted in 3D, the outer layer, then wear it on Java or Bedrock.',
     label: 'Make a skin',
     icon: 'human',
     accent: 'accent-blue',
@@ -373,10 +377,11 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'make-shaders-without-mods',
     blurb: 'What vanilla Java shader packs and Bedrock Vibrant Visuals can do.',
-    title: 'Minecraft Shaders Without Mods or OptiFine (Java & Bedrock)',
+    // The old snippet answered "yes" outright; this one promises what the page adds: limits, versions and a maker.
+    title: 'Minecraft Shaders Without Mods or OptiFine — Make Your Own',
     h1: 'Can you get Minecraft shaders without mods?',
     description:
-      'Yes, without OptiFine or Iris: Java 1.17+ resource packs can restyle the game’s own shaders and Bedrock has Vibrant Visuals. Make yours free with sliders.',
+      'What no-mod shader packs can and can’t do on Java 1.17+ and Bedrock, which versions they work on, and a free maker with presets to build yours in minutes.',
     label: 'Shaders without mods',
     icon: 'sun',
     accent: 'accent-purple',
@@ -385,10 +390,11 @@ export const GUIDES: GuideMeta[] = [
     slug: 'bedrock-vibrant-visuals-settings',
     blurb: 'Turn it on, fix it when it’s greyed out, and change sun, fog and water.',
     // Almost every search that shows this page is "how to turn on / get / use vibrant visuals".
-    title: 'How to Turn On Vibrant Visuals in Minecraft Bedrock',
+    // The quick-answer box already answers on the page; the snippet promises the fix for the greyed-out option too.
+    title: 'How to Turn On Vibrant Visuals (and Fix It if Greyed Out)',
     h1: 'How to turn on Vibrant Visuals and change its settings',
     description:
-      'Turn on Vibrant Visuals in Minecraft Bedrock, fix it when it is greyed out or missing, check supported devices and change the sun, fog, water and shadows.',
+      'The exact menu to turn it on, why it can be greyed out or missing and how to fix that, which devices support it, and how to tune sun, fog and water.',
     label: 'Vibrant Visuals settings',
     icon: 'cloud-sun',
     accent: 'accent-purple',

@@ -61,13 +61,13 @@ export const META_ES: MetaTranslation = {
       label: 'Creador de fuentes',
     },
     '/skins': {
-      title: 'Editor de skins de Minecraft y creador de packs de skins',
-      description: 'Pinta una skin de Minecraft en 2D o 3D, con brazos clásicos o delgados, y expórtala como PNG para Java o en un pack de skins de Bedrock (.mcpack). Gratis.',
+      title: 'Editor de skins de Minecraft: crea tu skin en 2D y 3D',
+      description: 'Crea tu propia skin de Minecraft online: pinta la plantilla de 64×64 o HD en 2D o sobre el modelo 3D, con brazos clásicos o delgados, y descarga el PNG.',
       label: 'Skins',
     },
     '/skin-pack-maker': {
-      title: 'Crear pack de skins de Minecraft gratis (.mcpack Bedrock)',
-      description: 'Crea tu pack de skins de Minecraft online: pinta o sube skins, mezcla brazos clásicos y delgados y descarga un .mcpack de Bedrock listo para el juego.',
+      title: 'Creador de packs de skins de Minecraft gratis (.mcpack)',
+      description: 'Crea tu pack de skins personalizado gratis: pinta o sube todas las skins que quieras, mezcla brazos clásicos y delgados y descarga un .mcpack de Bedrock.',
       label: 'Creador de packs de skins',
     },
     '/cape-maker': {
@@ -122,31 +122,32 @@ export const META_ES: MetaTranslation = {
       blurb: 'Paquetes de recursos de Java, archivos .mcpack de Bedrock y shader packs, con soluciones.',
     },
     'texture-pack-not-working': {
-      title: 'Texture pack de Minecraft no funciona: errores y soluciones',
+      title: 'Texture pack no funciona en Minecraft: solución a cada error',
       h1: '¿Tu texture pack de Minecraft no funciona? Cómo arreglar cada error',
-      // Searchers paste Bedrock's messages word for word: the description quotes the two most searched.
-      description: '«No se puede encontrar manifiesto en el pack», «pack.name tiene un valor no válido», bloques morados y negros: qué significa cada error y cómo arreglarlo.',
+      // Searchers paste Bedrock's messages word for word: the description quotes the most searched one
+      // and promises the fix (and Pack Doctor, which repairs the pack).
+      description: '¿Ves «No se puede encontrar manifiesto en el pack» o bloques morados? Qué significa cada error, cómo arreglarlo en minutos y una herramienta que lo repara.',
       label: '¿No funciona el pack? Soluciones',
       blurb: 'Packs que no aparecen, avisos de versión, bloques morados y negros y más.',
     },
     'minecraft-pack-format-versions': {
-      title: `Pack format de Minecraft ${LATEST} (${F(LATEST)}) y todas las versiones`,
+      title: `Pack format de Minecraft ${LATEST} y generador de pack.mcmeta`,
       h1: `Pack format de Minecraft para cada versión de Java (${LATEST} usa ${F(LATEST)})`,
-      description: `Cada versión de Minecraft Java de 1.6.1 a ${LATEST} con su formato de paquete de recursos (${LATEST} usa ${F(LATEST)}) y cómo ha cambiado pack.mcmeta con los años.`,
+      description: `Elige una versión o un rango y copia un pack.mcmeta que carga sin el aviso de «versión antigua», de 1.6.1 a ${LATEST}, más el pack format de cada versión.`,
       label: 'Formatos de pack por versión',
-      blurb: `El pack format de cada versión de Java, de 1.6.1 a ${LATEST}.`,
+      blurb: `El pack format de cada versión de Java hasta ${LATEST}, con generador de pack.mcmeta.`,
     },
     'make-a-skin': {
       title: 'Cómo hacer una skin de Minecraft (Java y Bedrock)',
       h1: 'Cómo hacer tu propia skin de Minecraft',
-      description: 'Haz una skin de Minecraft gratis: pinta la plantilla de 64×64 o HD de 128×128 en 2D o 3D, elige brazos clásicos o delgados y úsala en Java o Bedrock.',
+      description: 'Paso a paso con un editor de skins online gratis: brazos clásicos o delgados, plantilla de 64×64 o HD pintada en 3D, capa exterior y uso en Java o Bedrock.',
       label: 'Hacer una skin',
       blurb: 'Pinta la plantilla de 64×64 o HD de 128×128 para Java o un pack de skins de Bedrock.',
     },
     'make-shaders-without-mods': {
-      title: 'Shaders de Minecraft sin mods ni OptiFine (Java y Bedrock)',
+      title: 'Shaders de Minecraft sin mods ni OptiFine: crea los tuyos',
       h1: '¿Se pueden tener shaders en Minecraft sin mods?',
-      description: 'Sí, sin OptiFine ni Iris: en Java 1.17+ un paquete de recursos cambia los shaders del juego y Bedrock tiene Visuales vibrantes. Créalo gratis.',
+      description: 'Qué pueden hacer (y qué no) los shaders sin mods en Java 1.17+ y Bedrock, en qué versiones funcionan y un creador gratis con ajustes listos para el tuyo.',
       label: 'Shaders sin mods',
       blurb: 'Lo que pueden hacer los shaders vanilla de Java y Visuales vibrantes en Bedrock.',
     },
@@ -158,9 +159,9 @@ export const META_ES: MetaTranslation = {
       blurb: 'Archivos, carpetas, formatos, shaders y skins, comparados lado a lado.',
     },
     'bedrock-vibrant-visuals-settings': {
-      title: 'Ajustes de Visuales vibrantes en Minecraft Bedrock',
-      h1: 'Ajustes de Visuales vibrantes de Bedrock explicados',
-      description: 'Qué puede cambiar un pack de Visuales vibrantes en Bedrock (sol, cielo, niebla, agua, sombras y color), qué dispositivos lo admiten y cómo activarlo.',
+      title: 'Cómo activar los Visuales vibrantes y qué hacer si sale gris',
+      h1: 'Cómo activar los Visuales vibrantes y cambiar sus ajustes',
+      description: 'El menú exacto para activarlos, por qué la opción sale en gris o no aparece y cómo arreglarlo, qué dispositivos sirven y cómo ajustar sol, niebla y agua.',
       label: 'Ajustes de Visuales vibrantes',
       blurb: 'Sol, cielo, niebla, agua y color, y los dispositivos compatibles.',
     },

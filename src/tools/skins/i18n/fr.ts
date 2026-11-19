@@ -13,6 +13,22 @@ const FR: SkinsLanguage = {
       title: 'Crée ton propre skin',
       lead: 'Peins sur le patron du skin ou directement sur le modèle 3D, et regarde ton personnage prendre vie. Exporte pour Java ou Bedrock quand tu as fini.',
     },
+    packHero: {
+      eyebrow: 'Créateur de packs de skins',
+      title: 'Crée ton propre pack de skins',
+      lead: 'Peins ou importe chaque skin, puis télécharge-les tous dans un seul .mcpack Bedrock qui s’ouvre dans Minecraft. Les skins classiques et fins peuvent partager un pack.',
+    },
+    packSteps: {
+      label: 'Comment se fait un pack de skins',
+      make: 'Fais chaque skin',
+      makeText: 'Commence-en un ci-dessous. Chaque skin est enregistré dans ce navigateur.',
+      export: 'Exporte-les ensemble',
+      exportText: 'Dans l’éditeur, choisis Exporter › Pack de skins Bedrock et coche les autres.',
+      wear: 'Porte-les dans Minecraft',
+      wearText: 'Ouvre le .mcpack, puis choisis un skin dans le Vestiaire.',
+    },
+    packRecent: 'Enregistrés dans ce navigateur. Ouvres-en un et choisis Exporter › Pack de skins Bedrock pour les réunir.',
+    packLink: { title: 'Tu fais un pack de skins ?', text: 'Réunis plusieurs skins dans un seul .mcpack Bedrock avec le créateur de packs de skins' },
     defaultName: 'Mon skin',
     untitled: 'Sans titre',
     pick: {

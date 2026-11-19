@@ -203,6 +203,141 @@
   padding-left: 28px;
   color: var(--text-2);
 }
+/* The pack.mcmeta maker on the pack format guide (mcmeta-maker.ts) */
+.mcmeta-maker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 860px;
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--inner-hi), var(--shadow-1);
+}
+.mcmeta-maker-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.mcmeta-maker-head h2 {
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-lg);
+}
+.mcmeta-maker-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--tool-accent-soft);
+  color: var(--tool-accent);
+}
+.mcmeta-maker-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 20px;
+  align-items: start;
+}
+.mcmeta-maker-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.mcmeta-maker-form .segmented {
+  width: 100%;
+}
+.mcmeta-maker-form .segmented-item {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+  height: auto;
+  min-height: 40px;
+  white-space: normal;
+  text-align: center;
+}
+.mcmeta-range {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mcmeta-field[hidden],
+.mcmeta-range[hidden] {
+  display: none;
+}
+.mcmeta-maker-out {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.mcmeta-maker-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.mcmeta-maker-file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+}
+.mcmeta-maker-format {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.mcmeta-maker-actions {
+  display: flex;
+  gap: 8px;
+}
+.mcmeta-maker-code {
+  min-height: 148px;
+}
+.mcmeta-maker-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.mcmeta-maker [data-mcmeta='copy'][data-state='copied'] .icon {
+  color: inherit;
+}
+@media (max-width: 760px) {
+  .mcmeta-maker {
+    padding: 16px;
+  }
+  .mcmeta-maker-icon {
+    display: none;
+  }
+  .mcmeta-maker-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mcmeta-maker-actions {
+    width: 100%;
+  }
+  .mcmeta-maker-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+/* Long button labels (German, Russian) fit a phone without their icons */
+@media (max-width: 440px) {
+  .mcmeta-maker-actions .btn .icon {
+    display: none;
+  }
+}
 .guide-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

@@ -160,6 +160,11 @@ export const HOME: HomeText = {
     text: `Java版のパックを統合版用に、またはその逆に変換。古いパックを${LATEST}向けに更新したり、PNGを.mcpackにしたりもできます。`,
     cta: 'パックを変換',
   },
+  skinPack: {
+    title: 'スキンパック作成',
+    text: 'クラシックやスリムのオリジナルスキンを、Minecraftで開ける統合版の.mcpack 1つにまとめます。',
+    cta: 'スキンパックを作る',
+  },
   features: {
     eyebrow: '無料のテクスチャパック作成ツール',
     title: 'テクスチャパック作りに必要なものがすべて',

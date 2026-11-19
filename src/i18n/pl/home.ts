@@ -161,6 +161,11 @@ export const HOME: HomeText = {
     text: `Zamień paczkę z Javy na Bedrock albo odwrotnie, zaktualizuj starą paczkę do ${LATEST} albo zrób .mcpack z plików PNG.`,
     cta: 'Konwertuj paczkę',
   },
+  skinPack: {
+    title: 'Kreator paczek skinów',
+    text: 'Połącz kilka własnych skinów, szerokich i wąskich, w jeden .mcpack do Bedrocka, który otwiera się w Minecrafcie.',
+    cta: 'Zrób paczkę skinów',
+  },
   features: {
     eyebrow: 'Darmowy kreator paczek',
     title: 'Wszystko, co powinien umieć kreator paczek tekstur',

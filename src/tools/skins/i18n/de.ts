@@ -9,6 +9,22 @@ const DE: SkinsLanguage = {
       title: 'Gestalte deinen eigenen Skin',
       lead: 'Male auf der Skinvorlage oder direkt auf dem 3D-Modell und sieh zu, wie dein Charakter lebendig wird. Exportiere ihn danach für Java oder Bedrock.',
     },
+    packHero: {
+      eyebrow: 'Skinpaket-Ersteller',
+      title: 'Erstelle dein eigenes Skinpaket',
+      lead: 'Male jeden Skin oder lade ihn hoch und lade dann alle zusammen als ein Bedrock-.mcpack herunter, das sich in Minecraft öffnet. Breite und schmale Skins passen in ein Paket.',
+    },
+    packSteps: {
+      label: 'So entsteht ein Skinpaket',
+      make: 'Jeden Skin erstellen',
+      makeText: 'Beginne unten mit einem. Jeder Skin wird in diesem Browser gespeichert.',
+      export: 'Zusammen exportieren',
+      exportText: 'Wähle im Editor Exportieren › Bedrock-Skinpaket und hake die anderen an.',
+      wear: 'In Minecraft anlegen',
+      wearText: 'Öffne das .mcpack und wähle einen Skin im Ankleidezimmer.',
+    },
+    packRecent: 'In diesem Browser gespeichert. Öffne einen und wähle Exportieren › Bedrock-Skinpaket, um sie zu bündeln.',
+    packLink: { title: 'Du machst ein Skinpaket?', text: 'Bündle mehrere Skins mit dem Skinpaket-Ersteller in ein Bedrock-.mcpack' },
     defaultName: 'Mein Skin',
     untitled: 'Unbenannt',
     pick: {

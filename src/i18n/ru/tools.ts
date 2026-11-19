@@ -2,7 +2,7 @@
 // themselves are quoted in English for now; game menus use the Russian text of the game.
 
 import { el, type Child } from '../../app/markup';
-import { code, figure, link, strong } from '../../app/content/blocks';
+import { code, figure, link, strong, toolCallout } from '../../app/content/blocks';
 import { F, LATEST } from '../../app/content/facts';
 import type { IntroTool, ToolIntroText } from '../../app/content/tools';
 import { discLengths } from '../../app/content/discs';
@@ -180,7 +180,46 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         ],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
+    // What the editor is, which versions it covers and how to start: prose for readers and search
+    // engines, between the feature lists and the questions (also below the start screen).
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-card' },
+        el(sub, null, 'Что умеет редактор текстур'),
+        el('p', null, 'Текстурпак (в Java его называют набором ресурсов) заменяет картинки, которые рисует Minecraft: блоки, предметы, мобов, броню, частицы, небо и интерфейс. Редактор загружает с серверов Mojang настоящие текстуры выбранной версии, так что ты начинаешь ровно с того, что показывает игра, а экспортированный пак содержит только изменённые файлы — по тем путям и в том формате, которые читает эта версия.'),
+        el('p', null, 'Всё работает в браузере. Пак сохраняется на этом устройстве по ходу работы, ничего не загружается на сервер, а скачанный файл — обычный пак: его можно установить, отправить друзьям, позже снова открыть здесь или дорисовать в любом другом графическом редакторе.'),
+        el('p', null, 'Первый пак? Руководство ', link('/guides/make-a-texture-pack', 'Как сделать текстурпак'), ' проведёт по всем шагам, а ', link('/guides/texture-pack-not-working', 'решения для паков, которые не работают'), ' разбирают каждое сообщение об ошибке.'),
+      ),
+      el(
+        'div',
+        { class: 'tool-intro-grid' },
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Версии и издания'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('Java Edition'), `: все релизы от 1.6.1 до ${LATEST}, а если включить — и снапшоты. Пак получает формат твоей версии (${F(LATEST)} для ${LATEST}) и, по желанию, диапазон версий, в которых он работает.`),
+            el('li', null, strong('Bedrock Edition'), ': последний релиз, последняя превью-версия и старые версии. Пак — это ', code('.mcpack'), ', который Minecraft импортирует при открытии.'),
+            el('li', null, 'Любое разрешение от 16× (ванильный вид) до 512×.'),
+            el('li', null, 'Нужен пак для другого издания? ', link('/texture-pack-converter', 'Конвертер текстурпаков'), ' переделывает паки Java в паки Bedrock и обратно.'),
+          ]),
+        ),
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'С чего начать'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('Новый пак'), ': дай ему имя, выбери издание, версию и разрешение и нажми ', strong('Создать пак'), '. Потом найди текстуру через поиск или выбери её среди блоков, предметов и мобов.'),
+            el('li', null, strong('PvP-пак'), ': начни с низкого огня, чистого стекла, уменьшенных мечей и своего прицела, а заодно можно сделать FPS-пак. ', link('/guides/make-a-pvp-texture-pack', 'Как сделать PvP-пак'), '.'),
+            el('li', null, strong('Готовый пак'), ': выбери ', strong('Открыть пак'), ' и перетащи ', code('.zip'), ' или ', code('.mcpack'), '. Издание и версия определятся по паку.'),
+            el('li', null, strong('Одна часть игры'), ': ', link('/painting-maker', 'редактор картин'), ', ', link('/gui-maker', 'редактор интерфейса'), ', ', link('/music-disc-maker', 'редактор пластинок'), ' и ', link('/enchantment-glint-maker', 'редактор блеска зачарования'), ' открывают новый пак сразу на ней.'),
+          ]),
+        ),
+      ),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects)),
+    ],
     cta: 'Создать текстурпак',
   },
   painting: {
@@ -987,12 +1026,15 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     cta: 'Сделать шрифт',
   },
   skins: {
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d))],
+    extra: () => [
+      toolCallout('Делаешь набор скинов?', ['Собери несколько скинов в один ', code('.mcpack'), ' для Bedrock, у каждого своё имя, обычные и тонкие вперемешку: конструктор наборов соберёт его из скинов, которые ты рисуешь здесь.'], { to: '/skin-pack-maker', label: 'Открыть конструктор наборов', icon: 'package' }),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d)),
+    ],
     eyebrow: 'Скины',
-    heading: 'Сделай свой скин или набор скинов для Minecraft',
+    heading: 'Редактор скинов Minecraft: сделай свой скин',
     appName: 'Minecraft Skin Editor',
     screenshotCaption: 'Редактор скинов в Texture Pack Maker: стартовые скины, обычные или тонкие руки',
-    lead: ['Рисуй своего персонажа на стандартном шаблоне скина, пока 3D-модель обновляется на лету, а потом используй его в ', strong('Java'), ' или ', strong('Bedrock'), '. Бесплатно и без аккаунта.'],
+    lead: ['Рисуй своего персонажа на стандартном шаблоне скина, пока 3D-модель обновляется на лету, а потом используй его в ', strong('Java'), ' или ', strong('Bedrock'), '. Бесплатно и без аккаунта. Делаешь несколько скинов для Bedrock? ', link('/skin-pack-maker', 'Конструктор наборов скинов'), ' соберёт их в один ', code('.mcpack'), '.'],
     featureList: [
       'Рисование на шаблоне скина 64×64 с контурами частей тела и живым 3D-превью',
       'Обычная (руки шириной 4 пикселя) и тонкая (руки шириной 3 пикселя) модели',
@@ -1010,7 +1052,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Рисуй на плоском шаблоне или прямо на 3D-модели и скрывай части тела, чтобы добраться до любой стороны.'],
       ['Начни с пустого скина, цветного шаблона, оригинальных стартовых персонажей, загруженного PNG, скина любого игрока Java по нику или стандартных скинов из файлов игры.'],
       ['Старые скины 64×32 при открытии конвертируются в 64×64.'],
-      ['Экспортируй ', code('.png'), ' для Java (плюс старую копию 64×32 для 1.7.10 и старше) или набор скинов ', code('.mcpack'), ' для Bedrock — с одним скином или целой коллекцией, обычные и тонкие вперемешку.'],
+      ['Экспортируй ', code('.png'), ' для Java (плюс старую копию 64×32 для 1.7.10 и старше), ', code('.png'), ' для гардеробной Bedrock или целую коллекцию в одном ', code('.mcpack'), ' через ', link('/skin-pack-maker', 'конструктор наборов скинов'), '.'],
     ],
     howTitle: 'Как сделать скин здесь',
     steps: [
@@ -1038,8 +1080,8 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       },
       {
         id: 'pack',
-        q: 'Как сделать свой набор скинов?',
-        a: [p('Нарисуй каждый скин отдельным проектом, затем выбери ', strong('Набор скинов Bedrock (.mcpack)'), ' и отметь остальные скины. Каждый скин сохраняет своё имя и тип рук, а повторный экспорт обновляет установленный набор, а не добавляет копию. ', link('/skin-pack-maker', 'Подробнее о наборах скинов'), '.')],
+        q: 'Можно ли собрать несколько скинов в один набор для Bedrock?',
+        a: [p('Да, в ', link('/skin-pack-maker', 'конструкторе наборов скинов'), ': нарисуй каждый скин отдельным проектом, затем выбери ', strong('Набор скинов Bedrock (.mcpack)'), ' и отметь остальные скины. Каждый скин сохраняет своё имя и обычные или тонкие руки, а повторный экспорт обновляет установленный набор, а не добавляет копию.')],
       },
       {
         id: 'trusted',
@@ -1051,10 +1093,10 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
   },
   skinpack: {
     eyebrow: 'Наборы скинов',
-    heading: 'Конструктор наборов скинов Minecraft',
+    heading: 'Конструктор своих наборов скинов (скинпаков) Minecraft',
     appName: 'Minecraft Skin Pack Maker',
     screenshotCaption: 'Конструктор наборов скинов в Texture Pack Maker: три скина, с обычными и тонкими руками, в одном .mcpack для Bedrock',
-    lead: ['Нарисуй или загрузи свои скины и скачай их вместе одним файлом ', code('.mcpack'), ' для Bedrock, который Minecraft импортирует при открытии. Обычные и тонкие скины могут быть в одном наборе. Бесплатно, без аккаунта и без загрузки на сервер.'],
+    lead: ['Собери свой набор скинов для Minecraft Bedrock: нарисуй или загрузи сколько угодно скинов и скачай их вместе одним файлом ', code('.mcpack'), ', который Minecraft импортирует при открытии. Обычные и тонкие скины могут быть в одном наборе. Бесплатно, без аккаунта и без загрузки на сервер.'],
     featureList: [
       'Один или несколько скинов в одном наборе скинов для Bedrock (.mcpack)',
       'Скины с обычными (4 пикселя) и тонкими (3 пикселя) руками в одном наборе',
@@ -1121,6 +1163,11 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         id: 'slim',
         q: 'Могут ли в одном наборе быть обычные и тонкие скины?',
         a: [p('Да. Каждый скин сохраняет модель рук, с которой его рисовали, поэтому обычные и тонкие скины спокойно уживаются в одном наборе.')],
+      },
+      {
+        id: 'hd',
+        q: 'Можно ли добавить в набор HD-скины 128×128?',
+        a: [p('Да. Скины 64×64 и HD 128×128 уживаются в одном наборе, и каждый сохраняет свой размер. Выбери HD 128×128 в поле «Размер» перед созданием скина или переключи готовый скин на HD в редакторе.')],
       },
       {
         id: 'update',

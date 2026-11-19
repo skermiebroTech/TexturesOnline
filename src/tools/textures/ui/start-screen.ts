@@ -396,7 +396,7 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
   const recentCount = h('span', { class: 'tx-count-pill' });
   const recent = h(
     'section',
-    { class: 'container tx-recent', 'aria-labelledby': 'tx-recent-title' },
+    { class: 'container tx-recent', 'aria-labelledby': 'tx-recent-title', hidden: true },
     h('div', { class: 'tx-recent-head' }, h('h2', { id: 'tx-recent-title' }, t.recent.title), recentCount, h('span', { class: 'grow' }), h('span', { class: 'faint small tx-recent-note' }, icon('lock', { size: 16 }), t.recent.savedHere)),
     recentGrid,
   );
@@ -428,6 +428,9 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     if (!alive) return;
     recentCount.textContent = String(list.length);
     recentCount.hidden = !list.length;
+    // A first visit has nothing saved: no empty "your packs" box between the form and the page's
+    // introduction (search engines read an empty list as an empty page).
+    recent.hidden = !list.length;
     if (!list.length) {
       recentGrid.replaceChildren(
         h('div', { class: 'tx-recent-empty' }, emptyState({ icon: 'folder-plus', title: t.recent.emptyTitle, text: t.recent.emptyText })),

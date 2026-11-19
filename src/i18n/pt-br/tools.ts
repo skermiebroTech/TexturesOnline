@@ -2,7 +2,7 @@
 // and menus of the tools themselves are quoted in English, as the editors show them.
 
 import { el, type Child } from '../../app/markup';
-import { code, figure, link, strong } from '../../app/content/blocks';
+import { code, figure, link, strong, toolCallout } from '../../app/content/blocks';
 import { F, LATEST } from '../../app/content/facts';
 import type { IntroTool, ToolIntroText } from '../../app/content/tools';
 import { discLengths } from '../../app/content/discs';
@@ -180,7 +180,46 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         ],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
+    // What the editor is, which versions it covers and how to start: prose for readers and search
+    // engines, between the feature lists and the questions (also below the start screen).
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-card' },
+        el(sub, null, 'O que o editor de texturas faz'),
+        el('p', null, 'Um texture pack (no Java, pacote de recursos) troca as imagens que o Minecraft desenha: blocos, itens, mobs, armaduras, partículas, o céu e a interface. O editor baixa dos servidores da Mojang as texturas reais da versão que você escolher, então você começa exatamente com o que o jogo mostra, e o pack exportado só leva os arquivos que você mudou, nos caminhos e no formato que essa versão lê.'),
+        el('p', null, 'Tudo roda no seu navegador. Seu pack fica salvo neste aparelho enquanto você trabalha, nada é enviado, e o download é um pack comum: instale, compartilhe, abra aqui de novo depois ou continue editando em qualquer outro editor de imagens.'),
+        el('p', null, 'Primeiro pack? ', link('/guides/make-a-texture-pack', 'Como fazer um texture pack'), ' guia você passo a passo, e ', link('/guides/texture-pack-not-working', 'as soluções para packs que não carregam'), ' explicam cada mensagem de erro.'),
+      ),
+      el(
+        'div',
+        { class: 'tool-intro-grid' },
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Versões e edições'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('Java Edition'), `: todas as versões da 1.6.1 à ${LATEST}, e snapshots se você ativar. O pack recebe o pack format da sua versão (${F(LATEST)} na ${LATEST}) e, se quiser, um intervalo de versões em que funciona.`),
+            el('li', null, strong('Bedrock Edition'), ': a versão mais recente, a preview mais recente e versões anteriores. O pack é um ', code('.mcpack'), ' que o Minecraft importa quando você abre.'),
+            el('li', null, 'Qualquer resolução de 16× (o visual vanilla) a 512×.'),
+            el('li', null, 'Um pack para a outra edição? O ', link('/texture-pack-converter', 'conversor de texture packs'), ' transforma packs do Java em packs do Bedrock e vice-versa.'),
+          ]),
+        ),
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Jeitos de começar'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('Um pack novo'), ': dê um nome, escolha edição, versão e resolução e clique em ', strong('Criar pack'), '. Depois procure uma textura ou navegue pelos blocos, itens e mobs.'),
+            el('li', null, strong('Um pack de PvP'), ': comece com fogo baixo, vidro limpo, espadas menores e uma mira própria, com opção de pack FPS. ', link('/guides/make-a-pvp-texture-pack', 'Guia de packs de PvP'), '.'),
+            el('li', null, strong('Um pack que você já tem'), ': escolha ', strong('Abrir um pack'), ' e solte um ', code('.zip'), ' ou ', code('.mcpack'), '. A edição e a versão são lidas do pack.'),
+            el('li', null, strong('Uma parte do jogo'), ': o ', link('/painting-maker', 'criador de pinturas'), ', o ', link('/gui-maker', 'criador de GUI'), ', o ', link('/music-disc-maker', 'criador de discos de música'), ' e o do ', link('/enchantment-glint-maker', 'brilho de encantamento'), ' abrem um pack novo direto nessa parte.'),
+          ]),
+        ),
+      ),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects)),
+    ],
     cta: 'Começar um texture pack',
   },
   painting: {
@@ -994,10 +1033,10 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
   },
   skins: {
     eyebrow: 'Skins',
-    heading: 'Crie uma skin ou um pacote de skins de Minecraft',
+    heading: 'Editor de skin de Minecraft: crie sua própria skin',
     appName: 'Editor de skins de Minecraft',
     screenshotCaption: 'O editor de skins do Texture Pack Maker: skins iniciais, braços clássicos ou finos',
-    lead: ['Pinte seu personagem no modelo padrão de skin enquanto um modelo 3D se atualiza ao vivo, depois use no ', strong('Java'), ' ou no ', strong('Bedrock'), '. Grátis e sem conta.'],
+    lead: ['Pinte seu personagem no modelo padrão de skin enquanto um modelo 3D se atualiza ao vivo, depois use no ', strong('Java'), ' ou no ', strong('Bedrock'), '. Grátis e sem conta. Vai fazer várias skins para o Bedrock? O ', link('/skin-pack-maker', 'criador de pacote de skins'), ' junta todas em um único ', code('.mcpack'), '.'],
     featureList: [
       'Pinte no modelo de skin 64×64 com contornos das partes e prévia 3D ao vivo',
       'Modelos clássico (braços de 4 pixels) e fino (braços de 3 pixels)',
@@ -1015,7 +1054,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Pinte no modelo plano ou direto no modelo 3D, e esconda partes do corpo para alcançar todos os lados.'],
       ['Comece com uma skin em branco, um modelo colorido por partes, personagens iniciais originais, um PNG enviado, a skin de qualquer jogador do Java pelo nome de usuário ou as skins padrão dos arquivos do jogo.'],
       ['Skins antigas 64×32 são convertidas para 64×64 ao abrir.'],
-      ['Exporte um ', code('.png'), ' para Java (mais uma cópia 64×32 para a 1.7.10 e anteriores) ou um pacote de skins ', code('.mcpack'), ' do Bedrock com uma skin ou um conjunto inteiro, clássicas e finas misturadas.'],
+      ['Exporte um ', code('.png'), ' para Java (mais uma cópia 64×32 para a 1.7.10 e anteriores), um ', code('.png'), ' do Bedrock para o Vestiário ou um conjunto inteiro em um único ', code('.mcpack'), ' com o ', link('/skin-pack-maker', 'criador de pacote de skins'), '.'],
     ],
     howTitle: 'Como fazer uma skin aqui',
     steps: [
@@ -1043,16 +1082,8 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       },
       {
         id: 'pack',
-        q: 'Como faço meu próprio pacote de skins?',
-        a: [
-          p(
-            'Pinte cada skin como um projeto separado, depois escolha ',
-            strong('Pacote de skins do Bedrock (.mcpack)'),
-            ' e marque as outras skins que quer adicionar. Cada skin mantém o seu nome e os braços clássicos ou finos, e exportar de novo atualiza o pacote instalado em vez de criar uma cópia. ',
-            link('/skin-pack-maker', 'Mais sobre o criador de pacote de skins'),
-            '.',
-          ),
-        ],
+        q: 'Posso colocar várias skins em um só pacote do Bedrock?',
+        a: [p('Sim, com o ', link('/skin-pack-maker', 'criador de pacote de skins'), ': pinte cada skin como um projeto separado, escolha ', strong('Pacote de skins do Bedrock (.mcpack)'), ' e marque as outras skins que quer incluir. Cada skin mantém o nome e os braços clássicos ou finos, e exportar de novo atualiza o pacote instalado em vez de criar uma cópia.')],
       },
       {
         id: 'trusted',
@@ -1060,18 +1091,21 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         a: [p('No Bedrock, quem ativa ', strong('Apenas Permitir Aparências Confiáveis'), ' vê skins personalizadas como skins padrão. É uma configuração do lado deles.')],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d))],
+    extra: () => [
+      toolCallout('Vai fazer um pacote de skins?', ['Junte várias skins em um único ', code('.mcpack'), ' do Bedrock, cada uma com seu nome, clássicas e finas misturadas: o criador de pacote de skins monta tudo com as skins que você pinta aqui.'], { to: '/skin-pack-maker', label: 'Abrir o criador de pacote de skins', icon: 'package' }),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d)),
+    ],
     cta: 'Começar uma skin',
   },
   skinpack: {
     eyebrow: 'Pacotes de skins',
-    heading: 'Criador de pacote de skins de Minecraft',
+    heading: 'Criador de pacote de skins personalizado para Minecraft',
     appName: 'Criador de pacote de skins de Minecraft',
     screenshotCaption: 'O criador de pacote de skins do Texture Pack Maker: três skins, clássicas e finas, em um único .mcpack do Bedrock',
     lead: [
-      'Pinte ou envie suas skins e baixe todas juntas em um único ',
+      'Crie um pacote de skins personalizado para o Minecraft Bedrock: pinte ou envie quantas skins quiser e baixe todas juntas em um único ',
       code('.mcpack'),
-      ' do Bedrock que o Minecraft importa quando você abre. Skins clássicas e finas podem dividir o mesmo pacote, e é grátis, sem conta e sem upload.',
+      ' que o Minecraft importa quando você abre. Skins clássicas e finas podem dividir o mesmo pacote, e é grátis, sem conta e sem upload.',
     ],
     featureList: [
       'Junte uma ou várias skins em um único pacote de skins do Bedrock (.mcpack)',
@@ -1139,6 +1173,11 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         id: 'slim',
         q: 'Um pacote pode ter skins clássicas e finas?',
         a: [p('Sim. Cada skin mantém o modelo de braço com que foi pintada, então skins clássicas e finas ficam lado a lado no mesmo pacote.')],
+      },
+      {
+        id: 'hd',
+        q: 'Um pacote de skins pode ter skins HD de 128×128?',
+        a: [p('Sim. Skins 64×64 e HD 128×128 podem ficar no mesmo pacote, e cada uma mantém seu tamanho. Escolha HD 128×128 em “Tamanho” antes de começar uma skin, ou passe para HD uma skin que você já tem, no editor.')],
       },
       {
         id: 'update',

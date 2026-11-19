@@ -285,6 +285,7 @@ test('translated content keeps every question, section and step of the English p
       assert.equal(text!.quick?.items.length, en.quick?.items.length, `${l} ${slug} quick answer`);
       assert.equal(text!.howto?.steps.length, en.howto?.steps.length, `${l} ${slug} HowTo`);
       assert.equal(!!text!.image, !!en.image, `${l} ${slug} image`);
+      assert.equal(!!text!.maker, !!en.maker, `${l} ${slug} pack.mcmeta maker`);
       assert.equal(text!.image?.src, en.image?.src, `${l} ${slug} same screenshot`);
     }
   }
@@ -300,7 +301,8 @@ test('facts on translated pages come from the app data', () => {
     assert.ok(html.includes(F(LATEST)) && html.includes(LATEST), `${l} names ${LATEST} and ${F(LATEST)}`);
     assert.ok(html.includes(`&quot;min_format&quot;: [${F(LATEST).replace('.', ', ')}]`) || html.includes(`"min_format": [${F(LATEST).replace('.', ', ')}]`), `${l} pack.mcmeta example`);
     const meta = guideMeta('minecraft-pack-format-versions', l)!;
-    assert.ok(meta.title.includes(F(LATEST)), `${l} title names the format`);
+    // The title names the version searched for and offers the pack.mcmeta maker; the format itself is on the page.
+    assert.ok(meta.title.includes(LATEST) && meta.title.includes('pack.mcmeta'), `${l} title names the version and the file`);
   }
 });
 

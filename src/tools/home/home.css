@@ -477,11 +477,34 @@
 }
 
 /* ---------- Converter banner (under the tool cards) ---------- */
+.home-banners {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+/* Side by side, a banner's call to action goes under its text */
+@media (min-width: 1025px) {
+  .home-banners .convert-banner {
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+  .home-banners .convert-banner-text {
+    flex-basis: calc(100% - 68px);
+  }
+  .home-banners .convert-banner-cta {
+    margin-left: 68px;
+  }
+}
+@media (max-width: 1024px) {
+  .home-banners {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .convert-banner {
   display: flex;
   align-items: center;
   gap: 20px;
-  margin-top: 20px;
   padding: 20px 24px;
   border: 2px solid var(--border);
   border-radius: var(--r-lg);
@@ -491,7 +514,7 @@
   transition: border-color var(--dur-1) var(--ease);
 }
 .convert-banner:hover {
-  border-color: var(--green);
+  border-color: var(--tool-accent);
 }
 .convert-banner:focus-visible {
   outline: none;
@@ -506,7 +529,7 @@
   border-radius: var(--r-md);
   background: var(--surface-2);
   border: 2px solid var(--border);
-  color: var(--green);
+  color: var(--tool-accent);
 }
 .convert-banner-text {
   display: flex;
@@ -525,7 +548,7 @@
   align-items: center;
   gap: 8px;
   flex: none;
-  color: var(--green);
+  color: var(--tool-accent);
 }
 .convert-banner:hover .convert-banner-cta .icon {
   transform: translateX(3px);

@@ -258,7 +258,7 @@ function irisPack() {
       const before = await dump(page);
       await clearStorage(page, base);
       await page.goto(base + 'textures');
-      await page.waitForSelector('.tx-recent-empty');
+      await page.waitForSelector('.tx-recent-empty', { state: 'attached' });
       await openWith(page, '.tx-open [data-project-file="open"]', f.file);
       await page.waitForURL(new RegExp(`/textures/${texId}/?$`), { timeout: 20000 });
       await toastText(page, /Opened/);

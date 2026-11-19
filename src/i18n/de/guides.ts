@@ -60,12 +60,13 @@ const INSTALL_JAVA_STEPS: Child[] = [
 ];
 
 const SKIN_STEPS: Child[] = [
-  ['Öffne den ', link('/skins', 'Skin Maker'), ' und wähle einen Startpunkt: einen leeren Skin, eine farbcodierte Vorlage, einen Start-Charakter, ein PNG, das du schon hast, den Skin eines Java-Spielers per Benutzername oder einen der Standard-Skins.'],
-  'Wähle die Armform: breit (4 Pixel) oder schmal (3 Pixel).',
-  'Male auf der 64×64-Vorlage oder wechsle zu 3D und male direkt auf das Modell. Blende Körperteile aus, um an die Seiten darunter zu kommen. Mit Spiegeln bemalst du beide Arme oder Beine gleichzeitig, und fertige Teile kannst du sperren.',
-  'Gib dem Skin mit der Außenebene Tiefe: Hüte, Haare, Jacken, Ärmel und Hosenbeine sitzen leicht über dem Körper.',
-  ['Exportiere ein ', code('.png'), ' für Java (plus eine 64×32-Kopie für 1.7.10 und älter) oder ein Skinpaket ', code('.mcpack'), ' für Bedrock.'],
-  'Hochladen: im Minecraft Launcher (Java) oder indem du das .mcpack öffnest und den Skin im Ankleidezimmer wählst (Bedrock).',
+  ['Öffne den ', link('/skins', 'Skin Maker'), ' und wähle die Armform, breit (4 Pixel) oder schmal (3 Pixel), und die Größe: 64×64 oder HD 128×128 für Bedrock.'],
+  'Wähle einen Startpunkt: einen leeren Skin, die farbcodierte Vorlage, einen Start-Charakter, ein PNG, das du schon hast, den Skin eines Java-Spielers per Benutzername oder einen der Standard-Skins.',
+  'Bemale die Grundebene: Gesicht, Körper, Arme und Beine. Mit „Spiegeln“ bemalst du beide Arme oder Beine gleichzeitig, und ein gesperrtes Körperteil hält die Farbe in seinen Grenzen.',
+  'Stell die Ansicht auf 3D (oder drück D), um direkt auf das Modell zu malen, und blende Körperteile aus, um an die Seiten darunter zu kommen.',
+  'Füge die Außenebene hinzu: Haare, einen Hut, eine Kapuze, eine Jacke, Ärmel oder Stiefel, die vom Körper abstehen.',
+  ['Exportiere: ', strong('Java-Skin (.png)'), ' für den Minecraft Launcher, ', strong('Bedrock-Skin (.png)'), ' für das Ankleidezimmer oder ', strong('Bedrock-Skinpaket (.mcpack)'), ' für mehrere Skins auf einmal.'],
+  'Zieh ihn an: Lade das PNG in Java im Minecraft Launcher hoch oder importiere es in Bedrock im Ankleidezimmer.',
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
@@ -862,6 +863,31 @@ const install: GuideText = {
 };
 
 const packFormats: GuideText = {
+  maker: {
+    title: 'pack.mcmeta-Generator',
+    lead: 'Wähle die Java-Versionen, für die dein Pack ist, und kopiere die Datei. Sie folgt denselben Regeln wie der Export im Texture Pack Maker.',
+    worksOn: 'Gilt für',
+    one: 'Eine Version',
+    range: 'Mehrere Versionen',
+    version: 'Minecraft-Version',
+    from: 'Älteste Version',
+    to: 'Neueste Version',
+    description: 'Beschreibung des Packs',
+    defaultDescription: 'Mein Ressourcenpaket',
+    copy: 'Kopieren',
+    copied: 'Kopiert',
+    copyFailed: 'Drück Strg+C (oder ⌘C), um den markierten Text zu kopieren',
+    download: 'Herunterladen',
+    format: (f) => `Pack-Format ${f}`,
+    formats: (r) => `Pack-Formate ${r}`,
+    notes: {
+      new: 'Ab 1.21.9 liest Minecraft `min_format` und `max_format`. Eine einfache Zahl in `max_format` deckt alle Unterversionen davon ab.',
+      all: 'Der Bereich geht über 1.21.9 hinweg, darum stehen alle Felder in der Datei: `min_format` und `max_format` für 1.21.9 und neuer, `supported_formats` für 1.20.2 – 1.21.8 und `pack_format` für ältere Versionen.',
+      supported: '`pack_format` ist die Zahl, die ältere Versionen vergleichen, und `supported_formats` nennt 1.20.2 – 1.21.8 jedes Format, mit dem das Pack funktioniert.',
+      single: 'Minecraft vergleicht `pack_format` mit seiner eigenen Zahl. Andere Versionen zeigen eine Versionswarnung, du kannst das Pack aber trotzdem aktivieren.',
+      older: 'Versionen vor 1.20.2 lesen nur `pack_format`, darum zeigen manche Versionen in diesem Bereich eine Versionswarnung. Ein reines Textur-Pack funktioniert trotzdem, wenn du es aktivierst.',
+    },
+  },
   intro: [
     p(
       'Jedes Ressourcenpaket der Java Edition nennt in seiner ',
@@ -975,16 +1001,35 @@ const makeASkin: GuideText = {
   image: SHOTS.skin2d,
   intro: [
     p(
-      'Ein Minecraft-Skin ist ein PNG-Bild mit 64×64 Pixeln, das sich um das Spielermodell legt; Bedrock nimmt auch HD-Skins mit 128×128 Pixeln. Du kannst einen im Browser gestalten: auf der Vorlage malen, auf einem 3D-Modell prüfen und dann im Minecraft Launcher hochladen (Java) oder als Skinpaket importieren (Bedrock).',
+      'Ein Minecraft-Skin ist ein PNG-Bild mit 64×64 Pixeln, das sich um das Spielermodell legt; Bedrock nimmt auch HD-Skins mit 128×128 Pixeln. Du kannst einen kostenlos im Browser erstellen: breite oder schmale Arme wählen, auf der flachen Vorlage oder direkt auf dem 3D-Modell malen, eine zweite Ebene für Haare und Kleidung hinzufügen und ihn dann in Java oder Bedrock tragen. Diese Anleitung geht jeden Schritt mit dem ',
+      link('/skins', 'Skin Maker'),
+      ' durch, erklärt die Vorlage und ihre zwei Ebenen und zeigt, wie du den Skin in jeder Edition installierst.',
     ),
   ],
   quick: {
     title: 'Die Kurzfassung',
-    items: ['Öffne den Skin Maker und wähle eine Vorlage oder einen Start-Skin.', 'Bemale ihn und behalte die 3D-Vorschau im Blick.', 'Exportiere ein PNG für Java oder ein .mcpack für Bedrock und lade es hoch.'],
+    items: [
+      ['Öffne den ', link('/skins', 'Skin Maker'), ', wähle breite oder schmale Arme und einen Start-Skin.'],
+      'Bemale die Grundebene und füge auf der Außenebene Haare, einen Hut oder eine Jacke hinzu, mit Blick auf die 3D-Vorschau.',
+      ['Exportiere ein ', code('.png'), ': Java nimmt es im Minecraft Launcher, Bedrock im Ankleidezimmer.'],
+      ['Mehrere Skins für Bedrock? Bündle sie mit dem ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), '.'],
+    ],
   },
   howto: { name: 'Eigenen Minecraft Skin online erstellen', steps: SKIN_STEPS },
   sections: [
-    { id: 'steps', title: 'Schritt für Schritt', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d), figure(SHOTS.skin3d)] },
+    { id: 'steps', title: 'Schritt für Schritt', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d)] },
+    {
+      id: 'classic-slim',
+      title: 'Breite oder schmale Arme?',
+      body: [
+        p('Die beiden Spielermodelle unterscheiden sich nur bei den Armen. ', strong('Breite'), ' Arme (Steve) sind 4 Pixel breit, ', strong('schmale'), ' Arme (Alex) 3 Pixel; Kopf, Körper und Beine sind gleich.'),
+        ul([
+          'Wähle das Modell, bevor du die Arme bemalst: Ärmel, Bündchen und Hände werden für eine Breite gezeichnet.',
+          ['Doch anders entschieden? Stell im Editor ', strong('Arme'), ' um. Die Arm-Pixel werden umgerechnet, die Spalte neben dem Körper fällt weg oder wird wiederholt, sodass Ärmel und Hände weiter passen.'],
+          'Wähle beim Hochladen dasselbe Modell, sonst wirken die Arme im Spiel gestreckt oder abgeschnitten.',
+        ]),
+      ],
+    },
     {
       id: 'template',
       title: 'So funktioniert die Skinvorlage',
@@ -994,6 +1039,40 @@ const makeASkin: GuideText = {
           ['Es gibt zwei Ebenen. Die ', strong('Grundebene'), ' ist der Körper; die ', strong('Außenebene'), ' (Hut, Jacke, Ärmel und Hosenbeine) schwebt knapp darüber und darf transparent sein.'],
           [strong('Breite'), ' Arme (Steve) sind 4 Pixel breit, ', strong('schmale'), ' Arme (Alex) 3 Pixel. Lade den Skin mit demselben Modell hoch, mit dem du ihn gemalt hast.'],
           'Ungenutzte Bereiche der Vorlage sollten komplett transparent bleiben.',
+        ]),
+        p(
+          'Jedes Körperteil ist eine aufgeklappte Box: Die Vorlage zeigt oben Ober- und Unterseite, darunter die rechte, vordere, linke und hintere Seite. Der Kopf misst 8×8×8 Pixel, der Körper 8×12×4, jedes Bein 4×12×4 und jeder Arm 4×12×4 (schmal 3×12×4). Fahr im Skin Maker über die Vorlage, um zu sehen, zu welchem Teil und welcher Seite ein Pixel gehört, oder starte mit dem farbcodierten Skin ',
+          strong('Vorlage'),
+          ', auf dem jede Seite beschriftet ist.',
+        ),
+      ],
+    },
+    {
+      id: 'paint-3d',
+      title: 'Auf dem 3D-Modell malen',
+      body: [
+        p('Die flache Vorlage ist genau, aber man sieht schlecht, wo ihre Kanten aufeinandertreffen. In 3D malst du dort, wo du hinschaust:'),
+        ul([
+          ['Stell die Hauptansicht auf ', strong('3D-Modell'), ' (oder drück ', el('kbd', null, 'D'), ') und mal direkt auf das Modell. Jedes Pixel landet an der richtigen Stelle der Vorlage.'],
+          ['Blende ein Körperteil mit dem Auge in der Liste ', strong('Körperteile'), ' aus oder klick es auf der kleinen Figur an, um an das zu kommen, was es verdeckt, etwa die Innenseite der Arme. Ein Doppelklick zeigt nur dieses Teil.'],
+          ['Sperre ein Teil, um nur darin zu malen, und schalte ', strong('Spiegeln'), ' ein, um linken und rechten Arm oder linkes und rechtes Bein zusammen zu bemalen.'],
+          ['Schattiere direkt beim Malen: ', strong('Aufhellen'), ' und ', strong('Abdunkeln'), ' machen Pixel heller oder dunkler, wenn du darübermalst, und ', strong('Rauschen'), ' gibt Stoff, Haaren und Rüstung eine Struktur.'],
+          'Stell die Vorschau auf Gehen oder Rennen, um zu sehen, wie der Skin in Bewegung aussieht.',
+        ]),
+        figure(SHOTS.skin3d),
+      ],
+    },
+    {
+      id: 'layers',
+      title: 'Grundebene und Außenebene',
+      body: [
+        p('Jeder Skin hat zwei Ebenen im selben Bild. Die ', strong('Grundebene'), ' ist der Körper selbst. Die ', strong('Außenebene'), ' (Hut, Jacke, Ärmel und Hosenbeine) sitzt knapp darüber und kann deshalb abstehen: Haare, Kapuzen, Helme, Kragen, Bündchen und Stiefel.'),
+        ul([
+          'Bemale jede Seite der Grundebene. Nur die Außenebene darf durchsichtig sein; leere Pixel auf der Grundebene erscheinen im Spiel als Löcher oder schwarze Flecken.',
+          'Lass die Außenebene überall dort transparent, wo die Grundebene durchscheinen soll.',
+          ['Wähle über der Malfläche ', strong('Grund'), ', ', strong('Außen'), ' oder ', strong('Beide'), ' (Tasten 1, 2 und 3), um jeweils nur eine Ebene zu bemalen.'],
+          ['Schalte ', strong('Durchsichtige Außenebene'), ' ein, um in 3D die Grundebene unter Hüten und Jacken zu sehen, und blende mit ', strong('Zeigen'), ' eine Ebene in der Vorschau aus.'],
+          'In Java können Spieler Teile der Außenebene in ihren Skin-Einstellungen ausschalten. Der Skin sollte also auch nur mit der Grundebene gut aussehen.',
         ]),
       ],
     },
@@ -1032,40 +1111,51 @@ const makeASkin: GuideText = {
           ['Klicke auf ', strong('Durchsuchen'), ', wähle dein PNG und dann ', strong('Speichern und verwenden'), '.'],
         ]),
         p('Du kannst ihn auch in deinem Profil auf ', ext('https://www.minecraft.net/', 'minecraft.net'), ' hochladen.'),
+        p('Du spielst Java 1.7.10 oder älter oder auf einem Server für diese Versionen? Exportiere zusätzlich ', strong('Alter Java-Skin (64×32)'), ': Dieses Layout hat keinen eigenen linken Arm und kein eigenes linkes Bein, und von der Außenebene bleibt nur der Hut.'),
       ],
     },
     {
       id: 'bedrock',
-      title: 'Ein eigenes Bedrock-Skinpaket erstellen',
+      title: 'In Bedrock nutzen',
       body: [
+        p('Unter Windows, Android, iPhone und iPad kannst du einen eigenen Skin auf zwei Arten tragen.'),
+        h3('Ein Skin: das PNG importieren'),
+        steps([
+          ['Exportiere im Skin Maker ', strong('Bedrock-Skin (.png)'), '.'],
+          ['Öffne in Minecraft ', uiPath('Ankleidezimmer', 'Klassische Skins'), '.'],
+          ['Wähle unter ', strong('Freigeschaltet'), ' das leere Feld ', strong('Importieren'), ' und dann ', strong('Neuen Skin auswählen'), '.'],
+          'Wähle dein PNG und das breite (Steve) oder schmale (Alex) Armmodell.',
+        ]),
+        h3('Mehrere Skins: ein Skinpaket'),
         p(
           'Ein Skinpaket ist ein ',
           code('.mcpack'),
-          ' mit einem oder mehreren Skins. Der Skin Maker baut es für dich; darin liegen eine ',
-          code('manifest.json'),
-          ' (Modultyp ',
-          code('skin_pack'),
-          '), eine ',
-          code('skins.json'),
-          ', die jeden Skin mit dem breiten (',
-          code('geometry.humanoid.custom'),
-          ') oder schmalen (',
-          code('geometry.humanoid.customSlim'),
-          ') Modell und ',
-          code('"type": "free"'),
-          ' auflistet, die Skin-PNGs auf der obersten Ebene und die Namen in ',
-          code('texts/en_US.lang'),
-          '.',
+          ' mit mehreren Skins, jeder mit eigenem Namen und eigenen Armen, und erscheint unter „Klassische Skins“ als eigenes Paket. Erstelle es mit dem ',
+          link('/skin-pack-maker', 'Skinpaket-Ersteller'),
+          ': Male jeden Skin, wähle ',
+          strong('Exportieren'),
+          ' › ',
+          strong('Bedrock-Skinpaket (.mcpack)'),
+          ', hake die anderen Skins an und öffne die Datei. ',
+          link('/guides/make-a-bedrock-skin-pack', 'Minecraft-Bedrock-Skinpaket erstellen'),
+          ' erklärt Installieren, Aktualisieren und die Dateien im Paket.',
         ),
-        steps([
-          ['Male jeden Skin als eigenes Projekt. Breite und schmale Skins passen in ein Paket.'],
-          ['Wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
-          'Öffne das .mcpack (Doppelklick unter Windows, „Mit Minecraft öffnen“ auf Android, „Teilen › Minecraft“ auf iPhone und iPad).',
-          ['Geh in Minecraft zu ', uiPath('Ankleidezimmer', 'Klassische Skins'), ', such dein Paket, wähle den Skin und tippe auf ', strong('Anlegen'), '.'],
-        ]),
         figure(SHOTS.skinPack),
-        callout('warn', 'Gut zu wissen', 'Konsolen können keine Skin-Dateien importieren. Spieler mit eingeschaltetem „Nur vertrauenswürdige Skins erlauben“ sehen eigene Skins als Standard-Skins. Eigene Modelle sind in importierten Skinpaketen nicht erlaubt, nur breit und schmal.'),
-        p('Installieren, aktualisieren und die Dateien im Paket, Schritt für Schritt: ', link('/guides/make-a-bedrock-skin-pack', 'Minecraft-Bedrock-Skinpaket erstellen'), '.'),
+        callout('warn', 'Gut zu wissen', 'Konsolen können keine Skin-Dateien oder Skinpakete importieren. Spieler mit eingeschaltetem „Nur vertrauenswürdige Skins erlauben“ sehen eigene Skins als Standard-Skins.'),
+      ],
+    },
+    {
+      id: 'tips',
+      title: 'Tipps für einen besseren Skin',
+      body: [
+        ul([
+          'Leg fest, woher das Licht kommt, meist von oben, und bleib dabei: hellere Oberseiten von Kopf und Schultern, dunklere Unterseiten, Arm- und Beininnenseiten.',
+          'Nimm drei bis fünf Töne pro Farbe statt einer flachen Farbe. Aufhellen und Abdunkeln erzeugen sie für dich.',
+          'Verzichte auf eine schwarze Umrandung um jedes Teil: Im Spiel wirkt das flach. Nimm stattdessen einen dunkleren Ton der Nachbarfarbe.',
+          'Gib dem Gesicht Raum. Augen sind meist ein oder zwei Pixel hoch, knapp unter der Mitte des 8×8-Gesichts.',
+          'Prüf den Rücken, den Kopf von oben und die Fußsohlen: Auf der flachen Vorlage vergisst man sie leicht.',
+          'Schau dir die 3D-Vorschau ab und zu aus der Entfernung an. So sehen dich andere Spieler.',
+        ]),
       ],
     },
   ],
@@ -1086,17 +1176,37 @@ const makeASkin: GuideText = {
         ),
       ],
     },
+    {
+      id: 'outer-layer',
+      q: 'Was ist die zweite Ebene eines Minecraft-Skins?',
+      a: [p('Die Außenebene: eine etwas größere Kopie jedes Körperteils für Hüte, Haare, Jacken, Ärmel und Hosenbeine. Sie darf transparent sein, und andere sehen sie über der Grundebene.')],
+    },
+    {
+      id: 'black',
+      q: 'Warum sind Teile meines Skins im Spiel schwarz oder durchsichtig?',
+      a: [p('Meist hat die Grundebene leere (transparente) Pixel. Nur die Außenebene darf durchsichtig sein, bemale also jede Seite von Kopf, Körper, Armen und Beinen auf der Grundebene. Ein Skin, der mit dem falschen Armmodell hochgeladen wurde, kann außerdem einen leeren Streifen an den Armen zeigen.')],
+    },
+    {
+      id: 'java-bedrock',
+      q: 'Funktioniert derselbe Skin in Java und Bedrock?',
+      a: [p('Ja. Ein PNG mit 64×64 funktioniert in beiden: Lade es für Java im Minecraft Launcher hoch und importiere es für Bedrock im Ankleidezimmer, jeweils mit demselben Armmodell. HD-Skins mit 128×128 funktionieren nur in Bedrock.')],
+    },
+    {
+      id: 'not-showing',
+      q: 'Warum wird mein neuer Skin nicht angezeigt?',
+      a: [p('In Java verlässt du nach dem Wechsel die Welt oder den Server und trittst neu bei. Prüf auch, ob du den Skin des Kontos geändert hast, mit dem du spielst. In Bedrock muss der Skin im Ankleidezimmer angelegt sein. Freunde mit eingeschaltetem „Nur vertrauenswürdige Skins erlauben“ sehen stattdessen einen Standard-Skin.')],
+    },
+    {
+      id: 'consoles',
+      q: 'Kann ich einen eigenen Skin auf Xbox, PlayStation oder Switch nutzen?',
+      a: [p('Nein. Konsolen können keine Skin-Dateien oder Skinpakete importieren. Windows, Android, iPhone und iPad schon.')],
+    },
     { id: 'username', q: 'Kann ich mit dem Skin von jemand anderem anfangen?', a: [p('Ja. Der Skin Maker kann den aktuellen Skin jedes Java-Spielers per Benutzername laden, sodass du ihn remixen kannst. Bitte respektiere dabei die Arbeit anderer.')] },
     { id: 'phone', q: 'Kann ich einen Skin am Handy erstellen?', a: [p('Ja. Der Editor funktioniert mit Touch, inklusive Zoom mit zwei Fingern.')] },
     {
-      id: 'slim-pack',
-      q: 'Kann ein Skinpaket breite und schmale Skins mischen?',
-      a: [p('Ja. Jeder Skin in einem Paket hat sein eigenes Modell, ein eigenes Skinpaket kann also breite (4 Pixel breite Arme) und schmale (3 Pixel breite Arme) Skins nebeneinander enthalten.')],
-    },
-    {
-      id: 'update-pack',
-      q: 'Wie aktualisiere ich ein Skinpaket, das ich schon importiert habe?',
-      a: [p('Exportiere es aus demselben Projekt neu und öffne das neue .mcpack. Das Paket behält seine IDs und bekommt eine höhere Versionsnummer, sodass Minecraft das alte ersetzt, statt eine Kopie anzulegen.')],
+      id: 'skin-pack',
+      q: 'Wie bringe ich mehrere Skins in ein Paket?',
+      a: [p('Mit dem ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), ': Male jeden Skin, exportiere dann ein Bedrock-Skinpaket und hake die anderen an. Breite und schmale Skins passen in ein Paket, und ein erneuter Export aktualisiert das installierte Paket.')],
     },
   ],
   ctaLabel: 'Skin Maker öffnen',

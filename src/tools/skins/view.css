@@ -326,6 +326,47 @@
   transform: translateX(3px);
   color: var(--tool-accent);
 }
+/* /skins: the link to the skin pack maker sits right under the hero, closer to it than the sections */
+.sk-pack-link {
+  margin-top: -24px;
+}
+/* /skin-pack-maker: how a pack is made, three steps under the hero */
+.sk-pack-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: -16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sk-pack-steps li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--inner-hi), var(--shadow-1);
+}
+.sk-pack-step-n {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: var(--r-sm);
+  background: var(--tool-accent);
+  color: var(--on-accent);
+  font-size: var(--fs-sm);
+  line-height: 1;
+  font-weight: 700;
+}
 .sk-import .dropzone {
   flex: 1 1 auto;
 }
@@ -1837,6 +1878,10 @@
   }
   .sk-hero {
     align-items: stretch;
+  }
+  .sk-pack-steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
   }
   .sk-model-pick {
     width: 100%;

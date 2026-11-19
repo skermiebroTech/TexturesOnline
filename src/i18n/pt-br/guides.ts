@@ -62,12 +62,13 @@ const INSTALL_JAVA_STEPS: Child[] = [
 ];
 
 const SKIN_STEPS: Child[] = [
-  ['Abra o ', link('/skins', 'Skin Maker'), ' e escolha um ponto de partida: uma skin em branco, um modelo colorido por partes, um personagem inicial, um PNG que você já tem, a skin de um jogador do Java pelo nome de usuário ou uma das skins padrão.'],
-  'Escolha o tipo de braço: clássico (4 pixels de largura) ou fino (3 pixels).',
-  'Pinte no modelo 64×64 ou mude para 3D e pinte direto no modelo, escondendo partes do corpo para alcançar os lados de baixo. Use o espelhamento para pintar os dois braços ou as duas pernas de uma vez e bloqueie as partes que já terminou.',
-  'Dê profundidade com a camada externa: chapéus, cabelo, jaquetas, mangas e pernas da calça ficam um pouco acima do corpo.',
-  ['Exporte um ', code('.png'), ' para o Java (mais uma cópia 64×32 para a 1.7.10 e anteriores) ou um pacote de skins ', code('.mcpack'), ' para o Bedrock.'],
-  'Envie: no Minecraft Launcher (Java) ou abrindo o .mcpack e escolhendo a skin no Vestiário (Bedrock).',
+  ['Abra o ', link('/skins', 'Skin Maker'), ' e escolha o tipo de braço, clássico (4 pixels de largura) ou fino (3 pixels), e o tamanho: 64×64, ou HD 128×128 para o Bedrock.'],
+  'Escolha um ponto de partida: uma skin em branco, o modelo colorido por partes, um personagem inicial, um PNG que você já tem, a skin de um jogador do Java pelo nome de usuário ou uma das skins padrão.',
+  'Pinte a camada base: rosto, corpo, braços e pernas. Ative Espelhar para pintar os dois braços ou as duas pernas de uma vez e bloqueie uma parte do corpo para a tinta não sair dela.',
+  'Mude a visão para 3D (ou aperte D) para pintar direto no boneco, e esconda partes do corpo para alcançar os lados de baixo.',
+  'Adicione a camada externa: cabelo, chapéu, capuz, jaqueta, mangas ou botas que ficam para fora do corpo.',
+  ['Exporte: ', strong('Skin para Java (.png)'), ' para o Minecraft Launcher, ', strong('Skin para Bedrock (.png)'), ' para o Vestiário ou ', strong('Pacote de skins do Bedrock (.mcpack)'), ' para várias skins de uma vez.'],
+  'Use a skin: envie o PNG no Minecraft Launcher no Java ou importe no Vestiário no Bedrock.',
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
@@ -867,6 +868,31 @@ const install: GuideText = {
 };
 
 const packFormats: GuideText = {
+  maker: {
+    title: 'Gerador de pack.mcmeta',
+    lead: 'Escolha as versões do Java para as quais seu pack é feito e copie o arquivo. Ele segue as mesmas regras da exportação do Texture Pack Maker.',
+    worksOn: 'Funciona em',
+    one: 'Uma versão',
+    range: 'Um intervalo de versões',
+    version: 'Versão do Minecraft',
+    from: 'Versão mais antiga',
+    to: 'Versão mais nova',
+    description: 'Descrição do pack',
+    defaultDescription: 'Meu pacote de recursos',
+    copy: 'Copiar',
+    copied: 'Copiado',
+    copyFailed: 'Aperte Ctrl+C (ou ⌘C) para copiar o texto selecionado',
+    download: 'Baixar',
+    format: (f) => `Formato do pack: ${f}`,
+    formats: (r) => `Formatos do pack: ${r}`,
+    notes: {
+      new: 'Da 1.21.9 em diante, o Minecraft lê `min_format` e `max_format`. Um número simples em `max_format` cobre todas as versões menores dele.',
+      all: 'O intervalo passa pela 1.21.9, então o arquivo tem todos os campos: `min_format` e `max_format` para a 1.21.9 e mais novas, `supported_formats` para 1.20.2 – 1.21.8 e `pack_format` para as versões mais antigas.',
+      supported: '`pack_format` é o número que as versões antigas comparam, e `supported_formats` informa à 1.20.2 – 1.21.8 todos os formatos com que o pack funciona.',
+      single: 'O Minecraft compara `pack_format` com o próprio número. Outras versões mostram um aviso de versão, mas você ainda pode ativar o pack.',
+      older: 'Versões anteriores à 1.20.2 só leem `pack_format`, então algumas versões deste intervalo mostram um aviso de versão. Um pack só de texturas funciona mesmo assim se você ativar.',
+    },
+  },
   intro: [
     p(
       'Todo pacote de recursos do Java Edition informa um ',
@@ -980,16 +1006,35 @@ const makeASkin: GuideText = {
   image: SHOTS.skin2d,
   intro: [
     p(
-      'Uma skin de Minecraft é uma imagem PNG de 64×64 pixels que envolve o modelo do jogador; o Bedrock também aceita skins HD de 128×128 pixels. Dá para criar uma no navegador: pinte no modelo, confira em um modelo 3D e depois envie no Minecraft Launcher (Java) ou importe como pacote de skins (Bedrock).',
+      'Uma skin de Minecraft é uma imagem PNG de 64×64 pixels que envolve o modelo do jogador; o Bedrock também aceita skins HD de 128×128 pixels. Você pode fazer uma de graça no navegador: escolha braços clássicos ou finos, pinte no modelo plano ou direto no boneco 3D, adicione uma segunda camada para cabelo e roupas e use no Java ou no Bedrock. Este guia passa por cada etapa com o ',
+      link('/skins', 'Skin Maker'),
+      ', explica como funcionam o modelo e suas duas camadas e mostra como instalar a skin em cada edição.',
     ),
   ],
   quick: {
     title: 'Resumindo',
-    items: ['Abra o Skin Maker e escolha um modelo ou uma skin inicial.', 'Pinte olhando a prévia 3D.', 'Exporte um PNG para o Java ou um .mcpack para o Bedrock e envie.'],
+    items: [
+      ['Abra o ', link('/skins', 'Skin Maker'), ' e escolha braços clássicos ou finos e uma skin inicial.'],
+      'Pinte a camada base e adicione cabelo, chapéu ou jaqueta na camada externa, de olho na prévia 3D.',
+      ['Exporte um ', code('.png'), ': o Java usa no Minecraft Launcher e o Bedrock no Vestiário.'],
+      ['Várias skins para o Bedrock? Junte todas com o ', link('/skin-pack-maker', 'criador de pacote de skins'), '.'],
+    ],
   },
   howto: { name: 'Como fazer uma skin de Minecraft online', steps: SKIN_STEPS },
   sections: [
-    { id: 'steps', title: 'Passo a passo', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d), figure(SHOTS.skin3d)] },
+    { id: 'steps', title: 'Passo a passo', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d)] },
+    {
+      id: 'classic-slim',
+      title: 'Braços clássicos ou finos?',
+      body: [
+        p('Os dois modelos de jogador só mudam nos braços. Os ', strong('clássicos'), ' (Steve) têm 4 pixels de largura e os ', strong('finos'), ' (Alex), 3 pixels; cabeça, corpo e pernas são iguais.'),
+        ul([
+          'Escolha o modelo antes de pintar os braços: mangas, punhos e mãos são desenhados para uma largura.',
+          ['Mudou de ideia? Troque ', strong('Braços'), ' no editor. Ele converte os pixels dos braços, removendo ou repetindo a coluna ao lado do corpo, para que mangas e mãos continuem alinhadas.'],
+          'Escolha o mesmo modelo ao enviar a skin, ou os braços vão parecer esticados ou cortados no jogo.',
+        ]),
+      ],
+    },
     {
       id: 'template',
       title: 'Como funciona o modelo de skin',
@@ -999,6 +1044,40 @@ const makeASkin: GuideText = {
           ['São duas camadas. A ', strong('camada base'), ' é o corpo; a ', strong('camada externa'), ' (chapéu, jaqueta, mangas e pernas da calça) fica logo acima e pode ser transparente.'],
           ['Os braços ', strong('clássicos'), ' (Steve) têm 4 pixels de largura e os ', strong('finos'), ' (Alex) têm 3. Envie a skin com o mesmo modelo em que você pintou.'],
           'As partes do modelo que não são usadas devem ficar totalmente transparentes.',
+        ]),
+        p(
+          'Cada parte do corpo é uma caixa aberta no plano: o modelo mostra em cima as faces de cima e de baixo e, embaixo delas, as faces direita, frontal, esquerda e traseira. A cabeça tem 8×8×8 pixels, o corpo 8×12×4, cada perna 4×12×4 e cada braço 4×12×4 (3×12×4 quando fino). Passe o mouse pelo modelo no Skin Maker para ver a que parte e face um pixel pertence, ou comece pela skin ',
+          strong('Modelo'),
+          ', com cada parte de uma cor e cada face identificada.',
+        ),
+      ],
+    },
+    {
+      id: 'paint-3d',
+      title: 'Pinte direto no boneco 3D',
+      body: [
+        p('O modelo plano é preciso, mas é difícil ver onde as bordas se encontram. Em 3D você pinta onde está olhando:'),
+        ul([
+          ['Mude a visão principal para ', strong('Boneco 3D'), ' (ou aperte ', el('kbd', null, 'D'), ') e pinte direto no boneco. Cada pixel cai no lugar certo do modelo plano.'],
+          ['Esconda uma parte com o olho na lista ', strong('Partes do corpo'), ', ou clique nela no bonequinho, para alcançar o que ela cobre, como o lado de dentro dos braços. Um clique duplo mostra só essa parte.'],
+          ['Bloqueie uma parte para pintar só dentro dela, e ative ', strong('Espelhar'), ' para pintar juntos o braço ou a perna da esquerda e da direita.'],
+          ['Sombreie enquanto pinta: ', strong('Clarear'), ' e ', strong('Escurecer'), ' deixam os pixels mais claros ou mais escuros quando você pinta por cima, e ', strong('Ruído'), ' dá textura a roupas, cabelo e armadura.'],
+          'Coloque a prévia em Andar ou Correr para ver como a skin fica em movimento.',
+        ]),
+        figure(SHOTS.skin3d),
+      ],
+    },
+    {
+      id: 'layers',
+      title: 'A camada base e a camada externa',
+      body: [
+        p('Toda skin tem duas camadas na mesma imagem. A ', strong('camada base'), ' é o próprio corpo. A ', strong('camada externa'), ' (chapéu, jaqueta, mangas e pernas da calça) fica um pouco acima dela, então pode sobressair: cabelo, capuzes, capacetes, golas, punhos e botas.'),
+        ul([
+          'Pinte todas as faces da camada base. Só a camada externa pode ser transparente; pixels vazios na base aparecem no jogo como buracos ou manchas pretas.',
+          'Deixe a camada externa transparente onde a base deve aparecer.',
+          ['Escolha ', strong('Base'), ', ', strong('Externa'), ' ou ', strong('Ambas'), ' acima da área de pintura (teclas 1, 2 e 3) para pintar uma camada de cada vez.'],
+          ['Ative ', strong('Camada externa transparente'), ' para ver a base embaixo de chapéus e jaquetas em 3D, e use ', strong('Mostrar'), ' para esconder uma camada na prévia.'],
+          'No Java, os jogadores podem desligar partes da camada externa nas opções de skin, então confira se a skin fica boa só com a base.',
         ]),
       ],
     },
@@ -1037,40 +1116,51 @@ const makeASkin: GuideText = {
           ['Clique em ', strong('Procurar'), ', escolha seu PNG e depois ', strong('Salvar e usar'), '.'],
         ]),
         p('Você também pode enviar no seu perfil em ', ext('https://www.minecraft.net/', 'minecraft.net'), '.'),
+        p('Joga no Java 1.7.10 ou anterior, ou num servidor dessas versões? Exporte também ', strong('Skin antiga do Java (64×32)'), ': esse formato não tem braço e perna esquerdos separados, e da camada externa só fica o chapéu.'),
       ],
     },
     {
       id: 'bedrock',
-      title: 'Fazer seu próprio pacote de skins do Bedrock',
+      title: 'Usar no Bedrock',
       body: [
+        p('No Windows, Android, iPhone e iPad dá para usar uma skin sua de dois jeitos.'),
+        h3('Uma skin: importe o PNG'),
+        steps([
+          ['Exporte ', strong('Skin para Bedrock (.png)'), ' no Skin Maker.'],
+          ['No Minecraft abra ', uiPath('Vestiário', 'Aparências Clássicas'), '.'],
+          ['Em ', strong('Adquirido'), ', selecione o espaço vazio ', strong('Importar'), ' e depois ', strong('Escolher nova aparência'), '.'],
+          'Escolha seu PNG e o modelo de braço clássico (Steve) ou fino (Alex).',
+        ]),
+        h3('Várias skins: um pacote de skins'),
         p(
           'Um pacote de skins é um ',
           code('.mcpack'),
-          ' com uma ou mais skins. O Skin Maker monta para você; dentro dele há um ',
-          code('manifest.json'),
-          ' (tipo de módulo ',
-          code('skin_pack'),
-          '), um ',
-          code('skins.json'),
-          ' que lista cada skin com o modelo clássico (',
-          code('geometry.humanoid.custom'),
-          ') ou fino (',
-          code('geometry.humanoid.customSlim'),
-          ') e ',
-          code('"type": "free"'),
-          ', os PNGs das skins na raiz e os nomes em ',
-          code('texts/en_US.lang'),
-          '.',
+          ' com várias skins, cada uma com seu nome e seus braços, que aparece em Aparências Clássicas como um pacote próprio. Crie um com o ',
+          link('/skin-pack-maker', 'criador de pacote de skins'),
+          ': pinte cada skin, escolha ',
+          strong('Exportar'),
+          ' › ',
+          strong('Pacote de skins do Bedrock (.mcpack)'),
+          ', marque as outras skins e abra o arquivo. ',
+          link('/guides/make-a-bedrock-skin-pack', 'Como fazer um pacote de skins do Bedrock'),
+          ' explica como instalar, atualizar e quais arquivos vão dentro.',
         ),
-        steps([
-          ['Pinte cada skin como um projeto separado. Skins clássicas e finas podem dividir o mesmo pacote.'],
-          ['Escolha ', strong('Exportar'), ' › ', strong('Pacote de skins do Bedrock (.mcpack)'), ', dê um nome ao pacote e marque as outras skins que vão junto.'],
-          'Abra o .mcpack (clique duas vezes no Windows, “Abrir com o Minecraft” no Android, Compartilhar › Minecraft no iPhone e iPad).',
-          ['No Minecraft vá em ', uiPath('Vestiário', 'Aparências Clássicas'), ', ache seu pacote, escolha a skin e toque em ', strong('Equipar'), '.'],
-        ]),
         figure(SHOTS.skinPack),
-        callout('warn', 'Bom saber', 'Consoles não importam arquivos de skin. Quem ativa “Apenas Permitir Aparências Confiáveis” vê skins personalizadas como skins padrão. Pacotes de skins importados não aceitam modelos próprios, só clássico e fino.'),
-        p('Instalar, atualizar e os arquivos que vão dentro, passo a passo: ', link('/guides/make-a-bedrock-skin-pack', 'Como fazer um pacote de skins do Minecraft Bedrock'), '.'),
+        callout('warn', 'Bom saber', 'Consoles não importam arquivos nem pacotes de skins. Quem ativa “Apenas Permitir Aparências Confiáveis” vê skins personalizadas como skins padrão.'),
+      ],
+    },
+    {
+      id: 'tips',
+      title: 'Dicas para uma skin melhor',
+      body: [
+        ul([
+          'Escolha de onde vem a luz, normalmente de cima, e mantenha: topo da cabeça e ombros mais claros, partes de baixo e lado de dentro de braços e pernas mais escuros.',
+          'Use de três a cinco tons de cada cor em vez de uma cor chapada. Clarear e Escurecer criam esses tons para você.',
+          'Evite o contorno preto em volta de cada parte: no jogo fica achatado. Use um tom mais escuro da cor ao lado.',
+          'Dê espaço ao rosto. Os olhos costumam ter um ou dois pixels de altura, logo abaixo do meio do rosto de 8×8.',
+          'Confira as costas, o topo da cabeça e as solas dos pés: no modelo plano é fácil esquecer deles.',
+          'De vez em quando, olhe a prévia 3D de longe. É assim que os outros jogadores vão ver você.',
+        ]),
       ],
     },
   ],
@@ -1091,17 +1181,37 @@ const makeASkin: GuideText = {
         ),
       ],
     },
+    {
+      id: 'outer-layer',
+      q: 'O que é a segunda camada de uma skin de Minecraft?',
+      a: [p('A camada externa: uma cópia um pouco maior de cada parte do corpo para chapéus, cabelo, jaquetas, mangas e pernas da calça. Ela pode ser transparente e aparece por cima da camada base.')],
+    },
+    {
+      id: 'black',
+      q: 'Por que partes da minha skin ficam pretas ou transparentes no jogo?',
+      a: [p('Quase sempre a camada base tem pixels vazios (transparentes). Só a camada externa pode ser transparente, então pinte todas as faces da cabeça, do corpo, dos braços e das pernas na camada base. Uma skin enviada com o modelo de braço errado também pode mostrar uma faixa vazia nos braços.')],
+    },
+    {
+      id: 'java-bedrock',
+      q: 'A mesma skin funciona no Java e no Bedrock?',
+      a: [p('Sim. Um PNG de 64×64 funciona nos dois: envie no Minecraft Launcher para o Java e importe no Vestiário para o Bedrock, com o mesmo modelo de braço. Skins HD de 128×128 só funcionam no Bedrock.')],
+    },
+    {
+      id: 'not-showing',
+      q: 'Por que minha skin nova não aparece?',
+      a: [p('No Java, saia do mundo ou do servidor e entre de novo depois de trocar, e confira se mudou a skin da conta com que você joga. No Bedrock, veja se a skin está equipada no Vestiário. Amigos que ativam “Apenas Permitir Aparências Confiáveis” veem uma skin padrão.')],
+    },
+    {
+      id: 'consoles',
+      q: 'Posso usar uma skin minha no Xbox, PlayStation ou Switch?',
+      a: [p('Não. Consoles não importam arquivos nem pacotes de skins. Windows, Android, iPhone e iPad importam.')],
+    },
     { id: 'username', q: 'Posso começar com a skin de outra pessoa?', a: [p('Sim. O Skin Maker carrega a skin atual de qualquer jogador do Java pelo nome de usuário, para você remixar. Respeite o trabalho dos outros.')] },
     { id: 'phone', q: 'Posso fazer uma skin no celular?', a: [p('Sim. O editor funciona com toque, inclusive o zoom com dois dedos.')] },
     {
-      id: 'slim-pack',
-      q: 'Um pacote de skins pode misturar skins clássicas e finas?',
-      a: [p('Sim. Cada skin do pacote tem o próprio modelo, então um pacote de skins próprio pode ter skins clássicas (braços de 4 pixels) e finas (braços de 3 pixels) lado a lado.')],
-    },
-    {
-      id: 'update-pack',
-      q: 'Como atualizo um pacote de skins que já importei?',
-      a: [p('Exporte de novo a partir do mesmo projeto e abra o .mcpack novo. O pacote mantém os IDs e recebe um número de versão maior, então o Minecraft substitui o antigo em vez de criar uma cópia.')],
+      id: 'skin-pack',
+      q: 'Como coloco várias skins em um pacote?',
+      a: [p('Com o ', link('/skin-pack-maker', 'criador de pacote de skins'), ': pinte cada skin, exporte um pacote de skins do Bedrock e marque as outras. Skins clássicas e finas podem dividir o pacote, e exportar de novo atualiza o pacote instalado.')],
     },
   ],
   ctaLabel: 'Abrir o Skin Maker',
