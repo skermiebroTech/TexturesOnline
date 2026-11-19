@@ -2,7 +2,7 @@
 // the tools themselves are quoted in English, as the editors show them.
 
 import { el, type Child } from '../../app/markup';
-import { code, figure, link, strong } from '../../app/content/blocks';
+import { code, figure, link, strong, toolCallout } from '../../app/content/blocks';
 import { F, LATEST } from '../../app/content/facts';
 import type { IntroTool, ToolIntroText } from '../../app/content/tools';
 import { discLengths } from '../../app/content/discs';
@@ -180,7 +180,46 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         ],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
+    // What the editor is, which versions it covers and how to start: prose for readers and search
+    // engines, between the feature lists and the questions (also below the start screen).
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-card' },
+        el(sub, null, 'テクスチャエディターでできること'),
+        el('p', null, 'テクスチャパック（Java版ではリソースパック）は、Minecraftが描く画像を差し替えるものです。ブロック、アイテム、モブ、防具、パーティクル、空、画面のUIまで変えられます。エディターは選んだバージョンの本物のテクスチャをMojangのサーバーから読み込むので、ゲームと同じ見た目から始められます。書き出すパックには、変更したファイルだけが、そのバージョンが読むパスと形式で入ります。'),
+        el('p', null, 'すべてブラウザーの中で動きます。作業中のパックはこの端末に保存され、何もアップロードされません。ダウンロードしたものは普通のパックなので、インストールも共有もでき、あとでここで開き直したり、ほかの画像編集ソフトで続きを作ったりできます。'),
+        el('p', null, 'はじめてなら', link('/guides/make-a-texture-pack', 'テクスチャパックの作り方'), 'で最初のパックを作ってみましょう。パックが読み込まれないときは、', link('/guides/texture-pack-not-working', '動かないときの直し方'), 'でエラーメッセージごとに解説しています。'),
+      ),
+      el(
+        'div',
+        { class: 'tool-intro-grid' },
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, '対応バージョンとエディション'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('Java版'), `：1.6.1から${LATEST}までのすべてのリリースと、オンにすればスナップショットも。パックには選んだバージョンのパックフォーマット（${LATEST}は${F(LATEST)}）が入り、対応するバージョンの範囲も指定できます。`),
+            el('li', null, strong('統合版'), '：最新リリース、最新のプレビュー、古いバージョンに対応。パックは開くだけでMinecraftに取り込まれる', code('.mcpack'), 'です。'),
+            el('li', null, '解像度は16×（バニラの見た目）から512×まで選べます。'),
+            el('li', null, 'もう一方のエディション用のパックが欲しいなら、', link('/texture-pack-converter', 'テクスチャパック変換'), 'でJava版と統合版を相互に変換できます。'),
+          ]),
+        ),
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, '始め方'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('新しいパック'), '：名前を付け、エディション、バージョン、解像度を選んで', strong('パックを作る'), 'を押します。あとはテクスチャを検索するか、ブロック、アイテム、モブから選びます。'),
+            el('li', null, strong('PvPパック'), '：炎を低く、ガラスをすっきり、剣を小さく、照準を自分好みにした状態から始められ、FPSパックにもできます。', link('/guides/make-a-pvp-texture-pack', 'PvPパックの作り方'), '。'),
+            el('li', null, strong('手持ちのパック'), '：', strong('パックを開く'), 'を選び、', code('.zip'), 'か', code('.mcpack'), 'をドロップします。エディションとバージョンはパックから読み取られます。'),
+            el('li', null, strong('ゲームの一部だけ'), '：', link('/painting-maker', '絵画作成'), '、', link('/gui-maker', 'GUI作成'), '、', link('/music-disc-maker', 'レコード作成'), '、', link('/enchantment-glint-maker', 'エンチャントの輝き'), 'は、その部分を開いた状態で新しいパックを始めます。'),
+          ]),
+        ),
+      ),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects)),
+    ],
     cta: 'テクスチャパックを作る',
   },
   painting: {
@@ -993,10 +1032,10 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
   },
   skins: {
     eyebrow: 'スキン',
-    heading: 'Minecraftのオリジナルスキンやスキンパックを作る',
+    heading: 'Minecraft スキンエディター：オリジナルスキンを作る',
     appName: 'Minecraft スキンエディター',
     screenshotCaption: 'Texture Pack Makerのスキンエディター：最初から使えるスキン、クラシックまたはスリムの腕',
-    lead: ['標準のスキンテンプレートにキャラクターを描くと、3Dモデルがリアルタイムで更新されます。完成したら', strong('Java版'), 'や', strong('統合版'), 'で使えます。無料で、アカウントは不要です。'],
+    lead: ['標準のスキンテンプレートにキャラクターを描くと、3Dモデルがリアルタイムで更新されます。完成したら', strong('Java版'), 'や', strong('統合版'), 'で使えます。無料で、アカウントは不要です。統合版用に何枚も作るなら、', link('/skin-pack-maker', 'スキンパック作成'), 'で1つの', code('.mcpack'), 'にまとめられます。'],
     featureList: [
       '部位の枠線と3Dプレビューつきで64×64のスキンテンプレートに描ける',
       'クラシック（腕4ピクセル）とスリム（腕3ピクセル）の両モデル',
@@ -1014,7 +1053,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['平面のテンプレートでも3Dモデルの上でも描けて、部位を隠せばどの面にも届きます。'],
       ['白紙、色分けテンプレート、オリジナルのキャラクター、読み込んだPNG、Java版プレイヤーのユーザー名から取ったスキン、ゲームファイルのデフォルトスキンから始められます。'],
       ['古い64×32のスキンは、開くと64×64に変換されます。'],
-      ['Java版用の', code('.png'), '（1.7.10以前用の64×32のコピーも）か、統合版のスキンパック', code('.mcpack'), 'で書き出せます。スキンパックには1つでもセットでも、クラシックとスリムを混ぜて入れられます。'],
+      ['Java版用の', code('.png'), '（1.7.10以前向けの64×32のコピーも）、更衣室で読み込む統合版用の', code('.png'), '、または', link('/skin-pack-maker', 'スキンパック作成'), 'で複数のスキンをまとめた', code('.mcpack'), 'として書き出せます。'],
     ],
     howTitle: 'スキンの作り方',
     steps: [
@@ -1042,16 +1081,8 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       },
       {
         id: 'pack',
-        q: 'オリジナルのスキンパックはどう作りますか？',
-        a: [
-          p(
-            'スキンを1つずつ別のプロジェクトとして描き、',
-            strong('統合版スキンパック（.mcpack）'),
-            'を選んで、追加するほかのスキンにチェックを入れます。それぞれのスキンは名前とクラシック／スリムの腕を保ち、書き出し直すとコピーが増えるのではなく導入済みのパックが更新されます。',
-            link('/skin-pack-maker', 'スキンパック作成について詳しく'),
-            '。',
-          ),
-        ],
+        q: '複数のスキンを1つの統合版パックにまとめられますか？',
+        a: [p('はい、', link('/skin-pack-maker', 'スキンパック作成'), 'でできます。スキンを1つずつ別のプロジェクトとして描き、', strong('統合版スキンパック（.mcpack）'), 'を選んで、入れたいほかのスキンにチェックを入れます。各スキンは名前とクラシック/スリムの腕をそのまま保ち、書き出し直すとコピーが増えずにインストール済みのパックが更新されます。')],
       },
       {
         id: 'trusted',
@@ -1059,16 +1090,19 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         a: [p('統合版で', strong('信頼できるスキンのみ許可'), 'をオンにしているプレイヤーには、カスタムスキンがデフォルトのスキンとして表示されます。相手側の設定です。')],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d))],
+    extra: () => [
+      toolCallout('スキンパックを作るなら', ['ここで描いたスキンを、それぞれ名前を付けたまま、クラシックとスリムも混ぜて統合版の', code('.mcpack'), '1つにまとめられます。'], { to: '/skin-pack-maker', label: 'スキンパック作成を開く', icon: 'package' }),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d)),
+    ],
     cta: 'スキンを作る',
   },
   skinpack: {
     eyebrow: 'スキンパック',
-    heading: 'Minecraft スキンパック作成ツール',
+    heading: 'Minecraft オリジナルスキンパック作成ツール',
     appName: 'Minecraft スキンパック作成ツール',
     screenshotCaption: 'Texture Pack Makerのスキンパック作成：クラシックとスリムの3つのスキンを統合版の.mcpack 1つに',
     lead: [
-      'スキンを描くか読み込んで、まとめて統合版の',
+      'Minecraft統合版のオリジナルスキンパックを作成。好きなだけスキンを描くか読み込んで、まとめて統合版の',
       code('.mcpack'),
       '1つとしてダウンロード。開くだけでMinecraftに取り込まれます。クラシックとスリムのスキンを同じパックに入れられて、無料・アカウント不要・アップロードなしです。',
     ],
@@ -1138,6 +1172,11 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         id: 'slim',
         q: '1つのパックにクラシックとスリムのスキンを入れられますか？',
         a: [p('はい。それぞれのスキンは描いたときの腕のモデルを保つので、クラシックとスリムのスキンを同じパックに並べられます。')],
+      },
+      {
+        id: 'hd',
+        q: 'スキンパックにHD（128×128）のスキンを入れられますか？',
+        a: [p('はい。64×64とHD 128×128のスキンを同じパックに入れられ、それぞれのサイズはそのまま保たれます。スキンを作る前に「サイズ」でHD 128×128を選ぶか、エディターで既存のスキンをHDに切り替えます。')],
       },
       {
         id: 'update',

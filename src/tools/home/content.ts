@@ -60,6 +60,8 @@ export interface HomeText {
   };
   toolsSection: { eyebrow: string; title: string; lead: string };
   converter: { title: string; text: string; cta: string };
+  /** Banner next to the converter's: the skin pack maker */
+  skinPack: { title: string; text: string; cta: string };
   features: { eyebrow: string; title: string; lead: string; titles: Six<string>; items: Six<Child[]> };
   how: { eyebrow: string; title: string; steps: [Item, Item, Item] };
   guides: { eyebrow: string; title: string; lead: string; all: string };
@@ -235,6 +237,11 @@ export const HOME_EN: HomeText = {
     text: `Turn a Java pack into a Bedrock one or back, update an old pack to ${LATEST}, or turn PNGs into an .mcpack.`,
     cta: 'Convert a pack',
   },
+  skinPack: {
+    title: 'Skin Pack Maker',
+    text: 'Put several custom skins, classic and slim, into one Bedrock .mcpack that opens in Minecraft.',
+    cta: 'Make a skin pack',
+  },
   features: {
     eyebrow: 'Free texture pack creator',
     title: 'Everything a texture pack maker needs',
@@ -368,11 +375,22 @@ export function homePage(locale: Locale = 'en'): ElNode[] {
     sectionHead(t.toolsSection.eyebrow, 'tools-title', t.toolsSection.title, t.toolsSection.lead),
     el('div', { class: 'tool-grid' }, homeTools(locale).map(toolCard)),
     el(
-      'a',
-      { class: 'convert-banner accent-green', to: '/texture-pack-converter' },
-      el('span', { class: 'convert-banner-icon' }, ic('repeat')),
-      el('span', { class: 'convert-banner-text' }, el('strong', { class: 'convert-banner-title' }, t.converter.title), el('span', { class: 'muted' }, t.converter.text)),
-      el('span', { class: 'convert-banner-cta', 'data-md': 'skip' }, t.converter.cta, ic('arrow-right')),
+      'div',
+      { class: 'home-banners' },
+      el(
+        'a',
+        { class: 'convert-banner accent-green', to: '/texture-pack-converter' },
+        el('span', { class: 'convert-banner-icon' }, ic('repeat')),
+        el('span', { class: 'convert-banner-text' }, el('strong', { class: 'convert-banner-title' }, t.converter.title), el('span', { class: 'muted' }, t.converter.text)),
+        el('span', { class: 'convert-banner-cta', 'data-md': 'skip' }, t.converter.cta, ic('arrow-right')),
+      ),
+      el(
+        'a',
+        { class: 'convert-banner accent-blue', to: '/skin-pack-maker' },
+        el('span', { class: 'convert-banner-icon' }, ic('package')),
+        el('span', { class: 'convert-banner-text' }, el('strong', { class: 'convert-banner-title' }, t.skinPack.title), el('span', { class: 'muted' }, t.skinPack.text)),
+        el('span', { class: 'convert-banner-cta', 'data-md': 'skip' }, t.skinPack.cta, ic('arrow-right')),
+      ),
     ),
   );
 

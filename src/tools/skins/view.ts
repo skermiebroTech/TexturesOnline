@@ -16,5 +16,5 @@ export default async function view(root: HTMLElement, ctx: RouteContext): Promis
     return mountEditor(root, decodeURIComponent(id));
   }
   await text;
-  return mountStart(root);
+  return mountStart(root, ctx.path);
 }

@@ -16,6 +16,22 @@ const PL: SkinsLanguage = {
       title: 'Zaprojektuj własnego skina',
       lead: 'Maluj na szablonie skina albo prosto na modelu 3D i patrz, jak twoja postać ożywa. Gdy skończysz, wyeksportuj go do Javy albo Bedrocka.',
     },
+    packHero: {
+      eyebrow: 'Kreator paczek skinów',
+      title: 'Zrób własną paczkę skinów',
+      lead: 'Namaluj albo wgraj każdego skina, a potem pobierz je wszystkie jako jeden .mcpack do Bedrocka, który otwiera się w Minecrafcie. Szerokie i wąskie skiny mogą być w jednej paczce.',
+    },
+    packSteps: {
+      label: 'Jak powstaje paczka skinów',
+      make: 'Zrób każdego skina',
+      makeText: 'Zacznij od jednego poniżej. Każdy skin zapisuje się w tej przeglądarce.',
+      export: 'Wyeksportuj je razem',
+      exportText: 'W edytorze wybierz Eksportuj › Paczka skinów do Bedrocka i zaznacz pozostałe.',
+      wear: 'Załóż je w Minecrafcie',
+      wearText: 'Otwórz .mcpack i wybierz skina w przebieralni.',
+    },
+    packRecent: 'Zapisane w tej przeglądarce. Otwórz jednego i wybierz Eksportuj › Paczka skinów do Bedrocka, żeby je połączyć.',
+    packLink: { title: 'Robisz paczkę skinów?', text: 'Połącz kilka skinów w jeden .mcpack do Bedrocka w kreatorze paczek skinów' },
     defaultName: 'Mój skin',
     untitled: 'Bez nazwy',
     pick: {

@@ -311,8 +311,12 @@
   line-height: var(--lh-md);
 }
 .callout-cta .btn {
+  height: auto;
+  min-height: var(--btn-h);
   margin-top: 12px;
   max-width: 100%;
+  padding-top: 6px;
+  padding-bottom: 8px;
 }
 .callout-cta .btn-label {
   white-space: normal;

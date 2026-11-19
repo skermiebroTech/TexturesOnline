@@ -23,6 +23,7 @@ import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from './pbr-files';
 import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from './names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from './anim-files';
 import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from './totem-files';
+import { mcmetaMaker, type McmetaMakerText } from '../../app/content/mcmeta-maker';
 
 export { BEDROCK_MIN_ENGINE, formatGroups } from '../../app/content/facts';
 
@@ -40,6 +41,8 @@ export interface Guide {
   image?: Shot;
   /** Short numbered answer shown in a box under the intro */
   quick?: { title: string; items: Child[] };
+  /** The pack.mcmeta maker, under the quick answer (the pack format guide) */
+  maker?: McmetaMakerText;
   sections: GuideSection[];
   /** Steps for the HowTo structured data (also shown in one of the sections) */
   howto?: { name: string; steps: Child[] };
@@ -53,6 +56,7 @@ export interface GuideText {
   intro: Child[];
   image?: Shot;
   quick?: Guide['quick'];
+  maker?: McmetaMakerText;
   sections: GuideSection[];
   howto?: Guide['howto'];
   faq?: FaqItem[];
@@ -109,12 +113,13 @@ const INSTALL_JAVA_STEPS: Child[] = [
 ];
 
 const SKIN_STEPS: Child[] = [
-  ['Open the ', link('/skins', 'Skin Maker'), ' and pick a starting point: a blank skin, a colour-coded template, a starter character, a PNG you already have, a Java player’s skin by username, or one of the default skins.'],
-  'Choose the arm style: classic (4 pixels wide) or slim (3 pixels wide).',
-  'Paint on the 64×64 template or switch to 3D and paint right on the model, hiding body parts to reach the sides underneath. Use mirroring to paint both arms or legs at once, and lock parts you have finished.',
-  'Add depth with the outer layer: hats, hair, jackets, sleeves and trouser legs sit slightly above the body.',
-  ['Export a ', code('.png'), ' for Java (add a legacy 64×32 copy for 1.7.10 and older) or a skin pack ', code('.mcpack'), ' for Bedrock.'],
-  'Upload it: in the Minecraft Launcher (Java) or by opening the .mcpack and choosing it in the Dressing Room (Bedrock).',
+  ['Open the ', link('/skins', 'Skin Maker'), ' and choose the arm style, classic (4 pixels wide) or slim (3 pixels wide), and the size: 64×64, or HD 128×128 for Bedrock.'],
+  'Pick a starting point: a blank skin, the colour-coded template, a starter character, a PNG you already have, a Java player’s skin by username, or one of the default skins.',
+  'Paint the base layer: face, body, arms and legs. Turn on Mirror to paint both arms or both legs at once, and lock a body part to keep the paint inside it.',
+  'Switch the view to 3D (or press D) to paint right on the model, and hide body parts to reach the sides underneath.',
+  'Add the outer layer: hair, a hat, a hood, a jacket, sleeves or boots that stand out from the body.',
+  ['Export it: ', strong('Java skin (.png)'), ' for the Minecraft Launcher, ', strong('Bedrock skin (.png)'), ' for the Dressing Room, or ', strong('Bedrock skin pack (.mcpack)'), ' for several skins at once.'],
+  'Wear it: upload the PNG in the Minecraft Launcher on Java, or import it in the Dressing Room on Bedrock.',
 ];
 
 const SKIN_PACK_STEPS: Child[] = [
@@ -1040,6 +1045,31 @@ export const GUIDE_CONTENT: Guide[] = [
         ['A pack for older versions too also needs ', code('pack_format'), ' and ', code('supported_formats'), '. The table below lists every version.'],
       ],
     },
+    maker: {
+      title: 'pack.mcmeta maker',
+      lead: 'Pick the Java versions your pack is for and copy the file. It follows the same rules as the Texture Pack Maker’s export.',
+      worksOn: 'Works on',
+      one: 'One version',
+      range: 'A range of versions',
+      version: 'Minecraft version',
+      from: 'Oldest version',
+      to: 'Newest version',
+      description: 'Pack description',
+      defaultDescription: 'My resource pack',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyFailed: 'Press Ctrl+C (or ⌘C) to copy the selected text',
+      download: 'Download',
+      format: (f) => `Pack format ${f}`,
+      formats: (r) => `Pack formats ${r}`,
+      notes: {
+        new: '1.21.9 and newer read `min_format` and `max_format`. A plain number in `max_format` covers every minor version of it.',
+        all: 'The range crosses 1.21.9, so the file has every field: `min_format` and `max_format` for 1.21.9 and newer, `supported_formats` for 1.20.2 – 1.21.8 and `pack_format` for older versions.',
+        supported: '`pack_format` is the number older versions compare, and `supported_formats` tells 1.20.2 – 1.21.8 every format the pack works with.',
+        single: 'Minecraft compares `pack_format` with its own number. Other versions show a version warning, but you can still turn the pack on.',
+        older: 'Versions before 1.20.2 only read `pack_format`, so some versions in this range show a version warning. A texture-only pack still works if you turn it on anyway.',
+      },
+    },
     sections: [
       {
         id: 'table',
@@ -1137,16 +1167,35 @@ export const GUIDE_CONTENT: Guide[] = [
     image: SHOTS.skin2d,
     intro: [
       p(
-        'A Minecraft skin is a 64×64 pixel PNG image that wraps around the player model; Bedrock also takes HD skins of 128×128 pixels. You can design one in your browser: paint on the template, check it on a 3D model, then upload it in the Minecraft Launcher (Java) or import it as a skin pack (Bedrock).',
+        'A Minecraft skin is a 64×64 pixel PNG image that wraps around the player model; Bedrock also takes HD skins of 128×128 pixels. You can make one for free in your browser: pick classic or slim arms, paint on the flat template or right on the 3D model, add a second layer for hair and clothes, then wear it on Java or Bedrock. This guide goes through every step with the ',
+        link('/skins', 'Skin Maker'),
+        ', explains how the template and its two layers work, and shows how to install the skin on each edition.',
       ),
     ],
     quick: {
       title: 'The short version',
-      items: ['Open the Skin Maker and pick a template or starting skin.', 'Paint it, watching the 3D preview.', 'Export a PNG for Java or an .mcpack for Bedrock and upload it.'],
+      items: [
+        ['Open the ', link('/skins', 'Skin Maker'), ', pick classic or slim arms and a starting skin.'],
+        'Paint the base layer, then add hair, a hat or a jacket on the outer layer, checking the 3D preview.',
+        ['Export a ', code('.png'), ': Java takes it in the Minecraft Launcher, Bedrock in the Dressing Room.'],
+        ['Several skins for Bedrock? Bundle them with the ', link('/skin-pack-maker', 'Skin Pack Maker'), '.'],
+      ],
     },
     howto: { name: 'How to make a custom Minecraft skin online', steps: SKIN_STEPS },
     sections: [
-      { id: 'steps', title: 'Step by step', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d), figure(SHOTS.skin3d)] },
+      { id: 'steps', title: 'Step by step', body: [steps(SKIN_STEPS), figure(SHOTS.skin2d)] },
+      {
+        id: 'classic-slim',
+        title: 'Classic or slim arms?',
+        body: [
+          p('The two player models differ only in their arms. ', strong('Classic'), ' (Steve) arms are 4 pixels wide and ', strong('slim'), ' (Alex) arms are 3 pixels wide; the head, body and legs are the same.'),
+          ul([
+            'Pick the model before you paint the arms: sleeves, cuffs and hands are drawn for one width.',
+            ['Changed your mind? Switch ', strong('Arms'), ' in the editor. It converts the arm pixels, removing or repeating the column next to the body, so sleeves and hands still line up.'],
+            'Choose the same model when you upload the skin, or the arms look stretched or cut off in the game.',
+          ]),
+        ],
+      },
       {
         id: 'template',
         title: 'How the skin template works',
@@ -1156,6 +1205,46 @@ export const GUIDE_CONTENT: Guide[] = [
             ['There are two layers. The ', strong('base layer'), ' is the body; the ', strong('outer layer'), ' (hat, jacket, sleeves and trouser legs) floats just above it and can be transparent.'],
             [strong('Classic'), ' (Steve) arms are 4 pixels wide and ', strong('slim'), ' (Alex) arms are 3 pixels wide. Upload the skin with the same model you painted.'],
             'Unused parts of the template should stay fully transparent.',
+          ]),
+          p(
+            'Each body part is a box unfolded flat: the template shows its top and bottom above its right, front, left and back faces. The head is 8×8×8 pixels, the body 8×12×4, each leg 4×12×4 and each arm 4×12×4 (3×12×4 when slim). Hover the template in the Skin Maker to see which part and face a pixel belongs to, or start from the colour-coded ',
+            strong('Template'),
+            ' skin, where every face is labelled.',
+          ),
+        ],
+      },
+      {
+        id: 'paint-3d',
+        title: 'Paint on the 3D model',
+        body: [
+          p('The flat template is precise, but it is hard to see where its edges meet. In 3D you paint where you look:'),
+          ul([
+            ['Switch the main view to ', strong('3D model'), ' (or press ', el('kbd', null, 'D'), ') and paint straight on the model. Every pixel you paint lands in the right spot of the template.'],
+            ['Hide a body part with the eye in the ', strong('Body parts'), ' list, or click it on the little figure, to reach what it covers, such as the inside of the arms. Double-click a part to see only that one.'],
+            ['Lock a part to paint only inside it, and turn on ', strong('Mirror'), ' to paint the left and right arm or leg together.'],
+            ['Shade as you go: ', strong('Lighten'), ' and ', strong('Darken'), ' make pixels lighter or darker as you paint over them, and ', strong('Noise'), ' gives cloth, hair and armour a texture.'],
+            'Set the preview to walk or run to see how the skin looks when it moves.',
+          ]),
+          figure(SHOTS.skin3d),
+        ],
+      },
+      {
+        id: 'layers',
+        title: 'The base layer and the outer layer',
+        body: [
+          p(
+            'Every skin has two layers in the same image. The ',
+            strong('base layer'),
+            ' is the body itself. The ',
+            strong('outer layer'),
+            ' (the hat, jacket, sleeves and trouser legs) sits slightly above it, so it can stick out: hair, hoods, helmets, collars, cuffs and boots.',
+          ),
+          ul([
+            'Paint every face of the base layer. Only the outer layer may be see-through; empty pixels on the base show up as holes or black patches in the game.',
+            'Leave the outer layer transparent wherever the base should show through.',
+            ['Choose ', strong('Base'), ', ', strong('Outer'), ' or ', strong('Both'), ' above the canvas (keys 1, 2 and 3) to paint one layer at a time.'],
+            ['Turn on ', strong('See-through outer layer'), ' to look at the base under hats and jackets in 3D, and use ', strong('Show'), ' to hide one layer in the preview.'],
+            'On Java, players can turn outer-layer parts off in their skin settings, so make sure the skin still looks right with the base alone.',
           ]),
         ],
       },
@@ -1194,40 +1283,51 @@ export const GUIDE_CONTENT: Guide[] = [
             ['Click ', strong('Browse'), ', pick your PNG, then ', strong('Save & Use'), '.'],
           ]),
           p('You can also upload it on your profile at ', ext('https://www.minecraft.net/', 'minecraft.net'), '.'),
+          p('Playing Java 1.7.10 or older, or a server for those versions? Export ', strong('Old Java skin (64×32)'), ' too: that layout has no separate left arm and leg, and of the outer layer only the hat.'),
         ],
       },
       {
         id: 'bedrock',
-        title: 'Make a custom Bedrock skin pack',
+        title: 'Use it on Bedrock',
         body: [
-          p(
-            'A skin pack is an ',
-            code('.mcpack'),
-            ' holding one or more skins. The Skin Maker builds it for you; inside it has a ',
-            code('manifest.json'),
-            ' (module type ',
-            code('skin_pack'),
-            '), a ',
-            code('skins.json'),
-            ' listing each skin with the classic (',
-            code('geometry.humanoid.custom'),
-            ') or slim (',
-            code('geometry.humanoid.customSlim'),
-            ') model and ',
-            code('"type": "free"'),
-            ', the skin PNGs at the top level, and the names in ',
-            code('texts/en_US.lang'),
-            '.',
-          ),
+          p('On Windows, Android, iPhone and iPad you can wear a custom skin in two ways.'),
+          el('h3', { class: 'guide-sub' }, 'One skin: import the PNG'),
           steps([
-            ['Paint each skin as its own project. Classic and slim skins can share one pack.'],
-            ['Choose ', strong('Export'), ' › ', strong('Bedrock skin pack'), ', name the pack and tick the other skins to include.'],
-            'Open the .mcpack (double-click on Windows, Open with Minecraft on Android, Share › Minecraft on iPhone and iPad).',
-            ['In Minecraft go to ', uiPath('Dressing Room', 'Classic Skins'), ', find your pack, choose the skin and press ', strong('Equip'), '.'],
+            ['Export ', strong('Bedrock skin (.png)'), ' from the Skin Maker.'],
+            ['In Minecraft open ', uiPath('Dressing Room', 'Classic Skins'), '.'],
+            ['Under ', strong('Owned'), ' select the blank ', strong('Import'), ' slot, then ', strong('Choose New Skin'), '.'],
+            'Pick your PNG and choose the classic (Steve) or slim (Alex) arm model.',
           ]),
+          el('h3', { class: 'guide-sub' }, 'Several skins: a skin pack'),
+          p(
+            'A skin pack is one ',
+            code('.mcpack'),
+            ' holding several skins, each with its own name and arms, listed under Classic Skins as its own pack. Make one with the ',
+            link('/skin-pack-maker', 'Skin Pack Maker'),
+            ': paint each skin, choose ',
+            strong('Export'),
+            ' › ',
+            strong('Bedrock skin pack (.mcpack)'),
+            ', tick the other skins and open the file. ',
+            link('/guides/make-a-bedrock-skin-pack', 'How to make a Bedrock skin pack'),
+            ' covers installing, updating and the files inside.',
+          ),
           figure(SHOTS.skinPack),
-          callout('warn', 'Things to know', 'Consoles cannot import skin files. Players who turn on Only Allow Trusted Skins see custom skins as default ones. Custom models are not allowed in imported skin packs, only classic and slim.'),
-          p('Installing, updating and the files inside, step by step: ', link('/guides/make-a-bedrock-skin-pack', 'How to make a Minecraft Bedrock skin pack'), '.'),
+          callout('warn', 'Things to know', 'Consoles cannot import skin files or skin packs. Players who turn on Only Allow Trusted Skins see custom skins as default ones.'),
+        ],
+      },
+      {
+        id: 'tips',
+        title: 'Tips for a better skin',
+        body: [
+          ul([
+            'Pick where the light comes from, usually above, and keep to it: lighter tops of the head and shoulders, darker undersides, inner arms and inner legs.',
+            'Use three to five shades of each colour instead of one flat colour. Lighten and Darken make them for you.',
+            'Skip the black outline around every part: it looks flat in the game. Use a darker shade of the colour next to it instead.',
+            'Give the face room. Eyes are usually one or two pixels tall, just below the middle of the 8×8 face.',
+            'Check the back, the top of the head and the soles of the feet: they are easy to forget on the flat template.',
+            'Look at the 3D preview from a distance now and then. That is how other players will see you.',
+          ]),
         ],
       },
     ],
@@ -1248,17 +1348,21 @@ export const GUIDE_CONTENT: Guide[] = [
           ),
         ],
       },
+      { id: 'outer-layer', q: 'What is the second layer of a Minecraft skin?', a: [p('The outer layer: a copy of every body part slightly larger than the body, for hats, hair, jackets, sleeves and trouser legs. It can be transparent, and players see it on top of the base layer.')] },
+      { id: 'black', q: 'Why are parts of my skin black or see-through in the game?', a: [p('Usually the base layer has empty (transparent) pixels. Only the outer layer may be transparent, so fill every face of the head, body, arms and legs on the base layer. A skin uploaded with the wrong arm model can also show an empty strip on the arms.')] },
+      { id: 'java-bedrock', q: 'Does the same skin work on Java and Bedrock?', a: [p('Yes. A 64×64 PNG works on both: upload it in the Minecraft Launcher for Java and import it in the Dressing Room for Bedrock, choosing the same arm model each time. HD 128×128 skins work on Bedrock only.')] },
+      {
+        id: 'not-showing',
+        q: 'Why does my new skin not show up?',
+        a: [p('On Java, leave and rejoin the world or server after changing it, and check you changed the skin of the account you play with. On Bedrock, make sure the skin is equipped in the Dressing Room. Friends who turn on Only Allow Trusted Skins see a default skin instead.')],
+      },
+      { id: 'consoles', q: 'Can I use a custom skin on Xbox, PlayStation or Switch?', a: [p('No. Consoles cannot import skin files or skin packs. Windows, Android, iPhone and iPad can.')] },
       { id: 'username', q: 'Can I start from someone’s skin?', a: [p('Yes. The Skin Maker can load any Java player’s current skin by username, so you can remix it. Please respect other people’s work.')] },
       { id: 'phone', q: 'Can I make a skin on my phone?', a: [p('Yes. The editor works with touch, including pinch-to-zoom.')] },
       {
-        id: 'slim-pack',
-        q: 'Can a skin pack mix classic and slim skins?',
-        a: [p('Yes. Every skin in a pack has its own model, so a custom skin pack can hold classic (4-pixel arms) and slim (3-pixel arms) skins side by side.')],
-      },
-      {
-        id: 'update-pack',
-        q: 'How do I update a skin pack I already imported?',
-        a: [p('Export it again from the same project and open the new .mcpack. The pack keeps its IDs and gets a higher version number, so Minecraft replaces the old one instead of adding a copy.')],
+        id: 'skin-pack',
+        q: 'How do I put several skins in one pack?',
+        a: [p('Use the ', link('/skin-pack-maker', 'Skin Pack Maker'), ': paint each skin, then export a Bedrock skin pack and tick the others. Classic and slim skins can share a pack, and exporting again updates the installed pack.')],
       },
     ],
     related: ['make-a-bedrock-skin-pack', 'make-a-custom-totem', 'install-resource-packs', 'java-vs-bedrock-packs'],
@@ -3182,6 +3286,7 @@ export function guidePage(g: Guide): ElNode {
           el('ol', null, g.quick.items.map((i) => el('li', null, i))),
         )
       : null,
+    g.maker ? mcmetaMaker(g.maker) : null,
     el(
       'div',
       { class: ['guide-layout', hasToc ? 'has-toc' : null] },

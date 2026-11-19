@@ -3,7 +3,7 @@
 // English, as the editors show them.
 
 import { el, type Child } from '../../app/markup';
-import { code, figure, link, strong } from '../../app/content/blocks';
+import { code, figure, link, strong, toolCallout } from '../../app/content/blocks';
 import { F, LATEST } from '../../app/content/facts';
 import type { IntroTool, ToolIntroText } from '../../app/content/tools';
 import { discLengths } from '../../app/content/discs';
@@ -186,7 +186,46 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         ],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)), el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects))],
+    // What the editor is, which versions it covers and how to start: prose for readers and search
+    // engines, between the feature lists and the questions (also below the start screen).
+    extra: (sub) => [
+      el(
+        'div',
+        { class: 'tool-intro-card' },
+        el(sub, null, 'Co robi edytor tekstur'),
+        el('p', null, 'Paczka tekstur (w Javie: paczka zasobów) podmienia obrazki, które rysuje Minecraft: bloki, przedmioty, moby, zbroje, cząsteczki, niebo i interfejs. Edytor pobiera z serwerów Mojangu prawdziwe tekstury wybranej wersji, więc zaczynasz dokładnie od tego, co pokazuje gra, a wyeksportowana paczka zawiera tylko zmienione pliki, w ścieżkach i formacie, które czyta ta wersja.'),
+        el('p', null, 'Wszystko działa w przeglądarce. Paczka zapisuje się na tym urządzeniu w trakcie pracy, nic nie jest wysyłane, a pobrany plik to zwykła paczka: możesz ją zainstalować, udostępnić, później znów otworzyć tutaj albo dokończyć w dowolnym innym programie graficznym.'),
+        el('p', null, 'Pierwsza paczka? Poradnik ', link('/guides/make-a-texture-pack', 'Jak zrobić paczkę tekstur'), ' przeprowadzi cię krok po kroku, a ', link('/guides/texture-pack-not-working', 'rozwiązania dla paczek, które nie działają'), ' wyjaśniają każdy komunikat błędu.'),
+      ),
+      el(
+        'div',
+        { class: 'tool-intro-grid' },
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Wersje i edycje'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('Java Edition'), `: każde wydanie od 1.6.1 do ${LATEST}, a po włączeniu także snapshoty. Paczka dostaje format twojej wersji (${F(LATEST)} dla ${LATEST}) i, jeśli chcesz, zakres wersji, w których działa.`),
+            el('li', null, strong('Bedrock Edition'), ': najnowsze wydanie, najnowsza wersja preview i starsze wersje. Paczka to ', code('.mcpack'), ', który Minecraft importuje po otwarciu.'),
+            el('li', null, 'Dowolna rozdzielczość od 16× (wygląd vanilla) do 512×.'),
+            el('li', null, 'Paczka do drugiej edycji? ', link('/texture-pack-converter', 'Konwerter paczek tekstur'), ' zamienia paczki z Javy na paczki do Bedrocka i z powrotem.'),
+          ]),
+        ),
+        el(
+          'div',
+          { class: 'tool-intro-card' },
+          el(sub, null, 'Jak zacząć'),
+          el('ul', { class: 'guide-list' }, [
+            el('li', null, strong('Nowa paczka'), ': nadaj jej nazwę, wybierz edycję, wersję i rozdzielczość, a potem ', strong('Utwórz paczkę'), '. Następnie wyszukaj teksturę albo przeglądaj bloki, przedmioty i moby.'),
+            el('li', null, strong('Paczka PvP'), ': zacznij od niskiego ognia, czystego szkła, mniejszych mieczy i własnego celownika, z opcją paczki FPS. ', link('/guides/make-a-pvp-texture-pack', 'Poradnik paczek PvP'), '.'),
+            el('li', null, strong('Paczka, którą już masz'), ': wybierz ', strong('Otwórz paczkę'), ' i upuść ', code('.zip'), ' albo ', code('.mcpack'), '. Edycja i wersja zostaną odczytane z paczki.'),
+            el('li', null, strong('Jedna część gry'), ': ', link('/painting-maker', 'kreator obrazów'), ', ', link('/gui-maker', 'kreator GUI'), ', ', link('/music-disc-maker', 'kreator płyt'), ' i ', link('/enchantment-glint-maker', 'kreator połysku zaklęć'), ' otwierają nową paczkę od razu na niej.'),
+          ]),
+        ),
+      ),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.paint3d), figure(SHOTS.mobGear)),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.editor), figure(SHOTS.effects)),
+    ],
     cta: 'Zacznij paczkę tekstur',
   },
   painting: {
@@ -1000,10 +1039,10 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
   },
   skins: {
     eyebrow: 'Skiny',
-    heading: 'Zrób własnego skina albo paczkę skinów do Minecrafta',
+    heading: 'Edytor skinów Minecraft: zrób własnego skina',
     appName: 'Minecraft Skin Editor',
     screenshotCaption: 'Edytor skinów w Texture Pack Maker: skiny startowe, szerokie albo wąskie ręce',
-    lead: ['Maluj swoją postać na standardowym szablonie skina, a model 3D zmienia się na żywo, a potem używaj jej w ', strong('Javie'), ' albo w ', strong('Bedrocku'), '. Za darmo i bez konta.'],
+    lead: ['Maluj swoją postać na standardowym szablonie skina, a model 3D zmienia się na żywo, a potem używaj jej w ', strong('Javie'), ' albo w ', strong('Bedrocku'), '. Za darmo i bez konta. Robisz kilka skinów do Bedrocka? ', link('/skin-pack-maker', 'Kreator paczek skinów'), ' połączy je w jeden ', code('.mcpack'), '.'],
     featureList: [
       'Malowanie na szablonie skina 64×64, z obrysami części ciała i podglądem 3D na żywo',
       'Model szeroki (ręce o szerokości 4 pikseli) i wąski (ręce o szerokości 3 pikseli)',
@@ -1021,7 +1060,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Maluj na płaskim szablonie albo prosto na modelu 3D i ukrywaj części ciała, żeby dostać się do każdej strony.'],
       ['Start od pustego skina, kolorowego szablonu, własnych postaci startowych, wgranego PNG, skina dowolnego gracza Javy po nicku albo domyślnych skinów z plików gry.'],
       ['Stare skiny 64×32 są przy otwarciu zamieniane na 64×64.'],
-      ['Eksport jako ', code('.png'), ' do Javy (plus kopia 64×32 dla 1.7.10 i starszych) albo paczka skinów ', code('.mcpack'), ' do Bedrocka z jednym skinem albo całym zestawem, szerokie i wąskie razem.'],
+      ['Eksport do ', code('.png'), ' dla Javy (plus kopia 64×32 dla 1.7.10 i starszych), do ', code('.png'), ' dla przebieralni w Bedrocku albo cały zestaw w jednym ', code('.mcpack'), ' z ', link('/skin-pack-maker', 'kreatorem paczek skinów'), '.'],
     ],
     howTitle: 'Jak zrobić tutaj skina',
     steps: [
@@ -1049,16 +1088,8 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       },
       {
         id: 'pack',
-        q: 'Jak zrobić własną paczkę skinów?',
-        a: [
-          p(
-            'Maluj każdy skin jako osobny projekt, potem wybierz ',
-            strong('Paczka skinów do Bedrocka (.mcpack)'),
-            ' i zaznacz inne skiny, które mają się w niej znaleźć. Każdy skin zachowuje nazwę i szerokie albo wąskie ręce, a ponowny eksport aktualizuje zainstalowaną paczkę zamiast tworzyć kopię. ',
-            link('/skin-pack-maker', 'Więcej o kreatorze paczek skinów'),
-            '.',
-          ),
-        ],
+        q: 'Czy mogę zebrać kilka skinów w jednej paczce do Bedrocka?',
+        a: [p('Tak, w ', link('/skin-pack-maker', 'kreatorze paczek skinów'), ': namaluj każdego skina jako osobny projekt, wybierz ', strong('Paczka skinów do Bedrocka (.mcpack)'), ' i zaznacz pozostałe skiny. Każdy skin zachowuje swoją nazwę i szerokie albo wąskie ręce, a ponowny eksport aktualizuje zainstalowaną paczkę zamiast dodawać kopię.')],
       },
       {
         id: 'trusted',
@@ -1066,18 +1097,21 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         a: [p('W Bedrocku gracze, którzy mają włączoną opcję ', strong(BEDROCK.trustedSkins), ', widzą własne skiny jako domyślne. To ustawienie po ich stronie.')],
       },
     ],
-    extra: () => [el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d))],
+    extra: () => [
+      toolCallout('Robisz paczkę skinów?', ['Połącz kilka skinów w jeden ', code('.mcpack'), ' do Bedrocka, każdy z własną nazwą, szerokie i wąskie razem: kreator paczek skinów zbuduje go ze skinów, które malujesz tutaj.'], { to: '/skin-pack-maker', label: 'Otwórz kreator paczek skinów', icon: 'package' }),
+      el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skin2d), figure(SHOTS.skin3d)),
+    ],
     cta: 'Zacznij skina',
   },
   skinpack: {
     eyebrow: 'Paczki skinów',
-    heading: 'Kreator paczek skinów do Minecrafta',
+    heading: 'Kreator własnych paczek skinów do Minecrafta',
     appName: 'Kreator paczek skinów do Minecrafta',
     screenshotCaption: 'Kreator paczek skinów w Texture Pack Maker: trzy skiny, szerokie i wąskie, w jednym .mcpack do Bedrocka',
     lead: [
-      'Narysuj albo wgraj swoje skiny, a potem pobierz je razem jako jeden plik ',
+      'Zrób własną paczkę skinów do Minecrafta Bedrock: namaluj albo wgraj tyle skinów, ile chcesz, i pobierz je razem jako jeden ',
       code('.mcpack'),
-      ' do Bedrocka, który Minecraft zaimportuje po otwarciu. Szerokie i wąskie skiny mieszczą się w jednej paczce, a wszystko jest za darmo, bez konta i bez wysyłania plików.',
+      ', który Minecraft importuje po otwarciu. Szerokie i wąskie skiny mogą być w jednej paczce, a wszystko jest za darmo, bez konta i bez wysyłania czegokolwiek.',
     ],
     featureList: [
       'Zbierz jeden albo kilka skinów w paczkę skinów do Bedrocka (.mcpack)',
@@ -1147,6 +1181,11 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         id: 'slim',
         q: 'Czy jedna paczka może mieć skiny szerokie i wąskie?',
         a: [p('Tak. Każdy skin zachowuje model rąk, z którym był malowany, więc szerokie i wąskie skiny leżą obok siebie w tej samej paczce.')],
+      },
+      {
+        id: 'hd',
+        q: 'Czy paczka skinów może mieć skiny HD 128×128?',
+        a: [p('Tak. Skiny 64×64 i HD 128×128 mogą być w jednej paczce, a każdy zachowuje swój rozmiar. Przed rozpoczęciem skina wybierz HD 128×128 w polu „Rozmiar” albo przełącz istniejącego skina na HD w edytorze.')],
       },
       {
         id: 'update',

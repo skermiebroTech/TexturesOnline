@@ -161,6 +161,11 @@ export const HOME: HomeText = {
     text: `Transforme um pack do Java em um do Bedrock ou o contrário, atualize um pack antigo para a ${LATEST} ou transforme PNGs em um .mcpack.`,
     cta: 'Converter um pack',
   },
+  skinPack: {
+    title: 'Criador de pacote de skins',
+    text: 'Junte várias skins suas, clássicas e finas, em um único .mcpack do Bedrock que abre no Minecraft.',
+    cta: 'Criar um pacote de skins',
+  },
   features: {
     eyebrow: 'Criador de packs grátis',
     title: 'Tudo o que um criador de texture pack precisa',

@@ -355,7 +355,7 @@ try {
     // ---------------------------------------------------------- Spanish: the skin pack maker page
     if (LANGS.includes('es')) {
       const { page, errors } = await openPage(ctx, 'es/skin-pack-maker/', '.sk-starter-knight');
-      check(`es pack maker ${tag}: page is Spanish`, (await page.getAttribute('html', 'lang')) === LANG.es && /Diseña tu propia skin/.test(await page.textContent('.sk-hero h1')));
+      check(`es pack maker ${tag}: page is Spanish, about a skin pack`, (await page.getAttribute('html', 'lang')) === LANG.es && /Crea tu propio pack de skins/.test(await page.textContent('.sk-hero h1')) && (await page.locator('.sk-pack-steps li').count()) === 3);
       if (full) await inspect(page, `es-pack-1-start-${tag}`, 'es', { full: true });
       await page.click('.sk-starter-knight');
       await waitEditor(page);

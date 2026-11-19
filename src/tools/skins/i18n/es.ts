@@ -9,6 +9,22 @@ const ES: SkinsLanguage = {
       title: 'Diseña tu propia skin',
       lead: 'Pinta en la plantilla de la skin o directamente sobre el modelo 3D y mira cómo tu personaje cobra vida. Cuando termines, expórtala para Java o Bedrock.',
     },
+    packHero: {
+      eyebrow: 'Creador de packs de skins',
+      title: 'Crea tu propio pack de skins',
+      lead: 'Pinta o sube cada skin y descárgalas todas juntas en un solo .mcpack de Bedrock que se abre en Minecraft. Las skins clásicas y delgadas pueden compartir pack.',
+    },
+    packSteps: {
+      label: 'Cómo se hace un pack de skins',
+      make: 'Haz cada skin',
+      makeText: 'Empieza una aquí abajo. Cada skin se guarda en este navegador.',
+      export: 'Expórtalas juntas',
+      exportText: 'En el editor, elige Exportar › Pack de skins de Bedrock y marca las demás.',
+      wear: 'Póntelas en Minecraft',
+      wearText: 'Abre el .mcpack y elige una skin en el Vestidor.',
+    },
+    packRecent: 'Guardadas en este navegador. Abre una y elige Exportar › Pack de skins de Bedrock para juntarlas.',
+    packLink: { title: '¿Vas a hacer un pack de skins?', text: 'Junta varias skins en un solo .mcpack de Bedrock con el creador de packs de skins' },
     defaultName: 'Mi skin',
     untitled: 'Sin nombre',
     pick: {
