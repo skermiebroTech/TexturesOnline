@@ -13,6 +13,7 @@ import { paintCanvas } from './thumbs';
 import { fmt } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
 import { byPointer } from './media';
+import { afterNextPaint } from '../../../core/yield';
 
 export type UploadScope = 'full' | 'frame' | 'all-frames';
 
@@ -64,7 +65,7 @@ export function openUploadDialog(opts: UploadOptions): void {
     ],
     onChange: (v) => {
       mode = v;
-      render();
+      renderSoon();
     },
   });
   const fitSeg = segmented<'stretch' | 'contain' | 'cover'>({
@@ -78,7 +79,7 @@ export function openUploadDialog(opts: UploadOptions): void {
     ],
     onChange: (v) => {
       fit = v;
-      render();
+      renderSoon();
     },
   });
   const a = opts.anim;
@@ -94,7 +95,7 @@ export function openUploadDialog(opts: UploadOptions): void {
         ],
         onChange: (v) => {
           scope = v;
-          render();
+          renderSoon();
         },
       })
     : null;
@@ -132,6 +133,8 @@ export function openUploadDialog(opts: UploadOptions): void {
         label: te.upload.replace,
         variant: 'primary',
         onClick: () => {
+          // (an option just switched: its picture first)
+          if (renderPending) render();
           if (!result) {
             toast(te.upload.chooseFirst, { tone: 'warn' });
             return false;
@@ -151,10 +154,22 @@ export function openUploadDialog(opts: UploadOptions): void {
 
   const target = () => (a && scope !== 'full' ? { w: a.frameW, h: a.frameH } : { w: opts.width, h: opts.height });
 
+  /** Pictures made for this image, by option (switching back to one is instant). */
+  let made = new Map<string, ImageData>();
+  let renderTurn = 0;
+  let renderPending = false;
   function render() {
+    renderPending = false;
+    renderTurn++;
     if (!src) return;
     const t = target();
-    result = fitToSize(src, t.w, t.h, mode, fit);
+    const key = `${mode}|${fit}|${t.w}×${t.h}`;
+    let img = made.get(key);
+    if (!img) {
+      img = fitToSize(src, t.w, t.h, mode, fit);
+      made.set(key, img);
+    }
+    result = img;
     paintCanvas(outCanvas, result);
     const box = boxSize();
     const zoom = Math.max(1, Math.floor(box / Math.max(t.w, t.h)));
@@ -163,6 +178,18 @@ export function openUploadDialog(opts: UploadOptions): void {
     outCanvas.style.height = `${Math.round(t.h * sc)}px`;
     outCanvas.classList.toggle('pixelated', sc >= 1);
     outInfo.textContent = ` ${t.w}×${t.h}`;
+  }
+
+  /**
+   * An option switched: the switch paints at once, the picture follows after that paint (resizing a
+   * phone photo takes a while). The last switch wins.
+   */
+  function renderSoon() {
+    const my = ++renderTurn;
+    renderPending = true;
+    void afterNextPaint().then(() => {
+      if (my === renderTurn && modal.el.isConnected) render();
+    });
   }
 
   let loadId = 0;
@@ -197,6 +224,7 @@ export function openUploadDialog(opts: UploadOptions): void {
       return;
     }
     src = img;
+    made = new Map();
     dz.hidden = true;
     editor.hidden = false;
     if (applyBtn) applyBtn.disabled = false;

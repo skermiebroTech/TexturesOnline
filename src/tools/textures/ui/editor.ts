@@ -229,7 +229,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
       materialPanel?.setTexture(t);
     },
     onHistory: () => paintHistory(),
-    onBrowse: () => showMobile('textures', true),
+    onBrowse: () => tapTab('textures', true),
     onWorkspace: (v) => setWorkspace(v, true),
     onFrame: () => paint3d.textureChanged(),
     onAnimation: (t) => {
@@ -397,7 +397,7 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
             if (splashes && isPhone()) showMobile('editor');
             notifyVisibility();
           },
-          onBrowse: () => showMobile('textures', true),
+          onBrowse: () => tapTab('textures', true),
         });
         guiLeft.replaceChildren(guiMode.libraryEl);
         guiCenter.replaceChildren(guiMode.splashEl);
@@ -600,11 +600,22 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
   nameInput.addEventListener('focus', () => {
     if (nameInput.value !== proj.name) nameInput.value = proj.name;
   });
+  // The field is as wide as its name: a hidden copy of the text is measured by a resize observer, in
+  // the frame's own layout (reading its size on every key would lay the page out before the frame).
   const measurer = h('span', { class: 'tx-name-measure', 'aria-hidden': 'true' });
   const sizeName = () => {
-    measurer.textContent = nameInput.value || te.untitled;
-    if (measurer.isConnected) nameInput.style.width = `${Math.ceil(measurer.getBoundingClientRect().width) + 20}px`;
+    const text = nameInput.value || te.untitled;
+    if (measurer.textContent !== text) measurer.textContent = text;
   };
+  if (typeof ResizeObserver !== 'undefined') {
+    const nameRo = new ResizeObserver((entries) => {
+      const w = entries[entries.length - 1]?.contentRect.width;
+      // (0: the bar is hidden; its real size comes when it shows)
+      if (w) nameInput.style.width = `${Math.ceil(w) + 20}px`;
+    });
+    nameRo.observe(measurer);
+    cleanups.push(() => nameRo.disconnect());
+  }
   sizeName();
   nameInput.addEventListener('input', () => {
     proj.name = nameInput.value;
@@ -913,7 +924,6 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     h('div', { class: 'tx-col-right panel' }, bodies.preview, bodies.material, bodies.effects, bodies.pvp, bodies.pack),
   );
   shell.replaceChildren(bar, main, modelHost, tabbar);
-  sizeName();
   if (typeof ResizeObserver !== 'undefined') {
     const ro = new ResizeObserver(() => fitTabbar());
     ro.observe(tabbar);
@@ -921,7 +931,6 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     cleanups.push(() => ro.disconnect());
   }
   void document.fonts?.ready.then(() => fitTabbar());
-  void document.fonts?.ready.then(() => sizeName());
 
   function notifyVisibility() {
     const phone = isPhone();
@@ -959,13 +968,15 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
    * A tap on the tab bar: the tab lights up at once, its panel shows after that paint (showing a
    * panel styles, lays out and draws all of it, and what it holds catches up: the 3D view's size).
    * The last tap wins; the editor opening a tab itself (showMobile) wins over a tap still waiting.
+   * Also the "browse textures" buttons (`focusSearch`; on a desktop the list is on screen already,
+   * and the side panel showing the preview draws it again).
    */
   let tabTap = 0;
-  function tapTab(v: Mobile) {
+  function tapTab(v: Mobile, focusSearch = false) {
     const my = ++tabTap;
     markTab(v);
     void afterNextPaint().then(() => {
-      if (my === tabTap && !life.aborted) showMobile(v);
+      if (my === tabTap && !life.aborted) showMobile(v, focusSearch);
     });
   }
 
@@ -974,10 +985,9 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
     mobile = v;
     shell.dataset.mobile = v;
     markTab(v);
+    // (setSide shows the preview for the list on a desktop, where the list is always on screen)
     if (v !== 'editor') setSide(v);
     else notifyVisibility();
-    if (!isPhone() && !isTablet() && v === 'textures') setSide('preview');
-    if (isTablet() && v === 'textures') setSide('textures');
     if (focusSearch) requestAnimationFrame(() => focusSearch_());
   }
   const focusSearch_ = () =>
@@ -1086,13 +1096,17 @@ export async function renderEditor(root: HTMLElement, id: string, life: AbortSig
           { keys: ['Shift', '←'], label: k.trimBig },
         ],
       },
-    ]);
+      // (after the paint: showing a modal dialog restyles the whole editor, which goes inert)
+    ], undefined, { afterPaint: true });
   }
 
   const onKey = (e: KeyboardEvent) => {
-    if (document.querySelector('dialog[open]')) return;
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
+    const save = mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's';
+    // (typing in a field: nothing to do here, and no need to look through the page for a dialog)
+    if (!save && (isTypingTarget(e.target) || mod || e.altKey)) return;
+    if (document.querySelector('dialog[open]')) return;
+    if (save) {
       e.preventDefault();
       void store.flush().then(() => {
         if (store.saveState === 'saved') toast(te.save.saved, { tone: 'success', duration: 1400 });

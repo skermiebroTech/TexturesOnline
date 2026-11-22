@@ -358,17 +358,26 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   }
   let loadingBar: ReturnType<typeof progressBar> | null = null;
 
+  /** The list's box read at the start of refilter() (null: read it when needed). */
+  let listBox: { w: number; h: number; top: number } | null = null;
   /** A tap or a search changed the list: the rows on screen first (see leanLayout). */
   function refilter(resetScroll: boolean) {
-    computeItems();
-    renderCats();
-    paintMeta();
-    renderOverlay();
-    active = selected && selected.kind === kind ? items.findIndex((e) => e.id === selected!.id) : -1;
-    for (const t of tiles.values()) t.remove();
-    tiles.clear();
-    if (resetScroll) scroller.scrollTop = 0;
-    leanLayout(layout);
+    // the list's box while the page is laid out still: read after the counts and the overlay change,
+    // it would lay the page out early (a search does this on every pause in the typing)
+    listBox = { w: scroller.clientWidth, h: scroller.clientHeight, top: resetScroll ? 0 : scroller.scrollTop };
+    try {
+      computeItems();
+      renderCats();
+      paintMeta();
+      renderOverlay();
+      active = selected && selected.kind === kind ? items.findIndex((e) => e.id === selected!.id) : -1;
+      for (const t of tiles.values()) t.remove();
+      tiles.clear();
+      if (resetScroll) scroller.scrollTop = 0;
+      leanLayout(layout);
+    } finally {
+      listBox = null;
+    }
   }
 
   // ---- virtual list ----
@@ -457,7 +466,7 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
   };
 
   function measure(): boolean {
-    const w = scroller.clientWidth;
+    const w = listBox ? listBox.w : scroller.clientWidth;
     if (!w) return false;
     const inner = w - PAD * 2;
     if (view === 'list') {
@@ -502,8 +511,8 @@ export function createModelBrowser(opts: ModelBrowserOptions): ModelBrowserApi {
     const relayout = cols !== lastCols || tileW !== lastW;
     lastCols = cols;
     lastW = tileW;
-    const top = scroller.scrollTop;
-    const vh = scroller.clientHeight || 600;
+    const top = listBox ? listBox.top : scroller.scrollTop;
+    const vh = (listBox ? listBox.h : scroller.clientHeight) || 600;
     const over = lean ? 0 : OVERSCAN;
     const first = Math.max(0, Math.floor((top - PAD) / (rowH + GAP)) - over);
     const last = Math.min(rows - 1, Math.ceil((top + vh) / (rowH + GAP)) + over);

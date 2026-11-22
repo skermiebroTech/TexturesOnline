@@ -398,13 +398,14 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
   const stage = h('div', { class: 'tx-stage' }, canvasBox, stage3d, wsSwitch, layersUi.button, layersUi.el, loading, dropHint, emptyEl);
   // The open layers panel takes its room from the canvas when there is room to spare (the sheet on
   // phones, a column beside a wide canvas), so the texture stays in view and can be painted.
-  // When the panel opens, it paints first and the canvas takes the room after that frame: a canvas
-  // of a new size is a new picture (a new backing store, the texture drawn again).
+  // When the panel opens or closes, it paints first and the canvas takes or gives back the room after
+  // that frame: a canvas of a new size is a new picture (a new backing store, the texture drawn
+  // again), slow for a big canvas on a phone.
   let placedOpen: boolean | null = null;
   let placeTurn = 0;
   const placeCanvas = () => {
     const open = !layersUi.el.hidden;
-    const opening = open && placedOpen === false;
+    const toggled = placedOpen !== null && open !== placedOpen;
     placedOpen = open;
     let right = 0;
     let bottom = 0;
@@ -425,7 +426,7 @@ export function createCanvasPanel(opts: CanvasPanelOptions): CanvasPanel {
       canvasBox.style.bottom = bottom ? `${bottom}px` : '';
     };
     // (called from the resize observer, in the panel's frame: the next task comes after its paint)
-    if (opening) void nextTask().then(apply);
+    if (toggled) void nextTask().then(apply);
     else apply();
   };
   const placeRo = new ResizeObserver(() => placeCanvas());

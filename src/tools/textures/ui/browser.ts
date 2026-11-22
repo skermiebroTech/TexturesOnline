@@ -296,6 +296,9 @@ export function createBrowser(opts: BrowserOptions): BrowserApi {
 
   /** A tap or a search changed the list: the rows on screen first (see leanLayout). */
   function refilter(resetScroll: boolean) {
+    // the list's box while the page is laid out still: after the counts and the empty state change,
+    // reading it would lay the page out early (a search does this on every pause in the typing)
+    readBox();
     computeItems();
     renderCats();
     paintMeta();

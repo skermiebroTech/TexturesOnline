@@ -3,7 +3,7 @@
 
 import type { AssetIndex, Edition, TextureAnimation, TextureCategory, TextureInfo, TexturePackProject } from '../../../core/types';
 import type { IconName } from '../../../ui/icons';
-import { cropImageData, createImageData } from '../../../core/pixels';
+import { cropImageData } from '../../../core/pixels';
 import { parseLenientJson } from '../../../editions/bedrock/catalog';
 import { textureRoot } from '../project';
 import { FLIPBOOK_PATH, animationFromFlipbook, parseFlipbooks, type FlipbookEntry } from '../anim/pack';
@@ -526,17 +526,6 @@ export function extractPalette(img: ImageData, max = 32): RGBA[] {
 export function rgbaHex(c: RGBA): string {
   const hx = (n: number) => n.toString(16).padStart(2, '0');
   return `#${hx(c[0])}${hx(c[1])}${hx(c[2])}${c[3] < 255 ? hx(c[3]) : ''}`;
-}
-
-/** Tiles an image 3x3 (for seamless previews). */
-export function tile3(img: ImageData): ImageData {
-  const out = createImageData(img.width * 3, img.height * 3);
-  for (let ty = 0; ty < 3; ty++)
-    for (let y = 0; y < img.height; y++) {
-      const row = img.data.subarray(y * img.width * 4, (y + 1) * img.width * 4);
-      for (let tx = 0; tx < 3; tx++) out.data.set(row, ((ty * img.height + y) * out.width + tx * img.width) * 4);
-    }
-  return out;
 }
 
 export function sameSize(a: ImageData, b: ImageData): boolean {

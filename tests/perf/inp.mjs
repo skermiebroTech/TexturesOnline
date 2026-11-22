@@ -12,9 +12,15 @@
 // a running server (e.g. a Vite dev server, slower than a build).
 // Options:
 //   --cpu <n>          CPU slowdown through the DevTools protocol (default 4; a mid-range phone; try 6)
-//   --device <d>       phone (390 × 844, DPR 3; default) or tablet (820 × 1180, DPR 2)
+//   --device <d>       phone (390 × 844, DPR 3; default), tablet (820 × 1180, DPR 2) or desktop
+//                      (1280 × 800, DPR 1, a mouse)
 //   --flows <a,b>      some of: home, start, editor, skins, shaders, converter, totem (default all), and
-//                      rum: the interactions field data names as the slowest on phones, in one pass
+//                      rum: the interactions field data names as the slowest on phones, in one pass;
+//                      tex: the texture editor's slow interactions in field data (Nov 15–21): typing
+//                      the pack name and a search, the header buttons, a stroke, the upload dialog's
+//                      switches with a phone photo, closing the layers panel on a big texture, and on
+//                      a desktop the empty stage's browse button and a click on a toast
+//   --res <n>          the tex flow's pack resolution (default 16; 128 makes every texture big)
 //   --top <n>          rows in the slowest-interactions table (default 25)
 //   --runs <n>         repeat every flow n times and report the worst / median of each step (default 1)
 //   --json <file>      also write every step's numbers as JSON (to compare two builds)
@@ -66,10 +72,13 @@ const HOT = Number(opt('hot', '6'));
 const ONLY = opt('only', null) ? new RegExp(opt('only', ''), 'i') : null;
 const ALL_FLOWS = ['home', 'start', 'editor', 'skins', 'shaders', 'converter', 'totem'];
 const FLOWS = (opt('flows', ALL_FLOWS.join(',')) ?? '').split(',').filter(Boolean);
+const RES = Number(opt('res', '16'));
 const DEVICES = {
-  phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 },
-  tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2 },
+  phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  desktop: { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
 };
+const MOUSE = DEVICE === 'desktop';
 const UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
 
 // ------------------------------------------------------------------------------------ source maps
@@ -282,11 +291,12 @@ class Session {
   /** `probe`: tap 100 ms after `fn` (a step that opens a page or builds an editor) and report it on its own. */
   async step(name, fn, { quiet = 400, busy = false, probe = false } = {}) {
     const page = this.page;
+    let tracing = null;
     try {
       if (!busy) await this.settle(250, 6000);
       const t0 = await page.evaluate(() => performance.now());
       if (PROFILE) await this.cdp.send('Profiler.start');
-      const tracing = TRACE?.test(name) ? await this.startTrace() : null;
+      tracing = TRACE?.test(name) ? await this.startTrace() : null;
       await fn(page);
       const probing = probe && PROBE;
       let probeLoop = null;
@@ -311,6 +321,7 @@ class Session {
       await page.waitForTimeout(120);
       const prof = PROFILE ? (await this.cdp.send('Profiler.stop')).profile : null;
       const trace = tracing ? await tracing() : null;
+      tracing = null;
       const data = await page.evaluate((from) => {
         const r = window.__inp;
         return { events: r.events.filter((e) => e.start >= from - 1), loafs: r.loafs.filter((l) => l.start + l.dur >= from - 1) };
@@ -368,6 +379,7 @@ class Session {
       }
     } catch (err) {
       if (PROFILE) await this.cdp.send('Profiler.stop').catch(() => {});
+      if (tracing) await tracing().catch(() => {});
       console.log(`  SKIP ${this.flow} › ${name}: ${String(err.message).split('\n')[0]}`);
       results.push({ flow: this.flow, step: name, run: this.run, ms: null, n: 0, error: String(err.message).split('\n')[0] });
     }
@@ -389,12 +401,25 @@ class Session {
       return { events, mainTid: [...count.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] };
     };
   }
+  /** A tap (a click with the mouse on a desktop). */
   tap(sel) {
-    return this.page.locator(sel).filter({ visible: true }).first().tap({ timeout: 8000 });
+    const el = this.page.locator(sel).filter({ visible: true }).first();
+    return MOUSE ? el.click({ timeout: 8000 }) : el.tap({ timeout: 8000 });
   }
-  /** A finger stroke through screen points (Input.dispatchTouchEvent, as phone.e2e.cjs). */
+  /** A finger stroke through screen points (Input.dispatchTouchEvent, as phone.e2e.cjs); a mouse drag on a desktop. */
   async stroke(points, stepMs = 16) {
     const [x0, y0] = points[0];
+    if (MOUSE) {
+      const m = this.page.mouse;
+      await m.move(x0, y0);
+      await m.down();
+      for (const [x, y] of points.slice(1)) {
+        await m.move(x, y);
+        if (stepMs) await this.page.waitForTimeout(stepMs);
+      }
+      await m.up();
+      return;
+    }
     await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0, id: 1 }] });
     for (const [x, y] of points.slice(1)) {
       await this.cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y, id: 1 }] });
@@ -469,7 +494,7 @@ function hotFunctions(profile, window = null) {
 }
 
 async function session(flow, run, body) {
-  const ctx = await browser.newContext({ ...DEVICES[DEVICE], isMobile: true, hasTouch: true, userAgent: UA, serviceWorkers: 'block', colorScheme: 'light' });
+  const ctx = await browser.newContext({ ...DEVICES[DEVICE], ...(MOUSE ? {} : { userAgent: UA }), serviceWorkers: 'block', colorScheme: 'light' });
   await lib.routeMojang(ctx, fx);
   // skin lookups by name and other outside requests: answer fast instead of waiting on the network
   await ctx.route(/^https:\/\/(api\.mojang\.com|sessionserver\.mojang\.com|textures\.minecraft\.net|mc-heads\.net|crafatar\.com)\//, (r) => r.fulfill({ status: 404, body: '' }));
@@ -524,6 +549,33 @@ async function newPack(s, page) {
   await page.goto(base + 'textures/');
   await page.waitForSelector('.tx-new');
   await page.waitForTimeout(1200);
+}
+
+/** A phone photo (4000 × 3000 JPEG) made in the page, for the upload dialog. */
+async function phonePhoto(page) {
+  const b64 = await page.evaluate(async () => {
+    const w = 4000;
+    const h = 3000;
+    const c = new OffscreenCanvas(w, h);
+    const g = c.getContext('2d');
+    const gr = g.createLinearGradient(0, 0, w, h);
+    gr.addColorStop(0, '#3a7');
+    gr.addColorStop(1, '#a53');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 400; i++) {
+      g.fillStyle = `hsl(${(i * 37) % 360} 60% 50%)`;
+      g.beginPath();
+      g.arc((i * 997) % w, (i * 577) % h, 20 + (i % 7) * 15, 0, 7);
+      g.fill();
+    }
+    const blob = await c.convertToBlob({ type: 'image/jpeg', quality: 0.9 });
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    let str = '';
+    for (let i = 0; i < buf.length; i += 0x8000) str += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+    return btoa(str);
+  });
+  return Buffer.from(b64, 'base64');
 }
 
 async function flowStart(s, page) {
@@ -829,7 +881,130 @@ async function flowRum(s, page) {
   await s.step('close export dialog', () => page.keyboard.press('Escape'));
 }
 
-const FLOW_FNS = { home: flowHome, start: flowStart, editor: flowEditor, skins: flowSkins, shaders: flowShaders, converter: flowConverter, totem: flowTotem, rum: flowRum };
+/**
+ * The texture editor's interactions that field data (Nov 15–21) still names as slow, on a phone or (with
+ * --device desktop) a desktop: typing the pack name, the header's buttons, a stroke, typing a search,
+ * the upload dialog's switches with a phone photo, the layers panel closed on a big texture (and with
+ * --res 512 on a pack whose every texture is big), and on a desktop the empty stage's browse button and
+ * a click on a toast.
+ */
+async function flowTex(s, page) {
+  await newPack(s, page);
+  const photo = await phonePhoto(page);
+  await page.fill('.tx-name-field input', 'Perf');
+  if (RES !== 16) await page.locator('.tx-res-chip', { hasText: `${RES}×` }).click();
+  await page.locator('.tx-create-btn').click();
+  if (MOUSE) {
+    // the empty stage shows while the editor still loads the game's files: its browse button then
+    await page.waitForSelector('.tx-stage-empty .tx-browse-btn', { state: 'visible', timeout: 120000 });
+    await s.throttle();
+    await s.step('empty stage: browse textures while the editor loads', () => s.tap('.tx-stage-empty .tx-browse-btn'), { busy: true, quiet: 800 });
+    await s.throttle(false);
+  }
+  await editorReady(page);
+  await s.throttle();
+  const tab = (v) => s.tap(`.tx-tabbar-btn[data-v="${v}"]`);
+  const lib = (v) => s.tap(`.tx-libbar .segmented-item[data-value="${v}"]`);
+  const mobile = () => page.locator('.tx-editor').getAttribute('data-mobile');
+  // the empty stage (no texture open yet): its browse button
+  if (MOUSE) {
+    await s.step('empty stage: browse textures', () => s.tap('.tx-stage-empty .tx-browse-btn'), { quiet: 800 });
+    // (the side panel shows the preview for the list)
+    await s.step('side tab: Pack', () => s.tap('.tx-col-tabs .tab[data-value="pack"]'), { quiet: 600 });
+    await s.step('empty stage: browse textures (from the Pack tab)', () => s.tap('.tx-stage-empty .tx-browse-btn'), { quiet: 800 });
+  }
+  await s.step('pack name: tap', () => s.tap('.tx-name-input'));
+  await s.step('pack name: typing', () => page.keyboard.type(' Pack', { delay: 120 }), { quiet: 600 });
+  await s.step('pack name: backspace ×3', async () => {
+    for (let i = 0; i < 3; i++) {
+      await page.keyboard.press('Backspace');
+      await page.waitForTimeout(120);
+    }
+  }, { quiet: 600 });
+  // (a phone keyboard: the work after each key has time to start before the next)
+  await s.step('pack name: typing slowly', () => page.keyboard.type(' Two', { delay: 450 }), { quiet: 800 });
+  await s.step('pack name: Enter', () => page.keyboard.press('Enter'));
+  await s.step('quick pick: first texture', () => s.tap('.tx-pick'), { quiet: 800 });
+  if (!MOUSE && (await mobile()) !== 'editor') await s.step('tab bar: Paint', () => tab('editor'));
+  await page.waitForSelector('.tx-canvas-host canvas');
+  const box = await page.locator('.tx-canvas-host canvas').first().boundingBox();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const r = Math.min(box.width, box.height) * 0.3;
+  const line = (y) => Array.from({ length: 13 }, (_, i) => [cx - r + (2 * r * i) / 12, y]);
+  await s.step('paint: stroke', () => s.stroke(line(cy - r / 3)), { quiet: 600 });
+  await s.step('paint: second stroke', () => s.stroke(line(cy + r / 3)), { quiet: 600 });
+  await s.step('paint: tap a pixel', () => s.stroke([[cx, cy]]), { quiet: 600 });
+  // the header's buttons (phones show undo, redo and share)
+  await s.step('header: undo', () => s.tap('.tx-bar-actions .icon-btn[aria-label^="Undo"]'), { quiet: 600 });
+  await s.step('header: undo again', () => s.tap('.tx-bar-actions .icon-btn[aria-label^="Undo"]'), { quiet: 600 });
+  await s.step('header: redo', () => s.tap('.tx-bar-actions .icon-btn[aria-label^="Redo"]'), { quiet: 600 });
+  if (MOUSE) {
+    await s.step('header: shortcuts', () => s.tap('.tx-bar-actions .tx-keys-btn'), { quiet: 600 });
+    await s.step('close shortcuts', () => page.keyboard.press('Escape'));
+    await s.step('header: save project file', () => s.tap('.tx-bar-actions .tx-file-btn'), { quiet: 1200 });
+  }
+  await s.step('header: share picture', () => s.tap('.tx-bar-actions .tx-share-btn'), { quiet: 1200 });
+  if (MOUSE) {
+    // a click on a toast: right after it shows (what made it may still be at work), and at rest
+    await s.step('effects: apply a preset', async () => {
+      await s.tap('.tx-side .tab[data-value="effects"], [role="tab"][data-value="effects"]');
+      await page.waitForSelector('.tx-preset-wrap:nth-child(2) .tx-preset', { timeout: 10000 });
+      await page.waitForTimeout(600);
+      await s.tap('.tx-preset-wrap:nth-child(2) .tx-preset');
+    }, { quiet: 300, busy: true });
+    await s.step('toast: click right after it shows', async () => {
+      await page.waitForSelector('.toast', { timeout: 5000 });
+      await page.locator('.toast').last().click({ position: { x: 8, y: 8 }, timeout: 5000 });
+    }, { busy: true, quiet: 800 });
+    await s.step('effects: remove all (a toast)', () => page.locator('.tx-fx button', { hasText: 'Remove all' }).first().click({ timeout: 8000 }), { quiet: 300 });
+    await s.step('toast: click', () => page.locator('.toast').last().click({ position: { x: 8, y: 8 }, timeout: 5000 }), { quiet: 600 });
+  }
+  // the upload dialog's switches, with a phone photo
+  await s.step('texture header: upload', () => s.tap('.tx-texhead .tx-act-upload'), { quiet: 600 });
+  await s.throttle(false);
+  await page.setInputFiles('.tx-upload input[type=file]', { name: 'photo.jpg', mimeType: 'image/jpeg', buffer: photo });
+  await page.waitForSelector('.tx-up-editor:not([hidden])', { timeout: 30000 });
+  await page.waitForTimeout(500);
+  await s.throttle();
+  const opt = (v) => s.tap(`.tx-up-opts .segmented-item[data-value="${v}"]`);
+  for (const [v, label] of [['nearest', 'Sharp'], ['smooth', 'Smooth'], ['stretch', 'Stretch'], ['contain', 'Fit'], ['cover', 'Fill'], ['nearest', 'Sharp (again)']]) await s.step(`upload: ${label}`, () => opt(v), { quiet: 600 });
+  await s.step('close upload dialog', () => page.keyboard.press('Escape'));
+  // the layers panel on the open texture, then on a big one (512 × 512) with a few layers
+  await s.step('layers button: open', () => s.tap('.tx-pl-btn'), { quiet: 600 });
+  await s.step('layers button: close', () => s.tap('.tx-pl-btn.is-open'), { quiet: 600 });
+  if (!MOUSE) await s.step('tab bar: textures', () => tab('textures'), { quiet: 600 });
+  await s.step('library bar: textures', () => lib('textures'), { quiet: 800 });
+  await s.step('texture search: typing', async () => {
+    await s.tap('.tx-browser:not(.tx-mb) .tx-search-input');
+    await page.keyboard.type('stone', { delay: 120 });
+  }, { quiet: 600 });
+  await s.step('texture search: backspace ×5', async () => {
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Backspace');
+      await page.waitForTimeout(120);
+    }
+  }, { quiet: 600 });
+  await s.step('texture search: typing "mojangstudios"', () => page.keyboard.type('mojangstudios', { delay: 120 }), { quiet: 800 });
+  await s.step('open a big texture (512 × 512)', () => s.tap('.tx-browser:not(.tx-mb) .tx-tile'), { quiet: 1000 });
+  if (!MOUSE && (await mobile()) !== 'editor') await s.step('tab bar: Paint (big texture)', () => tab('editor'), { quiet: 800 });
+  await s.step('big texture: layers button: open', () => s.tap('.tx-pl-btn'), { quiet: 600 });
+  for (let i = 0; i < 3; i++) await s.step('big texture: add a layer', () => s.tap('.tx-pl-add'), { quiet: 600 });
+  await s.step('big texture: paint on the layer', () => s.stroke(line(cy)), { quiet: 600 });
+  await s.step('big texture: header: undo', () => s.tap('.tx-bar-actions .icon-btn[aria-label^="Undo"]'), { quiet: 600 });
+  await s.step('big texture: header: redo', () => s.tap('.tx-bar-actions .icon-btn[aria-label^="Redo"]'), { quiet: 600 });
+  await s.step('big texture: layers button: close', () => s.tap('.tx-pl-btn.is-open'), { quiet: 800 });
+  await s.step('big texture: layers button: open again', () => s.tap('.tx-pl-btn'), { quiet: 600 });
+  await s.step('big texture: layers: close (×)', () => s.tap('.tx-pl-close'), { quiet: 800 });
+  if (!MOUSE && (await mobile()) !== 'textures') await s.step('tab bar: textures (again)', () => tab('textures'), { quiet: 600 });
+  await s.step('library bar: blocks', () => lib('blocks'), { quiet: 800 });
+  await s.step('block search: typing', async () => {
+    await s.tap('.tx-mb .tx-search-input');
+    await page.keyboard.type('oak', { delay: 120 });
+  }, { quiet: 600 });
+}
+
+const FLOW_FNS = { tex: flowTex, home: flowHome, start: flowStart, editor: flowEditor, skins: flowSkins, shaders: flowShaders, converter: flowConverter, totem: flowTotem, rum: flowRum };
 
 // ------------------------------------------------------------------------------------------- main
 console.log(`INP harness: ${DEVICE}, CPU ${CPU}× slower, ${base}${fx ? '' : '  (no TO_FIXTURES: the texture editor flows need the game files)'}`);

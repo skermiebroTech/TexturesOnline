@@ -281,8 +281,11 @@ export interface ShortcutGroup {
   items: { keys: string[]; label: string }[];
 }
 
-/** Keyboard shortcuts sheet (editors open it with "?"). */
-export function openShortcutsSheet(groups: ShortcutGroup[], title = kit.keyboardShortcuts): { close(): void } {
+/**
+ * Keyboard shortcuts sheet (editors open it with "?"). `afterPaint`: shown after the next paint (see
+ * ModalOptions), for a big editor page.
+ */
+export function openShortcutsSheet(groups: ShortcutGroup[], title = kit.keyboardShortcuts, opts: { afterPaint?: boolean } = {}): { close(): void } {
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   // ⌥ and ⇧ are not in the UI font, so those keys are spelled out
   const keyLabel = (k: string) => (k === 'Mod' ? (isMac ? '⌘' : 'Ctrl') : k === 'Alt' && isMac ? 'Option' : k);
@@ -309,6 +312,6 @@ export function openShortcutsSheet(groups: ShortcutGroup[], title = kit.keyboard
       ),
     ),
   );
-  const m = openModal({ title, body, width: 640, class: 'shortcuts-modal' });
+  const m = openModal({ title, body, width: 640, class: 'shortcuts-modal', afterPaint: opts.afterPaint });
   return { close: m.close };
 }
