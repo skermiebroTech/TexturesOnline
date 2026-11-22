@@ -178,8 +178,8 @@ async function noOverflow(page) {
 
     // ---------------------------------------------------------------- entry points
     await page.goto(base + 'skins');
-    await page.waitForSelector('.sk-totem-link');
-    await page.click('.sk-totem-link');
+    await page.waitForSelector('.sk-totem-link:not(.sk-pack-link)');
+    await page.click('.sk-totem-link:not(.sk-pack-link)');
     await page.waitForURL(/totem-maker\/?$/, { timeout: 15000 });
     await page.waitForSelector('.tt-tabs');
     check('"My skin" (username) is the first, selected tab', (await page.getAttribute('.tt-tab[data-source="username"]', 'aria-selected')) === 'true' && (await page.$$eval('.tt-tab', (t) => t[0].dataset.source)) === 'username');
