@@ -429,13 +429,16 @@ a.chip:hover {
   text-shadow: calc(1em / 8) calc(1em / 8) 0 rgba(20, 30, 50, 0.12);
 }
 
+/* Reduced motion: no transitions at all (a very short one is still a transition: a script reading a
+   changed property sees the old value until the next frame, and a size measured then flips back and
+   forth), and animations jump to their end (animationend still fires: code waiting for it goes on). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition: none !important;
     scroll-behavior: auto !important;
   }
 }

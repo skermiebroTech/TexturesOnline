@@ -161,6 +161,22 @@ export function paintCanvas(canvas: HTMLCanvasElement, img: ImageData): void {
   ctx.putImageData(img, 0, 0);
 }
 
+/**
+ * Draws an image 3 × 3 times into a canvas (a seamless preview): put in nine times, rather than a
+ * copy nine times its size made and put in whole (for a big texture a long frame, and the panel
+ * draws it again on every change, shown or not).
+ */
+export function paintTiled3(canvas: HTMLCanvasElement, img: ImageData): void {
+  const w = img.width;
+  const h = img.height;
+  if (canvas.width !== w * 3) canvas.width = w * 3;
+  if (canvas.height !== h * 3) canvas.height = h * 3;
+  const ctx = thumbContext(canvas);
+  if (!ctx) return;
+  ctx.clearRect(0, 0, w * 3, h * 3);
+  for (let ty = 0; ty < 3; ty++) for (let tx = 0; tx < 3; tx++) ctx.putImageData(img, tx * w, ty * h);
+}
+
 const urls = new WeakMap<ImageData, string>();
 
 /**

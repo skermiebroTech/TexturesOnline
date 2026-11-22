@@ -59,18 +59,24 @@ export function cloneImageData(img: ImageData): ImageData {
 
 // ---- Geometry ----
 
-export function resizeNearest(img: ImageData, w: number, h: number): ImageData {
-  w = Math.max(1, Math.round(w));
-  h = Math.max(1, Math.round(h));
-  if (w === img.width && h === img.height) return cloneImageData(img);
+/** Source rectangle of a resize: the whole image, or the part that 'cover' keeps. */
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Nearest-neighbour resize of a rectangle of the image (a copy when the size stays). */
+function nearestRect(img: ImageData, r: Rect, w: number, h: number): ImageData {
   const out = createImageData(w, h);
   const data = img.data.byteOffset % 4 === 0 ? img.data : new Uint8ClampedArray(img.data);
   const src = new Uint32Array(data.buffer, data.byteOffset, img.width * img.height);
   const dst = new Uint32Array(out.data.buffer);
   const xs = new Uint32Array(w);
-  for (let x = 0; x < w; x++) xs[x] = Math.min(img.width - 1, Math.floor(((x + 0.5) * img.width) / w));
+  for (let x = 0; x < w; x++) xs[x] = r.x + Math.min(r.w - 1, Math.floor(((x + 0.5) * r.w) / w));
   for (let y = 0; y < h; y++) {
-    const sy = Math.min(img.height - 1, Math.floor(((y + 0.5) * img.height) / h));
+    const sy = r.y + Math.min(r.h - 1, Math.floor(((y + 0.5) * r.h) / h));
     const sRow = sy * img.width;
     const dRow = y * w;
     for (let x = 0; x < w; x++) dst[dRow + x] = src[sRow + xs[x]];
@@ -78,22 +84,30 @@ export function resizeNearest(img: ImageData, w: number, h: number): ImageData {
   return out;
 }
 
-/** One-axis resample of premultiplied float RGBA: box filter when shrinking, linear when growing. */
-function resampleAxis(src: Float32Array, sw: number, sh: number, dw: number, dh: number, horizontal: boolean): Float32Array {
-  const out = new Float32Array(dw * dh * 4);
-  const sLen = horizontal ? sw : sh;
-  const dLen = horizontal ? dw : dh;
-  const lines = horizontal ? sh : sw;
+export function resizeNearest(img: ImageData, w: number, h: number): ImageData {
+  w = Math.max(1, Math.round(w));
+  h = Math.max(1, Math.round(h));
+  if (w === img.width && h === img.height) return cloneImageData(img);
+  return nearestRect(img, { x: 0, y: 0, w: img.width, h: img.height }, w, h);
+}
+
+/**
+ * The taps of a one-axis resample from `sLen` to `dLen` samples: box filter when shrinking, linear
+ * when growing. Output d reads taps[start[d] .. start[d + 1]) with their weights; total[d] is their sum.
+ */
+function axisTaps(sLen: number, dLen: number): { start: Uint32Array; taps: Uint32Array; weights: Float64Array; total: Float64Array } {
   const scale = sLen / dLen;
-  const idx = (line: number, i: number, lw: number) => (horizontal ? line * lw + i : i * lw + line) * 4;
+  const start = new Uint32Array(dLen + 1);
+  const taps: number[] = [];
+  const weights: number[] = [];
+  const total = new Float64Array(dLen);
   for (let d = 0; d < dLen; d++) {
-    const weights: number[] = [];
-    const taps: number[] = [];
+    start[d] = taps.length;
     if (scale > 1) {
-      const start = d * scale;
-      const end = start + scale;
-      for (let s = Math.floor(start); s < Math.ceil(end); s++) {
-        const wgt = Math.min(end, s + 1) - Math.max(start, s);
+      const s0 = d * scale;
+      const end = s0 + scale;
+      for (let s = Math.floor(s0); s < Math.ceil(end); s++) {
+        const wgt = Math.min(end, s + 1) - Math.max(s0, s);
         if (wgt > 0) {
           taps.push(Math.min(sLen - 1, s));
           weights.push(wgt);
@@ -106,23 +120,91 @@ function resampleAxis(src: Float32Array, sw: number, sh: number, dw: number, dh:
       taps.push(Math.max(0, Math.min(sLen - 1, s0)), Math.max(0, Math.min(sLen - 1, s0 + 1)));
       weights.push(1 - f, f);
     }
-    let total = 0;
-    for (const wgt of weights) total += wgt;
-    for (let line = 0; line < lines; line++) {
-      let r = 0, gg = 0, b = 0, a = 0;
-      for (let k = 0; k < taps.length; k++) {
-        const si = idx(line, taps[k], sw);
+    let t = 0;
+    for (let k = start[d]; k < taps.length; k++) t += weights[k];
+    total[d] = t;
+  }
+  start[dLen] = taps.length;
+  return { start, taps: Uint32Array.from(taps), weights: Float64Array.from(weights), total };
+}
+
+/**
+ * Every colour value premultiplied by every alpha, as 32-bit floats: c × (a / 255) at a × 257 + c,
+ * and a / 255 itself at a × 257 + 256.
+ */
+let premultipliedLut: Float32Array | null = null;
+function premultiplied(): Float32Array {
+  if (!premultipliedLut) {
+    const t = new Float32Array(256 * 257);
+    for (let a = 0; a < 256; a++) {
+      const al = a / 255;
+      for (let c = 0; c < 256; c++) t[a * 257 + c] = c * al;
+      t[a * 257 + 256] = al;
+    }
+    premultipliedLut = t;
+  }
+  return premultipliedLut;
+}
+
+/**
+ * Smooth resize of a rectangle of the image, in premultiplied alpha: a horizontal pass straight from
+ * the pixels (premultiplied as they are read: no float copy of the whole picture), then a vertical
+ * pass row by row. Every value is rounded to 32-bit floats where a premultiplied float copy of the
+ * picture would hold it, so the result is the same to the bit.
+ */
+function smoothRect(img: ImageData, r: Rect, w: number, h: number): ImageData {
+  const d = img.data;
+  const stride = img.width;
+  const fround = Math.fround;
+  // horizontal: r.w × r.h → w × r.h
+  const { start, taps, weights, total } = axisTaps(r.w, w);
+  const pm = premultiplied();
+  const hPass = new Float32Array(w * r.h * 4);
+  for (let line = 0; line < r.h; line++) {
+    const row = (r.y + line) * stride + r.x;
+    const outRow = line * w;
+    for (let x = 0; x < w; x++) {
+      let rr = 0, gg = 0, b = 0, a = 0;
+      for (let k = start[x], e = start[x + 1]; k < e; k++) {
+        const si = (row + taps[k]) * 4;
         const wgt = weights[k];
-        r += src[si] * wgt;
-        gg += src[si + 1] * wgt;
-        b += src[si + 2] * wgt;
-        a += src[si + 3] * wgt;
+        const p = d[si + 3] * 257;
+        rr += pm[p + d[si]] * wgt;
+        gg += pm[p + d[si + 1]] * wgt;
+        b += pm[p + d[si + 2]] * wgt;
+        a += pm[p + 256] * wgt;
       }
-      const di = idx(line, d, dw);
-      out[di] = r / total;
-      out[di + 1] = gg / total;
-      out[di + 2] = b / total;
-      out[di + 3] = a / total;
+      const wt = total[x];
+      const di = (outRow + x) * 4;
+      hPass[di] = rr / wt;
+      hPass[di + 1] = gg / wt;
+      hPass[di + 2] = b / wt;
+      hPass[di + 3] = a / wt;
+    }
+  }
+  // vertical: w × r.h → w × h, a whole output row at a time (the taps' rows are read in order)
+  const vy = axisTaps(r.h, h);
+  const out = createImageData(w, h);
+  const od = out.data;
+  const acc = new Float64Array(w * 4);
+  const n = w * 4;
+  for (let y = 0; y < h; y++) {
+    acc.fill(0);
+    for (let k = vy.start[y], e = vy.start[y + 1]; k < e; k++) {
+      const so = vy.taps[k] * n;
+      const wgt = vy.weights[k];
+      for (let i = 0; i < n; i++) acc[i] += hPass[so + i] * wgt;
+    }
+    const wt = vy.total[y];
+    const o0 = y * n;
+    for (let i = 0; i < n; i += 4) {
+      const a = fround(acc[i + 3] / wt);
+      if (a > 0) {
+        od[o0 + i] = fround(acc[i] / wt) / a;
+        od[o0 + i + 1] = fround(acc[i + 1] / wt) / a;
+        od[o0 + i + 2] = fround(acc[i + 2] / wt) / a;
+        od[o0 + i + 3] = a * 255;
+      }
     }
   }
   return out;
@@ -132,32 +214,7 @@ export function resizeSmooth(img: ImageData, w: number, h: number): ImageData {
   w = Math.max(1, Math.round(w));
   h = Math.max(1, Math.round(h));
   if (w === img.width && h === img.height) return cloneImageData(img);
-  const n = img.width * img.height;
-  const pm = new Float32Array(n * 4);
-  const d = img.data;
-  for (let i = 0; i < n; i++) {
-    const o = i * 4;
-    const a = d[o + 3] / 255;
-    pm[o] = d[o] * a;
-    pm[o + 1] = d[o + 1] * a;
-    pm[o + 2] = d[o + 2] * a;
-    pm[o + 3] = a;
-  }
-  const hPass = resampleAxis(pm, img.width, img.height, w, img.height, true);
-  const vPass = resampleAxis(hPass, w, img.height, w, h, false);
-  const out = createImageData(w, h);
-  const od = out.data;
-  for (let i = 0; i < w * h; i++) {
-    const o = i * 4;
-    const a = vPass[o + 3];
-    if (a > 0) {
-      od[o] = vPass[o] / a;
-      od[o + 1] = vPass[o + 1] / a;
-      od[o + 2] = vPass[o + 2] / a;
-      od[o + 3] = a * 255;
-    }
-  }
-  return out;
+  return smoothRect(img, { x: 0, y: 0, w: img.width, h: img.height }, w, h);
 }
 
 /**
@@ -173,8 +230,10 @@ export function fitToSize(img: ImageData, w: number, h: number, mode: 'nearest' 
     const s = Math.max(w / img.width, h / img.height);
     const cw = Math.min(img.width, Math.round(w / s));
     const ch = Math.min(img.height, Math.round(h / s));
-    const cropped = cropImageData(img, Math.floor((img.width - cw) / 2), Math.floor((img.height - ch) / 2), cw, ch);
-    return resize(cropped, w, h);
+    // the middle of the picture, read in place (a copy of it first would cost as much as the resize)
+    const r = { x: Math.floor((img.width - cw) / 2), y: Math.floor((img.height - ch) / 2), w: cw, h: ch };
+    if (w === cw && h === ch) return cropImageData(img, r.x, r.y, cw, ch);
+    return mode === 'nearest' ? nearestRect(img, r, w, h) : smoothRect(img, r, w, h);
   }
   const s = Math.min(w / img.width, h / img.height);
   const sw = Math.max(1, Math.round(img.width * s));

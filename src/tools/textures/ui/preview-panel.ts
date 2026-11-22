@@ -17,11 +17,11 @@ import { badge, emptyState, iconButton, openPopover, segmented, select, spinner,
 import { compositeOverlay, tintByAlphaMask, tintImage } from '../../../shared/preview/preview-textures';
 import type { BiomeColors } from '../../../shared/models/tints';
 import { applyEffects, effectsApply } from '../effects';
-import { displayAlphaData, firstSquare, getFrame, planCube, tile3, tintFor, tintRgb, transparentShare, type AnimInfo } from './meta';
+import { displayAlphaData, firstSquare, getFrame, planCube, tintFor, tintRgb, transparentShare, type AnimInfo } from './meta';
 import { ICON_KEY, type TexStore } from './store';
 import type { OpenTexture } from './canvas-panel';
 import type { LiveTexture, ModelService } from './models';
-import { paintCanvas } from './thumbs';
+import { paintCanvas, paintTiled3 } from './thumbs';
 import { fmt, textLocale } from '../../../i18n/editor-text';
 import { te } from './i18n/editor';
 import { byPointer } from './media';
@@ -832,7 +832,7 @@ export function createPreviewPanel(store: TexStore, models: ModelService, hooks:
     const cat = t.entry?.category ?? 'block';
     const shown = (img: ImageData) => (t.alphaData ? displayAlphaData(t.entry ? tinted(img, t.entry.id, t.key) : img, cat) : img);
     const tileSrc = shown(withFx(frame, t.key, !!t.anim));
-    paintCanvas(tileCanvas, tile3(tileSrc));
+    paintTiled3(tileCanvas, tileSrc);
     const tw = tileSrc.width * 3;
     const th = tileSrc.height * 3;
     const box = 240;

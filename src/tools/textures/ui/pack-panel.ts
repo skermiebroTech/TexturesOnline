@@ -466,16 +466,25 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   const cancelIdle = whenIdle(wake, 3000);
 
   let descTimer: ReturnType<typeof setTimeout> | null = null;
+  // While the tab is hidden, the settings' pictures and texts are painted when it shows (renaming the
+  // pack in the top bar changes them on every key).
+  let shown = false;
+  let metaStale = false;
+  const paintMeta = () => {
+    metaStale = false;
+    if (woke) void paintIcon();
+    paintStats();
+    // renamed from the top bar
+    const nameEl = (nameField as HTMLElement & { input?: HTMLInputElement }).input;
+    if (nameEl && document.activeElement !== nameEl && nameEl.value.trim() !== project.name) {
+      nameField.setValue(project.name);
+      paintPreview();
+    }
+  };
   offs.push(
     store.events.on('meta', () => {
-      if (woke) void paintIcon();
-      paintStats();
-      // renamed from the top bar
-      const nameEl = (nameField as HTMLElement & { input?: HTMLInputElement }).input;
-      if (nameEl && document.activeElement !== nameEl && nameEl.value.trim() !== project.name) {
-        nameField.setValue(project.name);
-        paintPreview();
-      }
+      if (shown) paintMeta();
+      else metaStale = true;
       if (java && woke) {
         if (descTimer) clearTimeout(descTimer);
         descTimer = setTimeout(() => void renderCompat(), 400);
@@ -494,8 +503,10 @@ export function createPackPanel(opts: PackPanelOptions): PackPanel {
   return {
     el,
     setVisible(v) {
+      shown = v;
       if (v) {
         wake();
+        if (metaStale) paintMeta();
         paintStats();
         nameField.setValue(project.name);
       }
