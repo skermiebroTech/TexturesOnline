@@ -37,6 +37,7 @@ import { et } from './i18n/editor';
 import { t } from '../i18n/text';
 import { kit } from '../../../ui/i18n/kit';
 import { fmt, textLocale } from '../../../i18n/editor-text';
+import { ui } from '../../../i18n/ui';
 import { projectsText } from '../../../shared/i18n/projects';
 import { saveProjectFile } from '../../../shared/project-file/entry';
 
@@ -317,7 +318,7 @@ function buildEditor(root: HTMLElement, project: ShaderProjectData, target: Shad
   });
   const editor = h('div', { class: ['sh-editor', `is-${target.id}`] }, bar, layout, live);
   root.replaceChildren(editor);
-  const setTitle = () => (document.title = `${project.name.trim() || t.myShaders} · Shader Maker — Texture Pack Maker`);
+  const setTitle = () => (document.title = `${project.name.trim() || t.myShaders} · ${ui(textLocale()).footer.shaders} — Texture Pack Maker`);
   setTitle();
 
   // ---------------------------------------------------------------- state changes

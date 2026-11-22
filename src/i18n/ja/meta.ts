@@ -123,9 +123,10 @@ export const META_JA: MetaTranslation = {
       blurb: 'Java版のリソースパック、統合版の.mcpack、シェーダーパックの入れ方と対処法。',
     },
     'texture-pack-not-working': {
-      title: 'テクスチャパックが反映されない？原因と直し方',
-      h1: 'Minecraftのテクスチャパックが反映されないときの直し方',
-      description: '一覧に出ない、「旧バージョン向けに制作」、紫と黒のブロック、草が灰色、マニフェストのエラー。ゲームのメッセージごとに原因と直し方をまとめました。',
+      title: 'テクスチャパックが反映されない？エラー別の直し方',
+      h1: 'Minecraftのテクスチャパックが反映されない？エラー別の直し方',
+      // Quotes the game's most searched message and promises the meaning, the fix and Pack Doctor.
+      description: '「旧バージョン向けに制作」と出る、ブロックが紫と黒になる。エラーごとの意味と数分でできる直し方、パックを修復するツールも紹介します。',
       label: 'パックが反映されない時',
       blurb: '一覧に出ない、バージョン警告、紫と黒のブロックなどの直し方。',
     },

@@ -11,6 +11,7 @@ import { BING_SITE_VERIFICATION, GOOGLE_SITE_VERIFICATION, REPO_URL, SITE_NAME, 
 import { ABOUT_META, ALL_META, GUIDES, GUIDES_META, HELP_META, TOOL_META, allPublicPages, localizedPath, translatedPages, type PageMeta } from './meta';
 import { LOCALE_INFO, TRANSLATED_LOCALES, splitLocale, type Locale } from '../../i18n/locales';
 import { PRERENDERED_ATTR, PRERENDERED_YEAR_ATTR, prerenderedKey } from '../hydrate-attrs';
+import { ui } from '../../i18n/ui';
 import { TOOL_INTROS } from '../content/tools';
 import { DIFFERENCES } from '../../tools/about/content';
 import { prerenderPages, type PrerenderPage } from './pages';
@@ -225,6 +226,7 @@ export function render404(input: SiteBuildInput): string {
     return '';
   });
   const tagsJson = JSON.stringify(assetTags.join('')).replace(/</g, '\\u003c');
+  const langsJson = JSON.stringify(Object.fromEntries(TRANSLATED_LOCALES.map((l) => [l, [LOCALE_INFO[l].lang, ui(l).loading]]))).replace(/</g, '\\u003c');
   // On *.github.io the first path segment is the repository (project site) unless it is one of
   // the app's own sections (user site). Everywhere else the configured base applies.
   const sections = [...new Set([...allPublicPages().map((p) => p.path.split('/')[1]).filter(Boolean), ...TRANSLATED_LOCALES, 'kit', 'assets'])];
@@ -236,6 +238,16 @@ export function render404(input: SiteBuildInput): string {
         // Served offline by the service worker, which knows the site root on any host.
         var hint = document.querySelector('meta[name="app-base"]');
         if (hint && /^\\/[^"<>]*\\/$|^\\/$/.test(hint.content)) b = hint.content;
+        // A page in a language folder (/ru/textures/<id>) is in that language before the app starts.
+        var langs = ${langsJson};
+        var f = location.pathname.indexOf(b) === 0 ? location.pathname.slice(b.length).split('/')[0] : '';
+        if (langs.hasOwnProperty(f)) {
+          document.documentElement.lang = langs[f][0];
+          document.addEventListener('DOMContentLoaded', function () {
+            var h = document.querySelector('.fallback-body .empty-title');
+            if (h) h.textContent = langs[f][1];
+          });
+        }
         document.write(${tagsJson}.split('="./').join('="' + b));
       })();
     </script>`;

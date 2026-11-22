@@ -192,8 +192,15 @@
   gap: 12px;
 }
 @media (max-width: 480px) {
+  /* Long labels (Spanish, Russian) wrap instead of pushing the page sideways */
   .help-backup-actions > .btn {
     flex: 1 1 100%;
+    min-width: 0;
+    height: auto;
+    min-height: var(--btn-h);
+    padding-block: 6px 8px;
+    white-space: normal;
+    text-align: center;
   }
 }
 .help-section-body strong,

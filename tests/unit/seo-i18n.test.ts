@@ -449,3 +449,11 @@ test('every localized page and project URL survives a round trip under each base
   assert.equal(parseLocation('/es/help?s=iris#x').path, '/es/help');
   assert.equal(parseLocation('/es/help#iris').path, '/es/help');
 });
+
+test('404.html (editor pages and unknown paths) is noindex and takes the language of its folder before the app starts', () => {
+  const html = byName.get('404.html')!;
+  assert.match(html, /<meta name="robots" content="noindex" \/>/);
+  const script = /<script>([\s\S]*?)<\/script>/.exec(html)![1];
+  assert.doesNotThrow(() => new Function(script), 'the loader parses');
+  for (const l of TRANSLATED_LOCALES) assert.ok(script.includes(`${JSON.stringify(l)}:[${JSON.stringify(LOCALE_INFO[l].lang)},${JSON.stringify(ui(l).loading)}]`), `${l} lang and loading text`);
+});

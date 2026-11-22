@@ -11,7 +11,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
-import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_ITEM_MODEL, NAMES_ITEM_MODEL_GIVE, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
@@ -2140,9 +2140,13 @@ const make3dItems: GuideText = {
       q: 'Dá para deixar 3D só um item renomeado?',
       a: [
         p(
-          'Não com uma simples troca de modelo. Packs que mudam só itens renomeados usam as Custom Item Textures (CIT) do OptiFine ou um mod que lê esses arquivos. Desde o 1.21.4, as definições de item também podem escolher um modelo por ',
+          'Sim. Uma simples troca de modelo muda todos os itens de um tipo, mas uma textura por nome pode ter uma forma 3D própria: no Java 1.21.5 e mais novos a definição de item escolhe esse modelo pelo nome do item, e versões mais antigas recebem arquivos CIT do OptiFine. Desde o 1.21.4, as definições de item também podem escolher um modelo por ',
           code('custom_model_data'),
-          ', que servidores e criadores de mapas definem com comandos. O editor de modelos muda todos os itens de um tipo.',
+          ' ou pelo componente ',
+          code('item_model'),
+          ', que servidores e criadores de mapas definem com comandos. ',
+          link('/guides/rename-items-texture-pack', 'Como funciona renomear itens'),
+          '.',
         ),
       ],
     },
@@ -2624,6 +2628,24 @@ const renameItems: GuideText = {
       ],
     },
     {
+      id: 'compare',
+      title: 'Vanilla ou CIT do OptiFine: qual funciona',
+      body: [
+        p('Os dois dão a um item renomeado uma textura própria. Qual funciona depende da versão do jogo e dos mods dos seus jogadores:'),
+        table(
+          ['', 'Definição de item vanilla', 'CIT do OptiFine'],
+          [
+            ['Versões do Java', '1.21.5 e mais novas, incluindo a 26.3', 'Qualquer versão em que o OptiFine ou o CIT Resewn rode'],
+            ['O que os jogadores precisam', 'Só o pacote', 'O pacote e o OptiFine ou o CIT Resewn'],
+            ['Arquivo no pacote', code('items/<item>.json'), code('optifine/cit/…/<name>.properties')],
+            ['Como os nomes batem', 'Exatamente, maiúsculas também', 'Exatamente, ou com um padrão ou regex'],
+            ['Bedrock', 'Não', 'Não'],
+          ],
+        ),
+        p('Para um pacote que funcione em tudo, dê a ele uma faixa de versões de antes da 1.21.5 até a mais nova: o editor escreve os dois tipos de arquivo, e cada jogo lê o que entende.'),
+      ],
+    },
+    {
       id: 'vanilla',
       title: 'Java 1.21.5 e mais novos: sem mods',
       body: [
@@ -2645,6 +2667,54 @@ const renameItems: GuideText = {
           'Se o pacote já muda essa definição de item, por exemplo com um modelo 3D feito no editor de modelos, os nomes vêm na frente. O Java 1.21.4 também tem definições de item, mas ainda não lê o nome de um item, então recebe os arquivos do OptiFine abaixo. ',
           link('/guides/make-3d-items-texture-pack', 'Como funcionam as definições de item e os itens 3D'),
           '.',
+        ),
+      ],
+    },
+    {
+      id: 'commands',
+      title: 'Itens de comandos e servidores: item_model e custom_model_data',
+      body: [
+        p(
+          'A bigorna só muda o nome de um item. Servidores, mapas e pacotes de dados podem dar a um item um visual próprio com um componente, e o pacote de recursos fornece o modelo. Desde o Java 1.21.4, o componente ',
+          code('minecraft:item_model'),
+          ' indica qual definição de item usar, em qualquer namespace:',
+        ),
+        pre(NAMES_ITEM_MODEL_GIVE),
+        p(
+          'Essa espada lê ',
+          code('assets/mypack/items/excalibur.json'),
+          ' em vez da definição da espada de diamante, seja qual for o nome dela, e todas as outras espadas de diamante continuam iguais. O modelo vai em ',
+          code('assets/mypack/models/item/excalibur.json'),
+          ' e a imagem em ',
+          code('assets/mypack/textures/item/excalibur.png'),
+          ':',
+        ),
+        pre(NAMES_ITEM_MODEL.trimEnd()),
+        p(
+          'O outro componente é ',
+          code('minecraft:custom_model_data'),
+          '. Desde o 1.21.4 ele guarda listas de números, flags, textos e cores, e uma definição de item escolhe um modelo com um ',
+          code('minecraft:select'),
+          ' (textos), um ',
+          code('minecraft:condition'),
+          ' (flags) ou um ',
+          code('minecraft:range_dispatch'),
+          ' (números). Antes do 1.21.4 era um único número, lido pelos ',
+          code('overrides'),
+          ' no arquivo de modelo do item.',
+        ),
+        p(
+          'Para mudar todo item renomeado, seja qual for o nome, use um ',
+          code('minecraft:condition'),
+          ' em ',
+          code('minecraft:has_component'),
+          ' com ',
+          code('minecraft:custom_name'),
+          ' (1.21.4 e mais novos). A bigorna guarda o nome em ',
+          code('custom_name'),
+          '. Um item nomeado por comando com ',
+          code('minecraft:item_name'),
+          ' não tem nome personalizado, então escolha por esse componente. O editor escreve só nomes de bigorna; esses arquivos são para pacotes feitos para um servidor ou um mapa.',
         ),
       ],
     },
@@ -2715,6 +2785,11 @@ const renameItems: GuideText = {
       id: 'servers',
       q: 'Outros jogadores veem?',
       a: [p('Quem usa o seu pacote vê, em servidores também. O nome faz parte do item, então todo mundo vê o nome; só a textura precisa do pacote.')],
+    },
+    {
+      id: 'command',
+      q: 'Um item pode ter textura própria sem ser renomeado?',
+      a: [p('Sim, no Java 1.21.4 e mais novos, quando um comando, pacote de dados ou servidor dá a ele o componente item_model ou custom_model_data e o seu pacote tem a definição de item para onde ele aponta. Jogadores não conseguem colocar isso numa bigorna, então num mundo de sobrevivência normal o jeito é renomear.')],
     },
   ],
   ctaLabel: 'Abrir o Texture Pack Maker',

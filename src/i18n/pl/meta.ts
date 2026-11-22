@@ -122,9 +122,10 @@ export const META_PL: MetaTranslation = {
       blurb: 'Paczki zasobów do Javy, pliki .mcpack do Bedrocka i paczki shaderów, plus rozwiązania.',
     },
     'texture-pack-not-working': {
-      title: 'Paczka tekstur nie działa w Minecrafcie? Rozwiązania',
-      h1: 'Paczka tekstur nie działa? Tak to naprawisz',
-      description: 'Paczki nie ma na liście, „Stworzona dla starszej wersji”, fioletowo-czarne bloki, szara trawa, komunikaty błędów: skąd się biorą i jak je naprawić.',
+      title: 'Paczka tekstur nie działa w Minecrafcie? Napraw każdy błąd',
+      h1: 'Paczka tekstur nie działa? Tak naprawisz każdy błąd',
+      // Quotes the game's most searched message and promises the meaning, the fix and Pack Doctor.
+      description: 'Widzisz „Stworzona dla starszej wersji Minecrafta” albo fioletowo-czarne bloki? Co znaczy każdy błąd, jak go naprawić i narzędzie, które naprawi paczkę.',
       label: 'Paczka nie działa? Rozwiązania',
       blurb: 'Brakujące paczki, ostrzeżenia o wersji, fioletowo-czarne bloki i inne rozwiązania.',
     },

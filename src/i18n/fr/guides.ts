@@ -15,7 +15,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
-import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_ITEM_MODEL, NAMES_ITEM_MODEL_GIVE, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
@@ -2255,9 +2255,13 @@ const make3dItems: GuideText = {
       q: 'Seul un objet renommé peut être en 3D ?',
       a: [
         p(
-          'Pas avec un simple changement de modèle. Les packs qui ne changent que les objets renommés utilisent les textures d’objets perso (CIT) d’OptiFine ou un mod qui les lit. Depuis la 1.21.4, les définitions d’objets peuvent aussi choisir un modèle selon ',
+          'Oui. Un simple changement de modèle touche tous les objets d’un type, mais une texture selon le nom peut avoir sa propre forme 3D : sur Java 1.21.5 et plus récent, la définition d’objet choisit ce modèle selon le nom de l’objet, et les versions plus anciennes reçoivent des fichiers CIT d’OptiFine. Depuis la 1.21.4, les définitions d’objets peuvent aussi choisir un modèle selon ',
           code('custom_model_data'),
-          ', que les serveurs et les créateurs de cartes règlent avec des commandes. L’éditeur de modèles change chaque objet d’un type.',
+          ' ou le composant ',
+          code('item_model'),
+          ', que les serveurs et les créateurs de cartes règlent avec des commandes. ',
+          link('/guides/rename-items-texture-pack', 'Comment marche le renommage d’objets'),
+          '.',
         ),
       ],
     },
@@ -2711,6 +2715,24 @@ const renameItems: GuideText = {
       ],
     },
     {
+      id: 'compare',
+      title: 'Vanilla ou CIT d’OptiFine : lequel marche',
+      body: [
+        p('Les deux donnent sa propre texture à un objet renommé. Lequel marche dépend de la version du jeu et des mods de tes joueurs :'),
+        table(
+          ['', 'Définition d’objet vanilla', 'CIT d’OptiFine'],
+          [
+            ['Versions Java', '1.21.5 et plus récent, 26.3 comprise', 'Toute version où tournent OptiFine ou CIT Resewn'],
+            ['Ce qu’il faut aux joueurs', 'Le pack seulement', 'Le pack et OptiFine ou CIT Resewn'],
+            ['Fichier dans le pack', code('items/<item>.json'), code('optifine/cit/…/<name>.properties')],
+            ['Comment les noms correspondent', 'Exactement, majuscules comprises', 'Exactement, ou avec un motif ou une regex'],
+            ['Bedrock', 'Non', 'Non'],
+          ],
+        ),
+        p('Pour un pack qui marche partout, donne-lui une plage de versions d’avant la 1.21.5 jusqu’à la plus récente : l’éditeur écrit les deux sortes de fichiers, et chaque jeu lit celle qu’il comprend.'),
+      ],
+    },
+    {
       id: 'vanilla',
       title: 'Java 1.21.5 et plus récent : sans mods',
       body: [
@@ -2732,6 +2754,54 @@ const renameItems: GuideText = {
           'Si le pack change déjà cette définition d’objet, par exemple avec un modèle 3D fait dans l’éditeur de modèles, les noms passent devant. Java 1.21.4 a aussi des définitions d’objets, mais ne sait pas encore lire le nom d’un objet, donc il reçoit les fichiers OptiFine ci-dessous. ',
           link('/guides/make-3d-items-texture-pack', 'Comment marchent les définitions d’objets et les objets 3D'),
           '.',
+        ),
+      ],
+    },
+    {
+      id: 'commands',
+      title: 'Objets venant de commandes et de serveurs : item_model et custom_model_data',
+      body: [
+        p(
+          'Une enclume ne change que le nom d’un objet. Les serveurs, les cartes et les packs de données peuvent donner à un objet une apparence à lui avec un composant, et le pack de ressources fournit le modèle. Depuis Java 1.21.4, le composant ',
+          code('minecraft:item_model'),
+          ' indique quelle définition d’objet utiliser, dans n’importe quel espace de noms :',
+        ),
+        pre(NAMES_ITEM_MODEL_GIVE),
+        p(
+          'Cette épée lit ',
+          code('assets/mypack/items/excalibur.json'),
+          ' au lieu de la définition de l’épée en diamant, quel que soit son nom, et toutes les autres épées en diamant restent comme elles sont. Son modèle va dans ',
+          code('assets/mypack/models/item/excalibur.json'),
+          ' et son image dans ',
+          code('assets/mypack/textures/item/excalibur.png'),
+          ' :',
+        ),
+        pre(NAMES_ITEM_MODEL.trimEnd()),
+        p(
+          'L’autre composant est ',
+          code('minecraft:custom_model_data'),
+          '. Depuis la 1.21.4, il contient des listes de nombres, de drapeaux, de textes et de couleurs, et une définition d’objet y choisit un modèle avec un ',
+          code('minecraft:select'),
+          ' (textes), un ',
+          code('minecraft:condition'),
+          ' (drapeaux) ou un ',
+          code('minecraft:range_dispatch'),
+          ' (nombres). Avant la 1.21.4, c’était un seul nombre, lu par les ',
+          code('overrides'),
+          ' du fichier de modèle de l’objet.',
+        ),
+        p(
+          'Pour changer tous les objets renommés, quel que soit leur nom, utilise un ',
+          code('minecraft:condition'),
+          ' sur ',
+          code('minecraft:has_component'),
+          ' avec ',
+          code('minecraft:custom_name'),
+          ' (1.21.4 et plus récent). L’enclume range le nom dans ',
+          code('custom_name'),
+          '. Un objet nommé par une commande avec ',
+          code('minecraft:item_name'),
+          ' n’a pas de nom personnalisé : choisis plutôt selon ce composant. L’éditeur n’écrit que des noms d’enclume ; ces fichiers servent aux packs faits pour un serveur ou une carte.',
         ),
       ],
     },
@@ -2796,12 +2866,17 @@ const renameItems: GuideText = {
     {
       id: 'shape',
       q: 'Un objet renommé peut être en 3D ?',
-      a: [p('Oui. Appuie sur 3D shape sur une texture selon le nom pour ouvrir l’éditeur de modèles, et pars d’un objet 3D fait à partir de ta nouvelle image.')],
+      a: [p('Oui. Appuie sur Forme 3D sur une texture selon le nom pour ouvrir l’éditeur de modèles, et pars d’un objet 3D fait à partir de ta nouvelle image.')],
     },
     {
       id: 'servers',
       q: 'Les autres joueurs le voient ?',
       a: [p('Les joueurs qui utilisent ton pack le voient, sur les serveurs aussi. Le nom lui-même fait partie de l’objet, donc tout le monde voit le nom ; seule la texture a besoin du pack.')],
+    },
+    {
+      id: 'command',
+      q: 'Un objet peut avoir sa propre texture sans être renommé ?',
+      a: [p('Oui, sur Java 1.21.4 et plus récent, quand une commande, un pack de données ou un serveur lui donne le composant item_model ou custom_model_data et que ton pack a la définition d’objet vers laquelle il pointe. Les joueurs ne peuvent pas les mettre sur une enclume, donc dans un monde de survie normal, il faut renommer.')],
     },
   ],
   ctaLabel: 'Ouvrir le Texture Pack Maker',

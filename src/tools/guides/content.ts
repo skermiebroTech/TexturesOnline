@@ -20,7 +20,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from './model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from './pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from './pbr-files';
-import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from './names-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_ITEM_MODEL, NAMES_ITEM_MODEL_GIVE, NAMES_MODEL } from './names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from './anim-files';
 import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from './totem-files';
 import { mcmetaMaker, type McmetaMakerText } from '../../app/content/mcmeta-maker';
@@ -2323,9 +2323,13 @@ export const GUIDE_CONTENT: Guide[] = [
         q: 'Can only a renamed item be 3D?',
         a: [
           p(
-            'Not with a plain model change. Packs that change only renamed items use OptiFine’s custom item textures (CIT) or a mod that reads them. Since 1.21.4, item definitions can also pick a model by ',
+            'Yes. A plain model change affects every item of a type, but a name-based texture can have a 3D shape of its own: on Java 1.21.5 and newer the item definition picks that model by the item’s name, and older versions get OptiFine CIT files. Since 1.21.4, item definitions can also pick a model by ',
             code('custom_model_data'),
-            ', which servers and map makers set with commands. The model editor changes every item of a type.',
+            ' or the ',
+            code('item_model'),
+            ' component, which servers and map makers set with commands. ',
+            link('/guides/rename-items-texture-pack', 'How renaming items works'),
+            '.',
           ),
         ],
       },
@@ -2786,6 +2790,24 @@ export const GUIDE_CONTENT: Guide[] = [
         ],
       },
       {
+        id: 'compare',
+        title: 'Vanilla or OptiFine CIT: which one works',
+        body: [
+          p('Both give a renamed item its own texture. Which one works depends on the game version and mods your players have:'),
+          table(
+            ['', 'Vanilla item definition', 'OptiFine CIT'],
+            [
+              ['Java versions', '1.21.5 and newer, 26.3 included', 'Any version OptiFine or CIT Resewn runs on'],
+              ['Players need', 'Only the pack', 'The pack and OptiFine or CIT Resewn'],
+              ['File in the pack', code('items/<item>.json'), code('optifine/cit/…/<name>.properties')],
+              ['How names match', 'Exactly, capital letters too', 'Exactly, or with a pattern or regex'],
+              ['Bedrock', 'No', 'No'],
+            ],
+          ),
+          p('For a pack that should work everywhere, give it a version range from before 1.21.5 to the newest version: the editor writes both kinds of files, and each game reads the one it understands.'),
+        ],
+      },
+      {
         id: 'vanilla',
         title: 'Java 1.21.5 and newer: no mods',
         body: [
@@ -2807,6 +2829,54 @@ export const GUIDE_CONTENT: Guide[] = [
             'If the pack already changes that item definition, for example with a 3D model made in the model editor, the names go in front of it. Java 1.21.4 has item definitions too, but can’t read an item’s name yet, so it gets the OptiFine files below. ',
             link('/guides/make-3d-items-texture-pack', 'How item definitions and 3D items work'),
             '.',
+          ),
+        ],
+      },
+      {
+        id: 'commands',
+        title: 'Items from commands and servers: item_model and custom_model_data',
+        body: [
+          p(
+            'An anvil only sets an item’s name. Servers, maps and data packs can give an item a look of its own with a component, and the resource pack supplies the model. Since Java 1.21.4 the ',
+            code('minecraft:item_model'),
+            ' component names the item definition to use, in any namespace:',
+          ),
+          pre(NAMES_ITEM_MODEL_GIVE),
+          p(
+            'That sword reads ',
+            code('assets/mypack/items/excalibur.json'),
+            ' instead of the diamond sword’s own definition, whatever it is called, and every other diamond sword stays as it is. Its model goes in ',
+            code('assets/mypack/models/item/excalibur.json'),
+            ' and its picture in ',
+            code('assets/mypack/textures/item/excalibur.png'),
+            ':',
+          ),
+          pre(NAMES_ITEM_MODEL.trimEnd()),
+          p(
+            'The other component is ',
+            code('minecraft:custom_model_data'),
+            '. Since 1.21.4 it holds lists of numbers, flags, strings and colours, and an item definition picks a model from it with a ',
+            code('minecraft:select'),
+            ' (strings), a ',
+            code('minecraft:condition'),
+            ' (flags) or a ',
+            code('minecraft:range_dispatch'),
+            ' (numbers). Before 1.21.4 it was a single number, read by the ',
+            code('overrides'),
+            ' in the item’s model file.',
+          ),
+          p(
+            'To change every renamed item whatever its name, use a ',
+            code('minecraft:condition'),
+            ' on ',
+            code('minecraft:has_component'),
+            ' with ',
+            code('minecraft:custom_name'),
+            ' (1.21.4 and newer). The anvil stores the name in ',
+            code('custom_name'),
+            '. An item named by a command with ',
+            code('minecraft:item_name'),
+            ' has no custom name, so select on that component instead. The editor writes anvil names only; these files are for packs made for a server or a map.',
           ),
         ],
       },
@@ -2877,6 +2947,11 @@ export const GUIDE_CONTENT: Guide[] = [
         id: 'servers',
         q: 'Do other players see it?',
         a: [p('Players who use your pack see it, on servers too. The name itself is part of the item, so everyone sees the name; only the texture needs the pack.')],
+      },
+      {
+        id: 'command',
+        q: 'Can an item get its own texture without being renamed?',
+        a: [p('Yes, on Java 1.21.4 and newer, when a command, data pack or server gives it the item_model or custom_model_data component and your pack has the item definition it points to. Players can’t set those in an anvil, so in a normal survival world renaming is the way.')],
       },
     ],
     related: ['make-3d-items-texture-pack', 'make-a-custom-totem', 'make-a-texture-pack', 'install-resource-packs'],

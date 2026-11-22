@@ -27,7 +27,7 @@ import {
   withNameCases,
 } from '../../src/tools/textures/names/names';
 import { adoptPackNames, hasPackNames, itemBaseModel, nameFiles, nameFilesPlan, newVariantId, variantOfTexture } from '../../src/tools/textures/names/pack';
-import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../src/tools/guides/names-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_ITEM_MODEL, NAMES_ITEM_MODEL_GIVE, NAMES_MODEL } from '../../src/tools/guides/names-files';
 import { readProjectArchive, writeProjectArchive } from '../../src/shared/project-file/format';
 import { fakeAssets, itemArt, javaSpec, json, solid, text, unzipBlob } from '../tools/texlogic/fixtures';
 
@@ -331,6 +331,15 @@ test('the guide’s example files are what the export writes', async () => {
   assert.equal(res.files['assets/minecraft/optifine/cit/names/diamond_sword/excalibur.properties'], NAMES_CIT);
   const model = JSON.parse(await p.extraFiles['assets/minecraft/models/item/names/diamond_sword/excalibur.json'].text());
   assert.equal(`${JSON.stringify(model, null, 2)}\n`, NAMES_MODEL);
+});
+
+test('the guide’s item_model example: the command names the definition the guide shows, which points at its model', () => {
+  const id = /item_model="([a-z0-9_.-]+):([a-z0-9_/.-]+)"/.exec(NAMES_ITEM_MODEL_GIVE);
+  assert.ok(id, 'the command sets minecraft:item_model');
+  assert.deepEqual([id[1], id[2]], ['mypack', 'excalibur'], 'assets/mypack/items/excalibur.json');
+  const def = JSON.parse(NAMES_ITEM_MODEL) as { model: { type: string; model: string } };
+  assert.equal(def.model.type, 'minecraft:model');
+  assert.equal(def.model.model, 'mypack:item/excalibur', 'assets/mypack/models/item/excalibur.json');
 });
 
 test('a project file keeps the looks with their textures and models', async () => {
