@@ -75,7 +75,7 @@ const fontMaker = () => import('../tools/fonts/view');
 export const ROUTES: RouteDef[] = [
   { pattern: '/', load: () => import('../tools/home/home'), title: HOME_META.title, tool: 'home' },
   { pattern: '/textures', load: textures, title: TOOL_META.textures.title, tool: 'textures' },
-  { pattern: '/textures/:id', load: textures, title: `Texture packs — ${APP}`, tool: 'textures' },
+  { pattern: '/textures/:id', load: textures, title: `${ui('en').footer.textures} — ${APP}`, tool: 'textures' },
   { pattern: '/painting-maker', load: textures, title: TOOL_META.painting.title, tool: 'textures' },
   { pattern: '/gui-maker', load: textures, title: TOOL_META.gui.title, tool: 'textures' },
   { pattern: '/music-disc-maker', load: textures, title: TOOL_META.disc.title, tool: 'textures' },
@@ -87,10 +87,10 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/font-maker', load: fontMaker, title: TOOL_META.fonts.title, tool: 'fonts' },
   { pattern: '/skins', load: skins, title: TOOL_META.skins.title, tool: 'skins' },
   { pattern: '/skin-pack-maker', load: skins, title: TOOL_META.skinpack.title, tool: 'skins' },
-  { pattern: '/skins/:id', load: skins, title: `Skin editor — ${APP}`, tool: 'skins' },
+  { pattern: '/skins/:id', load: skins, title: `${ui('en').footer.skins} — ${APP}`, tool: 'skins' },
   { pattern: '/cape-maker', load: capeMaker, title: TOOL_META.cape.title, tool: 'skins' },
   { pattern: '/shaders', load: shaders, title: TOOL_META.shaders.title, tool: 'shaders' },
-  { pattern: '/shaders/:id', load: shaders, title: `Shader maker — ${APP}`, tool: 'shaders' },
+  { pattern: '/shaders/:id', load: shaders, title: `${ui('en').footer.shaders} — ${APP}`, tool: 'shaders' },
   { pattern: '/help', load: () => import('../tools/help/help'), title: HELP_META.title, tool: 'help' },
   { pattern: '/about', load: () => import('../tools/about/about'), title: ABOUT_META.title, tool: 'help' },
   { pattern: '/all', load: () => import('../tools/all/all'), title: ALL_META.title, tool: 'all' },
@@ -99,6 +99,15 @@ export const ROUTES: RouteDef[] = [
   { pattern: '/privacy', load: () => import('../tools/privacy/privacy'), title: PRIVACY_META.title, tool: 'help' },
   { pattern: '/kit', load: () => import('../tools/kit/kit'), title: `UI kit — ${APP}`, tool: 'kit' },
 ];
+
+/** Editor pages have no page meta: their tab title names the editor (the footer's link text). */
+const EDITOR_TITLES: Partial<Record<string, 'textures' | 'skins' | 'shaders'>> = { '/textures/:id': 'textures', '/skins/:id': 'skins', '/shaders/:id': 'shaders' };
+
+/** Tab title of a route in a language: the page's own title, an editor's name, or the route's (English) title. */
+export function routeTitle(route: RouteDef, path: string, locale: Locale): string {
+  const editor = EDITOR_TITLES[route.pattern];
+  return pageMeta(path, locale)?.title ?? (editor ? `${ui(locale).footer[editor]} — ${APP}` : route.title);
+}
 
 /**
  * Route path and query of a location string. Accepts an app path ('/textures/abc?x=1'), a legacy
@@ -509,7 +518,7 @@ async function render(force = false): Promise<void> {
     root.className = `view view-${tool ?? 'missing'}`;
     outlet.replaceChildren(root);
   }
-  document.title = match ? (pageMeta(path, locale)?.title ?? match.route.title) : ui(locale).notFound.pageTitle;
+  document.title = match ? routeTitle(match.route, path, locale) : ui(locale).notFound.pageTitle;
   restoring = restoreY > 0;
 
   try {

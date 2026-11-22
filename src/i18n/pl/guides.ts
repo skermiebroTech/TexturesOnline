@@ -13,7 +13,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
-import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_ITEM_MODEL, NAMES_ITEM_MODEL_GIVE, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
@@ -2135,9 +2135,13 @@ const make3dItems: GuideText = {
       q: 'Czy tylko przedmiot ze zmienioną nazwą może być 3D?',
       a: [
         p(
-          'Nie przez prostą zmianę modelu. Paczki, które zmieniają tylko przedmioty z nową nazwą, używają Custom Item Textures (CIT) z OptiFine albo moda, który je czyta. Od 1.21.4 definicje przedmiotów mogą też wybierać model według ',
+          'Tak. Prosta zmiana modelu zmienia każdy przedmiot danego rodzaju, ale tekstura po nazwie może mieć własny kształt 3D: w Javie 1.21.5 i nowszych definicja przedmiotu wybiera ten model po nazwie przedmiotu, a starsze wersje dostają pliki CIT z OptiFine. Od 1.21.4 definicje przedmiotów mogą też wybierać model według ',
           code('custom_model_data'),
-          ', które serwery i twórcy map ustawiają komendami. Edytor modeli zmienia każdy przedmiot danego rodzaju.',
+          ' albo komponentu ',
+          code('item_model'),
+          ', które serwery i twórcy map ustawiają komendami. ',
+          link('/guides/rename-items-texture-pack', 'Jak działa zmiana nazwy przedmiotów'),
+          '.',
         ),
       ],
     },
@@ -2623,6 +2627,24 @@ const renameItems: GuideText = {
       ],
     },
     {
+      id: 'compare',
+      title: 'Vanilla czy CIT z OptiFine: co zadziała',
+      body: [
+        p('Oba sposoby dają przedmiotowi ze zmienioną nazwą własną teksturę. Który zadziała, zależy od wersji gry i modów twoich graczy:'),
+        table(
+          ['', 'Definicja przedmiotu (vanilla)', 'CIT z OptiFine'],
+          [
+            ['Wersje Javy', '1.21.5 i nowsze, także 26.3', 'Każda wersja, na której działa OptiFine albo CIT Resewn'],
+            ['Czego potrzebują gracze', 'Tylko paczki', 'Paczki i OptiFine albo CIT Resewn'],
+            ['Plik w paczce', code('items/<item>.json'), code('optifine/cit/…/<name>.properties')],
+            ['Jak porównywane są nazwy', 'Dokładnie, łącznie z wielkimi literami', 'Dokładnie albo wzorcem lub regexem'],
+            ['Bedrock', 'Nie', 'Nie'],
+          ],
+        ),
+        p('Żeby paczka działała wszędzie, daj jej zakres wersji od wcześniejszej niż 1.21.5 do najnowszej: edytor zapisze oba rodzaje plików, a każda gra odczyta ten, który rozumie.'),
+      ],
+    },
+    {
       id: 'vanilla',
       title: 'Java 1.21.5 i nowsze: bez modów',
       body: [
@@ -2644,6 +2666,54 @@ const renameItems: GuideText = {
           'Jeśli paczka już zmienia tę definicję przedmiotu, na przykład modelem 3D z edytora modeli, nazwy trafiają przed niego. Java 1.21.4 ma już definicje przedmiotów, ale nie umie jeszcze czytać nazwy przedmiotu, dlatego dostaje pliki OptiFine opisane niżej. ',
           link('/guides/make-3d-items-texture-pack', 'Jak działają definicje przedmiotów i przedmioty 3D'),
           '.',
+        ),
+      ],
+    },
+    {
+      id: 'commands',
+      title: 'Przedmioty z komend i serwerów: item_model i custom_model_data',
+      body: [
+        p(
+          'Kowadło zmienia tylko nazwę przedmiotu. Serwery, mapy i paczki danych mogą dać przedmiotowi własny wygląd komponentem, a model dostarcza paczka zasobów. Od Javy 1.21.4 komponent ',
+          code('minecraft:item_model'),
+          ' wskazuje, której definicji przedmiotu użyć, w dowolnej przestrzeni nazw:',
+        ),
+        pre(NAMES_ITEM_MODEL_GIVE),
+        p(
+          'Ten miecz czyta ',
+          code('assets/mypack/items/excalibur.json'),
+          ' zamiast definicji diamentowego miecza, niezależnie od nazwy, a wszystkie inne diamentowe miecze zostają bez zmian. Jego model trafia do ',
+          code('assets/mypack/models/item/excalibur.json'),
+          ', a obrazek do ',
+          code('assets/mypack/textures/item/excalibur.png'),
+          ':',
+        ),
+        pre(NAMES_ITEM_MODEL.trimEnd()),
+        p(
+          'Drugi komponent to ',
+          code('minecraft:custom_model_data'),
+          '. Od 1.21.4 przechowuje listy liczb, flag, tekstów i kolorów, a definicja przedmiotu wybiera według nich model przez ',
+          code('minecraft:select'),
+          ' (teksty), ',
+          code('minecraft:condition'),
+          ' (flagi) albo ',
+          code('minecraft:range_dispatch'),
+          ' (liczby). Przed 1.21.4 była to jedna liczba, czytana przez ',
+          code('overrides'),
+          ' w pliku modelu przedmiotu.',
+        ),
+        p(
+          'Żeby zmienić każdy przedmiot ze zmienioną nazwą, niezależnie od nazwy, użyj ',
+          code('minecraft:condition'),
+          ' na ',
+          code('minecraft:has_component'),
+          ' z ',
+          code('minecraft:custom_name'),
+          ' (1.21.4 i nowsze). Kowadło zapisuje nazwę w ',
+          code('custom_name'),
+          '. Przedmiot nazwany komendą przez ',
+          code('minecraft:item_name'),
+          ' nie ma własnej nazwy, więc wybieraj według tego komponentu. Edytor zapisuje tylko nazwy z kowadła; te pliki są dla paczek robionych pod serwer albo mapę.',
         ),
       ],
     },
@@ -2714,6 +2784,11 @@ const renameItems: GuideText = {
       id: 'servers',
       q: 'Czy inni gracze to widzą?',
       a: [p('Kto używa twojej paczki, ten to widzi, także na serwerach. Sama nazwa należy do przedmiotu, więc widzą ją wszyscy; tylko do tekstury potrzebna jest paczka.')],
+    },
+    {
+      id: 'command',
+      q: 'Czy przedmiot może mieć własną teksturę bez zmiany nazwy?',
+      a: [p('Tak, w Javie 1.21.4 i nowszych, gdy komenda, paczka danych albo serwer da mu komponent item_model lub custom_model_data, a twoja paczka ma definicję przedmiotu, na którą on wskazuje. Gracze nie ustawią ich na kowadle, więc w zwykłym świecie przetrwania sposobem jest zmiana nazwy.')],
     },
   ],
   ctaLabel: 'Otwórz edytor paczek tekstur',

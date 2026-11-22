@@ -11,7 +11,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
-import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_ITEM_MODEL, NAMES_ITEM_MODEL_GIVE, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
@@ -2123,9 +2123,13 @@ const make3dItems: GuideText = {
       q: '名前を変えたアイテムだけを3Dにできますか？',
       a: [
         p(
-          'モデルを差し替えるだけではできません。名前を変えたアイテムだけを変えるパックは、OptiFineのCustom Item Textures（CIT）か、それを読むMODを使います。1.21.4からはアイテム定義で',
+          'はい。モデルを差し替えるだけだとその種類のアイテムがすべて変わりますが、名前で変わるテクスチャには専用の3D形状を付けられます。Java版1.21.5以降はアイテム定義がアイテムの名前でそのモデルを選び、それより前のバージョンにはOptiFineのCITファイルが書き出されます。1.21.4からはアイテム定義で',
           code('custom_model_data'),
-          'によってモデルを選ぶこともでき、サーバーや配布マップの作者がコマンドで設定します。モデルエディターは、その種類のアイテムをすべて変えます。',
+          'や',
+          code('item_model'),
+          'コンポーネントによってモデルを選ぶこともでき、サーバーや配布マップの作者がコマンドで設定します。',
+          link('/guides/rename-items-texture-pack', '名前を変えたアイテムのしくみ'),
+          '。',
         ),
       ],
     },
@@ -2607,6 +2611,24 @@ const renameItems: GuideText = {
       ],
     },
     {
+      id: 'compare',
+      title: 'バニラとOptiFineのCIT：どちらが使えるか',
+      body: [
+        p('どちらも名前を変えたアイテムに専用のテクスチャを付けます。どちらが使えるかは、プレイヤーのゲームのバージョンとMODによります。'),
+        table(
+          ['', 'バニラのアイテム定義', 'OptiFineのCIT'],
+          [
+            ['Java版のバージョン', '1.21.5以降（26.3も）', 'OptiFineかCIT Resewnが動くバージョン'],
+            ['プレイヤーに必要なもの', 'パックだけ', 'パックとOptiFineかCIT Resewn'],
+            ['パック内のファイル', code('items/<item>.json'), code('optifine/cit/…/<name>.properties')],
+            ['名前の一致', '大文字と小文字まで完全一致', '完全一致、またはパターンや正規表現'],
+            ['統合版', '不可', '不可'],
+          ],
+        ),
+        p('どこでも動くパックにしたいなら、対応バージョンの範囲を1.21.5より前から最新版までにしてください。エディターは両方のファイルを書き出し、ゲームはそれぞれ読めるほうを使います。'),
+      ],
+    },
+    {
       id: 'vanilla',
       title: 'Java版1.21.5以降：MOD不要',
       body: [
@@ -2628,6 +2650,54 @@ const renameItems: GuideText = {
           'パックがすでにそのアイテム定義を変えているとき（モデルエディターで作った3Dモデルなど）は、名前の判定がその前に入ります。Java版1.21.4にもアイテム定義はありますが、まだアイテムの名前を読めないので、下のOptiFine用ファイルが入ります。',
           link('/guides/make-3d-items-texture-pack', 'アイテム定義と3Dアイテムのしくみ'),
           '。',
+        ),
+      ],
+    },
+    {
+      id: 'commands',
+      title: 'コマンドやサーバーのアイテム：item_modelとcustom_model_data',
+      body: [
+        p(
+          '金床で変えられるのは名前だけです。サーバーや配布マップ、データパックはコンポーネントでアイテムに専用の見た目を付けられ、モデルはリソースパックが用意します。Java版1.21.4からは、',
+          code('minecraft:item_model'),
+          'コンポーネントが使うアイテム定義を指定します。名前空間は自由です。',
+        ),
+        pre(NAMES_ITEM_MODEL_GIVE),
+        p(
+          'この剣は名前に関係なく、ダイヤモンドの剣の定義ではなく',
+          code('assets/mypack/items/excalibur.json'),
+          'を読み、ほかのダイヤモンドの剣はそのままです。モデルは',
+          code('assets/mypack/models/item/excalibur.json'),
+          '、画像は',
+          code('assets/mypack/textures/item/excalibur.png'),
+          'に置きます。',
+        ),
+        pre(NAMES_ITEM_MODEL.trimEnd()),
+        p(
+          'もうひとつのコンポーネントは',
+          code('minecraft:custom_model_data'),
+          'です。1.21.4からは数値・フラグ・文字列・色のリストを持ち、アイテム定義は',
+          code('minecraft:select'),
+          '（文字列）、',
+          code('minecraft:condition'),
+          '（フラグ）、',
+          code('minecraft:range_dispatch'),
+          '（数値）でモデルを選びます。1.21.4より前はひとつの数値で、アイテムのモデルファイルの',
+          code('overrides'),
+          'が読んでいました。',
+        ),
+        p(
+          '名前に関係なく、名前を変えたアイテムすべてを変えるには、',
+          code('minecraft:condition'),
+          'で',
+          code('minecraft:has_component'),
+          'に',
+          code('minecraft:custom_name'),
+          'を指定します（1.21.4以降）。金床は名前を',
+          code('custom_name'),
+          'に保存します。コマンドの',
+          code('minecraft:item_name'),
+          'で名前を付けたアイテムにはカスタム名がないので、そのコンポーネントで選んでください。エディターが書き出すのは金床の名前だけです。これらのファイルはサーバーや配布マップ向けのパック用です。',
         ),
       ],
     },
@@ -2698,6 +2768,11 @@ const renameItems: GuideText = {
       id: 'servers',
       q: 'ほかのプレイヤーにも見えますか？',
       a: [p('あなたのパックを使っている人には、サーバーでも見えます。名前はアイテムの一部なので全員に見えますが、テクスチャを見るにはパックが必要です。')],
+    },
+    {
+      id: 'command',
+      q: '名前を変えずにアイテムに専用のテクスチャを付けられますか？',
+      a: [p('はい。Java版1.21.4以降で、コマンド、データパック、サーバーがitem_modelかcustom_model_dataコンポーネントを付け、パックにその指すアイテム定義があれば表示されます。これらは金床では付けられないので、ふつうのサバイバルのワールドでは名前を変える方法を使います。')],
     },
   ],
   ctaLabel: 'Texture Pack Makerを開く',

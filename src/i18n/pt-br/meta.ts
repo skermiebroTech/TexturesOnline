@@ -123,9 +123,10 @@ export const META_PT_BR: MetaTranslation = {
       blurb: 'Pacotes de recursos do Java, arquivos .mcpack do Bedrock e shader packs, com soluções.',
     },
     'texture-pack-not-working': {
-      title: 'Texture pack do Minecraft não funciona? Veja as soluções',
-      h1: 'Texture pack do Minecraft não funciona? Como resolver',
-      description: 'Pack não aparece na lista, “versão mais antiga”, blocos roxos e pretos, grama cinza, erros no manifesto: o que significa cada mensagem e a solução.',
+      title: 'Texture pack não funciona no Minecraft? Solução de cada erro',
+      h1: 'Texture pack do Minecraft não funciona? Como resolver cada erro',
+      // Quotes the game's most searched message and promises the meaning, the fix and Pack Doctor.
+      description: 'Aparece “Feito para uma versão mais antiga do Minecraft” ou blocos roxos e pretos? O que cada erro quer dizer, como resolver e uma ferramenta que conserta.',
       label: 'Pack não funciona? Soluções',
       blurb: 'Packs que não aparecem, avisos de versão, blocos roxos e pretos e mais.',
     },

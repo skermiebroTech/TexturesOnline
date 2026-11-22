@@ -117,13 +117,13 @@ test('activation keeps the current and the previous build, and leaves other cach
   assert.equal(cacheable({ ok: false, status: 0, type: 'opaqueredirect' }), false);
 });
 
-/** Runs the 404.html loader script with a given address and an optional hint; returns the asset URLs it writes. */
-function runLoader(html: string, href: string, hint?: string): string[] {
+/** Runs the 404.html loader script with a given address and an optional hint; returns the asset URLs it writes (and the html lang it sets). */
+function runLoader(html: string, href: string, hint?: string, root: { lang: string } = { lang: 'en' }): string[] {
   const script = /<script>\s*(\(function \(\) \{[\s\S]*?\}\)\(\);)\s*<\/script>/.exec(html)?.[1];
   assert.ok(script, 'loader script');
   const written: string[] = [];
   const u = new URL(href);
-  const document = { querySelector: (sel: string) => (sel.includes('app-base') && hint ? { content: hint } : null), write: (s: string) => written.push(s) };
+  const document = { querySelector: (sel: string) => (sel.includes('app-base') && hint ? { content: hint } : null), write: (s: string) => written.push(s), documentElement: root, addEventListener: () => {} };
   new Function('document', 'location', script)(document, { pathname: u.pathname, hostname: u.hostname });
   return Array.from(written.join('').matchAll(/(?:src|href)="([^"]+)"/g), (m) => m[1]);
 }
@@ -138,8 +138,13 @@ test('offline, the app shell finds the site root from the hint the worker adds (
   const hinted = withBaseHint(html, '/TexturesOnline/');
   assert.ok(hinted.indexOf('<meta name="app-base"') > 0 && hinted.indexOf('<meta name="app-base"') < hinted.indexOf('<script>'), 'the hint comes before the loader');
   assert.equal(withBaseHint(hinted, '/TexturesOnline/'), hinted, 'added once');
-  const urls = runLoader(hinted, 'http://127.0.0.1:5000/TexturesOnline/de/help/', '/TexturesOnline/');
+  const root = { lang: 'en' };
+  const urls = runLoader(hinted, 'http://127.0.0.1:5000/TexturesOnline/de/help/', '/TexturesOnline/', root);
   assert.ok(urls.length > 0 && urls.every((u) => u.startsWith('/TexturesOnline/')), urls.join(' '));
+  assert.equal(root.lang, 'de', 'a page in a language folder takes its language');
+  const enRoot = { lang: 'en' };
+  runLoader(html, 'https://texturepackmaker.com/textures/abc', undefined, enRoot);
+  assert.equal(enRoot.lang, 'en');
   assert.ok(runLoader(html, 'http://127.0.0.1:5000/de/', '"><script>').every((u) => u.startsWith('/') && !u.includes('<')), 'a malformed hint is ignored');
 });
 

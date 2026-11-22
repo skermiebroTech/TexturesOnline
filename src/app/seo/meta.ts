@@ -190,9 +190,10 @@ export const HELP_META: PageMeta = {
   path: '/help',
   kind: 'help',
   tool: 'help',
-  title: 'How to Install Texture Packs, Skins & Shaders in Minecraft',
+  // Promises the specific answers (the folder on each device, turning a pack on, skins, shaders) without giving them away.
+  title: 'How to Install Texture Packs, Skins & Shaders on Any Device',
   description:
-    'Step by step for Java and Bedrock on Windows, Mac, Android, iPhone and consoles: where the resourcepacks folder is, how to turn a pack on, and quick fixes.',
+    'The exact resourcepacks folder on Windows, Mac, Android, iPhone and consoles, how to turn a pack on, change your skin and add shaders, plus quick fixes.',
   label: 'Help',
 };
 
@@ -286,10 +287,12 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'rename-items-texture-pack',
     blurb: 'Give a renamed item its own texture, like a sword named “Excalibur”.',
-    title: 'How to Change an Item’s Texture by Renaming It in Minecraft',
+    // Searchers want custom textures for anvil-renamed items, most of all without OptiFine: the title
+    // promises that, the description names the versions and the file without giving it away.
+    title: 'Custom Textures for Renamed Items in Minecraft, No OptiFine',
     h1: 'Rename items to change their texture',
     description:
-      'Make a Minecraft pack where renamed items look different: vanilla item definitions for Java 1.21.5+, OptiFine CIT for older versions, free in your browser.',
+      'Give a renamed sword or totem its own look: the item definition that needs no mods on Java 1.21.5 to 26.3, CIT for older versions, and a free maker.',
     label: 'Rename items',
     icon: 'label',
     accent: 'accent-green',
@@ -330,10 +333,12 @@ export const GUIDES: GuideMeta[] = [
   guide({
     slug: 'texture-pack-not-working',
     blurb: 'Missing packs, version warnings, purple-and-black blocks and other fixes.',
-    title: 'Minecraft Texture Pack Not Working? Fixes for Java & Bedrock',
-    h1: 'Minecraft texture pack not working? How to fix it',
+    // Searchers paste the game's message word for word: the description quotes the most searched one
+    // and promises the meaning, the fix and Pack Doctor (as the Spanish page does).
+    title: 'Minecraft Texture Pack Not Working? The Fix for Every Error',
+    h1: 'Minecraft texture pack not working? How to fix every error',
     description:
-      'Pack not in the list, “made for an older version”, purple and black blocks, grey grass, manifest errors: every message, what it means and how to fix it.',
+      'Seeing “Made for an older version of Minecraft” or purple-and-black blocks? What each error means, the fix in minutes and a tool that repairs your pack.',
     label: 'Pack not working? Fixes',
     icon: 'warning-diamond',
     accent: 'accent-gold',

@@ -28,7 +28,8 @@ import './packedit.css';
 import { pt } from './i18n/text';
 import { t } from '../i18n/text';
 import { it } from '../i18n/import';
-import { fmt } from '../../../i18n/editor-text';
+import { fmt, textLocale } from '../../../i18n/editor-text';
+import { ui } from '../../../i18n/ui';
 import { projectsText } from '../../../shared/i18n/projects';
 import { saveProjectFile } from '../../../shared/project-file/entry';
 
@@ -545,7 +546,7 @@ function buildPackEditor(root: HTMLElement, project: ImportedPackProject, ws: Pa
   const live = h('div', { class: 'sr-only', 'aria-live': 'polite' });
   const editor = h('div', { class: ['pe-editor', `is-${project.packFormat}`] }, bar, body, live);
   root.replaceChildren(editor);
-  const setTitle = () => (document.title = `${project.name.trim() || pt.shaderPack} · Shader Maker — Texture Pack Maker`);
+  const setTitle = () => (document.title = `${project.name.trim() || pt.shaderPack} · ${ui(textLocale()).footer.shaders} — Texture Pack Maker`);
   setTitle();
 
   // ------------------------------------------------------------------ panes

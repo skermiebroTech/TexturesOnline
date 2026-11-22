@@ -11,7 +11,7 @@ import { SKIN_PACK_LANG, SKIN_PACK_MANIFEST, SKIN_PACK_SKINS_JSON, SKIN_PACK_TRE
 import { MODEL_BLOCK_EXAMPLE, MODEL_FILES, MODEL_FLAT_DEFINITION, MODEL_SPRITE_CUBE, MODEL_STONE_BLOCKSTATE } from '../../tools/guides/model-files';
 import { PVP_EXAMPLE_FILES, PVP_SWORD_189, PVP_SWORD_LATEST } from '../../tools/guides/pvp-files';
 import { PBR_MANIFEST, PBR_TEXTURE_SET, PBR_UNIFORM_SET } from '../../tools/guides/pbr-files';
-import { NAMES_CIT, NAMES_DEFINITION, NAMES_MODEL } from '../../tools/guides/names-files';
+import { NAMES_CIT, NAMES_DEFINITION, NAMES_ITEM_MODEL, NAMES_ITEM_MODEL_GIVE, NAMES_MODEL } from '../../tools/guides/names-files';
 import { ANIM_FLIPBOOK, ANIM_MCMETA, ANIM_MCMETA_WIDE } from '../../tools/guides/anim-files';
 import { TOTEM_BEDROCK_TREE, TOTEM_JAVA_TREE, totemManifest } from '../../tools/guides/totem-files';
 
@@ -2135,9 +2135,13 @@ const make3dItems: GuideText = {
       q: 'Kann nur ein umbenanntes Item 3D sein?',
       a: [
         p(
-          'Nicht mit einer einfachen Modelländerung. Packs, die nur umbenannte Items ändern, nutzen die Custom Item Textures (CIT) von OptiFine oder eine Mod, die sie liest. Seit 1.21.4 können Item-Definitionen ein Modell auch nach ',
+          'Ja. Eine einfache Modelländerung trifft jedes Item einer Sorte, aber eine Namenstextur kann eine eigene 3D-Form haben: Ab Java 1.21.5 wählt die Item-Definition dieses Modell nach dem Namen des Items, ältere Versionen bekommen OptiFine-CIT-Dateien. Seit 1.21.4 können Item-Definitionen ein Modell auch nach ',
           code('custom_model_data'),
-          ' wählen, das Server und Kartenbauer mit Befehlen setzen. Der Modell-Editor ändert jedes Item einer Sorte.',
+          ' oder der Komponente ',
+          code('item_model'),
+          ' wählen, die Server und Kartenbauer mit Befehlen setzen. ',
+          link('/guides/rename-items-texture-pack', 'So funktioniert das Umbenennen'),
+          '.',
         ),
       ],
     },
@@ -2619,6 +2623,24 @@ const renameItems: GuideText = {
       ],
     },
     {
+      id: 'compare',
+      title: 'Vanilla oder OptiFine-CIT: was funktioniert',
+      body: [
+        p('Beide geben einem umbenannten Item eine eigene Textur. Welche Art funktioniert, hängt von der Spielversion und den Mods deiner Spieler ab:'),
+        table(
+          ['', 'Vanilla-Item-Definition', 'OptiFine-CIT'],
+          [
+            ['Java-Versionen', '1.21.5 und neuer, auch 26.3', 'Jede Version, auf der OptiFine oder CIT Resewn läuft'],
+            ['Spieler brauchen', 'Nur das Pack', 'Das Pack und OptiFine oder CIT Resewn'],
+            ['Datei im Pack', code('items/<item>.json'), code('optifine/cit/…/<name>.properties')],
+            ['Namensvergleich', 'Genau, auch Groß- und Kleinschreibung', 'Genau oder mit Muster bzw. Regex'],
+            ['Bedrock', 'Nein', 'Nein'],
+          ],
+        ),
+        p('Soll das Pack überall funktionieren, gib ihm einen Versionsbereich von vor 1.21.5 bis zur neuesten Version: Der Editor schreibt dann beide Arten von Dateien, und jedes Spiel liest die, die es versteht.'),
+      ],
+    },
+    {
       id: 'vanilla',
       title: 'Java 1.21.5 und neuer: ohne Mods',
       body: [
@@ -2640,6 +2662,54 @@ const renameItems: GuideText = {
           'Ändert das Pack diese Item-Definition schon, zum Beispiel mit einem 3D-Modell aus dem Modell-Editor, kommen die Namen davor. Java 1.21.4 hat zwar Item-Definitionen, kann den Namen eines Items aber noch nicht lesen, deshalb bekommt es die OptiFine-Dateien unten. ',
           link('/guides/make-3d-items-texture-pack', 'So funktionieren Item-Definitionen und 3D-Items'),
           '.',
+        ),
+      ],
+    },
+    {
+      id: 'commands',
+      title: 'Items von Befehlen und Servern: item_model und custom_model_data',
+      body: [
+        p(
+          'Ein Amboss setzt nur den Namen eines Items. Server, Karten und Datenpakete können einem Item mit einer Komponente ein eigenes Aussehen geben, und das Ressourcenpaket liefert das Modell dazu. Seit Java 1.21.4 nennt die Komponente ',
+          code('minecraft:item_model'),
+          ' die Item-Definition, die benutzt wird, in einem beliebigen Namensraum:',
+        ),
+        pre(NAMES_ITEM_MODEL_GIVE),
+        p(
+          'Dieses Schwert liest ',
+          code('assets/mypack/items/excalibur.json'),
+          ' statt der Definition des Diamantschwerts, egal wie es heißt, und alle anderen Diamantschwerter bleiben, wie sie sind. Sein Modell kommt nach ',
+          code('assets/mypack/models/item/excalibur.json'),
+          ' und sein Bild nach ',
+          code('assets/mypack/textures/item/excalibur.png'),
+          ':',
+        ),
+        pre(NAMES_ITEM_MODEL.trimEnd()),
+        p(
+          'Die andere Komponente ist ',
+          code('minecraft:custom_model_data'),
+          '. Seit 1.21.4 enthält sie Listen von Zahlen, Flags, Texten und Farben, und eine Item-Definition wählt daraus ein Modell mit einem ',
+          code('minecraft:select'),
+          ' (Texte), einer ',
+          code('minecraft:condition'),
+          ' (Flags) oder einem ',
+          code('minecraft:range_dispatch'),
+          ' (Zahlen). Vor 1.21.4 war sie eine einzelne Zahl, die die ',
+          code('overrides'),
+          ' in der Modelldatei des Items lasen.',
+        ),
+        p(
+          'Um jedes umbenannte Item zu ändern, egal mit welchem Namen, nimm eine ',
+          code('minecraft:condition'),
+          ' auf ',
+          code('minecraft:has_component'),
+          ' mit ',
+          code('minecraft:custom_name'),
+          ' (1.21.4 und neuer). Der Amboss speichert den Namen in ',
+          code('custom_name'),
+          '. Ein Item, das ein Befehl mit ',
+          code('minecraft:item_name'),
+          ' benannt hat, hat keinen eigenen Namen, wähle dann nach dieser Komponente. Der Editor schreibt nur Amboss-Namen; diese Dateien sind für Packs für einen Server oder eine Karte.',
         ),
       ],
     },
@@ -2710,6 +2780,11 @@ const renameItems: GuideText = {
       id: 'servers',
       q: 'Sehen andere Spieler das?',
       a: [p('Wer dein Pack nutzt, sieht es, auch auf Servern. Der Name selbst gehört zum Item, den sehen also alle; nur für die Textur braucht man das Pack.')],
+    },
+    {
+      id: 'command',
+      q: 'Kann ein Item ohne Umbenennen eine eigene Textur bekommen?',
+      a: [p('Ja, ab Java 1.21.4, wenn ein Befehl, ein Datenpaket oder ein Server ihm die Komponente item_model oder custom_model_data gibt und dein Pack die Item-Definition hat, auf die sie zeigt. Am Amboss lassen sie sich nicht setzen, in einer normalen Überlebenswelt ist Umbenennen also der Weg.')],
     },
   ],
   ctaLabel: 'Texture Pack Maker öffnen',

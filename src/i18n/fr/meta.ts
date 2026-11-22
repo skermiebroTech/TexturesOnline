@@ -122,9 +122,10 @@ export const META_FR: MetaTranslation = {
       blurb: 'Packs de ressources Java, fichiers .mcpack Bedrock et packs de shaders, avec les solutions.',
     },
     'texture-pack-not-working': {
-      title: 'Ton pack de textures Minecraft ne marche pas ? Solutions',
-      h1: 'Ton pack de textures Minecraft ne marche pas ? Comment le réparer',
-      description: 'Pack absent, « ancienne version », blocs violets et noirs, herbe grise, erreurs du manifeste du pack : ce que veut dire chaque message et la solution.',
+      title: 'Pack de textures qui ne marche pas ? Chaque erreur résolue',
+      h1: 'Ton pack de textures Minecraft ne marche pas ? Comment régler chaque erreur',
+      // Quotes the game's most searched message and promises the meaning, the fix and Pack Doctor.
+      description: 'Tu vois « Conçu pour une ancienne version de Minecraft » ou des blocs violets et noirs ? Ce que dit chaque erreur, sa solution et un outil de réparation.',
       label: 'Pack qui ne marche pas ? Solutions',
       blurb: 'Packs qui n’apparaissent pas, alertes de version, blocs violets et noirs et plus encore.',
     },

@@ -159,7 +159,7 @@ export const TOOL_INTROS: Record<IntroTool, ToolIntro> = {
       {
         id: 'resource',
         q: 'Is a texture pack the same as a resource pack?',
-        a: [el('p', null, 'Yes, for textures. Java Edition renamed texture packs to resource packs in 1.6.1, because they can also change models, sounds, fonts and shaders. This editor makes the texture part and writes the files every resource pack needs.')],
+        a: [el('p', null, 'Yes, for textures. Java Edition renamed texture packs to resource packs in 1.6.1, because they can also change models, sounds, fonts and shaders, so this texture pack editor is a resource pack maker too: it makes the texture part and writes the files every resource pack needs.')],
       },
       {
         id: 'photoshop',

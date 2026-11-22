@@ -41,3 +41,18 @@ items=diamond_sword
 texture=textures/item/names/diamond_sword/excalibur.png
 nbt.display.Name=regex:(Excalibur|Sword of Light)
 `;
+
+/**
+ * Not written by the editor: assets/mypack/items/excalibur.json, the item definition an item given
+ * the minecraft:item_model component "mypack:excalibur" (by a command, data pack or server) reads, 1.21.4+.
+ */
+export const NAMES_ITEM_MODEL = `{
+  "model": {
+    "type": "minecraft:model",
+    "model": "mypack:item/excalibur"
+  }
+}
+`;
+
+/** The command that gives a diamond sword that component (1.21.4+). */
+export const NAMES_ITEM_MODEL_GIVE = '/give @s minecraft:diamond_sword[minecraft:item_model="mypack:excalibur"]';

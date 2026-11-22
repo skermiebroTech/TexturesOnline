@@ -122,9 +122,10 @@ export const META_DE: MetaTranslation = {
       blurb: 'Java-Ressourcenpakete, Bedrock-.mcpack-Dateien und Shaderpakete, plus Lösungen.',
     },
     'texture-pack-not-working': {
-      title: 'Minecraft Texture Pack funktioniert nicht? Die Lösungen',
-      h1: 'Minecraft Texture Pack funktioniert nicht? So behebst du es',
-      description: 'Pack fehlt in der Liste, „für eine ältere Version erstellt“, lila-schwarze Blöcke, graues Gras, Fehlermeldungen: was dahintersteckt und wie du es löst.',
+      title: 'Texture Pack funktioniert nicht? Lösung für jeden Fehler',
+      h1: 'Minecraft Texture Pack funktioniert nicht? So behebst du jeden Fehler',
+      // Quotes the game's most searched message and promises the meaning, the fix and Pack Doctor.
+      description: '„Für eine ältere Version von Minecraft erstellt“ oder lila-schwarze Blöcke? Was jeder Fehler bedeutet, die schnelle Lösung und ein Reparatur-Tool.',
       label: 'Pack geht nicht? Lösungen',
       blurb: 'Fehlende Packs, Versionswarnungen, lila-schwarze Blöcke und weitere Lösungen.',
     },

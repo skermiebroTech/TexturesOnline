@@ -1,7 +1,9 @@
 // Path routing: URL <-> route path under any site base, legacy hash links, public page routes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ROUTES, fragmentOf, parseLocation, resolveRoute, stripBase, toHref } from '../../src/core/router';
+import { ROUTES, fragmentOf, parseLocation, resolveRoute, routeTitle, stripBase, toHref } from '../../src/core/router';
+import { LOCALES } from '../../src/i18n/locales';
+import { ui } from '../../src/i18n/ui';
 import { PUBLIC_PAGES, GUIDES, publicPageMeta } from '../../src/app/seo/meta';
 
 const BASES = ['/', '/TexturesOnline/'];
@@ -82,4 +84,18 @@ test('public pages resolve to routes with the same title; private routes are not
   assert.equal(resolveRoute('/guides/make-a-skin')?.route.tool, 'help');
   const patterns = ROUTES.map((r) => r.pattern);
   assert.equal(new Set(patterns).size, patterns.length, 'route patterns are unique');
+});
+
+test('editor pages are titled in the page language; public pages keep their own title', () => {
+  const editors = { '/textures/abc': 'textures', '/skins/abc': 'skins', '/shaders/abc': 'shaders' } as const;
+  for (const l of LOCALES) {
+    for (const [path, key] of Object.entries(editors)) {
+      const r = resolveRoute(path)!;
+      assert.equal(routeTitle(r.route, path, l), `${ui(l).footer[key]} — Texture Pack Maker`, `${l} ${path}`);
+    }
+    const help = resolveRoute('/help')!;
+    assert.notEqual(routeTitle(help.route, '/help', l), '');
+  }
+  assert.equal(routeTitle(resolveRoute('/textures/abc')!.route, '/textures/abc', 'ru'), 'Редактор текстурпаков — Texture Pack Maker');
+  assert.equal(routeTitle(resolveRoute('/textures/abc')!.route, '/textures/abc', 'en'), resolveRoute('/textures/abc')!.route.title);
 });

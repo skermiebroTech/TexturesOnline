@@ -81,8 +81,9 @@ export const META_ES: MetaTranslation = {
       label: 'Shaders',
     },
     '/help': {
-      title: 'Cómo instalar texture packs, skins y shaders en Minecraft',
-      description: 'Paso a paso para Java y Bedrock en Windows, Mac, Android, iPhone y consolas: dónde está la carpeta resourcepacks, cómo activarlo y qué hacer si falla.',
+      // «poner texturas» is how Spanish speakers search; the install guide keeps «instalar».
+      title: 'Cómo poner texturas, skins y shaders en Minecraft',
+      description: 'Dónde está la carpeta resourcepacks en Windows, Mac, Android, iPhone y consolas, cómo activar un pack, cambiar tu skin, poner shaders y qué hacer si falla.',
       label: 'Ayuda',
     },
     '/about': {
@@ -115,9 +116,10 @@ export const META_ES: MetaTranslation = {
       blurb: 'Elige una versión, pinta texturas y exporta un pack que Minecraft carga.',
     },
     'install-resource-packs': {
-      title: 'Cómo instalar un texture pack de Minecraft (Java y Bedrock)',
+      // Not the same promise as the help page: the devices in the title, the exact steps in the description.
+      title: 'Cómo instalar texture packs en Minecraft: PC, móvil, consola',
       h1: 'Cómo instalar texture packs, shaders y archivos .mcpack en Minecraft',
-      description: 'Instala un paquete de recursos en Java, importa un .mcpack de Bedrock en PC o móvil, añade shaders con Iris u OptiFine y arregla packs que no aparecen.',
+      description: 'Dónde va el .zip en Java, cómo importar un .mcpack en PC, Android e iPhone, cómo poner shaders con Iris u OptiFine y qué hacer si el pack no aparece.',
       label: 'Instalar packs y shaders',
       blurb: 'Paquetes de recursos de Java, archivos .mcpack de Bedrock y shader packs, con soluciones.',
     },
