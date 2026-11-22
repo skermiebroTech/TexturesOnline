@@ -3,6 +3,7 @@
 // Pure logic apart from AssetIndex I/O.
 
 import type { AssetIndex } from '../../core/types';
+import { nextTask } from '../../core/yield';
 import { proceduralTexture, WATER_FRAMES, type ProceduralTextureName, type RGBAImage } from './procedural-textures';
 import { TEXTURE_SLOTS, type TextureSlot } from './voxel-world';
 
@@ -372,18 +373,19 @@ async function loadSlot(assets: AssetIndex, slot: TextureSlot, tints: { grass: R
 export async function loadSlotTextures(assets: AssetIndex | null, signal?: AbortSignal): Promise<SlotTextures> {
   if (!assets) return proceduralSlotTextures();
   const tints = await loadTints(assets).catch(() => ({ grass: DEFAULT_GRASS_TINT, foliage: DEFAULT_FOLIAGE_TINT }));
-  const entries = await Promise.all(
-    TEXTURE_SLOTS.map(async (slot) => {
-      if (signal?.aborted) return [slot, proceduralSlot(slot)] as const;
-      try {
-        return [slot, await loadSlot(assets, slot, tints)] as const;
-      } catch {
-        return [slot, proceduralSlot(slot)] as const;
-      }
-    }),
-  );
-  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  // The files arrive together (one download); each slot is then decoded and prepared in a task of
+  // its own: all of them at once were one long task while the preview set up (and taps waited).
+  await Promise.all(TEXTURE_SLOTS.map((slot) => resolvePath(assets, SOURCES[slot])).map((path) => (path ? assets.readFile(path).catch(() => null) : null)));
   const out = {} as SlotTextures;
-  for (const [slot, tex] of entries) out[slot] = tex;
+  for (const slot of TEXTURE_SLOTS) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    try {
+      out[slot] = await loadSlot(assets, slot, tints);
+    } catch {
+      out[slot] = proceduralSlot(slot);
+    }
+    await nextTask();
+  }
+  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   return out;
 }

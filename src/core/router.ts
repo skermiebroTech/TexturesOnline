@@ -11,7 +11,7 @@ import { ABOUT_META, ALL_META, GUIDES, GUIDES_META, HELP_META, HOME_META, PRIVAC
 import { SITE_NAME } from '../app/site';
 import { DEFAULT_LOCALE, splitLocale, type Locale } from '../i18n/locales';
 import { ui } from '../i18n/ui';
-import { loadContent } from '../i18n/content';
+import { loadContent, type ContentPart } from '../i18n/content';
 import { setTextLocale } from '../i18n/editor-text';
 import { loadKitText } from '../ui/i18n/load';
 import { loadSharedText } from '../shared/i18n/load';
@@ -60,6 +60,7 @@ export interface RouteState extends RouteContext {
 const APP = SITE_NAME;
 /** Pages without an editor: they need the UI kit's text but not the editors' shared text. */
 const TEXT_ONLY_TOOLS = new Set<ToolId>(['home', 'help', 'all']);
+const TOOL_CONTENT: ContentPart = 'tools';
 
 const textures = () => import('../tools/textures/view');
 const skins = () => import('../tools/skins/view');
@@ -505,7 +506,8 @@ async function render(force = false): Promise<void> {
   }
   // A translated page's text arrives in its own chunk: wait for it before swapping, so the page on
   // screen (often the prerendered one) never goes blank while the view waits for its words.
-  await Promise.all([loadContent(locale).catch(() => undefined), text]);
+  // (a tool page shows only the introduction of its tool from the language's content)
+  await Promise.all([loadContent(locale, tool && !TEXT_ONLY_TOOLS.has(tool) ? TOOL_CONTENT : undefined).catch(() => undefined), text]);
   clearTimeout(loadingTimer);
   if (my !== token) return;
 

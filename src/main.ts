@@ -98,7 +98,11 @@ onViewRendered((state, view) => {
 
 // The page's number format is ready before a tap first needs one (its first use is slow).
 onViewRendered((state) => {
-  whenIdle(() => warmNumberFormats(state.locale), 4000);
+  // (in two idle turns: each loads locale data, together a long task on a phone)
+  whenIdle(() => {
+    warmNumberFormats(state.locale, 'number');
+    whenIdle(() => warmNumberFormats(state.locale, 'plural'), 4000);
+  }, 4000);
 });
 
 // A prerendered page that the app renders the same way ("keep" pages: home, help, guides) is shown

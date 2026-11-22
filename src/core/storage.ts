@@ -1,4 +1,4 @@
-import { createStore, get, set, setMany, getMany, del, delMany, keys, values, clear, type UseStore } from 'idb-keyval';
+import { createStore, get, set, setMany, getMany, del, delMany, keys, clear, type UseStore } from 'idb-keyval';
 import type { Project } from './types';
 import { kit } from '../ui/i18n/kit';
 
@@ -169,11 +169,32 @@ export function onAssetCacheCleared(fn: () => void): () => void {
 
 const PROJECT_PREFIX = 'project:';
 
+/**
+ * Every value of a store, one cursor step at a time: each project arrives in a task of its own. A
+ * project holds a Blob for each of its textures, and reading them all at once (getAll) turned a few
+ * big packs into one long task while a start screen listed them.
+ */
+function valuesOneByOne(store: UseStore): Promise<unknown[]> {
+  return store('readonly', (s) => {
+    const out: unknown[] = [];
+    const req = s.openCursor();
+    return new Promise<unknown[]>((resolve, reject) => {
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) return resolve(out);
+        out.push(cursor.value);
+        cursor.continue();
+      };
+      req.onerror = () => reject(req.error);
+    });
+  });
+}
+
 export async function listProjects(kind?: Project['kind']): Promise<Project[]> {
   const b = await projectsDb();
   let all: unknown[];
   if ('mem' in b) all = [...b.mem.values()];
-  else all = await values(b.idb);
+  else all = await valuesOneByOne(b.idb);
   const list = all.filter((p): p is Project => !!p && typeof p === 'object' && typeof (p as Project).id === 'string' && typeof (p as Project).kind === 'string');
   return list.filter((p) => !kind || p.kind === kind).sort((a, b2) => (b2.updatedAt || 0) - (a.updatedAt || 0));
 }

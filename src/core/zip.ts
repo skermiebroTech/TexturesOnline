@@ -51,21 +51,26 @@ export const MAX_UNZIPPED_BYTES = 1024 * 1024 * 1024;
 export async function readZip(data: ZipInput, filter?: (path: string) => boolean): Promise<Record<string, Uint8Array>> {
   const bytes = await toBytes(data);
   if (!isZip(bytes)) throw new Error(fileText.zip.notZip);
-  // (the reader's errors are worded for people: damaged, encrypted, unsupported method...)
-  const zip = await openBytesZip(bytes);
-  const wanted: { entry: ZipEntry; path: string }[] = [];
-  let expanded = 0;
-  for (const entry of zip.entries) {
-    const path = normalizeZipPath(entry.name);
-    if (!path || (filter && !filter(path))) continue;
-    expanded += entry.size;
-    if (expanded > MAX_UNZIPPED_BYTES) throw new Error(fileText.zip.tooLarge);
-    wanted.push({ entry, path });
+  try {
+    const zip = await openBytesZip(bytes);
+    const wanted: { entry: ZipEntry; path: string }[] = [];
+    let expanded = 0;
+    for (const entry of zip.entries) {
+      const path = normalizeZipPath(entry.name);
+      if (!path || (filter && !filter(path))) continue;
+      expanded += entry.size;
+      if (expanded > MAX_UNZIPPED_BYTES) throw new Error(fileText.zip.tooLarge);
+      wanted.push({ entry, path });
+    }
+    const read = await zip.readMany(wanted.map((w) => w.entry));
+    const out: Record<string, Uint8Array> = {};
+    for (const { entry, path } of wanted) out[path] = read.get(entry.name)!;
+    return out;
+  } catch (err) {
+    // the reader's own errors are worded for people (damaged, encrypted, unsupported method...);
+    // anything else (a TypeError or RangeError from bytes that aren't what they claim) is a damaged archive
+    throw err instanceof Error && !(err instanceof TypeError || err instanceof RangeError) ? err : zipError(err);
   }
-  const read = await zip.readMany(wanted.map((w) => w.entry));
-  const out: Record<string, Uint8Array> = {};
-  for (const { entry, path } of wanted) out[path] = read.get(entry.name)!;
-  return out;
 }
 
 /** Builds a zip Blob from a FileMap. PNG and other compressed data is stored, text is deflated. */

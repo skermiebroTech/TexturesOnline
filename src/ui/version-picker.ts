@@ -2,7 +2,7 @@
 
 import type { Edition, GameVersion, Progress } from '../core/types';
 import { DEFAULT_JAVA_VERSION, getDefaultVersion, listVersions } from '../editions/versions';
-import { h, uid } from './dom';
+import { h, uid, whenIdle } from './dom';
 import { icon } from './icons';
 import { badge, button, progressBar, segmented, spinner, toggle } from './components';
 import { openPopover, type PopoverHandle } from './popover';
@@ -96,6 +96,7 @@ export function versionPicker(opts: {
       if (e !== edition || v !== value) return;
       known = list.find((x) => x.id === v);
       paintTrigger();
+      prepareList();
     } catch {
       /* the popover shows the error with a retry */
     }
@@ -121,11 +122,25 @@ export function versionPicker(opts: {
   }
 
   // ---- popover ----
-  function openList() {
-    if (pop?.open) {
-      pop.close();
-      return;
-    }
+  /**
+   * The list's content: built ahead while the page is idle (or by the first open) and kept for the
+   * next opens while the edition, the version and the extras toggle stay the same, so a tap on the
+   * picker only shows it instead of building a few dozen rows first.
+   */
+  interface ListContent {
+    /** edition, extras toggle and version it shows */
+    key: string;
+    content: HTMLElement;
+    search: HTMLInputElement;
+    /** Loads the versions and shows the rows on screen (the others after the paint while open) */
+    fill(): Promise<void>;
+    /** About to be shown again: an empty search, and the rows that were left out */
+    reopen(): void;
+  }
+  let listUi: ListContent | null = null;
+  const listKey = () => `${edition}|${extras}|${value}`;
+
+  function makeList(): ListContent {
     const listId = uid('vp-list');
     const search = h('input', {
       class: 'input',
@@ -178,14 +193,30 @@ export function versionPicker(opts: {
       paintTrigger();
       pop?.close();
       opts.onChange(edition, value);
+      prepareList();
     };
 
     // The list shows the rows on screen (and the chosen version's) at once, the rest after that paint:
     // a few hundred rows to style and lay out would hold up the tap that opened the list.
     let renderTurn = 0;
     let fresh = true;
+    let filled = false;
+    let loading = false;
+    /** The groups left out of the first rows, added after the paint (once the list is open) */
+    let rest: (() => void) | null = null;
+    const addRestAfterPaint = () => {
+      const add = rest;
+      if (!add) return;
+      void afterNextPaint().then(() => {
+        if (rest === add && pop?.open) {
+          rest = null;
+          add();
+        }
+      });
+    };
     const render = () => {
       const my = ++renderTurn;
+      rest = null;
       const q = search.value.trim().toLowerCase();
       const shown = q ? versions.filter((v) => `${v.id} ${v.name} ${versionName(v.name)}`.toLowerCase().includes(q)) : versions;
       list.replaceChildren();
@@ -248,17 +279,21 @@ export function versionPicker(opts: {
       setActive(first, !fresh || first >= 6);
       fresh = false;
       if (g < groups.length) {
-        void afterNextPaint().then(() => {
-          if (my === renderTurn && pop?.open) addGroups(true);
-        });
+        rest = () => {
+          if (my === renderTurn) addGroups(true);
+        };
+        if (pop?.open && listUi?.content === content) addRestAfterPaint();
       }
     };
 
     const fill = async () => {
       list.replaceChildren(h('div', { class: 'vp-status' }, spinner(20), pickers.version.loading));
+      ui.key = listKey();
+      loading = true;
       try {
         versions = await loadList(edition, extras);
         render();
+        filled = true;
       } catch (err) {
         console.error(err);
         const retry = button({ label: kit.tryAgain, icon: 'reload', size: 'sm', onClick: () => void fill() });
@@ -270,6 +305,8 @@ export function versionPicker(opts: {
             retry,
           ),
         );
+      } finally {
+        loading = false;
       }
     };
 
@@ -294,17 +331,61 @@ export function versionPicker(opts: {
       }
     });
 
-    trigger.setAttribute('aria-expanded', 'true');
-    pop = openPopover(trigger, content, {
+    const ui: ListContent = {
+      key: listKey(),
+      content,
+      search,
+      fill,
+      reopen() {
+        // (still loading: the rows come when the versions do; it failed: try again)
+        if (!filled) {
+          if (!loading) void fill();
+          return;
+        }
+        if (search.value) {
+          search.value = '';
+          render();
+        } else if (active >= 6) setActive(active);
+        addRestAfterPaint();
+      },
+    };
+    return ui;
+  }
+
+  function openList() {
+    if (pop?.open) {
+      pop.close();
+      return;
+    }
+    const reuse = listUi && listUi.key === listKey() ? listUi : null;
+    const ui = reuse ?? makeList();
+    listUi = ui;
+    // (openPopover marks the trigger expanded once it has read where the trigger is: changed before,
+    // the attribute would make that read lay the page out first)
+    pop = openPopover(trigger, ui.content, {
       placement: 'bottom-start',
       matchWidth: true,
-      focus: search,
+      focus: ui.search,
       role: 'dialog',
       label: pickers.version.dialog,
       onClose: () => trigger.setAttribute('aria-expanded', 'false'),
     });
-    void fill();
+    if (reuse) reuse.reopen();
+    else void ui.fill();
   }
+
+  /** Builds the list for the picker's current choice once the page is idle (see ListContent). */
+  let preparing = false;
+  const prepareList = () => {
+    if (preparing) return;
+    preparing = true;
+    whenIdle(() => {
+      preparing = false;
+      if (pop?.open || !el.isConnected || listUi?.key === listKey()) return;
+      listUi = makeList();
+      void listUi.fill();
+    }, 3000);
+  };
 
   trigger.addEventListener('click', openList);
   trigger.addEventListener('keydown', (e) => {
@@ -338,6 +419,8 @@ export function versionPicker(opts: {
   } else {
     void refreshKnown();
   }
+  // (built while the versions still load: they fill it in when they arrive, not in the tap)
+  prepareList();
   return el;
 }
 

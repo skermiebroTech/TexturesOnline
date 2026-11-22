@@ -22,6 +22,7 @@ import { ui, type UiText } from '../../i18n/ui';
 import type { Locale } from '../../i18n/locales';
 import { BACKED_UP, lastBackupAt, onProjectsChanged } from '../../shared/project-file/handoff';
 import { openBackupDialog, pickProjectFile, saveProjectFile } from '../../shared/project-file/entry';
+import { yieldToMain } from '../../core/yield';
 
 /** localStorage: the reminder that projects live only in this browser was dismissed */
 const REMINDER_KEY = 'to-backup-reminder-dismissed';
@@ -308,7 +309,10 @@ export default async function home(root: HTMLElement, ctx: ViewContext): Promise
   );
 
   const cards = Array.from(root.querySelectorAll<HTMLAnchorElement>('a[data-tool-card]'));
-  const showcases: Showcase[] = cards.map((card) => toolPreview(card, card.dataset.toolCard as ToolKey));
+  // Each card's preview draws its first frame in a task of its own, after the hero block: together
+  // with it they were one long task right as the page became the app (a tap meanwhile waited).
+  const showcases: Showcase[] = [];
+  let gone = false;
 
   const recent = recentSection(ui(ctx.locale).recent);
   root.querySelector('.tools')?.after(recent.el);
@@ -326,10 +330,18 @@ export default async function home(root: HTMLElement, ctx: ViewContext): Promise
         }, { rootMargin: '80px' })
       : null;
   // The previews show their first frame now and start moving once the page has loaded.
-  const cancelStart = whenIdle(() => {
-    if (io) cards.forEach((c) => io.observe(c));
-    else showcases.forEach((s) => s.start());
-  });
+  let cancelStart = () => {};
+  void (async () => {
+    for (const card of cards) {
+      await yieldToMain();
+      if (gone) return;
+      showcases.push(toolPreview(card, card.dataset.toolCard as ToolKey));
+    }
+    cancelStart = whenIdle(() => {
+      if (io) cards.forEach((c) => io.observe(c));
+      else showcases.forEach((s) => s.start());
+    });
+  })();
   const onVis = () => {
     if (document.hidden) showcases.forEach((s) => s.stop());
     else if (io) {
@@ -342,6 +354,7 @@ export default async function home(root: HTMLElement, ctx: ViewContext): Promise
   document.addEventListener('visibilitychange', onVis);
 
   return () => {
+    gone = true;
     cancelStart();
     block.destroy();
     showcases.forEach((s) => s.destroy());
