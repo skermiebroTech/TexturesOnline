@@ -31,7 +31,7 @@ import { guideBySlug, guidePage, guidesIndexPage } from '../../tools/guides/cont
 import { aboutPage, aboutText } from '../../tools/about/content';
 import { privacyPage } from '../../tools/privacy/content';
 import { allPage } from '../../tools/all/content';
-import { CONTENT_MODULES, contentOf, hasContent } from '../../i18n/content';
+import { CONTENT_MODULES, TOOLS_CONTENT_MODULES, contentOf, hasContent } from '../../i18n/content';
 import { TRANSLATED_LOCALES, type Locale } from '../../i18n/locales';
 import { ui } from '../../i18n/ui';
 
@@ -103,6 +103,24 @@ const TOOL_ROUTE_MODULE: Record<IntroTool, string> = {
   shaders: 'src/tools/shaders/view.ts',
 };
 
+/** Folder of each tool's own interface text (<folder>/<lang>.ts), which its view loads before it renders. */
+const TOOL_TEXT_DIR: Record<IntroTool, string> = {
+  textures: 'src/tools/textures/i18n',
+  painting: 'src/tools/textures/i18n',
+  gui: 'src/tools/textures/i18n',
+  disc: 'src/tools/textures/i18n',
+  glint: 'src/tools/textures/i18n',
+  skins: 'src/tools/skins/i18n',
+  skinpack: 'src/tools/skins/i18n',
+  cape: 'src/tools/skins/i18n',
+  converter: 'src/tools/convert/i18n',
+  merge: 'src/tools/merge/i18n',
+  doctor: 'src/tools/doctor/i18n',
+  totem: 'src/tools/totem/i18n',
+  fonts: 'src/tools/fonts/i18n',
+  shaders: 'src/tools/shaders/i18n',
+};
+
 /**
  * The picture a start screen shows first (its largest element) when the view loads that start
  * screen in a second step: fetched with the page, so it is ready when the start screen appears.
@@ -123,15 +141,18 @@ function shotIn(locale: Locale, key: IntroTool | 'home'): Screenshot {
 const crumbsFor = (locale: Locale, ...items: Crumb[]): Crumb[] => [{ label: ui(locale).home, to: '/' }, ...items];
 
 /** Fields every page shares: language, alternates, footer and the language's content module. */
-function base(meta: PageMeta, preload: string[]): Pick<PrerenderPage, 'meta' | 'locale' | 'alternates' | 'preload'> {
+function base(meta: PageMeta, preload: string[], content: 'all' | 'tools' = 'all'): Pick<PrerenderPage, 'meta' | 'locale' | 'alternates' | 'preload'> {
   const locale = metaLocale(meta);
   const route = metaRoute(meta);
   return {
     meta,
     locale,
     alternates: pageLocales(route).map((l) => ({ locale: l, url: absoluteUrl(pageMeta(route, l)!.path) })),
-    // The view waits for its language's text before replacing the prerendered page.
-    preload: locale === 'en' ? preload : [...preload, CONTENT_MODULES[locale]],
+    // The router's first render loads its fallback views (src/app/pages.ts) and, on a translated
+    // page, the language's content (on a tool page only its tools' part) and UI kit text before the
+    // view replaces the prerendered page: preloaded with the page, they cost no extra round trip
+    // after the app's script has run.
+    preload: [...preload, 'src/app/pages.ts', ...(locale === 'en' ? [] : [(content === 'tools' ? TOOLS_CONTENT_MODULES : CONTENT_MODULES)[locale], `src/ui/i18n/${locale}.ts`])],
   };
 }
 
@@ -184,7 +205,8 @@ function toolEntry(tool: IntroTool, locale: Locale): PrerenderPage | null {
   const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'painting' | 'gui' | 'disc' | 'glint' | 'skinpack' | 'cape' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts'>);
   const startImage = TOOL_START_IMAGE[tool];
   return {
-    ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts']),
+    // (and the text all editors share and the tool's own, which the tool waits for before it renders)
+    ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts', ...(locale === 'en' ? [] : [`src/shared/i18n/${locale}.ts`, `${TOOL_TEXT_DIR[tool]}/${locale}.ts`])], 'tools'),
     ...(startImage ? { preloadImages: [startImage] } : {}),
     tool: tb,
     nav: tb,

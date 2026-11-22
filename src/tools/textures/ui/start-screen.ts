@@ -31,6 +31,7 @@ import { byPointer } from './media';
 import { projectsText } from '../../../shared/i18n/projects';
 import { onProjectsChanged } from '../../../shared/project-file/handoff';
 import { openProjectButton, saveProjectFile } from '../../../shared/project-file/entry';
+import { afterNextPaint, yieldToMain } from '../../../core/yield';
 
 const START_RES = [16, 32, 64, 128];
 
@@ -83,10 +84,21 @@ function heroArt(): { el: HTMLElement; destroy(): void } {
     items.map(([, , preset], i) => h('figure', { class: 'tx-hero-cube', style: { '--i': i } }, canvases[i], h('figcaption', null, preset ? getPreset(preset)?.label ?? preset : t.hero.original))),
   );
   let painted = false;
+  let gone = false;
+  // After the start screen's first paint, one block a task: each restyled block runs the effect
+  // presets over its textures, which held up the frame that shows the page (and the taps meanwhile).
+  // The canvases keep their size in CSS, so nothing moves when they are drawn.
   const paint = () => {
     if (painted) return;
     painted = true;
-    items.forEach(([top, sd, preset], i) => paintIsoBlock(canvases[i], top, sd, preset, 64));
+    void (async () => {
+      await afterNextPaint();
+      for (const [i, [top, sd, preset]] of items.entries()) {
+        if (gone) return;
+        paintIsoBlock(canvases[i], top, sd, preset, 64);
+        await yieldToMain();
+      }
+    })();
   };
   const mq = typeof matchMedia === 'function' ? matchMedia(HERO_HIDDEN) : null;
   const onMq = () => {
@@ -97,7 +109,13 @@ function heroArt(): { el: HTMLElement; destroy(): void } {
   };
   if (!mq || !mq.matches) paint();
   else mq.addEventListener('change', onMq);
-  return { el, destroy: () => mq?.removeEventListener('change', onMq) };
+  return {
+    el,
+    destroy: () => {
+      gone = true;
+      mq?.removeEventListener('change', onMq);
+    },
+  };
 }
 
 /** Up to four of the pack's own edited textures, or an original block restyled with the pack's effects. */
@@ -273,6 +291,9 @@ export function renderStartScreen(root: HTMLElement, ctx: RouteContext): () => v
     if (createBtn.disabled) return;
     createBtn.disabled = true;
     try {
+      // The pressed button paints first; the new pack is stored and the editor opens after that frame.
+      await afterNextPaint();
+      if (!alive) return;
       const p = newTextureProject({ name: name.trim() || (start === 'pvp' ? t.create.pvpName : (ft?.name ?? t.create.defaultName)), edition, version: version || (edition === 'java' ? DEFAULT_JAVA_VERSION : 'latest'), resolution, description: description.trim() || t.create.descriptionPlaceholder });
       // the PvP tweaks need the game's files: the editor switches them on when it has them
       if (start === 'pvp') p.pvp = { tweaks: {}, pending: { fps } };

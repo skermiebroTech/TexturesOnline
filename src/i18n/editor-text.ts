@@ -159,9 +159,9 @@ export function num(n: number, opts?: Intl.NumberFormatOptions, locale: Locale =
  * loads the browser's locale data (tens of ms on a phone), better spent while nothing happens than
  * in the tap that first shows a number.
  */
-export function warmNumberFormats(locale: Locale = active): void {
-  num(1, undefined, locale);
-  pluralCategory(1, locale);
+export function warmNumberFormats(locale: Locale = active, part: 'number' | 'plural' | 'both' = 'both'): void {
+  if (part !== 'plural') num(1, undefined, locale);
+  if (part !== 'number') pluralCategory(1, locale);
 }
 
 function pluralCategory(n: number, locale: Locale): string {

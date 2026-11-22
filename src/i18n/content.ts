@@ -35,10 +35,19 @@ export interface LocaleContent {
   all?: AllText;
 }
 
+/**
+ * How much of a language's content a page needs: a tool page shows only the tools' introductions,
+ * a small part of the language's content (most of it is the guides' and the help page's text).
+ */
+export type ContentPart = 'all' | 'tools';
+
 const store = new Map<TranslatedLocale, LocaleContent>();
+/** Languages whose content is in the store in full (the others may have their tools' part). */
+const complete = new Set<TranslatedLocale>();
 
 export function registerContent(locale: TranslatedLocale, content: LocaleContent): void {
   store.set(locale, content);
+  complete.add(locale);
 }
 
 /** The loaded content of a language (throws when it has not been loaded). */
@@ -62,6 +71,17 @@ const LOADERS: Record<TranslatedLocale, () => Promise<{ CONTENT: LocaleContent }
   pl: () => import('./pl/content'),
 };
 
+/** The tools' part of each language's content on its own. */
+const TOOLS_LOADERS: Record<TranslatedLocale, () => Promise<{ TOOLS: LocaleContent['tools'] }>> = {
+  de: () => import('./de/tools'),
+  es: () => import('./es/tools'),
+  'pt-br': () => import('./pt-br/tools'),
+  ja: () => import('./ja/tools'),
+  ru: () => import('./ru/tools'),
+  fr: () => import('./fr/tools'),
+  pl: () => import('./pl/tools'),
+};
+
 /**
  * Fetches the pixel font's extension files for a language written with them (Cyrillic, and Polish ą ć ę ł ń ś ź ż), so a page
  * reached in the app does not show its text in the fallback font first (prerendered pages preload
@@ -73,13 +93,33 @@ function loadExtendedFont(locale: Locale): Promise<unknown> {
   return Promise.race([fonts, new Promise((r) => setTimeout(r, 1000))]);
 }
 
-/** Makes sure a language's content is available (the app calls this before rendering a page). */
-export async function loadContent(locale: Locale): Promise<void> {
-  if (hasContent(locale)) return;
+/**
+ * Makes sure a language's content is available (the app calls this before rendering a page): all of
+ * it, or only its tools' part (`part`).
+ */
+export async function loadContent(locale: Locale, part: ContentPart = 'all'): Promise<void> {
+  if (locale === 'en') return;
   const l = locale as TranslatedLocale;
+  if (complete.has(l) || (part === 'tools' && store.has(l))) return;
+  if (part === 'tools') {
+    const [mod] = await Promise.all([TOOLS_LOADERS[l](), loadExtendedFont(l)]);
+    if (!store.has(l)) store.set(l, { tools: mod.TOOLS, guides: {} });
+    return;
+  }
   const [mod] = await Promise.all([LOADERS[l](), loadExtendedFont(l)]);
   registerContent(l, mod.CONTENT);
 }
+
+/** Source module of each language's tool texts (the build preloads it on that language's tool pages). */
+export const TOOLS_CONTENT_MODULES: Record<TranslatedLocale, string> = {
+  de: 'src/i18n/de/tools.ts',
+  es: 'src/i18n/es/tools.ts',
+  'pt-br': 'src/i18n/pt-br/tools.ts',
+  ja: 'src/i18n/ja/tools.ts',
+  ru: 'src/i18n/ru/tools.ts',
+  fr: 'src/i18n/fr/tools.ts',
+  pl: 'src/i18n/pl/tools.ts',
+};
 
 /** Source module of a language's content (the build preloads it on that language's pages). */
 export const CONTENT_MODULES: Record<TranslatedLocale, string> = {

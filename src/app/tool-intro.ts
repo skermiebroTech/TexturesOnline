@@ -11,7 +11,7 @@ import { loadContent } from '../i18n/content';
 import type { Locale } from '../i18n/locales';
 
 export async function mountToolIntro(root: HTMLElement, tool: IntroTool, locale: Locale = 'en'): Promise<void> {
-  await loadContent(locale).catch((err) => console.warn('Translation unavailable', err));
+  await loadContent(locale, 'tools').catch((err) => console.warn('Translation unavailable', err));
   if (!root.isConnected || root.querySelector('[data-tool-intro]')) return;
   const section = toDom(toolIntro(tool, { prerender: false, locale }));
   const footer = root.querySelector('.site-footer');

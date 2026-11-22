@@ -12,9 +12,12 @@
 // a running server (e.g. a Vite dev server, slower than a build).
 // Options:
 //   --cpu <n>          CPU slowdown through the DevTools protocol (default 4; a mid-range phone; try 6)
-//   --device <d>       phone (390 × 844, DPR 3; default) or tablet (820 × 1180, DPR 2)
+//   --device <d>       phone (390 × 844, DPR 3; default), tablet (820 × 1180, DPR 2) or desktop
+//                      (1280 × 800, mouse clicks)
 //   --flows <a,b>      some of: home, start, editor, skins, shaders, converter, totem (default all), and
-//                      rum: the interactions field data names as the slowest on phones, in one pass
+//                      rum: the interactions field data names as the slowest on phones, in one pass,
+//                      field: the slow ones outside the texture editor (phones and laptops), also in
+//                      parts: field-home, field-start, field-packs, field-skins, field-shaders
 //   --top <n>          rows in the slowest-interactions table (default 25)
 //   --runs <n>         repeat every flow n times and report the worst / median of each step (default 1)
 //   --json <file>      also write every step's numbers as JSON (to compare two builds)
@@ -26,6 +29,7 @@
 //                      rendering work during the slowest interaction (style, layout, paint, commit)
 //   --until <regex>    end each flow after the first step whose name matches
 //   --headed           show the browser
+//   --verbose          for the steps that tap while a page loads: every tap and every long frame
 //   --no-probe         don't tap during load (see below)
 // Tap during load: 100 ms after each step that opens a page or builds an editor (marked `probe`), and
 // then every 250 ms until the page goes quiet (at most 5 s), a finger taps a tiny transparent spot at
@@ -51,7 +55,7 @@ const { startPagesServer } = await import('../e2e/seo/pages-server.mjs');
 const argv = process.argv.slice(2);
 const opt = (name, def) => (argv.includes(`--${name}`) ? argv[argv.indexOf(`--${name}`) + 1] : def);
 const flag = (name) => argv.includes(`--${name}`);
-const positional = argv.filter((a, i) => !a.startsWith('--') && !(i > 0 && argv[i - 1].startsWith('--') && !['--profile', '--headed', '--no-probe'].includes(argv[i - 1])));
+const positional = argv.filter((a, i) => !a.startsWith('--') && !(i > 0 && argv[i - 1].startsWith('--') && !['--profile', '--headed', '--no-probe', '--verbose'].includes(argv[i - 1])));
 const target = positional[0] ?? path.join(ROOT, 'dist');
 const CPU = Number(opt('cpu', '4'));
 const DEVICE = opt('device', 'phone');
@@ -63,13 +67,17 @@ const TRACE = opt('trace', null) ? new RegExp(opt('trace', ''), 'i') : null;
 const UNTIL = opt('until', null) ? new RegExp(opt('until', ''), 'i') : null;
 const PROBE = !flag('no-probe');
 const HOT = Number(opt('hot', '6'));
+const VERBOSE = flag('verbose');
 const ONLY = opt('only', null) ? new RegExp(opt('only', ''), 'i') : null;
 const ALL_FLOWS = ['home', 'start', 'editor', 'skins', 'shaders', 'converter', 'totem'];
 const FLOWS = (opt('flows', ALL_FLOWS.join(',')) ?? '').split(',').filter(Boolean);
 const DEVICES = {
   phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 },
   tablet: { viewport: { width: 820, height: 1180 }, deviceScaleFactor: 2 },
+  // a laptop: mouse clicks instead of taps
+  desktop: { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, mouse: true },
 };
+const MOUSE = !!DEVICES[DEVICE]?.mouse;
 const UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
 
 // ------------------------------------------------------------------------------------ source maps
@@ -389,8 +397,78 @@ class Session {
       return { events, mainTid: [...count.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] };
     };
   }
+  /** A tap (a mouse click on the desktop device). */
   tap(sel) {
-    return this.page.locator(sel).filter({ visible: true }).first().tap({ timeout: 8000 });
+    const el = this.page.locator(sel).filter({ visible: true }).first();
+    return MOUSE ? el.click({ timeout: 8000 }) : el.tap({ timeout: 8000 });
+  }
+  /**
+   * Opens `url` with the network throttled like a phone on a slow connection (DevTools "Slow 4G") and
+   * the CPU slowed down, and taps `sel` every 250 ms from when it is on screen until the page has been
+   * quiet for a while (at most `max` ms): the slowest of those taps is the step's latency. What a
+   * visitor's tap on the page waits for while the page loads and the app boots.
+   */
+  async loadStep(name, url, sel, { max = 9000, net = true } = {}) {
+    const page = this.page;
+    const cdp = this.cdp;
+    try {
+      await cdp.send('Network.enable');
+      await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+      if (net) await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 562.5, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (750 * 1024) / 8 });
+      await this.throttle();
+      await page.goto(url, { waitUntil: 'commit' });
+      await page.waitForSelector(sel, { state: 'visible', timeout: 30000 });
+      const t0 = Date.now();
+      let taps = 0;
+      while (Date.now() - t0 < max) {
+        const box = await page.locator(sel).first().boundingBox();
+        if (box) {
+          const x = box.x + Math.min(40, box.width / 2);
+          const y = box.y + box.height / 2;
+          if (MOUSE) await page.mouse.click(x, y);
+          else {
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 3 }] });
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+          }
+          taps++;
+        }
+        await page.waitForTimeout(250);
+        // quiet: no long frame for a second, and the page has loaded
+        const quiet = await page.evaluate(() => document.readyState === 'complete' && performance.now() - Math.max(0, ...window.__inp.loafs.map((l) => l.start + l.dur)) > 1000);
+        if (quiet && Date.now() - t0 > 2500) break;
+      }
+      await page.waitForTimeout(150);
+      if (net) await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+      await cdp.send('Network.setCacheDisabled', { cacheDisabled: false });
+      const data = await page.evaluate(() => ({ events: window.__inp.events.filter((e) => !e.probe), loafs: window.__inp.loafs }));
+      const byId = new Map();
+      for (const e of data.events) {
+        const cur = byId.get(e.id);
+        if (!cur || e.dur > cur.dur) byId.set(e.id, { ...e, names: new Set([...(cur?.names ?? []), e.name]) });
+        else cur.names.add(e.name);
+      }
+      const inter = [...byId.values()].sort((a, b) => b.dur - a.dur);
+      const worst = inter[0] ?? null;
+      const att = worst ? attribute(worst, data.events.filter((e) => e.id === worst.id), data.loafs) : null;
+      const longest = data.loafs.reduce((m, l) => (l.blocking > (m?.blocking ?? 0) ? l : m), null);
+      const blocker = longest && longest.dur > 100 ? { dur: Math.round(longest.dur), scripts: longest.scripts.sort((a, b) => b.dur - a.dur).slice(0, 3).map((sc) => `${Math.round(sc.dur)} ms ${sc.invoker || sc.type}${sc.fn ? ` → ${sc.fn}` : ''} ${where(sc.url, { char: sc.char })}`) } : null;
+      results.push({ flow: this.flow, step: name, run: this.run, ms: worst ? worst.dur : 0, n: inter.length, worst: worst && { target: worst.target, names: [...worst.names], ...att }, blocker, hot: null });
+      process.stdout.write(`  ${worst ? String(Math.round(worst.dur)).padStart(4) : '  <16'} ms  ${this.flow} › ${name}  (slowest of ${taps} taps)${blocker ? `  [longest frame: ${blocker.dur} ms]` : ''}\n`);
+      if (VERBOSE) {
+        // when each tap came and how long it took, and the long frames of the load
+        const nav = await page.evaluate(() => {
+          const n = performance.getEntriesByType('navigation')[0];
+          return { fcp: performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? 0, dcl: n.domContentLoadedEventEnd, load: n.loadEventEnd };
+        });
+        console.log(`        first paint ${Math.round(nav.fcp)} ms, DOMContentLoaded ${Math.round(nav.dcl)} ms, load ${Math.round(nav.load)} ms`);
+        for (const e of [...byId.values()].sort((a, b) => a.start - b.start)) console.log(`        tap at ${String(Math.round(e.start)).padStart(5)}: ${String(Math.round(e.dur)).padStart(4)} ms (input delay ${Math.round(e.ps - e.start)})`);
+        for (const l of data.loafs.filter((x) => x.dur > 50)) console.log(`        frame at ${String(Math.round(l.start)).padStart(5)}: ${String(Math.round(l.dur)).padStart(4)} ms  ${l.scripts.sort((a, b) => b.dur - a.dur).slice(0, 3).map((sc) => `${Math.round(sc.dur)} ms ${sc.invoker || sc.type}${sc.fn ? ` → ${sc.fn}` : ''} ${where(sc.url, { char: sc.char })}`).join('; ')}`);
+      }
+    } catch (err) {
+      console.log(`  SKIP ${this.flow} › ${name}: ${String(err.message).split('\n')[0]}`);
+      results.push({ flow: this.flow, step: name, run: this.run, ms: null, n: 0, error: String(err.message).split('\n')[0] });
+    }
+    if (UNTIL?.test(name)) throw new Error('--until reached');
   }
   /** A finger stroke through screen points (Input.dispatchTouchEvent, as phone.e2e.cjs). */
   async stroke(points, stepMs = 16) {
@@ -469,7 +547,8 @@ function hotFunctions(profile, window = null) {
 }
 
 async function session(flow, run, body) {
-  const ctx = await browser.newContext({ ...DEVICES[DEVICE], isMobile: true, hasTouch: true, userAgent: UA, serviceWorkers: 'block', colorScheme: 'light' });
+  const { mouse, ...device } = DEVICES[DEVICE];
+  const ctx = await browser.newContext({ ...device, isMobile: !mouse, hasTouch: !mouse, ...(mouse ? {} : { userAgent: UA }), serviceWorkers: 'block', colorScheme: 'light' });
   await lib.routeMojang(ctx, fx);
   // skin lookups by name and other outside requests: answer fast instead of waiting on the network
   await ctx.route(/^https:\/\/(api\.mojang\.com|sessionserver\.mojang\.com|textures\.minecraft\.net|mc-heads\.net|crafatar\.com)\//, (r) => r.fulfill({ status: 404, body: '' }));
@@ -829,7 +908,192 @@ async function flowRum(s, page) {
   await s.step('close export dialog', () => page.keyboard.press('Escape'));
 }
 
-const FLOW_FNS = { home: flowHome, start: flowStart, editor: flowEditor, skins: flowSkins, shaders: flowShaders, converter: flowConverter, totem: flowTotem, rum: flowRum };
+/** A Java texture pack of the game's own block and item textures (as a visitor's pack: about 2,000 files). */
+let packZip = null;
+/** How many of the visitor's own packs are saved when the start screen loads (the field flow). */
+const SAVED_PACKS = 4;
+function testPack() {
+  if (packZip || !fx) return packZip;
+  const { unzipSync, zipSync, strToU8 } = require(path.join(ROOT, 'node_modules/fflate'));
+  const jar = unzipSync(new Uint8Array(fs.readFileSync(path.join(fx, 'client-26.3.jar'))), { filter: (f) => /^assets\/minecraft\/textures\/(block|item|entity)\/.+\.png$/.test(f.name) });
+  const files = { 'pack.mcmeta': strToU8(JSON.stringify({ pack: { pack_format: 69, description: 'Perf pack' } })) };
+  for (const [name, data] of Object.entries(jar)) files[name] = [data, { level: 0 }];
+  packZip = { name: 'Perf Pack.zip', mimeType: 'application/zip', buffer: Buffer.from(zipSync(files)) };
+  return packZip;
+}
+
+/** Opens a page with the CPU at full speed, lets it settle, then slows the CPU down for the steps. */
+async function openSettled(s, page, url, sel, wait = 1500) {
+  await s.throttle(false);
+  await page.goto(url);
+  await page.waitForSelector(sel, { timeout: 30000 });
+  await page.waitForTimeout(wait);
+  await s.throttle();
+}
+
+/**
+ * The interactions field data (RUM, Nov 15–21) names as slow outside the texture editor, on phones and
+ * on laptops (--device desktop): taps while the home page loads, the new pack page's version picker,
+ * edition switch, "open a pack" card and Create button, the top bar's links, the skin editor's import
+ * by username and the shader maker's preview.
+ */
+async function flowField(s, page) {
+  await fieldHome(s, page);
+  await fieldStart(s, page);
+  await fieldPacks(s, page);
+  await fieldSkins(s, page);
+  await fieldShaders(s, page);
+}
+
+/** A tap on the home page's title while the page loads and the app boots. */
+async function fieldHome(s) {
+  await s.loadStep('home: tap the title while the page loads', base, 'section.hero h1.hero-title');
+}
+
+/** The new pack page's version picker and edition switch, and the top bar's links. */
+async function fieldStart(s, page) {
+  await openSettled(s, page, base + 'textures/', '.tx-new');
+  await s.step('new pack: version picker', () => s.tap('section.card.tx-new .version-picker > button.vp-trigger'), { quiet: 600 });
+  await s.step('new pack: close version picker', () => page.keyboard.press('Escape'));
+  await s.step('new pack: edition Bedrock', () => s.tap('section.card.tx-new .field .segmented-item:nth-child(2)'), { quiet: 600 });
+  await s.step('new pack: edition Java', () => s.tap('section.card.tx-new .field .segmented-item:nth-child(1)'), { quiet: 600 });
+  await s.step('new pack: version picker (again)', () => s.tap('section.card.tx-new .version-picker > button.vp-trigger'), { quiet: 600 });
+  await s.step('new pack: close version picker (again)', () => page.keyboard.press('Escape'));
+  // the top bar: a main nav link (laptops) and the wordmark (home)
+  if (await page.locator('header.topbar nav.mainnav a.nav-link').first().isVisible()) {
+    await s.step('top bar: nav link (to /skins/)', () => s.tap('header.topbar nav.mainnav a.nav-link[href*="skins"]'), { quiet: 1000 });
+    await page.waitForSelector('.sk-imports', { timeout: 30000 });
+    await page.waitForTimeout(800);
+    await s.step('top bar: nav link (to /textures/)', () => s.tap('header.topbar nav.mainnav a.nav-link[href*="textures"]'), { quiet: 1000 });
+    await page.waitForSelector('.tx-new', { timeout: 30000 });
+    await page.waitForTimeout(800);
+  }
+  await s.step('top bar: wordmark (to the home page)', () => s.tap('header.topbar a.brand > span.wordmark'), { quiet: 1000 });
+  await page.waitForSelector('section.hero', { timeout: 30000 });
+  await page.waitForTimeout(800);
+  await s.step('top bar: wordmark on the home page', () => s.tap('header.topbar a.brand > span.wordmark'), { quiet: 800 });
+
+}
+
+/** "Open a pack": taps on its card while the page loads and while a pack opens; saved packs; Create. */
+async function fieldPacks(s, page) {
+  await s.loadStep('new pack: tap the "open a pack" card while the page loads', base + 'textures/', 'section.card.tx-open > div.tx-card-head');
+  const pack = testPack();
+  if (pack) {
+    await openSettled(s, page, base + 'textures/', '.tx-open-dz');
+    await s.step('new pack: taps on the "open a pack" card while a pack opens', async () => {
+      // straight input events (a locator's click would wait for the page to answer first)
+      const box = await page.locator('section.card.tx-open > div.tx-card-head').boundingBox();
+      await page.setInputFiles('.tx-open-dz input[type=file]', pack);
+      const t0 = Date.now();
+      while (Date.now() - t0 < 12000 && !/textures\/[0-9a-f-]{20,}/.test(page.url())) {
+        const x = box.x + 30;
+        const y = box.y + box.height / 2;
+        if (MOUSE) await page.mouse.click(x, y);
+        else {
+          await s.cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 4 }] });
+          await s.cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        }
+        await page.waitForTimeout(300);
+      }
+    }, { quiet: 600 });
+  }
+
+  // A returning visitor: a few packs of their own saved in the browser (opened from a .zip, every
+  // texture a file of its own). The start screen lists them while the visitor taps around.
+  if (pack) {
+    await s.throttle(false);
+    for (let i = 0; i < SAVED_PACKS - 1; i++) {
+      await page.goto(base + 'textures/');
+      await page.setInputFiles('.tx-open-dz input[type=file]', pack);
+      await page.waitForURL(/textures\/[0-9a-f-]{20,}/, { timeout: 60000 });
+    }
+    await s.loadStep(`new pack, ${SAVED_PACKS} packs saved: tap the "new pack" card while the page loads`, base + 'textures/', 'section.card.tx-new > div.tx-card-head', { net: false });
+    for (const [label, sel] of [
+      ['version picker', 'section.card.tx-new .version-picker > button.vp-trigger'],
+      ['edition Bedrock', 'section.card.tx-new .field .segmented-item:nth-child(2)'],
+    ]) {
+      await s.throttle(false);
+      await page.goto(base + 'textures/', { waitUntil: 'commit' });
+      await page.waitForSelector(sel, { state: 'visible', timeout: 30000 });
+      await s.throttle();
+      await s.step(`new pack, ${SAVED_PACKS} packs saved: ${label} as soon as it shows`, () => s.tap(sel), { quiet: 600, busy: true });
+      await page.keyboard.press('Escape');
+    }
+  }
+
+  // the Create button: the tap's own frame (the editor opens after it)
+  await openSettled(s, page, base + 'textures/', '.tx-new');
+  await page.fill('.tx-name-field input', 'Perf');
+  await s.step('new pack: Create', () => s.tap('section.card.tx-new .tx-create-btn'), { quiet: 600 });
+  await page.waitForURL(/textures\/[0-9a-f-]+\/?$/, { timeout: 30000 }).catch(() => {});
+
+}
+
+/** The skin editor's import by username (the lookup answers at once with a skin from the game files). */
+async function fieldSkins(s, page) {
+  if (fx) {
+    const skin = lib.jarEntry(fx, 'assets/minecraft/textures/entity/player/wide/steve.png');
+    await page.route(/^https:\/\/playerdb\.co\//, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ success: true, code: 'player.found', data: { player: { username: 'jeb_', skin_texture: 'https://textures.minecraft.net/texture/perf', properties: [] } } }) }));
+    await page.route(/^https:\/\/textures\.minecraft\.net\/texture\/perf/, (r) => r.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: Buffer.from(skin) }));
+  }
+  await openSettled(s, page, base + 'skins/', '.sk-user-row');
+  await page.fill('#sk-username', 'jeb_');
+  await s.step('skins: import by username', () => s.tap('div.sk-imports section.sk-import div.sk-user-row > button.btn.btn-primary'), { quiet: 1000 });
+  // the same right after the page shows (the start screen still setting up)
+  await s.throttle();
+  await page.goto(base + 'skins/', { waitUntil: 'commit' });
+  await page.waitForSelector('#sk-username', { state: 'visible', timeout: 30000 });
+  await page.fill('#sk-username', 'jeb_');
+  await s.step('skins: import by username right after the page shows', () => s.tap('div.sk-imports section.sk-import div.sk-user-row > button.btn.btn-primary'), { quiet: 1000, busy: true });
+
+}
+
+/** The shader maker's preview: a tap and a drag on the canvas. */
+async function fieldShaders(s, page) {
+  await openSettled(s, page, base + 'shaders/', '.sh-card');
+  await s.throttle(false);
+  await page.locator('.sh-card[data-target="iris"] .sh-card-start').first().click();
+  await page.waitForSelector('.sh-new .sh-preset', { timeout: 30000 });
+  await s.throttle();
+  await page.getByRole('button', { name: 'Create pack' }).click();
+  const drag = async (pts) => {
+    if (!MOUSE) return s.stroke(pts);
+    await page.mouse.move(pts[0][0], pts[0][1]);
+    await page.mouse.down();
+    for (const [x, y] of pts.slice(1)) {
+      await page.mouse.move(x, y);
+      await page.waitForTimeout(16);
+    }
+    await page.mouse.up();
+  };
+  const cv = page.locator('section.sh-stage .sh-stage-host .preview-stage canvas').filter({ visible: true }).first();
+  const host = page.locator('section.sh-stage .sh-stage-host').filter({ visible: true }).first();
+  // a tap on the preview as soon as it is on screen (the 3D view still setting up), then a few more
+  await host.waitFor({ timeout: 30000 });
+  await host.scrollIntoViewIfNeeded().catch(() => {});
+  const hb = await host.boundingBox();
+  if (hb) {
+    await s.step('shaders: taps on the preview while it sets up', async () => {
+      for (let i = 0; i < 8; i++) {
+        await drag([[hb.x + hb.width / 2 + i * 3, hb.y + hb.height / 2]]);
+        await page.waitForTimeout(300);
+      }
+    }, { quiet: 800, busy: true });
+  }
+  await page.waitForTimeout(3000);
+  await cv.scrollIntoViewIfNeeded().catch(() => {});
+  const b = await cv.boundingBox();
+  if (b) {
+    const cx = b.x + b.width / 2;
+    const cy = b.y + b.height / 2;
+    await s.step('shaders: tap the preview', () => drag([[cx, cy]]), { quiet: 800 });
+    await s.step('shaders: drag the preview', () => drag(Array.from({ length: 14 }, (_, i) => [cx - 70 + i * 10, cy + Math.sin(i / 2) * 12])), { quiet: 800 });
+    await s.step('shaders: tap the preview (again)', () => drag([[cx + 20, cy - 10]]), { quiet: 800 });
+  }
+}
+
+const FLOW_FNS = { home: flowHome, start: flowStart, editor: flowEditor, skins: flowSkins, shaders: flowShaders, converter: flowConverter, totem: flowTotem, rum: flowRum, field: flowField, 'field-home': fieldHome, 'field-start': fieldStart, 'field-packs': fieldPacks, 'field-skins': fieldSkins, 'field-shaders': fieldShaders };
 
 // ------------------------------------------------------------------------------------------- main
 console.log(`INP harness: ${DEVICE}, CPU ${CPU}× slower, ${base}${fx ? '' : '  (no TO_FIXTURES: the texture editor flows need the game files)'}`);

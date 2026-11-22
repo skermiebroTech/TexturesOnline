@@ -1,7 +1,8 @@
-import { unzip, zip, strToU8, type Unzipped, type AsyncZippable } from 'fflate';
+import { zip, strToU8, type AsyncZippable } from 'fflate';
 import type { FileMap } from './types';
 import { fileText } from '../shared/i18n/files';
 import { fmt } from '../i18n/editor-text';
+import { openBytesZip, type ZipEntry } from './rangezip';
 
 export type ZipInput = Blob | Uint8Array | ArrayBuffer;
 
@@ -48,39 +49,30 @@ export const MAX_UNZIPPED_BYTES = 1024 * 1024 * 1024;
 export async function readZip(data: ZipInput, filter?: (path: string) => boolean): Promise<Record<string, Uint8Array>> {
   const bytes = await toBytes(data);
   if (!isZip(bytes)) throw new Error(fileText.zip.notZip);
-  const renamed = new Map<string, string>();
-  let expanded = 0;
-  let tooBig = false;
-  const files = await new Promise<Unzipped>((resolve, reject) => {
-    try {
-      unzip(
-        bytes,
-        {
-          filter(f) {
-            if (tooBig) return false;
-            const p = normalizeZipPath(f.name);
-            if (!p) return false;
-            if (filter && !filter(p)) return false;
-            expanded += f.originalSize;
-            if (expanded > MAX_UNZIPPED_BYTES) {
-              tooBig = true;
-              return false;
-            }
-            if (p !== f.name) renamed.set(f.name, p);
-            return true;
-          },
-        },
-        (err, out) => (err ? reject(zipError(err)) : resolve(out)),
-      );
-    } catch (err) {
-      reject(zipError(err));
+  // The directory first, then the files one after another with a turn for the page every few
+  // milliseconds (RangeZip over the bytes): a pack of thousands of textures used to be inflated in
+  // one task that held every tap for seconds.
+  try {
+    const archive = await openBytesZip(bytes);
+    const wanted: ZipEntry[] = [];
+    const paths = new Map<ZipEntry, string>();
+    let expanded = 0;
+    for (const e of archive.entries) {
+      const p = normalizeZipPath(e.name);
+      if (!p || (filter && !filter(p))) continue;
+      expanded += e.size;
+      if (expanded > MAX_UNZIPPED_BYTES) throw new Error(fileText.zip.tooLarge);
+      wanted.push(e);
+      paths.set(e, p);
     }
-  });
-  if (tooBig) throw new Error(fileText.zip.tooLarge);
-  if (!renamed.size) return files;
-  const out: Record<string, Uint8Array> = {};
-  for (const [name, content] of Object.entries(files)) out[renamed.get(name) ?? name] = content;
-  return out;
+    const read = await archive.readMany(wanted);
+    const out: Record<string, Uint8Array> = {};
+    for (const e of wanted) out[paths.get(e)!] = read.get(e.name)!;
+    return out;
+  } catch (err) {
+    // the reader's own errors are written for the visitor; anything else is a damaged archive
+    throw err instanceof Error && !(err instanceof TypeError || err instanceof RangeError) ? err : zipError(err);
+  }
 }
 
 /** Builds a zip Blob from a FileMap. PNG and other compressed data is stored, text is deflated. */

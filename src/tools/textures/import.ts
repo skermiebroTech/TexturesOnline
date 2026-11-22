@@ -3,6 +3,7 @@ import { isPng } from '../../core/pixels';
 import { packText } from '../../shared/i18n/packs';
 import { fmt } from '../../i18n/editor-text';
 import { isZip, readZip } from '../../core/zip';
+import { yieldToMain } from '../../core/yield';
 import { isUuid } from '../../core/uuid';
 import { readPackMcmetaRange } from '../../editions/java/packmeta';
 import { KNOWN_RELEASES, KNOWN_RELEASE_FORMATS, comparePackFormats, formatPackFormat } from '../../editions/java/packformats';
@@ -109,7 +110,7 @@ export async function importPack(file: File): Promise<ImportResult> {
   }
 
   const baseName = nameFromFile(fileName);
-  const project = cand.edition === 'java' ? await importJava(rel, baseName, warnings) : importBedrock(rel, cand.manifest, baseName, warnings);
+  const project = cand.edition === 'java' ? await importJava(rel, baseName, warnings) : await importBedrock(rel, cand.manifest, baseName, warnings);
   if (!Object.keys(project.overrides).length) {
     warnings.push(packText.open.noTextures);
   }
@@ -193,7 +194,9 @@ async function importJava(rel: Files, baseName: string, warnings: string[]): Pro
   let badImages = 0;
   let optifine = false;
   let overlays = false;
+  const turn = slicer();
   for (const [path, data] of Object.entries(rel)) {
+    await turn();
     if (path === 'pack.png') {
       if (isPng(data)) icon = toBlob(data, 'image/png');
       else warnings.push(packText.open.badPackPng);
@@ -312,7 +315,7 @@ async function liveJavaReleases(): Promise<GameVersion[]> {
 
 const IMAGE_EXT = new Set(['png', 'tga']);
 
-function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefined, baseName: string, warnings: string[]): TexturePackProject {
+async function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefined, baseName: string, warnings: string[]): Promise<TexturePackProject> {
   const manifest = manifestArg ?? (rel['manifest.json'] ? (parseJsonLoose(decodeText(rel['manifest.json'])) as Record<string, unknown> | null) : null) ?? null;
   const header = (manifest?.header ?? {}) as Record<string, unknown>;
   const lang = readLang(rel['texts/en_US.lang']);
@@ -351,7 +354,9 @@ function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefi
   let badImages = 0;
   const all = new Set(Object.keys(rel));
   const hasTextureSet = (stem: string) => all.has(`${stem}.texture_set.json`);
+  const turn = slicer();
   for (const [path, data] of Object.entries(rel)) {
+    await turn();
     if (path === 'pack_icon.png') {
       if (isPng(data)) icon = toBlob(data, 'image/png');
       else warnings.push(packText.open.badPackIcon);
@@ -473,6 +478,21 @@ function mimeFor(path: string): string {
     default:
       return 'application/octet-stream';
   }
+}
+
+/**
+ * For the loops over every file of a pack: each file becomes a Blob, and a Blob costs enough that
+ * thousands of them took seconds in one task. The returned function gives the page a turn about
+ * every 10 ms (await it once per file).
+ */
+function slicer(): () => Promise<void> | void {
+  let t0 = performance.now();
+  return () => {
+    if (performance.now() - t0 < 10) return;
+    return yieldToMain().then(() => {
+      t0 = performance.now();
+    });
+  };
 }
 
 function toBlob(data: Uint8Array, type: string): Blob {
