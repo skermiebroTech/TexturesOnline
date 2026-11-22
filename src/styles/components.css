@@ -815,6 +815,21 @@ input[type='number']::-webkit-outer-spin-button {
 .empty-state .empty-action {
   margin-top: 8px;
 }
+/* (a long label, as in some languages, wraps inside the button rather than off a phone's screen) */
+.empty-state .btn {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--btn-h);
+  padding-top: 5px;
+  padding-bottom: 7px;
+  white-space: normal;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  .empty-state .btn {
+    padding-inline: 12px;
+  }
+}
 
 .badge {
   --tone: var(--text-3);
