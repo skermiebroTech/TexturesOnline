@@ -1,4 +1,5 @@
-import { unzip, zip, strToU8, type Unzipped, type AsyncZippable } from 'fflate';
+import { zip, strToU8, type AsyncZippable } from 'fflate';
+import { openBytesZip, type ZipEntry } from './rangezip';
 import type { FileMap } from './types';
 import { fileText } from '../shared/i18n/files';
 import { fmt } from '../i18n/editor-text';
@@ -38,48 +39,32 @@ function zipError(err: unknown): Error {
   return new Error(fmt(fileText.zip.unreadable, { message: msg }));
 }
 
-/**
- * Reads a zip (.zip/.jar/.mcpack) into path -> bytes. Directory entries, __MACOSX and
- * path-traversal entries are skipped. `filter` receives the normalised path.
- */
 /** Refuse archives that would expand to more than this (zip bombs, or not a pack at all). */
 export const MAX_UNZIPPED_BYTES = 1024 * 1024 * 1024;
 
+/**
+ * Reads a zip (.zip/.jar/.mcpack) into path -> bytes. Directory entries, __MACOSX and
+ * path-traversal entries are skipped. `filter` receives the normalised path. The entries are
+ * inflated a few at a time with turns for the page in between: a pack of thousands of files
+ * doesn't freeze it.
+ */
 export async function readZip(data: ZipInput, filter?: (path: string) => boolean): Promise<Record<string, Uint8Array>> {
   const bytes = await toBytes(data);
   if (!isZip(bytes)) throw new Error(fileText.zip.notZip);
-  const renamed = new Map<string, string>();
+  // (the reader's errors are worded for people: damaged, encrypted, unsupported method...)
+  const zip = await openBytesZip(bytes);
+  const wanted: { entry: ZipEntry; path: string }[] = [];
   let expanded = 0;
-  let tooBig = false;
-  const files = await new Promise<Unzipped>((resolve, reject) => {
-    try {
-      unzip(
-        bytes,
-        {
-          filter(f) {
-            if (tooBig) return false;
-            const p = normalizeZipPath(f.name);
-            if (!p) return false;
-            if (filter && !filter(p)) return false;
-            expanded += f.originalSize;
-            if (expanded > MAX_UNZIPPED_BYTES) {
-              tooBig = true;
-              return false;
-            }
-            if (p !== f.name) renamed.set(f.name, p);
-            return true;
-          },
-        },
-        (err, out) => (err ? reject(zipError(err)) : resolve(out)),
-      );
-    } catch (err) {
-      reject(zipError(err));
-    }
-  });
-  if (tooBig) throw new Error(fileText.zip.tooLarge);
-  if (!renamed.size) return files;
+  for (const entry of zip.entries) {
+    const path = normalizeZipPath(entry.name);
+    if (!path || (filter && !filter(path))) continue;
+    expanded += entry.size;
+    if (expanded > MAX_UNZIPPED_BYTES) throw new Error(fileText.zip.tooLarge);
+    wanted.push({ entry, path });
+  }
+  const read = await zip.readMany(wanted.map((w) => w.entry));
   const out: Record<string, Uint8Array> = {};
-  for (const [name, content] of Object.entries(files)) out[renamed.get(name) ?? name] = content;
+  for (const { entry, path } of wanted) out[path] = read.get(entry.name)!;
   return out;
 }
 

@@ -425,7 +425,6 @@ const DE: ModelsLanguage = {
       Extended: 'Ausgeklappt',
       'Key held': 'Taste gedrückt',
       Viewing: 'Beim Hindurchsehen',
-      Linked: 'Verbunden',
       Blocking: 'Beim Blocken',
       Pale: 'Blass',
       Ashen: 'Aschfahl',

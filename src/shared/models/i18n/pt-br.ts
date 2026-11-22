@@ -425,7 +425,6 @@ const PT: ModelsLanguage = {
       Extended: 'Estendido',
       'Key held': 'Tecla pressionada',
       Viewing: 'Olhando',
-      Linked: 'Vinculado',
       Blocking: 'Bloqueando',
       Pale: 'Pálido',
       Ashen: 'Cinzento',

@@ -6,7 +6,7 @@
 import type { AssetIndex, ProgressFn } from '../../core/types';
 import { parseLenientJson } from '../../editions/bedrock/catalog';
 import { BedrockBackend, parseLang } from './bedrock-blocks';
-import { JavaBackend, javaModelFiles } from './java-blocks';
+import { JavaBackend, javaModelFiles, type PackOverlay } from './java-blocks';
 import { BedrockEntities, JavaEntities, type EntityBackend } from './entities';
 import { loadJavaModelMirror } from './java-mirror';
 import type { JavaModelSet, JsonGet } from './java-models';
@@ -51,6 +51,8 @@ export class ModelLibrary {
   private readonly blockIndex = new Map<string, BlockRecord>();
   private readonly itemEntries: ModelEntry[] = [];
   private readonly itemIndex = new Map<string, ModelEntry>();
+  /** Ids of the items the pack's own item definitions add */
+  private packItems: string[] = [];
   private usageCache: Map<string, TextureUsage> | null = null;
   private readonly categories = new Map<string, ModelCategory>();
   private readonly textureCache = new Map<string, TextureStates[]>();
@@ -114,11 +116,22 @@ export class ModelLibrary {
    * Java: the pack's own model, blockstate and item files to use before the game's (null: none). The
    * views and textures of blocks and items are worked out again; call rebuildUsage() for the reverse index.
    */
-  setPackFiles(get: JsonGet | null): void {
+  setPackFiles(get: JsonGet | null, pack: PackOverlay = {}): void {
     if (!(this.backend instanceof JavaBackend)) return;
-    this.backend.setOverlay(get);
+    this.backend.setOverlay(get, pack);
     this.textureCache.clear();
     this.categories.clear();
+    // the pack's own items (its namespace's item definitions) are listed with the game's
+    for (const id of this.packItems) this.itemIndex.delete(id);
+    this.packItems = this.backend.packItemIds();
+    const items = this.itemEntries.filter((e) => this.itemIndex.has(e.id));
+    for (const id of this.packItems) {
+      const e: ModelEntry = { kind: 'item', id, name: pretty(id.slice(id.lastIndexOf('/') + 1).replace(/^.*:/, '')) };
+      items.push(e);
+      this.itemIndex.set(id, e);
+    }
+    items.sort((a, b) => a.name.localeCompare(b.name));
+    this.itemEntries.splice(0, this.itemEntries.length, ...items);
   }
 
   /** Java model files: `json` reads the pack's file first, `vanilla` only the game's (null for Bedrock). */

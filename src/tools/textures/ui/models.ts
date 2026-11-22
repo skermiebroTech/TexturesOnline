@@ -19,7 +19,7 @@ import { applyEffects, effectsApply } from '../effects';
 import { displayAlphaData, getFrame, makeEntry, readAnimInfo, type AnimInfo } from './meta';
 import { parseJsonLoose } from '../project';
 import type { TexStore } from './store';
-import { nextTask } from '../../../core/yield';
+import { nextTask, timeSlicer } from '../../../core/yield';
 
 export interface LiveTexture {
   path: string;
@@ -118,7 +118,12 @@ export class ModelService {
   private async readPackFiles(lib: ModelLibrary): Promise<void> {
     if (this.store.project.edition !== 'java') return;
     const paths = Object.keys(this.store.project.extraFiles).filter((p) => PACK_MODEL_FILE.test(p));
-    await Promise.all(paths.map((p) => this.readPackFile(p)));
+    // a few at a time with turns for the page in between (a server pack has thousands)
+    const slice = timeSlicer(8);
+    for (let i = 0; i < paths.length; i += 32) {
+      await Promise.all(paths.slice(i, i + 32).map((p) => this.readPackFile(p)));
+      await slice();
+    }
     this.applyPackFiles(lib);
     this.offModels ??= this.store.events.on('models', ({ paths: changed, entries }) => void this.onModelFiles(changed, entries));
   }
@@ -139,7 +144,7 @@ export class ModelService {
 
   private applyPackFiles(lib: ModelLibrary): void {
     if (!this.packFiles.size) lib.setPackFiles(null);
-    else lib.setPackFiles((path) => this.packFiles.get(path));
+    else lib.setPackFiles((path) => this.packFiles.get(path), { files: this.packFiles.keys(), hasTexture: (path) => this.store.isEdited(path) });
     this.viewPaths.clear();
   }
 

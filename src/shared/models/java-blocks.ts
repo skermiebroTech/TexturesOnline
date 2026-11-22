@@ -14,6 +14,7 @@ import {
   defaultState,
   faceTexture,
   itemDefinitionPath,
+  itemIdOfDefinition,
   itemOptions,
   javaBlockTint,
   javaTexturePath,
@@ -44,6 +45,12 @@ const PLANT_PARENTS = /(^|:)block\/(cross|tinted_cross|cross_emissive|flower_pot
 const INVISIBLE = /^(barrier|light|structure_void)$/;
 /** Note of blocks invisible in the world (read when shown: it follows the page's language) */
 export const invisibleNote = (): string => mt.notes.invisible;
+
+/** What a pack adds besides its JSON files: the paths of its files and the textures it has. */
+export interface PackOverlay {
+  files?: Iterable<string>;
+  hasTexture?: (path: string) => boolean;
+}
 
 export interface JavaSource {
   version: string;
@@ -85,6 +92,9 @@ export class JavaBackend implements EditionBackend {
   private readonly blockList: string[];
   private readonly synthetic = new Map<string, Synthetic>();
   private readonly itemList: string[];
+  private packItemList: string[] = [];
+  /** The pack has this texture (one the game doesn't: a mod's or server's namespace) */
+  private packTexture: ((path: string) => boolean) | null = null;
   private readonly modern: boolean;
   private readonly flattened: boolean;
   private readonly optionsCache = new Map<string, ItemOption[] | string[]>();
@@ -157,8 +167,12 @@ export class JavaBackend implements EditionBackend {
    * Reads a pack's own model / blockstate / item files before the game's (null: back to the game's).
    * Blocks and items keep their lists; their shapes and textures are worked out again.
    */
-  setOverlay(get: JsonGet | null): void {
+  setOverlay(get: JsonGet | null, pack: PackOverlay = {}): void {
     this.overlay = get;
+    this.packTexture = get ? (pack.hasTexture ?? null) : null;
+    // item definitions of the pack's own (1.21.4+): a server's or mod's namespace, new minecraft items
+    const vanilla = new Set(this.itemList);
+    this.packItemList = get && this.modern ? [...new Set([...(pack.files ?? [])].map(itemIdOfDefinition).filter((id): id is string => !!id && !vanilla.has(id)))].sort() : [];
     this.models = new JavaModelSet(this.json);
     this.states.clear();
     this.optionsCache.clear();
@@ -176,6 +190,11 @@ export class JavaBackend implements EditionBackend {
     return this.itemList;
   }
 
+  /** Items only the pack's own item definitions make (see setOverlay). */
+  packItemIds(): string[] {
+    return this.packItemList;
+  }
+
   blockName(id: string): string | null {
     const l = this.src.lang;
     if (this.flattened) return l[`block.minecraft.${id}`] ?? null;
@@ -190,7 +209,7 @@ export class JavaBackend implements EditionBackend {
   }
 
   hasTexture(path: string): boolean {
-    return this.src.hasFile(path);
+    return this.src.hasFile(path) || !!this.packTexture?.(path);
   }
 
   isAnimated(path: string): boolean {
@@ -512,6 +531,8 @@ export class JavaBackend implements EditionBackend {
     if (views.length === 1) return views[0];
     const quads = views.flatMap((v) => v.quads);
     if (quads.length) return { shape: 'model', quads, sprite: [], category: 'item', note: views.find((v) => v.note)?.note };
+    // flat parts drawn together (a drill's head over its handle): one sprite of every layer
+    if (views.every((v) => v.shape === 'sprite')) return { shape: 'sprite', quads: [], sprite: views.flatMap((v) => v.sprite), category: 'item' };
     return views[0];
   }
 

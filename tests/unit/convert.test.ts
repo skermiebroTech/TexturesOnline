@@ -242,6 +242,28 @@ test('Java 1.12.2 -> Java 26.3: renamed paths, moved .mcmeta, rewritten models, 
   assert.ok(zip[`${J}block/stone.png`] && zip['pack.png']);
 });
 
+test('a server pack\'s own namespace: kept unchanged between Java versions, skipped with a reason for Bedrock', async () => {
+  const src = newTextureProject({ name: 'Server', edition: 'java', version: '26.2' });
+  const gem = encodePng(strip(16, 3));
+  const meta = '{"animation":{"frametime":3,"interpolate":true}}';
+  src.overrides['assets/skyland/textures/item/gem.png'] = new Blob([gem as BlobPart], { type: 'image/png' });
+  src.extraFiles['assets/skyland/textures/item/gem.png.mcmeta'] = textBlob(meta);
+  src.extraFiles['assets/skyland/models/item/gem.json'] = textBlob('{"parent":"item/generated","textures":{"layer0":"skyland:item/gem"}}');
+  src.overrides[`${J}block/stone.png`] = png(noisy(16, 16, 1));
+  const skippedOf = (r: { report: { skipped: { source: string; reason: string; detail: string }[] } }) => r.report.skipped.map((x) => [x.source, x.reason, x.detail]);
+
+  const java = await convertPack(src, { edition: 'java', version: '26.3' }, java263Assets(), MAPS);
+  assert.deepEqual(new Uint8Array(await java.project.overrides['assets/skyland/textures/item/gem.png'].arrayBuffer()), gem);
+  assert.equal(await java.project.extraFiles['assets/skyland/textures/item/gem.png.mcmeta']?.text(), meta);
+  assert.ok(java.project.extraFiles['assets/skyland/models/item/gem.json']);
+  assert.deepEqual(skippedOf(java), []);
+  assert.deepEqual(java.report.kept.map((k) => k.source), ['assets/skyland/textures/item/gem.png']);
+
+  const bedrock = await convertPack(src, { edition: 'bedrock', version: 'latest' }, bedrockAssets(), MAPS);
+  assert.ok(!Object.keys(bedrock.project.overrides).some((k) => k.includes('gem')));
+  assert.deepEqual(skippedOf(bedrock), [['assets/skyland/textures/item/gem.png', 'no-counterpart', 'Bedrock has no matching texture']]);
+});
+
 test('Java 26.3 -> Java 1.12.2 downgrade: old names, newer textures skipped as missing', async () => {
   const src = newTextureProject({ name: 'New', edition: 'java', version: '26.3' });
   src.overrides[`${J}block/stone.png`] = png(noisy(16, 16, 1));

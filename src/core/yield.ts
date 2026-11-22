@@ -46,3 +46,17 @@ export function afterNextPaint(): Promise<void> {
     const timer = setTimeout(finish, 100);
   });
 }
+
+/**
+ * For loops over many small pieces of work: the returned function resolves at once, except after
+ * about `ms` of work since the last turn, when it gives the event loop one (no long tasks).
+ */
+export function timeSlicer(ms = 10): () => Promise<void> | void {
+  let last = performance.now();
+  return () => {
+    if (performance.now() - last < ms) return;
+    return nextTask().then(() => {
+      last = performance.now();
+    });
+  };
+}

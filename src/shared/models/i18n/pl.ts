@@ -423,7 +423,6 @@ const PL: ModelsLanguage = {
       Extended: 'Rozłożony',
       'Key held': 'Z kluczem',
       Viewing: 'Patrzy',
-      Linked: 'Połączony',
       Blocking: 'Blokuje',
       Pale: 'Blady',
       Ashen: 'Popielaty',

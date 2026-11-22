@@ -81,14 +81,13 @@ test('Java: nested single folder, junk entries, formatted description, OptiFine 
   assert.equal(project.name, 'Fancy Pack');
   assert.equal(project.version, '1.20.1');
   assert.equal(project.description, 'Fancy Pack');
-  assert.deepEqual(Object.keys(project.overrides), [`${J}block/stone.png`]);
+  // a mod's own namespace is editable like the game's textures
+  assert.deepEqual(Object.keys(project.overrides).sort(), [`${J}block/stone.png`, 'assets/mymod/textures/item/gem.png']);
   assert.ok(project.extraFiles[`${J}block/stone.png.mcmeta`]);
-  assert.ok(project.extraFiles['assets/mymod/textures/item/gem.png']);
   assert.ok(project.icon);
-  assert.equal(warnings.length, 3, warnings.join('\n'));
+  assert.equal(warnings.length, 2, warnings.join('\n'));
   assert.ok(warnings.some((x) => /formatting/.test(x)));
   assert.ok(warnings.some((x) => /OptiFine/.test(x)));
-  assert.ok(warnings.some((x) => /mods/.test(x)));
 });
 
 test('Bedrock round trip keeps uuids, bumps from the imported version, keeps .tga', async () => {

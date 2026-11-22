@@ -8,7 +8,7 @@ import { decodeImage, encodePng } from '../../../core/image';
 import { friendlyError } from '../../../core/net';
 import { categoryForPath, getBaseImage, isEdited, removeOverride, setOverride } from '../project';
 import { hasActiveEffects } from '../effects';
-import { buildEntries, makeEntry, type TextureEntry } from './meta';
+import { buildEntries, makeEntry, packAnimations, type TextureEntry } from './meta';
 import { customModelKey, resetCustomModel, writeCustomModel } from '../models/pack';
 import { isPlain, type LayerStack } from '../layers/stack';
 import { recordOf, stackOf } from '../layers/record';
@@ -62,6 +62,7 @@ export class TexStore {
   private flushing: Promise<void> | null = null;
   private again = false;
   private discarded = false;
+  private packAnimated = new Set<string>();
   private vanillaCache = new Map<string, Promise<ImageData | null>>();
   /** Paint layers in memory: being painted, waiting to be saved, or read lately */
   private layerStacks = new Map<string, LayerStack>();
@@ -77,10 +78,16 @@ export class TexStore {
     readonly assets: AssetIndex,
   ) {
     this.rebuildEntries();
+    // the pack's own animated textures (a mod's or server's namespace): known once their .mcmeta is read
+    void packAnimations(project, assets).then((found) => {
+      if (!found.size || this.discarded) return;
+      this.packAnimated = found;
+      this.rebuildEntries();
+    });
   }
 
   rebuildEntries(): void {
-    this.entries = buildEntries(this.project, this.assets, categoryForPath, this.pending.keys());
+    this.entries = buildEntries(this.project, this.assets, categoryForPath, this.pending.keys(), this.packAnimated);
     this.byPath = new Map(this.entries.map((e) => [e.path, e]));
     this.events.emit('entries');
   }

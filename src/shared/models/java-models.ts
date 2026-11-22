@@ -144,8 +144,17 @@ export function blockstatePath(blockId: string): string {
   return `assets/minecraft/blockstates/${blockId}.json`;
 }
 
+/** Item definition file of an item: 'apple' (the game's) or 'my_pack:item/gem' (a pack's own namespace). */
 export function itemDefinitionPath(itemId: string): string {
-  return `assets/minecraft/items/${itemId}.json`;
+  const [ns, path] = splitId(itemId);
+  return `assets/${ns}/items/${path}.json`;
+}
+
+/** Item id of a pack's item definition file (the inverse of itemDefinitionPath), or null. */
+export function itemIdOfDefinition(path: string): string | null {
+  const m = /^assets\/([^/]+)\/items\/(.+)\.json$/.exec(path);
+  if (!m) return null;
+  return m[1] === 'minecraft' ? m[2] : `${m[1]}:${m[2]}`;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -800,10 +809,10 @@ export function itemOptions(def: unknown): ItemOption[] {
         return res;
       }
       case 'range_dispatch': {
-        const res: ItemOption[] = [];
-        if (node.fallback) res.push(...walk(node.fallback, labels, off));
-        if (Array.isArray(node.entries)) for (const e of node.entries) if (isObj(e)) res.push(...walk(e.model, labels, off));
-        return res;
+        const steps = [node.fallback, ...(Array.isArray(node.entries) ? node.entries.map((e) => (isObj(e) ? e.model : undefined)) : [])].filter(Boolean);
+        // under a labelled state (a bow being drawn), the steps are numbered; else each is named after its model
+        const numbered = steps.length > 1 && labels.some(Boolean);
+        return steps.flatMap((m, i) => walk(m, numbered ? [...labels, String(i + 1)] : labels, off));
       }
       case 'bundle/selected_item':
         return [];
@@ -839,6 +848,13 @@ function whenLabel(when: unknown): string {
 
 function conditionLabel(node: Record<string, unknown>): string {
   const p = typeof node.property === 'string' ? node.property.replace(/^minecraft:/, '') : '';
+  // a component's value (server packs test their own custom_data flags, e.g. "{active:true}")
+  if (p === 'component') {
+    const v = node.value;
+    const key = typeof v === 'string' ? /^\s*\{?\s*"?([A-Za-z_][\w.]*)"?\s*:/.exec(v)?.[1] : isObj(v) ? Object.keys(v)[0] : undefined;
+    if (key) return prettyWord(key);
+    if (typeof node.predicate === 'string') return prettyWord(node.predicate);
+  }
   const map: Record<string, string> = {
     using_item: 'In use',
     broken: 'Broken',
@@ -851,7 +867,6 @@ function conditionLabel(node: Record<string, unknown>): string {
     extended_view: 'Extended',
     keybind_down: 'Key held',
     view_entity: 'Viewing',
-    component: 'Linked',
   };
   return map[p] ?? (p ? prettyWord(p) : 'On');
 }

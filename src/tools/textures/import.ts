@@ -4,6 +4,7 @@ import { packText } from '../../shared/i18n/packs';
 import { fmt } from '../../i18n/editor-text';
 import { isZip, readZip } from '../../core/zip';
 import { isUuid } from '../../core/uuid';
+import { timeSlicer } from '../../core/yield';
 import { readPackMcmetaRange } from '../../editions/java/packmeta';
 import { KNOWN_RELEASES, KNOWN_RELEASE_FORMATS, comparePackFormats, formatPackFormat } from '../../editions/java/packformats';
 import { isPbrMap } from '../../editions/bedrock/catalog';
@@ -11,9 +12,9 @@ import { BEDROCK_LATEST_ID } from '../../editions/bedrock/versions';
 import { DEFAULT_JAVA_VERSION, listVersions } from '../../editions/index';
 import {
   BEDROCK_TEXTURE_ROOT,
-  JAVA_TEXTURE_ROOT,
   extOf,
   imageDims,
+  isPackTexturePath,
   newBedrockUuids,
   newTextureProject,
   normalizeResolution,
@@ -109,7 +110,7 @@ export async function importPack(file: File): Promise<ImportResult> {
   }
 
   const baseName = nameFromFile(fileName);
-  const project = cand.edition === 'java' ? await importJava(rel, baseName, warnings) : importBedrock(rel, cand.manifest, baseName, warnings);
+  const project = cand.edition === 'java' ? await importJava(rel, baseName, warnings) : await importBedrock(rel, cand.manifest, baseName, warnings);
   if (!Object.keys(project.overrides).length) {
     warnings.push(packText.open.noTextures);
   }
@@ -189,30 +190,31 @@ async function importJava(rel: Files, baseName: string, warnings: string[]): Pro
   const overrides: Record<string, Blob> = {};
   const extraFiles: Record<string, Blob> = {};
   let icon: Blob | undefined;
-  let modTextures = 0;
   let badImages = 0;
   let optifine = false;
   let overlays = false;
+  // (a Blob per file adds up over thousands of files: the page gets turns in between)
+  const slice = timeSlicer();
   for (const [path, data] of Object.entries(rel)) {
+    await slice();
     if (path === 'pack.png') {
       if (isPng(data)) icon = toBlob(data, 'image/png');
       else warnings.push(packText.open.badPackPng);
       continue;
     }
-    if (path.startsWith(JAVA_TEXTURE_ROOT) && path.endsWith('.png')) {
+    // every namespace's textures are editable (mods, server packs with their own namespace)
+    if (isPackTexturePath(path, 'java')) {
       if (isPng(data)) {
         overrides[path] = toBlob(data, 'image/png');
         continue;
       }
       badImages++;
     }
-    if (/^assets\/(?!minecraft\/)[^/]+\/textures\/.+\.png$/.test(path)) modTextures++;
     if (/^assets\/minecraft\/(optifine|mcpatcher)\//.test(path)) optifine = true;
     if (/^[^/]+\/assets\//.test(path)) overlays = true;
     extraFiles[path] = toBlob(data, mimeFor(path));
   }
   if (badImages) warnings.push(fmt(packText.open.badImages, { count: badImages }));
-  if (modTextures) warnings.push(fmt(packText.open.modTextures, { count: modTextures }));
   if (optifine) warnings.push('OptiFine features (connected textures, custom item textures, …) are kept but not shown in the preview.');
   if (overlays && rel['pack.mcmeta'] && /"overlays"/.test(decodeText(rel['pack.mcmeta']))) {
     warnings.push(packText.open.overlays);
@@ -312,7 +314,7 @@ async function liveJavaReleases(): Promise<GameVersion[]> {
 
 const IMAGE_EXT = new Set(['png', 'tga']);
 
-function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefined, baseName: string, warnings: string[]): TexturePackProject {
+async function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefined, baseName: string, warnings: string[]): Promise<TexturePackProject> {
   const manifest = manifestArg ?? (rel['manifest.json'] ? (parseJsonLoose(decodeText(rel['manifest.json'])) as Record<string, unknown> | null) : null) ?? null;
   const header = (manifest?.header ?? {}) as Record<string, unknown>;
   const lang = readLang(rel['texts/en_US.lang']);
@@ -351,7 +353,10 @@ function importBedrock(rel: Files, manifestArg: Record<string, unknown> | undefi
   let badImages = 0;
   const all = new Set(Object.keys(rel));
   const hasTextureSet = (stem: string) => all.has(`${stem}.texture_set.json`);
+  // (a Blob per file adds up over thousands of files: the page gets turns in between)
+  const slice = timeSlicer();
   for (const [path, data] of Object.entries(rel)) {
+    await slice();
     if (path === 'pack_icon.png') {
       if (isPng(data)) icon = toBlob(data, 'image/png');
       else warnings.push(packText.open.badPackIcon);

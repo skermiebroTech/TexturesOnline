@@ -422,7 +422,6 @@ const RU: ModelsLanguage = {
       Extended: 'Выдвинут',
       'Key held': 'С ключом',
       Viewing: 'Смотрит',
-      Linked: 'Привязан',
       Blocking: 'Блокирует',
       Pale: 'Бледный',
       Ashen: 'Пепельный',

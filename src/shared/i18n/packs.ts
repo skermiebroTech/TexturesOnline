@@ -27,7 +27,6 @@ export const packText = defineText('shared.packs', {
     formattedDescription: 'The pack description used colours or formatting codes; it was converted to plain text.',
     badPackPng: "The pack icon (pack.png) isn't a valid PNG, so a new icon will be generated.",
     badImages: '{count, plural, one {# texture isn\'t a real PNG image and will be kept as-is but can\'t be edited.} other {# textures aren\'t real PNG images and will be kept as-is but can\'t be edited.}}',
-    modTextures: "{count, plural, one {# texture} other {# textures}} for mods (other namespaces) will be kept but can't be edited here.",
     overlays: 'Overlay folders (version-specific extras) are kept as they are; only the main textures are editable.',
     noVersion: "The pack doesn't say which Minecraft version it's for, so it was set to {version}. You can change this in the Pack settings.",
     newerFormat: 'This pack is for a newer Minecraft version than this app knows (pack format {format}). It was set to {version}; check the version in the Pack settings.',
