@@ -421,7 +421,6 @@ const FR: ModelsLanguage = {
       Extended: 'Déployé',
       'Key held': 'Clé tenue',
       Viewing: 'Regarde',
-      Linked: 'Lié',
       Blocking: 'Parade',
       Pale: 'Pâle',
       Ashen: 'Cendré',

@@ -6,7 +6,7 @@ import type { AssetIndex, Edition, ProgressFn, TexturePackProject } from '../../
 import { createImageData, cropImageData, decodeImage, encodePng, encodeTga } from '../../core/image';
 import { abortError, isAbortError } from '../../core/net';
 import { stringifyPretty } from '../../editions/java/packmeta';
-import { BEDROCK_TEXTURE_ROOT, JAVA_TEXTURE_ROOT, extOf, imageDims, newTextureProject, parseJsonLoose } from '../textures/project';
+import { BEDROCK_TEXTURE_ROOT, JAVA_TEXTURE_ROOT, extOf, imageDims, javaTextureParts, newTextureProject, parseJsonLoose } from '../textures/project';
 import { flipbookEntries, flipbookToJava, javaFrameSize, javaToFlipbook, parseJavaAnimation, terrainTiles, type FlipbookEntry, type JavaAnimation } from './anim';
 import { buildPairIndex, pairKey, renameChain, rewriteModelTextures, type JavaBedrockMap, type JavaRenames, type PairIndex, type RenameChain } from './paths';
 import { isSameTarget, targetLabel, targetText } from './target';
@@ -225,7 +225,10 @@ export async function convertPack(source: TexturePackProject, target: ConvertTar
 
   function planTexture(path: string): Plan | null {
     if (!path.startsWith(sourceRoot)) {
-      report.skipped.push({ source: path, reason: 'no-counterpart', detail: engineText.skip.notTextures });
+      // a mod's or server's own namespace: the same file in any Java version, nothing like it on Bedrock
+      const own = source.edition === 'java' && !!javaTextureParts(path);
+      if (own && kind === 'j2j') return { source: path, renamed: false, targets: [{ path, inCatalogue: false }] };
+      report.skipped.push({ source: path, reason: 'no-counterpart', detail: own ? engineText.skip.noBedrock : engineText.skip.notTextures });
       return null;
     }
     const ext = extOf(path);

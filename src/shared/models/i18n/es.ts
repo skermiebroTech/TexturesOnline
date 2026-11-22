@@ -425,7 +425,6 @@ const ES: ModelsLanguage = {
       Extended: 'Ampliado',
       'Key held': 'Tecla pulsada',
       Viewing: 'Mirando',
-      Linked: 'Vinculado',
       Blocking: 'Bloqueando',
       Pale: 'Pálido',
       Ashen: 'Ceniciento',

@@ -425,7 +425,6 @@ const JA: ModelsLanguage = {
       Extended: '伸びた状態',
       'Key held': 'キーを押している',
       Viewing: '見ている',
-      Linked: 'リンク済み',
       Blocking: 'ガード中',
       Pale: '白っぽい',
       Ashen: '灰色',

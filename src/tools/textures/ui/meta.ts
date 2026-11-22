@@ -5,7 +5,7 @@ import type { AssetIndex, Edition, TextureAnimation, TextureCategory, TextureInf
 import type { IconName } from '../../../ui/icons';
 import { cropImageData, createImageData } from '../../../core/pixels';
 import { parseLenientJson } from '../../../editions/bedrock/catalog';
-import { textureRoot } from '../project';
+import { isPackTexturePath, javaTextureParts, textureRoot } from '../project';
 import { FLIPBOOK_PATH, animationFromFlipbook, parseFlipbooks, type FlipbookEntry } from '../anim/pack';
 import { clampTicks, normalizeFrames, playSteps } from '../anim/timing';
 import { t } from '../i18n/start';
@@ -71,21 +71,56 @@ export function makeEntry(t: TextureInfo, custom = false): TextureEntry {
 }
 
 /** Vanilla textures plus the pack's own textures that aren't in this version (saved or `unsaved`). */
-export function buildEntries(project: TexturePackProject, assets: AssetIndex, categoryForPath: (p: string, e: Edition) => TextureCategory, unsaved: Iterable<string> = []): TextureEntry[] {
+export function buildEntries(
+  project: TexturePackProject,
+  assets: AssetIndex,
+  categoryForPath: (p: string, e: Edition) => TextureCategory,
+  unsaved: Iterable<string> = [],
+  /** The pack's own textures its .mcmeta files animate (see packAnimations) */
+  packAnimated?: ReadonlySet<string>,
+): TextureEntry[] {
   const list: TextureEntry[] = assets.textures.map((t) => makeEntry(t));
   const known = new Set(assets.textures.map((t) => t.path));
-  const root = textureRoot(project.edition);
   // `unsaved`: textures painted but not saved yet (a new one shows in the list straight away)
   for (const path of new Set([...Object.keys(project.overrides), ...unsaved])) {
-    if (known.has(path) || !path.startsWith(root) || !/\.(png|tga)$/i.test(path)) continue;
-    const rel = path.slice(root.length);
-    const id = rel.replace(/\.(png|tga)$/i, '');
+    if (known.has(path) || !isPackTexturePath(path, project.edition)) continue;
+    const id = packTextureId(path, project.edition);
     const name = id.slice(id.lastIndexOf('/') + 1);
-    list.push(makeEntry({ path, id, name, category: categoryForPath(path, project.edition), ext: /\.tga$/i.test(path) ? 'tga' : 'png' }, true));
+    list.push(makeEntry({ path, id, name, category: categoryForPath(path, project.edition), ext: /\.tga$/i.test(path) ? 'tga' : 'png', ...(packAnimated?.has(path) ? { animated: true } : {}) }, true));
   }
   // textures made animated in the editor
   const own = project.animations;
   return own ? list.map((e) => (own[e.path] && !e.animated ? { ...e, animated: true } : e)) : list;
+}
+
+/** Java: the pack's own textures (not the game's) that their .mcmeta animates. */
+export async function packAnimations(project: TexturePackProject, assets: AssetIndex): Promise<Set<string>> {
+  const out = new Set<string>();
+  if (project.edition !== 'java') return out;
+  for (const [path, blob] of Object.entries(project.extraFiles)) {
+    if (!path.endsWith('.png.mcmeta')) continue;
+    const texture = path.slice(0, -'.mcmeta'.length);
+    if (!project.overrides[texture] || assets.hasFile(texture)) continue;
+    try {
+      const json = parseLenientJson<{ animation?: unknown }>(await blob.text());
+      if (json?.animation && typeof json.animation === 'object') out.add(texture);
+    } catch {
+      /* not an animation the game reads either */
+    }
+  }
+  return out;
+}
+
+/**
+ * Id of a pack texture that isn't in the game: its path under textures/ without the extension, with
+ * the namespace in front outside minecraft ('my_mod:item/gem').
+ */
+export function packTextureId(path: string, edition: Edition): string {
+  const parts = edition === 'java' ? javaTextureParts(path) : null;
+  const root = textureRoot(edition);
+  const rel = parts ? parts.rel : path.startsWith(root) ? path.slice(root.length) : path;
+  const id = rel.replace(/\.(png|tga)$/i, '');
+  return parts && parts.ns !== 'minecraft' ? `${parts.ns}:${id}` : id;
 }
 
 // ---------------------------------------------------------------------------------------------

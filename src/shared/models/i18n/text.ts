@@ -440,7 +440,6 @@ export const mt = defineText('shared.models', {
     Extended: 'Extended',
     'Key held': 'Key held',
     Viewing: 'Viewing',
-    Linked: 'Linked',
     Blocking: 'Blocking',
     Pale: 'Pale',
     Ashen: 'Ashen',

@@ -140,11 +140,28 @@ export function addEffectLayer(project: TexturePackProject, layer: Omit<EffectLa
 
 // ---- Paths & categories ----
 
+const JAVA_ANY_TEXTURE = /^assets\/([^/]+)\/textures\/(.+)$/;
+
+/**
+ * Namespace and path under textures/ of a Java texture file in any namespace
+ * ('assets/my_mod/textures/item/gem.png' -> my_mod, 'item/gem.png'); null outside a textures folder.
+ */
+export function javaTextureParts(path: string): { ns: string; rel: string } | null {
+  const m = JAVA_ANY_TEXTURE.exec(path);
+  return m ? { ns: m[1], rel: m[2] } : null;
+}
+
+/** A pack texture the editor lists and edits: any namespace on Java (mods, servers), textures/ on Bedrock. */
+export function isPackTexturePath(path: string, edition: Edition): boolean {
+  if (!/\.(png|tga)$/i.test(path)) return false;
+  return edition === 'java' ? /\.png$/i.test(path) && !!javaTextureParts(path) : path.startsWith(BEDROCK_TEXTURE_ROOT);
+}
+
 /** Category of a texture path, for textures that aren't in the vanilla index (imported/custom). */
 export function categoryForPath(path: string, edition: Edition): TextureCategory {
+  if (edition === 'java') return javaTextureCategory(javaTextureParts(path)?.rel ?? path);
   const root = textureRoot(edition);
-  const rel = path.startsWith(root) ? path.slice(root.length) : path;
-  return edition === 'java' ? javaTextureCategory(rel) : bedrockTextureCategory(rel);
+  return bedrockTextureCategory(path.startsWith(root) ? path.slice(root.length) : path);
 }
 
 /** JSON.parse that tolerates a BOM, comments and trailing commas; null when it still can't be read. */

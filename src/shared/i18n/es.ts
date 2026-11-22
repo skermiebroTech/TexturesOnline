@@ -166,7 +166,6 @@ const ES: SharedLanguage = {
       formattedDescription: 'La descripción del pack usaba colores o códigos de formato; se convirtió en texto sin formato.',
       badPackPng: 'El icono del pack (pack.png) no es un PNG válido, así que se generará uno nuevo.',
       badImages: '{count, plural, one {# textura no es una imagen PNG real: se conserva tal cual, pero no se puede editar.} other {# texturas no son imágenes PNG reales: se conservan tal cual, pero no se pueden editar.}}',
-      modTextures: '{count, plural, one {# textura de mods (otros espacios de nombres) se conserva, pero no se puede editar aquí.} other {# texturas de mods (otros espacios de nombres) se conservan, pero no se pueden editar aquí.}}',
       overlays: 'Las carpetas de overlay (extras para versiones concretas) se conservan tal cual; solo se pueden editar las texturas principales.',
       noVersion: 'El pack no indica para qué versión de Minecraft es, así que se puso la {version}. Puedes cambiarla en los ajustes del pack.',
       newerFormat: 'Este pack es para una versión de Minecraft más nueva de las que conoce esta app (formato de pack {format}). Se puso la {version}; revisa la versión en los ajustes del pack.',

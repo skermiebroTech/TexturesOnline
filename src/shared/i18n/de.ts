@@ -166,7 +166,6 @@ const DE: SharedLanguage = {
       formattedDescription: 'Die Pack-Beschreibung nutzte Farben oder Formatierungscodes; sie wurde in reinen Text umgewandelt.',
       badPackPng: 'Das Pack-Symbol (pack.png) ist kein gültiges PNG, deshalb wird ein neues Symbol erzeugt.',
       badImages: '{count, plural, one {# Textur ist kein echtes PNG-Bild und bleibt unverändert, kann aber nicht bearbeitet werden.} other {# Texturen sind keine echten PNG-Bilder und bleiben unverändert, können aber nicht bearbeitet werden.}}',
-      modTextures: '{count, plural, one {# Textur} other {# Texturen}} für Mods (andere Namespaces) bleiben erhalten, können hier aber nicht bearbeitet werden.',
       overlays: 'Overlay-Ordner (Extras für bestimmte Versionen) bleiben, wie sie sind; nur die Haupttexturen sind bearbeitbar.',
       noVersion: 'Das Pack gibt nicht an, für welche Minecraft-Version es ist, deshalb wurde {version} eingestellt. Du kannst das in den Pack-Einstellungen ändern.',
       newerFormat: 'Dieses Pack ist für eine neuere Minecraft-Version, als diese App kennt (Pack-Format {format}). Es wurde auf {version} gesetzt; prüf die Version in den Pack-Einstellungen.',

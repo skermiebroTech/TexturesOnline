@@ -656,7 +656,9 @@ export async function diagnose(input: DiagnoseInput): Promise<Diagnosis> {
       if (missing.length) add('overlay-missing', 'warning', all('java'), { params: { count: missing.length }, files: missing });
     }
     const shaders = [...files.keys()].filter((p) => /^assets\/minecraft\/(shaders\/(core|program|include|post)|post_effect)\//.test(p));
-    if (shaders.length) add('core-shaders', 'warning', { edition: 'java', kind: 'target' }, { params: { count: shaders.length, from: packVersion ?? version }, files: shaders, link: 'shaders-help' });
+    // on the version the pack is made for they work: only a note then
+    const madeForTarget = !!(range && tf && inRange(tf, range)) && metaProblem?.code !== 'format-mismatch';
+    if (shaders.length) add('core-shaders', madeForTarget ? 'info' : 'warning', { edition: 'java', kind: 'target' }, { params: { count: shaders.length, from: packVersion ?? version }, files: shaders, link: 'shaders-help' });
     const optifine = [...files.keys()].filter((p) => /^assets\/minecraft\/(optifine|mcpatcher)\//.test(p));
     if (optifine.length) add('optifine', 'info', all('java'), { params: { count: optifine.length } });
   }

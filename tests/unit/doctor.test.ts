@@ -496,10 +496,38 @@ test('sounds that are not Ogg Vorbis', async () => {
   assert.equal(issue(s, 'sound-format')!.count, 2);
 });
 
+test('a server pack with its own namespace, modern item definitions and core shaders has no false problems', async () => {
+  const s = await check({
+    'pack.mcmeta': { pack: { pack_format: 97, min_format: [97, 1], max_format: 97, description: 'Skyland' } },
+    'pack.png': png(64, 64),
+    LICENSE: 'All rights reserved.',
+    'assets/skyland/items/item/ruby.json': {
+      model: { type: 'condition', property: 'component', predicate: 'custom_data', value: '{active:true}', on_true: { type: 'model', model: 'skyland:item/ruby_active' }, on_false: { type: 'select', property: 'display_context', cases: [{ when: ['gui'], model: { type: 'model', model: 'skyland:item/ruby' } }], fallback: { type: 'range_dispatch', property: 'use_duration', entries: [{ threshold: 0.5, model: { type: 'model', model: 'skyland:item/ruby' } }], fallback: { type: 'model', model: 'skyland:item/ruby', tints: [{ type: 'dye', default: -1 }] } } } },
+    },
+    'assets/skyland/models/item/ruby.json': { parent: 'item/generated', textures: { layer0: 'skyland:item/ruby' } },
+    'assets/skyland/models/item/ruby_active.json': { parent: 'skyland:item/ruby', textures: { layer0: 'skyland:item/ruby_active' } },
+    'assets/skyland/textures/item/ruby.png': png(),
+    'assets/skyland/textures/item/ruby_active.png': png(16, 48),
+    'assets/skyland/textures/item/ruby_active.png.mcmeta': { animation: { frametime: 3, interpolate: true, frames: [0, 1, { index: 2, time: 9 }] } },
+    'assets/skyland/sounds.json': { 'music.theme': { sounds: [{ name: 'skyland:music/theme' }] } },
+    'assets/skyland/sounds/music/theme.ogg': 'OggS....',
+    'assets/skyland/font/map.json': { providers: [{ type: 'bitmap', file: 'skyland:item/ruby.png', ascent: 8, height: 8, chars: [''] }] },
+    'assets/minecraft/shaders/core/item.vsh': '#version 330\nvoid main() {}\n',
+    'assets/minecraft/shaders/include/util.glsl': 'float twice(float x) { return x * 2.0; }\n',
+  });
+  assert.ok(looksGood(s.now.issues), s.now.issues.map((i) => `${i.code} ${i.severity}`).join(', '));
+  assert.deepEqual(codes(s), ['core-shaders']);
+});
+
 test('OptiFine files and core shaders are noted', async () => {
   const s = await check({ ...healthyJava(), 'assets/minecraft/optifine/ctm/glass/1.png': png(), 'assets/minecraft/shaders/core/rendertype_solid.fsh': 'x' });
   assert.equal(issue(s, 'optifine')!.severity, 'info');
-  assert.equal(issue(s, 'core-shaders')!.severity, 'warning');
+  // checked for the version the pack is made for: the shaders work there, so only a note
+  assert.equal(issue(s, 'core-shaders')!.severity, 'info');
+  // checked for another version: they may turn the pack off
+  const other = await check({ ...healthyJava(), 'pack.mcmeta': { pack: { description: 'Old', min_format: 88, max_format: 88 } }, 'assets/minecraft/shaders/include/util.glsl': 'x' });
+  assert.equal(issue(other, 'core-shaders')!.severity, 'warning');
+  assert.ok(has(other, 'format-mismatch'));
 });
 
 // ---------------------------------------------------------------------------------------------
