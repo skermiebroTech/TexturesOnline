@@ -260,7 +260,8 @@ async function overflowAt390(page) {
     // Changing the version checks again.
     await page.click('.dr-version .vp-trigger');
     await page.waitForSelector('.vp-pop:not([hidden]), .vp-menu, [role="listbox"]', { timeout: 10000 });
-    const option = await page.$('[role="option"][data-value="1.12.2"], [role="option"]:has-text("1.12.2")');
+    // (the rows past the first screenful are added in the frame after the list opens)
+    const option = await page.waitForSelector('[role="option"][data-value="1.12.2"], [role="option"]:has-text("1.12.2")', { timeout: 5000 }).catch(() => null);
     if (option) {
       await option.click();
       await page.waitForFunction(() => /1\.12\.2/.test(document.querySelector('.dr-result .cv-res-titles .eyebrow')?.textContent ?? ''), null, { timeout: 60000 });
