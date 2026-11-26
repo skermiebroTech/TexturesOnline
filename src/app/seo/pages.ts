@@ -6,9 +6,9 @@ import '../../i18n/all-content';
 import type { Child } from '../markup';
 import { footer, type NavTool } from '../content/chrome';
 import type { Crumb } from '../content/blocks';
-import { TOOL_INTROS, toolIntro, toolIntroIn, type IntroTool } from '../content/tools';
+import { INTRO_MODULES, toolIntro, toolIntroIn, type IntroTool } from '../content/tools';
 import { absoluteUrl, SITE_NAME } from '../site';
-import { ABOUT_META, ALL_META, GUIDES, GUIDES_META, HELP_META, HOME_META, PRIVACY_META, TOOL_META, guidesIn, metaLocale, metaRoute, pageLocales, pageMeta, type PageMeta } from './meta';
+import { ABOUT_META, ALL_META, GUIDES, GUIDES_META, HELP_META, HOME_META, PRIVACY_META, TOOL_META, guidesIn, metaLocale, metaRoute, pageLocales, pageMeta, pagePath, type PageMeta } from './meta';
 import {
   APP_ID,
   DEFAULT_SCREENSHOT,
@@ -32,6 +32,7 @@ import { aboutPage, aboutText } from '../../tools/about/content';
 import { privacyPage } from '../../tools/privacy/content';
 import { allPage } from '../../tools/all/content';
 import { CONTENT_MODULES, TOOLS_CONTENT_MODULES, contentOf, hasContent } from '../../i18n/content';
+import { LOCALE_TEXT_MODULES } from '../../i18n/locale-text';
 import { TRANSLATED_LOCALES, type Locale } from '../../i18n/locales';
 import { ui } from '../../i18n/ui';
 
@@ -147,12 +148,13 @@ function base(meta: PageMeta, preload: string[], content: 'all' | 'tools' = 'all
   return {
     meta,
     locale,
-    alternates: pageLocales(route).map((l) => ({ locale: l, url: absoluteUrl(pageMeta(route, l)!.path) })),
+    alternates: pageLocales(route).map((l) => ({ locale: l, url: absoluteUrl(pagePath(route, l)!) })),
     // The router's first render loads its fallback views (src/app/pages.ts) and, on a translated
     // page, the language's content (on a tool page only its tools' part) and UI kit text before the
-    // view replaces the prerendered page: preloaded with the page, they cost no extra round trip
-    // after the app's script has run.
-    preload: [...preload, 'src/app/pages.ts', ...(locale === 'en' ? [] : [(content === 'tools' ? TOOLS_CONTENT_MODULES : CONTENT_MODULES)[locale], `src/ui/i18n/${locale}.ts`])],
+    // view replaces the prerendered page, and the app boots once the language's short texts are in
+    // (src/i18n/locale-text.ts): preloaded with the page, they cost no extra round trip after the
+    // app's script has run.
+    preload: [...(locale === 'en' ? [] : [LOCALE_TEXT_MODULES[locale]]), ...preload, 'src/app/pages.ts', ...(locale === 'en' ? [] : [(content === 'tools' ? TOOLS_CONTENT_MODULES : CONTENT_MODULES)[locale], `src/ui/i18n/${locale}.ts`])],
   };
 }
 
@@ -202,11 +204,11 @@ function toolEntry(tool: IntroTool, locale: Locale): PrerenderPage | null {
   const intro = toolIntroIn(tool, locale);
   const url = absoluteUrl(meta.path);
   const crumbs = crumbsFor(locale, { label: meta.label });
-  const tb = TOOL_INTROS[tool].base ?? (tool as Exclude<IntroTool, 'painting' | 'gui' | 'disc' | 'glint' | 'skinpack' | 'cape' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts'>);
+  const tb = intro.base ?? (tool as Exclude<IntroTool, 'painting' | 'gui' | 'disc' | 'glint' | 'skinpack' | 'cape' | 'converter' | 'merge' | 'doctor' | 'totem' | 'fonts'>);
   const startImage = TOOL_START_IMAGE[tool];
   return {
     // (and the text all editors share and the tool's own, which the tool waits for before it renders)
-    ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts', ...(locale === 'en' ? [] : [`src/shared/i18n/${locale}.ts`, `${TOOL_TEXT_DIR[tool]}/${locale}.ts`])], 'tools'),
+    ...base(meta, [TOOL_ROUTE_MODULE[tool], 'src/app/tool-intro.ts', INTRO_MODULES[tool], ...(locale === 'en' ? [] : [`src/shared/i18n/${locale}.ts`, `${TOOL_TEXT_DIR[tool]}/${locale}.ts`])], 'tools'),
     ...(startImage ? { preloadImages: [startImage] } : {}),
     tool: tb,
     nav: tb,

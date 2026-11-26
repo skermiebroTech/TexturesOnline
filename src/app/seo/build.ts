@@ -309,10 +309,11 @@ export function robotsTxt(): string {
 const mdLink = (m: PageMeta, label = m.label) => `[${label}](${absoluteUrl(m.path)})`;
 
 /** Tool names as people search for them (llms.txt link text). */
-const TOOL_INTROS_NAMES: Record<string, string> = Object.fromEntries(Object.values(TOOL_INTROS).map((t) => [TOOL_META[t.tool].path, t.appName]));
+const toolNames = (): Record<string, string> => Object.fromEntries(Object.values(TOOL_INTROS).map((t) => [TOOL_META[t.tool].path, t.appName]));
 
 export function llmsTxt(): string {
   const f = formatPackFormat(KNOWN_RELEASE_FORMATS['26.3']);
+  const names = toolNames();
   const lines = [
     `# ${SITE_NAME}`,
     '',
@@ -322,7 +323,7 @@ export function llmsTxt(): string {
     '',
     '## Tools',
     '',
-    ...Object.values(TOOL_META).map((m) => `- ${mdLink(m, TOOL_INTROS_NAMES[m.path] ?? m.label)}: ${m.description}`),
+    ...Object.values(TOOL_META).map((m) => `- ${mdLink(m, names[m.path] ?? m.label)}: ${m.description}`),
     '',
     '## What makes it different',
     '',

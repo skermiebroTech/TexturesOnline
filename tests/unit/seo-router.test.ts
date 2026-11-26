@@ -1,6 +1,7 @@
 // Path routing: URL <-> route path under any site base, legacy hash links, public page routes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import '../../src/i18n/all-content';
 import { ROUTES, fragmentOf, parseLocation, resolveRoute, routeTitle, stripBase, toHref } from '../../src/core/router';
 import { LOCALES } from '../../src/i18n/locales';
 import { ui } from '../../src/i18n/ui';

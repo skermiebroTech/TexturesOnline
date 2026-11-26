@@ -12,6 +12,7 @@ import { SITE_NAME } from '../app/site';
 import { DEFAULT_LOCALE, splitLocale, type Locale } from '../i18n/locales';
 import { ui } from '../i18n/ui';
 import { loadContent, type ContentPart } from '../i18n/content';
+import { hasLocaleText, loadLocaleText } from '../i18n/locale-text';
 import { setTextLocale } from '../i18n/editor-text';
 import { loadKitText } from '../ui/i18n/load';
 import { loadSharedText } from '../shared/i18n/load';
@@ -459,6 +460,12 @@ async function render(force = false): Promise<void> {
   // cleanup and the new view (often a whole screen built at once) come after that frame.
   if (!firstRender) {
     await afterNextPaint();
+    if (my !== token) return;
+  }
+  // A page in another language: its short texts (titles, the top bar's and footer's words) come
+  // first, as everything from here on shows them. (The first page's language is loaded before boot.)
+  if (!hasLocaleText(locale)) {
+    await loadLocaleText(locale).catch((err: unknown) => console.warn('Language text unavailable', err));
     if (my !== token) return;
   }
   const match = resolveRoute(path);

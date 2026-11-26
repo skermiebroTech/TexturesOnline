@@ -5,19 +5,21 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EXTENDED_FONTS, buildSite, type SiteFile } from '../../src/app/seo/build';
 import { prerenderPages, pagesIn, type PrerenderPage } from '../../src/app/seo/pages';
-import { GUIDES, PUBLIC_PAGES, META_TRANSLATIONS, TOOL_META, guideMeta, localizedPath, metaRoute, pageLocales, pageMeta, publicPageMeta, allPublicPages } from '../../src/app/seo/meta';
+import { GUIDES, PUBLIC_PAGES, META_TRANSLATIONS, UNTRANSLATED, TOOL_META, pagePath, guideMeta, localizedPath, metaRoute, pageLocales, pageMeta, publicPageMeta, allPublicPages } from '../../src/app/seo/meta';
 import { absoluteUrl, SITE_URL } from '../../src/app/site';
 import { flatten, type Child } from '../../src/app/markup';
 import { LOCALES, LOCALE_INFO, TRANSLATED_LOCALES, prefixPath, splitLocale, type Locale } from '../../src/i18n/locales';
 import { contentOf } from '../../src/i18n/content';
 import { ui, UI_EN } from '../../src/i18n/ui';
-import { TOOL_INTROS, type IntroTool } from '../../src/app/content/tools';
+import { INTRO_MODULES, TOOL_INTROS, type IntroTool } from '../../src/app/content/tools';
 import { FAQ as HELP_FAQ_EN, HELP_EN } from '../../src/tools/help/content';
 import { GUIDE_CONTENT } from '../../src/tools/guides/content';
 import { HOME_EN } from '../../src/tools/home/content';
 import { ABOUT_EN } from '../../src/tools/about/content';
 import { F, LATEST, formatGroups } from '../../src/app/content/facts';
 import { parseLocation, resolveRoute, stripBase, toHref } from '../../src/core/router';
+import { LOCALE_TEXT_MODULES, hasLocaleText, loadLocaleText } from '../../src/i18n/locale-text';
+import { readFileSync } from 'node:fs';
 
 const TEMPLATE = `<!doctype html>
 <html lang="en" class="no-js" data-theme="dark">
@@ -456,4 +458,40 @@ test('404.html (editor pages and unknown paths) is noindex and takes the languag
   const script = /<script>([\s\S]*?)<\/script>/.exec(html)![1];
   assert.doesNotThrow(() => new Function(script), 'the loader parses');
   for (const l of TRANSLATED_LOCALES) assert.ok(script.includes(`${JSON.stringify(l)}:[${JSON.stringify(LOCALE_INFO[l].lang)},${JSON.stringify(ui(l).loading)}]`), `${l} lang and loading text`);
+});
+
+test('a tool page preloads its own tool introduction and no other', () => {
+  for (const p of pages) {
+    const intros = p.preload.filter((m) => Object.values(INTRO_MODULES).includes(m));
+    const tool = (Object.keys(TOOL_META) as IntroTool[]).find((t) => TOOL_META[t].path === metaRoute(p.meta));
+    assert.deepEqual(intros, tool ? [INTRO_MODULES[tool]] : [], p.meta.path);
+  }
+});
+
+test('which pages each language has is known without its text (UNTRANSLATED matches the meta files)', () => {
+  for (const l of TRANSLATED_LOCALES) {
+    const t = META_TRANSLATIONS[l]!;
+    const missing = PUBLIC_PAGES.filter((m) => !(m.kind === 'guide' ? t.guides[m.path.slice('/guides/'.length)] : t.pages[m.path])).map((m) => m.path);
+    assert.deepEqual([...UNTRANSLATED[l]].sort(), missing.sort(), `${l}: UNTRANSLATED lists exactly the pages without a translated title`);
+    const extra = [...Object.keys(t.pages).filter((p) => !PUBLIC_PAGES.some((m) => m.path === p)), ...Object.keys(t.guides).filter((s) => !GUIDES.some((g) => g.slug === s))];
+    assert.deepEqual(extra, [], `${l}: no titles for pages that do not exist`);
+    for (const m of PUBLIC_PAGES) assert.equal(pagePath(m.path, l), missing.includes(m.path) ? undefined : prefixPath(m.path, l), `${l} ${m.path}`);
+  }
+});
+
+test('the short texts of every language but English are chunks of their own, loaded on demand', async () => {
+  for (const l of TRANSLATED_LOCALES) {
+    assert.ok(hasLocaleText(l), `${l} is registered for the build and the tests`);
+    await loadLocaleText(l); // already there: resolves at once
+    assert.match(readFileSync(LOCALE_TEXT_MODULES[l], 'utf8'), /export const TEXT: LocaleText/, `${LOCALE_TEXT_MODULES[l]} exports the text`);
+  }
+  // every translated page preloads its language's short texts (the app boots once they are in), English pages none
+  for (const p of pages) {
+    const texts = p.preload.filter((m) => Object.values(LOCALE_TEXT_MODULES).includes(m));
+    assert.deepEqual(texts, p.locale === 'en' ? [] : [LOCALE_TEXT_MODULES[p.locale as Exclude<Locale, 'en'>]], p.meta.path);
+  }
+  // the modules of the app's main script import no translation
+  for (const file of ['src/i18n/ui.ts', 'src/app/seo/meta.ts', 'src/core/router.ts', 'src/main.ts', 'src/app/content/chrome.ts', 'src/app/head.ts', 'src/app/shell.ts']) {
+    assert.doesNotMatch(readFileSync(file, 'utf8'), /from '[./]*(?:i18n\/)?(?:de|es|pt-br|ja|ru|fr|pl)\/(?:meta|ui)'/, `${file} imports no translation`);
+  }
 });

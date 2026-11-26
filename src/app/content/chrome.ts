@@ -4,7 +4,7 @@
 
 import type { IconName } from '../../ui/icons';
 import { el, ic, logo, type ElNode } from '../markup';
-import { guideMeta, localizedPath, pageMeta, publicPageMeta } from '../seo/meta';
+import { guideMeta, localizedPath, pagePath, publicPageMeta } from '../seo/meta';
 import { REPO_URL, SITE_NAME } from '../site';
 import { LOCALES, LOCALE_INFO, prefixPath, type Locale } from '../../i18n/locales';
 import { ui, type UiText } from '../../i18n/ui';
@@ -90,7 +90,7 @@ export function skipLink(locale: Locale = 'en'): ElNode {
  */
 export function languageTargets(route: string): { locale: Locale; path: string }[] {
   const isPublic = !!publicPageMeta(route);
-  return LOCALES.filter((l) => !!pageMeta('/', l)).map((l) => ({ locale: l, path: isPublic ? (pageMeta(route, l)?.path ?? prefixPath('/', l)) : localizedPath(route, l) }));
+  return LOCALES.filter((l) => !!pagePath('/', l)).map((l) => ({ locale: l, path: isPublic ? (pagePath(route, l) ?? prefixPath('/', l)) : localizedPath(route, l) }));
 }
 
 /** Links to the current page in every language (the current one marked); null while there is only English. */

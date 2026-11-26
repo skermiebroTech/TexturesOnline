@@ -2,7 +2,7 @@
 // privacy link. A translation fills in the same keys for its language (anything left out falls
 // back to English).
 
-import type { Locale } from '../i18n/locales';
+import type { Locale, TranslatedLocale } from '../i18n/locales';
 
 export interface AppText {
   /** Footer link and phone menu item */
@@ -49,114 +49,15 @@ export const APP_TEXT_EN: AppText = {
   privacy: 'Privacy',
 };
 
-/** Translations, by language (partial: missing keys use English). */
-export const APP_TEXT: Partial<Record<Locale, Partial<AppText>>> = {
-  de: {
-    installApp: 'App installieren',
-    installTitle: 'Texture Pack Maker installieren',
-    installWhy: 'Öffne sie wie jede andere App vom Startbildschirm oder Desktop. Sie funktioniert auch offline.',
-    installIos: ['Tippe in der Safari-Leiste auf „Teilen“.', 'Wähle „Zum Home-Bildschirm“.', 'Tippe auf „Hinzufügen“.'],
-    installMacSafari: ['Wähle in der Menüleiste von Safari Ablage › Zum Dock hinzufügen.', 'Klicke auf „Hinzufügen“.'],
-    gotIt: 'Verstanden',
-    installed: 'Texture Pack Maker ist installiert. Du findest ihn bei deinen anderen Apps.',
-    exportHint: 'Tipp: Installiere Texture Pack Maker als App, um ihn vom Desktop oder Startbildschirm zu öffnen, sogar offline.',
-    install: 'Installieren',
-    updateReady: 'Eine neue Version von Texture Pack Maker ist bereit.',
-    reload: 'Neu laden',
-    cantOpen: 'Texture Pack Maker kann „{name}“ nicht öffnen. Wähle ein .zip-, .mcpack- oder .mcaddon-Pack oder einen Skin bzw. eine Textur als .png.',
-    privacy: 'Datenschutz',
-  },
-  es: {
-    installApp: 'Instalar app',
-    installTitle: 'Instalar Texture Pack Maker',
-    installWhy: 'Ábrelo desde tu pantalla de inicio o escritorio como cualquier otra app. También funciona sin conexión.',
-    installIos: ['Toca el botón Compartir en la barra de Safari.', 'Elige «Añadir a pantalla de inicio».', 'Toca «Añadir».'],
-    installMacSafari: ['En la barra de menús de Safari, elige Archivo › Añadir al Dock.', 'Haz clic en «Añadir».'],
-    gotIt: 'Entendido',
-    installed: 'Texture Pack Maker está instalado. Lo encontrarás junto a tus otras apps.',
-    exportHint: 'Consejo: instala Texture Pack Maker como app para abrirlo desde el escritorio o la pantalla de inicio, incluso sin conexión.',
-    install: 'Instalar',
-    updateReady: 'Hay una nueva versión de Texture Pack Maker lista.',
-    reload: 'Recargar',
-    cantOpen: 'Texture Pack Maker no puede abrir «{name}». Elige un pack .zip, .mcpack o .mcaddon, o una skin o textura .png.',
-    privacy: 'Privacidad',
-  },
-  'pt-br': {
-    installApp: 'Instalar app',
-    installTitle: 'Instalar o Texture Pack Maker',
-    installWhy: 'Abra pela tela inicial ou pela área de trabalho como qualquer outro app. Também funciona offline.',
-    installIos: ['Toque no botão Compartilhar na barra do Safari.', 'Escolha “Adicionar à Tela de Início”.', 'Toque em “Adicionar”.'],
-    installMacSafari: ['Na barra de menus do Safari, escolha Arquivo › Adicionar ao Dock.', 'Clique em “Adicionar”.'],
-    gotIt: 'Entendi',
-    installed: 'O Texture Pack Maker foi instalado. Você vai encontrá-lo junto com seus outros apps.',
-    exportHint: 'Dica: instale o Texture Pack Maker como app para abri-lo pela área de trabalho ou tela inicial, até offline.',
-    install: 'Instalar',
-    updateReady: 'Uma nova versão do Texture Pack Maker está pronta.',
-    reload: 'Recarregar',
-    cantOpen: 'O Texture Pack Maker não consegue abrir “{name}”. Escolha um pack .zip, .mcpack ou .mcaddon, ou uma skin ou textura .png.',
-    privacy: 'Privacidade',
-  },
-  ja: {
-    installApp: 'アプリをインストール',
-    installTitle: 'Texture Pack Makerをインストール',
-    installWhy: 'ほかのアプリと同じようにホーム画面やデスクトップから開けます。オフラインでも使えます。',
-    installIos: ['Safariのツールバーにある共有ボタンをタップします。', '「ホーム画面に追加」を選びます。', '「追加」をタップします。'],
-    installMacSafari: ['Safariのメニューバーで ファイル › Dockに追加 を選びます。', '「追加」をクリックします。'],
-    gotIt: 'OK',
-    installed: 'Texture Pack Makerをインストールしました。ほかのアプリと同じ場所にあります。',
-    exportHint: 'ヒント：Texture Pack Makerをアプリとしてインストールすると、デスクトップやホーム画面からオフラインでも開けます。',
-    install: 'インストール',
-    updateReady: 'Texture Pack Makerの新しいバージョンが利用できます。',
-    reload: '再読み込み',
-    cantOpen: 'Texture Pack Makerは「{name}」を開けません。.zip、.mcpack、.mcaddonのパック、または.pngのスキンやテクスチャを選んでください。',
-    privacy: 'プライバシー',
-  },
-  ru: {
-    installApp: 'Установить приложение',
-    installTitle: 'Установить Texture Pack Maker',
-    installWhy: 'Открывай его с экрана «Домой» или рабочего стола, как любое другое приложение. Работает и без интернета.',
-    installIos: ['Нажми кнопку «Поделиться» на панели Safari.', 'Выбери «На экран „Домой“».', 'Нажми «Добавить».'],
-    installMacSafari: ['В строке меню Safari выбери Файл › Добавить в Dock.', 'Нажми «Добавить».'],
-    gotIt: 'Понятно',
-    installed: 'Texture Pack Maker установлен. Он появится среди других твоих приложений.',
-    exportHint: 'Совет: установи Texture Pack Maker как приложение, чтобы открывать его с рабочего стола или экрана «Домой», даже без интернета.',
-    install: 'Установить',
-    updateReady: 'Готова новая версия Texture Pack Maker.',
-    reload: 'Обновить',
-    cantOpen: 'Texture Pack Maker не может открыть «{name}». Выбери пак .zip, .mcpack или .mcaddon либо скин или текстуру .png.',
-    privacy: 'Конфиденциальность',
-  },
-  fr: {
-    installApp: 'Installer l’appli',
-    installTitle: 'Installer Texture Pack Maker',
-    installWhy: 'Ouvre-la depuis ton écran d’accueil ou ton bureau comme n’importe quelle autre appli. Elle marche aussi hors ligne.',
-    installIos: ['Touche le bouton Partager dans la barre de Safari.', 'Choisis « Sur l’écran d’accueil ».', 'Touche « Ajouter ».'],
-    installMacSafari: ['Dans la barre des menus de Safari, choisis Fichier › Ajouter au Dock.', 'Clique sur « Ajouter ».'],
-    gotIt: 'Compris',
-    installed: 'Texture Pack Maker est installé. Tu le trouveras avec tes autres applis.',
-    exportHint: 'Astuce : installe Texture Pack Maker comme une appli pour l’ouvrir depuis ton bureau ou ton écran d’accueil, même hors ligne.',
-    install: 'Installer',
-    updateReady: 'Une nouvelle version de Texture Pack Maker est prête.',
-    reload: 'Recharger',
-    cantOpen: 'Texture Pack Maker ne peut pas ouvrir « {name} ». Choisis un pack .zip, .mcpack ou .mcaddon, ou un skin ou une texture en .png.',
-    privacy: 'Confidentialité',
-  },
-  pl: {
-    installApp: 'Zainstaluj aplikację',
-    installTitle: 'Zainstaluj Texture Pack Maker',
-    installWhy: 'Otwieraj go z ekranu początkowego albo pulpitu, jak każdą inną aplikację. Działa też bez internetu.',
-    installIos: ['Stuknij przycisk Udostępnij na pasku Safari.', 'Wybierz „Do ekranu początkowego”.', 'Stuknij „Dodaj”.'],
-    installMacSafari: ['Na pasku menu Safari wybierz Plik › Dodaj do Docka.', 'Kliknij „Dodaj”.'],
-    gotIt: 'Rozumiem',
-    installed: 'Texture Pack Maker jest zainstalowany. Znajdziesz go wśród swoich innych aplikacji.',
-    exportHint: 'Wskazówka: zainstaluj Texture Pack Maker jako aplikację, żeby otwierać go z pulpitu albo ekranu początkowego, nawet bez internetu.',
-    install: 'Zainstaluj',
-    updateReady: 'Nowa wersja Texture Pack Maker jest gotowa.',
-    reload: 'Odśwież',
-    cantOpen: 'Texture Pack Maker nie może otworzyć „{name}”. Wybierz paczkę .zip, .mcpack lub .mcaddon albo skin lub teksturę .png.',
-    privacy: 'Prywatność',
-  },
-};
+/**
+ * Translations of the languages loaded so far (partial: missing keys use English). A language's
+ * translation (src/i18n/<lang>/app.ts) is loaded with its other short texts (src/i18n/locale-text.ts).
+ */
+const APP_TEXT: Partial<Record<Locale, Partial<AppText>>> = {};
+
+export function registerAppText(locale: TranslatedLocale, text: Partial<AppText>): void {
+  APP_TEXT[locale] = text;
+}
 
 export function appText(locale: Locale = 'en'): AppText {
   return { ...APP_TEXT_EN, ...(APP_TEXT[locale] ?? {}) };

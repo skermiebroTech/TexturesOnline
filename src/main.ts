@@ -4,7 +4,7 @@ import './styles/components.css';
 import './styles/layout.css';
 import './app/app.css';
 
-import { onNavigation, onViewRendered, startRouter } from './core/router';
+import { currentLocale, onNavigation, onViewRendered, startRouter } from './core/router';
 import { createShell } from './app/shell';
 import { initHead } from './app/head';
 import { whenIdle } from './ui/dom';
@@ -13,6 +13,7 @@ import { initToasts, toast } from './ui/toast';
 import { initPwa } from './pwa';
 import { kit } from './ui/i18n/kit';
 import { fmt, warmNumberFormats } from './i18n/editor-text';
+import { hasLocaleText, loadLocaleText } from './i18n/locale-text';
 
 initTheme();
 
@@ -70,17 +71,20 @@ const loadIntro = (): Promise<IntroModule> =>
     throw err;
   }));
 const introTool = (pattern: string | null) => (pattern ? INTRO_ROUTES[pattern] : undefined);
+// (each tool's own text is a small chunk of its own, fetched as soon as the route is known too)
 onNavigation((state) => {
-  if (introTool(state.pattern)) loadIntro().catch(() => undefined);
+  const tool = introTool(state.pattern);
+  if (tool) loadIntro().then((m) => m.preloadToolIntro(tool), () => undefined);
 });
 onViewRendered((state, view) => {
   const tool = introTool(state.pattern);
   if (!tool) return;
-  if (introModule) introModule.mountToolIntro(view, tool, state.locale);
+  const unavailable = (err: unknown) => console.warn('Tool introduction unavailable', err);
+  if (introModule) introModule.mountToolIntro(view, tool, state.locale).catch(unavailable);
   else
     loadIntro()
       .then((m) => m.mountToolIntro(view, tool, state.locale))
-      .catch((err) => console.warn('Tool introduction unavailable', err));
+      .catch(unavailable);
 });
 
 // Long pages: once a view (with its introduction) has been drawn in full, every section's size is
@@ -108,9 +112,20 @@ onViewRendered((state) => {
 // A prerendered page that the app renders the same way ("keep" pages: home, help, guides) is shown
 // first and the app takes over right after, so the first paint never waits for the boot work.
 // Tool pages show their tool as soon as it is ready (their prerendered text is hidden until then).
+// A translated page boots once its language's short texts are in (a small chunk of their own, which
+// the page preloads with this script): the shell and the head show them from the start.
 const prerendered = document.querySelector('main#main');
-if (prerendered?.hasChildNodes() && !prerendered.hasAttribute('data-boot')) afterFirstPaint(boot);
-else boot();
+const start = () => {
+  if (prerendered?.hasChildNodes() && !prerendered.hasAttribute('data-boot')) afterFirstPaint(boot);
+  else boot();
+};
+const locale = currentLocale();
+if (hasLocaleText(locale)) start();
+else
+  loadLocaleText(locale).then(start, (err: unknown) => {
+    console.warn('Language text unavailable', err);
+    start();
+  });
 
 // Last-resort error reporting: keep the app usable and tell the user something failed.
 let lastErrorAt = 0;

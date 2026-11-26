@@ -24,6 +24,7 @@ import {
 import { isShaderPack, isSkinSize, planLaunch, pngSize } from '../../src/pwa/route-file';
 import { platformOf, sameBuild } from '../../src/pwa/detect';
 import { render404 } from '../../src/app/seo/build';
+import '../../src/i18n/all-content';
 import { APP_TEXT_EN, appText } from '../../src/pwa/text';
 
 const ROOT = 'https://texturepackmaker.com/';
@@ -207,5 +208,6 @@ test('a page already running the new build switches workers without asking', () 
 test('app texts: English is complete; translations fall back to it', () => {
   for (const [k, v] of Object.entries(APP_TEXT_EN)) assert.ok(Array.isArray(v) ? v.length > 0 : v.length > 0, k);
   assert.deepEqual(appText('de'), { ...APP_TEXT_EN, ...appText('de') });
+  assert.equal(appText('de').installApp, 'App installieren', 'the German text is registered (src/i18n/all-content.ts)');
   assert.ok(APP_TEXT_EN.cantOpen.includes('{name}'));
 });

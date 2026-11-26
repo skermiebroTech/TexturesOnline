@@ -1,16 +1,10 @@
 // Short interface texts of the public pages (top bar, footer, breadcrumbs, shared headings and the
-// fallback views) in every language. Small enough to ship with the app shell; the long page content
-// is loaded per language (src/i18n/content.ts).
+// fallback views). English ships with the app shell; a translation (src/i18n/<lang>/ui.ts) is
+// registered when its language is loaded (src/i18n/locale-text.ts), before anything shows it. The
+// long page content is loaded per language too (src/i18n/content.ts).
 
 import { OG_IMAGE, SITE_NAME } from '../app/site';
-import type { Locale } from './locales';
-import { UI_DE } from './de/ui';
-import { UI_ES } from './es/ui';
-import { UI_PT_BR } from './pt-br/ui';
-import { UI_JA } from './ja/ui';
-import { UI_RU } from './ru/ui';
-import { UI_FR } from './fr/ui';
-import { UI_PL } from './pl/ui';
+import type { Locale, TranslatedLocale } from './locales';
 
 export interface UiText {
   nav: { home: string; textures: string; convert: string; skins: string; shaders: string; help: string; all: string };
@@ -209,9 +203,14 @@ export const UI_EN: UiText = {
   ogImageAlt: OG_IMAGE.alt,
 };
 
-const UI: Record<Locale, UiText> = { en: UI_EN, de: UI_DE, es: UI_ES, 'pt-br': UI_PT_BR, ja: UI_JA, ru: UI_RU, fr: UI_FR, pl: UI_PL };
+/** The languages loaded so far. */
+const UI: Partial<Record<Locale, UiText>> = { en: UI_EN };
 
-/** Interface texts for a language. */
+export function registerUi(locale: TranslatedLocale, text: UiText): void {
+  UI[locale] = text;
+}
+
+/** Interface texts for a language (English until the language has been loaded). */
 export function ui(locale: Locale): UiText {
-  return UI[locale];
+  return UI[locale] ?? UI_EN;
 }

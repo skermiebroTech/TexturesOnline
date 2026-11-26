@@ -4,7 +4,7 @@
 // someone navigates inside the app.)
 
 import { onRouteChange } from '../core/router';
-import { pageLocales, pageMeta } from './seo/meta';
+import { pageLocales, pageMeta, pagePath } from './seo/meta';
 import { absoluteUrl } from './site';
 import { LOCALE_INFO } from '../i18n/locales';
 
@@ -71,9 +71,9 @@ export function initHead(): void {
     const url = absoluteUrl(meta.path);
     setCanonical(url);
     const locales = pageLocales(state.path);
-    const links = locales.map((l) => ({ hreflang: LOCALE_INFO[l].lang, href: absoluteUrl(pageMeta(state.path, l)!.path) }));
+    const links = locales.map((l) => ({ hreflang: LOCALE_INFO[l].lang, href: absoluteUrl(pagePath(state.path, l)!) }));
     setAlternates(
-      [...links, { hreflang: 'x-default', href: absoluteUrl(pageMeta(state.path, 'en')!.path) }],
+      [...links, { hreflang: 'x-default', href: absoluteUrl(pagePath(state.path, 'en')!) }],
       locales.filter((l) => l !== state.locale).map((l) => LOCALE_INFO[l].ogLocale),
     );
     setMeta('property', 'og:locale', LOCALE_INFO[state.locale].ogLocale);
