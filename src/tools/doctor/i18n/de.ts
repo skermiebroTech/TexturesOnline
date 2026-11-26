@@ -363,7 +363,7 @@ const DE: DoctorLanguage = {
       'core-shaders': {
         title: 'Core-Shader für eine einzige Version',
         text: 'Das Pack ersetzt die Shader des Spiels selbst ({count, plural, one {# Datei} other {# Dateien}}). Mojang ändert diese Dateien oft, deshalb funktionieren sie nur in der Version, für die sie geschrieben wurden; in einer anderen kann Java alle Ressourcenpakete abschalten.',
-        steps: 'Nutze das Pack in der Version, für die es gemacht wurde, oder erstell im Shader Maker einen neuen Shader für deine Version.',
+        steps: 'Nutze das Pack in der Version, für die es gemacht wurde, oder erstell im Shader-Ersteller einen neuen Shader für deine Version.',
       },
       optifine: {
         title: 'Teile, die OptiFine brauchen',

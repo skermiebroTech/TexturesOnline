@@ -5,7 +5,7 @@ import type { ShadersLanguage } from './load';
 const DE: ShadersLanguage = {
   shaders: {
     hero: {
-      eyebrow: 'Shader Maker',
+      eyebrow: 'Shader-Ersteller',
       title: 'Gib Minecraft einen ganz neuen {look}',
       look: 'Look',
       lead: 'Wähle, wo du spielst, nimm ein Preset, verschiebe ein paar Regler und sieh dir die Live-Vorschau an. Dann exportierst du ein Pack, das direkt ins Spiel kann.',
@@ -83,7 +83,7 @@ const DE: ShadersLanguage = {
       bedrockSub: 'Die JSON-Einstellungen bearbeiten',
       eyebrow: 'Hast du schon ein Pack?',
       title: 'Shaderpaket öffnen',
-      text: 'Bearbeite ein Pack, das du heruntergeladen oder hier schon gemacht hast. Packs aus dem Shader Maker öffnen sich mit allen Einstellungen.',
+      text: 'Bearbeite ein Pack, das du heruntergeladen oder hier schon gemacht hast. Packs aus dem Shader-Ersteller öffnen sich mit allen Einstellungen.',
       license: 'Packs von anderen Leuten haben ihre eigenen Lizenzen. Bearbeitete Kopien sind für dich selbst, außer die Lizenz erlaubt das Teilen.',
       dropToOpen: 'Loslassen, um das Pack zu öffnen',
       notPack: '„{name}“ ist kein Pack. Zieh ein .zip-Shaderpaket oder eine .mcpack-Datei hierher.',
@@ -227,4 +227,4 @@ const DE: ShadersLanguage = {
 
 export default DE;
 
-export const SAME_AS_ENGLISH = ['shaders:hero.eyebrow', 'shaders:targets.bedrock.name', 'shaders:targets.bedrock.shortName', 'shaders.import:textureMaker'];
+export const SAME_AS_ENGLISH = ['shaders:targets.bedrock.name', 'shaders:targets.bedrock.shortName', 'shaders.import:textureMaker'];

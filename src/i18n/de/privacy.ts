@@ -6,7 +6,8 @@ import type { PrivacyText } from '../../tools/privacy/content';
 
 export const PRIVACY: PrivacyText = {
   eyebrow: 'Datenschutz',
-  title: 'Datenschutzerklärung',
+  // A soft hyphen: the long word breaks with a hyphen on narrow phones.
+  title: 'Datenschutz\u00ADerklärung',
   intro: `${SITE_NAME} ist so gebaut, dass deine Arbeit dein Gerät nie verlässt. Es gibt keine Konten, keine Werbung und kein Tracking. Diese Seite erklärt, was das im Alltag bedeutet, für die Website und für die installierte App.`,
   updated: 'Zuletzt geändert',
   sections: [

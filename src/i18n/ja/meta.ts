@@ -12,8 +12,8 @@ export const META_JA: MetaTranslation = {
       label: 'ホーム',
     },
     '/textures': {
-      title: 'テクスチャパック エディター｜リソースパック作成（Java/統合版）',
-      description: 'Minecraftのあらゆるテクスチャを編集。ブロック・アイテム・モブを3Dモデル上で塗り、PNGを読み込み、ワンクリックで全体を変更して.zip/.mcpackで書き出せます。',
+      title: 'マイクラ リソースパック作成｜テクスチャパックエディター',
+      description: 'Minecraftのリソースパックを無料で作成。ブロック・アイテム・モブを3Dモデル上で塗り、PNGを読み込み、ワンクリックで全体の見た目を変えて.zip/.mcpackで書き出せます。',
       label: 'テクスチャパック',
     },
     '/painting-maker': {
@@ -37,7 +37,7 @@ export const META_JA: MetaTranslation = {
       label: 'エンチャントの輝き',
     },
     '/texture-pack-converter': {
-      title: 'テクスチャパック変換ツール｜Java版⇔統合版（Bedrock）',
+      title: 'マイクラ テクスチャパック変換｜Java版⇔統合版を無料で',
       description: 'MinecraftのテクスチャパックをJava版から統合版へ、統合版からJava版へ、Java版のバージョン間で変換。PNGを.mcpackにもできます。ブラウザで無料。',
       label: 'テクスチャパック変換',
     },
@@ -62,7 +62,7 @@ export const META_JA: MetaTranslation = {
       label: 'フォント作成',
     },
     '/skins': {
-      title: 'マイクラ スキンエディター｜2D・3Dでオリジナルスキン作成',
+      title: 'マイクラ スキン作成｜無料のスキンエディター（2D・3D）',
       description: 'Minecraftのオリジナルスキンをブラウザで作成。64×64やHDのテンプレートを2Dや3Dモデル上で塗り、クラシックかスリムを選んで、Java版・統合版用のPNGを保存。無料。',
       label: 'スキン',
     },
@@ -82,7 +82,7 @@ export const META_JA: MetaTranslation = {
       label: 'シェーダー',
     },
     '/help': {
-      title: 'テクスチャパック・スキン・シェーダーの入れ方',
+      title: 'マイクラ テクスチャパック・スキン・シェーダーの入れ方',
       description: 'Java版と統合版の入れ方を、Windows・Mac・Android・iPhone・ゲーム機ごとに手順で解説。resourcepacksフォルダーの場所、パックの有効化、よくあるトラブルの直し方も。',
       label: 'ヘルプ',
     },
@@ -116,14 +116,14 @@ export const META_JA: MetaTranslation = {
       blurb: 'バージョンを選び、テクスチャを描き、Minecraftで読み込めるパックを書き出す。',
     },
     'install-resource-packs': {
-      title: 'テクスチャパックの入れ方（Java版・統合版）',
+      title: 'マイクラ リソースパックの入れ方（Java版・統合版）',
       h1: 'Minecraftにテクスチャパック・シェーダー・.mcpackを入れる方法',
       description: 'Java版でのリソースパックの導入、PCやスマホでの統合版.mcpackのインポート、IrisやOptiFineでのシェーダー導入、表示されないパックの直し方。',
       label: 'パックとシェーダーの入れ方',
       blurb: 'Java版のリソースパック、統合版の.mcpack、シェーダーパックの入れ方と対処法。',
     },
     'texture-pack-not-working': {
-      title: 'テクスチャパックが反映されない？エラー別の直し方',
+      title: 'マイクラ テクスチャパックが反映されない？エラー別の直し方',
       h1: 'Minecraftのテクスチャパックが反映されない？エラー別の直し方',
       // Quotes the game's most searched message and promises the meaning, the fix and Pack Doctor.
       description: '「旧バージョン向けに制作」と出る、ブロックが紫と黒になる。エラーごとの意味と数分でできる直し方、パックを修復するツールも紹介します。',
@@ -184,7 +184,7 @@ export const META_JA: MetaTranslation = {
       h1: 'Minecraft統合版のスキンパックの作り方',
       description: '統合版のスキンパックを自作する方法。スキンを描くか読み込み、.mcpackで書き出し、PCやスマホでインポート。更新のしかたと手作業での作り方も解説。',
       label: '統合版スキンパックを作る',
-      blurb: 'スキンを1つの.mcpackにまとめ、更衣室で着る。',
+      blurb: 'スキンを1つの.mcpackにまとめ、着せ替えで着る。',
     },
     'make-3d-items-texture-pack': {
       title: 'マイクラ テクスチャパックで3Dアイテムを作る方法（Java版）',
@@ -201,11 +201,11 @@ export const META_JA: MetaTranslation = {
       blurb: '低い炎、透明なガラス、小さい剣、照準、FPS向けテクスチャ。',
     },
     'make-a-pbr-texture-pack': {
-      title: 'PBRテクスチャパックの作り方（バイブラントビジュアル・シェーダー）',
-      h1: 'バイブラントビジュアルとシェーダー向けPBRテクスチャパックの作り方',
-      description: 'MinecraftのPBRテクスチャパックを無料で作れます。つや、金属、発光、でこぼこを、バイブラントビジュアル用テクスチャセットとlabPBRマップに。',
+      title: 'PBRテクスチャパックの作り方（バイブラントビジュアルズ）',
+      h1: 'バイブラントビジュアルズとシェーダー向けPBRテクスチャパックの作り方',
+      description: 'MinecraftのPBRテクスチャパックを無料で作れます。つや、金属、発光、でこぼこを、バイブラントビジュアルズ用テクスチャセットとlabPBRマップに。',
       label: 'PBRパックを作る',
-      blurb: 'バイブラントビジュアルとlabPBRシェーダー向けの、つや、金属、発光、でこぼこ。',
+      blurb: 'バイブラントビジュアルズとlabPBRシェーダー向けの、つや、金属、発光、でこぼこ。',
     },
     'rename-items-texture-pack': {
       title: 'Minecraftでアイテムの名前を変えてテクスチャを変える方法',
@@ -215,7 +215,7 @@ export const META_JA: MetaTranslation = {
       blurb: '「Excalibur」という名前の剣など、名前を変えたアイテムに専用のテクスチャを付けます。',
     },
     'make-animated-textures': {
-      title: 'Minecraftのアニメーションテクスチャの作り方（Java版・統合版）',
+      title: 'マイクラ アニメーションテクスチャの作り方（Java版・統合版）',
       h1: 'アニメーションテクスチャを作る',
       description: 'ブラウザで無料で、Minecraftのブロックやアイテムをアニメーションに。フレーム、tick単位のタイミング、GIFの読み込み、Java版の.png.mcmetaと統合版のフリップブックに対応。',
       label: 'アニメーションテクスチャ',

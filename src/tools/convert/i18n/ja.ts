@@ -155,7 +155,7 @@ const JA: ConvertLanguage = {
       image: 'テクスチャではない画像',
       other: 'その他のファイル',
       subpack: 'サブパックのファイル',
-      pbr: 'バイブラントビジュアル（PBR）のファイル',
+      pbr: 'バイブラントビジュアルズ（PBR）のファイル',
       menu: 'メニューのレイアウト',
       particle: 'パーティクルの定義',
       textureSettings: 'テクスチャの設定',

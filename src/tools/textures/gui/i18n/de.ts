@@ -15,7 +15,7 @@ const DE: GuiLanguage = {
       glint: 'Verzauberungsglanz',
     },
     parts: {
-      hotbar: 'Schnellleiste',
+      hotbar: 'Schnellzugriffsleiste',
       crosshair: 'Fadenkreuz',
       hearts: 'Herzen',
       heartsPoisoned: 'Vergiftete Herzen',

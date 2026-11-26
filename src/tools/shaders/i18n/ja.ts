@@ -66,7 +66,7 @@ const JA: ShadersLanguage = {
       createFailed: 'プロジェクトを作れませんでした',
       defaultIris: 'マイシェーダーパック',
       defaultVanilla: 'マイバニラシェーダー',
-      defaultBedrock: 'マイVibrant Visuals',
+      defaultBedrock: 'マイバイブラントビジュアルズ',
       description: 'Texture Pack Makerで作った{preset}シェーダー',
       descriptionCustom: 'Texture Pack Makerで作ったカスタムシェーダー',
     },
@@ -83,7 +83,7 @@ const JA: ShadersLanguage = {
       bedrockSub: 'JSONの設定を編集',
       eyebrow: 'パックをもう持っていますか？',
       title: 'シェーダーパックを開く',
-      text: 'ダウンロードしたパックや、ここで前に作ったパックを編集できます。Shader Makerから書き出したパックは、すべての設定つきで開きます。',
+      text: 'ダウンロードしたパックや、ここで前に作ったパックを編集できます。シェーダー作成ツールで書き出したパックは、すべての設定つきで開きます。',
       license: 'ほかの人が作ったパックには独自のライセンスがあります。ライセンスで共有が許可されていない限り、編集したコピーは自分だけで使ってください。',
       dropToOpen: 'ドロップしてこのパックを開く',
       notPack: '「{name}」はパックではありません。.zipのシェーダーパックか.mcpackファイルをドロップしてください。',
@@ -140,8 +140,8 @@ const JA: ShadersLanguage = {
         compareLabel: '通常のMinecraft',
       },
       bedrock: {
-        name: '統合版 Vibrant Visuals',
-        shortName: 'Vibrant Visuals',
+        name: '統合版 バイブラントビジュアルズ',
+        shortName: 'バイブラントビジュアルズ',
         tagline: '統合版に組み込まれたバイブラントビジュアルズを調整：日光、空、霧、水、色。',
         bestFor: 'Windows、Xbox、PlayStation、最近のスマホやタブレットで遊ぶ統合版のプレイヤー向け。',
         gets: {
@@ -227,4 +227,4 @@ const JA: ShadersLanguage = {
 
 export default JA;
 
-export const SAME_AS_ENGLISH = ['shaders:targets.bedrock.shortName'];
+export const SAME_AS_ENGLISH: string[] = [];

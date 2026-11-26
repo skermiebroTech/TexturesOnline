@@ -14,7 +14,7 @@ const JA: ModelsLanguage = {
       ends: '両端',
       plant: '植物',
       flowers: '花',
-      torch: 'たいまつ',
+      torch: '松明',
       particles: 'パーティクル',
       overlay: 'オーバーレイ',
       sprite: 'スプライト',
