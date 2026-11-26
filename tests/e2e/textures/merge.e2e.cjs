@@ -245,7 +245,9 @@ async function noOverflow(page) {
     order = await names(page);
     check('"Move down" button', order.join() === 'Top Pack,Extras,Old School', order.join());
     check('first pack can’t move up, last can’t move down', (await page.isDisabled('.mg-row:first-child .mg-up')) && (await page.isDisabled('.mg-row:last-child .mg-down')));
-    check('live region announces moves', /moved to position 3 of 3/.test(await page.textContent('.mg-page [aria-live="polite"].sr-only')));
+    // (the announcement is set in the next animation frame, so screen readers hear the change)
+    const announced = await page.waitForFunction(() => /moved to position 3 of 3/.test(document.querySelector('.mg-page [aria-live="polite"].sr-only')?.textContent ?? ''), null, { timeout: 3000 }).then(() => true, () => false);
+    check('live region announces moves', announced, await page.textContent('.mg-page [aria-live="polite"].sr-only'));
 
     // ---------------------------------------------------------------- mixed editions
     await addPacks(page, [packs.phone]);
