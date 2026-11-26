@@ -56,9 +56,9 @@ const DE: TexturesLanguage = {
       gui: {
         eyebrow: 'GUI-Ersteller',
         title: 'Gestalte deine eigene Minecraft-GUI',
-        lead: 'Gestalte Schnellleiste, Herzen, Hunger, Fadenkreuz, Inventar, Knöpfe und Menüs neu und sieh die Änderungen live in einer Vorschau wie im Spiel. Für Java und Bedrock.',
+        lead: 'Gestalte Schnellzugriffsleiste, Herzen, Hunger, Fadenkreuz, Inventar, Knöpfe und Menüs neu und sieh die Änderungen live in einer Vorschau wie im Spiel. Für Java und Bedrock.',
         newTitle: 'Neues GUI-Pack',
-        newText: 'Öffnet sich bei der GUI-Liste, mit der Schnellleiste bereit zum Malen.',
+        newText: 'Öffnet sich bei der GUI-Liste, mit der Schnellzugriffsleiste bereit zum Malen.',
         button: 'GUI-Pack erstellen',
         name: 'Mein GUI-Pack',
       },
@@ -73,7 +73,7 @@ const DE: TexturesLanguage = {
       },
       glint: {
         eyebrow: 'Verzauberungsglanz',
-        title: 'Ändere den Verzauberungsglanz',
+        title: 'Ändere den Verzauberungs\u00ADglanz',
         lead: 'Färbe oder bemale den Schimmer auf verzauberten Items und Rüstungen neu und sieh beim Malen zu, wie er über ein Schwert, ein Buch und eine Spitzhacke zieht. Für Java und Bedrock.',
         newTitle: 'Neues Glanz-Pack',
         newText: 'Öffnet sich bei der Glanz-Textur mit ihrer bewegten Vorschau.',

@@ -47,7 +47,7 @@ export const GUIDES_INDEX: GuidesIndexText = {
 const MAKE_PACK_STEPS: Child[] = [
   ['Öffne den ', link('/textures', 'Texture Pack Maker'), ', gib deinem Pack einen Namen und wähle Java oder Bedrock, deine Spielversion und eine Auflösung. Klicke dann auf ', strong('Pack erstellen'), '.'],
   'Such eine Textur über das Suchfeld oder die Kategorien und bemale sie im Pixel-Editor neu, oder lade ein eigenes PNG hoch.',
-  'Optional: Gestalte das ganze Pack mit Effekten per Klick um, etwa Dark Mode, Pastel oder Retro 8-bit.',
+  'Optional: Gestalte das ganze Pack mit Effekten per Klick um, etwa Dunkelmodus, Pastelltraum oder Retro 8-Bit.',
   ['Öffne den Tab ', strong('Pack'), ', um Beschreibung und Symbol festzulegen, und exportiere dann eine ', code('.zip'), ' (Java) oder ein ', code('.mcpack'), ' (Bedrock).'],
   ['Installiere das Pack in Minecraft und teste es. ', link('/guides/install-resource-packs', 'So installierst du es'), '.'],
 ];
@@ -60,17 +60,17 @@ const INSTALL_JAVA_STEPS: Child[] = [
 ];
 
 const SKIN_STEPS: Child[] = [
-  ['Öffne den ', link('/skins', 'Skin Maker'), ' und wähle die Armform, breit (4 Pixel) oder schmal (3 Pixel), und die Größe: 64×64 oder HD 128×128 für Bedrock.'],
+  ['Öffne den ', link('/skins', 'Skin-Editor'), ' und wähle die Armform, breit (4 Pixel) oder schmal (3 Pixel), und die Größe: 64×64 oder HD 128×128 für Bedrock.'],
   'Wähle einen Startpunkt: einen leeren Skin, die farbcodierte Vorlage, einen Start-Charakter, ein PNG, das du schon hast, den Skin eines Java-Spielers per Benutzername oder einen der Standard-Skins.',
   'Bemale die Grundebene: Gesicht, Körper, Arme und Beine. Mit „Spiegeln“ bemalst du beide Arme oder Beine gleichzeitig, und ein gesperrtes Körperteil hält die Farbe in seinen Grenzen.',
   'Stell die Ansicht auf 3D (oder drück D), um direkt auf das Modell zu malen, und blende Körperteile aus, um an die Seiten darunter zu kommen.',
   'Füge die Außenebene hinzu: Haare, einen Hut, eine Kapuze, eine Jacke, Ärmel oder Stiefel, die vom Körper abstehen.',
-  ['Exportiere: ', strong('Java-Skin (.png)'), ' für den Minecraft Launcher, ', strong('Bedrock-Skin (.png)'), ' für das Ankleidezimmer oder ', strong('Bedrock-Skinpaket (.mcpack)'), ' für mehrere Skins auf einmal.'],
-  'Zieh ihn an: Lade das PNG in Java im Minecraft Launcher hoch oder importiere es in Bedrock im Ankleidezimmer.',
+  ['Exportiere: ', strong('Java-Skin (.png)'), ' für den Minecraft Launcher, ', strong('Bedrock-Skin (.png)'), ' für die Umkleidekabine oder ', strong('Bedrock-Skinpaket (.mcpack)'), ' für mehrere Skins auf einmal.'],
+  'Zieh ihn an: Lade das PNG in Java im Minecraft Launcher hoch oder importiere es in Bedrock in der Umkleidekabine.',
 ];
 
 const VANILLA_SHADER_STEPS: Child[] = [
-  ['Öffne den ', link('/shaders', 'Shader Maker'), ' und wähle ', strong('Vanilla Java'), '.'],
+  ['Öffne den ', link('/shaders', 'Shader-Ersteller'), ' und wähle ', strong('Vanilla Java'), '.'],
   `Wähle genau die Minecraft-Version, die du spielst (Java 1.17 oder neuer; ${LATEST} ist voreingestellt).`,
   'Starte mit einem Preset und stelle Helligkeit, Kontrast, Farbe, Vignette und Nebel ein, während sich die Vorschau aktualisiert.',
   ['Exportiere die ', code('.zip'), ' und installiere sie wie jedes Ressourcenpaket: ', uiPath(OPTIONS, PACKS, OPEN_FOLDER), '.'],
@@ -97,7 +97,7 @@ const makeATexturePack: GuideText = {
   ],
   quick: {
     title: 'Die Kurzfassung',
-    items: ['Wähle Java oder Bedrock und die Version, die du spielst.', 'Bemale Texturen neu, lade eigene Bilder hoch oder nutze einen Effekt per Klick.', 'Exportiere das Pack und zieh es in Minecraft.'],
+    items: ['Wähle Java oder Bedrock und die Version, die du spielst.', 'Bemale Texturen neu, lade eigene Bilder hoch oder nutze einen Effekt per Klick.', 'Exportiere das Pack und installiere es in Minecraft.'],
   },
   howto: { name: 'Minecraft Texture Pack mit Texture Pack Maker erstellen', steps: MAKE_PACK_STEPS },
   sections: [
@@ -129,7 +129,7 @@ const makeATexturePack: GuideText = {
           ' (oder drücke D) und male direkt auf das Modell: Jede Seite bemalt die Textur, die sie zeigt. Zieh am Hintergrund oder nutze zwei Finger, um den Block zu drehen. Mob-Texturen funktionieren genauso: Wähle Mobs in der Texturliste und blende Körperteile aus, um an die Seiten darunter zu kommen.',
         ),
         p(
-          'In Java kannst du auch Formen ändern: Drücke im Tab Preview auf ',
+          'In Java kannst du auch Formen ändern: Drücke im Tab Vorschau auf ',
           strong('Form bearbeiten'),
           ', um aus einem flachen Item ein 3D-Item zu machen oder einen Block umzuformen. ',
           link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'),
@@ -149,7 +149,7 @@ const makeATexturePack: GuideText = {
       title: 'Schritt 3 – Das ganze Pack per Klick umgestalten (optional)',
       body: [
         p(MAKE_PACK_STEPS[2]),
-        p('Effekte stapeln sich übereinander und über deine eigene Malerei, ohne sie zu verändern, und werden beim Export auf jede Textur angewendet. Kombiniere Autumn mit Smooth HD oder Dark Mode mit Neon Outline und male dann von Hand weiter.'),
+        p('Effekte stapeln sich übereinander und über deine eigene Malerei, ohne sie zu verändern, und werden beim Export auf jede Textur angewendet. Kombiniere „Herbst“ mit „Glattes HD“ oder „Dunkelmodus“ mit „Neon-Umriss“ und male dann von Hand weiter.'),
         figure(SHOTS.effects),
       ],
     },
@@ -313,7 +313,7 @@ const makeATexturePack: GuideText = {
     {
       id: 'older',
       q: 'Wie erstelle ich ein Texture Pack für eine ältere Version wie 1.21.11 oder 1.8.9?',
-      a: [p('Wähle diese Version beim Anlegen des Packs. Der Maker lädt die Texturen und Ordnernamen genau dieser Version und schreibt ihr Pack-Format. ', link('/guides/minecraft-pack-format-versions', 'Pack-Formate aller Versionen'), '.')],
+      a: [p('Wähle diese Version beim Anlegen des Packs. Der Editor lädt die Texturen und Ordnernamen genau dieser Version und schreibt ihr Pack-Format. ', link('/guides/minecraft-pack-format-versions', 'Pack-Formate aller Versionen'), '.')],
     },
     {
       id: 'originals',
@@ -328,7 +328,7 @@ const makeATexturePack: GuideText = {
     {
       id: 'time',
       q: 'Wie lange dauert es, ein Texture Pack zu erstellen?',
-      a: [p('Ein paar Minuten für ein kleines Pack, das eine Handvoll Blöcke ändert, oder für einen Effekt wie Dark Mode auf dem ganzen Pack. Ein komplett handgemaltes Pack mit Hunderten Texturen kann Wochen dauern; exportieren und testen kannst du jederzeit zwischendurch.')],
+      a: [p('Ein paar Minuten für ein kleines Pack, das eine Handvoll Blöcke ändert, oder für einen Effekt wie Dunkelmodus auf dem ganzen Pack. Ein komplett handgemaltes Pack mit Hunderten Texturen kann Wochen dauern; exportieren und testen kannst du jederzeit zwischendurch.')],
     },
     {
       id: 'hd',
@@ -469,7 +469,7 @@ const notWorking: GuideText = {
       body: [
         p(
           'Wenn ein Ressourcenpaket einen Shader enthält, der sich nicht kompilieren lässt, schaltet Java alle Packs aus und kehrt zu den Standardwerten zurück. Das passiert mit Vanilla-Shaderpaketen, die für eine andere Version gemacht wurden, weil Mojang diese Shader-Dateien oft ändert. Entferne das Pack oder exportiere es für deine genaue Version neu; jeder Shader, den der ',
-          link('/shaders', 'Shader Maker'),
+          link('/shaders', 'Shader-Ersteller'),
           ' schreibt, wird vorher auf Kompilierfehler geprüft.',
         ),
       ],
@@ -819,7 +819,7 @@ const install: GuideText = {
       body: [
         ul([
           [strong('Java:'), ' Minecraft Launcher › Skins › Neuer Skin, Klassisch oder Schlank wählen, das PNG auswählen und auf „Speichern und verwenden“ klicken. Oder lade ihn in deinem Profil auf minecraft.net hoch.'],
-          [strong('Bedrock:'), ' öffne ein Skinpaket als ', code('.mcpack'), ' und wähle den Skin unter Ankleidezimmer › Klassische Skins, oder importiere dort ein einzelnes PNG.'],
+          [strong('Bedrock:'), ' öffne ein Skinpaket als ', code('.mcpack'), ' und wähle den Skin unter Umkleidekabine › Klassische Skins, oder importiere dort ein einzelnes PNG.'],
         ]),
         p('Mehr dazu in ', link('/guides/make-a-skin', 'Eigenen Minecraft Skin erstellen'), '.'),
       ],
@@ -1002,16 +1002,16 @@ const makeASkin: GuideText = {
   intro: [
     p(
       'Ein Minecraft-Skin ist ein PNG-Bild mit 64×64 Pixeln, das sich um das Spielermodell legt; Bedrock nimmt auch HD-Skins mit 128×128 Pixeln. Du kannst einen kostenlos im Browser erstellen: breite oder schmale Arme wählen, auf der flachen Vorlage oder direkt auf dem 3D-Modell malen, eine zweite Ebene für Haare und Kleidung hinzufügen und ihn dann in Java oder Bedrock tragen. Diese Anleitung geht jeden Schritt mit dem ',
-      link('/skins', 'Skin Maker'),
+      link('/skins', 'Skin-Editor'),
       ' durch, erklärt die Vorlage und ihre zwei Ebenen und zeigt, wie du den Skin in jeder Edition installierst.',
     ),
   ],
   quick: {
     title: 'Die Kurzfassung',
     items: [
-      ['Öffne den ', link('/skins', 'Skin Maker'), ', wähle breite oder schmale Arme und einen Start-Skin.'],
+      ['Öffne den ', link('/skins', 'Skin-Editor'), ', wähle breite oder schmale Arme und einen Start-Skin.'],
       'Bemale die Grundebene und füge auf der Außenebene Haare, einen Hut oder eine Jacke hinzu, mit Blick auf die 3D-Vorschau.',
-      ['Exportiere ein ', code('.png'), ': Java nimmt es im Minecraft Launcher, Bedrock im Ankleidezimmer.'],
+      ['Exportiere ein ', code('.png'), ': Java nimmt es im Minecraft Launcher, Bedrock in der Umkleidekabine.'],
       ['Mehrere Skins für Bedrock? Bündle sie mit dem ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), '.'],
     ],
   },
@@ -1041,7 +1041,7 @@ const makeASkin: GuideText = {
           'Ungenutzte Bereiche der Vorlage sollten komplett transparent bleiben.',
         ]),
         p(
-          'Jedes Körperteil ist eine aufgeklappte Box: Die Vorlage zeigt oben Ober- und Unterseite, darunter die rechte, vordere, linke und hintere Seite. Der Kopf misst 8×8×8 Pixel, der Körper 8×12×4, jedes Bein 4×12×4 und jeder Arm 4×12×4 (schmal 3×12×4). Fahr im Skin Maker über die Vorlage, um zu sehen, zu welchem Teil und welcher Seite ein Pixel gehört, oder starte mit dem farbcodierten Skin ',
+          'Jedes Körperteil ist eine aufgeklappte Box: Die Vorlage zeigt oben Ober- und Unterseite, darunter die rechte, vordere, linke und hintere Seite. Der Kopf misst 8×8×8 Pixel, der Körper 8×12×4, jedes Bein 4×12×4 und jeder Arm 4×12×4 (schmal 3×12×4). Fahr im Skin-Editor über die Vorlage, um zu sehen, zu welchem Teil und welcher Seite ein Pixel gehört, oder starte mit dem farbcodierten Skin ',
           strong('Vorlage'),
           ', auf dem jede Seite beschriftet ist.',
         ),
@@ -1084,15 +1084,15 @@ const makeASkin: GuideText = {
           'Ein HD-Skin ist dieselbe Vorlage in doppelter Auflösung: 128×128 statt 64×64 Pixel. Jedes Gesicht, jeder Ärmel und jeder Schuh hat also viermal so viele Pixel für Schattierungen, Augen und feine Muster. Wo er funktioniert:',
         ),
         ul([
-          [strong('Bedrock Edition'), ' (Windows, Android, iPhone und iPad): Importiere das PNG im Ankleidezimmer oder pack es in ein Skinpaket. Ein Paket kann Skins mit 64×64 und HD-Skins mischen.'],
+          [strong('Bedrock Edition'), ' (Windows, Android, iPhone und iPad): Importiere das PNG in der Umkleidekabine oder pack es in ein Skinpaket. Ein Paket kann Skins mit 64×64 und HD-Skins mischen.'],
           [strong('Java Edition'), ': Der Minecraft Launcher und minecraft.net nehmen nur Skins mit 64×64 an. Für einen HD-Skin brauchst du eine Mod, die HD-Skins lädt, etwa CustomSkinLoader.'],
         ]),
-        h3('So erstellst du einen im Skin Maker'),
+        h3('So erstellst du einen im Skin-Editor'),
         steps([
           ['Stell auf dem Startbildschirm ', strong('Größe'), ' auf ', strong('HD 128×128'), ' und wähle dann einen Startpunkt. Vorlagen und Start-Skins werden auf 128×128 verdoppelt, und ein hochgeladenes PNG mit 128×128 bleibt HD.'],
           ['Du malst schon an einem Skin mit 64×64? Stell im Editor ', strong('Größe'), ' auf ', strong('HD 128'), ' und bestätige mit ', strong('Zu HD machen'), '. Jedes Pixel wird zu einem 2×2-Block, der Skin sieht also gleich aus, bis du feinere Details malst. Mit ', strong('Größe'), ' › ', strong('64×64'), ' und ', strong('Auf 64×64 verkleinern'), ' geht es zurück.'],
-          ['Exportiere ', strong('Bedrock-Skin (.png)'), ' für den Import im Ankleidezimmer oder ein ', strong('Bedrock-Skinpaket (.mcpack)'), '. Beide behalten 128×128.'],
-          ['Für Java lädt ', strong('Java skin (.png)'), ' eine Kopie mit 64×64 herunter, bei der jeder 2×2-Block zu einem Pixel wird; dein HD-Skin bleibt, wie er ist. Du nutzt eine HD-Skin-Mod? Dann wähle stattdessen ', strong('128×128 für Mods'), '.'],
+          ['Exportiere ', strong('Bedrock-Skin (.png)'), ' für den Import in der Umkleidekabine oder ein ', strong('Bedrock-Skinpaket (.mcpack)'), '. Beide behalten 128×128.'],
+          ['Für Java lädt ', strong('Java-Skin (.png)'), ' eine Kopie mit 64×64 herunter, bei der jeder 2×2-Block zu einem Pixel wird; dein HD-Skin bleibt, wie er ist. Du nutzt eine HD-Skin-Mod? Dann wähle stattdessen ', strong('128×128 für Mods'), '.'],
         ]),
         callout(
           'warn',
@@ -1121,8 +1121,8 @@ const makeASkin: GuideText = {
         p('Unter Windows, Android, iPhone und iPad kannst du einen eigenen Skin auf zwei Arten tragen.'),
         h3('Ein Skin: das PNG importieren'),
         steps([
-          ['Exportiere im Skin Maker ', strong('Bedrock-Skin (.png)'), '.'],
-          ['Öffne in Minecraft ', uiPath('Ankleidezimmer', 'Klassische Skins'), '.'],
+          ['Exportiere im Skin-Editor ', strong('Bedrock-Skin (.png)'), '.'],
+          ['Öffne in Minecraft ', uiPath('Umkleidekabine', 'Klassische Skins'), '.'],
           ['Wähle unter ', strong('Freigeschaltet'), ' das leere Feld ', strong('Importieren'), ' und dann ', strong('Neuen Skin auswählen'), '.'],
           'Wähle dein PNG und das breite (Steve) oder schmale (Alex) Armmodell.',
         ]),
@@ -1166,7 +1166,7 @@ const makeASkin: GuideText = {
       q: 'Kann ich einen Minecraft-Skin mit 128×128 erstellen?',
       a: [
         p(
-          'Ja, für die Bedrock Edition. Stell im Skin Maker vor dem Start ',
+          'Ja, für die Bedrock Edition. Stell im Skin-Editor vor dem Start ',
           strong('Größe'),
           ' auf ',
           strong('HD 128×128'),
@@ -1189,19 +1189,19 @@ const makeASkin: GuideText = {
     {
       id: 'java-bedrock',
       q: 'Funktioniert derselbe Skin in Java und Bedrock?',
-      a: [p('Ja. Ein PNG mit 64×64 funktioniert in beiden: Lade es für Java im Minecraft Launcher hoch und importiere es für Bedrock im Ankleidezimmer, jeweils mit demselben Armmodell. HD-Skins mit 128×128 funktionieren nur in Bedrock.')],
+      a: [p('Ja. Ein PNG mit 64×64 funktioniert in beiden: Lade es für Java im Minecraft Launcher hoch und importiere es für Bedrock in der Umkleidekabine, jeweils mit demselben Armmodell. HD-Skins mit 128×128 funktionieren nur in Bedrock.')],
     },
     {
       id: 'not-showing',
       q: 'Warum wird mein neuer Skin nicht angezeigt?',
-      a: [p('In Java verlässt du nach dem Wechsel die Welt oder den Server und trittst neu bei. Prüf auch, ob du den Skin des Kontos geändert hast, mit dem du spielst. In Bedrock muss der Skin im Ankleidezimmer angelegt sein. Freunde mit eingeschaltetem „Nur vertrauenswürdige Skins erlauben“ sehen stattdessen einen Standard-Skin.')],
+      a: [p('In Java verlässt du nach dem Wechsel die Welt oder den Server und trittst neu bei. Prüf auch, ob du den Skin des Kontos geändert hast, mit dem du spielst. In Bedrock muss der Skin in der Umkleidekabine angelegt sein. Freunde mit eingeschaltetem „Nur vertrauenswürdige Skins erlauben“ sehen stattdessen einen Standard-Skin.')],
     },
     {
       id: 'consoles',
       q: 'Kann ich einen eigenen Skin auf Xbox, PlayStation oder Switch nutzen?',
       a: [p('Nein. Konsolen können keine Skin-Dateien oder Skinpakete importieren. Windows, Android, iPhone und iPad schon.')],
     },
-    { id: 'username', q: 'Kann ich mit dem Skin von jemand anderem anfangen?', a: [p('Ja. Der Skin Maker kann den aktuellen Skin jedes Java-Spielers per Benutzername laden, sodass du ihn remixen kannst. Bitte respektiere dabei die Arbeit anderer.')] },
+    { id: 'username', q: 'Kann ich mit dem Skin von jemand anderem anfangen?', a: [p('Ja. Der Skin-Editor kann den aktuellen Skin jedes Java-Spielers per Benutzername laden, sodass du ihn remixen kannst. Bitte respektiere dabei die Arbeit anderer.')] },
     { id: 'phone', q: 'Kann ich einen Skin am Handy erstellen?', a: [p('Ja. Der Editor funktioniert mit Touch, inklusive Zoom mit zwei Fingern.')] },
     {
       id: 'skin-pack',
@@ -1209,7 +1209,7 @@ const makeASkin: GuideText = {
       a: [p('Mit dem ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), ': Male jeden Skin, exportiere dann ein Bedrock-Skinpaket und hake die anderen an. Breite und schmale Skins passen in ein Paket, und ein erneuter Export aktualisiert das installierte Paket.')],
     },
   ],
-  ctaLabel: 'Skin Maker öffnen',
+  ctaLabel: 'Skin-Editor öffnen',
 };
 
 const shadersWithoutMods: GuideText = {
@@ -1239,7 +1239,7 @@ const shadersWithoutMods: GuideText = {
           ],
         ),
         p(`Java ${LATEST} hat einen immer aktiven Vollbild-Effekt eingeführt, deshalb funktionieren dort Bloom und saubereres Color Grading. Versionen 1.16.5 und älter haben keine ersetzbaren Welt-Shader.`),
-        callout('warn', 'Genau eine Version', 'Mojang ändert diese Shader-Dateien oft, deshalb läuft ein Vanilla-Shaderpaket nur in der Version, für die es gemacht wurde. Ein kaputter Shader kann dazu führen, dass Minecraft alle deine Ressourcenpakete ausschaltet – deshalb wird jeder Shader, den der Shader Maker schreibt, vorher auf Kompilierfehler geprüft.'),
+        callout('warn', 'Genau eine Version', 'Mojang ändert diese Shader-Dateien oft, deshalb läuft ein Vanilla-Shaderpaket nur in der Version, für die es gemacht wurde. Ein kaputter Shader kann dazu führen, dass Minecraft alle deine Ressourcenpakete ausschaltet – deshalb wird jeder Shader, den der Shader-Ersteller schreibt, vorher auf Kompilierfehler geprüft.'),
         h3('Selbst erstellen'),
         steps(VANILLA_SHADER_STEPS),
         figure(SHOTS.shaderVanilla),
@@ -1273,7 +1273,7 @@ const shadersWithoutMods: GuideText = {
           'Wähle das Pack in der Liste und klicke auf „Anwenden“. Leichtere Packs passen zu Laptops; schwerere brauchen eine starke Grafikkarte.',
         ]),
         figure(SHOTS.shaderIris),
-        p('Mit Forge oder NeoForge suchst du nach einer Iris-Portierung für diesen Loader. Ein eigenes Iris-/OptiFine-Shaderpaket mit Presets und Live-Vorschau kannst du auch im ', link('/shaders', 'Shader Maker'), ' bauen.'),
+        p('Mit Forge oder NeoForge suchst du nach einer Iris-Portierung für diesen Loader. Ein eigenes Iris-/OptiFine-Shaderpaket mit Presets und Live-Vorschau kannst du auch im ', link('/shaders', 'Shader-Ersteller'), ' bauen.'),
       ],
     },
   ],
@@ -1282,7 +1282,7 @@ const shadersWithoutMods: GuideText = {
     { id: 'servers', q: 'Funktionieren Vanilla-Shaderpakete auf Servern?', a: [p('Ja. Ressourcenpakete wendet dein eigenes Spiel an, deshalb funktionieren sie auch, wenn du auf einem Server spielst.')] },
     { id: 'bedrock', q: 'Kann ich Java-Shader in Bedrock nutzen?', a: [p('Nein. Bedrock kann keinen Shader-Code aus Packs laden. Nutze stattdessen ein Vibrant-Visuals-Paket.')] },
   ],
-  ctaLabel: 'Shader Maker öffnen',
+  ctaLabel: 'Shader-Ersteller öffnen',
 };
 
 const javaVsBedrock: GuideText = {
@@ -1331,7 +1331,7 @@ const javaVsBedrock: GuideText = {
             ['Symbol', [code('pack.png')], [code('pack_icon.png')]],
             ['Installation', ['In den Ordner ', code('resourcepacks'), ' legen'], 'Datei öffnen; Minecraft importiert sie'],
             ['Shader', 'Iris-/OptiFine-Shaderpakete oder Vanilla-Shader als Ressourcenpaket (1.17+)', 'Kein eigener Shader-Code; Einstellungspakete für Vibrant Visuals'],
-            ['Skins', 'Ein PNG, hochgeladen im Launcher oder auf minecraft.net', 'Ein Skinpaket (.mcpack) oder ein im Ankleidezimmer importiertes PNG'],
+            ['Skins', 'Ein PNG, hochgeladen im Launcher oder auf minecraft.net', 'Ein Skinpaket (.mcpack) oder ein in der Umkleidekabine importiertes PNG'],
             ['Konsolen', 'Nicht zutreffend', 'Können keine Dateien importieren; Welt, Realm oder Server mit dem Pack nutzen'],
           ],
         ),
@@ -1412,7 +1412,7 @@ const javaVsBedrock: GuideText = {
 // ---------------------------------------------------------------- vibrant visuals
 
 const VV_STEPS: Child[] = [
-  ['Erstelle ein Pack mit dem ', link('/shaders', 'Shader Maker'), ' (wähle ', strong('Bedrock Vibrant Visuals'), ') und exportiere das ', code('.mcpack'), '.'],
+  ['Erstelle ein Pack mit dem ', link('/shaders', 'Shader-Ersteller'), ' (wähle ', strong('Bedrock Vibrant Visuals'), ') und exportiere das ', code('.mcpack'), '.'],
   'Öffne die Datei. Minecraft importiert sie automatisch.',
   ['Geh zu ', uiPath('Einstellungen', 'Globale Ressourcen', 'Meine Pakete'), ' und aktiviere das Pack. Deaktiviere klassische Texture Packs, die Vibrant Visuals nicht unterstützen.'],
   ['Öffne ', uiPath('Einstellungen', 'Grafik'), ' und stelle den ', strong('Grafikmodus'), ' auf ', strong('Lebendige Grafik'), ' (Vibrant Visuals).'],
@@ -1491,7 +1491,7 @@ const vibrantVisuals: GuideText = {
 const CONVERT_STEPS: Child[] = [
   ['Öffne den ', link('/texture-pack-converter', 'Texture-Pack-Konverter'), ' und wähle dein Pack: eine Java-', code('.zip'), ', ein Bedrock-', code('.mcpack'), ' oder PNG-Texturen.'],
   ['Wähle das Ziel: ', strong('Bedrock Edition'), ' oder ', strong('Java Edition'), ' mit einer Version.'],
-  ['Klicke auf ', strong('Convert'), '. Dein Browser lädt die Texturliste der Ziel-Edition und wandelt jede Textur um, die er umwandeln kann.'],
+  ['Klicke auf ', strong('In Bedrock Edition umwandeln'), ' (oder ', strong('In Java Edition umwandeln'), '). Dein Browser lädt die Texturliste der Ziel-Edition und wandelt jede Textur um, die er umwandeln kann.'],
   'Lies den Bericht: wie viele Texturen umgewandelt wurden, welche übersprungen wurden und warum.',
   'Lade das umgewandelte Pack herunter oder öffne es im Editor, um die übersprungenen Texturen vorher neu zu malen.',
 ];
@@ -1515,7 +1515,7 @@ const convertJavaToBedrock: GuideText = {
     title: 'Die Kurzfassung',
     items: [
       ['Öffne den ', link('/texture-pack-converter', 'Texture-Pack-Konverter'), ' und wähle deine Java-', code('.zip'), '.'],
-      ['Wähle ', strong('Bedrock Edition'), ' und klicke auf ', strong('Convert to Bedrock'), '.'],
+      ['Wähle ', strong('Bedrock Edition'), ' und klicke auf ', strong('In Bedrock Edition umwandeln'), '.'],
       ['Lade das ', code('.mcpack'), ' herunter und öffne es: Minecraft importiert es.'],
     ],
   },
@@ -1592,7 +1592,7 @@ const convertJavaToBedrock: GuideText = {
   faq: [
     { id: 'free', q: 'Ist der Konverter kostenlos?', a: [p('Ja, ohne Konto und ohne Grenzen. Das Pack wird in deinem Browser umgewandelt und nie hochgeladen.')] },
     { id: 'look', q: 'Sieht das Pack in Bedrock gleich aus?', a: [p('Umgewandelte Texturen sehen gleich aus. Übersprungene Texturen fallen auf die von Bedrock zurück, und Bedrocks Beleuchtung sowie Vibrant Visuals können Farben etwas anders wirken lassen.')] },
-    { id: 'shaders', q: 'Kann ich ein Java-Shaderpaket in Bedrock umwandeln?', a: [p('Nein. Bedrock lädt keinen eigenen Shader-Code. Nutze stattdessen ein ', link('/guides/bedrock-vibrant-visuals-settings', 'Vibrant-Visuals'), '-Paket, das du mit dem ', link('/shaders', 'Shader Maker'), ' erstellen kannst.')] },
+    { id: 'shaders', q: 'Kann ich ein Java-Shaderpaket in Bedrock umwandeln?', a: [p('Nein. Bedrock lädt keinen eigenen Shader-Code. Nutze stattdessen ein ', link('/guides/bedrock-vibrant-visuals-settings', 'Vibrant-Visuals'), '-Paket, das du mit dem ', link('/shaders', 'Shader-Ersteller'), ' erstellen kannst.')] },
     { id: 'png', q: 'Kann ich PNG-Dateien in ein .mcpack umwandeln?', a: [p('Ja. Wähle ein PNG oder eine Zip mit PNGs, die wie die Texturen des Spiels benannt sind (zum Beispiel ', code('stone.png'), '), und wandle sie in Bedrock um.')] },
     { id: 'console', q: 'Kann ich das umgewandelte Pack auf einer Konsole nutzen?', a: [p('Konsolen können keine Dateien importieren. Füge das Pack auf einem PC oder Handy einer Welt hinzu und tritt dieser Welt bei, oder nutze einen Realm oder Server, der es hat.')] },
   ],
@@ -1605,7 +1605,7 @@ const MERGE_STEPS: Child[] = [
   ['Öffne ', link('/merge-texture-packs', 'Texture Packs zusammenführen'), ' und füge zwei bis acht Java-', code('.zip'), '- oder Bedrock-', code('.mcpack'), '-Packs hinzu.'],
   'Bring sie per Ziehen oder mit den Pfeiltasten in eine Reihenfolge. Das oberste Pack gewinnt, wo zwei Packs dieselbe Datei ändern.',
   'Gib dem neuen Pack einen Namen und wähle sein Symbol. Für Java wählst du außerdem die Version, die du spielst.',
-  ['Klicke auf ', strong('Merge'), ' und sieh dir die Liste der Konflikte an.'],
+  ['Klicke auf ', strong('Packs zusammenführen'), ' und sieh dir die Liste der Konflikte an.'],
   'Lade das zusammengeführte Pack herunter oder öffne es im Editor, um weiterzumachen.',
 ];
 
@@ -1684,7 +1684,7 @@ const SKIN_PACK_STEPS: Child[] = [
   'Erstelle die anderen Skins für das Paket auf dieselbe Weise.',
   ['Öffne einen davon, wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen, hake die anderen Skins an und drücke ', strong('Paket herunterladen'), '.'],
   ['Öffne das ', code('.mcpack'), ' unter Windows, Android, auf dem iPhone oder iPad. Minecraft importiert es.'],
-  ['Geh in Minecraft zu ', uiPath('Ankleidezimmer', 'Klassische Skins'), ', such dein Paket, wähle einen Skin und tippe auf ', strong('Anlegen'), '.'],
+  ['Öffne in Minecraft ', uiPath('Umkleidekabine', 'Klassische Skins'), ', such dein Paket, wähle einen Skin und tippe auf ', strong('Anlegen'), '.'],
 ];
 
 const bedrockSkinPack: GuideText = {
@@ -1700,7 +1700,7 @@ const bedrockSkinPack: GuideText = {
       code('skins.json'),
       '. Male deine Skins im ',
       link('/skin-pack-maker', 'Skinpaket-Ersteller'),
-      ' oder lade sie hoch, lade das Paket herunter, öffne es unter Windows, Android, auf dem iPhone oder iPad und trag deine Skins im Ankleidezimmer. Ein Paket im Minecraft Marketplace (im Spiel „Marktplatz“) zu verkaufen ist etwas anderes: Dort veröffentlichen nur Marketplace-Partner, die Mojang zugelassen hat.',
+      ' oder lade sie hoch, lade das Paket herunter, öffne es unter Windows, Android, auf dem iPhone oder iPad und trag deine Skins in der Umkleidekabine. Ein Paket im Minecraft Marketplace (im Spiel „Marktplatz“) zu verkaufen ist etwas anderes: Dort veröffentlichen nur Marketplace-Partner, die Mojang zugelassen hat.',
     ),
   ],
   quick: {
@@ -1708,7 +1708,7 @@ const bedrockSkinPack: GuideText = {
     items: [
       ['Male jeden Skin im ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), ' oder lade ihn hoch, mit breiten oder schmalen Armen.'],
       ['Wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
-      ['Öffne das ', code('.mcpack'), ' und leg einen Skin unter ', uiPath('Ankleidezimmer', 'Klassische Skins'), ' an.'],
+      ['Öffne das ', code('.mcpack'), ' und leg einen Skin unter ', uiPath('Umkleidekabine', 'Klassische Skins'), ' an.'],
     ],
   },
   howto: { name: 'Minecraft-Bedrock-Skinpaket erstellen', steps: SKIN_PACK_STEPS },
@@ -1724,7 +1724,7 @@ const bedrockSkinPack: GuideText = {
             [code('manifest.json'), ['Name des Pakets, zwei eindeutige IDs (UUIDs) und eine Versionsnummer. Der Modultyp ', code('skin_pack'), ' sagt Minecraft, dass es ein Skinpaket ist und kein Texture Pack.']],
             [code('skins.json'), ['Die Liste der Skins: für jeden sein Namensschlüssel, sein PNG, das Modell (', code('geometry.humanoid.custom'), ' für breite Arme, ', code('geometry.humanoid.customSlim'), ' für schmale) und ', code('"type": "free"'), '.']],
             ['Skin-Bilder', ['Ein 64×64-PNG pro Skin, direkt neben der ', code('manifest.json'), '.']],
-            [code('texts/en_US.lang'), ['Die Namen im Ankleidezimmer, für das Paket und jeden Skin. ', code('texts/languages.json'), ' listet die Sprachdateien.']],
+            [code('texts/en_US.lang'), ['Die Namen in der Umkleidekabine, für das Paket und jeden Skin. ', code('texts/languages.json'), ' listet die Sprachdateien.']],
           ],
         ),
         p(code('"type": "free"'), ' heißt, dass jeder mit dem Paket den Skin tragen darf. Marketplace-Pakete markieren die meisten Skins als ', code('"paid"'), ' – die werden erst nach dem Kauf freigeschaltet. Ein selbst gemachtes Paket nutzt deshalb immer „free“.'),
@@ -1760,7 +1760,7 @@ const bedrockSkinPack: GuideText = {
               content: [
                 steps([
                   ['Doppelklicke auf das ', code('.mcpack'), '. Minecraft öffnet sich und zeigt ', el('em', null, 'Import gestartet...'), ' und dann ', el('em', null, 'erfolgreich importiert'), '.'],
-                  ['Öffne ', uiPath('Ankleidezimmer', 'Klassische Skins'), ', wähle einen Skin aus deinem Paket und tippe auf ', strong('Anlegen'), '.'],
+                  ['Öffne ', uiPath('Umkleidekabine', 'Klassische Skins'), ', wähle einen Skin aus deinem Paket und tippe auf ', strong('Anlegen'), '.'],
                 ]),
               ],
             },
@@ -1772,7 +1772,7 @@ const bedrockSkinPack: GuideText = {
                 steps([
                   ['Lade das ', code('.mcpack'), ' auf das Handy oder Tablet herunter.'],
                   [strong('Android: '), 'öffne es in den Downloads oder der Dateien-App und wähle Minecraft. ', strong('iPhone / iPad: '), 'tippe es in der Dateien-App an, dann ', uiPath('Teilen', 'Minecraft'), '.'],
-                  ['Öffne ', uiPath('Ankleidezimmer', 'Klassische Skins'), ' und leg einen Skin aus deinem Paket an.'],
+                  ['Öffne ', uiPath('Umkleidekabine', 'Klassische Skins'), ' und leg einen Skin aus deinem Paket an.'],
                 ]),
               ],
             },
@@ -1873,7 +1873,7 @@ const bedrockSkinPack: GuideText = {
 
 const MODEL_STEPS: Child[] = [
   ['Öffne den ', link('/textures', 'Texture Pack Maker'), ' und erstelle ein ', strong('Java'), '-Pack für deine Version: 1.8 oder neuer, oder 1.21.4 oder neuer, wenn das Item im Inventar flach bleiben soll.'],
-  ['Stell die Liste auf ', strong('Items'), ' und öffne das Item, zum Beispiel das Diamantschwert. Drücke im Tab ', strong('Preview'), ' auf ', strong('Form bearbeiten'), '.'],
+  ['Stell die Liste auf ', strong('Items'), ' und öffne das Item, zum Beispiel das Diamantschwert. Drücke im Tab ', strong('Vorschau'), ' auf ', strong('Form bearbeiten'), '.'],
   ['Wähle ', strong('3D-Item aus dem Sprite'), '. Jedes Pixel des flachen Bildes wird Teil eines Würfels mit 1 Pixel Tiefe.'],
   ['Ändere die Form: Klicke einen Würfel in der 3D-Ansicht oder in der Liste an und verschiebe, vergrößere oder kopiere ihn oder füge neue hinzu. Unter ', strong('Seiten'), ' bekommt eine Seite eine andere Textur oder einen anderen Ausschnitt.'],
   ['Öffne ', strong('Anzeige'), ' und prüfe das Modell im Inventar, in der Ich- und der Dritte-Person-Ansicht, auf dem Boden, im Rahmen und auf dem Kopf. Passe Drehung, Position oder Größe an, wo es nicht passt.'],
@@ -1895,7 +1895,7 @@ const make3dItems: GuideText = {
   quick: {
     title: 'Die Kurzfassung',
     items: [
-      ['Zeig das Item im Texture Pack Maker im Tab ', strong('Preview'), ' an und drücke ', strong('Form bearbeiten'), '.'],
+      ['Zeig das Item im Texture Pack Maker im Tab ', strong('Vorschau'), ' an und drücke ', strong('Form bearbeiten'), '.'],
       ['Wähle ', strong('3D-Item aus dem Sprite'), ' und verfeinere dann die Würfel und die Haltung in der Hand.'],
       ['Exportiere das Pack. Es enthält das Modell in ', code('models/item/'), ' und ab 1.21.4, wenn nötig, eine Item-Definition in ', code('items/'), '.'],
     ],
@@ -1957,7 +1957,7 @@ const make3dItems: GuideText = {
         ul([
           'Mach die Klinge dicker: Wähle ihre Würfel aus und ändere Z-Position und -Größe, zum Beispiel von 7,5 und 1 auf 7 und 2.',
           ['Füg mit dem Knopf ', strong('+'), ' (oder N) einen Würfel für eine Parierstange oder einen Edelstein hinzu und gib seinen Seiten unter ', uiPath('Faces', 'Change'), ' eine andere Textur.'],
-          ['Dreh einen Würfel unter ', strong('Rotation'), '. Vor Minecraft 1.21.6 dreht sich ein Würfel nur um eine Achse, um -45°, -22,5°, 0°, 22,5° oder 45°; der Editor bietet an, was deine Version erlaubt.'],
+          ['Dreh einen Würfel unter ', strong('Drehung'), '. Vor Minecraft 1.21.6 dreht sich ein Würfel nur um eine Achse, um -45°, -22,5°, 0°, 22,5° oder 45°; der Editor bietet an, was deine Version erlaubt.'],
           'Jede Änderung machst du mit Strg+Z rückgängig.',
         ]),
       ],
@@ -1983,7 +1983,7 @@ const make3dItems: GuideText = {
           ' übernimmt die Darstellung des Items, ein 3D-Schwert wird also gehalten wie das flache. ',
           strong('Game’s default'),
           ' setzt einen Platz auf die Werte des Spiels zurück, ',
-          strong('No change'),
+          strong('Keine Änderung'),
           ' entfernt die Einstellung. Java 1.21.9 hat den Platz ',
           code('on_shelf'),
           ' für Regale eingeführt; der Editor übernimmt den Wert aus dem Modell des Spiels.',
@@ -2016,16 +2016,16 @@ const make3dItems: GuideText = {
       title: 'Die Form eines Blocks ändern',
       body: [
         p(
-          'Bei Blöcken geht es genauso. Zeig einen Block im Tab Preview an und drücke ',
+          'Bei Blöcken geht es genauso. Zeig einen Block im Tab Vorschau an und drücke ',
           strong('Form bearbeiten'),
           '. Der Editor öffnet das Modell, das der Block in dem Zustand nutzt, den du gerade siehst, und das Menü oben listet seine anderen Modelle, etwa die obere und die doppelte Stufe. Behalte das Modell des Spiels oder beginne mit ',
-          strong('Full cube'),
+          strong('Voller Würfel'),
           ', ',
-          strong('Slab'),
+          strong('Stufe'),
           ', ',
           strong('Cross (plant)'),
           ' oder ',
-          strong('Empty'),
+          strong('Leer'),
           ' und füge dann Würfel hinzu, verschiebe sie und ändere ihre Größe. Aus Stein wird eine Treppenstufe mit dem Startpunkt Slab und einem weiteren Würfel:',
         ),
         figure(SHOTS.modelBlock),
@@ -2033,11 +2033,11 @@ const make3dItems: GuideText = {
           [strong('Geteilte Modelle: '), 'Manche Blöcke nutzen dieselbe Modelldatei. Nutzt ein anderer Block das Modell, das du bearbeitest, sagt dir der Editor welcher; er ändert sich mit.'],
           [strong('Items bleiben getrennt: '), 'Ein Item, das ein Blockmodell zeigt, etwa eine Stufe in der Hand, bekommt ein eigenes Item-Modell, wenn du das Item bearbeitest. Der Block behält also seine Form.'],
           [strong('Nur das Aussehen ändert sich: '), 'Hitbox, Kollision und Licht kommen aus dem Code des Spiels. Ein Steinblock in Form einer Stufe hält dich weiter auf wie ein voller Block, und die Blöcke daneben blenden weiter ihre anliegenden Seiten aus. Dadurch können Lücken entstehen, durch die man hindurchsieht.'],
-          [strong('Vom Spiel gezeichnete Blöcke: '), 'Truhen, Betten, Schilder, Banner und andere Blöcke, die das Spiel selbst zeichnet, haben kein Blockmodell, darum gibt es für sie kein Edit shape. Vom Code gezeichnete Items wie der Schild können ein Modell bekommen, das dieses Aussehen ersetzt.'],
+          [strong('Vom Spiel gezeichnete Blöcke: '), 'Truhen, Betten, Schilder, Banner und andere Blöcke, die das Spiel selbst zeichnet, haben kein Blockmodell, darum gibt es für sie kein „Form bearbeiten“. Vom Code gezeichnete Items wie der Schild können ein Modell bekommen, das dieses Aussehen ersetzt.'],
         ]),
         p(
           'Stein und einige andere Blöcke wählen zufällig zwischen zwei Modellen: Stein und einer gespiegelten Kopie, jeweils auch gedreht. ',
-          strong('Use for every random variant'),
+          strong('Für jede zufällige Variante verwenden'),
           ' im Tab Model setzt deine Form auf alle davon, indem der Editor die Blockzustandsdatei des Blocks schreibt. Der Eintrag ',
           code('"y": 180'),
           ' erhält die zufällige Drehung, und ',
@@ -2158,7 +2158,7 @@ const make3dItems: GuideText = {
     {
       id: 'undo',
       q: 'Wie bekomme ich die ursprüngliche Form zurück?',
-      a: [p('Wähle im Menü des Modell-Editors ', strong('Put back the original model'), '. Deine Dateien für dieses Modell werden aus dem Pack entfernt, und das Spiel nutzt wieder sein eigenes Modell.')],
+      a: [p('Wähle im Menü des Modell-Editors ', strong('Originalmodell wiederherstellen'), '. Deine Dateien für dieses Modell werden aus dem Pack entfernt, und das Spiel nutzt wieder sein eigenes Modell.')],
     },
     {
       id: 'phone',

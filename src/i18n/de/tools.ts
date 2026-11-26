@@ -33,13 +33,13 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Biomfarben: die Farbtabellen für Gras, Laub und trockenes Laub mit den eingezeichneten Biomen bearbeiten und Gras und Laub in jedem Biom ansehen',
       'Direkt auf das 3D-Blockmodell malen: Jede Seite bemalt die Textur, die sie zeigt, auch bei Blöcken mit mehreren Texturen, Treppen, Stufen und Truhen',
       'Mob-Texturen auf 3D-Mob-Modellen bearbeiten (über 80 Mobs, Java und Bedrock) mit Varianten und ein-/ausblendbaren Körperteilen',
-      'Sättel, Pferde- und Wolfsrüstung, Lama-Teppiche und Rüstungen für Humanoide mit Rüstungsbesätzen werden an den Mobs gezeigt und bemalt, die sie tragen',
+      'Sättel, Rossharnische, Wolfspanzer, Lama-Teppiche und Rüstungen für Humanoide mit Rüstungsbesätzen werden an den Mobs gezeigt und bemalt, die sie tragen',
       'Modell-Editor für Java-Blöcke und -Items: Würfel, Drehung, Texturen und UVs der Seiten, Haltung in der Hand und 3D-Items aus dem flachen Sprite',
       'Eigene PNGs hochladen, automatisch auf die Textur skaliert (16x bis 512x)',
       'Sounds des Spiels durch eigene Dateien oder Mikrofonaufnahmen ersetzen, gekürzt und als Ogg Vorbis exportiert',
       'Animations-Editor: jeden Block und jedes Item animieren, mit Bildern, Zwiebelschicht und Zeiten in Ticks, GIFs importieren und speichern, .mcmeta-Dateien für Java oder Flipbooks für Bedrock',
       'PvP- und FPS-Packs: niedriges Feuer, klares Glas, eigenes Fadenkreuz, kleinere Schwerter und 8×-Texturen per Klick',
-      'GUI-Editor: Schnellleiste, Herzen, Hunger, Rüstung, Inventar und Behälter, Knöpfe, Menü-Hintergründe, das Panorama des Titelbildschirms, Splash-Texte und der Verzauberungsglanz, mit Live-Vorschau im Spiel',
+      'GUI-Editor: Schnellzugriffsleiste, Herzen, Hunger, Rüstung, Inventar und Behälter, Knöpfe, Menü-Hintergründe, das Panorama des Titelbildschirms, Splash-Texte und der Verzauberungsglanz, mit Live-Vorschau im Spiel',
       'PBR-Materialien: Glanz, Metall, Leuchten, Durchlicht und Relief (Normal-Maps aus den Farben) für Vibrant Visuals in Bedrock und labPBR-Shader in Java, mit beleuchteter 3D-Vorschau',
       'Namenstexturen: Ein umbenanntes Item bekommt eine eigene Textur und ein eigenes Modell, als Item-Definitionen für Java 1.21.5+ (ohne Mods) oder OptiFine-CIT-Dateien für ältere Versionen',
       'Effekte für das ganze Pack per Klick, etwa Dunkelmodus, Pastelltraum, Neon-Umriss, Retro 8-Bit, Herbst, Winterfrost, Noir, Cartoon und Glattes HD',
@@ -53,12 +53,12 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Ebenen: Öffne „Ebenen“ über der Zeichenfläche und male auf getrennten Ebenen wie in einem Bildprogramm. Füg sie hinzu, dupliziere, benenne, blende aus, sperre, verschiebe und füg sie zusammen, stell Deckkraft und Füllmodus ein (Multiplizieren, Negativ multiplizieren, Aufhellen, Ineinanderkopieren) oder leg die Spieltextur auf eine gesperrte Ebene zum Nachzeichnen. Ebenen gehen durch alle Bilder einer Animation, Rückgängig nimmt auch Ebenen-Änderungen zurück, und Minecraft bekommt die Ebenen zu einem PNG zusammengefügt.'],
       ['Stempel: Wähle das Stempel-Werkzeug (S) und setze Erzflecken, Risse, Moos, ein Rastermuster oder Funkeln in Tönen deiner Farbe, oder speichere eine Auswahl als eigenen Stempel. Dreh ihn mit R, spiegle ihn mit H, sieh ihn vor dem Klick unter dem Zeiger und tippe auf dem Handy, um ihn zu setzen. Stempel malen auf die aktuelle Ebene und lassen sich wie jeder Strich rückgängig machen.'],
       ['Farbe tauschen: Ersetze eine Farbe durch eine andere, nimm mit einer Toleranz ähnliche Farben mit oder verschiebe die ganze Farbabstufung einer Farbe, sodass ihre dunkleren und helleren Töne ihre Farbtonverschiebung behalten. Tausche in der offenen Textur, in der Auswahl oder in allen Texturen deines Packs, die die Farbe nutzen, ausgewählt aus einer Liste mit Vorher- und Nachher-Bildern, und nimm alles mit einem Rückgängig zurück.'],
-      ['Biomfarben: Öffne die Farbtabelle für Gras, Laub oder (ab 1.21.5) trockenes Laub und sieh, wo jedes Biom seine Farbe holt, mit warm bis kalt und trocken bis regnerisch erklärt und Biomen wie Ebene, Dschungel, Sumpf und Kirschberghain markiert. Ein Grasblock und Laub zeigen die Farbe beim Malen, und die 3D-Vorschau färbt Gras und Laub für das gewählte Biom. Der Editor sagt, wo das Spiel eigene Farben nimmt, etwa bei Sumpfgras, Tafelbergen sowie Fichten- und Birkenlaub.'],
+      ['Biomfarben: Öffne die Farbtabelle für Gras, Laub oder (ab 1.21.5) trockenes Laub und sieh, wo jedes Biom seine Farbe holt, mit warm bis kalt und trocken bis regnerisch erklärt und Biomen wie Ebene, Dschungel, Sumpf und Kirschberghain markiert. Ein Grasblock und Laub zeigen die Farbe beim Malen, und die 3D-Vorschau färbt Gras und Laub für das gewählte Biom. Der Editor sagt, wo das Spiel eigene Farben nimmt, etwa bei Sumpfgras, Tafelbergen sowie Fichtennadeln und Birkenlaub.'],
       ['Malen in 3D: Schalte den Editor auf 3D (oder drücke D) und male direkt auf das Blockmodell. Jede Seite bemalt die Textur, die sie zeigt – Vorderseite, Seiten und Oberseite eines Ofens oder die Seitenauflage von Gras bearbeitest du genau dort, wo du sie siehst.'],
       ['Mobs in 3D: Über 80 Mobs vom Creeper bis zum Dorfbewohner erscheinen auf ihren eigenen Modellen und lassen sich wie Blöcke bemalen. Blende Körperteile aus, um an Verdecktes zu kommen, wechsle Varianten, Alter oder Wollfarben und zieh Mobs Sättel und Rüstungen an, um auch diese zu bemalen.'],
       ['Formen ändern (Java): Bearbeite das Modell eines Blocks oder Items Würfel für Würfel, mit Texturen, UVs und der Haltung in der Hand, oder mach aus einem flachen Item ein 3D-Item. Die Modelldateien kommen passend zu deiner Version ins Pack. ', link('/guides/make-3d-items-texture-pack', '3D-Items erstellen'), '.'],
       ['PvP- und FPS-Packs: niedriges Feuer, klares Glas, kein Kürbis-Rand, ein eigenes Fadenkreuz, kleinere Schwerter und ein tieferer Schild, dazu 8×-Texturen und keine Animationen – jeweils ein Schalter, der die richtigen Dateien für deine Version schreibt. ', link('/guides/make-a-pvp-texture-pack', 'PvP-Pack erstellen'), '.'],
-      ['Die Oberfläche neu gestalten: Schnellleiste, Herzen in jedem Zustand, Hunger, Rüstung, Luft, Erfahrungsleiste, Fadenkreuz, Inventar, Truhen, Ofen und Werkbank, Knöpfe und Menü-Hintergründe im Pixel-Editor, mit Live-Vorschau von HUD, Inventar, Titelbildschirm mit drehendem Panorama und Knöpfen sowie verzauberten Items. Auch die Splash-Texte des Titelbildschirms lassen sich bearbeiten. Ältere Java-Versionen haben das HUD in zwei großen Bildern: Wählst du ein Herz, wird genau sein Bereich markiert.'],
+      ['Die Oberfläche neu gestalten: Schnellzugriffsleiste, Herzen in jedem Zustand, Hunger, Rüstung, Luft, Erfahrungsleiste, Fadenkreuz, Inventar, Truhen, Ofen und Werkbank, Knöpfe und Menü-Hintergründe im Pixel-Editor, mit Live-Vorschau von HUD, Inventar, Titelbildschirm mit drehendem Panorama und Knöpfen sowie verzauberten Items. Auch die Splash-Texte des Titelbildschirms lassen sich bearbeiten. Ältere Java-Versionen haben das HUD in zwei großen Bildern: Wählst du ein Herz, wird genau sein Bereich markiert.'],
       ['PBR-Materialien: Gib einer Textur im Tab „Material“ ein schnelles Material (Metall, polierter oder rauer Stein, Holz, Glas, leuchtend, leuchtende Erzpunkte, Wasser, Blätter) oder stell Glanz, Metall, Leuchten und Durchlicht für die ganze Textur oder Teile davon ein, mit Relief aus ihren Farben, auf einem beleuchteten 3D-Block unter wandernder Sonne. Bedrock bekommt Texture-Sets für Vibrant Visuals, Java die labPBR-Maps ', code('_n'), ' und ', code('_s'), ' für PBR-Shader in Iris oder OptiFine. ', link('/guides/make-a-pbr-texture-pack', 'PBR-Pack erstellen'), '.'],
       ['Namenstexturen (Java): Gib einem Item eine eigene Textur, wenn es am Amboss umbenannt wird, etwa einem Diamantschwert namens „Excalibur“. Tipp einen oder mehrere Namen ein, mal die neue Textur ausgehend von einer Kopie der Item-Textur und gib ihr auf Wunsch eine 3D-Form. Java 1.21.5 und neuer brauchen keine Mods; ältere Versionen bekommen OptiFine-CIT-Dateien. ', link('/guides/rename-items-texture-pack', 'Items umbenennen und ihre Textur ändern'), '.'],
       ['Animierte Texturen: Animiere jeden Block und jedes Item oder ändere Wasser, Lava und Feuer. Füg Bilder hinzu, zieh sie an eine neue Stelle, kopier und lösch sie, mal mit Zwiebelschicht, stell das Tempo in Ticks ein (20 Ticks sind 1 Sekunde), mit eigenen Zeiten für einzelne Bilder und Überblenden, und sieh dir alles im Spieltempo an. Importiere ein GIF oder ein Spritesheet als Bilder und speichere die Animation als GIF. Java-Packs bekommen ', code('.png.mcmeta'), '-Dateien, Bedrock-Packs Flipbook-Einträge (nur Blöcke). ', link('/guides/make-animated-textures', 'Animierte Texturen erstellen'), '.'],
@@ -98,7 +98,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
             code('max_format'),
             ' in der ',
             code('pack.mcmeta'),
-            ' an statt einer einzelnen Zahl; der Maker schreibt die richtigen Felder für die gewählte Version. ',
+            ' an statt einer einzelnen Zahl; der Editor schreibt die richtigen Felder für die gewählte Version. ',
             link('/guides/minecraft-pack-format-versions', 'Formate aller Versionen'),
             '.',
           ),
@@ -121,7 +121,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       },
       {
         id: 'gui',
-        q: 'Kann ich Schnellleiste, Herzen, Menüs und Titelbildschirm ändern?',
+        q: 'Kann ich Schnellzugriffsleiste, Herzen, Menüs und Titelbildschirm ändern?',
         a: [p('Ja. Wähl über der Texturliste den GUI-Knopf: Er listet HUD, Inventar und Behälter, Knöpfe, Menü-Hintergründe, das Panorama, die Splash-Texte und den Verzauberungsglanz deiner Version, und der Tab „Vorschau“ zeigt sie beim Malen an ihrem Platz. Java vor 1.20.2 hat HUD und Knöpfe in gui/icons.png und gui/widgets.png; der Editor markiert dir den richtigen Bereich.')],
       },
       {
@@ -142,7 +142,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'biomes',
         q: 'Wie ändere ich die Farbe von Gras und Laub?',
-        a: [p('Gras, Laub und Ranken sind im Pack grau und werden vom Spiel je nach Biom gefärbt, mit den Farbtabellen ', code('colormap/grass.png'), ' und ', code('foliage.png'), ' (ab 1.21.5 auch ', code('dry_foliage.png'), ' für Laubhaufen). Öffne eine davon, um zu sehen, wo jedes Biom seine Farbe holt, und bemale diese Stellen, oder male die Grastextur selbst farbig. Ein paar Biome nutzen die Tabellen nicht: Sümpfe, Tafelberge, Kirschberghaine und Blasse Gärten haben eigene Farben, und in der Java Edition ändern Fichten- und Birkenlaub nie ihre Farbe.')],
+        a: [p('Gras, Laub und Ranken sind im Pack grau und werden vom Spiel je nach Biom gefärbt, mit den Farbtabellen ', code('colormap/grass.png'), ' und ', code('foliage.png'), ' (ab 1.21.5 auch ', code('dry_foliage.png'), ' für Laubhaufen). Öffne eine davon, um zu sehen, wo jedes Biom seine Farbe holt, und bemale diese Stellen, oder male die Grastextur selbst farbig. Ein paar Biome nutzen die Tabellen nicht: Sümpfe, Tafelberge, Kirschberghaine und Blasse Gärten haben eigene Farben, und in der Java Edition ändern Fichtennadeln und Birkenlaub nie ihre Farbe.')],
       },
       {
         id: 'devices',
@@ -315,16 +315,16 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     eyebrow: 'GUI-Ersteller',
     heading: 'Minecraft GUI- & HUD-Ersteller',
     appName: 'Minecraft GUI-Ersteller',
-    screenshotCaption: 'Der GUI-Ersteller von Texture Pack Maker: ein neues Pack, das sich bei Schnellleiste, Herzen und Menüs mit Live-Vorschau öffnet',
+    screenshotCaption: 'Der GUI-Ersteller von Texture Pack Maker: ein neues Pack, das sich bei Schnellzugriffsleiste, Herzen und Menüs mit Live-Vorschau öffnet',
     lead: [
-      'Gestalte deine eigene Minecraft-GUI: Bemale Schnellleiste, Herzen, Hunger, Fadenkreuz, Inventar, Knöpfe und Menü-Hintergründe neu, während eine Live-Vorschau sie an ihrem Platz zeigt, wie im Spiel. Für die ',
+      'Gestalte deine eigene Minecraft-GUI: Bemale Schnellzugriffsleiste, Herzen, Hunger, Fadenkreuz, Inventar, Knöpfe und Menü-Hintergründe neu, während eine Live-Vorschau sie an ihrem Platz zeigt, wie im Spiel. Für die ',
       strong('Java Edition'),
       ` (1.6.1 bis ${LATEST}) und die `,
       strong('Bedrock Edition'),
       ', kostenlos und im Browser.',
     ],
     featureList: [
-      'Das HUD: Schnellleiste, ausgewählter Platz, Fadenkreuz, Herzen in jedem Zustand, Hunger, Rüstung, Luftblasen und die Erfahrungsleiste',
+      'Das HUD: Schnellzugriffsleiste, ausgewählter Platz, Fadenkreuz, Herzen in jedem Zustand, Hunger, Rüstung, Luftblasen und die Erfahrungsleiste',
       'Fenster für Inventar, Truhe, große Truhe, Ofen und Werkbank',
       'Knöpfe, Menü-Hintergründe, das Logo des Titelbildschirms und sein drehendes Panorama',
       'Eigene Splash-Texte auf dem Titelbildschirm',
@@ -333,7 +333,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Export als Java-.zip oder Bedrock-.mcpack',
     ],
     features: [
-      ['Das HUD, Teil für Teil: die Schnellleiste, ihr ausgewählter Platz und der Platz für die Zweithand, das Fadenkreuz, Herzen (normal, vergiftet, ausgezehrt, gefroren, Absorption, Hardcore und die eines Reittiers), Hunger, Rüstung, Luftblasen und die Erfahrungsleiste.'],
+      ['Das HUD, Teil für Teil: die Schnellzugriffsleiste, ihr ausgewählter Platz und der Platz für die Zweithand, das Fadenkreuz, Herzen (normal, vergiftet, ausgezehrt, gefroren, Absorption, Hardcore und die eines Reittiers), Hunger, Rüstung, Luftblasen und die Erfahrungsleiste.'],
       ['Inventar und Behälter: das Inventar, die Truhe und große Truhe, der Ofen mit Flamme und Pfeil und die Werkbank.'],
       ['Knöpfe normal, mit dem Zeiger darauf und ausgegraut, die Menü-Hintergründe, das Minecraft-Logo und die sechs Bilder des Panoramas auf dem Titelbildschirm.'],
       ['Eine Live-Vorschau im Tab „Vorschau“: das HUD, Inventar und Behälter, der Titelbildschirm mit drehendem Panorama und die Menüs. Zeig vergiftete, gefrorene oder Hardcore-Herzen, das HUD unter Wasser oder beim Reiten, ändere die GUI-Größe und klick auf ein Teil, um es zu bemalen.'],
@@ -342,8 +342,8 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     ],
     howTitle: 'So erstellst du eine eigene GUI',
     steps: [
-      ['Wähle ', strong('Java'), ' oder ', strong('Bedrock'), ' und deine Version und drück dann ', strong('GUI-Pack erstellen'), '. Der Editor öffnet sich bei der GUI-Liste mit der Schnellleiste.'],
-      'Wähle ein Teil in der Liste (die Schnellleiste, Herzen, das Inventar …) und bemale es oder lade ein Bild dafür hoch.',
+      ['Wähle ', strong('Java'), ' oder ', strong('Bedrock'), ' und deine Version und drück dann ', strong('GUI-Pack erstellen'), '. Der Editor öffnet sich bei der GUI-Liste mit der Schnellzugriffsleiste.'],
+      'Wähle ein Teil in der Liste (die Schnellzugriffsleiste, Herzen, das Inventar …) und bemale es oder lade ein Bild dafür hoch.',
       'Schau in den Tab „Vorschau“: Er zeigt das Teil an seinem Platz und folgt dem, was du öffnest. Klick auf ein Teil der Vorschau, um genau das zu bemalen.',
       'Füge eigene Splash-Texte und einen Menü-Hintergrund hinzu, wenn du willst.',
       ['Exportiere eine ', code('.zip'), ' (Java) oder ein ', code('.mcpack'), ' (Bedrock) und aktiviere das Pack im Spiel.'],
@@ -354,7 +354,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
         { class: 'tool-intro-card' },
         el(sub, null, 'Wo die GUI in jeder Version liegt'),
         p(strong('Java 1.20.2 und neuer:'), ' Jedes HUD-Symbol und jeder Knopf ist ein eigenes Sprite in ', code('textures/gui/sprites/'), ' (', code('hud/hotbar.png'), ', ', code('hud/heart/full.png'), ', ', code('widget/button.png'), ' …). Knöpfe haben eine ', code('.mcmeta'), ', die sagt, wie sie gestreckt werden, also lass ihre Ränder, wo sie sind.'),
-        p(strong('Java 1.6.1 bis 1.20.1:'), ' Das HUD ist ein Bild mit 256×256 Pixeln, ', code('textures/gui/icons.png'), ', Schnellleiste und Knöpfe ein zweites, ', code('textures/gui/widgets.png'), '. Jedes Teil liegt an einer festen Stelle; der Editor wählt sie aus, wenn du das Teil anklickst.'),
+        p(strong('Java 1.6.1 bis 1.20.1:'), ' Das HUD ist ein Bild mit 256×256 Pixeln, ', code('textures/gui/icons.png'), ', Schnellzugriffsleiste und Knöpfe ein zweites, ', code('textures/gui/widgets.png'), '. Jedes Teil liegt an einer festen Stelle; der Editor wählt sie aus, wenn du das Teil anklickst.'),
         p(strong('Behälter'), ' sind in jeder Java-Version ganze Bilder (', code('gui/container/inventory.png'), ', ', code('generic_54.png'), ' für Truhen …), mit dem Fenster in der linken oberen Ecke eines 256×256-Bildes.'),
         p(strong('Bedrock:'), ' Das HUD sind einzelne Dateien in ', code('textures/ui/'), ' (', code('heart.png'), ', ', code('hotbar_0.png'), ' bis ', code('hotbar_8.png'), ' …), das Fadenkreuz ist die linke obere Ecke von ', code('textures/gui/icons.png'), ', und die klassischen Knöpfe und Fenster sind kleine Bilder, die das Spiel streckt.'),
         p('Ein Texture Pack ändert, wie die GUI aussieht, nicht wo etwas ist: Plätze, Leisten und Knöpfe bleiben, wo das Spiel sie hinsetzt. (Die JSON-UI-Dateien von Bedrock können Dinge verschieben; dieses Tool bearbeitet sie nicht.)'),
@@ -369,17 +369,17 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'hd',
         q: 'Kann die GUI in HD sein?',
-        a: [p('Ja. Erstelle das Pack mit 32× oder mehr, dann öffnet sich jede GUI-Textur mit mehr Pixeln, und das Spiel zeichnet sie trotzdem gleich groß auf den Bildschirm. Behalte die Form jedes Bildes: Die 182×22 große Schnellleiste wird bei 32× zu 364×44.')],
+        a: [p('Ja. Erstelle das Pack mit 32× oder mehr, dann öffnet sich jede GUI-Textur mit mehr Pixeln, und das Spiel zeichnet sie trotzdem gleich groß auf den Bildschirm. Behalte die Form jedes Bildes: Die 182×22 große Schnellzugriffsleiste wird bei 32× zu 364×44.')],
       },
       {
         id: 'layout',
-        q: 'Kann ich die Schnellleiste verschieben oder das Inventar umbauen?',
+        q: 'Kann ich die Schnellzugriffsleiste verschieben oder das Inventar umbauen?',
         a: [p('Nein. Ein Texture Pack ändert die Bilder, nicht die Anordnung: Plätze, Leisten und Knöpfe bleiben, wo das Spiel sie hinsetzt, also gestalte dein Design um sie herum.')],
       },
       {
         id: 'atlas',
         q: 'Warum ist das ganze HUD in meiner Version ein einziges Bild?',
-        a: [p('Java vor 1.20.2 speichert das HUD in ', code('gui/icons.png'), ' und Schnellleiste und Knöpfe in ', code('gui/widgets.png'), '. Wähle ein Teil in der GUI-Liste, dann markiert der Editor seinen Bereich, und du bemalst nur dieses Teil.')],
+        a: [p('Java vor 1.20.2 speichert das HUD in ', code('gui/icons.png'), ' und Schnellzugriffsleiste und Knöpfe in ', code('gui/widgets.png'), '. Wähle ein Teil in der GUI-Liste, dann markiert der Editor seinen Bereich, und du bemalst nur dieses Teil.')],
       },
       {
         id: 'title',
@@ -482,7 +482,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
   },
   glint: {
     eyebrow: 'Verzauberungsglanz',
-    heading: 'Eigenen Verzauberungsglanz erstellen',
+    heading: 'Eigenen Verzauberungs\u00ADglanz erstellen',
     appName: 'Minecraft Verzauberungsglanz-Ersteller',
     screenshotCaption: 'Der Glanz-Ersteller von Texture Pack Maker: ein neues Pack, das sich beim Verzauberungsglanz mit bewegter Vorschau öffnet',
     lead: [
@@ -502,7 +502,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
     ],
     features: [
       ['Die Glanz-Textur deiner Version öffnet sich sofort, mit dem Rüstungsglanz daneben in der GUI-Liste, wo deine Version einen hat.'],
-      ['Eine bewegte Vorschau im Bildschirm ', strong('Glanz'), ': ein verzaubertes Schwert, Buch und eine Spitzhacke, über die dein Glanz zieht, so gemischt wie im Spiel, und darunter gleitet die Textur selbst. Auch die Vorschauen von Schnellleiste und Inventar zeigen ihn.'],
+      ['Eine bewegte Vorschau im Bildschirm ', strong('Glanz'), ': ein verzaubertes Schwert, Buch und eine Spitzhacke, über die dein Glanz zieht, so gemischt wie im Spiel, und darunter gleitet die Textur selbst. Auch die Vorschauen von Schnellzugriffsleiste und Inventar zeigen ihn.'],
       ['Umfärben in einem Schritt: ', strong('Farbe tauschen'), ' kann die ganze Farbabstufung des Glanzes in eine neue Farbe verschieben, sodass ein roter, goldener oder grüner Glanz seine hellen und dunklen Streifen behält.'],
       ['Oder mal dein eigenes Muster mit dem Pixel-Editor: Ebenen, Stempel wie Funkeln und HD-Auflösungen.'],
       ['Java vor 1.15 zeichnete zwei Glanz-Lagen, die seitwärts gleiten; die Vorschau zeigt auch das, wenn du ein Pack für diese Versionen erstellst.'],
@@ -1058,7 +1058,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       ['Auf der flachen Vorlage oder direkt auf dem 3D-Modell malen und Körperteile ausblenden, um jede Seite zu erreichen.'],
       ['Start mit leerem Skin, farbcodierter Vorlage, eigenen Start-Charakteren, hochgeladenem PNG, dem Skin eines beliebigen Java-Spielers per Benutzername oder den Standard-Skins aus den Spieldateien.'],
       ['Alte 64×32-Skins werden beim Öffnen auf 64×64 umgewandelt.'],
-      ['Export als Java-', code('.png'), ' (plus 64×32-Kopie für 1.7.10 und älter), als Bedrock-', code('.png'), ' für das Ankleidezimmer oder als ganzes Set in einem ', code('.mcpack'), ' mit dem ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), '.'],
+      ['Export als Java-', code('.png'), ' (plus 64×32-Kopie für 1.7.10 und älter), als Bedrock-', code('.png'), ' für die Umkleidekabine oder als ganzes Set in einem ', code('.mcpack'), ' mit dem ', link('/skin-pack-maker', 'Skinpaket-Ersteller'), '.'],
     ],
     howTitle: 'So erstellst du hier einen Skin',
     steps: [
@@ -1066,7 +1066,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Male auf der Vorlage oder direkt auf dem 3D-Modell. Nutze die Außenebene für Hüte, Jacken, Ärmel und andere Details, die abstehen.',
       'Dreh die 3D-Vorschau, um jede Seite zu prüfen.',
       ['Exportiere ein ', code('.png'), ' für Java oder ein Skinpaket ', code('.mcpack'), ' für Bedrock.'],
-      ['Java: Füge ihn im Minecraft Launcher unter ', strong('Skins'), ' hinzu. Bedrock: Öffne das ', code('.mcpack'), ' und wähle den Skin im Ankleidezimmer.'],
+      ['Java: Füge ihn im Minecraft Launcher unter ', strong('Skins'), ' hinzu. Bedrock: Öffne das ', code('.mcpack'), ' und wähle den Skin in der Umkleidekabine.'],
     ],
     faq: [
       {
@@ -1082,7 +1082,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'bedrock',
         q: 'Wie nutze ich meinen Skin in Bedrock?',
-        a: [p('Exportiere ein Bedrock-Skinpaket und öffne das ', code('.mcpack'), '; es erscheint im Ankleidezimmer unter „Klassische Skins“. Dort kannst du auch ein einzelnes PNG importieren. Konsolen können keine Skin-Dateien importieren. ', link('/guides/make-a-skin', 'Ausführliche Skin-Anleitung'), '.')],
+        a: [p('Exportiere ein Bedrock-Skinpaket und öffne das ', code('.mcpack'), '; es erscheint in der Umkleidekabine unter „Klassische Skins“. Dort kannst du auch ein einzelnes PNG importieren. Konsolen können keine Skin-Dateien importieren. ', link('/guides/make-a-skin', 'Ausführliche Skin-Anleitung'), '.')],
       },
       {
         id: 'pack',
@@ -1133,7 +1133,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       'Erstelle die anderen Skins für das Paket auf dieselbe Weise.',
       ['Öffne einen davon, wähle ', strong('Exportieren'), ' › ', strong('Bedrock-Skinpaket (.mcpack)'), ', gib dem Paket einen Namen und hake die anderen Skins an.'],
       ['Öffne das heruntergeladene ', code('.mcpack'), ': unter Windows per Doppelklick, auf Android, iPhone und iPad antippen und Minecraft wählen.'],
-      ['Geh in Minecraft zu ', strong('Ankleidezimmer'), ' › ', strong('Klassische Skins'), ', such dein Paket, wähle einen Skin und tippe auf ', strong('Anlegen'), '.'],
+      ['Öffne in Minecraft ', strong('Umkleidekabine'), ' › ', strong('Klassische Skins'), ', such dein Paket, wähle einen Skin und tippe auf ', strong('Anlegen'), '.'],
     ],
     extra: (sub) => [
       el('div', { class: 'tool-intro-grid' }, figure(SHOTS.skinPack), figure(SHOTS.skin3d)),
@@ -1191,7 +1191,7 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
       {
         id: 'where',
         q: 'Wo finde ich mein Skinpaket in Minecraft?',
-        a: [p('Im Ankleidezimmer unter „Klassische Skins“, mit dem Paketnamen, den du gewählt hast. Fehlt es, öffne das ', code('.mcpack'), ' erneut und warte auf die Meldung, dass der Import erfolgreich war.')],
+        a: [p('In der Umkleidekabine unter „Klassische Skins“, mit dem Paketnamen, den du gewählt hast. Fehlt es, öffne das ', code('.mcpack'), ' erneut und warte auf die Meldung, dass der Import erfolgreich war.')],
       },
       {
         id: 'trusted',
@@ -1284,8 +1284,8 @@ export const TOOLS: Partial<Record<IntroTool, ToolIntroText>> = {
   shaders: {
     eyebrow: 'Shader',
     heading: 'Minecraft Shader online erstellen',
-    appName: 'Minecraft Shader Maker',
-    screenshotCaption: 'Der Shader Maker von Texture Pack Maker: Iris / OptiFine, Vanilla Java oder Bedrock Vibrant Visuals',
+    appName: 'Minecraft Shader-Ersteller',
+    screenshotCaption: 'Der Shader-Ersteller von Texture Pack Maker: Iris / OptiFine, Vanilla Java oder Bedrock Vibrant Visuals',
     lead: ['Wähle, wo du spielst, nimm ein Preset, verschiebe ein paar Regler und sieh dir eine 3D-Live-Vorschau mit Tag-Nacht-Wechsel an. Dann exportierst du ein Pack, das direkt ins Spiel kann.'],
     featureList: [
       'Iris-/OptiFine-Shaderpakete für Java: Schatten, wehende Pflanzen, Wasser, Bloom, Lichtstrahlen, Tone Mapping und Color Grading',

@@ -131,7 +131,7 @@ const JA: GuiLanguage = {
       quit: 'ゲーム終了',
       play: '遊ぶ',
       settings: '設定',
-      dressingRoom: '更衣室',
+      dressingRoom: '着せ替え',
       crafting: 'クラフト',
       inventory: 'インベントリ',
       chest: 'チェスト',

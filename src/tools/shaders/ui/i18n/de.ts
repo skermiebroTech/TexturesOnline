@@ -365,7 +365,7 @@ const DE: ShadersEditorLanguage = {
         lighting: 'Licht',
       },
       options: {
-        brightness: { label: 'Helligkeit', description: 'Macht die ganze Welt heller oder dunkler. Menüs und die Schnellleiste bleiben immer gleich.' },
+        brightness: { label: 'Helligkeit', description: 'Macht die ganze Welt heller oder dunkler. Menüs und die Schnellzugriffsleiste bleiben immer gleich.' },
         contrast: { label: 'Kontrast', description: 'Unterschied zwischen dunklen und hellen Bereichen. 1 ist Vanilla.' },
         saturation: { label: 'Sättigung', description: 'Wie farbig alles ist. 0 ist schwarz-weiß, 1 ist Vanilla.' },
         vibrance: { label: 'Dynamik', description: 'Verstärkt blasse Farben mehr als schon kräftige, damit Hauttöne und helle Blöcke natürlich bleiben.' },
@@ -514,8 +514,8 @@ const DE: ShadersEditorLanguage = {
       },
       notes: {
         exact: 'Das Pack funktioniert nur in genau der Version, für die es gemacht wurde. Shader ändern sich zwischen Versionen, mach also für jede Version ein neues Pack.',
-        perObject: 'Farben werden pro Objekt (Welt, Himmel, Hand und Wesen) angepasst statt auf dem fertigen Bild. Menüs, die Schnellleiste und Gegenstände im Inventar sehen normal aus.',
-        finished: 'Farben, Vignette und Bloom wirken auf das fertige Bild, bevor Menüs und die Schnellleiste gezeichnet werden, deshalb sieht die Oberfläche normal aus.',
+        perObject: 'Farben werden pro Objekt (Welt, Himmel, Hand und Wesen) angepasst statt auf dem fertigen Bild. Menüs, die Schnellzugriffsleiste und Gegenstände im Inventar sehen normal aus.',
+        finished: 'Farben, Vignette und Bloom wirken auf das fertige Bild, bevor Menüs und die Schnellzugriffsleiste gezeichnet werden, deshalb sieht die Oberfläche normal aus.',
         unknown: 'Diese Version ließ sich nicht genau erkennen; was verfügbar ist, wird noch einmal geprüft, wenn ihre Spieldateien geladen sind.',
       },
       warnings: {

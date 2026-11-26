@@ -158,7 +158,7 @@ const JA: EditorLanguage = {
       label: 'テクスチャエディター',
       pixels: 'テクスチャのピクセル',
       tools: {
-        pencil: '鉛筆',
+        pencil: 'ペン',
         eraser: '消しゴム',
         fill: '塗りつぶし',
         picker: 'スポイト',

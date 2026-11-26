@@ -36,14 +36,14 @@ const JAVA_SKIN_STEPS: Child[] = [
 const BEDROCK_SKIN_STEPS: Child[] = [
   ['Exportiere als ', strong('Bedrock-Skinpaket'), '. Du bekommst eine ', code('.mcpack'), '-Datei.'],
   'Öffne die Datei (Doppelklick unter Windows, „Mit Minecraft öffnen“ auf Handys und Tablets), um sie zu importieren.',
-  ['Geh in Minecraft zu ', uiPath('Ankleidezimmer', 'Klassische Skins'), '. Dein Paket steht bei den importierten Paketen.'],
+  ['Öffne in Minecraft ', uiPath('Umkleidekabine', 'Klassische Skins'), '. Dein Paket steht bei den importierten Paketen.'],
   ['Wähle deinen Skin und tippe auf ', strong('Anlegen'), '.'],
 ];
 
 const IRIS_STEPS: Child[] = [
   ['Lade den Iris Installer von ', ext('https://www.irisshaders.dev/', 'irisshaders.dev'), ' herunter. Er installiert Fabric Loader, Iris und Sodium für deine Version in einem Rutsch.'],
   ['Öffne den Minecraft Launcher, wähle das neue Profil ', strong('Iris & Sodium'), ' und spiele einmal.'],
-  ['Exportiere dein Shaderpaket aus dem Shader Maker (eine ', code('.zip'), ' – nicht entpacken).'],
+  ['Exportiere dein Shaderpaket aus dem Shader-Ersteller (eine ', code('.zip'), ' – nicht entpacken).'],
   ['Öffne im Spiel ', uiPath('Optionen …', 'Grafikeinstellungen …', 'Shaderpakete ...'), ' und klicke auf ', strong('Shader-Ordner öffnen ...'), '. Leg die Zip hinein.'],
   ['Wähle dein Pack und klicke auf ', strong('Anwenden'), '. Über ', strong('Shader-Einstellungen ...'), ' kannst du die Optionen im Spiel feinjustieren.'],
 ];
@@ -67,7 +67,7 @@ export const HELP: HelpText = {
       short: 'Java-Packs',
       howto: { name: 'Texture Pack (Ressourcenpaket) in Minecraft Java Edition installieren', steps: JAVA_PACK_STEPS },
       body: [
-        el('p', { class: 'guide-intro' }, 'Java Edition nennt Texture Packs ', el('em', null, 'Ressourcenpakete'), '. Dein Export ist eine ', code('.zip'), '-Datei – nicht entpacken.'),
+        el('p', { class: 'guide-intro' }, 'In der Java Edition heißen Texture Packs ', el('em', null, 'Ressourcenpakete'), '. Dein Export ist eine ', code('.zip'), '-Datei – nicht entpacken.'),
         steps(JAVA_PACK_STEPS),
         callout(
           'info',
@@ -171,7 +171,7 @@ export const HELP: HelpText = {
               content: [
                 steps([
                   ['Exportiere den Skin als ', code('.png'), '.'],
-                  ['Öffne ', uiPath('Ankleidezimmer', 'Klassische Skins'), ' und wähle unter ', strong('Freigeschaltet'), ' das leere Feld ', strong('Importieren'), '.'],
+                  ['Öffne ', uiPath('Umkleidekabine', 'Klassische Skins'), ' und wähle unter ', strong('Freigeschaltet'), ' das leere Feld ', strong('Importieren'), '.'],
                   ['Wähle dein PNG und dann das breite oder schmale Armmodell.'],
                 ]),
               ],
@@ -327,34 +327,34 @@ export const HELP: HelpText = {
         p(
           'Ja. Wähle ',
           strong('Mobs'),
-          ' in der Texturliste (Blocks · Items · Mobs · All) oder öffne eine beliebige Textur aus dem Ordner „entity“. Der Mob erscheint in 3D und lässt sich wie ein Block bemalen. Mit den Auswahlfeldern daneben (Variante, Alter, Wollfarbe, Beruf und so weiter) erreichst du jede Textur, die er nutzt; Auflagen wie Schafwolle, leuchtende Augen und Dorfbewohner-Kleidung bemalst du auf ihren eigenen Texturen. In der Liste „Parts“ blendest du ein Teil per Klick aus, um zu bemalen, was es verdeckt, ein Doppelklick zeigt nur dieses Teil, und „Show all“ holt alles zurück. Bedrock-Mobs nutzen die eigenen Modelle von Bedrock, und die Tönungsmasken in ihren transparenten Pixeln bleiben erhalten.',
+          ' in der Texturliste (Blöcke · Items · Mobs · Alle) oder öffne eine beliebige Textur aus dem Ordner „entity“. Der Mob erscheint in 3D und lässt sich wie ein Block bemalen. Mit den Auswahlfeldern daneben (Variante, Alter, Wollfarbe, Beruf und so weiter) erreichst du jede Textur, die er nutzt; Auflagen wie Schafwolle, leuchtende Augen und Dorfbewohner-Kleidung bemalst du auf ihren eigenen Texturen. In der Liste „Teile“ blendest du ein Teil per Klick aus, um zu bemalen, was es verdeckt, ein Doppelklick zeigt nur dieses Teil, und „Alle zeigen“ holt alles zurück. Bedrock-Mobs nutzen die eigenen Modelle von Bedrock, und die Tönungsmasken in ihren transparenten Pixeln bleiben erhalten.',
         ),
       ],
     },
     {
       id: 'gear',
-      q: 'Kann ich Sättel, Rüstungen und Pferderüstungen bearbeiten?',
+      q: 'Kann ich Sättel, Rüstungen und Rossharnische bearbeiten?',
       a: [
         p(
           'Ja. Mobs, die etwas tragen können, haben bei ihren Auswahlfeldern eine Gruppe ',
-          strong('Wearing'),
+          strong('Trägt'),
           ': Setz einen Sattel auf Schwein, Schreiter, Pferd, Kamel oder Nautilus; zieh Zombies, Skeletten, Piglins und dem Rüstungsständer Rüstung an (Material für das ganze Set wählen, dann einzelne Teile an- oder ausschalten, Leder mit ',
-          strong('Dye'),
+          strong('Farbe'),
           ' färben); gib Pferden, Wölfen und Nautilussen ihre Rüstung, Lamas einen Teppich und dem Glücklichen Ghast ein Geschirr. Jedes getragene Teil wird auf seiner eigenen Textur bemalt und hat einen eigenen Eintrag unter ',
-          strong('Parts'),
+          strong('Teile'),
           ', sodass du es ausblenden kannst, um den Mob darunter zu bemalen. Öffnest du eine Rüstungs-, Sattel- oder Teppichtextur, siehst du sie getragen, und ',
-          strong('Used by'),
+          strong('Verwendet von'),
           ' listet jeden Mob, der sie trägt. Ältere Versionen nutzen die Rüstungs- und Satteltexturen, die sie damals hatten.',
         ),
         p(
           strong('Rüstungsbesätze: '),
-          'Trägt ein menschenähnlicher Mob Rüstung, wählst du unter Wearing ein ',
-          strong('Trim'),
-          '-Muster und ein ',
-          strong('Material'),
+          'Trägt ein menschenähnlicher Mob Rüstung, wählst du unter „Trägt“ ein Muster für den ',
+          strong('Besatz'),
+          ' und ein ',
+          strong('Besatzmaterial'),
           ' (Java ab 1.20 und Bedrock). Das Spiel färbt das graue Muster mit der Palette des Materials und nimmt eine dunklere Palette, wenn Besatz und Rüstung aus demselben Material sind, etwa ein Eisenbesatz auf Eisenrüstung. Bemale den Besatz am Modell oder öffne sein Muster: Die acht Grautöne nehmen die Farbe des Besatzes an, jede andere Farbe bleibt so, wie du sie malst. Bearbeite die Palette eines Materials, um es auf jedem Besatz umzufärben, und blende ',
-          strong('Trim'),
-          ' unter Parts aus, um an die Rüstung darunter zu kommen.',
+          strong('Besatz'),
+          ' unter „Teile“ aus, um an die Rüstung darunter zu kommen.',
         ),
       ],
     },
@@ -406,15 +406,15 @@ export const HELP: HelpText = {
       id: 'sounds',
       q: 'Kann ich Sounds in meinem Pack ändern?',
       a: [
-        p('Ja. Drücke im Texture-Pack-Editor die Musiknote am Ende des Schalters Blocks · Items · Mobs · All. Suche einen Sound nach Name oder Kategorie und drücke Play, um ihn zu hören. Öffne ihn und ersetze eine Datei mit ', strong('Replace'), ' durch eigenes Audio (MP3, WAV, OGG, M4A und mehr) oder nimm eine mit deinem Mikrofon auf. Ziehe die Griffe an der Wellenform, um zu kürzen, stelle die Lautstärke ein oder drücke ', strong('Normalise'), '; mit Reset kehrst du zum Spielsound zurück. Ersetzte Sounds werden als Ogg Vorbis gespeichert und mit deinem Pack exportiert: Java-Packs legen sie in ', code('assets/minecraft/sounds'), ' ab, Bedrock-Packs in ', code('sounds/'), ' mit passenden Einträgen in ', code('sound_definitions.json'), '.'),
-        p('Die Aufnahme fragt erst beim Drücken von Start nach dem Mikrofon; ist es blockiert, erlaube es für diese Seite über das Symbol in der Adressleiste. Aufnahmen verlassen nie dein Gerät. Halte die meisten Sounds mono, damit sie von ihrem Ort in der Welt kommen, und nutze Stereo für Musik und Menüsounds. Die Java-Sounds des Spiels kommen direkt von Mojangs Servern, die Webseiten das Audio nicht lesen lassen: Du kannst sie anhören, aber nur hochgeladene oder aufgenommene Sounds kürzen. Sounds bearbeiten geht ab Java 1.7.10 und in Bedrock.'),
+        p('Ja. Drücke im Texture-Pack-Editor die Musiknote am Ende des Schalters Blöcke · Items · Mobs · Alle. Suche einen Sound nach Name oder Kategorie und drücke Abspielen, um ihn zu hören. Öffne ihn und ersetze eine Datei mit ', strong('Ersetzen'), ' durch eigenes Audio (MP3, WAV, OGG, M4A und mehr) oder nimm eine mit deinem Mikrofon auf. Ziehe die Griffe an der Wellenform, um zu kürzen, stelle die Lautstärke ein oder drücke ', strong('Normalisieren'), '; mit „Auf den Sound des Spiels zurücksetzen“ kehrst du zum Original zurück. Ersetzte Sounds werden als Ogg Vorbis gespeichert und mit deinem Pack exportiert: Java-Packs legen sie in ', code('assets/minecraft/sounds'), ' ab, Bedrock-Packs in ', code('sounds/'), ' mit passenden Einträgen in ', code('sound_definitions.json'), '.'),
+        p('Die Aufnahme fragt erst beim Drücken von „Aufnahme starten“ nach dem Mikrofon; ist es blockiert, erlaube es für diese Seite über das Symbol in der Adressleiste. Aufnahmen verlassen nie dein Gerät. Halte die meisten Sounds mono, damit sie von ihrem Ort in der Welt kommen, und nutze Stereo für Musik und Menüsounds. Die Java-Sounds des Spiels kommen direkt von Mojangs Servern, die Webseiten das Audio nicht lesen lassen: Du kannst sie anhören, aber nur hochgeladene oder aufgenommene Sounds kürzen. Sounds bearbeiten geht ab Java 1.7.10 und in Bedrock.'),
       ],
     },
     {
       id: 'hd-skins',
       q: 'Kann ich einen HD-Skin mit 128×128 erstellen?',
       a: [
-        p('Ja, für die Bedrock Edition. HD-Skins haben doppelt so viele Pixel wie ein normaler Skin (128×128 statt 64×64), so werden Gesichter, Schattierungen und Muster feiner. Wähle beim Start eines Skins im Skin-Editor unter ', strong('Größe'), ' die Option ', strong('HD 128×128'), ' oder stelle einen vorhandenen Skin im Editor mit ', strong('Größe'), ' › ', strong('HD 128'), ' um: Jedes Pixel wird verdoppelt, der Skin sieht also gleich aus, bis du Details hinzufügst. Exportiere ', strong('Bedrock-Skin (.png)'), ' für den Import im Ankleidezimmer oder ein ', strong('Bedrock-Skinpaket (.mcpack)'), '. Ein Skinpaket kann normale und HD-Skins mischen.'),
+        p('Ja, für die Bedrock Edition. HD-Skins haben doppelt so viele Pixel wie ein normaler Skin (128×128 statt 64×64), so werden Gesichter, Schattierungen und Muster feiner. Wähle beim Start eines Skins im Skin-Editor unter ', strong('Größe'), ' die Option ', strong('HD 128×128'), ' oder stelle einen vorhandenen Skin im Editor mit ', strong('Größe'), ' › ', strong('HD 128'), ' um: Jedes Pixel wird verdoppelt, der Skin sieht also gleich aus, bis du Details hinzufügst. Exportiere ', strong('Bedrock-Skin (.png)'), ' für den Import in der Umkleidekabine oder ein ', strong('Bedrock-Skinpaket (.mcpack)'), '. Ein Skinpaket kann normale und HD-Skins mischen.'),
         p('Die Java Edition nimmt ohne Mods nur Skins mit 64×64 an. Der Java-Export macht deshalb eine Kopie mit 64×64 (jeder 2×2-Block wird ein Pixel) und behält dein HD-Original. Mit einer HD-Skin-Mod wie CustomSkinLoader wählst du stattdessen ', strong('128×128 für Mods'), '. Konsolen können keine Skin-Dateien importieren, und Größen über 128×128 werden nicht unterstützt. HD-Skins funktionieren auch im Totem-Ersteller.'),
       ],
     },
@@ -444,7 +444,7 @@ export const HELP: HelpText = {
       a: [
         p(
           'Ja, nach dem ersten Laden. Die App und jede Version, die du schon geöffnet hast, bleiben auf diesem Gerät, du kannst also ohne Internet weiterarbeiten. Eine Version, die du noch nicht genutzt hast, braucht eine Verbindung – oder du wählst ',
-          strong('Use my own .jar'),
+          strong('Eigene .jar verwenden'),
           ' und nimmst sie aus deinem Ordner ',
           code('.minecraft/versions'),
           '.',

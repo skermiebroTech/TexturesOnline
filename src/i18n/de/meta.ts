@@ -11,8 +11,8 @@ export const META_DE: MetaTranslation = {
       label: 'Start',
     },
     '/textures': {
-      title: 'Texture Pack Editor – Ressourcenpaket erstellen (Java)',
-      description: 'Jede Minecraft-Textur bearbeiten: Blöcke, Items und Mobs auf 3D-Modellen bemalen, PNGs hochladen oder alles per Klick umstylen. Export: .zip oder .mcpack.',
+      title: 'Minecraft Texturenpaket erstellen – Texture Pack Editor',
+      description: 'Minecraft-Ressourcenpaket gratis erstellen: Blöcke, Items und Mobs auf 3D-Modellen bemalen, PNGs hochladen oder alles per Klick umstylen. Java und Bedrock.',
       label: 'Texture Packs',
     },
     '/painting-maker': {
@@ -21,8 +21,8 @@ export const META_DE: MetaTranslation = {
       label: 'Gemälde-Ersteller',
     },
     '/gui-maker': {
-      title: 'Minecraft GUI & HUD erstellen – Schnellleiste, Herzen, Menüs',
-      description: 'Eigenes Minecraft-GUI-Pack: Schnellleiste, Herzen, Hunger, Fadenkreuz, Inventar und Knöpfe neu bemalen, mit Live-Vorschau wie im Spiel. Java und Bedrock.',
+      title: 'Minecraft-GUI erstellen – Schnellzugriffsleiste & Herzen',
+      description: 'Eigenes Minecraft-GUI-Pack: Schnellzugriffsleiste, Herzen, Hunger, Fadenkreuz, Inventar und Knöpfe bemalen, mit Live-Vorschau wie im Spiel. Java & Bedrock.',
       label: 'GUI-Ersteller',
     },
     '/music-disc-maker': {
@@ -61,12 +61,12 @@ export const META_DE: MetaTranslation = {
       label: 'Schriftart-Ersteller',
     },
     '/skins': {
-      title: 'Minecraft Skin Editor – eigenen Skin in 2D & 3D erstellen',
+      title: 'Minecraft Skin erstellen – Skin Editor in 2D & 3D, gratis',
       description: 'Eigenen Minecraft-Skin online erstellen: 64×64- oder HD-Vorlage in 2D oder auf dem 3D-Modell bemalen, breite oder schmale Arme, PNG für Java oder Bedrock.',
       label: 'Skins',
     },
     '/skin-pack-maker': {
-      title: 'Minecraft Skin Pack Maker – eigenes Skinpaket gratis',
+      title: 'Minecraft Skinpaket erstellen – Skin Pack Maker für Bedrock',
       description: 'Kostenloser Skin Pack Maker: so viele Skins malen oder hochladen, wie du willst, breite und schmale Arme mischen und ein Bedrock-.mcpack herunterladen.',
       label: 'Skinpaket-Ersteller',
     },
@@ -183,7 +183,7 @@ export const META_DE: MetaTranslation = {
       h1: 'Minecraft-Bedrock-Skinpaket erstellen – so geht’s',
       description: 'Eigenes Skinpaket für Minecraft Bedrock: Skins malen oder hochladen, als .mcpack exportieren, am PC oder Handy importieren, updaten oder selbst bauen.',
       label: 'Bedrock-Skinpaket erstellen',
-      blurb: 'Deine Skins in einem .mcpack bündeln und im Ankleidezimmer tragen.',
+      blurb: 'Deine Skins in einem .mcpack bündeln und in der Umkleidekabine tragen.',
     },
     'make-3d-items-texture-pack': {
       title: '3D-Items im Minecraft Texture Pack erstellen (Java)',

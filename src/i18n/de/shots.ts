@@ -13,7 +13,7 @@ export const SHOTS = localShots({
   },
   effects: {
     alt: 'Der Tab „Effects“ mit dem Preset Autumn: Vorher-nachher-Streifen umgefärbter Texturen, Moosblöcke in der Blockliste in Orangebraun.',
-    caption: 'Effekte wie Autumn gestalten mit einem Klick jede Textur um.',
+    caption: 'Effekte wie „Herbst“ gestalten mit einem Klick jede Textur um.',
   },
   packSettings: {
     alt: 'Die Karte zur Spielversion im Tab „Pack“: Das Pack ist für Java 26.3 (Pack-Format 97.1) gemacht und funktioniert auch von Java 1.21 (Pack-Format 34) bis 26.3.',
@@ -40,15 +40,15 @@ export const SHOTS = localShots({
     caption: 'Drei Skins, breit und schmal, in einem Bedrock-Skinpaket.',
   },
   shaderVanilla: {
-    alt: 'Der Shader Maker für Vanilla Java mit Reglern für Farbe und Ton (Helligkeit, Kontrast, Sättigung) neben einer 3D-Live-Vorschau einer Grasinsel.',
+    alt: 'Der Shader-Ersteller für Vanilla Java mit Reglern für Farbe und Ton (Helligkeit, Kontrast, Sättigung) neben einer 3D-Live-Vorschau einer Grasinsel.',
     caption: 'Ein Vanilla-Java-Shaderpaket: Farbregler mit Live-Vorschau, ganz ohne Mods.',
   },
   shaderIris: {
-    alt: 'Der Shader Maker für Iris und OptiFine bei Sonnenuntergang: warmes, flaches Licht und lange Schatten in der Vorschau, dazu Presets und ein Regler für die Sonnenstärke.',
+    alt: 'Der Shader-Ersteller für Iris und OptiFine bei Sonnenuntergang: warmes, flaches Licht und lange Schatten in der Vorschau, dazu Presets und ein Regler für die Sonnenstärke.',
     caption: 'Ein Iris-/OptiFine-Shaderpaket mit echten Schatten in der Vorschau bei Sonnenuntergang.',
   },
   vibrantVisuals: {
-    alt: 'Der Shader Maker für Bedrock Vibrant Visuals: helle Vorschau mit blauem Himmel, Presets, ein Regler für die Sonnenhelligkeit und Hinweise, dass keine Mods nötig sind.',
+    alt: 'Der Shader-Ersteller für Bedrock Vibrant Visuals: helle Vorschau mit blauem Himmel, Presets, ein Regler für die Sonnenhelligkeit und Hinweise, dass keine Mods nötig sind.',
     caption: 'Ein Vibrant-Visuals-Paket für Bedrock mit Live-Vorschau erstellen.',
   },
   paint3d: {
