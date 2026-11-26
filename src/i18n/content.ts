@@ -1,5 +1,5 @@
 // Translated page content, one bundle per language (src/i18n/<lang>/content.ts). The English text
-// stays in the page modules (src/tools/*/content.ts, src/app/content/tools.ts); each of them
+// stays in the page modules (src/tools/*/content.ts, src/app/content/intros/*.ts); each of them
 // describes its text as an interface, and a translation fills in the same interface.
 //
 // How a page gets translated

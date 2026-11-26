@@ -2,8 +2,9 @@
 // language under its own folder ("/de/help/"). Pure helpers, no DOM and no translations here.
 //
 // Adding a language: add it to LOCALES and LOCALE_INFO, give it a folder in src/i18n/ (ui.ts,
-// meta.ts and content.ts) and register those in src/i18n/ui.ts, src/app/seo/meta.ts and
-// src/i18n/content.ts (which also explains how a page gets translated).
+// meta.ts, app.ts and text.ts, which bundles those three, and content.ts) and register them in
+// src/i18n/locale-text.ts, src/app/seo/meta.ts (UNTRANSLATED), src/i18n/content.ts (which also
+// explains how a page gets translated) and src/i18n/all-content.ts.
 
 export const LOCALES = ['en', 'de', 'es', 'pt-br', 'ja', 'ru', 'fr', 'pl'] as const;
 export type Locale = (typeof LOCALES)[number];

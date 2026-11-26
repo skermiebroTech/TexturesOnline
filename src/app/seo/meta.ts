@@ -1,16 +1,14 @@
 // Titles and descriptions of every public (indexable) page, in English and in every language a page
 // has been translated into. Kept free of DOM and content imports so the router, the runtime head
 // updater and the build-time prerender can all share it.
+//
+// The English text is here; a translation's text (src/i18n/<lang>/meta.ts) is registered when its
+// language is loaded (src/i18n/locale-text.ts: the app loads only the language it shows, the build
+// and the unit tests all of them). Which pages exist in which language is known without the text
+// (UNTRANSLATED below), so links, the language switcher and hreflang work for every language.
 
 import { SITE_NAME } from '../site';
 import { DEFAULT_LOCALE, LOCALES, TRANSLATED_LOCALES, prefixPath, splitLocale, type Locale, type TranslatedLocale } from '../../i18n/locales';
-import { META_DE } from '../../i18n/de/meta';
-import { META_ES } from '../../i18n/es/meta';
-import { META_PT_BR } from '../../i18n/pt-br/meta';
-import { META_JA } from '../../i18n/ja/meta';
-import { META_RU } from '../../i18n/ru/meta';
-import { META_FR } from '../../i18n/fr/meta';
-import { META_PL } from '../../i18n/pl/meta';
 
 export type PageKind = 'home' | 'tool' | 'help' | 'about' | 'privacy' | 'all' | 'guides' | 'guide';
 export type PageTool = 'home' | 'textures' | 'convert' | 'merge' | 'doctor' | 'totem' | 'fonts' | 'skins' | 'shaders' | 'help' | 'all';
@@ -467,7 +465,19 @@ export interface MetaTranslation {
   guides: Partial<Record<string, GuidePageText>>;
 }
 
-export const META_TRANSLATIONS: Record<TranslatedLocale, MetaTranslation> = { de: META_DE, es: META_ES, 'pt-br': META_PT_BR, ja: META_JA, ru: META_RU, fr: META_FR, pl: META_PL };
+/**
+ * Public pages (English route paths, guides as '/guides/<slug>') that a language has no translation
+ * of: every other public page exists in every language. Must match the languages' meta files (a
+ * unit test checks): this is how the app knows a page's languages without loading their text.
+ */
+export const UNTRANSLATED: Record<TranslatedLocale, readonly string[]> = { de: [], es: [], 'pt-br': [], ja: [], ru: [], fr: [], pl: [] };
+
+/** The translations of the languages loaded so far (registerMeta). */
+export const META_TRANSLATIONS: Partial<Record<TranslatedLocale, MetaTranslation>> = {};
+
+export function registerMeta(locale: TranslatedLocale, meta: MetaTranslation): void {
+  META_TRANSLATIONS[locale] = meta;
+}
 
 const trimSlash = (p: string) => (p.length > 1 ? p.replace(/\/+$/, '') : p);
 
@@ -482,14 +492,28 @@ function englishMeta(route: string): PageMeta | undefined {
   return PUBLIC_PAGES.find((m) => m.path === p);
 }
 
-/** Meta of a public page in one language ('/textures', 'de'); undefined when it is not public or not translated. */
-export function pageMeta(route: string, locale: Locale): PageMeta | undefined {
+/** English meta of a public route path when the page exists in `locale` too. */
+function existingMeta(route: string, locale: Locale): PageMeta | undefined {
   const en = englishMeta(route);
+  return en && (locale === 'en' || !UNTRANSLATED[locale].includes(en.path)) ? en : undefined;
+}
+
+/**
+ * Meta of a public page in one language ('/textures', 'de'); undefined when it is not public or not
+ * translated. (Its text needs the language loaded; until then the page has its English text.)
+ */
+export function pageMeta(route: string, locale: Locale): PageMeta | undefined {
+  const en = existingMeta(route, locale);
   if (!en || locale === 'en') return en;
   const t = META_TRANSLATIONS[locale];
-  const text = en.kind === 'guide' ? t.guides[(en as GuideMeta).slug] : t.pages[en.path];
-  if (!text) return undefined;
+  const text = en.kind === 'guide' ? t?.guides[(en as GuideMeta).slug] : t?.pages[en.path];
   return { ...en, ...text, locale, route: en.path, path: prefixPath(en.path, locale) };
+}
+
+/** Path of a public page in one language ('/textures', 'de' -> '/de/textures'), or undefined when it is not there. */
+export function pagePath(route: string, locale: Locale): string | undefined {
+  const en = existingMeta(route, locale);
+  return en && prefixPath(en.path, locale);
 }
 
 /** A guide's meta in one language, or undefined when it is not translated. */
@@ -505,7 +529,7 @@ export function guidesIn(locale: Locale): GuideMeta[] {
 
 /** Every language a public route path is available in (English first). */
 export function pageLocales(route: string): Locale[] {
-  return LOCALES.filter((l) => !!pageMeta(route, l));
+  return LOCALES.filter((l) => !!existingMeta(route, l));
 }
 
 /** Translated pages of one language, in sitemap order. */
@@ -528,7 +552,7 @@ export function localizedPath(path: string, locale: Locale): string {
   const route = m[1] || '/';
   if (locale === DEFAULT_LOCALE || splitLocale(route).locale !== DEFAULT_LOCALE) return path;
   if (/\.[a-z0-9]{1,8}$/i.test(route)) return path; // site files
-  if (englishMeta(route) && !pageMeta(route, locale)) return path;
+  if (englishMeta(route) && !existingMeta(route, locale)) return path;
   return prefixPath(path, locale);
 }
 
