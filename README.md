@@ -160,6 +160,14 @@ repository keeps its original name, `TexturesOnline`).
 - Start from a blank skin, a colour-coded template, original starter characters, an uploaded PNG
   (legacy 64x32 skins are converted), any player's skin by username, or Steve/Alex from the game files.
 - Export a Java PNG (plus legacy 64x32) or a Bedrock skin pack `.mcpack`.
+- Skin Pack Maker (`/skin-pack-maker`): a Bedrock skin pack built on one screen. Its skins show as 3D
+  figures; add saved skins (later edits in the skin editor come into the pack), several PNGs at once
+  (64x64, HD 128x128, legacy 64x32 converted; arms detected from the picture), starter skins or a Java
+  player's skin; name each skin, pick classic or slim arms, reorder (drag, or arrow buttons on touch
+  screens), paint one in the skin editor and come back; set the pack's name, description and icon (the
+  first skin's face by default). Existing skin packs (`.mcpack` / `.zip`) open to be edited, keeping their
+  uuids. Packs are stored like other projects (kind `skinpack`), with project files and backups. The
+  editor's Export › Bedrock skin pack dialog can hand its pack over to it.
 - Share a picture (in the Export menu): a 1200×675 PNG card of the skin in 3D from the front and the back,
   with its face and name, shared on phones that can share files and downloaded elsewhere.
 

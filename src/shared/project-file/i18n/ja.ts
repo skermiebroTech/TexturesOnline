@@ -21,6 +21,7 @@ const JA: ProjectFileLanguage = {
     types: {
       texturepack: 'テクスチャパック',
       skin: 'スキン',
+      skinpack: 'スキンパック',
       shader: 'シェーダー',
       cape: 'マント',
       font: 'フォント',
@@ -28,6 +29,7 @@ const JA: ProjectFileLanguage = {
     counts: {
       texturepack: 'テクスチャパック {count}個',
       skin: 'スキン {count}個',
+      skinpack: 'スキンパック {count}個',
       shader: 'シェーダー {count}個',
       cape: 'あなたのマント',
       font: 'あなたのフォント',

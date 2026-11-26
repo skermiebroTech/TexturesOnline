@@ -21,7 +21,7 @@ Every owner of interface text has an `i18n/` folder next to its code:
 | `src/tools/totem/i18n/` | `totem` | `totem/view.ts` |
 | `src/tools/fonts/i18n/` | `fonts` | `fonts/view.ts` |
 | `src/tools/doctor/i18n/` | `doctor` (start screen), `doctor.report` (the report and every problem) | `doctor/view.ts` |
-| `src/tools/skins/i18n/` | `skins` (start screen), `skins.parts`, `skins.editor`, `skins.export`, `skins.pose` (the pose maker), `skins.cape` (the cape maker) | `skins/view.ts`, `skins/cape/view.ts` |
+| `src/tools/skins/i18n/` | `skins` (start screen), `skins.parts`, `skins.editor`, `skins.export`, `skins.pose` (the pose maker), `skins.cape` (the cape maker), `skins.pack` (the Skin Pack Maker) | `skins/view.ts`, `skins/cape/view.ts` |
 | `src/tools/shaders/i18n/` | `shaders` (start screen, targets, "New pack"), `shaders.import` | `shaders/view.ts` |
 | `src/tools/shaders/ui/i18n/` | `shaders.editor`, `shaders.options` (settings, presets and notes by key), `shaders.messages` (the generators' messages) | `shaders/view.ts` for an editor route, and every `loadGenerator()` |
 | `src/tools/shaders/packedit/i18n/` | `shaders.packedit` | `shaders/view.ts` for an editor route |

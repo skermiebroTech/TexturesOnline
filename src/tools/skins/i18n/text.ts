@@ -11,24 +11,6 @@ export const t = defineText('skins', {
     title: 'Design your own skin',
     lead: 'Paint on the skin template or right onto the 3D model, and watch your character come to life. Export for Java or Bedrock when you are done.',
   },
-  /** The same start screen on /skin-pack-maker: the page is about making a pack */
-  packHero: {
-    eyebrow: 'Skin Pack Maker',
-    title: 'Make your own skin pack',
-    lead: 'Paint or upload each skin, then download them all as one Bedrock .mcpack that opens in Minecraft. Classic and slim skins can share a pack.',
-  },
-  /** The three steps under the hero on /skin-pack-maker */
-  packSteps: {
-    label: 'How a skin pack is made',
-    make: 'Make each skin',
-    makeText: 'Start one below. Every skin is saved in this browser.',
-    export: 'Export them together',
-    exportText: 'In the editor, choose Export › Bedrock skin pack and tick the others.',
-    wear: 'Wear them in Minecraft',
-    wearText: 'Open the .mcpack, then pick a skin in the Dressing Room.',
-  },
-  /** Text under “Your skins” on /skin-pack-maker */
-  packRecent: 'Saved in this browser. Open one and choose Export › Bedrock skin pack to bundle them.',
   /** The link to /skin-pack-maker on /skins */
   packLink: { title: 'Making a skin pack?', text: 'Bundle several skins into one Bedrock .mcpack with the Skin Pack Maker' },
   /** Name of a new skin project (also used when the name field is left empty) */

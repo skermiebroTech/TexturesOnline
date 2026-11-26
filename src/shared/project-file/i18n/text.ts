@@ -29,6 +29,7 @@ export const pf = defineText('shared.projectFile', {
   types: {
     texturepack: 'Texture pack',
     skin: 'Skin',
+    skinpack: 'Skin pack',
     shader: 'Shader',
     cape: 'Cape',
     font: 'Font',
@@ -37,6 +38,7 @@ export const pf = defineText('shared.projectFile', {
   counts: {
     texturepack: '{count, plural, one {# texture pack} other {# texture packs}}',
     skin: '{count, plural, one {# skin} other {# skins}}',
+    skinpack: '{count, plural, one {# skin pack} other {# skin packs}}',
     shader: '{count, plural, one {# shader} other {# shaders}}',
     cape: 'Your cape',
     font: 'Your font',

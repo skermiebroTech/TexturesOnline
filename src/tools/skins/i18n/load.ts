@@ -8,6 +8,7 @@ import type { SkinEditorText } from './editor';
 import type { SkinExportText } from './export';
 import type { SkinPoseText } from './pose';
 import type { SkinCapeText } from './cape';
+import type { SkinPackText } from './pack';
 
 /** A language file of the skin tool (./<lang>.ts). */
 export interface SkinsLanguage {
@@ -17,6 +18,7 @@ export interface SkinsLanguage {
   'skins.export': Translation<SkinExportText>;
   'skins.pose': Translation<SkinPoseText>;
   'skins.cape': Translation<SkinCapeText>;
+  'skins.pack': Translation<SkinPackText>;
 }
 
 export const loadSkinsText = textLoader<SkinsLanguage>({

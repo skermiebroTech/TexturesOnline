@@ -7,7 +7,7 @@
 // Restoring keeps a project's id unless this browser already has a project with it: then it is
 // skipped, or added as a copy with a new id (and new Bedrock uuids, so both packs can be installed).
 
-import type { Project, SkinProject, TexturePackProject } from '../../core/types';
+import type { Project, SkinPackProject, SkinPackSkin, SkinProject, TexturePackProject } from '../../core/types';
 import { getProject, listProjects, saveProject } from '../../core/storage';
 import { uuidv4 } from '../../core/uuid';
 import { fmt } from '../../i18n/editor-text';
@@ -30,7 +30,7 @@ const damaged = () => new ProjectFileError('damaged', pf.errors.damaged);
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 
 function projectItem(p: Project, data: Record<string, unknown>): ProjectItem {
-  const type: ItemType = p.kind === 'texturepack' ? 'texturepack' : p.kind === 'skin' ? 'skin' : 'shader';
+  const type: ItemType = p.kind;
   return { type, id: p.id, name: p.name ?? '', updatedAt: p.updatedAt, data };
 }
 
@@ -52,6 +52,8 @@ export async function collectProject(id: string): Promise<{ tool: ProjectTool; i
   if (!p) throw damaged();
   if (p.kind === 'texturepack') return { tool: 'textures', items: [projectItem(p, { project: p })] };
   if (p.kind === 'shader') return { tool: 'shaders', items: [await shaderItem(p as ShaderProjectData)] };
+  // a pack of the Skin Pack Maker holds its skins' pictures itself
+  if (p.kind === 'skinpack') return { tool: 'skinpack', items: [projectItem(p, { project: p })] };
   const skin = p as SkinProjectData;
   const members: ProjectItem[] = [];
   for (const mid of skin.packSkinIds ?? []) {
@@ -104,7 +106,7 @@ export function fontItem(font?: { draft: FontDraft; name: string; ttf?: FontTtfD
 export async function collectAll(): Promise<ProjectItem[]> {
   const items: ProjectItem[] = [];
   for (const p of await listProjects()) {
-    if (p.kind === 'texturepack' || p.kind === 'skin') items.push(projectItem(p, { project: p }));
+    if (p.kind === 'texturepack' || p.kind === 'skin' || p.kind === 'skinpack') items.push(projectItem(p, { project: p }));
     else if (isShaderProject(p)) {
       // an imported pack whose files are gone can't be opened anyway
       items.push(await shaderItem(p).catch(() => projectItem(p, { project: p })));
@@ -164,6 +166,23 @@ function checkSkin(x: unknown): SkinProjectData {
   };
 }
 
+function checkSkinPack(x: unknown): SkinPackProject {
+  if (!isObj(x) || x.kind !== 'skinpack' || !Array.isArray(x.skins)) throw damaged();
+  const p = x as unknown as SkinPackProject;
+  const skins: SkinPackSkin[] = [];
+  for (const s of x.skins as unknown[]) {
+    if (!isObj(s) || !(s.image instanceof Blob)) continue;
+    const skin: SkinPackSkin = { id: str(s.id) || uuidv4(), name: str(s.name), model: s.model === 'slim' ? 'slim' : 'classic', image: s.image };
+    if (typeof s.skinId === 'string' && s.skinId) skin.skinId = s.skinId;
+    if (typeof s.syncedAt === 'number') skin.syncedAt = s.syncedAt;
+    if (s.syncedModel === 'slim' || s.syncedModel === 'classic') skin.syncedModel = s.syncedModel;
+    skins.push(skin);
+  }
+  const out: SkinPackProject = { ...p, name: str(x.name), description: str(x.description), skins, icon: x.icon instanceof Blob ? x.icon : undefined };
+  if (!out.icon) delete out.icon;
+  return out;
+}
+
 function checkShader(x: unknown): ShaderProjectData {
   if (!isShaderProject(x)) throw damaged();
   const p: ShaderProjectData = { ...x, name: str(x.name), description: str(x.description), version: str(x.version), settings: isObj(x.settings) ? { ...x.settings } as ShaderProjectData['settings'] : {} };
@@ -189,7 +208,7 @@ export interface RestoreResult {
   error?: unknown;
 }
 
-const PROJECT_TYPES: ItemType[] = ['texturepack', 'skin', 'shader'];
+const PROJECT_TYPES: ItemType[] = ['texturepack', 'skin', 'skinpack', 'shader'];
 
 /** True when this browser already has the item (a project with its id, or a cape / font). */
 export async function existsHere(item: { type: ItemType; id: string }): Promise<boolean> {
@@ -228,6 +247,16 @@ async function projectRecord(item: ProjectItem, id: string, idMap: Map<string, s
       delete out.packVersion;
     }
     return out as SkinProject;
+  }
+  if (item.type === 'skinpack') {
+    const p = checkSkinPack(raw);
+    // links to saved skins follow them when they came along as copies; a skin left behind keeps its picture
+    const out: SkinPackProject = { ...p, id, name: name(p.name), skins: p.skins.map((s) => (s.skinId ? { ...s, skinId: idMap.get(s.skinId) ?? s.skinId } : s)) };
+    if (copy) {
+      out.bedrockUuids = newUuids();
+      delete out.packVersion;
+    }
+    return out;
   }
   const p = checkShader(raw);
   const out: ShaderProjectData = { ...p, id, name: name(p.name) };

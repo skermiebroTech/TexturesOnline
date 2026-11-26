@@ -21,6 +21,7 @@ const PT_BR: ProjectFileLanguage = {
     types: {
       texturepack: 'Texture pack',
       skin: 'Skin',
+      skinpack: 'Pacote de skins',
       shader: 'Shader',
       cape: 'Capa',
       font: 'Fonte',
@@ -28,6 +29,7 @@ const PT_BR: ProjectFileLanguage = {
     counts: {
       texturepack: '{count, plural, one {# texture pack} other {# texture packs}}',
       skin: '{count, plural, one {# skin} other {# skins}}',
+      skinpack: '{count, plural, one {# pacote de skins} other {# pacotes de skins}}',
       shader: '{count, plural, one {# shader} other {# shaders}}',
       cape: 'Sua capa',
       font: 'Sua fonte',

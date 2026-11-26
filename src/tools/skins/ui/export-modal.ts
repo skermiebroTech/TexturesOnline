@@ -1,8 +1,8 @@
 // Export: the format menu, the download itself and a modal that explains where the file goes.
 
-import { convertLegacySkin, decodeImage } from '../../../core/image';
-import { listProjects } from '../../../core/storage';
-import { href as routeHref } from '../../../core/router';
+import { convertLegacySkin, decodeImage, encodePng } from '../../../core/image';
+import { listProjects, saveProject } from '../../../core/storage';
+import { href as routeHref, navigate } from '../../../core/router';
 import { saveBlob } from '../../../core/download';
 import type { SkinModel } from '../../../core/types';
 import { badge, button, openPopover, textInput, withBusy } from '../../../ui/components';
@@ -34,6 +34,8 @@ import { drawFigureSoon } from './figure';
 import { fmt, fmtNodes } from '../../../i18n/editor-text';
 import { kit } from '../../../ui/i18n/kit';
 import { exportText as t } from '../i18n/export';
+import { packText } from '../i18n/pack';
+import { newPackSkin, newSkinPack } from '../pack/pack';
 
 interface FormatInfo {
   readonly kind: ExportKind;
@@ -272,6 +274,36 @@ async function choosePackSkins(project: SkinProjectData, img: ImageData): Promis
   });
   sync();
 
+  // The Skin Pack Maker takes the pack over: this skin and the ticked ones, with the pack's ids.
+  const handoff = h(
+    'button',
+    { type: 'button', class: 'sk-totem-link sk-pack-handoff' },
+    h('span', { class: 'sk-import-icon' }, icon('package')),
+    h('span', { class: 'sk-totem-text' }, h('strong', null, packText.handoff.title), h('span', { class: 'faint small' }, packText.handoff.text)),
+    icon('arrow-right'),
+  );
+  handoff.addEventListener('click', () =>
+    void (async () => {
+      handoff.disabled = true;
+      try {
+        const ids = orderPackSkinIds(project.packSkinIds, boxes.filter((b) => b.checked).map((b) => b.value));
+        const pack = newSkinPack(packName.trim() || packNameOf(project));
+        pack.bedrockUuids = project.bedrockUuids;
+        pack.packVersion = project.packVersion;
+        pack.skins = [
+          newPackSkin({ name: project.name, model: project.model, image: new Blob([encodePng(img)], { type: 'image/png' }), from: project }),
+          ...pickPackSkins(ids, saved, project.id).map((p) => newPackSkin({ name: p.name, model: p.model, image: p.image, from: p })),
+        ];
+        await saveProject(pack);
+        modal.close();
+        navigate(`/skin-pack-maker?pack=${encodeURIComponent(pack.id)}`);
+      } catch (err) {
+        handoff.disabled = false;
+        toast(err instanceof Error ? err.message : t.done.failed, { tone: 'error' });
+      }
+    })(),
+  );
+
   const body = h(
     'div',
     { class: 'sk-export sk-pack' },
@@ -290,6 +322,7 @@ async function choosePackSkins(project: SkinProjectData, img: ImageData): Promis
       rows,
     ),
     h('p', { class: 'sk-note' }, icon('info'), t.pack.note),
+    handoff,
   );
 
   let result: PackSkinSource[] | null = null;
@@ -415,6 +448,39 @@ export async function exportSkin(kind: ExportKind, project: SkinProjectData, img
   );
   const title = skinCount > 1 ? t.done.packReady : info.edition === 'Java' ? t.done.javaReady : t.done.bedrockReady;
   const m = openModal({ title, body, width: 620, actions: [{ label: t.done.finished, variant: 'primary' }] });
+  help.addEventListener('click', () => m.close());
+}
+
+/**
+ * The "skin pack is ready" dialog of the Skin Pack Maker (the same one the editor shows after a
+ * pack export): the file, its details and how to install it. `again` downloads the file again.
+ */
+export function openPackReady(opts: { res: ExportResult; packName: string; skinName: string; image: ImageData; model: SkinModel; again: () => void }): void {
+  const { res } = opts;
+  const skinCount = res.skinCount ?? 1;
+  const again = button({ label: t.done.again, icon: 'download', variant: 'secondary', size: 'sm' });
+  again.addEventListener('click', () => opts.again());
+  const help = h('a', { class: 'sk-help-link', href: routeHref('/help#bedrock-skins') }, icon('book-open'), t.done.guide);
+  const body = h(
+    'div',
+    { class: 'sk-export sk-pack-ready' },
+    h(
+      'div',
+      { class: 'sk-export-done' },
+      figure(opts.image, opts.model, opts.skinName),
+      h(
+        'div',
+        { class: 'sk-export-file' },
+        h('span', { class: 'sk-export-ok' }, icon('check'), t.done.started),
+        h('code', { class: 'sk-export-name' }, res.filename),
+        h('span', { class: 'muted small sk-export-meta' }, [t.done.bedrockEdition, res.meta].filter(Boolean).join(' · ')),
+        h('div', { class: 'row', style: { '--gap': '8px', marginTop: '8px' } }, again),
+      ),
+    ),
+    ...instructions('bedrock-pack', opts.model, res.filename, opts.packName, skinCount),
+    help,
+  );
+  const m = openModal({ title: t.done.packReady, body, width: 620, actions: [{ label: t.done.finished, variant: 'primary' }] });
   help.addEventListener('click', () => m.close());
 }
 
