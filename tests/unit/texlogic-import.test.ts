@@ -7,6 +7,8 @@ import { newTextureProject, setOverride, addEffectLayer } from '../../src/tools/
 import { createLayer } from '../../src/tools/textures/effects';
 import { encodePng, encodeTga } from '../../src/core/image';
 import { bedrockSpec, fakeAssets, img, javaSpec, json, noisy, unzipBlob } from '../tools/texlogic/fixtures';
+import { KNOWN_RELEASES, KNOWN_RELEASE_FORMATS } from '../../src/editions/java/packformats';
+import { DEFAULT_JAVA_VERSION } from '../../src/editions/versions';
 
 const J = 'assets/minecraft/textures/';
 const bytesOf = async (b: Blob) => new Uint8Array(await b.arrayBuffer());
@@ -64,6 +66,44 @@ test('Java: version guessed from every pack.mcmeta era', async () => {
   const w: string[] = [];
   assert.equal((await guessJavaVersion({ min: { major: 14, minor: 0 }, max: { major: 14, minor: 0 } }, w)).version, '1.19.4');
   assert.equal(w.length, 1);
+});
+
+test('Java: a pack newer than every release opens as the snapshot or pre-release with its format', async () => {
+  // Versions newer than the bundled table (made up, so the test outlives the next release)
+  const newest = KNOWN_RELEASES[KNOWN_RELEASES.length - 1];
+  const f = KNOWN_RELEASE_FORMATS[newest];
+  const t = (id: string, day: string, type = 'snapshot') => ({ id, type, url: `https://mock.test/${id}.json`, time: day, releaseTime: day });
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    if (url.includes('version_manifest_v2.json')) {
+      return Response.json({
+        latest: { release: newest, snapshot: '29.1-pre-1' },
+        versions: [t('29.1-pre-1', '2029-11-24T12:48:31+00:00'), t('29.1-snapshot-8', '2029-11-10T14:20:05+00:00'), t(newest, '2029-01-15T11:23:02+00:00', 'release')],
+      });
+    }
+    if (url.includes('misode/mcmeta')) {
+      return Response.json([
+        { id: '29.1-pre-1', name: '29.1 Pre-Release 1', type: 'snapshot', resource_pack_version: 904, resource_pack_version_minor: 0 },
+        { id: '29.1-snapshot-8', name: '29.1 Snapshot 8', type: 'snapshot', resource_pack_version: 903, resource_pack_version_minor: 0 },
+        { id: newest, name: newest, type: 'release', resource_pack_version: f.major, resource_pack_version_minor: f.minor },
+      ]);
+    }
+    return new Response('nope', { status: 404 });
+  }) as typeof fetch;
+  try {
+    const w: string[] = [];
+    assert.deepEqual(await guessJavaVersion({ min: { major: 904, minor: 0 }, max: { major: 904, minor: 0 } }, w), { version: '29.1-pre-1' });
+    assert.equal((await guessJavaVersion({ min: { major: 903, minor: 0 }, max: { major: 903, minor: 0 } }, w)).version, '29.1-snapshot-8');
+    assert.deepEqual(w, []);
+    // A release in range is still preferred to a snapshot
+    assert.equal((await guessJavaVersion({ min: { major: f.major, minor: 0 }, max: { major: 904, minor: 0 } }, w)).version, newest);
+    // A format no version has yet: the default, with a note
+    assert.equal((await guessJavaVersion({ min: { major: 990, minor: 0 }, max: { major: 990, minor: 0 } }, w)).version, DEFAULT_JAVA_VERSION);
+    assert.equal(w.length, 1);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
 
 test('Java: nested single folder, junk entries, formatted description, OptiFine files', async () => {

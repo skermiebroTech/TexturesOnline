@@ -11,6 +11,7 @@ import { unzipSync } from 'fflate';
 import { loadJavaBedrockMap, loadJavaRenames, type JavaBedrockMap, type JavaRenames } from '../../src/editions/convert/maps';
 import { KNOWN_RELEASES } from '../../src/editions/java/packformats';
 import { bedrockTexturesFromFiles, catalogFromIndex, type BedrockIndexFile } from '../../src/editions/bedrock/catalog';
+import { compareJavaVersions } from '../../src/tools/convert/paths';
 import { javaJarPath } from '../tools/models/fixtures';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
@@ -139,11 +140,20 @@ test('java renames: format, release order and clean paths', async () => {
   const r = await renames();
   assert.equal(r.format, 1);
   let last = -1;
+  let dev: string | null = null;
   for (const step of r.steps) {
     const i = KNOWN_RELEASES.indexOf(step.version);
-    assert.ok(i >= 0, `${step.version} is not a known release`);
-    assert.ok(i > last, `${step.version} is out of order`);
-    last = i;
+    if (i < 0) {
+      // A development version newer than every bundled release (until that release is in the table)
+      assert.equal(dev, null, `${step.version}: only one development-version step, after the releases`);
+      // (once its release is in the table, name the step after the release or run scripts/gen-convert-maps.ts)
+      assert.equal(compareJavaVersions(step.version, KNOWN_RELEASES[KNOWN_RELEASES.length - 1]), 1, `${step.version} is not a known release or a newer development version`);
+      dev = step.version;
+    } else {
+      assert.equal(dev, null, `${step.version} comes after the development-version step ${dev}`);
+      assert.ok(i > last, `${step.version} is out of order`);
+      last = i;
+    }
     for (const [from, to] of Object.entries(step.renames)) {
       assert.ok(cleanPath(from), `${step.version}: bad path ${from}`);
       const list = Array.isArray(to) ? to : [to];
@@ -212,6 +222,23 @@ test('java renames: every 1.12.2 texture reaches a 26.3 path or is listed as rem
   const art = [...old].filter((p) => !/^(font|gui)\//.test(p));
   const artReached = art.filter((p) => !follow(r, p, '1.12.2', '26.3').removedIn).length;
   assert.ok(artReached > art.length * 0.9, `only ${artReached} of ${art.length} non-GUI textures reach 26.3 (${reached} reached, ${removed} removed overall)`);
+});
+
+const PRE = '26.4-pre-1';
+test(`java renames: the ${PRE} step matches its jars (keys gone, targets new)`, { skip: javaJarPath('26.3') && javaJarPath(PRE) ? false : NO_JAR(`26.3 and ${PRE}`) }, async () => {
+  const r = await renames();
+  const step = r.steps.find((s) => s.version === PRE);
+  if (!step) return; // replaced by the 26.4 release step
+  const before = jarTextures('26.3')!;
+  const after = jarTextures(PRE)!;
+  for (const [from, to] of Object.entries(step.renames)) {
+    assert.ok(before.has(from) && !after.has(from), `${from} should exist in 26.3 only`);
+    for (const t of Array.isArray(to) ? to : [to]) assert.ok(after.has(t), `${t} should exist in ${PRE}`);
+  }
+  // Every texture that left with 26.4-pre-1 is renamed or listed as removed
+  const gone = [...before].filter((p) => !after.has(p));
+  assert.deepEqual(gone.filter((p) => !(p in step.renames) && !step.removed?.includes(p)), []);
+  for (const p of step.removed ?? []) assert.ok(before.has(p) && !after.has(p));
 });
 
 test('java renames: each step matches its jars (keys gone, targets new)', { skip: javaJarPath('1.12.2') && javaJarPath('1.13') ? false : NO_JAR('1.12.2 and 1.13') }, async () => {

@@ -352,6 +352,29 @@ test('textures renamed in a later version (grass → short_grass in 1.20.3)', as
   assert.ok(z[`${J}block/short_grass.png`] && !z[`${J}block/grass.png`]);
 });
 
+test('a 26.3 pack checked for 26.4-pre-1: pack format and the GUI sprites 26.4 renamed', async () => {
+  const pre: DoctorTarget = { edition: 'java', version: '26.4-pre-1' };
+  const ctx = { javaVanilla: null, targetFormat: { major: 104, minor: 0 } };
+  const s = await check({ ...healthyJava(), [`${J}gui/sprites/friends/button.png`]: png(200, 20), [`${J}gui/sprites/friends/remove.png`]: png() }, 'p.zip', pre, ctx);
+  assert.equal(s.now.packVersion, '26.3');
+  assert.equal(issue(s, 'format-mismatch')!.params.direction, 'old');
+  const i = issue(s, 'renamed-textures')!;
+  assert.deepEqual(i.params, { count: 1, version: '26.4-pre-1', from: '26.3' });
+  const { zip: z, again } = await fixAndRecheck(s);
+  assert.ok(z[`${J}gui/sprites/friends/tab.png`] && !z[`${J}gui/sprites/friends/button.png`]);
+  assert.deepEqual(JSON.parse(dec.decode(z['pack.mcmeta'])).pack.max_format, 104);
+  assert.deepEqual(serious(again), []);
+
+});
+
+test('a pack made for a version newer than the release table is named after it when checked for it', async () => {
+  // (a made-up pre-release, so the test outlives the next release)
+  const next: DoctorTarget = { edition: 'java', version: '29.1-pre-1' };
+  const made = await check({ ...healthyJava(), 'pack.mcmeta': { pack: { description: 'x', min_format: 904, max_format: 904 } } }, 'p.zip', next, { javaVanilla: null, targetFormat: { major: 904, minor: 0 } });
+  assert.equal(made.now.packVersion, '29.1-pre-1');
+  assert.deepEqual(codes(made), []);
+});
+
 test('capital letters and spaces in file names', async () => {
   const s = await check({
     ...healthyJava(),

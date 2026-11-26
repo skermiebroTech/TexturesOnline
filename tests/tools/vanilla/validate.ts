@@ -74,7 +74,7 @@ const CORE = `${SHADERS}core/`;
 const INCLUDE = `${SHADERS}include/`;
 const GL_BUILTIN_BLOCKS = ['Projection', 'Lighting', 'Fog', 'Globals'];
 /** Shaders that only draw menus, screen blits or the title panorama. */
-const GUI_SHADERS = /^(gui|rendertype_gui.*|panorama|blit_screen|screenquad)\.(vsh|fsh|json)$/;
+const GUI_SHADERS = /^(gui|rendertype_gui.*|panorama|blit_screen|screenquad|screentriangle)\.(vsh|fsh|json)$/;
 const WORLD_GATE = /if \((txo_aspect > 0\.0001|abs\(ProjMat\[2\]\[3\]\) > 0\.0001)\) \{\n\s+\w+\.rgb = /;
 
 function packFormatOf(version: string, fromJar: PackFormat | null): PackFormat {
@@ -273,6 +273,9 @@ export async function validateVersion(jar: JarRef, glslang: string | null, sets:
     if (wavingOn && !waveAllowed && !r.warnings.some((w) => /Waving/.test(w))) fail('missing warning for unavailable waving plants');
     if (set.values.bloom === true && !fam.endOfFrame && !r.warnings.some((w) => /Bloom/.test(w))) fail('missing warning for unavailable bloom');
     if (files['assets/minecraft/post_effect/end_of_frame.json'] !== undefined && !fam.endOfFrame) fail('end_of_frame.json written for a version that ignores it');
+    if (fam.endOfFrame && files['assets/minecraft/post_effect/end_of_frame.json'] === undefined && r.warnings.some((w) => /Colors, vignette and bloom skipped/.test(w))) {
+      fail('colours / vignette / bloom were requested but the end_of_frame post effect was not written');
+    }
     // The environmental fog multiplier must never reach Blindness, Darkness, lava or powder snow fog.
     const envSet = typeof set.values.fogEnvironment === 'number' && set.values.fogEnvironment !== 1;
     const fogOut = files[`${INCLUDE}fog.glsl`];

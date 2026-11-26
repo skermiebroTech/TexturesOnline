@@ -116,11 +116,16 @@ function javaFormat(version: string, given?: PackFormat | null): PackFormat | nu
 
 const inRange = (f: PackFormat, r: PackRange) => comparePackFormats(f, r.min) >= 0 && comparePackFormats(f, r.max) <= 0;
 
-/** Newest bundled release a declared range accepts (for texture renames and messages). */
-export function guessPackVersion(range: PackRange | null): string | null {
+/**
+ * Newest bundled release a declared range accepts (for texture renames and messages). A range only
+ * versions newer than the table accept names the target version when it accepts it (a pack made for
+ * 26.4-pre-1, checked for 26.4-pre-1), else the newest bundled release.
+ */
+export function guessPackVersion(range: PackRange | null, target?: { version: string; format: PackFormat | null }): string | null {
   if (!range) return null;
   const hit = [...KNOWN_RELEASES].reverse().find((id) => inRange(KNOWN_RELEASE_FORMATS[id], range));
   if (hit) return hit;
+  if (target?.format && inRange(target.format, range)) return target.version;
   if (comparePackFormats(range.min, KNOWN_RELEASE_FORMATS[KNOWN_RELEASES[KNOWN_RELEASES.length - 1]]) > 0) return KNOWN_RELEASES[KNOWN_RELEASES.length - 1];
   return guessReleaseForFormat(range.max) ?? KNOWN_RELEASES[0];
 }
@@ -415,7 +420,7 @@ export async function diagnose(input: DiagnoseInput): Promise<Diagnosis> {
     }
     if (range) {
       out.packFormats = formatsOf(range);
-      out.packVersion = guessPackVersion(range);
+      out.packVersion = guessPackVersion(range, { version, format: tf });
     }
     const packVersion = out.packVersion;
     await step();

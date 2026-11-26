@@ -39,6 +39,8 @@
  * decoded pixels (name similarity settles groups of identical images), then to new paths with a similar
  * name and similar pixels, then RENAME_OVERRIDES. When two consecutive available jars differ and releases
  * between them have no jar, those jars are downloaded first so every step names the exact release.
+ * A step for a development version newer than every release (e.g. "26.4-pre-1") is kept from the
+ * current file until that release is in the table.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs';
@@ -48,6 +50,7 @@ import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 import { decodeImageSync } from '../src/core/image';
 import { KNOWN_RELEASES } from '../src/editions/java/packformats';
+import { compareJavaVersions } from '../src/tools/convert/paths';
 import { bedrockTexturesFromFiles, catalogFromIndex, parseLenientJson, type BedrockIndexFile } from '../src/editions/bedrock/catalog';
 import { atlasTextures, faceNames } from '../src/shared/models/bedrock-blocks';
 import { JAVA_FORMS, JavaShapes, javaTargetFor, pickBedrockTexture, textureTokens, type TextureCandidate } from '../src/shared/models/bedrock-java';
@@ -1053,6 +1056,19 @@ function javaRenames(report: (name: string, text: string) => void): Step[] {
   return steps;
 }
 
+/**
+ * Steps of a development version newer than every release in the table (e.g. "26.4-pre-1", written from
+ * that version's jar before its release): kept from the current file until the release itself is in
+ * packformats.ts, whose own step then replaces them.
+ */
+function developmentSteps(): Step[] {
+  const file = join(OUT_DIR, 'java-renames.json');
+  if (!existsSync(file)) return [];
+  const newest = KNOWN_RELEASES[KNOWN_RELEASES.length - 1];
+  const steps = (JSON.parse(readFileSync(file, 'utf8')) as { steps?: Step[] }).steps ?? [];
+  return steps.filter((s) => !KNOWN_RELEASES.includes(s.version) && compareJavaVersions(s.version, newest) > 0);
+}
+
 // ---------------------------------------------------------------------------------------------
 // Output
 
@@ -1081,7 +1097,7 @@ function main() {
     writeFileSync(join(OUT_DIR, 'java-bedrock.json'), body + '\n');
   }
   if (ONLY !== 'bedrock') {
-    const steps = javaRenames(report);
+    const steps = [...javaRenames(report), ...developmentSteps()];
     const body = [
       '{',
       `"format": 1,`,

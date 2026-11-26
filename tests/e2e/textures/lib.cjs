@@ -59,33 +59,64 @@ async function launch() {
   return chromium.launch({ executablePath: EXE, args });
 }
 
-/** Serves Mojang's manifest, the 26.3 version JSON and client jar (with Range) from local files. */
+/** A client jar from a local file, with Range support. */
+function fulfilJar(r, jar, cors) {
+  const range = r.request().headers()['range'];
+  const m = range && /bytes=(\d+)-(\d+)?/.exec(range);
+  if (!m) {
+    return r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/java-archive', 'content-length': String(jar.size) }, body: fs.readFileSync(jar.path) });
+  }
+  const start = Number(m[1]);
+  const end = Math.min(jar.size - 1, m[2] ? Number(m[2]) : jar.size - 1);
+  const buf = Buffer.alloc(end - start + 1);
+  fs.readSync(jar.fd, buf, 0, buf.length, start);
+  return r.fulfill({
+    status: 206,
+    headers: { ...cors, 'content-type': 'application/java-archive', 'content-range': `bytes ${start}-${end}/${jar.size}`, 'content-length': String(buf.length), 'accept-ranges': 'bytes' },
+    body: buf,
+  });
+}
+
+const openJar = (p) => ({ path: p, size: fs.statSync(p).size, fd: fs.openSync(p, 'r') });
+
+/**
+ * The newest development version whose jar the fixtures may hold, as client-<id>.jar next to the
+ * 26.3 one. Its tests skip when the jar isn't there. Update the id when a newer one comes out.
+ */
+const NEXT_VERSION = '26.4-pre-1';
+
+/** Path of the NEXT_VERSION jar in the fixtures, or null. */
+function nextJar(fx) {
+  const p = fx ? path.join(fx, `client-${NEXT_VERSION}.jar`) : null;
+  return p && fs.existsSync(p) ? p : null;
+}
+
+/**
+ * Serves Mojang's manifest, the 26.3 version JSON and client jar (with Range) from local files, and
+ * the NEXT_VERSION jar when the fixtures have it: its version JSON is made from 26.3's with that
+ * jar's sha1 and size, so the manifest's entry for the version leads to the local file.
+ */
 async function routeMojang(context, fx) {
   if (!fx) return;
   const manifest = fs.readFileSync(path.join(fx, 'manifest.json'));
   const v263 = fs.readFileSync(path.join(fx, 'v263.json'));
-  const jarPath = path.join(fx, 'client-26.3.jar');
-  const jarSize = fs.statSync(jarPath).size;
-  const jarFd = fs.openSync(jarPath, 'r');
+  const jar = openJar(path.join(fx, 'client-26.3.jar'));
   const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range, content-length, accept-ranges' };
-  await context.route(/^https:\/\/(piston-meta|launchermeta)\.mojang\.com\/mc\/game\/version_manifest_v2\.json/, (r) => r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: manifest }));
-  await context.route(/^https:\/\/piston-meta\.mojang\.com\/v1\/packages\/[0-9a-f]+\/26\.3\.json$/, (r) => r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: v263 }));
-  await context.route(/^https:\/\/piston-data\.mojang\.com\/v1\/objects\/e877b6a07acd633fb3bb475002175cec036e7b87\/client\.jar$/, (r) => {
-    const range = r.request().headers()['range'];
-    const m = range && /bytes=(\d+)-(\d+)?/.exec(range);
-    if (!m) {
-      return r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/java-archive', 'content-length': String(jarSize) }, body: fs.readFileSync(jarPath) });
-    }
-    const start = Number(m[1]);
-    const end = Math.min(jarSize - 1, m[2] ? Number(m[2]) : jarSize - 1);
-    const buf = Buffer.alloc(end - start + 1);
-    fs.readSync(jarFd, buf, 0, buf.length, start);
-    return r.fulfill({
-      status: 206,
-      headers: { ...cors, 'content-type': 'application/java-archive', 'content-range': `bytes ${start}-${end}/${jarSize}`, 'content-length': String(buf.length), 'accept-ranges': 'bytes' },
-      body: buf,
-    });
-  });
+  const json = (body) => (r) => r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body });
+  await context.route(/^https:\/\/(piston-meta|launchermeta)\.mojang\.com\/mc\/game\/version_manifest_v2\.json/, json(manifest));
+  await context.route(/^https:\/\/piston-meta\.mojang\.com\/v1\/packages\/[0-9a-f]+\/26\.3\.json$/, json(v263));
+  await context.route(/^https:\/\/piston-data\.mojang\.com\/v1\/objects\/e877b6a07acd633fb3bb475002175cec036e7b87\/client\.jar$/, (r) => fulfilJar(r, jar, cors));
+
+  const nextPath = nextJar(fx);
+  if (!nextPath) return;
+  const next = openJar(nextPath);
+  const sha1 = require('node:crypto').createHash('sha1').update(fs.readFileSync(nextPath)).digest('hex');
+  const url = `https://piston-data.mojang.com/v1/objects/${sha1}/client.jar`;
+  const vj = JSON.parse(v263.toString('utf8'));
+  const nextJson = JSON.stringify({ ...vj, id: NEXT_VERSION, type: 'snapshot', downloads: { ...vj.downloads, client: { sha1, size: next.size, url } } });
+  const id = NEXT_VERSION.replace(/\./g, '\\.');
+  await context.route(new RegExp(`^https://piston-meta\\.mojang\\.com/v1/packages/[0-9a-f]+/${id}\\.json$`), json(nextJson));
+  await context.route(url, (r) => fulfilJar(r, next, cors));
 }
 
 function unzip(file) {
@@ -104,4 +135,4 @@ function jarEntry(fx, name) {
   return all[name];
 }
 
-module.exports = { ROOT, EXE, fixturesDir, freePort, startVite, launch, routeMojang, unzip, decodePng, jarEntry };
+module.exports = { ROOT, EXE, NEXT_VERSION, fixturesDir, nextJar, freePort, startVite, launch, routeMojang, unzip, decodePng, jarEntry };

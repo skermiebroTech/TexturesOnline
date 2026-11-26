@@ -1,6 +1,7 @@
 // Vanilla Java target on other versions: export for older shader families, and a version without
-// core shaders (export disabled, controls greyed out with a reason).
-// Usage: NODE_PATH=$(npm root -g) node tests/e2e/shaders/vanilla-versions.e2e.cjs <baseUrl> [versions]
+// core shaders (export disabled, controls greyed out with a reason). Snapshot and pre-release ids
+// (e.g. 26.4-pre-1) are picked with the snapshots switch.
+// Usage: NODE_PATH=$(npm root -g) [TO_FIXTURES=<dir>] node tests/e2e/shaders/vanilla-versions.e2e.cjs <baseUrl> [versions]
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -16,6 +17,12 @@ const EXPECT = { '1.21.4': 46, '1.20.1': 15, '1.21.8': 64, '1.18.2': 8 };
 async function pickVersion(page, v) {
   await page.click('.sh-pack .vp-trigger');
   await page.waitForSelector('.vp-item');
+  // snapshots, pre-releases and release candidates are listed with the snapshots switch on
+  const sw = page.locator('.vp-pop:visible .vp-pop-head .switch');
+  if (!/^\d+\.\d+(\.\d+)?$/.test(v) && (await sw.getAttribute('aria-checked')) !== 'true') {
+    await sw.click();
+    await page.waitForSelector('.vp-item.snapshot');
+  }
   await page.fill('.vp-pop input', v);
   await page.waitForTimeout(300);
   await page.keyboard.press('Enter');
@@ -47,8 +54,20 @@ async function pickVersion(page, v) {
     if (EXPECT[v]) assert.equal(meta.pack.pack_format, EXPECT[v], `pack_format for ${v}`);
     const shaders = Object.keys(zip).filter((n) => n.startsWith('assets/minecraft/shaders/'));
     assert.ok(shaders.length > 0, 'patched shaders');
+    // 26.3+: the full-screen post effect must name a vertex shader the version has (26.4 replaced
+    // core/screenquad with core/screentriangle); checked against the jar when TO_FIXTURES has it
+    const eof = zip['assets/minecraft/post_effect/end_of_frame.json'];
+    const jarFile = process.env.TO_FIXTURES && path.join(process.env.TO_FIXTURES, `client-${v}.jar`);
+    if (eof && jarFile && fs.existsSync(jarFile)) {
+      const names = new Set();
+      unzipSync(new Uint8Array(fs.readFileSync(jarFile)), { filter: (f) => (names.add(f.name), false) });
+      for (const pass of JSON.parse(strFromU8(eof)).passes) {
+        const vsh = `assets/minecraft/shaders/${pass.vertex_shader.replace(/^minecraft:/, '')}.vsh`;
+        assert.ok(names.has(vsh) || zip[vsh], `${v}: end_of_frame.json uses ${pass.vertex_shader}, which the version doesn't have`);
+      }
+    }
     const warnings = await page.locator('.sh-export-warnings li').allInnerTexts();
-    console.log(`ok - ${v}: pack_format ${meta.pack.pack_format}, ${shaders.length} shader files${warnings.length ? `, warnings: ${warnings.join(' | ')}` : ''}`);
+    console.log(`ok - ${v}: pack format ${JSON.stringify(meta.pack.pack_format ?? meta.pack.min_format)}, ${shaders.length} shader files${warnings.length ? `, warnings: ${warnings.join(' | ')}` : ''}`);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
   }

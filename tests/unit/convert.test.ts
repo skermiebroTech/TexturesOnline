@@ -64,9 +64,14 @@ const MAPS: ConvertMaps = { javaBedrock: MAP, renames: RENAMES };
 // Paths
 
 test('Java versions sort as releases, with snapshots before their release', () => {
-  const order = ['1.6.1', '1.12.2', '17w43a', '1.13', '1.13.2', '1.20.1', '1.21.11', '26.1', '26.3', '26.4-snapshot-1', '26.4'];
+  const order = [
+    '1.6.1', '1.12.2', '17w43a', '1.13', '1.13.2', '1.20.1', '24w18a', '24w21b', '1.21-pre1', '1.21-rc1', '1.21', '1.21.11', '26.1', '26.3',
+    '26.4-snapshot-1', '26.4-snapshot-2', '26.4-snapshot-10', '26.4-pre-1', '26.4-pre-2', '26.4-rc-1', '26.4',
+  ];
   for (let i = 1; i < order.length; i++) assert.equal(compareJavaVersions(order[i - 1], order[i]), -1, `${order[i - 1]} < ${order[i]}`);
   assert.equal(compareJavaVersions('1.13', '1.13.0'), 0);
+  assert.equal(compareJavaVersions('1.14 Pre-Release 1', '1.14-pre1'), 0);
+  assert.equal(compareJavaVersions('26.4-pre-1', '26.4-pre-1'), 0);
 });
 
 test('rename chain: upgrades apply each newer step, splits, removals', () => {
@@ -99,6 +104,20 @@ test('rename chain: downgrades undo steps newest first; same version is a no-op'
   assert.equal(none.direction, 'none');
   assert.deepEqual(none.map('blocks/stone'), { kind: 'paths', paths: ['blocks/stone'], renamed: false });
   assert.deepEqual(renameChain(null, '1.12.2', '26.3').map('blocks/stone'), { kind: 'paths', paths: ['blocks/stone'], renamed: false });
+});
+
+test('rename chain: a step first seen in a pre-release applies to it, the release and later, not to earlier snapshots', () => {
+  const renames: JavaRenames = { format: 1, steps: [...RENAMES.steps, { version: '26.4-pre-1', renames: { 'gui/sprites/friends/button': 'gui/sprites/friends/tab' }, removed: ['gui/sprites/friends/remove'] }] };
+  for (const to of ['26.4-pre-1', '26.4-rc-1', '26.4']) {
+    const up = renameChain(renames, '26.3', to);
+    assert.deepEqual(up.steps, ['26.4-pre-1'], to);
+    assert.deepEqual(up.map('gui/sprites/friends/button'), { kind: 'paths', paths: ['gui/sprites/friends/tab'], renamed: true });
+    assert.deepEqual(up.map('gui/sprites/friends/remove'), { kind: 'removed', version: '26.4-pre-1' });
+  }
+  assert.deepEqual(renameChain(renames, '26.3', '26.4-snapshot-10').steps, []);
+  assert.deepEqual(renameChain(renames, '26.4-pre-1', '26.4').steps, []);
+  const down = renameChain(renames, '26.4-pre-1', '26.3');
+  assert.deepEqual(down.map('gui/sprites/friends/tab'), { kind: 'paths', paths: ['gui/sprites/friends/button'], renamed: true });
 });
 
 test('pair index: many-to-many both ways, convertible pairs first', () => {
@@ -422,6 +441,9 @@ test('same edition and version is refused; names; loose PNGs become a Java proje
   assert.ok(isSameTarget({ edition: 'java', version: '1.13' }, { edition: 'java', version: '1.13.0' }));
   assert.ok(isSameTarget({ edition: 'bedrock', version: 'latest' }, { edition: 'bedrock', version: '1.21.0' }));
   assert.ok(!isSameTarget({ edition: 'java', version: '1.13' }, { edition: 'bedrock', version: 'latest' }));
+  // Development versions of one release are different targets (their pack formats differ).
+  assert.ok(!isSameTarget({ edition: 'java', version: '26.4-snapshot-8' }, { edition: 'java', version: '26.4-pre-1' }));
+  assert.ok(isSameTarget({ edition: 'java', version: '26.4-pre-1' }, { edition: 'java', version: '26.4-pre-1' }));
   assert.equal(convertedName('Cool (Java 1.12.2)', { edition: 'bedrock', version: 'latest' }), 'Cool (Bedrock)');
   const p = newTextureProject({ name: 'X', edition: 'java', version: '26.3' });
   await assert.rejects(convertPack(p, { edition: 'java', version: '26.3' }, java263Assets(), MAPS), /already for Java 26.3/);

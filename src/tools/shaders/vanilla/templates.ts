@@ -209,9 +209,11 @@ export const POST_NAMES = {
   bloomB: `${P}_bloom_b`,
 } as const;
 
-/** `post_effect/end_of_frame.json`: [bright → 4 blur passes] → grade/vignette/bloom → blit back to main. */
-export function endOfFrameJson(bloom: boolean): string {
-  const vs = 'minecraft:core/screenquad';
+/**
+ * `post_effect/end_of_frame.json`: [bright → 4 blur passes] → grade/vignette/bloom → blit back to main.
+ * `vs`: the version's full-screen vertex shader (core/screenquad in 26.3, core/screentriangle from 26.4).
+ */
+export function endOfFrameJson(bloom: boolean, vs = 'minecraft:core/screenquad'): string {
   const passes: PostPass[] = [];
   const targets: Record<string, Record<string, never>> = { [POST_NAMES.swap]: {} };
   const finalInputs: PostInput[] = [{ sampler_name: 'In', target: 'minecraft:main' }];

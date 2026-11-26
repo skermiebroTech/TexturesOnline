@@ -74,6 +74,7 @@ export const packText = defineText('shared.packs', {
     iconUnreadable: "The pack icon couldn't be read, so a generated icon was used instead.",
     /** {files} lists up to three texture names */
     pbrMissingColour: '{count, plural, one {# material was left out because its texture is in neither the pack nor the game: {files}.} other {# materials were left out because their textures are in neither the pack nor the game: {files}.}}',
+    renamedTextures: "{count, plural, one {# edited texture has another name in Minecraft {version}, so the game won't use it: {files}.} other {# edited textures have other names in Minecraft {version}, so the game won't use them: {files}.}}",
     /** Name-based textures (an item renamed in an anvil looks different) of a pack for Java before 1.21.5 */
     namesCit: '{count, plural, one {# name-based texture needs OptiFine or the CIT Resewn mod in Minecraft before 1.21.5.} other {# name-based textures need OptiFine or the CIT Resewn mod in Minecraft before 1.21.5.}}',
     /** {names} lists up to three OptiFine name patterns, e.g. "*sword*" */

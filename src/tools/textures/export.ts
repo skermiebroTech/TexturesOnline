@@ -4,7 +4,10 @@ import { normalizeZipPath, writeZip } from '../../core/zip';
 import { abortError, isAbortError } from '../../core/net';
 import { isUuid } from '../../core/uuid';
 import { buildPackMcmeta, buildPackMcmetaForVersions, describePackForGame, getJavaPackFormat, stringifyPretty } from '../../editions/java/packmeta';
-import { comparePackFormats, packFormatFromVersionJson } from '../../editions/java/packformats';
+import { KNOWN_RELEASES, comparePackFormats, packFormatFromVersionJson } from '../../editions/java/packformats';
+import { loadJavaRenames } from '../../editions/convert/maps';
+import { renameChain } from '../convert/paths';
+import { JAVA_TEXTURE_ROOT } from '../../editions/java/textures';
 import { isStandInImage } from '../../editions/java/asset-objects';
 import { DEFAULT_MIN_ENGINE, buildResourceManifest, bumpPackVersion } from '../../editions/bedrock/manifest';
 import { applyEffects, effectsApply, hasActiveEffects, layerApplies, type EffectContext } from './effects';
@@ -99,6 +102,8 @@ export async function exportTexturePack(project: TexturePackProject, assets: Ass
   let nextVersion: [number, number, number] | undefined;
   if (edition === 'java') {
     files['pack.mcmeta'] = await buildJavaMcmeta(project, assets, extra.get('pack.mcmeta'), warnings);
+    const renamed = await renamedInVersion([...overrides.keys()], project.version, assets);
+    if (renamed.length) warnings.push(fmt(packText.export.renamedTextures, { count: renamed.length, version: project.version, files: sampleList(renamed) }));
   } else {
     if (validUuids(project.bedrockUuids)) nextUuids = { ...project.bedrockUuids! };
     else {
@@ -912,6 +917,33 @@ function check(signal?: AbortSignal): void {
 
 function editionName(e: Edition): string {
   return e === 'java' ? packText.export.javaEdition : packText.export.bedrockEdition;
+}
+
+/**
+ * Edited Java textures the version doesn't have but reads under a newer name (a 26.3 pack switched to
+ * 26.4: gui/sprites/friends/button.png is gui/sprites/friends/tab.png there), as 'old → new'.
+ */
+async function renamedInVersion(paths: string[], version: string, assets: AssetIndex): Promise<string[]> {
+  if (assets.version !== version) return [];
+  const missing = paths.filter((p) => p.startsWith(JAVA_TEXTURE_ROOT) && p.endsWith('.png') && !assets.hasFile(p));
+  if (!missing.length) return [];
+  const renames = await loadJavaRenames().catch(() => null);
+  if (!renames) return [];
+  const chain = renameChain(renames, KNOWN_RELEASES[0], version);
+  const out: string[] = [];
+  for (const p of missing) {
+    const rel = p.slice(JAVA_TEXTURE_ROOT.length, -4);
+    const r = chain.map(rel);
+    if (r.kind !== 'paths' || !r.renamed) continue;
+    const now = r.paths.filter((q) => assets.hasFile(`${JAVA_TEXTURE_ROOT}${q}.png`));
+    if (now.length) out.push(`${rel}.png → ${now.map((q) => `${q}.png`).join(', ')}`);
+  }
+  return out;
+}
+
+/** Up to three entries of a list, then "and N more". */
+function sampleList(items: string[]): string {
+  return items.length > 3 ? fmt(packText.export.andMore, { list: items.slice(0, 3).join(', '), count: items.length - 3 }) : items.join(', ');
 }
 
 function sample(paths: string[]): string {
