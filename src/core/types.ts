@@ -413,6 +413,37 @@ export interface SkinProject extends ProjectBase {
   cape?: Blob;
 }
 
+/** One skin of a skin pack made in the Skin Pack Maker. */
+export interface SkinPackSkin {
+  /** Stable id inside the pack */
+  id: string;
+  /** Name shown in the Dressing Room */
+  name: string;
+  /** Arm model the pack gives it (classic: geometry.humanoid.custom, slim: customSlim) */
+  model: SkinModel;
+  /** 64x64 or HD 128x128 PNG */
+  image: Blob;
+  /** Saved skin project it was added from or painted in: later edits there come into the pack */
+  skinId?: string;
+  /** That project's updatedAt when its picture was last taken */
+  syncedAt?: number;
+  /** That project's arm model then (a later change of arms in the editor comes along too) */
+  syncedModel?: SkinModel;
+}
+
+/** A Bedrock skin pack made in the Skin Pack Maker: its skins are stored in it, in pack order. */
+export interface SkinPackProject extends ProjectBase {
+  kind: 'skinpack';
+  description: string;
+  skins: SkinPackSkin[];
+  /** Pack icon PNG chosen by the user; without one the first skin's face is used */
+  icon?: Blob;
+  /** Stable uuids so re-exports update the installed pack */
+  bedrockUuids?: { header: string; module: string };
+  /** Pack version, bumped on every export */
+  packVersion?: [number, number, number];
+}
+
 export type ShaderTarget = 'iris' | 'java-vanilla' | 'bedrock-vibrant';
 
 export interface ShaderProject extends ProjectBase {
@@ -427,4 +458,4 @@ export interface ShaderProject extends ProjectBase {
   bedrockUuids?: { header: string; module: string };
 }
 
-export type Project = TexturePackProject | SkinProject | ShaderProject;
+export type Project = TexturePackProject | SkinProject | ShaderProject | SkinPackProject;

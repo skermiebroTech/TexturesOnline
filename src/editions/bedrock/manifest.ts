@@ -163,7 +163,9 @@ export async function prepareSkinPng(png: Blob | Uint8Array): Promise<Uint8Array
 
 /**
  * Skin pack files (zip root): manifest.json, skins.json, texts/en_US.lang, texts/languages.json
- * and one PNG per skin. serialize_name == localization_name, so either reading of the lang keys works.
+ * and one PNG per skin, plus pack_icon.png when an icon is given. serialize_name ==
+ * localization_name, so either reading of the lang keys works. A description goes into the
+ * manifest's header only when there is one.
  * Uint8Array skins are validated/converted here; Blob skins are included as given (use
  * buildSkinPackFilesAsync to validate them too).
  */
@@ -173,6 +175,10 @@ export function buildSkinPackFiles(opts: {
   uuids: { header: string; module: string };
   version: [number, number, number];
   author?: string;
+  /** Manifest header description (left out when empty) */
+  description?: string;
+  /** pack_icon.png (PNG bytes) */
+  icon?: Uint8Array;
 }): FileMap {
   checkUuids(opts.uuids);
   if (!opts.skins.length) throw new Error(errorText.noSkins);
@@ -206,9 +212,11 @@ export function buildSkinPackFiles(opts: {
     lang.push(`skin.${packId}.${id}=${langValue(display)}`);
   });
 
+  const description = (opts.description ?? '').replace(/\r\n?/g, '\n').trim().slice(0, 500);
+  if (opts.icon && isPng(opts.icon)) files['pack_icon.png'] = opts.icon;
   files['manifest.json'] = stringify({
     format_version: 2,
-    header: { name: packName, uuid: opts.uuids.header.toLowerCase(), version },
+    header: { name: packName, ...(description ? { description } : {}), uuid: opts.uuids.header.toLowerCase(), version },
     modules: [{ type: 'skin_pack', uuid: opts.uuids.module.toLowerCase(), version }],
   });
   files['skins.json'] = stringify({ serialize_name: packId, localization_name: packId, skins: skinsJson });

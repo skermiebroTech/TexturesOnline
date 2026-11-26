@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { zipSync, strToU8, unzipSync, strFromU8 } from 'fflate';
 import { createImageData, encodePng } from '../../src/core/image';
 import { getProject, listProjects, saveProject, deleteProject, cacheGet } from '../../src/core/storage';
-import type { Project, TexturePackProject } from '../../src/core/types';
+import type { Project, SkinPackProject, TexturePackProject } from '../../src/core/types';
 import {
   FORMAT_VERSION,
   ProjectFileError,
@@ -329,6 +329,44 @@ test('a skin pack opened as a copy points at the copies of its skins', async () 
   const fresh = await restoreItems(items, { existing: 'copy' });
   assert.deepEqual(fresh.map((r) => r.id), ['m', 'k1', 'k2']);
   assert.deepEqual((await getProject<SkinProjectData>('m'))!.packSkinIds, ['k1', 'k2', 'gone']);
+});
+
+test('a pack of the Skin Pack Maker survives a project file and a backup, its links following copied skins', async () => {
+  await clearProjects();
+  const pack: SkinPackProject = {
+    id: 'pk',
+    kind: 'skinpack',
+    name: 'Crew',
+    description: 'Two of us',
+    createdAt: 1,
+    updatedAt: 5,
+    icon: png(128, 128, [9, 9, 9, 255]),
+    bedrockUuids: { header: '11111111-1111-4111-8111-111111111111', module: '22222222-2222-4222-8222-222222222222' },
+    packVersion: [1, 0, 4],
+    skins: [
+      { id: 'a', name: 'Linked', model: 'slim', image: png(64, 64, [1, 1, 1, 255]), skinId: 'sk', syncedAt: 3, syncedModel: 'classic' },
+      { id: 'b', name: 'Uploaded', model: 'classic', image: png(128, 128, [2, 2, 2, 255]) },
+    ],
+  };
+  const linked: SkinProjectData = { id: 'sk', kind: 'skin', name: 'Linked', model: 'classic', image: png(64, 64, [1, 1, 1, 255]), createdAt: 1, updatedAt: 3 };
+  await saveProject(pack, { keepTime: true });
+  await saveProject(linked as Project, { keepTime: true });
+  const { tool, items } = await collectProject('pk');
+  assert.equal(tool, 'skinpack');
+  assert.deepEqual(items.map((i) => [i.type, i.id]), [['skinpack', 'pk']]);
+  const [back] = await roundTrip('skinpack', items);
+  assert.deepEqual(await plainOf(back.data.project), await plainOf(pack));
+  // in a backup next to the skin it links to; restored as copies, the link follows the copy
+  const all = await collectAll();
+  assert.deepEqual(all.map((i) => i.type).sort(), ['skin', 'skinpack']);
+  const res = await restoreItems(all, { existing: 'copy' });
+  const copy = (await getProject<SkinPackProject>(res.find((r) => r.item.type === 'skinpack')!.id))!;
+  const skinCopy = res.find((r) => r.item.type === 'skin')!.id;
+  assert.notEqual(copy.id, 'pk');
+  assert.equal(copy.skins[0].skinId, skinCopy);
+  assert.equal(copy.skins[1].skinId, undefined);
+  assert.notEqual(copy.bedrockUuids!.header, pack.bedrockUuids!.header, 'a copy installs next to the original');
+  assert.equal(copy.packVersion, undefined);
 });
 
 test('an imported shader pack brings its files back, under its new id when copied', async () => {

@@ -23,10 +23,15 @@ import { markBackedUp, openerFor, projectsChanged, setPending } from './handoff'
 /** A saved project by id (saved first with `flush`), or a design the page passes as an item. */
 export type SaveRequest = { id: string; flush?: () => Promise<unknown> } | { tool: ProjectTool; item: ProjectItem };
 
-const ROUTE: Record<ItemType, string> = { texturepack: '/textures', skin: '/skins', shader: '/shaders', cape: '/cape-maker', font: '/font-maker' };
-const TYPE_ICON: Record<ItemType, IconName> = { texturepack: 'image', skin: 'human', shader: 'sparkles', cape: 'bookmark', font: 'text-start-a' };
-const TYPE_ACCENT: Record<ItemType, string> = { texturepack: 'accent-green', skin: 'accent-blue', shader: 'accent-purple', cape: 'accent-blue', font: 'accent-green' };
-const TYPE_ORDER: ItemType[] = ['texturepack', 'skin', 'shader', 'cape', 'font'];
+const ROUTE: Record<ItemType, string> = { texturepack: '/textures', skin: '/skins', skinpack: '/skin-pack-maker', shader: '/shaders', cape: '/cape-maker', font: '/font-maker' };
+const TYPE_ICON: Record<ItemType, IconName> = { texturepack: 'image', skin: 'human', skinpack: 'package', shader: 'sparkles', cape: 'bookmark', font: 'text-start-a' };
+const TYPE_ACCENT: Record<ItemType, string> = { texturepack: 'accent-green', skin: 'accent-blue', skinpack: 'accent-blue', shader: 'accent-purple', cape: 'accent-blue', font: 'accent-green' };
+const TYPE_ORDER: ItemType[] = ['texturepack', 'skin', 'skinpack', 'shader', 'cape', 'font'];
+
+/** Where a project opens: its editor, or the Skin Pack Maker with the pack. */
+function projectPath(type: ItemType, id: string): string {
+  return type === 'skinpack' ? `${ROUTE.skinpack}?pack=${encodeURIComponent(id)}` : `${ROUTE[type]}/${encodeURIComponent(id)}`;
+}
 
 const loadText = () => loadProjectFileText(textLocale());
 
@@ -106,7 +111,7 @@ async function openItems(archive: ProjectArchive): Promise<void> {
   toast(fmt(first.status === 'copy' ? pf.openedCopy : pf.opened, { name: plain(main.name) }), { tone: 'success' });
   const broken = results.find((r) => r.error);
   if (broken) toast(fmt(pf.errors.item, { name: plain(broken.item.name) }), { tone: 'warn', duration: 8000 });
-  navigate(`${ROUTE[main.type]}/${encodeURIComponent(first.id)}`);
+  navigate(projectPath(main.type, first.id));
 }
 
 /** Asks before a cape from a file replaces the cape maker's cape; `saveCurrent` keeps it first. */
@@ -194,7 +199,7 @@ export async function openBackupDialog(): Promise<void> {
     const projects = await listProjects();
     const counts = new Map<ItemType, number>();
     for (const p of projects) {
-      const type: ItemType = p.kind === 'texturepack' ? 'texturepack' : p.kind === 'skin' ? 'skin' : 'shader';
+      const type: ItemType = p.kind;
       counts.set(type, (counts.get(type) ?? 0) + 1);
     }
     if (await existsHere({ type: 'cape', id: 'cape' })) counts.set('cape', 1);

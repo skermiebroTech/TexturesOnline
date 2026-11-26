@@ -21,6 +21,7 @@ const RU: ProjectFileLanguage = {
     types: {
       texturepack: 'Текстурпак',
       skin: 'Скин',
+      skinpack: 'Набор скинов',
       shader: 'Шейдерпак',
       cape: 'Плащ',
       font: 'Шрифт',
@@ -28,6 +29,7 @@ const RU: ProjectFileLanguage = {
     counts: {
       texturepack: '{count, plural, one {# текстурпак} few {# текстурпака} many {# текстурпаков} other {# текстурпака}}',
       skin: '{count, plural, one {# скин} few {# скина} many {# скинов} other {# скина}}',
+      skinpack: '{count, plural, one {# набор скинов} few {# набора скинов} many {# наборов скинов} other {# набора скинов}}',
       shader: '{count, plural, one {# шейдерпак} few {# шейдерпака} many {# шейдерпаков} other {# шейдерпака}}',
       cape: 'Твой плащ',
       font: 'Твой шрифт',

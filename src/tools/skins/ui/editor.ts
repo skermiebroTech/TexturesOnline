@@ -20,6 +20,7 @@ import { toast } from '../../../ui/toast';
 import { kit } from '../../../ui/i18n/kit';
 import type { SkinAnimation, SkinPreview } from '../skin-preview';
 import { exportSkin, openExportMenu } from './export-modal';
+import { packText } from '../i18n/pack';
 import { hdLossPercent, type SkinProjectData } from '../export';
 import { resizeSkin, type SkinSize } from '../hd';
 import {
@@ -286,7 +287,11 @@ export interface SkinEditorTestApi {
   hit3d(clientX: number, clientY: number): { x: number; y: number; layer: string } | null;
 }
 
-export async function mountEditor(root: HTMLElement, id: string): Promise<() => void> {
+/**
+ * The skin editor. `pack`: opened from that pack of the Skin Pack Maker; the back button saves and
+ * returns there, where the pack takes the new picture.
+ */
+export async function mountEditor(root: HTMLElement, id: string, opts: { pack?: string | null } = {}): Promise<() => void> {
   const found = await getProject<SkinProjectData>(id);
   if (!found || found.kind !== 'skin') {
     return notFound(root, t.missing.title, t.missing.text);
@@ -389,7 +394,14 @@ export async function mountEditor(root: HTMLElement, id: string): Promise<() => 
   // a picture card to post (./share-card.ts, loaded when picked)
   const shareExtra = { title: t.share.title, sub: t.share.sub, icon: 'share' as const, onPick: () => void sharePicture() };
   exportBtn.addEventListener('click', () => togglePopover(exportBtn, () => openExportMenu(exportBtn, (kind) => void doExport(kind), [shareExtra, fileExtra, totemExtra], { hd: scale === 2 })));
-  const backBtn = iconButton('arrow-left', t.bar.allSkins, () => navigate('/skins'));
+  const backToPack = () =>
+    void flushSave()
+      .catch(() => undefined)
+      .then(() => navigate(`/skin-pack-maker?pack=${encodeURIComponent(opts.pack!)}`));
+  const backBtn = opts.pack
+    ? button({ label: packText.editor.back, icon: 'arrow-left', variant: 'ghost', size: 'sm', class: 'sk-pack-back', onClick: backToPack })
+    : iconButton('arrow-left', t.bar.allSkins, () => navigate('/skins'));
+  if (opts.pack) backBtn.setAttribute('aria-label', packText.editor.back);
 
   const bar = h(
     'div',

@@ -1,0 +1,565 @@
+/* Skin Pack Maker (/skin-pack-maker). Classes use the skp- prefix; the page reuses the skin start
+   screen's hero, sections and saved-item cards (sk-*). */
+
+.skp {
+  gap: 32px;
+}
+
+/* ---- hero ---- */
+.skp-hero {
+  align-items: flex-end;
+}
+.skp-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---- pack details ---- */
+.skp-details {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 20px 24px;
+  align-items: start;
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--inner-hi), var(--shadow-1);
+}
+.skp-icon-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 112px;
+  text-align: center;
+}
+.skp-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--sk-stage-bg);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease);
+}
+.skp-icon:hover {
+  border-color: color-mix(in srgb, var(--tool-accent) 55%, var(--border));
+}
+.skp-icon:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.skp-icon-canvas,
+.skp-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+.skp-icon-canvas[hidden],
+.skp-icon-img[hidden] {
+  display: none;
+}
+.skp-icon-edit {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  box-shadow: var(--shadow-1);
+}
+.skp-icon-edit .icon {
+  --icon-size: 20px;
+}
+.skp-icon-label {
+  margin-top: 4px;
+  color: var(--text-2);
+  font-weight: 700;
+}
+.skp-icon-note {
+  line-height: var(--lh-sm);
+}
+.skp-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 16px;
+  min-width: 0;
+}
+.skp-fields .input,
+.skp-fields .textarea {
+  width: 100%;
+}
+.skp-desc {
+  min-height: 44px;
+  resize: vertical;
+}
+.skp-export {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 200px;
+}
+.skp-export-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.skp-download-note[hidden] {
+  display: none;
+}
+
+/* ---- skins ---- */
+.skp-skins {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.skp-skins-head {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.skp-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.skp-order-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 0;
+}
+.skp-order-hint[hidden] {
+  display: none;
+}
+.skp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.skp-grid[hidden] {
+  display: none;
+}
+.skp-empty {
+  min-height: 240px;
+}
+.skp-empty[hidden] {
+  display: none;
+}
+
+.skp-skin {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--inner-hi), var(--shadow-1);
+  transition:
+    border-color var(--dur-1) var(--ease),
+    opacity var(--dur-1) var(--ease);
+}
+.skp-skin:focus-within {
+  border-color: color-mix(in srgb, var(--tool-accent) 55%, var(--border));
+}
+.skp-skin.is-dragging {
+  opacity: 0.45;
+}
+.skp-skin.drop-before::before,
+.skp-skin.drop-after::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--tool-accent);
+}
+.skp-skin.drop-before::before {
+  left: 2px;
+}
+.skp-skin.drop-after::after {
+  right: 2px;
+}
+.skp-stage {
+  position: relative;
+  height: 168px;
+  padding: 8px 0 4px;
+  border-bottom: 2px solid var(--border);
+  background: var(--sk-stage-bg);
+}
+.skp-stage > .icon {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0 auto;
+  color: var(--text-3);
+}
+.skp-num {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: var(--r-sm);
+  background: var(--tool-accent);
+  color: var(--on-accent);
+  font-size: var(--fs-sm);
+  line-height: 1;
+  font-weight: 700;
+}
+.skp-hd {
+  top: 36px;
+  left: 8px;
+}
+.skp-handle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  cursor: grab;
+  touch-action: none;
+}
+.skp-handle:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.skp-handle:active {
+  cursor: grabbing;
+}
+.skp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+.skp-skin-name {
+  width: 100%;
+  font-weight: 700;
+}
+.skp-arms {
+  width: 100%;
+}
+.skp-arms .segmented-item {
+  flex: 1 1 0;
+  justify-content: center;
+}
+.skp-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: var(--gold);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+}
+.skp-hint .icon {
+  --icon-size: 20px;
+  flex: none;
+}
+.skp-hint[hidden] {
+  display: none;
+}
+.skp-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.skp-remove:hover {
+  color: var(--red);
+}
+
+/* Files dragged over the skins */
+.skp-drop-cover {
+  position: absolute;
+  inset: -8px;
+  z-index: 5;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  border: 2px dashed var(--tool-accent);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--bg) 82%, var(--tool-accent));
+  color: var(--text);
+  text-align: center;
+  pointer-events: none;
+}
+.skp-drop-cover > .icon {
+  color: var(--tool-accent);
+}
+.skp-skins.is-file-over:has(.skp-grid:not([hidden])) .skp-drop-cover {
+  display: flex;
+}
+
+/* ---- dialogs ---- */
+.skp-starter-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.skp-starter-arms {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.skp-starters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+}
+.skp-starter {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease);
+}
+.skp-starter:hover {
+  border-color: color-mix(in srgb, var(--tool-accent) 55%, var(--border));
+}
+.skp-starter[aria-pressed='true'] {
+  border-color: var(--tool-accent);
+  box-shadow: 0 0 0 2px var(--tool-accent-soft);
+}
+.skp-starter-stage {
+  position: relative;
+  display: block;
+  height: 112px;
+  padding: 4px 0;
+  background: var(--sk-stage-bg);
+}
+.skp-starter-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+  background: var(--tool-accent);
+  color: var(--on-accent);
+}
+.skp-starter-check .icon {
+  --icon-size: 20px;
+}
+.skp-starter[aria-pressed='true'] .skp-starter-check {
+  display: grid;
+}
+.skp-starter-name {
+  overflow-wrap: break-word;
+  hyphens: auto;
+  padding: 8px;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: 700;
+  text-align: center;
+}
+.skp-saved-none {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* The ready dialog after a download: pack and file names wrap instead of being cut off. */
+.sk-pack-ready .sk-export-name,
+.sk-pack-ready .sk-export-figure figcaption {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* ---- your packs ---- */
+.skp-pack-link {
+  width: 100%;
+  padding-right: 12px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.skp-pack-link .sk-recent-info {
+  flex: 1;
+}
+.skp-pack-link.is-current {
+  border-color: color-mix(in srgb, var(--tool-accent) 70%, var(--border));
+  background: var(--tool-accent-soft);
+}
+.skp-current {
+  flex: none;
+}
+
+
+@media (max-width: 1100px) {
+  .skp-details {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .skp-export {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .skp-export-top {
+    order: 2;
+    margin-left: auto;
+  }
+  .skp-download {
+    flex: 1 1 220px;
+  }
+  .skp-download-note {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 860px) {
+  .skp-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .skp-hero-actions {
+    width: 100%;
+  }
+  .skp-hero-actions .btn {
+    flex: 1 1 0;
+  }
+  .skp-details {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+  .skp-icon-wrap {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    width: auto;
+    gap: 2px 12px;
+    text-align: left;
+  }
+  .skp-icon-wrap .skp-icon {
+    grid-row: span 2;
+    width: 72px;
+    height: 72px;
+  }
+  .skp-icon-label {
+    align-self: end;
+    margin: 0;
+  }
+  .skp-icon-note {
+    align-self: start;
+  }
+  .skp-add {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .skp-add .btn {
+    justify-content: flex-start;
+    min-width: 0;
+    height: auto;
+    min-height: var(--btn-h);
+    padding: 6px 12px 8px;
+    white-space: normal;
+    text-align: left;
+  }
+  .skp-add .btn .icon {
+    flex: none;
+  }
+  .skp-starters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Phones: each skin is a row, its figure beside its fields. */
+@media (max-width: 560px) {
+  .skp-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .skp-skin {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+  }
+  .skp-stage {
+    height: auto;
+    min-height: 168px;
+    padding: 28px 0 8px;
+    border-right: 2px solid var(--border);
+    border-bottom: 0;
+  }
+  .skp-handle {
+    top: 2px;
+    right: 2px;
+  }
+  .skp-num {
+    top: 4px;
+    left: 4px;
+  }
+  .skp-hd {
+    top: 32px;
+    left: 4px;
+  }
+  .skp-skin.drop-before::before,
+  .skp-skin.drop-after::after {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    height: 4px;
+  }
+  .skp-skin.drop-before::before {
+    top: 2px;
+  }
+  .skp-skin.drop-after::after {
+    bottom: 2px;
+  }
+}
+
+/* Touch screens move skins with the arrow buttons. */
+@media (pointer: coarse) {
+  .skp-handle {
+    display: none;
+  }
+}

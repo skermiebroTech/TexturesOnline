@@ -1,7 +1,7 @@
 // The translated skin editor and skin pack maker in Chromium: German (an HD template skin: start
 // screen, painting, hover names, parts menu, 3D painting, export menu, the Java HD dialog, Reduce to
 // 64×64, the shortcut list), Japanese (a starter skin, the export menu and the skin pack maker),
-// Spanish (/skin-pack-maker: a pack of two skins and its ready dialog), Portuguese (saved skins,
+// Spanish (/skin-pack-maker: the pack builder, two starter skins added and the ready dialog), Portuguese (saved skins,
 // the default skins dialog, the old Java export) and Russian (all of it: the editor, every export
 // dialog, the skin pack maker and the start screen's saved skins, lookup and default skins), French (the
 // same as Russian), and in
@@ -354,25 +354,26 @@ try {
 
     // ---------------------------------------------------------- Spanish: the skin pack maker page
     if (LANGS.includes('es')) {
-      const { page, errors } = await openPage(ctx, 'es/skin-pack-maker/', '.sk-starter-knight');
-      check(`es pack maker ${tag}: page is Spanish, about a skin pack`, (await page.getAttribute('html', 'lang')) === LANG.es && /Crea tu propio pack de skins/.test(await page.textContent('.sk-hero h1')) && (await page.locator('.sk-pack-steps li').count()) === 3);
-      if (full) await inspect(page, `es-pack-1-start-${tag}`, 'es', { full: true });
-      await page.click('.sk-starter-knight');
-      await waitEditor(page);
-      await page.fill('.sk-name', 'Kachel');
-      await api(page, (e) => e.flush());
-      await page.click('.sk-export-btn');
-      await page.click('.sk-export-item[data-kind="bedrock-pack"]');
-      await page.waitForSelector('dialog[open] .sk-pack-skin:not(.is-current)');
-      await page.check('dialog[open] .sk-pack-skin:not(.is-current) input');
-      check(`es pack maker ${tag}: count in Spanish`, /^\d+ skins$/.test((await page.textContent('.sk-pack-count')).trim()), await page.textContent('.sk-pack-count'));
-      await inspect(page, `es-pack-2-choose-${tag}`, 'es', { wait: 400 });
-      const [dl] = await Promise.all([page.waitForEvent('download'), page.click('dialog[open] .modal-footer .btn-primary')]);
-      check(`es pack maker ${tag}: downloads a .mcpack`, /\.mcpack$/.test(dl.suggestedFilename()), dl.suggestedFilename());
+      const { page, errors } = await openPage(ctx, 'es/skin-pack-maker/', '.skp-details');
+      check(`es pack maker ${tag}: page is Spanish, the pack builder`, (await page.getAttribute('html', 'lang')) === LANG.es && /Crea tu propio pack de skins/.test(await page.textContent('.skp-hero h1')) && (await page.inputValue('.skp-name')) === 'Mi pack de skins');
+      if (full) await inspect(page, `es-pack-1-empty-${tag}`, 'es', { full: true });
+      await page.click('.skp-add-starters');
+      await page.waitForSelector('dialog[open] .skp-starter[data-starter="knight"]');
+      await page.click('dialog[open] .skp-starter[data-starter="knight"]');
+      await page.click('dialog[open] .skp-starter[data-starter="robot"]');
+      check(`es pack maker ${tag}: starter dialog in Spanish`, /Añadir skins de inicio/.test(await page.textContent('dialog[open]')) && /Añadir 2 skins/.test(await page.textContent('dialog[open] .modal-footer .btn-primary')));
+      await inspect(page, `es-pack-2-starters-${tag}`, 'es', { wait: 400 });
+      await page.click('dialog[open] .modal-footer .btn-primary');
+      await page.waitForFunction(() => document.querySelectorAll('.skp-skin').length === 2);
+      check(`es pack maker ${tag}: count and skins in Spanish`, (await page.textContent('.skp-count')).trim() === '2 skins' && (await page.inputValue('.skp-skin:nth-child(1) .skp-skin-name')) === 'Caballero' && /Clásicos/.test(await page.textContent('.skp-skin:nth-child(1) .skp-arms')));
+      await closeLayers(page);
+      await inspect(page, `es-pack-3-skins-${tag}`, 'es', { wait: 400 });
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.click('.skp-download')]);
+      check(`es pack maker ${tag}: downloads a .mcpack`, dl.suggestedFilename() === 'Mi pack de skins.mcpack', dl.suggestedFilename());
       await page.waitForSelector('dialog[open] .sk-export-done');
       const ready = await page.textContent('dialog[open]');
       check(`es pack maker ${tag}: ready dialog in Spanish`, /Tu pack de skins de Bedrock está listo/.test(ready) && /Vestidor/.test(ready) && /Equipar/.test(ready), ready.slice(0, 160));
-      await inspect(page, `es-pack-3-ready-${tag}`, 'es', { wait: 400 });
+      await inspect(page, `es-pack-4-ready-${tag}`, 'es', { wait: 400 });
       await closeLayers(page);
       check(`es pack maker ${tag}: no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));
       await page.close();

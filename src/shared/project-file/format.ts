@@ -34,8 +34,8 @@ const MANIFEST = 'manifest.json';
 const ITEM_JSON = 'item.json';
 
 /** What a stored item is: a project record, or the cape and font makers' single drafts. */
-export type ItemType = 'texturepack' | 'skin' | 'shader' | 'cape' | 'font';
-export const ITEM_TYPES: readonly ItemType[] = ['texturepack', 'skin', 'shader', 'cape', 'font'];
+export type ItemType = 'texturepack' | 'skin' | 'skinpack' | 'shader' | 'cape' | 'font';
+export const ITEM_TYPES: readonly ItemType[] = ['texturepack', 'skin', 'skinpack', 'shader', 'cape', 'font'];
 
 /** The tool a file was saved from (where it opens), or 'backup' for everything at once. */
 export type ProjectTool = 'textures' | 'skins' | 'skinpack' | 'cape' | 'shaders' | 'fonts' | 'backup';
@@ -329,7 +329,7 @@ export function validateManifest(m: unknown, opts: { target?: number } = {}): Pr
 
 /** The tool an item opens in. */
 export function toolOfItem(type: ItemType): ProjectTool {
-  return type === 'texturepack' ? 'textures' : type === 'skin' ? 'skins' : type === 'shader' ? 'shaders' : type === 'cape' ? 'cape' : 'fonts';
+  return type === 'texturepack' ? 'textures' : type === 'skin' ? 'skins' : type === 'skinpack' ? 'skinpack' : type === 'shader' ? 'shaders' : type === 'cape' ? 'cape' : 'fonts';
 }
 
 /** A project file or backup, read and checked. Items are decoded when they are needed. */

@@ -306,11 +306,10 @@ async function renderRecent(list: HTMLElement, section: HTMLElement, urls: strin
   );
 }
 
-/** The skin pack maker's page shows this start screen too, as a page about making a pack. */
+/** The Skin Pack Maker, linked from the top of this screen. */
 const PACK_PAGE = '/skin-pack-maker';
 
-export function mountStart(root: HTMLElement, path = '/skins'): () => void {
-  const packPage = path === PACK_PAGE;
+export function mountStart(root: HTMLElement): () => void {
   let model = loadModelPref();
   let size = loadSizePref();
   const urls: string[] = [];
@@ -513,39 +512,14 @@ export function mountStart(root: HTMLElement, path = '/skins'): () => void {
     ),
   );
 
-  // /skins: one skin. Several skins in one Bedrock pack is the skin pack maker's page, linked up top.
-  const packLink = packPage
-    ? null
-    : h(
-        'a',
-        { class: 'sk-totem-link sk-pack-link', href: routeHref(PACK_PAGE) },
-        h('span', { class: 'sk-import-icon' }, icon('package')),
-        h('span', { class: 'sk-totem-text' }, h('strong', null, t.packLink.title), h('span', { class: 'faint small' }, t.packLink.text)),
-        icon('arrow-right'),
-      );
-
-  // /skin-pack-maker: how the skins on this screen become one pack.
-  const packSteps = packPage
-    ? h(
-        'ol',
-        { class: 'sk-pack-steps', 'aria-label': t.packSteps.label },
-        (
-          [
-            ['brush', t.packSteps.make, t.packSteps.makeText],
-            ['package', t.packSteps.export, t.packSteps.exportText],
-            ['human', t.packSteps.wear, t.packSteps.wearText],
-          ] as const
-        ).map(([ic, title, text], i) =>
-          h(
-            'li',
-            null,
-            h('span', { class: 'sk-pack-step-n', 'aria-hidden': 'true' }, String(i + 1)),
-            h('span', { class: 'sk-import-icon' }, icon(ic)),
-            h('span', { class: 'sk-totem-text' }, h('strong', null, title), h('span', { class: 'faint small' }, text)),
-          ),
-        ),
-      )
-    : null;
+  // One skin here. Several skins in one Bedrock pack is the Skin Pack Maker's page, linked up top.
+  const packLink = h(
+    'a',
+    { class: 'sk-totem-link sk-pack-link', href: routeHref(PACK_PAGE) },
+    h('span', { class: 'sk-import-icon' }, icon('package')),
+    h('span', { class: 'sk-totem-text' }, h('strong', null, t.packLink.title), h('span', { class: 'faint small' }, t.packLink.text)),
+    icon('arrow-right'),
+  );
 
   const totemLink = h(
     'a',
@@ -559,29 +533,27 @@ export function mountStart(root: HTMLElement, path = '/skins'): () => void {
   const recentList = h('div', { class: 'sk-recent-grid' });
   const recentSection = h('section', { class: 'sk-section', hidden: true, 'aria-labelledby': 'sk-recent-title' });
   recentSection.append(
-    h('div', { class: 'sk-section-head' }, h('div', { class: 'stack', style: { '--gap': '4px' } }, h('h2', { id: 'sk-recent-title' }, t.recent.title), h('p', { class: 'muted' }, packPage ? t.packRecent : t.recent.text))),
+    h('div', { class: 'sk-section-head' }, h('div', { class: 'stack', style: { '--gap': '4px' } }, h('h2', { id: 'sk-recent-title' }, t.recent.title), h('p', { class: 'muted' }, t.recent.text))),
     recentList,
   );
   void renderRecent(recentList, recentSection, urls);
   const offProjects = onProjectsChanged(() => void renderRecent(recentList, recentSection, urls));
 
-  const hero = packPage ? t.packHero : t.hero;
   const page = h(
     'div',
-    { class: ['sk-start', 'container', packPage ? 'sk-start-pack' : null] },
+    { class: ['sk-start', 'container'] },
     h(
       'header',
       { class: 'sk-hero' },
       h(
         'div',
         { class: 'sk-hero-text' },
-        h('span', { class: 'eyebrow' }, icon(packPage ? 'package' : 'human'), hero.eyebrow),
-        h('h1', { class: 'pixel-shadow' }, hero.title),
-        h('p', { class: 'lead' }, hero.lead),
+        h('span', { class: 'eyebrow' }, icon('human'), t.hero.eyebrow),
+        h('h1', { class: 'pixel-shadow' }, t.hero.title),
+        h('p', { class: 'lead' }, t.hero.lead),
       ),
       modelPick,
     ),
-    packSteps,
     packLink,
     recentSection,
     h('section', { class: 'sk-section', 'aria-label': t.start.title }, sectionHead(t.start.title, t.start.text), starterGrid),

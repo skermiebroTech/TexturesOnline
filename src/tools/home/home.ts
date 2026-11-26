@@ -65,15 +65,17 @@ function startDialog(locale: Locale): void {
   options.forEach((a) => a.addEventListener('click', () => m.close()));
 }
 
-const KIND_INFO: Record<Project['kind'], { label: string; icon: IconName; route: ToolKey; accent: string }> = {
-  texturepack: { label: 'Texture pack', icon: 'image', route: 'textures', accent: 'accent-green' },
-  skin: { label: 'Skin', icon: 'human', route: 'skins', accent: 'accent-blue' },
-  shader: { label: 'Shader', icon: 'sparkles', route: 'shaders', accent: 'accent-purple' },
+const KIND_INFO: Record<Project['kind'], { label: string; icon: IconName; accent: string; path: (id: string) => string }> = {
+  texturepack: { label: 'Texture pack', icon: 'image', accent: 'accent-green', path: (id) => `/textures/${encodeURIComponent(id)}` },
+  skin: { label: 'Skin', icon: 'human', accent: 'accent-blue', path: (id) => `/skins/${encodeURIComponent(id)}` },
+  skinpack: { label: 'Skin pack', icon: 'package', accent: 'accent-blue', path: (id) => `/skin-pack-maker?pack=${encodeURIComponent(id)}` },
+  shader: { label: 'Shader', icon: 'sparkles', accent: 'accent-purple', path: (id) => `/shaders/${encodeURIComponent(id)}` },
 };
 
 function projectMeta(p: Project): string {
   if (p.kind === 'texturepack') return `${p.edition === 'java' ? 'Java' : 'Bedrock'} ${p.version === 'latest' ? 'latest' : p.version}`;
   if (p.kind === 'skin') return p.model === 'slim' ? 'Slim arms' : 'Classic arms';
+  if (p.kind === 'skinpack') return `Bedrock · ${p.skins?.length ?? 0} ${p.skins?.length === 1 ? 'skin' : 'skins'}`;
   const target = p.target === 'iris' ? 'Iris / OptiFine' : p.target === 'java-vanilla' ? `Vanilla ${p.version}` : 'Vibrant Visuals';
   return target;
 }
@@ -114,10 +116,10 @@ function projectThumb(p: Project, urls: string[]): HTMLElement {
     const img = h('img', { src: url, alt: '', class: 'pixelated', loading: 'lazy' });
     img.addEventListener('error', fallback);
     wrap.appendChild(img);
-  } else if (p.kind === 'skin' && p.image instanceof Blob) {
+  } else if ((p.kind === 'skin' && p.image instanceof Blob) || (p.kind === 'skinpack' && p.skins?.[0]?.image instanceof Blob)) {
     const c = h('canvas', { class: 'pixelated' });
     wrap.appendChild(c);
-    void drawSkinFace(p.image, c).then((ok) => {
+    void drawSkinFace(p.kind === 'skin' ? p.image : p.skins[0].image, c).then((ok) => {
       if (!ok) fallback();
     });
   } else {
@@ -193,7 +195,7 @@ function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void 
           e.preventDefault();
           e.stopPropagation();
           openMenu(menuBtn, [
-            { label: t.open, icon: 'external-link', onClick: () => navigate(`/${info.route}/${encodeURIComponent(p.id)}`) },
+            { label: t.open, icon: 'external-link', onClick: () => navigate(info.path(p.id)) },
             { label: t.rename, icon: 'pen-square', onClick: () => void rename(p) },
             { label: t.saveFile, icon: 'save', onClick: () => void saveProjectFile({ id: p.id }) },
             { label: t.delete, icon: 'trash', danger: true, onClick: () => void remove(p) },
@@ -204,7 +206,7 @@ function recentSection(t: UiText['recent']): { el: HTMLElement; destroy(): void 
           { class: ['recent-card', info.accent] },
           h(
             'a',
-            { class: 'recent-link', href: href(`/${info.route}/${encodeURIComponent(p.id)}`) },
+            { class: 'recent-link', href: href(info.path(p.id)) },
             projectThumb(p, urls),
             h(
               'span',
