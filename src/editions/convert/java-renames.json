@@ -1544,6 +1544,17 @@
 }, "removed": [
   "item/filled_map_markings",
   "item/light"
+]},
+{"version": "26.4-pre-1", "renames": {
+  "gui/sprites/friends/button": "gui/sprites/friends/tab",
+  "gui/sprites/friends/button_highlighted": "gui/sprites/friends/tab_highlighted",
+  "gui/sprites/friends/loading": "gui/sprites/widget/loading",
+  "gui/sprites/pause_menu/social_interactions": "gui/sprites/pause_menu/feedback"
+}, "removed": [
+  "gui/sprites/friends/button_disabled",
+  "gui/sprites/friends/remove",
+  "gui/sprites/pause_menu/player_reporting",
+  "gui/sprites/toast/social_interactions"
 ]}
 ]
 }

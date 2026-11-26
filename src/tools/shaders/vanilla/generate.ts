@@ -40,7 +40,7 @@ export interface VanillaVersionInfo {
 }
 
 /** Shaders whose colour output is not the world's final colour (or which run for the GUI only). */
-export const GRADE_DENY = /^(blit_screen|blit_depth|lightmap|animate_sprite.*|panorama|gui|rendertype_gui.*|integrate_depth|oit_.*|rendertype_outline|rendertype_water_mask|rendertype_crumbling|glint|rendertype_.*glint.*|screenquad|rendertype_eyes|rendertype_energy_swirl|rendertype_lightning)$/;
+export const GRADE_DENY = /^(blit_screen|blit_depth|lightmap|animate_sprite.*|panorama|gui|rendertype_gui.*|integrate_depth|oit_.*|rendertype_outline|rendertype_water_mask|rendertype_crumbling|glint|rendertype_.*glint.*|screenquad|screentriangle|rendertype_eyes|rendertype_energy_swirl|rendertype_lightning)$/;
 
 const P = PREFIX;
 const POST_INCLUDE_FILE = `${P}_post.glsl`;
@@ -247,9 +247,16 @@ function patchWorldFragments(pt: Patcher, fam: Family, s: Settings, withGrade: b
 
 // ---------------------------------------------------------------- (a)+(b) 26.3+: end_of_frame post effect
 
+/** Full-screen vertex shader of the version's post effects: screentriangle (26.4+) or screenquad (26.3). */
+export function postVertexShader(sources: Record<string, string>): string | null {
+  const name = ['screentriangle', 'screenquad'].find((n) => sources[`${CORE}${n}.vsh`] !== undefined);
+  return name ? `minecraft:core/${name}` : null;
+}
+
 function endOfFrameFiles(pt: Patcher, s: Settings, withGrade: boolean, withVignette: boolean, bloom: boolean): void {
   const src = pt.sources;
-  if (src[`${CORE}screenquad.vsh`] === undefined || src[`${POST_SHADERS}blit.fsh`] === undefined) {
+  const vertex = postVertexShader(src);
+  if (vertex === null || src[`${POST_SHADERS}blit.fsh`] === undefined) {
     pt.warn(W().noPostShaders);
     return;
   }
@@ -258,7 +265,7 @@ function endOfFrameFiles(pt: Patcher, s: Settings, withGrade: boolean, withVigne
     pt.out[`${POST_SHADERS}${POST_NAMES.bright}.fsh`] = postBrightShader(s);
     pt.out[`${POST_SHADERS}${POST_NAMES.blur}.fsh`] = postBlurShader();
   }
-  pt.out[`${POST_EFFECT}end_of_frame.json`] = endOfFrameJson(bloom);
+  pt.out[`${POST_EFFECT}end_of_frame.json`] = endOfFrameJson(bloom, vertex);
 }
 
 // ---------------------------------------------------------------- (d) fog: include/fog.glsl

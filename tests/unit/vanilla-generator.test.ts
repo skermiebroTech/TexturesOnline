@@ -707,6 +707,26 @@ test('26.3-style patch: full-screen post effect, no core fragment patches', () =
   assert.match(early.warnings.join('\n'), /Colors and vignette skipped/);
 });
 
+test('26.4-style post effect: passes use core/screentriangle when the version has no screenquad', () => {
+  const src = f6Sources();
+  const quad = src[`${CORE}screenquad.vsh`];
+  delete src[`${CORE}screenquad.vsh`];
+  src[`${CORE}screentriangle.vsh`] = quad;
+  const r = generateVanillaShaderFiles(src, ALL_ON, { versionId: '26.4-pre-1', packFormat: pf(104) });
+  const files = r.files as Record<string, string>;
+  assert.ok(!r.warnings.some((w) => /Colors and vignette skipped|full-screen shaders/i.test(w)), r.warnings.join('\n'));
+  const eof = JSON.parse(files['assets/minecraft/post_effect/end_of_frame.json']);
+  assert.equal(eof.passes.length, 7);
+  for (const p of eof.passes) assert.equal(p.vertex_shader, 'minecraft:core/screentriangle');
+  assert.ok(GRADE_DENY.test('screentriangle'));
+
+  // Neither full-screen vertex shader: the post effect is left out, with a warning.
+  delete src[`${CORE}screentriangle.vsh`];
+  const none = generateVanillaShaderFiles(src, ALL_ON, { versionId: '26.4-pre-1', packFormat: pf(104) });
+  assert.ok(!('assets/minecraft/post_effect/end_of_frame.json' in none.files));
+  assert.ok(none.warnings.length > 0);
+});
+
 test('pack description names the one version the pack works in', () => {
   assert.equal(vanillaPackDescription('26.3'), 'Shaders for Java 26.3 only. Made with Texture Pack Maker');
   assert.equal(vanillaPackDescription('1.21.4', 'Dusk'), 'Dusk · Shaders for Java 1.21.4 only. Made with Texture Pack Maker');

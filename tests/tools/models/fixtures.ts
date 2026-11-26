@@ -15,8 +15,8 @@ const ROOT = new URL('../../../', import.meta.url).pathname;
 
 export function javaJarPath(version: string): string | null {
   const dir = fixturesDir();
-  const candidates = [join(dir, 'research-cache', 'jars', `${version}.jar`)];
-  if (version === '26.3') candidates.unshift(join(dir, 'client-26.3.jar'));
+  // client-<version>.jar: the jars kept next to the manifest (client-26.3.jar, client-26.4-pre-1.jar)
+  const candidates = [join(dir, `client-${version}.jar`), join(dir, 'research-cache', 'jars', `${version}.jar`)];
   return candidates.find((p) => existsSync(p)) ?? null;
 }
 

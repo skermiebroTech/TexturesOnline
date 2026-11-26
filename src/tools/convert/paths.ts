@@ -20,7 +20,13 @@ const WEEKLY_CYCLES: [string, string][] = [
   ['25w31a', '1.21.9'], ['25w41a', '1.21.11'], ['25w99z', '26.1'],
 ];
 
-/** Sort key of a Java version id: release numbers, with pre-releases/snapshots just before their release. */
+/** Development versions before a release, in order: snapshots, pre-releases, release candidates. */
+const STAGES: Record<string, number> = { snapshot: -3, pre: -2, rc: -1 };
+
+/**
+ * Sort key of a Java version id: release numbers, with snapshots, then pre-releases, then release
+ * candidates just before their release ('26.4-snapshot-10' < '26.4-pre-1' < '26.4-rc-1' < '26.4').
+ */
 export function javaVersionKey(id: string): number[] {
   const v = id.trim().toLowerCase();
   const weekly = /^(\d\d)w(\d\d)([a-z])/.exec(v);
@@ -28,11 +34,15 @@ export function javaVersionKey(id: string): number[] {
     const code = `${weekly[1]}w${weekly[2]}${weekly[3]}`;
     const cycle = WEEKLY_CYCLES.find(([first], i) => code >= first && (i === WEEKLY_CYCLES.length - 1 || code < WEEKLY_CYCLES[i + 1][0]));
     const release = cycle ? cycle[1] : code < WEEKLY_CYCLES[0][0] ? '1.6.1' : '26.1';
-    return [...releaseParts(release), -1];
+    return [...releaseParts(release), STAGES.snapshot, Number(weekly[1]) * 100 + Number(weekly[2]), weekly[3].charCodeAt(0)];
   }
   const m = /^(\d+)\.(\d+)(?:\.(\d+))?(.*)$/.exec(v);
   if (!m) return [0, 0, 0, 0];
-  return [Number(m[1]), Number(m[2]), Number(m[3] ?? 0), m[4] ? -1 : 0];
+  const release = [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)];
+  if (!m[4]) return [...release, 0];
+  // '-pre1', '-pre-1', ' Pre-Release 1', '-rc-2', '-snapshot-3'; anything else sorts before them
+  const dev = /(snapshot|pre|rc)\D*(\d+)/.exec(m[4]);
+  return dev ? [...release, STAGES[dev[1]], Number(dev[2])] : [...release, -4];
 }
 
 function releaseParts(id: string): number[] {

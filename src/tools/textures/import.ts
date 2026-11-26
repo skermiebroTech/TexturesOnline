@@ -232,7 +232,8 @@ async function importJava(rel: Files, baseName: string, warnings: string[]): Pro
 
 /**
  * Newest release whose pack format the pack accepts. Uses the bundled release table and, only for
- * packs newer than it, the live version list.
+ * packs newer than it, the live version list: a newer release, else the newest snapshot or
+ * pre-release with that format (a pack made for 26.4-pre-1 opens as 26.4-pre-1).
  */
 export async function guessJavaVersion(
   range: { min: PackFormat; max: PackFormat } | null,
@@ -251,8 +252,9 @@ export async function guessJavaVersion(
 
   // Only a newer major format can belong to a release this build doesn't know yet.
   if (range.max.major > newestKnown.major) {
-    const live = await liveJavaReleases();
-    const hit = live.find((v) => v.packFormat && inRange(v.packFormat));
+    const live = await liveJavaVersions();
+    const fits = (v: GameVersion) => !!v.packFormat && inRange(v.packFormat);
+    const hit = live.find((v) => v.type === 'release' && fits(v)) ?? (version ? undefined : live.find(fits));
     if (hit?.packFormat && (!versionFormat || comparePackFormats(hit.packFormat, versionFormat) > 0)) {
       version = hit.id;
       versionFormat = hit.packFormat;
@@ -292,16 +294,17 @@ function describeRange(r: { min: PackFormat; max: PackFormat }): string {
   return a === b ? a : `${a}–${b}`;
 }
 
-async function liveJavaReleases(): Promise<GameVersion[]> {
+/** Releases and snapshots with a known pack format, newest first ([] when the list can't be had in time). */
+async function liveJavaVersions(): Promise<GameVersion[]> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const list = await Promise.race([
-      listVersions('java'),
+      listVersions('java', { includeSnapshots: true }),
       new Promise<GameVersion[]>((resolve) => {
         timer = setTimeout(() => resolve([]), LIVE_VERSIONS_TIMEOUT);
       }),
     ]);
-    return list.filter((v) => v.type === 'release' && v.packFormat);
+    return list.filter((v) => v.packFormat);
   } catch {
     return [];
   } finally {

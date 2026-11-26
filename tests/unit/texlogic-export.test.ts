@@ -194,3 +194,33 @@ test('metadata helpers', () => {
   assert.deepEqual(JSON.parse(adjustMcmeta('{"animation":{"width":5,"height":2,"frames":[0,1,2]}}', { width: 5, height: 2 }, { w: 16, h: 16 }, 1)!), { animation: { frames: [0] } });
   assert.deepEqual(JSON.parse(scaleNineSlice('// c\n{"nineslice_size":[1,2,3,4],"base_size":[4,4],}', 4)!), { nineslice_size: [4, 8, 12, 16], base_size: [16, 16] });
 });
+
+test('Java: edited textures a newer version reads under another name are reported', async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response('offline', { status: 404 })) as typeof fetch;
+  try {
+    const spec = javaSpec();
+    spec['version.json'] = JSON.stringify({ id: '26.4-pre-1', pack_version: { resource_major: 104, resource_minor: 0 } });
+    delete spec[`${J}gui/sprites/friends/loading.png`];
+    delete spec[`${J}gui/sprites/friends/loading.png.mcmeta`];
+    spec[`${J}gui/sprites/widget/loading.png`] = noisy(5, 6, 5);
+    const assets = fakeAssets('java', '26.4-pre-1', spec);
+    // A 26.3 pack switched to 26.4-pre-1 keeps its own paths
+    const p = newTextureProject({ name: 'Moved', edition: 'java', version: '26.4-pre-1' });
+    await setOverride(p, `${J}gui/sprites/friends/loading.png`, noisy(5, 6, 9));
+    await setOverride(p, `${J}block/stone.png`, noisy(16, 16, 9));
+    await setOverride(p, `${J}block/my_own.png`, noisy(16, 16, 9));
+    const res = await exportTexturePack(p, assets);
+    assert.deepEqual(json((await unzipBlob(res.blob))['pack.mcmeta']), { pack: { description: 'Made with Texture Pack Maker', min_format: 104, max_format: 104 } });
+    const w = res.warnings.filter((x) => /another name|other names/.test(x));
+    assert.deepEqual(w, ["1 edited texture has another name in Minecraft 26.4-pre-1, so the game won't use it: gui/sprites/friends/loading.png → gui/sprites/widget/loading.png."]);
+
+    // The same pack for 26.3 has nothing to report
+    const old = newTextureProject({ name: 'Moved', edition: 'java', version: '26.3' });
+    await setOverride(old, `${J}gui/sprites/friends/loading.png`, noisy(5, 6, 9));
+    const res263 = await exportTexturePack(old, fakeAssets('java', '26.3', javaSpec()));
+    assert.ok(!res263.warnings.some((x) => /another name|other names/.test(x)), res263.warnings.join('\n'));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
